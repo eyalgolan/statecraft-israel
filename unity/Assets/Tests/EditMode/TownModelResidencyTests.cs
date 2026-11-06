@@ -1201,6 +1201,103 @@ public class TownModelResidencyTests
         }
     }
 
+    /// <summary>The owner's bug of 6 November 2026 ("the look of the buildings in tel aviv changes when you change the zoom in
+    /// a way that you first see the big buildings and them the small ones"), ruled "Big blocks, every zoom" and "Just the
+    /// four (Recommended)", which supersedes the 2 November 2026 ruling: the major cities draw their code-built kit, its
+    /// landmarks with it, at every zoom. One camera over each city's footprint centre walks from the widest zoom in through
+    /// the far band and the close switch's band to the closest zoom and out again; at every step, before the stream answers
+    /// and once it has, the kit draws, the city's close mesh never swaps in and its building models are never ready. The low
+    /// tier at the 31 km opening the same. None of the kinds that only these cities place is ever asked for, as an original
+    /// or as a far-off copy.</summary>
+    [Test]
+    public void TheMajorCitiesDrawTheirKitsAtEveryZoom()
+    {
+        using var s = new StreamedMap();
+        var majors = TownLandmarksTests.BigCities;
+        float[] walk = { 250_000f, 112_500f, 90_000f, 60_000f, 42_000f, 39_000f, CameraRig.StartDistance, 6_000f, 43_000f, 46_000f, 101_000f, 250_000f };
+        foreach (var id in majors)
+        {
+            var at = s.Footprint(id).centre;
+            var kit = s.kits.Find(id)?.GetComponent<MeshRenderer>();
+            var close = s.kits.Find(id + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(kit, id + ": its kit"); Assert.IsNotNull(close, id + ": its close mesh");
+            var camera = s.Camera(at, walk[0]);
+            void Check(string where)
+            {
+                Assert.IsFalse(kit!.forceRenderingOff, where + ": the kit draws");
+                Assert.IsTrue(close!.forceRenderingOff, where + ": the close mesh does not swap in");
+                Assert.IsFalse(s.layer.ReadyForTown(id, camera), where + ": no building models");
+            }
+            foreach (float d in walk)
+            {
+                string where = FormattableString.Invariant($"{id} at {d / 1000f} km");
+                s.Pose(camera, at, d); s.layer.PrepareCamera(camera);
+                Check(where + ", before the stream answers");
+                s.Settle(camera);
+                Check(where + ", settled");
+            }
+            try
+            {
+                TownModelLayer.LowTier = true;
+                string where = FormattableString.Invariant($"{id} at {CameraRig.StartDistance / 1000f} km on the low tier");
+                s.Pose(camera, at, CameraRig.StartDistance); s.layer.PrepareCamera(camera);
+                Check(where + ", before the stream answers");
+                s.Settle(camera);
+                Check(where + ", settled");
+            }
+            finally { TownModelLayer.LowTier = false; }
+        }
+        // The kinds only the major cities place, from the data: every other place's instances (the other game settlements and
+        // the 1948 localities) leave them out.
+        var perPlace = (System.Collections.IDictionary)typeof(TownModelLayer).GetField("perPlace", Flags)!.GetValue(s.layer)!;
+        var elsewhere = new HashSet<TownModel>();
+        foreach (string place in perPlace.Keys)
+            if (!majors.Contains(place)) foreach (var m in s.layer.InstancesOf(place)) elsewhere.Add(m.Model);
+        var cityOnly = majors.SelectMany(id => s.layer.InstancesOf(id)).Select(m => m.Model).Where(k => !elsewhere.Contains(k))
+            .Distinct().OrderBy(k => k).ToList();
+        TestContext.WriteLine("kinds only the major cities place: " + string.Join(", ", cityOnly.Select(k => TownModels.Ids[(int)k])));
+        CollectionAssert.IsNotEmpty(cityOnly, "the major cities place kinds of their own (else the check below is vacuous)");
+        foreach (var kind in cityOnly)
+        {
+            string original = TownModels.Ids[(int)kind];
+            CollectionAssert.DoesNotContain(s.RequestOrder, original, original + " is never asked for");
+            CollectionAssert.DoesNotContain(s.RequestOrder, CollectionCatalog.FarCopy(original), original + "'s far-off copy is never asked for");
+        }
+    }
+
+    /// <summary>The major cities are a data predicate (owner, 6 November 2026, "Just the four (Recommended)"): a place is one
+    /// when its 1945 population (content/map/settlement_population_1945.yaml, the table MapScene.Build hands the kits) is at
+    /// least TownModels.MajorCityPopulation, 60,000. Over every game settlement and 1948 locality on the map that is exactly
+    /// Haifa, Jaffa, Jerusalem and Tel Aviv; the next place below it, Gaza (34,250), is not one.</summary>
+    [Test]
+    public void TheMajorCitiesAreThePlacesOfSixtyThousandOrMoreIn1945()
+    {
+        // Reflection, so this test compiles on the tree before the predicate exists and fails there on its absence.
+        var predicate = typeof(TownModels).GetMethod("IsMajorCity", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(string) }, null);
+        Assert.IsNotNull(predicate, "TownModels.IsMajorCity(string): the major cities from the data");
+        var threshold = typeof(TownModels).GetField("MajorCityPopulation", BindingFlags.Public | BindingFlags.Static);
+        Assert.IsNotNull(threshold, "TownModels.MajorCityPopulation: the threshold, named");
+        Assert.AreEqual(60_000, (int)threshold!.GetValue(null)!);
+        bool Major(string id) => (bool)predicate!.Invoke(null, new object[] { id })!;
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        try
+        {
+            var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var places = map.Settlements.Select(x => x.Id).Concat(map.Localities.Select(p => p.Settlement.Id)).Distinct().ToList();
+            CollectionAssert.AreEquivalent(new[] { "haifa", "jaffa", "jerusalem", "tel_aviv" }, places.Where(Major).ToList(), "the major cities");
+            CollectionAssert.AreEquivalent(TownLandmarksTests.BigCities, places.Where(Major).ToList(), "the tests' own list agrees");
+            var next = places.Where(id => !Major(id)).OrderByDescending(id => KitPopulation.Of(id)).ThenBy(id => id, StringComparer.Ordinal).First();
+            Assert.AreEqual("gaza", next, "the next place below the threshold");
+            Assert.AreEqual(34_250, KitPopulation.Of("gaza"), "Gaza's 1945 population");
+            Assert.IsFalse(Major("gaza"), "Gaza is not a major city");
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            VisualToggles.Clear();
+        }
+    }
+
     /// <summary>The production view admission (ConfigureProduction) on a synthetic layer: towns and merged village tiles wired
     /// as KitLayer wires them (explicit town ids, renderer identities and tile ids), in the player's streaming path. Each
     /// model kind is answered only when the test says so.</summary>
