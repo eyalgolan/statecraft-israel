@@ -123,8 +123,11 @@ public class KitAtlasShots
         foreach (var (city, yaw) in new[] { ("tel_aviv", 0f), ("jerusalem", 0f), ("haifa", 0f), ("jaffa", 0f) })
             foreach (var km in new[] { 31f, 16f, 8f })
                 yield return Take(FormattableString.Invariant($"{city}-{km:0}km"), CentreOf(city), km * 1000f, yaw);
-        yield return Take("tel_aviv-low-6km", CentreOf("tel_aviv", new Vector2(-900f, -1400f)), 6000f, 30f);
-        yield return Take("jerusalem-low-6km", CentreOf("jerusalem", new Vector2(600f, -1100f)), 6000f, 30f);
+        yield return Take("tel_aviv-low-6km", CentreOf("tel_aviv", new Vector2(2500f, 1500f)), 6000f, 30f);
+        // Tal Heuberger's clock tower and minaret in Jaffa beside Tel Aviv's first blocks.
+        yield return Take("tel_aviv-tal-8km", CentreOf("tel_aviv", new Vector2(-300f, -1300f)), 8000f, 30f);
+        yield return Take("jerusalem-west-8km", CentreOf("jerusalem", new Vector2(-2600f, -300f)), 8000f, 20f);
+        yield return Take("jerusalem-old-8km", CentreOf("jerusalem", new Vector2(2300f, -2200f)), 8000f, 20f);
         // Tel Aviv's edge towards its neighbours, where the kit's blocks meet Tal Heuberger's models.
         yield return Take("tel_aviv-edge-12km", CentreOf("tel_aviv", new Vector2(4200f, -1800f)), 12000f);
     }

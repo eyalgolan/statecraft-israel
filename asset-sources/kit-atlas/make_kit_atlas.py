@@ -318,7 +318,8 @@ def plaster() -> np.ndarray:
 
 
 def ashlar() -> np.ndarray:
-    a = np.repeat(coursed_stone(71, 34)[..., None], 3, axis=2) * rgb(1.0, 0.985, 0.95)
+    # Rolled half a course, so the cell's edges fall inside a course: its seam is no joint.
+    a = np.roll(np.repeat(coursed_stone(71, 34)[..., None], 3, axis=2), 17, axis=0) * rgb(1.0, 0.985, 0.95)
     return normalise(grain(a, 72, 0.03, 0.024), 0.90)
 
 
@@ -342,18 +343,18 @@ def roof_tile() -> np.ndarray:
     fy, fx = ry - np.floor(ry), cx - np.floor(cx)
     k = tone[r, c] * (0.86 + 0.14 * np.sin(np.pi * fx) ** 0.6)     # the tile's crown a little paler than its side
     k *= np.where(fy < 0.12, 0.62, 1.0)
-    a = np.repeat(k[..., None], 3, axis=2)
+    a = np.roll(np.repeat(k[..., None], 3, axis=2), N // (2 * rows), axis=0)   # the seam inside a row, not on a gap
     return normalise(grain(a, 92, 0.05, 0.03), 0.84)
 
 
 def flat_roof() -> np.ndarray:
     """A limed terrace: patched, seamed in big bays, a few darker repairs."""
     a = fill(rgb(0.96, 0.95, 0.93))
-    a = grain(a, 101, 0.05, 0.02)
-    for x in range(0, N, N // 4):
-        a[:, x:x + 2] *= 0.86
-        a[x:x + 2, :] *= 0.86
-    a[(noise(102, 1.8) > 0.42)] *= rgb(0.88, 0.87, 0.85)
+    a = grain(a, 101, 0.035, 0.018)
+    a *= (1.0 - 0.05 * np.clip((noise(102, 1.8) - 0.1) * 2.0, 0.0, 1.0))[..., None]
+    for x in range(N // 4, N, N // 2):
+        a[:, x:x + 2] *= 0.95
+        a[x:x + 2, :] *= 0.95
     return normalise(a, 0.92)
 
 
@@ -401,10 +402,12 @@ def planks() -> np.ndarray:
     rng = np.random.default_rng(141)
     a = np.ones((N, N))
     w = N // 16
+    tones = rng.uniform(0.84, 1.08, 16)
+    tones[8:] += tones[:8].mean() - tones[8:].mean()   # the cell's two halves weigh the same: no drift across it
     for i in range(16):
-        a[:, i * w:(i + 1) * w] = rng.uniform(0.84, 1.08)
+        a[:, i * w:(i + 1) * w] = tones[i]
         a[:, i * w:i * w + 2] = 0.58
-    a = a * (1.0 + 0.05 * noise(142, 1.2, (0.6, 6.0)))
+    a = np.roll(a, w // 2, axis=1) * (1.0 + 0.05 * noise(142, 1.2, (0.6, 6.0)))
     return normalise(np.repeat(a[..., None], 3, axis=2), 0.88)
 
 
