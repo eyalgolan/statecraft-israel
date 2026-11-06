@@ -101,4 +101,31 @@ public class Gdd03SaveTests
     [InlineData(6, "gdd-0.3")]
     public void Gdd03RefusesUnknownRulesAndFutureSchemas(int schema, string ruleset) =>
         Assert.Equal(SaveException.NewerVersion, Assert.Throws<SaveException>(() => SaveGame.Parse(Text(schema, ruleset), SaveGame.Gdd03Ruleset)).Code);
+
+    // R-SAVE-005 (#2605): a schema 4 gdd-0.3 save through GameSession.Load, not only SaveGame.Parse. With its saved hash it
+    // loads with no warning and is written back as schema 5. With a wrong end hash it was played under the earlier cap, so
+    // it loads with the replay_differs warning alone, not an exception.
+    [Fact]
+    public void ASchemaFourGdd03SaveLoadsThroughTheSession()
+    {
+        var files = Fixture.Gdd(); NoAttentionTests.Select(files, true);
+        var c = ContentLoader.Load(Fixture.Write(files));
+        Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
+        var played = GameSession.New(c, 1, Mode.Historical);
+        played.Step(new Command[] { new BuyArms(1) });
+        played.Step(new Command[0]);
+        var five = played.Save.Write();
+        var four = five.Replace("statecraft-save 5\n", "statecraft-save 4\n");
+        Assert.Equal(4, SaveGame.Parse(four).Version);
+        var loaded = GameSession.Load(c, four, out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(played.State.Hash(), loaded.State.Hash());
+        Assert.Equal(five, loaded.Save.Write());
+
+        var wrongEnd = four.Replace("end " + played.State.Hash(), "end " + new string('0', 64));
+        Assert.NotEqual(four, wrongEnd);
+        var differs = GameSession.Load(c, wrongEnd, out warnings);
+        Assert.Equal(new[] { GameSession.ReplayDiffers }, warnings);
+        Assert.Equal(played.State.Hash(), differs.State.Hash());
+    }
 }

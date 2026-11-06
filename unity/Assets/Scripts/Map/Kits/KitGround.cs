@@ -209,11 +209,11 @@ namespace Statecraft.Game.Map.Kits
             return false;
         }
 
-        /// <summary>The unit tokens that stand outside every footprint (centre x, z; ring radius m; MapScene). The Bedouin camps,
+        /// <summary>The unit tokens that stand outside every footprint (centre x, z; footprint radius m; MapScene). The Bedouin camps,
         /// the one kit placed where no footprint is, keep off them (units-in-play merge, review I5).</summary>
         public readonly List<(Vector2 centre, float radius)> Tokens = new List<(Vector2, float)>();
 
-        /// <summary>True when a disc of radius <paramref name="r"/> at <paramref name="p"/> reaches a unit token's ring.</summary>
+        /// <summary>True when a disc of radius <paramref name="r"/> at <paramref name="p"/> reaches a unit token's footprint.</summary>
         public bool OnToken(Vector2 p, float r)
         {
             foreach (var (c, tr) in Tokens) if ((p - c).sqrMagnitude < (tr + r) * (tr + r)) return true;

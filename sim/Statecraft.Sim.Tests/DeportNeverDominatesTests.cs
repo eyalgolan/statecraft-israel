@@ -13,8 +13,8 @@ using Statecraft.Sim;
 /// losing the war (Q-DEP-7 (b)). On Social cohesion and International Support it is below both by at least
 /// <see cref="Margin"/>. The goldens hold no capture state until a capture is reachable in the real content (#1304), so the
 /// fixture states carry the test: town_a captured at full and at minimum strength, with a halutz, with an enemy beside it,
-/// and with a second place awaiting, with the fixture's one city moved to town_d's hex, out of reach. "shared hex" keeps the
-/// city on town_a's own hex, as Tel Aviv shares Jaffa's: there no city project can be started on the depopulated hex
+/// and with a second place awaiting, with the fixture's one city, town_h, on its own hex (0, 2), out of reach. "shared hex" moves
+/// town_h onto town_a's hex, as Tel Aviv shares Jaffa's: there no city project can be started on the depopulated hex
 /// (R-CTRL-020), so the reference policy builds less and spends less (IL 3.0m in the fixture), which the Money cost covers.
 /// Food ends the same under all three outcomes in these states, so a Food gain from Deport shows only in
 /// DeportTests.TheCostsApplyAtOnce, not here. Each run is also the fixture stand-in for the paired mvp-occupy-cost and mvp-deport-cost scenarios
@@ -50,8 +50,9 @@ public class DeportNeverDominatesTests
     public void DeportNeverDominates(string name)
     {
         var shared = name == "shared hex";
-        var c = shared ? DeportTests.Load() : DeportTests.Load(files => files["cities.yaml"] = files["cities.yaml"].Replace("id: town_a,", "id: town_d,"));
-        Assert.Equal(shared ? "town_a" : "town_d", Assert.Single(c.Cities).Id);
+        var c = shared ? DeportTests.Load(files => files["map/settlement_hexes.yaml"] = files["map/settlement_hexes.yaml"].Replace("id: town_h, q: 0, r: 2", "id: town_h, q: 1, r: 0"))
+                       : DeportTests.Load();
+        Assert.Equal("town_h", Assert.Single(c.Cities).Id);
         var s = State(c, name);
         var turnEnd = new Dictionary<string, GameState>();
         var end = new Dictionary<string, GameState>();

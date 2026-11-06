@@ -41,7 +41,11 @@ def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True, al
         f.write_text(re.sub(r"(?m)^status: .*$", f"status: {status}", f.read_text()))
     units = content / "map" / "units_1948.yaml"
     forces = "fact-checked" if forces_checked else "draft"
-    units.write_text(re.sub(r"(?m)^  status: .*$", f"  status: {forces}", units.read_text(encoding="utf-8")), encoding="utf-8")
+    # #2722: a fact-checked row needs its check day, and a field sourced after it counts as unchecked; TEST-ONLY, a day
+    # after every source check, as a person's check of every field would leave it.
+    checked_on = "\n  checked_on: '2099-12-31'" if forces_checked else ""
+    units_text = re.sub(r"(?m)^  checked_on: .*\n", "", units.read_text(encoding="utf-8"))
+    units.write_text(re.sub(r"(?m)^  status: .*$", f"  status: {forces}{checked_on}", units_text), encoding="utf-8")
     targets = content / "settlement_targets.yaml"   # #793's rows, as the owner's review would leave them (Q-TGT-3 (b))
     targets.write_text(re.sub(r"(?m)^    status: .*$", f"    status: {status}", targets.read_text(encoding="utf-8")), encoding="utf-8")
     # TEST-ONLY fixture data: these two files are copies below tmp_path, never the source content.

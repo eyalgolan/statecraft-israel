@@ -70,6 +70,14 @@ public class GameSceneTests
         var play = (Func<int, bool>)typeof(UnitAttackPresenter).GetField("play", flags)!.GetValue(presenters[0])!;
         Assert.AreSame(root.Units, play.Target, "it plays on the game's unit layer");
         Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayAttack), play.Method.Name);
+        var defenderHit = (Func<Statecraft.Game.Map.Units.CombatHit, bool>)typeof(UnitAttackPresenter)
+            .GetField("defenderHit", flags)!.GetValue(presenters[0])!;
+        Assert.AreSame(root.Units, defenderHit.Target, "the defender reaction uses the game's unit layer");
+        Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayDefenderHit), defenderHit.Method.Name);
+        var timedPlay = (Func<int, Action, Action, bool>)typeof(UnitAttackPresenter)
+            .GetField("timedPlay", flags)!.GetValue(presenters[0])!;
+        Assert.AreSame(root.Units, timedPlay.Target, "the reaction is timed through the game's attack path");
+        Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayAttack), timedPlay.Method.Name);
     }
 
     [Test]
@@ -1286,6 +1294,10 @@ public class GameRootEscapeTests : SharedCameraActionsFixture
         Escape();
         Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "the first Escape closes the screen");
         Assert.IsTrue(newGame.Armed, "the first Escape is the screen's: the request is still armed");
+        // The next key press is a later frame: the screen closed on the first press, and ScreenNav.ClosedThisFrame
+        // would still claim this one in the single EditMode frame (#2609).
+        var nav = typeof(GameRoot).GetField("nav", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        typeof(ScreenNav).GetField("closedFrame", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(nav, -1);
         Escape();
         Assert.IsFalse(newGame.Armed, "the next Escape withdraws the request");
         Assert.AreEqual("", Ui.Q<Label>("toast").text, "the prompt is off the toast");

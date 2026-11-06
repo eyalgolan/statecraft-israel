@@ -343,9 +343,11 @@ public class SeaAirCollectionTests
     /// the 15 May turn only, at Tel Aviv's place. #2482 (owner, 4 November 2026: "make the visual 2 slightly smaller planes and
     /// not 0ne big one"; the sourced sortie was "גיחה של שני מטוסי הפצצה", two bombers): two Dakotas, each with its own stable
     /// key made from DakotaKey, the lead first, each slightly smaller than the one 12.2 km Dakota of #2274 (DakotaScale of the
-    /// unit tokens' aircraft scale). Changed from #2274's one-key test: it asserted one want and the full 420x size.</summary>
+    /// unit tokens' aircraft scale). Changed from #2274's one-key test: it asserted one want and the full 420x size. Changed
+    /// again for the second bombing period, 8 to 17 July 1948 (DakotaSecondFrom; owner: "(a) Add the Dakotas to the 15 July
+    /// 1948 turn, the second bombing period"): it asserted the 15 May turn only and no Dakota after 11 June.</summary>
     [Test]
-    public void TheTwoDakotasAreWantedOnlyInTheFirstBombingPeriod()
+    public void TheTwoDakotasAreWantedOnlyInTheTwoBombingPeriods()
     {
         bool Wanted(DateTime d)
         {
@@ -363,9 +365,13 @@ public class SeaAirCollectionTests
         Assert.IsTrue(Wanted(new DateTime(1948, 6, 11)));
         Assert.IsFalse(Wanted(new DateTime(1948, 6, 12)), "the first truce");
         Assert.IsFalse(Wanted(new DateTime(1948, 6, 15)));
+        Assert.IsFalse(Wanted(new DateTime(1948, 7, 7)), "the first truce, to 8 July");
+        Assert.IsTrue(Wanted(new DateTime(1948, 7, 8)), "the Ten Days: the second bombing period begins");
+        Assert.IsTrue(Wanted(new DateTime(1948, 7, 17)), "the last bombing of Tel Aviv");
+        Assert.IsFalse(Wanted(new DateTime(1948, 7, 18)), "the second truce");
         var turns = new List<DateTime>();
         for (var d = C.Rules.Start; d < C.End; d = d.AddMonths(1)) turns.Add(d);
-        CollectionAssert.AreEqual(new[] { new DateTime(1948, 5, 15) }, turns.Where(Wanted), "the 15 May 1948 turn only");
+        CollectionAssert.AreEqual(new[] { new DateTime(1948, 5, 15), new DateTime(1948, 7, 15) }, turns.Where(Wanted), "the 15 May and 15 July 1948 turns only");
         Assert.AreEqual(29.11f, SeaAirCollection.RealLengthM(SeaAirCollection.Dakota), 0.01f, "95 ft 6 in, en.wiki Douglas C-47 Skytrain");
         float old = 29.11f * Statecraft.Game.Map.Units.UnitShowcase.AircraftScale;   // #2274's one Dakota, 12.2 km across
         Assert.That(SeaAirCollection.DakotaScale, Is.InRange(0.6f, 0.95f), "slightly smaller, not a different kind of piece");
@@ -480,6 +486,55 @@ public class SeaAirCollectionTests
         Assert.AreNotSame(first, layer.KeepClear, "a new list a step on, so the labels re-place");
     }
 
+    /// <summary>#2604: in the 31 km opening view, names in frame hid for a Dakota off the frame's top edge. #2490's keep-clear
+    /// box held the aircraft at every heading and bank at once (half its box's 3D diagonal every way, about 6 km), so it
+    /// reached about 3.7 km under the aircraft and 1.1 km past its wingtips, and the board camera, 50 degrees down, saw that
+    /// overhang inside the frame. Now the box is the aircraft and its flag as they fly through the step: round the loop it
+    /// never reaches more than 400 m under the aircraft's own lowest point (a step's change of bank in the turns), and on the
+    /// pass in over Tel Aviv (nose east, level) it is no wider north-south than the wingspan and the pad.</summary>
+    [Test]
+    public void TheDakotasKeepClearBoxIsNoBiggerThanTheAircraftAndItsFlag()
+    {
+        var map = OpenMap();
+        var (layer, planes, loops, _) = DrawnDakotas(map);
+        float period = SeaAirCollection.DakotaLoopSeconds;
+        for (int i = 0; i < 60; i++)
+        {
+            float t = i * period / 60f;
+            for (int p = 0; p < planes.Length; p++)
+            {
+                loops[p].Place(t);
+                var pb = WorldBounds(planes[p].gameObject); var keep = DakotaKeepOf(layer, planes[p].gameObject)!.Value;
+                Assert.IsTrue(keep.Contains(pb.min) && keep.Contains(pb.max), $"{planes[p].name}'s box holds it at {t:0.0} s");
+                Assert.Greater(keep.min.y, pb.min.y - 400f, $"{planes[p].name}'s box stops near its underside at {t:0.0} s, not 3.7 km under it");
+            }
+        }
+        // On the pass in (the lead's first step, its clock lag 0): the box may be no wider north-south than the aircraft as drawn
+        // at the box's own sample points through that step (its heading turns about 0.03 rad in the step, so the swept span
+        // is wider than the level wingspan: by about 2 x half its length x 0.03, ~200 m, plus its bank and the path's drift),
+        // plus the pad on both sides (DakotaKeepPadM), plus one more pad's slack for the propeller discs' reach past the
+        // airframe and the bow between samples. #2613's first bound, the level wingspan + 300 m, ignored the step's turn.
+        float step = SeaAirCollection.DakotaKeepStepS; int samples = SeaAirCollection.DakotaKeepSamples;
+        Bounds swept = default;
+        for (int k = 0; k <= samples; k++)
+        {
+            loops[0].Place(Mathf.Min(k * step / samples, step - 1e-3f));   // the step's last point, still in the step
+            var drawn = WorldBounds(planes[0].gameObject);
+            if (k == 0) swept = drawn; else swept.Encapsulate(drawn);
+        }
+        loops[0].Place(0f);
+        var lead = WorldBounds(planes[0].gameObject); var box = DakotaKeepOf(layer, planes[0].gameObject)!.Value;
+        float widest = swept.size.z + 2f * SeaAirCollection.DakotaKeepPadM + SeaAirCollection.DakotaKeepPadM;
+        Assert.Less(box.size.z, widest, "on the pass in, no wider north-south than the aircraft through the step and the pad");
+        // The bound still catches an oversized box: twice as wide, or only a pad wider on each side.
+        var doubled = box; doubled.size = new Vector3(box.size.x, box.size.y, 2f * box.size.z);
+        Assert.GreaterOrEqual(doubled.size.z, widest, "a doubled box fails the bound");
+        var padded = box; padded.Expand(new Vector3(0f, 0f, 2f * SeaAirCollection.DakotaKeepPadM));
+        Assert.GreaterOrEqual(padded.size.z, widest, "a box a pad wider on each side fails the bound");
+        Assert.Less(box.size.x, lead.size.x + 0.5f * SeaAirCollection.SizeOf(SeaAirCollection.Dakota) + 2f * 640f,
+            "no longer east-west than its length, the flag over its tail and a step's flight");
+    }
+
 
     /// <summary>The world point is on one of Tel Aviv's hexes (content/map/settlement_hexes.yaml), by the map's own click
     /// picker (MapPointer.Pick: lon/lat and tools/hexgrid.py's rounding), a different route from the layer's own grid test.</summary>
@@ -489,9 +544,9 @@ public class SeaAirCollectionTests
         return C.SettlementHexes.Any(h => h.Id == SeaAirCollection.DakotaTown && h.Q == q && h.R == r);
     }
 
-    /// <summary>Two Dakotas in the window, none outside it (#2482): on the turns of 14 May, 12 June and 15 June 1948 no Dakota,
-    /// no loop, and no marks object (flag, shadow, bombs) is drawn; on the 15 May turn exactly two looping Dakotas, each at
-    /// the smaller size.</summary>
+    /// <summary>Two Dakotas in the windows, none outside them (#2482): on the turns of 14 May, 12 June, 15 June, 7 July and 18
+    /// July 1948 no Dakota, no loop, and no marks object (flag, shadow, bombs) is drawn; on the 15 May and 15 July turns exactly
+    /// two looping Dakotas. Changed for the second bombing period (DakotaSecondFrom), which added 7, 15 and 18 July.</summary>
     [Test]
     public void TwoDakotasFlyInTheWindowAndNoneOutsideIt()
     {
@@ -500,6 +555,7 @@ public class SeaAirCollectionTests
         {
             (new DateTime(1948, 5, 14), false), (new DateTime(1948, 5, 15), true), (new DateTime(1948, 6, 11), true),
             (new DateTime(1948, 6, 12), false), (new DateTime(1948, 6, 15), false),
+            (new DateTime(1948, 7, 7), false), (new DateTime(1948, 7, 15), true), (new DateTime(1948, 7, 18), false),
         })
         {
             var layer = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll();
@@ -980,6 +1036,80 @@ public class SeaAirCollectionTests
         TestContext.WriteLine($"{all.Count} smoke columns over Tel Aviv");
     }
 
+    /// <summary>#2604: the columns read in play as "two flat, dark-brown blobs" over the city, their feet hidden, dark top to
+    /// bottom. The column's curves now: its height share rises from 0 at the impact to 1 at the top, slowly at first; its
+    /// width only grows with height, from a thin foot (DakotaColumnFootM) under a quarter of the top's width; its shade (the tint times the flipbook's 0.44 grey) only lightens, from under
+    /// 0.15 at the foot to over 0.6 aloft; and above its first 1% (a newborn puff's fade-in) its alpha only falls, from over
+    /// 0.8 near the foot to under 0.1 at 90% of the height and nothing at the top.</summary>
+    [Test]
+    public void TheSmokeColumnsCurvesStartThinDarkAndDenseAndEndWidePaleAndThin()
+    {
+        Assert.AreEqual(0f, DakotaBombRun.ColumnHeightShare(0f), 1e-6f, "a puff starts on the impact");
+        Assert.AreEqual(1f, DakotaBombRun.ColumnHeightShare(1f), 1e-6f, "and ends at the column's top");
+        Assert.Less(DakotaBombRun.ColumnWidth(0f), 0.25f * DakotaBombRun.ColumnWidth(1f), "a thin foot under a wide top");
+        Assert.AreEqual(SeaAirCollection.DakotaColumnFootM, DakotaBombRun.ColumnWidth(0f), 1e-3f);
+        float lastH = 0f, lastW = DakotaBombRun.ColumnWidth(0f), lastShade = DakotaBombRun.ColumnTint(0f).r, lastA = float.MaxValue;
+        for (int i = 1; i <= 200; i++)
+        {
+            float x = i / 200f;
+            float h = DakotaBombRun.ColumnHeightShare(x);
+            Assert.Greater(h, lastH, $"it only rises ({x:0.000})");
+            Assert.Less(h, x + 1e-6f, $"slower than an even pace, so the puffs crowd at the foot ({x:0.000})");
+            float w = DakotaBombRun.ColumnWidth(x), shade = DakotaBombRun.ColumnTint(x).r, a = DakotaBombRun.ColumnAlphaAt(x);
+            Assert.Greater(w, lastW, $"it only widens with height ({x:0.000})");
+            Assert.GreaterOrEqual(shade, lastShade - 1e-6f, $"it only pales with height ({x:0.000})");
+            if (x > DakotaBombRun.ColumnFadeInShare) Assert.LessOrEqual(a, lastA + 1e-6f, $"above the fade-in its alpha only falls ({x:0.000})");
+            lastH = h; lastW = w; lastShade = shade; lastA = a;
+        }
+        const float FlipbookGrey = 0.44f;
+        Assert.Less(FlipbookGrey * DakotaBombRun.ColumnTint(0f).r, 0.15f, "near-black at the foot");
+        Assert.Greater(FlipbookGrey * DakotaBombRun.ColumnTint(1f).r, 0.6f, "light grey aloft");
+        Assert.Greater(DakotaBombRun.ColumnAlphaAt(0.05f), 0.8f, "dense near the foot");
+        Assert.Less(DakotaBombRun.ColumnAlphaAt(0.9f), 0.1f, "thin near the top");
+        Assert.AreEqual(0f, DakotaBombRun.ColumnAlphaAt(1f), 1e-6f, "gone at the top");
+        Assert.AreEqual(0f, DakotaBombRun.ColumnAlphaAt(0f), 1e-6f, "a newborn puff fades in, no pop");
+    }
+
+    /// <summary>#2604 in the scene, over Tel Aviv's hex: each standing column's puffs in its lowest quarter are under 0.6 of
+    /// the width of the widest in its upper part (above 60% of DakotaColumnM); its lowest puff is thin (under twice
+    /// DakotaColumnFootM) and its lower edge within 150 m of the ground, so the column's foot stands on its impact; its
+    /// lower quarter is on average over twice as opaque as its upper part, every upper puff under half opaque, and it is over
+    /// twice as light aloft as at the foot. Every puff is over Tel Aviv's hex (MapPointer.Pick).</summary>
+    [Test]
+    public void EachStandingColumnIsThinAndDarkAtItsFootAndWidePaleAndSeeThroughAloftOverTelAviv()
+    {
+        var map = OpenMap();
+        var (_, planes, loops, _) = DrawnDakotas(map);
+        float life = SeaAirCollection.DakotaColumnLifeS, M = SeaAirCollection.DakotaColumnM;
+        int P = SeaAirCollection.DakotaColumnPuffs;
+        for (int p = 0; p < planes.Length; p++)
+        {
+            var loop = loops[p]; var run = loop.Bombs!;
+            for (int c = 0; c < run.ColumnSites.Count; c++)
+            {
+                var site = run.ColumnSites[c]; float from = (float)run.ColumnFrom(c);
+                foreach (float later in new[] { 1.5f * life, 2.5f * life + 3.3f, 4f * life + 7.9f })
+                {
+                    loop.Place(loop.Lag + from + later);
+                    var on = run.Columns.Skip(c * P).Take(P).Where(r => r.enabled).ToList();
+                    Assert.AreEqual(P, on.Count, "standing whole");
+                    float Up(Renderer r) => r.transform.position.y - site.y;
+                    var low = on.Where(r => Up(r) < 0.25f * M).ToList(); var high = on.Where(r => Up(r) > 0.6f * M).ToList();
+                    string at = $"{planes[p].name} column {c}, {later:0.0} s after its first hit";
+                    Assert.IsNotEmpty(low, $"{at}: puffs at its foot"); Assert.IsNotEmpty(high, $"{at}: puffs aloft");
+                    Assert.Less(low.Max(r => r.transform.localScale.x), 0.6f * high.Max(r => r.transform.localScale.x), $"{at}: narrower at the foot");
+                    var lowest = on.OrderBy(Up).First();
+                    Assert.Less(lowest.transform.localScale.x, 2f * SeaAirCollection.DakotaColumnFootM, $"{at}: thin where it meets the impact");
+                    Assert.Less(Up(lowest) - 0.5f * lowest.transform.localScale.y, 150f, $"{at}: its foot on the ground");
+                    Assert.Greater(low.Average(r => DakotaBombRun.Colour(r).a), 2f * high.Average(r => DakotaBombRun.Colour(r).a), $"{at}: denser at the foot");
+                    Assert.Less(high.Max(r => DakotaBombRun.Colour(r).a), 0.5f, $"{at}: see-through aloft");
+                    Assert.Greater(high.Average(r => DakotaBombRun.Colour(r).r), 2f * low.Average(r => DakotaBombRun.Colour(r).r), $"{at}: paler aloft");
+                    foreach (var r in on) Assert.IsTrue(OnTelAviv(map, r.transform.position), $"{at}: over Tel Aviv ({r.transform.position})");
+                }
+            }
+        }
+    }
+
     /// <summary>Sampling the bombs, blasts, dust and columns, and turning them to a camera, allocates nothing (DakotaBombRun),
     /// as the gun's shot (UnitGunFireTests).</summary>
     [Test]
@@ -1158,6 +1288,11 @@ public class SeaAirCollectionTests
         var prop = airframe.transform.Find(SeaAirCollection.SpitfirePropellerName);
         Assert.IsNotNull(prop, "a propeller disc, a child of the aircraft's mesh");
         Assert.AreEqual(ShadowCastingMode.Off, prop.GetComponent<MeshRenderer>().shadowCastingMode, "a blur casts no shadow");
+        // The coordinator-approved plan, step 1 (5 November 2026): a light haze, not the dark disc it was.
+        var colours = prop.GetComponent<MeshFilter>().sharedMesh.colors32;
+        Assert.IsTrue(colours.All(c => c.r > 180 && c.g > 180 && c.b > 180), "a light blur");
+        Assert.That(colours.Max(c => c.a) / 255f, Is.InRange(0.3f, 0.6f), "see-through");
+        Assert.AreEqual(0, colours.Min(c => c.a), "clear at its rim");
         float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire);
         loop.Place(0f);
         var nose = plane.TransformDirection(Vector3.down);   // the mesh's -y, as the in-flight test reads it
@@ -1213,11 +1348,36 @@ public class SeaAirCollectionTests
         finally { SpitfireLoop.Clock = clock; Object.DestroyImmediate(flying); }
     }
 
+    /// <summary>The coordinator-approved Spitfire plan, step 2 (5 November 2026): the streamed model is fully matte, so the
+    /// layer gives it a glossy copy of its material (the same shader and map, smoothness UnitShowcase.AircraftSmoothness), and
+    /// leaves the streamed material itself as it was.</summary>
+    [Test]
+    public void TheSpitfireWearsAGlossyCopyOfItsMatteMaterial()
+    {
+        var map = OpenMap();
+        var (_, plane, _, _) = DrawnSpitfire(map);
+        var airframe = plane.GetComponentInChildren<MeshFilter>().GetComponent<MeshRenderer>();
+        var gloss = airframe.sharedMaterial;
+        Assert.IsTrue(gloss.name.EndsWith(" (glossy)"), "a copy, not the streamed material");
+        Assert.AreEqual(Statecraft.Game.Map.Units.UnitShowcase.AircraftSmoothness, gloss.GetFloat("_Smoothness"), 1e-6f);
+        var name = gloss.name.Substring(0, gloss.name.Length - " (glossy)".Length);
+        var sources = Resources.FindObjectsOfTypeAll<Material>().Where(m => m.name == name).ToList();
+        Assert.IsNotEmpty(sources, "the streamed material it copies");
+        foreach (var source in sources)
+        {
+            Assert.AreEqual(0f, source.GetFloat("_Smoothness"), 1e-6f, "the streamed material stays matte");
+            Assert.AreSame(source.shader, gloss.shader);
+            Assert.AreSame(source.GetTexture("_BaseMap"), gloss.GetTexture("_BaseMap"), "the same map");
+        }
+    }
+
     /// <summary>The owner's report: "it doesnt look fliying". The aircraft flies well clear of the ground at every point of its
     /// loop (UnitShowcase.AltitudeM over the highest ground under the loop), and a soft dark disc, as long and as wide as the
     /// aircraft seen from above and fading to nothing at its rim, lies on the ground where the map's sun (MapLighting) casts
     /// it: on the sun's ray through the aircraft, east-south-east of it, turned with its heading, a little over the ground
-    /// under it and inside the board.</summary>
+    /// under it and inside the board. The ray starts at SpitfireLoop.ShadowHeightShare of the aircraft's height over the
+    /// surface under it, so the shadow lies near enough to read as the aircraft's (e21's captures, 5 November 2026: about
+    /// 7.5 km away at the full height).</summary>
     [Test]
     public void TheSpitfireFliesHighOverTheGroundAndItsSoftShadowLiesDownSunOnTheBoard()
     {
@@ -1233,14 +1393,23 @@ public class SeaAirCollectionTests
             var (layer, plane, loop, centre) = DrawnSpitfire(map);
             var shadow = Marks(layer, SeaAirCollection.SpitfireShadowName);
             Assert.IsNotNull(shadow, "a ground shadow beside the aircraft");
+            Assert.IsTrue(plane.GetComponentsInChildren<Renderer>(true).All(x => x.shadowCastingMode == ShadowCastingMode.Off),
+                "its only shadow: the aircraft casts none (one would lie about 7.7 km off at its drawn height, e21's AFTER captures)");
             var renderer = shadow!.GetComponent<MeshRenderer>();
             Assert.AreEqual(ShadowCastingMode.Off, renderer.shadowCastingMode); Assert.IsFalse(renderer.receiveShadows);
             var alpha = shadow.GetComponent<MeshFilter>().sharedMesh.colors32.Select(c => c.a / 255f).ToList();
             Assert.That(alpha.Max(), Is.InRange(0.2f, 0.8f), "dark but see-through at its middle");
+            // e21's AFTER captures of #2728: the Dakotas' disc read too faint as the Spitfire's only shadow; its own is darker.
+            var dakota = SeaAirCollection.ShadowDisc();
+            try { Assert.Greater(alpha.Max(), dakota.colors32.Max(c => c.a) / 255f + 0.1f, "darker than the Dakotas' disc"); }
+            finally { Object.DestroyImmediate(dakota); }
             Assert.AreEqual(0f, alpha.Min(), 1e-3f, "nothing at its rim: a soft edge");
             var ground = PlacementLayer.CampGround(map);
             float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire), y0 = map.Terrain.transform.position.y;
             float Height(Vector3 p) => map.Terrain.SampleHeight(p) + y0;
+            // Where the shadow's ray starts: ShadowHeightShare of the way up from the surface (land or sea) under the aircraft.
+            Vector3 Low(Vector3 drawn) { float u = Mathf.Max(Height(drawn), ground.SeaLevelY); drawn.y = u + SpitfireLoop.ShadowHeightShare * (drawn.y - u); return drawn; }
+            Assert.That(SpitfireLoop.ShadowHeightShare, Is.InRange(0.1f, 0.5f), "lower than the drawn height, still well over the ground");
             var sunFlat = new Vector2(SpitfireLoop.SunRay.x, SpitfireLoop.SunRay.z).normalized;
             for (int i = 0; i < 40; i++)
             {
@@ -1252,9 +1421,11 @@ public class SeaAirCollectionTests
                 var at = SeaAirCollection.LoopOffset(t); var drawn = centre + new Vector3(at.x, 0f, at.y);
                 var s = shadow.position; float g = Height(s);
                 Assert.That(s.y - g, Is.InRange(0f, SpitfireLoop.ShadowLiftM + 400f), $"on the ground under it at {t:0.0} s");
-                var cast = drawn + SpitfireLoop.SunRay * ((drawn.y - g) / -SpitfireLoop.SunRay.y);
-                Assert.Less(new Vector2(s.x - cast.x, s.z - cast.z).magnitude, 0.03f * (drawn.y - g), $"on the sun's ray through the aircraft at {t:0.0} s");
-                Assert.Greater(Vector2.Dot(new Vector2(s.x - drawn.x, s.z - drawn.z), sunFlat), 0.9f * (drawn.y - g), "down-sun of it");
+                var low = Low(drawn);
+                var cast = low + SpitfireLoop.SunRay * ((low.y - g) / -SpitfireLoop.SunRay.y);
+                Assert.Less(new Vector2(s.x - cast.x, s.z - cast.z).magnitude, 0.03f * (low.y - g), $"on the sun's ray through the aircraft, from its lowered height, at {t:0.0} s");
+                Assert.Greater(Vector2.Dot(new Vector2(s.x - drawn.x, s.z - drawn.z), sunFlat), 0.9f * (low.y - g), "down-sun of it");
+                Assert.Less(new Vector2(s.x - drawn.x, s.z - drawn.z).magnitude, 0.6f * (drawn.y - g) / Mathf.Tan(MapLighting.SunElevation * Mathf.Deg2Rad), "nearer than the full height's ray would lay it");
                 var heading = SeaAirCollection.LoopHeading(t);
                 Assert.Greater(Vector3.Dot(shadow.forward, new Vector3(heading.x, 0f, heading.y)), 0.999f, "turned with its heading");
                 Assert.That(shadow.lossyScale.z / span, Is.InRange(0.3f, 0.6f), "half as long as the aircraft, about");
@@ -1267,7 +1438,7 @@ public class SeaAirCollectionTests
             // higher sun from the south-west puts it north-east of the aircraft, nearer.
             sun.transform.rotation = Quaternion.Euler(48f, 215f - 180f, 0f);
             loop.Place(0f);
-            var high = centre + new Vector3(SeaAirCollection.LoopOffset(0f).x, 0f, SeaAirCollection.LoopOffset(0f).y);
+            var high = Low(centre + new Vector3(SeaAirCollection.LoopOffset(0f).x, 0f, SeaAirCollection.LoopOffset(0f).y));
             var landed = shadow.position; float under0 = Height(landed);
             var cast0 = high + sun.transform.forward * ((high.y - under0) / -sun.transform.forward.y);
             Assert.Less(new Vector2(landed.x - cast0.x, landed.z - cast0.z).magnitude, 0.03f * (high.y - under0), "on the scene sun's ray, not a fixed one");
@@ -1336,8 +1507,10 @@ public class SeaAirCollectionTests
     /// 15 October 2026). The Spitfire flies the same flag, cloth and colours, but as the owner ruled on #2260 (2 November
     /// 2026, "Smaller flag, no pole": "a small Egyptian flag pennant floating just above the tail (no pole through the
     /// plane)"): the cloth alone, smaller than the tokens' flag, floating over the aircraft's tail. In every pose of the loop
-    /// and facing every way it stays upright, behind the aircraft's middle, wholly above the aircraft's box (so it never
-    /// meets the airframe, banked or not), and inside the box the labels keep clear of.</summary>
+    /// and facing every way it stays upright, behind the aircraft's middle, clear above every part of the airframe under it
+    /// (so it never meets the airframe, banked or not), just above the tail (not over the raised wingtip's height: from
+    /// there the map's camera drew it over the cockpit, e21's captures, 5 November 2026), and inside the box the labels keep
+    /// clear of.</summary>
     [Test]
     public void TheSpitfireFliesEgyptsFlagAsTheEgyptianTokensDo()
     {
@@ -1359,7 +1532,9 @@ public class SeaAirCollectionTests
         float tokens = Statecraft.Game.Map.Units.UnitBadge.FigureHeightM * Statecraft.Game.Map.Units.UnitShowcase.FigureScale;
         Assert.Less(flag.lossyScale.y, 0.75f * tokens, "clearly smaller than the tokens' flag");
         Assert.AreEqual(ShadowCastingMode.Off, flag.GetComponent<MeshRenderer>().shadowCastingMode, "only the aircraft's own shadow on the ground");
-        var airframe = plane.GetComponentInChildren<MeshFilter>().GetComponent<Renderer>();
+        var airframeMesh = plane.GetComponentInChildren<MeshFilter>();
+        var local = airframeMesh.sharedMesh.vertices;   // the streamed model is readable (the propeller test reads it too)
+        float span = SeaAirCollection.SizeOf(SeaAirCollection.Spitfire);
         var keep = layer.KeepClear.Single(k => k[0].Contains(centre))[0];
         for (int i = 0; i < 32; i++)
         {
@@ -1367,16 +1542,26 @@ public class SeaAirCollectionTests
             loop.Place(t);
             var at = SeaAirCollection.LoopOffset(t); var heading = SeaAirCollection.LoopHeading(t);
             var drawn = centre + new Vector3(at.x, 0f, at.y);
-            var body = airframe.bounds;
-            Assert.Less(Vector3.Dot(flag.position - drawn, new Vector3(heading.x, 0f, heading.y)), -0.3f * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire),
-                $"over the tail, behind the aircraft's middle, at {t:0.0} s");
+            var forward = new Vector3(heading.x, 0f, heading.y);
+            var verts = local.Select(airframeMesh.transform.TransformPoint).ToArray();
+            // The tail: the airframe behind 0.3 of the span back from its middle (the wing's root is well forward of it).
+            float tailTop = verts.Where(v => Vector3.Dot(v - drawn, forward) < -0.3f * span).Max(v => v.y);
+            Assert.Less(Vector3.Dot(flag.position - drawn, forward), -0.3f * span, $"over the tail, behind the aircraft's middle, at {t:0.0} s");
+            // Clear above every part of the airframe the cloth could be over, whichever way it turns: every vertex within the
+            // cloth's whole reach about its middle (it turns about its vertical) and a margin of a tenth of the span, which is
+            // wider than the airframe's triangles there, lies under the cloth's lower edge.
+            var clothMesh = flag.GetComponent<MeshFilter>().sharedMesh.bounds;
+            float reach = new Vector2(clothMesh.extents.x, clothMesh.extents.z).magnitude * flag.lossyScale.x + 0.1f * span;
+            float lower = flag.position.y - clothMesh.extents.y * flag.lossyScale.y;
+            var near = verts.Where(v => new Vector2(v.x - flag.position.x, v.z - flag.position.z).magnitude < reach).ToArray();
+            if (near.Length > 0) Assert.Greater(lower, near.Max(v => v.y), $"clear above every part of the airframe the cloth could be over at {t:0.0} s");
             foreach (var look in new[] { Vector3.forward, Vector3.back, Vector3.left, Vector3.right, new Vector3(1f, 0f, 1f).normalized })
             {
                 Statecraft.Game.Map.Units.UnitFlagFacing.Face(flag, flag.position + look * 50000f);
                 Assert.Greater(Vector3.Dot(flag.up, Vector3.up), 0.999f, $"upright at {t:0.0} s");
                 var fb = flag.GetComponent<Renderer>().bounds;
-                Assert.Greater(fb.min.y, body.max.y, $"wholly above the aircraft's box, clear of the airframe, at {t:0.0} s");
-                Assert.Less(fb.min.y - body.max.y, 0.25f * SeaAirCollection.SizeOf(SeaAirCollection.Spitfire), $"just above it, at {t:0.0} s");
+                Assert.Greater(fb.min.y, tailTop, $"above the tail at {t:0.0} s");
+                Assert.Less(fb.min.y - tailTop, 0.2f * span, $"just above the tail, not up at the raised wingtip's height, at {t:0.0} s");
                 Assert.IsTrue(keep.Contains(fb.min) && keep.Contains(fb.max), $"inside the labels' keep-clear box at {t:0.0} s");
             }
         }
@@ -1409,7 +1594,8 @@ public class SeaAirCollectionTests
     }
 
     /// <summary>Review of #2260: drawing, dropping and drawing the Spitfire again (its dates end and come back, the layer
-    /// redraws) makes no new propeller, shadow or flag meshes or materials past the first: the layer makes them once. When
+    /// redraws) makes no new propeller, shadow or flag meshes or materials (its glossy paint included) past the first: the
+    /// layer makes them once. When
     /// its dates end under residency, the aircraft and its shadow-and-flag object both go, and the labels keep clear of
     /// exactly the craft left.</summary>
     [Test]
@@ -1419,7 +1605,7 @@ public class SeaAirCollectionTests
         int Meshes() => Resources.FindObjectsOfTypeAll<Mesh>().Count(m => m.name == "SpitfirePropellerBlur" || m.name == "SpitfireShadow"
             || m.name == Statecraft.Game.Map.Units.UnitFlags.MeshName(Statecraft.Game.Map.Units.UnitFlags.Egypt));
         int Materials() => Resources.FindObjectsOfTypeAll<Material>().Count(m => m.name.StartsWith("UnitFlag (egypt", StringComparison.Ordinal)
-            || m.name == Statecraft.HexTiles.HexMaterials.AttackBorder);
+            || m.name == Statecraft.HexTiles.HexMaterials.AttackBorder || m.name.EndsWith(" (glossy)", StringComparison.Ordinal));
         SeaAirCollection Show(DateTime date) { var l = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll(); return l; }
         var layer = Show(new DateTime(1948, 6, 15));
         Assert.IsNotNull(layer.transform.Find("el-arish-spitfire"));
