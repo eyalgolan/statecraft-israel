@@ -225,7 +225,7 @@ public class SiteGroundLayerTests
         var at = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
         at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
         var cam = Camera.main;
-        cam.aspect = 1f;
+        ShotCamera.Configure(cam, Size, Size);
         var rig = cam.GetComponent<CameraRig>();
         rig.LookAt = at; rig.Distance = 31000f; rig.Yaw = 0f; rig.Apply();
         // Without a layer, then with the layer and no sites (only the warm mesh), then with the site built.

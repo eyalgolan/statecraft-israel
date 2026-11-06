@@ -63,7 +63,7 @@ public class SiteGroundShots
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var doc = Object.FindFirstObjectByType<UIDocument>();
-        Camera.main.aspect = (float)Width / Height;
+        ShotCamera.Configure(Camera.main, Width, Height);
         rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         ps = Object.Instantiate(doc.panelSettings);
         ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.clear;
