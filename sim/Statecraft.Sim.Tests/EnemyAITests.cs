@@ -91,7 +91,7 @@ public class EnemyAITests
     }
 
     // R-ENEMY-003: with no script, the unit attacks the first adjacent hex with a player unit, in the fixed neighbour order,
-    // where Combat.Preview's ratio reaches mvp.enemy_attack_ratio_percent; otherwise it fortifies its hex.
+    // where Combat.EnemyPreview's ratio reaches mvp.enemy_attack_ratio_percent; otherwise it fortifies its hex.
     [Theory]
     [InlineData(10, Combat.Attack, "3,0")]    // 10 against 5: 200%, the threshold
     [InlineData(9, Orders.Fortifying, "2,0")]   // 180%: below it
@@ -101,6 +101,33 @@ public class EnemyAITests
         var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, strength));
         EnemyAI.Order(c, s, new List<Cause>());
         Assert.Equal((order, target), (s.Units[2].Order, s.Units[2].OrderTarget));
+    }
+
+    // R-ENEMY-003: each enemy is only 1:1 against the player unit, but an attack already standing on the target makes the
+    // joining unit's preview 2:1. Step 2 will group those same-target attacks into one engagement.
+    [Fact]
+    public void AUnitJoinsAnAlreadyOrderedAttackWhenTogetherTheyReachTheThreshold()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 3, 1, 5), Enemy(3, 2, 0, 5));
+        Assert.Null(Combat.Give(c, s, 3, 3, 0, new List<Cause>(), enemy: true));
+
+        EnemyAI.Order(c, s, new List<Cause>());
+
+        Assert.Equal((Combat.Attack, "3,0"), (s.Units[2].Order, s.Units[2].OrderTarget));
+        Assert.Equal((Combat.Attack, "3,0"), (s.Units[3].Order, s.Units[3].OrderTarget));
+    }
+
+    // R-ENEMY-003: the same 1:1 unit has no qualifying attack without a same-target standing attacker, so it fortifies.
+    [Fact]
+    public void AUnitAloneBelowTheAttackThresholdFortifies()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 3, 1, 5));
+
+        EnemyAI.Order(c, s, new List<Cause>());
+
+        Assert.Equal((Orders.Fortifying, "3,1"), (s.Units[2].Order, s.Units[2].OrderTarget));
     }
 
     // R-ENEMY-003: the attack resolves in the same turn's step 2, and a unit already fortified keeps its order quietly.
@@ -215,6 +242,33 @@ public class EnemyAITests
         })));
         var f = Assert.Single(c.StartingForces);
         Assert.Equal(scripted ? new[] { (3, 2, new DateTime(1948, 7, 8)) } : Array.Empty<(int, int, DateTime)>(), f.Script);
+    }
+
+    // R-ENEMY-002, R-MOVE-001: under gdd-0.1 too, a scripted unit that has not moved this turn may enter one neighbouring
+    // land hex whose cost exceeds its full allowance, spending all its points. Fixture: two points, adjacent desert costs 3.
+    [Fact]
+    public void AScriptedFirstStepMayCostMoreThanTheUnitsFullPoints()
+    {
+        const string SlowTypes = Fixture.GddUnitTypes
+            + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
+            + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 2 }\n";
+        const string Two = "[{ url: 'https://example.org/a', checked: '2026-10-13' }, { url: 'https://example.org/b', checked: '2026-10-13' }]";
+        var row = "- id: force\n  service: army\n  side: egypt\n  status: draft\n  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
+            + "  - { place: Start, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1948-06-11' }\n"
+            + "  - { place: June, lon: 34.29, lat: 33.35, from: '1948-06-11', to: '1948-07-08', sources: " + Two + " }\n";
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = SlowTypes,
+            ["map/hexes.json"] = MovementTests.Board((3, 1, "desert")),
+            ["corridors.yaml"] = "corridors: []\n",
+            ["map/units_1948.yaml"] = "units:\n" + row,
+            ["map/unit_anchor_hexes.yaml"] = "anchors:\n  - { id: force, anchor: 0, q: 2, r: 1 }\n  - { id: force, anchor: 1, q: 3, r: 1 }\n",
+        })));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var why = new List<Cause>();
+        EnemyAI.Order(c, s, why);
+        Assert.Equal((3, 1), (s.Units[0].Q, s.Units[0].R));
+        Assert.Contains(why, x => x.Message == "Unit 0 moved to hex 3,1 for 2 movement points");
     }
 
     // R-ENEMY-002 past the first truce (#1270; owner, 31 October 2026, ruling a: "First listed (as today)"): the script is
@@ -421,7 +475,7 @@ public class EnemyAITests
         for (int i = 0; i < 8 && s.GameOver == null; i++)
         {
             s = Simulation.Step(Real, s, Array.Empty<Command>()).State;
-            Assert.Subset(ids, s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet());
+            Assert.Subset(ids, s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet());   // xUnit: every id now is a starting one (B ⊆ A), so none arrived
         }
     }
 
@@ -461,7 +515,8 @@ public class EnemyAITests
     {
         var c = Load();
         var fought = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10)), Array.Empty<Command>());
-        Assert.Equal(new[] { Combat.Attack }, fought.Why.Where(x => x.EnemyOrder != "").Select(x => x.EnemyOrder));
+        // #2534: the new order's own cause names it too, ahead of the engagement's.
+        Assert.Equal(new[] { Combat.Attack, Combat.Attack }, fought.Why.Where(x => x.EnemyOrder != "").Select(x => x.EnemyOrder));
         var mine = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 10), Enemy(2, 2, 0, 1)), new Command[] { new UnitOrder(1, Combat.Attack, 2, 0) });
         Assert.Contains(mine.Why, x => x.Message.StartsWith("The attack on hex 2,0", StringComparison.Ordinal));
         Assert.DoesNotContain(mine.Why, x => x.EnemyOrder == Combat.Attack);
@@ -491,11 +546,23 @@ public class EnemyAITests
             var r = Simulation.Step(c, s, Array.Empty<Command>());
             Assert.Equal((Combat.Attack, "3,0"), (r.State.Units[2].Order, r.State.Units[2].OrderTarget));
             Assert.Equal(4 - turn, r.State.Units[1].Strength);   // it engaged this turn
-            var attack = Assert.Single(r.Why, x => x.EnemyOrder == Combat.Attack);
+            var attack = Assert.Single(r.Why, x => x.EnemyOrder == Combat.Attack && x.Key == WhyKeys.Engagement);   // #2534: the order's own cause is marked too
             Assert.Equal("3,0", attack.Target);
             Assert.Equal(new[] { 2 }, attack.EnemyAttackers);
             s = r.State;
         }
+    }
+
+    // #2534: a newly issued enemy attack order names itself on its own cause, so the turn report's enemy-orders row can
+    // show it (the engagement names its attackers only when the attack engages, #1297).
+    [Fact]
+    public void ANewEnemyAttackOrderNamesItselfForTheReport()
+    {
+        var c = Load();
+        var r = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10)), Array.Empty<Command>());
+        var order = Assert.Single(r.Why, x => x.Key == WhyKeys.AttackOrdered && x.EnemyOrder == Combat.Attack);
+        Assert.Equal(new[] { 2 }, order.EnemyAttackers);
+        Assert.Equal("2", order.Target);
     }
     // R-ENEMY-005 (Q-ENEMY-5; owner, 31 October 2026, #749): an operation card's option gives a go-to order to a unit of a
     // units_1948.yaml row, toward one of that row's own anchor hexes, through the player's own go-to (Movement.GiveGoTo).
@@ -511,7 +578,8 @@ public class EnemyAITests
             + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-06-01', to: '1949-01-01' }\n";
         const string Hexes = "anchors:\n  - { id: brig, anchor: 0, q: 0, r: 0 }\n  - { id: brig, anchor: 1, q: 4, r: 0 }\n";
         static string Card(string order) => "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
-            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [" + order + "]\n";
+            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [" + order + "]\n"
+            + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
         static Dictionary<string, string> Files() => Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
@@ -525,6 +593,20 @@ public class EnemyAITests
         var invented = Refused(Files(), "{ unit: brig, q: 3, r: 0 }");
         Assert.Equal("events[probe].options[ok].unit_orders[0]", invented.Field);
         Assert.Contains("not an anchor", invented.Message);
+        var missingQ = Refused(Files(), "{ unit: brig, r: 0 }");
+        Assert.Equal("events[probe].options[ok].unit_orders[0].q", missingQ.Field);
+        var missingR = Refused(Files(), "{ unit: brig, q: 0 }");
+        Assert.Equal("events[probe].options[ok].unit_orders[0].r", missingR.Field);
+        var legacyMissingQ = Assert.Throws<ContentException>(() => ContentLoader.Load(
+            Fixture.Write(null, new() { ["probe.yaml"] = Card("{ unit: brig, r: 0 }") })));
+        Assert.Equal("events[probe].options[ok].unit_orders[0].q", legacyMissingQ.Field);
+        // R-ENEMY-005: every order names a unit row, in every ruleset (the schema requires unit, q and r).
+        var missingUnit = Refused(Files(), "{ q: 4, r: 0 }");
+        Assert.Equal("events[probe].options[ok].unit_orders[0].unit", missingUnit.Field);
+        Assert.EndsWith(": required", missingUnit.Message);
+        var legacyMissingUnit = Assert.Throws<ContentException>(() => ContentLoader.Load(
+            Fixture.Write(null, new() { ["probe.yaml"] = Card("{ q: 4, r: 0 }") })));
+        Assert.Equal("events[probe].options[ok].unit_orders[0].unit", legacyMissingUnit.Field);
         // The legacy loop reads the shared cards too: the order does not stop it loading, and it has no units to order.
         Assert.Empty(ContentLoader.Load(Fixture.Write(null, new() { ["probe.yaml"] = Card("{ unit: brig, q: 4, r: 0 }") })).StartingForces);
 
@@ -618,7 +700,8 @@ public class EnemyAITests
             + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-05-15', to: '" + to + "' }\n";
         var hexes = FormattableString.Invariant($"anchors:\n  - {{ id: brig, anchor: 0, q: 0, r: 0 }}\n  - {{ id: brig, anchor: 1, q: {q}, r: {r} }}\n");
         var card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
-            + FormattableString.Invariant($"  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{{ unit: brig, q: {q}, r: {r} }}]\n");
+            + FormattableString.Invariant($"  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{{ unit: brig, q: {q}, r: {r} }}]\n")
+            + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = board, ["corridors.yaml"] = "corridors: []\n",
@@ -628,7 +711,11 @@ public class EnemyAITests
         {
             files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities: []", "enemy_held_localities: [town_a]");
             files["settlement_targets.yaml"] = "targets:\n" + CaptureTests.Target("town_a", 1, 0);
-            files["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("type: town", "type: arab_town");
+            // town_a is now an Arab town, so the fixture's city moves to town_h, a town on a far corner (R-CITY-006).
+            files["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("type: town", "type: arab_town")
+                + "  - { id: town_h, name: Town H, lon: 34.79, lat: 33.15, type: town, founded: 1900, pre_modern: false }\n";
+            files["map/settlement_hexes.yaml"] = Fixture.Files["map/settlement_hexes.yaml"] + "  - { id: town_h, q: 5, r: 2 }\n";
+            files["cities.yaml"] = "cities:\n" + Fixture.City("town_h", 12, 8, 10, 6, "[military_camp, hakhshara]");
         }
         return ContentLoader.Load(Fixture.Write(files, new() { ["probe.yaml"] = card }));
     }
@@ -667,7 +754,8 @@ public class EnemyAITests
             + "  order_targets:\n  - { place: There, lon: 34.30, lat: 33.35" + target + " }\n";
         const string Hexes = "anchors:\n  - { id: brig, anchor: 0, q: 0, r: 0 }\norder_targets:\n  - { id: brig, target: 0, q: 4, r: 0 }\n";
         const string Card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
-            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{ unit: brig, q: 4, r: 0 }]\n";
+            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{ unit: brig, q: 4, r: 0 }]\n"
+            + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",

@@ -65,7 +65,7 @@ public class Gdd03TrainingCentreFixtureTests
     static Gdd03SyntheticMonthContext Month(GameState s, int ordinal, bool centresAvailable = true)
         => Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, ordinal, s.PopulationLedger.Units,
             Facilities.Select(f => new Gdd03SyntheticFacilitySnapshot(f, centresAvailable || !f.Contains("centre", StringComparison.Ordinal), 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
     static (int teacher, int trainee) Pair(CivilianProfession p) => p == CivilianProfession.Farmer ? (0, 1) : (2, 3);
 
     // A ruled #1668 Q42 or Q43 refusal is a plain ArgumentException with its reason; only unbuilt cases say "Deferred:".
@@ -469,7 +469,7 @@ public class Gdd03TrainingCentreFixtureTests
         var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         var noPlace = Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, s.PopulationLedger.Units,
             Facilities.Select(id => new Gdd03SyntheticFacilitySnapshot(id, true, id == CentreA ? 0 : 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
         f.Start(1, 0, CentreA, Month(s, 0));
         Unchanged(s, () => f.Advance(1, noPlace), typeof(NotSupportedException), MonthFreezeDeferred);
         Assert.Equal(0, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
@@ -836,13 +836,86 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(4, s.PopulationLedger.Get(5).Assignment.TeacherId);
     }
 
-    // R-TRAIN-008: #1668 Q44 and the GDD's novice lock-in stay open: no free entrant becomes a novice here, and no
-    // novice (cancelled or not) changes profession through a course.
-    [Fact] public void LockInAndProfessionChangeStayDeferred()
+    // R-TRAIN-005, R-TRAIN-006 (#2464): a free civilian with no profession enters either course with a matching veteran
+    // teacher (`docs/gdd/training.md:48`: "An eligible free civilian may train under the retained course rules. Completion
+    // grants the retained qualification"; #1697: "A free civilian or a matching equipped novice may enrol; completion gives
+    // the trained tier."). The pupil stays professionless on the course, and the course's teacher decides the profession:
+    // graduation gives the same id the teacher's profession at the trained tier, keeping every other record field.
+    [Theory]
+    [InlineData(CivilianProfession.Farmer)]
+    [InlineData(CivilianProfession.Pioneer)]
+    public void AProfessionlessPupilGraduatesInTheTeachersProfession(CivilianProfession profession)
     {
         var c = Catalogue(); var s = State(c, Person(CivilianProfession.None, CivilianTier.None, null));
         var f = new Gdd03TrainingCentreFixture(c, s, Centres());
-        Unchanged(s, () => f.Start(6, 0, CentreA, Month(s, 0)), typeof(NotSupportedException), "Deferred: #1668 Q44");
+        var (teacher, _) = Pair(profession); var l = s.PopulationLedger;
+        var before = l.Get(6); int count = l.Units.Count, next = l.NextPopulationId;
+
+        f.Start(6, teacher, CentreA, Month(s, 0));
+        var on = l.Get(6);
+        Assert.Equal(PopulationStatus.Trainee, on.Status); Assert.Equal(teacher, on.Assignment.TeacherId);
+        Assert.Equal(CivilianProfession.None, on.Profession); Assert.Equal(CivilianTier.None, on.Tier);
+        f.Advance(6, Month(s, 0)); f.Advance(6, Month(s, 1));
+        Assert.Equal(CivilianProfession.None, l.Get(6).Profession);   // no unfinished qualification on the course
+        f.Advance(6, Month(s, 2));
+
+        var graduate = l.Get(6);
+        Assert.Equal(PopulationStatus.FreeCivilian, graduate.Status); Assert.Same(PopulationAssignment.Unassigned, graduate.Assignment);
+        Assert.Equal(profession, graduate.Profession); Assert.Equal(CivilianTier.Trained, graduate.Tier);
+        Assert.Equal(0, graduate.WorkXp); Assert.Equal(before.ReceptionTicks, graduate.ReceptionTicks);
+        Assert.Same(before.Equipment, graduate.Equipment); Assert.Same(before.Location, graduate.Location);
+        Assert.Equal(before.CombatXp, graduate.CombatXp); Assert.Equal(before.Qualification, graduate.Qualification);
+        Assert.Equal(PopulationAssignmentKind.Unassigned, l.Get(teacher).Assignment.Kind);
+        Assert.Equal(CivilianTier.Veteran, l.Get(teacher).Tier);
+        Assert.Equal(count, l.Units.Count); Assert.Equal(next, l.NextPopulationId);
+    }
+
+    // R-TRAIN-007 (#2464): cancelling a professionless pupil's course keeps the id and leaves an ordinary civilian with no
+    // profession, no unfinished qualification and no course progress (`docs/gdd/training.md:66`: "Cancelled retained
+    // courses award no unfinished qualification."); the teacher is released, and the pupil may start again at once.
+    [Theory]
+    [InlineData(CivilianProfession.Farmer)]
+    [InlineData(CivilianProfession.Pioneer)]
+    public void ACancelledProfessionlessPupilStaysProfessionless(CivilianProfession profession)
+    {
+        var c = Catalogue(); var s = State(c, Person(CivilianProfession.None, CivilianTier.None, null));
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var (teacher, _) = Pair(profession); var l = s.PopulationLedger; var before = l.Get(6);
+        f.Start(6, teacher, CentreA, Month(s, 0)); f.Advance(6, Month(s, 0)); f.Advance(6, Month(s, 1));
+        f.Cancel(6);
+
+        var p = l.Get(6);
+        Assert.Equal(PopulationStatus.FreeCivilian, p.Status); Assert.Same(PopulationAssignment.Unassigned, p.Assignment);
+        Assert.Equal(CivilianProfession.None, p.Profession); Assert.Equal(CivilianTier.None, p.Tier); Assert.Equal(0, p.WorkXp);
+        Assert.Equal(before.ReceptionTicks, p.ReceptionTicks); Assert.Same(before.Equipment, p.Equipment);
+        Assert.Same(before.Location, p.Location); Assert.Equal(before.CombatXp, p.CombatXp); Assert.Equal(before.Qualification, p.Qualification);
+        Assert.Equal(PopulationAssignmentKind.Unassigned, l.Get(teacher).Assignment.Kind);
+        f.Start(6, teacher, CentreA, Month(s, 1));                     // a restart is a fresh course, from 0
+        Assert.Equal(0, l.Get(6).Assignment.ProgressTicks);
+    }
+
+    // R-TRAIN-005 (#2464): a professionless pupil now passes the Q44 check and meets the region, occupancy and one-pupil
+    // checks, each refused with the state unchanged: a pupil outside the centre's region (the owner's Q23 ruling), a second
+    // pupil at an occupied centre (Q42), and a pupil already on a course.
+    [Fact] public void AProfessionlessPupilMeetsTheSameRefusals()
+    {
+        var c = Catalogue(); var s = State(c,
+            Person(CivilianProfession.None, CivilianTier.None, null, region: "south"),   // 6
+            Person(CivilianProfession.None, CivilianTier.None, null),                    // 7
+            Person(CivilianProfession.None, CivilianTier.None, null));                   // 8
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        Unchanged(s, () => f.Start(6, 0, CentreA, Month(s, 0)), typeof(ArgumentException), PupilCity);
+        f.Start(7, 0, CentreA, Month(s, 0));
+        Unchanged(s, () => f.Start(8, 4, CentreA, Month(s, 0)), typeof(ArgumentException), OneTeacherOnePupil);
+        Unchanged(s, () => f.Start(7, 4, CentreB, Month(s, 0)), typeof(ArgumentException), "The trainee must be a free civilian");
+    }
+
+    // R-TRAIN-008: a novice of another profession still does not change profession through a course (cancelled or not),
+    // and stays Deferred; a professionless pupil no longer is (#2464, above).
+    [Fact] public void ProfessionChangeStaysDeferred()
+    {
+        var c = Catalogue(); var s = State(c);
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         Unchanged(s, () => f.Start(1, 2, CentreA, Month(s, 0)), typeof(NotSupportedException), "Deferred: #1668 Q44");
         f.Start(1, 0, CentreA, Month(s, 0)); f.Cancel(1);
         Unchanged(s, () => f.Start(1, 2, CentreA, Month(s, 1)), typeof(NotSupportedException), "Deferred: #1668 Q44");
@@ -892,7 +965,7 @@ public class Gdd03TrainingCentreFixtureTests
         var without = Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 1,
             l.Units.Where(p => p.Id != trainee && p.Id != teacher),
             Facilities.Select(x => new Gdd03SyntheticFacilitySnapshot(x, true, 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
         new Gdd03TrainingCentreFixture(c, s, Centres(operating: false)).Advance(trainee, without);
         CancelledByTheLoss(s, before, teacherBefore, 100, 7);
     }

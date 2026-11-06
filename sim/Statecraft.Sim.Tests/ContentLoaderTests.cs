@@ -194,6 +194,8 @@ targets:
     [InlineData("      born: [{}]\n", "people[pm_one].biography_sources.born[0]")]
     [InlineData("      born: [{ checked: 2026-10-11 }]\n", "people[pm_one].biography_sources.born[0]")]
     [InlineData("      born: [{ url: 'https://example.org/birth', checked: 2026-10-11 }, { url: 'https://example.org/b2' }]\n", "people[pm_one].biography_sources.born[1]")]
+    [InlineData("      born: []\n", "people[pm_one].biography_sources.born")]
+    [InlineData("      born: [{ url: 'http://example.org/birth', checked: 2026-10-11 }]\n", "people[pm_one].biography_sources.born[0]")]
     public void BadBiographySourceNamesFileAndField(string sources, string field)
     {
         var ex = LoadPmOneWith("    born: 1900-01-01\n    biography_sources:\n" + sources);
@@ -242,6 +244,49 @@ targets:
         var bad = Fixture.Files["parties.yaml"].Replace("name: Beta", "nmae: Beta");
         var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["parties.yaml"] = bad })));
         Assert.Equal("parties.yaml", ex.File);
+        Assert.StartsWith("nmae (line ", ex.Field);
+        Assert.EndsWith(")", ex.Field);
+    }
+
+    [Theory]
+    [InlineData("offices.yaml", "offices")]
+    [InlineData("parties.yaml", "parties")]
+    [InlineData("people.yaml", "people")]
+    public void RequiredRootListsNameTheirMissingKey(string file, string field)
+    {
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { [file] = "{}\n" })));
+        Assert.Equal(file, ex.File);
+        Assert.Equal(field, ex.Field);
+    }
+
+    [Theory]
+    [InlineData("offices.yaml", "    title: Minister of Finance\n", "", "offices[finance_minister].title")]
+    [InlineData("offices.yaml", "title: Minister of Finance", "title: ' '", "offices[finance_minister].title")]
+    [InlineData("parties.yaml", "    name: Beta\n", "", "parties[beta].name")]
+    [InlineData("parties.yaml", "name: Beta", "name: ' '", "parties[beta].name")]
+    [InlineData("people.yaml", "    name: Def Two\n", "", "people[def_two].name")]
+    [InlineData("people.yaml", "name: Def Two", "name: ' '", "people[def_two].name")]
+    public void RequiredDisplayNamesNameTheirField(string file, string from, string to, string field)
+    {
+        var bad = Fixture.Files[file].Replace(from, to);
+        Assert.NotEqual(Fixture.Files[file], bad);
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { [file] = bad })));
+        Assert.Equal(file, ex.File);
+        Assert.Equal(field, ex.Field);
+    }
+
+    [Theory]
+    [InlineData("      - office: finance_minister\n        from: 1948-05-14\n        sources: *fixture_term_sources\n", "      - office: finance_minister\n        from: 1948-05-14\n", "people[def_two].offices.finance_minister.sources")]
+    [InlineData("      - office: finance_minister\n        from: 1948-05-14\n        sources: *fixture_term_sources", "      - office: finance_minister\n        from: 1948-05-14\n        sources: []", "people[def_two].offices.finance_minister.sources")]
+    [InlineData("https://example.org/term", "http://example.org/term", "people[pm_one].offices.prime_minister.sources[0]")]
+    [InlineData(", checked: 2026-10-18", "", "people[pm_one].offices.prime_minister.sources[0]")]
+    public void OfficeTermSourcesAreRequiredAndComplete(string from, string to, string field)
+    {
+        var bad = Fixture.Files["people.yaml"].Replace(from, to);
+        Assert.NotEqual(Fixture.Files["people.yaml"], bad);
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["people.yaml"] = bad })));
+        Assert.Equal("people.yaml", ex.File);
+        Assert.Equal(field, ex.Field);
     }
 
     [Fact]

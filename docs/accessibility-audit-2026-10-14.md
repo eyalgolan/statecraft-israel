@@ -470,16 +470,17 @@ The reasoning is K3's, not wider: a bar is always in sight, a list is reached by
 that hold labels only (`why-rows`, `defence-body`, the event card's text) have nothing to Tab to, while `KeyScroll`
 gives PageUp, PageDown, Home and End with or without focus. Focusability only: dragging and the wheel are untouched.
 
-Three views are left out of the sweep, because for them that reasoning does not hold: `turn-report-rows`,
-`end-screen-rows` and `capture-scroll`. `KeyScroll` has no target for any of them, `GameRoot` switches the paging
-keys off entirely while the turn report or the end screen is open, and their rows are plain labels, so Tab reaches
-nothing inside them. Taking their bar out would leave no keyboard route at all, which is worse than a stray stop.
-Giving `KeyScroll` a route to them is the better answer and is its own change.
+The turn report (`turn-report-rows`), the ending (`end-screen-rows`), the capture dialog (`capture-scroll`) and the
+info panel (`info-panel`) were first left out of the sweep, because `KeyScroll` had no target for them and `GameRoot`
+switched the paging keys off under the turn report and the ending, so their bar was the only keyboard route. Since
+#2479 they take PageUp, PageDown, Home and End through `KeyScroll` too (the topmost of the ending and the turn report
+first, then the capture dialog, then the info panel while it is in reach), `GameRoot` pages under the report and the
+ending, and their bars are out of the Tab order like every other view's. Up and Down still move nothing under the turn
+report or the ending (`GameRoot`'s guard on `NavigationGuard.Step`, L4).
 
 Pinned in EditMode: `ScrollBarTabStopTests` (in a 1280x420 window the Budget's and Defence's bars take no stop,
 with the overflow asserted as a precondition so the test cannot pass vacuously; the Cabinet stays at zero; no
-`ScrollView` in the tree keeps a focusable scroller, slider or arrow button apart from the three above; and those
-three do keep theirs, so the exclusion cannot be dropped by accident). No UI string was added, so nothing goes
+`ScrollView` in the tree keeps a focusable scroller, slider or arrow button). No UI string was added, so nothing goes
 to #564.
 
 ## The focus rule looks past the element's own display, 23 October 2026

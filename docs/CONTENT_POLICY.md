@@ -21,7 +21,8 @@ a different choice under its own name (see `TRADEMARK.md`).
 These rules protect the game and the people in it. They are not a viewpoint:
 
 1. **Every fact is sourced.** Every date, number, name and office in `content/` carries `sources:` (a citation or a
-   URL, plus the date it was checked) and a review `status`. As of M3 every fact is at least `fact-checked`. Events
+   URL, plus the date it was checked) and a review `status`. As of M3 every fact is at least `fact-checked`, except records that stay `draft`, among them three
+   events (`first_new_yishuv`, `jerusalem_demilitarisation_guard` and `rafah_force_pressure`; `RealContentTests` pins the list). Events
    with a sensitive tag must also be `sensitivity-reviewed` before any build leaves the maintainer's machine; the
    simulation enforces that (`Statecraft.Cli --release-gate`, the `-shareable` build flag and
    `tools/package_release.py` all refuse otherwise). Historian review is planned for M4 and is not yet a gate.
@@ -32,9 +33,11 @@ These rules protect the game and the people in it. They are not a viewpoint:
    quotes; they explain the game and its state, and say nothing on a contested issue beyond neutral game facts. A real
    quote appears only from the verified list in `docs/superpowers/specs/2026-10-23-advisors-design.md` (section 3.3),
    styled as a quote with its source. The owner reviews every advisor line before it ships.
-3. **Choices never reward atrocities.** Options tagged `holocaust`, `terror`, `massacre` or `war-casualties` cannot grant
-   treasury or score rewards for the atrocity side of a choice, and they need a recorded sensitivity review. Automated
-   tests enforce this (`dotnet test`).
+3. **Choices never reward atrocities.** No option of an event tagged `holocaust`, `terror`, `massacre`, `war-casualties` or
+   `displacement` can raise a resource: the loader refuses a positive effect on money (`treasury`, `fx_reserves`), Food,
+   Arms, morale or international standing (`EventRules`), so `dotnet test` fails on one. Nor can a `displacement` option raise score (when score
+   becomes a target, R-EFX-007), and a sensitive option carries no unit grant, city-effect gain or project unlock (R-EFX-005; the loader
+   refuses those too). Such an event also needs a recorded sensitivity review.
 4. **The Holocaust is an event the player reacts to, never one the player plays.** It is shown without swastikas.
 5. **Real people.** People appear in their public roles and documented acts. Competence and loyalty values are game
    balance, not judgements of the person, and `content/people.yaml` labels them so. The maintainer does not add living
@@ -54,7 +57,7 @@ These rules protect the game and the people in it. They are not a viewpoint:
    (Recommended)" (4 November 2026)). A native Hebrew speaker reviews these names (#564)
    and then removes the line, or an AI-assisted contributor does, when the pull request discloses the AI help and names
    the strings read and the sources they were read against (asked whether an AI-assisted contributor's Hebrew read can clear an `agent-checked` string or still needs a native Hebrew speaker, the owner answered "AI-assisted can clear it" ([4 November 2026](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295))); the loader accepts only `agent-checked` (a blank value is an error), and only next to a
-   name.
+   name, or, on an event, `text_he_review` next to its Hebrew text.
 7. **A sign-off names a person.** A row a person has reviewed carries, beside its `status`, `reviewed_by` (the
    reviewer's GitHub handle, never an email) and `reviewed_on` (the day), both or neither (owner, 15 October 2026,
    #375: "Yes, humans only"). Only that person writes the two lines, in their own commit; an AI agent never adds, changes

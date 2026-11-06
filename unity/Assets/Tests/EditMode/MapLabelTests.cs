@@ -577,6 +577,45 @@ public class MapLabelTests
         labels.Refresh(force: true); yield return null;
     }
 
+    /// <summary>#2572: the camera inset includes the safe area above the top bar, while a zero inset keeps the top bar's
+    /// old share of the window. Built in GameRoot's order (TopBarInset, then SafeAreaFit) and never told to update: the
+    /// padding SafeAreaFit puts on the root must reach the camera through the layout's own events.</summary>
+    [UnityTest]
+    public IEnumerator TheCameraInsetIncludesTheSafeAreaAboveTheTopBar()
+    {
+        var hd = new HdPanel(cam);
+        var safeInsets = (l: 0f, r: 0f, t: 0f, b: 0f);
+        var inset = new TopBarInset(hd.Root, rig);
+        var safeArea = new SafeAreaFit(hd.Root, () => safeInsets);
+        try
+        {
+            var bar = hd.Root.Q<VisualElement>("top-bar");
+            for (int i = 0; i < 20 && (float.IsNaN(bar.worldBound.height) || bar.worldBound.height <= 0); i++) yield return null;
+            yield return null; yield return null;
+            var panelBounds = hd.Root.panel.visualTree.worldBound;
+            var window = panelBounds.height;
+            Assert.AreEqual(panelBounds.yMin, bar.worldBound.yMin, 1e-3f, "with no safe area the bar starts at the panel top");
+            Assert.AreEqual(bar.worldBound.height / window, rig.TopInset, 1e-3f,
+                "with no safe-area inset the bar starts at the panel top, so its bottom edge is its height");
+
+            const float safeTop = 47f;
+            safeInsets = (0f, 0f, safeTop, 0f);   // what SafeAreaFit's per-frame poll reads next
+            safeArea.Apply(0f, 0f, safeTop, 0f);   // and what it then writes: the root's padding, as on a notched phone
+            var expected = 0f;
+            for (int i = 0; i < 20; i++)
+            {
+                EditorApplication.QueuePlayerLoopUpdate();
+                yield return null;
+                expected = (bar.worldBound.yMax - panelBounds.yMin) / window;
+                if (bar.worldBound.yMin - panelBounds.yMin >= safeTop - 1f && Mathf.Abs(rig.TopInset - expected) < 1e-3f) break;
+            }
+            Assert.AreEqual(safeTop, bar.worldBound.yMin - panelBounds.yMin, 1f, "precondition: the padding moved the bar down");
+            Assert.AreEqual((safeTop + bar.worldBound.height) / window, rig.TopInset, 1e-3f,
+                "the camera leaves room for the safe area and the top bar, with no call to Update");
+        }
+        finally { safeArea.Dispose(); inset.Dispose(); hd.Dispose(); }
+    }
+
     /// <summary>Independent of the presenter's own projection call: the Tel Aviv pill sits centred over its kit and just
     /// above it (issue #214): its bottom at least LiftPx and at most 30 px above the top of the kit's drawn buildings (every
     /// vertex projected with Camera.WorldToScreenPoint and the panel's scale; the presenter's columns are a little looser). Also on a 2880x1620 target (panel scale 1.5, Retina-like) with the game's top-bar
@@ -1542,6 +1581,74 @@ public class MapLabelTests
             Assert.AreEqual(new Rect(25, 25, 50, 50), (Rect)args[5], "all eight corners produce the expected hull");
             Assert.AreEqual(8L, MapLabelsPresenter.ProjectedCornersForTests - beforeBox,
                 "one box requires eight transforms; repeating the same corners 3x does not get a free pass");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    [UnityTest]
+    public IEnumerator ASettledRefreshDoesNotReadEveryLabelSize()
+    {
+        var hd = new HdPanel(cam); var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            yield return Settle(labels);
+            long reads = labels.LabelSizeReadsForTests, placements = labels.PlacementVisitsForTests;
+            // This fixture owns a bare presenter, not a GameRoot component; Refresh is the production operation that
+            // GameRoot.LateUpdate calls, without booting an unrelated scene-wide presenter into these counters.
+            for (int i = 0; i < 5; i++) labels.Refresh();
+            Assert.AreEqual(reads, labels.LabelSizeReadsForTests, "settled refreshes do not poll every label's resolved size");
+            Assert.AreEqual(placements, labels.PlacementVisitsForTests, "settled refreshes do no placement work");
+
+            labels.Labels[0].text += " wider";
+            yield return null;   // UI Toolkit delivers the label's real GeometryChangedEvent.
+            labels.Refresh();
+            Assert.Greater(labels.PlacementVisitsForTests, placements, "changed text invalidates real placement");
+            Assert.Greater(labels.LabelSizeReadsForTests, reads, "sizes are read while that placement work runs");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    [UnityTest]
+    public IEnumerator HoverAndPillHitsAreCachedUntilPointerOrPlacementChanges()
+    {
+        var hd = new HdPanel(cam); var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            Pose(35.50, 32.49, 30000f); yield return Settle(labels);
+            var origin = hd.Root.Q<VisualElement>(MapLabelsPresenter.ContainerName).worldBound.position;
+            var locality = labels.LocalitySlots.Single(x => x.name == "slot-beit_shean");
+            var hover = locality.Q<Label>().worldBound.center - origin;
+            var city = labels.Slots.First(Shown).Q<Label>().worldBound.center - origin;
+            var panel = hd.Root.panel;
+            Assert.IsNotNull(panel, "the labels have a live panel");
+            Vector2 panelZero = UiPointer.ToPanel(panel, Vector2.zero, Screen.height);
+            Vector2 panelX = UiPointer.ToPanel(panel, Vector2.right * 100f, Screen.height) - panelZero;
+            Vector2 panelY = UiPointer.ToPanel(panel, Vector2.up * 100f, Screen.height) - panelZero;
+            Vector2 ScreenPoint(Vector2 layerPoint)
+            {
+                var wanted = layerPoint + origin - panelZero;
+                return new Vector2(wanted.x / panelX.x * 100f, wanted.y / panelY.y * 100f);
+            }
+            var hoverScreen = ScreenPoint(hover); var cityScreen = ScreenPoint(city);
+
+            labels.Hover(hoverScreen); long hoverVisits = labels.HoverVisitsForTests;
+            labels.Hover(hoverScreen);
+            Assert.AreEqual(hoverVisits, labels.HoverVisitsForTests, "the unchanged hover reuses its hit");
+            labels.Hover(ScreenPoint(hover + Vector2.right));
+            Assert.Greater(labels.HoverVisitsForTests, hoverVisits, "a moved hover recomputes");
+
+            labels.PillAt(cityScreen); long pillVisits = labels.PillVisitsForTests;
+            labels.PillAt(cityScreen);
+            Assert.AreEqual(pillVisits, labels.PillVisitsForTests, "the unchanged city-pill hit is reused");
+            labels.PillAt(ScreenPoint(city + Vector2.right));
+            Assert.Greater(labels.PillVisitsForTests, pillVisits, "a moved pill probe recomputes");
+
+            // As above, the bare presenter has no player-loop method of its own; GameRoot owns this Refresh call in play.
+            labels.Refresh(force: true);
+            hoverVisits = labels.HoverVisitsForTests; pillVisits = labels.PillVisitsForTests;
+            labels.Hover(hoverScreen); labels.PillAt(cityScreen);
+            Assert.Greater(labels.HoverVisitsForTests, hoverVisits, "new placement invalidates hover hits");
+            Assert.Greater(labels.PillVisitsForTests, pillVisits, "new placement invalidates pill hits");
         }
         finally { labels.Dispose(); hd.Dispose(); }
     }

@@ -139,6 +139,12 @@ namespace Statecraft.Game.Map.Units
         /// out this second list with the same boxes, the two taking turns (no allocation per frame). A new pair per rebuild.</summary>
         List<Bounds[]> keepClearSpare = new List<Bounds[]>();
         bool slid;   // a token's slide moved since FaceCamera last turned the boxes
+        int pickVersion;
+        /// <summary>Changes whenever TokenAtScreen's projected source geometry can change.</summary>
+        internal long PickVersion => ((long)pickVersion << 32) | (uint)UnitFigures.GeometryVersion;
+#if UNITY_EDITOR
+        internal long TokenHitQueriesForTests { get; private set; }
+#endif
         GameObject? ring;
         bool still;
         /// <summary>The camera pose and projection (vertical scale, orthographic) <see cref="FaceCamera"/> last turned the badges and flags to; a call from the same pose and projection
@@ -581,6 +587,9 @@ namespace Statecraft.Game.Map.Units
         /// a click on a unit's badge showed the hex behind it, with no Move). No allocation.</summary>
         public PlacedToken? TokenAtScreen(Camera cam, Vector2 screen)
         {
+#if UNITY_EDITOR
+            TokenHitQueriesForTests++;
+#endif
             if (cam == null || !gameObject.activeInHierarchy) return null;
             FaceCamera(cam);   // the boxes as this camera draws them (a no-op from the pose it last turned them to)
             PlacedToken? best = null; float nearest = float.MaxValue;
@@ -712,6 +721,7 @@ namespace Statecraft.Game.Map.Units
             IReadOnlyDictionary<(int sim, string row), float> firing,
             IReadOnlyDictionary<(int sim, string row), (float left, float delay)> hits)
         {
+            pickVersion++;
             FreeTokenMeshes();
             motions.Clear();
             drawnSims.Clear();
@@ -841,7 +851,7 @@ namespace Statecraft.Game.Map.Units
                 var motion = token.gameObject.AddComponent<UnitTokenMotion>();
                 motion.enabled = false;   // runs only while it moves or attacks
                 motion.SimId = placed[i].Token.StateUnit?.Id ?? -1;
-                motion.Changed = () => { facedFor = null; slid = true; };   // FaceCamera sets the badge and the boxes where the token is drawn
+                motion.Changed = () => { pickVersion++; facedFor = null; slid = true; };   // FaceCamera sets the badge and the boxes where the token is drawn
                 motion.Effects = combat;
                 motion.GroundHome = trios[i].centre;
                 motion.HitFlash = badges[i].Find("HitFlash").GetComponent<Renderer>();

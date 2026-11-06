@@ -9,8 +9,10 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
 - **Reference vectors:** `DeterminismTests.SplitMix64MatchesTheReferenceVectors` checks the first three outputs for
   seeds 0 and 1234567. The expected values come from Sebastiano Vigna's reference `splitmix64.c`
   (https://prng.di.unimi.it/splitmix64.c), compiled and run separately. They were not copied from this implementation.
-- **No trigonometry in the sim:** the sim calls only `Math.Abs`, `Math.Min` and `Math.Max`. Geometry that needs
-  cos/sin (which hex owns a settlement, which hex a starting force's anchor is on) is precomputed by
+- **No trigonometry in the sim:** paths that change state call only `Math.Abs`, `Math.Floor`, `Math.Max`, `Math.Min`
+  and `Math.Round`, and every such `Math.Round` passes `MidpointRounding.AwayFromZero`. `PlayerText` also rounds, for
+  display only, and `MapOverrides` uses `Math.Sqrt(3)` only to diagnose editor offsets; neither changes state. Geometry
+  that needs cos/sin (which hex owns a settlement, which hex a starting force's anchor is on) is precomputed by
   `tools/settlement_hexes.py` and `tools/unit_anchor_hexes.py` and read as content.
 - **Canonical hash:** `GameState.Hash()` is SHA-256 over a canonical text. Keys are sorted ordinally. Doubles are
   written as IEEE bit patterns, with -0.0 written as 0.0. Culture is invariant. Fractional site and city-project
@@ -33,12 +35,12 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   its hex, with no RNG draw (R-CTRL-011 to R-CTRL-013; `OccupyTests.TheTimerCountsDownInStepTen` and
   `OccupationDrawsNothing`). `mvp-occupy-cost` (#798) is the golden that occupies a place: it plays the real content, moves
   Golani's unit onto Nazareth, answers the capture with Occupy and runs to the end of the timer; `OccupyTests` plays the
-  same run on fixture content. `mvp-annex-nazareth` (#799) plays the same run and annexes Nazareth when the timer ends (R-CTRL-016): one new city from the row's count, with no RNG draw (`EndOccupationTests`). No other golden occupies a place, so none moves.
+  same run on fixture content. `mvp-annex-nazareth` (#799) plays the same run and annexes Nazareth when the timer ends (R-CTRL-016): one new city from the row's count, with no RNG draw (`EndOccupationTests`), and the same count joins `GameState.Population`'s `annexed` group (R-CITY-008, #2608), which moved this golden's population, debt, FX and Food lines. No other golden occupies a place, so none moves.
 - **Deport (resolver step 10, after the occupation timers):** the units leave as in Raid; the costs, the drag (each turn,
   per place in `DisplacedByPlayer`) and the International Support ceiling are plain arithmetic on the indicator's shift,
   with no RNG draw (R-CTRL-018; `DeportTests.DeportDrawsNothing`). `DisplacedByPlayer` is hashed as `displaced=` only when
   non-zero. The real content keeps Deport out of play (`mvp.deport_in_play: false`), and no golden Deports, so
-  none moves. The `mvp-deport-cost` golden, paired with `mvp-occupy-cost`, cannot play the real content, where Deport
+  none moves. The `mvp-deport-cost` fixture comparison (not a manifest golden), paired with `mvp-occupy-cost`, cannot play the real content, where Deport
   is refused (#800);
   `DeportNeverDominatesTests` plays both runs from the same fixture states.
 
@@ -54,7 +56,7 @@ with `GoldenRun.Seed = 1948` on the real `content/`, then steps with `GoldenRun.
 (or the game ends, or 1000 turns pass). Since the GDD cutover (Phase 2 PR 1) the orders are the reference player's
 (`Statecraft.Sim.Reference.ReferencePlayer`, decision D-A7): a stated test policy, not game AI and not history. It sends
 `HistoricalAI`'s orders and leaves the jobs to each city's default (R-CITY-009), then trains one halutz group when there is none and none in training,
-while the turn's Attention and the Treasury last. No game mode or UI reaches it (`ReferencePlayerTests`); every copy of the
+while the turn's Attention lasts (training borrows, so the Treasury does not hold it back). No game mode or UI reaches it (`ReferencePlayerTests`); every copy of the
 golden loop (the writer preview, the invariants, the era goldens) takes its orders from `GoldenRun.Orders`. The real game
 plays the GDD loop on monthly turns from 15 May 1948 and ends on 15 January 1952 after 44 turns (R-LOOP-004). Each run's
 final `GameState.Hash()` is pinned:
@@ -89,8 +91,8 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
 `-smoke-orders`: the golden seed, one turn). It hides the turn's event card (the events go to their ministers), clicks the
 hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
-10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
-place (7,11; it skips Nazareth's 7,10, so the run captures nothing) and presses End Turn:
+11,11, its first anchor in `content/map/unit_anchor_hexes.yaml`), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
+place (8,12, no place, so the run captures nothing) and presses End Turn:
 `SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78`.
 `GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
 prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
@@ -129,9 +131,9 @@ them from a seed (default 1948) in Historical mode until `until:`, and `Scenario
 scripted command passes. A command the sim rejects fails the test with the date, the order and the reason, and a step that never runs
 fails too. To add one: write the file, run `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln --filter ScenarioTests` (it adds the
 manifest line and the snapshot), then run the tests plain. A scenario that moves is re-pinned with the hash goldens by the same
-command; its snapshot diff in the PR shows what moved, and the commit message says why. All four play the real content.
+command; its snapshot diff in the PR shows what moved, and the commit message says why. All six play the real content.
 `cautious` and `reckless` run through March 1949, setting rationing on the first turn after its office opens; `mvp-absorb-first` (GDD Phase 1
-PR 3) fills Tel Aviv's jobs on the first turn and completes the absorb objective on 15 January 1950; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
+PR 3) sets Tel Aviv's workers to 90 of its 106 job slots on the first turn (all are filled at the start), freeing 158 civilians for that turn's halutz training, and completes the absorb objective on 15 January 1950; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
 turns down every source of foreign currency until Money and Food run out, and ends in `defeat_economy` (R-END-002).
 
 **MVP goldens after the cutover.** The real game is the GDD game, so every golden above is an MVP golden. Each PR that
@@ -161,10 +163,9 @@ current runs; the design document and the maintainers decide which ranges matter
 
 **Rules per era.** A system reads `Content.RulesAt(date)`, where `date` is the date of the state the turn starts from (`s.Date`
 before the step); `AttentionSystem.Refill` runs after the date moves, so it fills the next turn from that turn's era. Rules
-change only at era boundaries (chapters spec section 3.3). Spec section 4.1 will end the turn that reaches a boundary exactly
-on it, so every turn then lies in one era; until that lands, only the last era's end is a boundary turn, and a turn that
-starts in one era and ends in the next uses the starting era's rules for its whole length
-(`EraRulesSwitchTests.ARunPicksUpTheOverrideFromTheFirstTurnThatStartsInTheNewEra`). Start
+change only at era boundaries (chapters spec section 3.3). Spec section 4.1 ends the turn that reaches a boundary exactly
+on it: `Simulation.TurnEnd` cuts each turn at the next era's start or the game's end, whichever comes first, so every
+turn lies in one era (`sim/Statecraft.Sim/Simulation.cs`). Start
 values (`start`, `treasury_start`, `fx_start`, `start_rung`, `initial_population`, `budget_start`, `budget_owners`) are read once by `NewGame`
 from the base `rules.yaml`: an era override cannot set them. A map action's display name is also read from the base rules,
 because an override cannot remove an action. `EraRulesSwitchTests.OnlyStartValuesAndMapActionNamesReadTheBaseRulesDirectly`
@@ -510,3 +511,4 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-defeat | `8c83f6e0` | as absorb-first (was `6782cce4`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-occupy-cost | `ad9af425` | the Syrian unit on (15, 5) is the only change (was `612e9feb`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-annex-nazareth | `e8a9dbf1` | the Syrian unit on (15, 5); unit 1, on its card order toward (15, 3), is on (13, 6) at the run's end instead of (15, 5) (was `c8195c09`). No other golden moves: smoke-orders does not reach 15 July 1948 |
+| #2608: the annexed residents join the population (R-CITY-008) | scenario-mvp-annex-nazareth | `d0372ca6` | `end_occupation nazareth annex` adds the row's count to `GameState.Population`'s `annexed` group, so the population gains the annexed residents, and the debt, FX and Food lines move with it; the annexation itself and every unit position are unchanged. No other golden occupies a place, so none moves (was `e8a9dbf1`) |
