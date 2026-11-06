@@ -71,7 +71,7 @@ Revision 21 October 2026, localisation follow-up: the Cabinet reads government a
 
 ### spelling (preferred)
 
-The rule exists but only as a comment in content/offices.yaml: office titles keep Israel's official English ('Ministry of Defense', 'Minister of Defense') because they are proper nouns, and the UI is otherwise British English, so the screen and its button say 'Defence'. The comment says not to 'fix' it (playtest 1, item 8). No document in docs/ or CONTRIBUTING.md states it, no reference dictionary is named, and docs/GDD.md mixes both spellings ('defence' in the soldier actions table, 'defense' under settlement control).
+The rule is written in the defence-screen-and-office entry below and in a comment in content/offices.yaml: office titles keep Israel's official English ('Ministry of Defense', 'Minister of Defense') because they are proper nouns, and the UI is otherwise British English, so the screen and its button say 'Defence'. The comment says not to 'fix' it (playtest 1, item 8). `docs/WRITING_GUIDE.md` does not state it, no reference dictionary is named, and docs/GDD.md mixes both spellings ('defence' in the soldier actions table, 'defense' under settlement control).
 
 Recommendation (see status): Move the rule from the offices.yaml comment into docs/WRITING_GUIDE.md so it covers every surface, name one reference dictionary for the British spelling, and say which spelling the GDD and docs follow. Pattern from the Google developer documentation style guide and the GOV.UK style guide.
 
