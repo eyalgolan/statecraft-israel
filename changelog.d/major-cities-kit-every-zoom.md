@@ -15,3 +15,6 @@
   standing it hidden behind the blocks.
 - Tel Aviv's three port sheds are shorter along the shore, so they read as three sheds up close rather than one long
   strip.
+- Every built arms workshop's building is drawn 2.5 times bigger, 720 m long on the map instead of 288 m (owner,
+  6 November 2026: "the workshop should be bigger as it's barely visible"). It keeps a wider ring of ground clear
+  around it to match, so in a crowded town its spot may move.

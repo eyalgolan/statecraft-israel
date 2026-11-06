@@ -31,7 +31,8 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Design values, not sourced measurements: the real long side (m) each model stands for, so that at
         /// <see cref="WorldScale"/> the fort, the barracks, the factory and the shikun block are each a few locomotive cars
-        /// long and shorter than the whole train, and the workshop is a little over one.</summary>
+        /// long and shorter than the whole train, and the workshop is a little over one (drawn at <see cref="WorkshopScale"/>, 2.5 times
+        /// that, #2876: about 3.5, still shorter than the train).</summary>
         public static float RealLengthM(string model) => model switch
         {
             Tegart => 30f, Barracks => 25f, Factory => 30f, Shikun => 30f, Workshop => 12f,
@@ -62,12 +63,13 @@ namespace Statecraft.Game.Map.Collection
         /// props over <see cref="WorldScale"/>. At the world scale alone they were about 10 px at the closest zoom.</summary>
         public const float PropScale = 3f;
 
-        /// <summary>#2876, owner, 6 November 2026: "the workshop should be bigger as it's barely visible": the b21's scale over
-        /// <see cref="WorldScale"/>, one for every built arms workshop, in a major city and in an ordinary town. Both
+        /// <summary>#2876, the owner, 6 November 2026 (verbatim): "the workshop should be bigger as it's barely visible"; the owner
+        /// then chose 2.5x on the coordinator's recommendation ("do it"). The b21's scale over <see cref="WorldScale"/>, one for
+        /// every built arms workshop, in a major city and in an ordinary town: 12 m x 24 x 2.5 = 720 m long (288 m at the world
+        /// scale alone), its clearance (<see cref="ClearanceOf(Want)"/>) about 511 m (204.5 m before). Both
         /// <see cref="ArmsWorkshops"/>' rows and <see cref="ScaleOf"/>(<see cref="Workshop"/>) read it, so its size by model name
-        /// and by row agree. 1 (no change) until the size is picked from WorkshopScaleShots' stills; a static field only so
-        /// that shots class can try sizes (a test seam).</summary>
-        internal static float WorkshopScale = 1f;
+        /// and by row agree.</summary>
+        public const float WorkshopScale = 2.5f;
 
         /// <summary>The farthest (m) a town-edge prop may stand from its sourced point (owner on #2274: "right by the sourced
         /// spot"): a spot farther out is not drawn, with a warning.</summary>
@@ -110,7 +112,8 @@ namespace Statecraft.Game.Map.Collection
             /// <summary>The first day it is no longer drawn, or null: drawn from <see cref="From"/> on.</summary>
             public readonly DateTime? To;
             public readonly Siting Site;
-            /// <summary>The row's own scale over <see cref="WorldScale"/> (1, or <see cref="PropScale"/> for the four props), and
+            /// <summary>The row's own scale over <see cref="WorldScale"/> (1, <see cref="PropScale"/> for the four props, or
+            /// <see cref="WorkshopScale"/> for a b21, #2876), and
             /// whether it may stand at a town's edge, inside its kit footprint, clear of the town's building models, the tokens in
             /// the towns and the name points instead (the four props; owner on #2274: "Bigger, closer").</summary>
             public readonly float Scale; public readonly bool TownEdge;
@@ -759,7 +762,7 @@ namespace Statecraft.Game.Map.Collection
                     // SettlementKits.PlotReach of the radius), so a spot just outside one keeps off its outer blocks.
                     var hexBlocks = MajorCityBlocksNear(map, anchor);
                     // #2876: on a hex those blocks reach, also where the camera sees the b21's top past them (InSight: the blocks
-                    // stand up to about 1.6 km at 60x, the b21 about 160 m). Every other hex: no test (sight stays null).
+                    // stand up to about 1.6 km at 60x, the b21's top about 400 m, at 24x times WorkshopScale). Every other hex: no test (sight stays null).
                     float side = SizeOf(w), tan = SightTan;
                     var sight = hexBlocks.Count == 0 ? null : MajorCitySightBlocks(map, ground, anchor, tan);
                     bool Seen(Vector2 p, float yawDeg) => sight == null || InSight(p, yawDeg, side, ground.Y(p.x, p.y) + WorkshopTopShare * side, sight, tan);
@@ -1063,7 +1066,7 @@ namespace Statecraft.Game.Map.Collection
         /// past the outermost kit block on its bearing a major city's b21 may stand (m, from the block's face to the b21's
         /// clearance disc; about one plot of the major cities' kit lattices, which are 0.8 to 1.6 km a side at 60x), and how many
         /// compass bearings round the city's centre its edge is walked on (3.75 degrees apart: about 460 m at Tel Aviv's 7 km
-        /// edge, a little more than the disc's 410 m width).</summary>
+        /// edge, under half the b21's disc, about 1.02 km wide at WorkshopScale 2.5; 410 m before it, #2876).</summary>
         public const float EdgeGapM = 1000f;
         public const int EdgeBearings = 96;
 
@@ -1236,7 +1239,7 @@ namespace Statecraft.Game.Map.Collection
         /// clear of every name there (<see cref="ClearOfName"/>) and <paramref name="free"/> (the hex, the routes, the tokens, the
         /// other models). A fixed search: rings half a clearance apart outward from the hex centre, each from an FNV-1a bearing of
         /// the key. Where no gap is clear and major-city blocks reach the hex (their streets are narrower than the clearance disc:
-        /// Tel Aviv's 60x blocks stand 180 to 360 m apart, the disc is about 409 m across), the same search for a street: the
+        /// Tel Aviv's 60x blocks stand 180 to 360 m apart, the b21's disc is about 1.02 km across at WorkshopScale 2.5), the same search for a street: the
         /// model's ground taken as its square, <paramref name="size"/> a side (b21 is nearly square from above: vertex extents
         /// 0.959 by 0.999 FBX units, read from b21-artisan-workshop-v2.fbx on 6 November 2026, centred, so its square holds it),
         /// turned with the nearest block within reach, clear of every block and kit landmark as boxes, every other test
@@ -1350,7 +1353,7 @@ namespace Statecraft.Game.Map.Collection
                 // #2876 (coordinator, 6 November 2026: a palm in front of the Jaffa b21 covered it): a major city's b21 also
                 // keeps the kit trees out of its sight lane toward the camera (south), across its clearance (it holds the
                 // model at any turn) and as far south as a tree's top would rise into the ray from its foot at the view's
-                // shallowest depression (SightTan): the trees are 100 times life size (KitScale.Trees), the b21 24 times.
+                // shallowest depression (SightTan): the trees are 100 times life size (KitScale.Trees), the b21 60 times (24x, WorldScale, times WorkshopScale).
                 if (w.Model == Workshop && Kits.TownModels.IsMajorCity(w.City)) lanes.Add((spot.at, ClearanceOf(w), pos.y, SightTan));
             }
             // Published once, whole (review of #2281, M1): a list handed to the labels is never changed after.
