@@ -82,7 +82,7 @@ public class StartingForcesTests
         Assert.Equal(new[] { "seen" }, c.StartingForces.Select(f => f.Row));
     }
 
-    // R-UNIT-006 (#2815, owner, 6 November 2026: option 1): a strength of nobody is a load error, since a force is never below 1.
+    // R-UNIT-006 (#2815, option 1, the issue's Recommended option, confirmed on the issue on 6 November 2026): a strength of nobody is a load error, since a force is never below 1.
     [Fact]
     public void AStrengthOfZeroIsALoadError()
     {
