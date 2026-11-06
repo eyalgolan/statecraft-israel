@@ -1,0 +1,148 @@
+#nullable enable
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using NUnit.Framework;
+using Statecraft.Game;
+using Statecraft.Game.Map;
+using Statecraft.Game.UI;
+using Statecraft.Sim;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.TestTools;
+using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
+
+/// <summary>TEMPORARY tuning harness for #2431, not committed.</summary>
+[Explicit("tuning harness")]
+public class BorderTuneShots
+{
+    static float[] F(string v) => v.Split(',').Select(x => float.Parse(x, CultureInfo.InvariantCulture)).ToArray();
+    static Vector4 Lin(string v, float w = 1f) { var f = F(v); var c = new Color(f[0], f[1], f[2]).linear; return new Vector4(c.r, c.g, c.b, w); }
+
+    [UnityTest]
+    public IEnumerator Run()
+    {
+        string file = Environment.GetEnvironmentVariable("TUNE_FILE")!, dir = Environment.GetEnvironmentVariable("TUNE_DIR")!;
+        var viewsWanted = (Environment.GetEnvironmentVariable("TUNE_VIEWS") ?? "gameplay03").Split(',');
+        Directory.CreateDirectory(dir);
+        QualitySettings.SetQualityLevel(0, true);
+        bool heb = Environment.GetEnvironmentVariable("TUNE_LANG") == "he", ui = Environment.GetEnvironmentVariable("TUNE_UI") == "1";
+        var saveDir = Path.Combine(Path.GetTempPath(), "statecraft-tune-" + Guid.NewGuid().ToString("N"));
+        RenderTexture uiTex = null!;
+        GameRoot? root = null; UnityEngine.UIElements.VisualElement? rootUi = null;
+        yield return Boot(heb, saveDir, (t, p, u, g) => { uiTex = t; root = g; rootUi = u; });
+        var map = Object.FindFirstObjectByType<MapScene>();
+        for (int i = 0; i < 5; i++) yield return null;
+        var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
+        var all = PromoPose.All.Concat(PromoPose.CloseChecks).Concat(PromoPose.CloseUps).Concat(PromoPose.TownChecks)
+            .Append(new PromoPose("negev60", 34.9, 30.8, 60000f, 0f)).Append(new PromoPose("sea60", 34.55, 32.3, 60000f, 0f))
+            .Append(new PromoPose("acre60", 35.08, 32.9, 60000f, 0f)).Append(new PromoPose("north60", 35.4, 32.75, 60000f, 0f)).Append(new PromoPose("gaza60", 34.75, 31.45, 60000f, 0f)).ToList();
+        if (Environment.GetEnvironmentVariable("TUNE_PICK") == "1")
+        {
+            var bridge = root!.Bridge!; var units = root.Units!; var info = root.Info!; var c = bridge.Content;
+            string RowOf(int id) => units.Tokens.First(t => UnitCard.SimUnit(c, bridge.State, t.Token) == id).Token.Unit.Id;
+            var g = PromoPose.Gameplay03;
+            var mover = bridge.State.Units[0];
+            var hx = c.HexAt(mover.Q, mover.R)!;
+            Debug.Log($"PICK unit {mover.Id} {RowOf(mover.Id)} {mover.Q},{mover.R}");
+            GameRoot.OnHexClicked(map, units, info, mover.Q, mover.R);
+            for (int i = 0; i < 3; i++) yield return null;
+            Debug.Log($"PICK selected {units.Selected}");
+            UiTestKit.Press(rootUi!.Q<UnityEngine.UIElements.Button>("info-move"));
+            for (int i = 0; i < 3; i++) yield return null;
+            all.Add(new PromoPose("pick60", hx.Lon, hx.Lat, 60000f, g.Yaw));
+        }
+        var views = viewsWanted.Select(n => all.First(p => p.Name == n)).ToList();
+        var cands = new List<(string name, Dictionary<string, string> kv)>();
+        foreach (var raw in File.ReadAllLines(file))
+        {
+            var l = raw.Trim(); if (l.Length == 0 || l[0] == '#') continue;
+            if (l[0] == '@') { cands.Add((l.Substring(1), new Dictionary<string, string>())); continue; }
+            int e = l.IndexOf('='); cands[^1].kv[l.Substring(0, e).Trim()] = l.Substring(e + 1).Trim();
+        }
+        var v0 = MapBorders.Variant;
+        foreach (var (name, kv) in cands)
+        {
+            MapBorders.Variant = v0;   // resets every global
+            void c1old() { var a = MapBorders.Primary.Colour.linear; var b = MapBorders.Secondary.Colour.linear; Shader.SetGlobalVector("_ScBorderStripe1", new Vector4(a.r, a.g, a.b, 1f)); Shader.SetGlobalVector("_ScBorderStripe2", new Vector4(b.r, b.g, b.b, 1f)); }
+            VisualToggles.Set(MapBorders.ToggleName, !kv.ContainsKey("off"));
+            float Fl(string k, float d) => kv.TryGetValue(k, out var s) ? F(s)[0] : d;
+            void Col(string k, string g, float w = 1f) { if (kv.TryGetValue(k, out var s)) Shader.SetGlobalVector(g, Lin(s, w)); }
+            Col("f1", "_ScBorderColour1"); Col("f2", "_ScBorderColour2"); Col("c1", "_ScBorderStripe1"); Col("c2", "_ScBorderStripe2"); Col("l1", "_ScBorderLight1"); Col("l2", "_ScBorderLight2");
+            if (kv.ContainsKey("noglow")) { Shader.SetGlobalVector("_ScBorderGlow1", Vector4.zero); Shader.SetGlobalVector("_ScBorderGlow2", Vector4.zero); c1old(); }
+            var t = Shader.GetGlobalVector("_ScBorderTint"); t.x = Fl("tn", t.x); t.y = Fl("tf", t.y); Shader.SetGlobalVector("_ScBorderTint", t);
+            foreach (var sn in new[] { "_ScBorderShape1", "_ScBorderShape2" })
+            { var q = Shader.GetGlobalVector(sn); q.w = Fl("wash", q.w); q.z = Fl("reach", q.z); Shader.SetGlobalVector(sn, q); }
+            foreach (var p in views)
+            {
+                p.Apply(rig, map.Frame);
+                yield return null; CheckAspect(cam, $"{name} {p.Name}"); Save(cam, 1920, 1080, Path.Combine(dir, $"{name}__{p.Name}.png"), ui ? uiTex : null);
+            }
+            TestContext.WriteLine($"TUNE {name} done");
+            yield return null;
+        }
+        VisualToggles.Set(MapBorders.ToggleName, true);
+        QualitySettings.SetQualityLevel(1, false);
+    }
+
+    /// <summary>CivMovementShots.Boot with the camera's aspect set right after the scene opens, before MapScene.Build and root.Begin
+    /// (#2882: TopInset > 0 freezes the projection at the batch run's 4:3, and the frame comes out 1.33x too wide).</summary>
+    static IEnumerator Boot(bool hebrew, string saveDir, Action<RenderTexture, PanelSettings, VisualElement, GameRoot> booted)
+    {
+        const int Width = 1280, Height = 720;
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Camera.main.aspect = (float)Width / Height;
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        var rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+        var ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.clear;
+        doc.panelSettings = ps;
+        Object.FindFirstObjectByType<MapScene>().Build(MapFocusTests.Inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        if (hebrew) root.Language = UiLanguage.Hebrew;
+        root.Begin(MapFocusTests.Inputs, 0);
+        var ui = doc.rootVisualElement;
+        for (int i = 0; i < 30 && !(ui.Q("top-bar").worldBound.height > 0); i++) yield return null;
+        for (int i = 0; i < 5; i++) yield return null;
+        GameSceneTests.HideTheOpeningCard(ui);
+        if (root.Advisor != null && root.Advisor.IsOpen) UiTestKit.Press(ui.Q<Button>("advisor-close"));
+        for (int i = 0; i < 3; i++) yield return null;
+        booted(rt, ps, ui, root);
+    }
+
+    /// <summary>Refuses a still whose projection is not 16:9, and logs it.</summary>
+    static void CheckAspect(Camera cam, string what)
+    {
+        var m = cam.projectionMatrix; float got = m[1, 1] / m[0, 0];
+        Debug.Log($"ASPECT {what}: cam.aspect {cam.aspect:0.000}, projection {got:0.000}, TopInset {cam.GetComponent<CameraRig>().TopInset:0.000}");
+        Assert.AreEqual(16f / 9f, cam.aspect, 0.002f, what); Assert.AreEqual(16f / 9f, got, 0.002f, what);
+    }
+
+    static Color[] Read(RenderTexture from)
+    {
+        var prev = RenderTexture.active; RenderTexture.active = from;
+        var tex = new Texture2D(from.width, from.height, TextureFormat.RGBA32, false);
+        tex.ReadPixels(new Rect(0, 0, from.width, from.height), 0, 0); tex.Apply();
+        RenderTexture.active = prev; var px = tex.GetPixels(); Object.DestroyImmediate(tex); return px;
+    }
+
+    static void Save(Camera cam, int w, int h, string path, RenderTexture? uiTex)
+    {
+        if (uiTex != null) { w = uiTex.width; h = uiTex.height; }
+        var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32); var before = cam.targetTexture;
+        cam.targetTexture = rt; cam.Render(); cam.Render(); cam.targetTexture = before;
+        var px = Read(rt);
+        if (uiTex != null) { var over = Read(uiTex); for (int i = 0; i < px.Length; i++) { var u = over[i]; var m = px[i]; px[i] = new Color(u.r + m.r * (1f - u.a), u.g + m.g * (1f - u.a), u.b + m.b * (1f - u.a), 1f); } }
+        var tex = new Texture2D(w, h, TextureFormat.RGB24, false); tex.SetPixels(px); tex.Apply();
+        File.WriteAllBytes(path, tex.EncodeToPNG());
+        rt.Release(); Object.DestroyImmediate(rt); Object.DestroyImmediate(tex);
+    }
+
+    [TearDown]
+    public void Done() { MapBorders.Variant = MapBorders.DefaultVariant; EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
+}
