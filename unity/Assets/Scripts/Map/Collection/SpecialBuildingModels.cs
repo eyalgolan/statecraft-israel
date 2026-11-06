@@ -52,6 +52,7 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The scale over <see cref="WorldScale"/> of <paramref name="model"/>'s rows (1 for a model with none).</summary>
         public static float ScaleOf(string model)
         {
+            if (model == Workshop) return WorkshopScale;   // its rows are built per city project (ArmsWorkshops), not in All
             foreach (var w in All) if (w.Model == model) return w.Scale;
             return 1f;
         }
@@ -60,6 +61,13 @@ namespace Statecraft.Game.Map.Collection
         /// at close zoom, and let them stand at the town's edge right by the sourced spot"): the scale of Tal Heuberger's four
         /// props over <see cref="WorldScale"/>. At the world scale alone they were about 10 px at the closest zoom.</summary>
         public const float PropScale = 3f;
+
+        /// <summary>#2876, owner, 6 November 2026: "the workshop should be bigger as it's barely visible": the b21's scale over
+        /// <see cref="WorldScale"/>, one for every built arms workshop, in a major city and in an ordinary town. Both
+        /// <see cref="ArmsWorkshops"/>' rows and <see cref="ScaleOf"/>(<see cref="Workshop"/>) read it, so its size by model name
+        /// and by row agree. 1 (no change) until the size is picked from WorkshopScaleShots' stills; a static field only so
+        /// that shots class can try sizes (a test seam).</summary>
+        internal static float WorkshopScale = 1f;
 
         /// <summary>The farthest (m) a town-edge prop may stand from its sourced point (owner on #2274: "right by the sourced
         /// spot"): a spot farther out is not drawn, with a warning.</summary>
@@ -310,7 +318,7 @@ namespace Statecraft.Game.Map.Collection
                 var hex = content.HexAt(p.Q, p.R);
                 if (hex == null) continue;
                 list.Add(new Want(WorkshopKey(p.Id), Workshop, on, null, hex.Lon, hex.Lat,
-                    FormattableString.Invariant($"city project {p.Id}: {p.City}'s arms workshop on hex {p.Q},{p.R}"), Siting.Seeded, "", city: p.City));
+                    FormattableString.Invariant($"city project {p.Id}: {p.City}'s arms workshop on hex {p.Q},{p.R}"), Siting.Seeded, "", WorkshopScale, city: p.City));
             }
             return list;
         }
