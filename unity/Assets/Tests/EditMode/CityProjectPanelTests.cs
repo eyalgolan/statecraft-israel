@@ -935,6 +935,39 @@ public class WorkshopPanelTests
         Assert.IsTrue(turn.State.CityProjects[id].Builder);
     }
 
+    // R-CITY-011 (#2477): two projects being built, neither with a builder. The stepper counts both, + steps 1 then 2 and is
+    // then off, - from 2 queues 1, and End turn puts the one builder on the lower id (Projects.AssignBuilders).
+    [Test]
+    public void TwoProjectsBeingBuiltStepOneAtATime_RCity011()
+    {
+        using var ui = new UiTestKit();
+        var second = 0;
+        var (bridge, first) = Game(C03, En, "housing", turnsLeft: 2, edit: (s, _) =>
+        {
+            var hex = C03.Hexes.Where(h => h.Land && (h.Q, h.R) != Hex(C03) && Projects.CitiesFor(C03, s, h.Q, h.R).Contains(City)).OrderBy(h => h.Q).ThenBy(h => h.R).First();
+            second = s.NextId++;
+            s.CityProjects.Add(second, new CityProject(second, "housing", City, hex.Q, hex.R, 2));
+        });
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = Hex(C03);
+        panel.Show(q, r);
+        Assert.AreEqual(En["city.project_no_builder"], ui.Q<Label>("city-project-builder").text);
+        Assert.AreEqual(En.Format("city.builders", 0, 2), ui.Q<Label>("city-builders").text);
+        ui.Press("city-builders-more");
+        Assert.AreEqual(En.Format("city.builders_ordered", 1, 2), ui.Q<Label>("city-builders").text);
+        Assert.IsTrue(ui.Q<Button>("city-builders-more").enabledSelf, "4 free, 1 of 2 ordered: a second may still be put on");
+        ui.Press("city-builders-more");
+        Assert.AreEqual(En.Format("city.builders_ordered", 2, 2), ui.Q<Label>("city-builders").text);
+        Assert.IsFalse(ui.Q<Button>("city-builders-more").enabledSelf, "both projects ordered a builder");
+        Assert.IsNull(ui.Root.Q("city-builders-reason"));
+        ui.Press("city-builders-less");
+        Assert.AreEqual(1, ((AssignWorkers)bridge.QueuedLike(new AssignWorkers(City, Projects.BuildRole, 0))!).Count, "- from 2 queues 1, not no order");
+        var turn = bridge.EndTurn();
+        Assert.IsEmpty(turn.Rejected);
+        Assert.IsTrue(turn.State.CityProjects[Math.Min(first, second)].Builder, "a rise puts the builder on the lower id");
+        Assert.IsFalse(turn.State.CityProjects[Math.Max(first, second)].Builder);
+    }
+
     // R-CITY-011 (#2477): + is off where End turn would refuse one more builder, counting this turn's queue (a jobs order,
     // or an arms workshop's worker, that takes the last free person), and the sim's refusal shows in the UI's language.
     [Test]
