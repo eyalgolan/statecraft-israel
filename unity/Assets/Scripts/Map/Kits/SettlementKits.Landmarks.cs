@@ -470,15 +470,18 @@ namespace Statecraft.Game.Map.Kits
             }
             if (pieces > 0) { Record(s.Id, "port", sea + new Vector2(-12f * m, 6f * m), 0f, 24f * m, 18f * m, 2.2f * m, stone); n++; }
             var shed = C(0.82f, 0.79f, 0.72f);
-            // #2876: 8 m along the row (was 15 m), on the same lots. The row runs north-south, the way the camera looks, and
-            // the four major cities draw these kit sheds at every zoom (TownModels.IsMajorCity): on the 17 m pitch a 15 m shed
-            // left a 2 m gap, which the shed in front hides, so the three drew as one strip. An 8 m shed leaves 9 m, more
+            // #2876: 8 m along the row (was 15 m) and 11.25 m across it (was 6 m), so each shed keeps its 90 square metres of
+            // ground (TownCensusTests.TheCitiesCoverTheirGround's floors). The row runs north-south, the way the camera looks,
+            // and the four major cities draw these kit sheds at every zoom (TownModels.IsMajorCity): on the 17 m pitch a 15 m
+            // shed left a 2 m gap, which the shed in front hides, so the three drew as one strip. An 8 m shed leaves 9 m, more
             // than a 5 m shed hides behind it at the camera's shallowest ray (TownCensusTests.TelAvivsPortShedsStandApart).
-            const float shedL = 8f, shedW = 6f;
+            // The deeper shed's seaward side stays on the beach strip's inner edge: its lot is wanted half its depth plus
+            // 0.1 m (was 4 m) behind BeachSetbackM.
+            const float shedL = 8f, shedW = 11.25f, behindBeach = 0.5f * shedW + 0.1f;
             for (int i = 0; i < 3; i++)
             {
                 // Behind the beach strip (BeachSetbackM), so the sand stays open in front of them.
-                if (!Claim(lots, l + new Vector2(BeachSetbackM + 4f * m, (i - 1) * 17f * m), 8.5f * m, s.Id, ground, out var q)) continue;
+                if (!Claim(lots, l + new Vector2(BeachSetbackM + behindBeach * m, (i - 1) * 17f * m), 8.5f * m, s.Id, ground, out var q)) continue;
                 var (bt, gy) = GroundSpan(q, 90f, shedL * m, shedW * m, ground, m);
                 AddModel(s.Id, TownModel.B32CargoShed, q, 90f, shedL * m, shedW * m, 5f * m, bt, gy, km, m, exactHeight: false, flip: false);   // #659
                 var cut = km.CutStart();
