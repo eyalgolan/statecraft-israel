@@ -880,4 +880,242 @@ public class WorkshopPanelTests
         Assert.IsEmpty(turn.Rejected, "the sim accepts the order the panel queued");
         Assert.IsTrue(turn.State.Workshops[first].Staffed && turn.State.Workshops[second].Staffed);
     }
+
+    // R-CITY-011 (#2477): under gdd-0.3 a project being built says whether it has a builder, and shows its city's builder
+    // stepper (AssignWorkers(city, "build", n): how many of the city's projects being built have one). Not on a built
+    // project, and not under gdd-0.1, which has no builders.
+    [Test]
+    public void AProjectBeingBuiltShowsItsBuilderAndTheCitysBuilderStepper_RCity011([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        foreach (var (c, turns, builder, shown) in new[] { (C03, 2, false, true), (C03, 2, true, true), (C03, 0, false, false), (C01, 2, false, false) })
+        {
+            var (q, r) = Hex(c);
+            using var ui = new UiTestKit();
+            var (bridge, _) = Game(c, t, "housing", turnsLeft: turns, edit: (s, id) => { if (builder) s.CityProjects[id] = s.CityProjects[id].WithBuilder(true); });
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(q, r);
+            var at = $"{c.Ruleset} turns {turns} builder {builder}";
+            Assert.IsNotNull(ui.Root.Q("city-project-state"), at + ": precondition, the project's part shows");
+            Assert.AreEqual(shown, ui.Root.Q("city-builders-row") != null, at);
+            Assert.AreEqual(shown, ui.Root.Q("city-project-builder") != null, at);
+            if (!shown) continue;
+            Assert.AreEqual(t[builder ? "city.project_builder" : "city.project_no_builder"], ui.Q<Label>("city-project-builder").text, at);
+            Assert.AreEqual(t.Format("city.builders", builder ? 1 : 0, 1), ui.Q<Label>("city-builders").text, at);
+            Assert.AreEqual(builder, ui.Q<Button>("city-builders-less").enabledSelf, at);
+            Assert.AreEqual(!builder, ui.Q<Button>("city-builders-more").enabledSelf, at + ": 4 people without a job, 1 project");
+            Assert.IsNull(ui.Root.Q("city-builders-reason"), at);
+        }
+    }
+
+    // R-CITY-011 (#2477): + queues AssignWorkers(city, "build", n + 1), the line reads the ordered count, and - back to the
+    // current count withdraws the order. The sim accepts the queued order and the project gets its builder.
+    [Test]
+    public void TheBuilderStepperQueuesTheBuildRoleAndStepsBackToNoOrder_RCity011()
+    {
+        using var ui = new UiTestKit();
+        var (bridge, id) = Game(C03, En, "housing", turnsLeft: 2);
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = Hex(C03);
+        panel.Show(q, r);
+        ui.Press("city-builders-more");
+        var order = bridge.QueuedLike(new AssignWorkers(City, Projects.BuildRole, 0)) as AssignWorkers;
+        Assert.IsNotNull(order, "the stepper queues an AssignWorkers order");
+        Assert.AreEqual((City, Projects.BuildRole, 1), (order!.City, order.Role, order.Count));
+        Assert.AreEqual(En.Format("city.builders_ordered", 1, 1), ui.Q<Label>("city-builders").text);
+        Assert.IsFalse(ui.Q<Button>("city-builders-more").enabledSelf, "its one project is ordered a builder");
+        Assert.IsNull(ui.Root.Q("city-builders-reason"), "every project has one: no refusal to explain");
+        Assert.IsNull(bridge.QueuedLike(new AssignWorkers(City, "job", 0)), "the jobs order's slot is its own");
+        ui.Press("city-builders-less");
+        Assert.IsNull(bridge.QueuedLike(new AssignWorkers(City, Projects.BuildRole, 0)), "back at the current count: no order is left queued");
+        Assert.AreEqual(En.Format("city.builders", 0, 1), ui.Q<Label>("city-builders").text);
+        ui.Press("city-builders-more");
+        var turn = bridge.EndTurn();
+        Assert.IsEmpty(turn.Rejected, "the sim accepts the order the panel queued");
+        Assert.IsTrue(turn.State.CityProjects[id].Builder);
+    }
+
+    // R-CITY-011 (#2477): two projects being built, neither with a builder. The stepper counts both, + steps 1 then 2 and is
+    // then off, - from 2 queues 1, and End turn puts the one builder on the lower id (Projects.AssignBuilders).
+    [Test]
+    public void TwoProjectsBeingBuiltStepOneAtATime_RCity011()
+    {
+        using var ui = new UiTestKit();
+        var second = 0;
+        var (bridge, first) = Game(C03, En, "housing", turnsLeft: 2, edit: (s, _) =>
+        {
+            var hex = C03.Hexes.Where(h => h.Land && (h.Q, h.R) != Hex(C03) && Projects.CitiesFor(C03, s, h.Q, h.R).Contains(City)).OrderBy(h => h.Q).ThenBy(h => h.R).First();
+            second = s.NextId++;
+            s.CityProjects.Add(second, new CityProject(second, "housing", City, hex.Q, hex.R, 2));
+        });
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = Hex(C03);
+        panel.Show(q, r);
+        Assert.AreEqual(En["city.project_no_builder"], ui.Q<Label>("city-project-builder").text);
+        Assert.AreEqual(En.Format("city.builders", 0, 2), ui.Q<Label>("city-builders").text);
+        ui.Press("city-builders-more");
+        Assert.AreEqual(En.Format("city.builders_ordered", 1, 2), ui.Q<Label>("city-builders").text);
+        Assert.IsTrue(ui.Q<Button>("city-builders-more").enabledSelf, "4 free, 1 of 2 ordered: a second may still be put on");
+        ui.Press("city-builders-more");
+        Assert.AreEqual(En.Format("city.builders_ordered", 2, 2), ui.Q<Label>("city-builders").text);
+        Assert.IsFalse(ui.Q<Button>("city-builders-more").enabledSelf, "both projects ordered a builder");
+        Assert.IsNull(ui.Root.Q("city-builders-reason"));
+        ui.Press("city-builders-less");
+        Assert.AreEqual(1, ((AssignWorkers)bridge.QueuedLike(new AssignWorkers(City, Projects.BuildRole, 0))!).Count, "- from 2 queues 1, not no order");
+        var turn = bridge.EndTurn();
+        Assert.IsEmpty(turn.Rejected);
+        Assert.IsTrue(turn.State.CityProjects[Math.Min(first, second)].Builder, "a rise puts the builder on the lower id");
+        Assert.IsFalse(turn.State.CityProjects[Math.Max(first, second)].Builder);
+    }
+
+    // R-CITY-011 (#2477): + is off where End turn would refuse one more builder, counting this turn's queue (a jobs order,
+    // an arms workshop's worker, or a Train, that takes the last free person), and the sim's refusal shows in the UI's language.
+    [Test]
+    public void PlusFollowsTheSimWithTheQueueAndShowsItsRefusal_RCity011([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var (q, r) = Hex(C03);
+        foreach (var pending in new[] { "none", "job", "workshop", "train" })
+        {
+            using var ui = new UiTestKit();
+            var (bridge, _) = Game(C03, t, "housing", employed: pending == "none" ? 10 : 9, turnsLeft: 2, edit: (s, _) =>
+            {
+                if (pending == "workshop") SecondWorkshop(C03, s);
+                // Haifa has no training facility of its own: a built industry project lets it train craftsmen (Training.HasFacility).
+                if (pending == "train") { var w = SecondWorkshop(C03, s); var x = s.CityProjects[w]; s.CityProjects[w] = new CityProject(w, Training.Industry, City, x.Q, x.R, 0).Built(s.Date); }
+            });
+            if (pending == "job") Assert.IsNull(bridge.Queue(new AssignWorkers(City, "job", 10)));
+            if (pending == "workshop") Assert.IsNull(bridge.Queue(new AssignWorkers(City, Workshops.Role, 1)));
+            if (pending == "train") Assert.IsNull(bridge.Queue(new Train(City, "craftsman", 1)), "precondition: the Train takes the one free person");
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(q, r);
+            var press = new AssignWorkers(City, Projects.BuildRole, 1);
+            var preview = Simulation.Preview(C03, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).Append(press).ToList());
+            var rejected = preview.Rejected.SingleOrDefault(x => ReferenceEquals(x.Command, press));
+            Assert.IsNotNull(rejected, pending + ": precondition, End turn refuses one more builder");
+            Assert.IsFalse(ui.Q<Button>("city-builders-more").enabledSelf, pending);
+            Assert.AreEqual(SimBridge.ReasonText(t, rejected!.Reason, C03, TownsHe), ui.Q<Label>("city-builders-reason").text, pending);
+            if (hebrew) Assert.AreNotEqual(rejected.Reason, ui.Q<Label>("city-builders-reason").text, pending + ": the Hebrew string, not the sim's English");
+        }
+    }
+
+    // R-CITY-011 (#2477): a project that is finished, or cancelled, no longer shows the builder control.
+    [Test]
+    public void AFinishedOrCancelledProjectShowsNoBuilderControl_RCity011()
+    {
+        var (q, r) = Hex(C03);
+        foreach (var cancel in new[] { false, true })
+        {
+            using var ui = new UiTestKit();
+            var (bridge, id) = Game(C03, En, "housing", turnsLeft: 1, edit: (s, p) => s.CityProjects[p] = s.CityProjects[p].WithBuilder(true));
+            using var panel = Panel(ui, bridge, En);
+            panel.Show(q, r);
+            Assert.IsNotNull(ui.Root.Q("city-builders-row"), "precondition: shown while it is built");
+            if (cancel) ui.Press("city-project-cancel");
+            var turn = bridge.EndTurn();
+            Assert.IsEmpty(turn.Rejected, cancel ? "cancelled" : "finished");
+            Assert.AreEqual(cancel, !turn.State.CityProjects.ContainsKey(id), "precondition: cancelled projects leave the state");
+            // The Labour minister's housing multiplier can stretch one turn of work over more (R-MIN-002): End turn until done.
+            for (var i = 0; !cancel && turn.State.CityProjects[id].BuiltOn == null && i < 6; i++) turn = bridge.EndTurn();
+            if (!cancel) Assert.IsNotNull(turn.State.CityProjects[id].BuiltOn, "precondition: with its builder it is finished");
+            panel.Show(q, r);
+            Assert.IsNull(ui.Root.Q("city-builders-row"), cancel ? "cancelled" : "finished");
+            Assert.IsNull(ui.Root.Q("city-project-builder"), cancel ? "cancelled" : "finished");
+        }
+    }
+
+    // R-CITY-011 (#2477): a build order past the city's projects being built (the end of turn's toast) reads in Hebrew.
+    [Test]
+    public void TheBeingBuiltRefusalsReadInHebrew_RCity011()
+    {
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var one = SimBridge.ReasonText(He, string.Format(inv, Projects.RefusedBeingBuiltOne, "Haifa"), C03, TownsHe);
+        Assert.IsTrue(string.Equals(TownsHe[City] + ": יש רק מיזם עירוני אחד בבנייה", one, StringComparison.Ordinal), one);
+        var two = SimBridge.ReasonText(He, string.Format(inv, Projects.RefusedBeingBuilt, "Haifa", 2), C03, TownsHe);
+        Assert.IsTrue(two.StartsWith(TownsHe[City] + ": מיזמים עירוניים בבנייה: ", StringComparison.Ordinal) && two.Contains("2"), two);
+    }
+
+    // R-CITY-011 with R-HOUSE-006 (#2477 review): a housing repair being built has no hex of its own, so it shows on its city's
+    // own hex, where it is offered: its line, whether it has a builder, and its city's stepper, also when it is the city's only
+    // project being built. + there queues the build order and End turn gives the repair its builder.
+    [Test]
+    public void ARepairBeingBuiltShowsItsBuilderOnItsCitysOwnHex_RCity011([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var home = C03.SettlementHexes.First(x => x.Id == City);
+        var repair = 0;
+        using var ui = new UiTestKit();
+        var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, id) =>
+        {
+            s.CityProjects.Remove(id);
+            repair = s.NextId++;
+            s.CityProjects.Add(repair, new CityProject(repair, Projects.HousingRepair, City, home.Q, home.R, 2));
+        });
+        using var panel = Panel(ui, bridge, t);
+        panel.Show(home.Q, home.R);
+        var kind = PlayerText.Capitalised(ContentNames.Of(t, C03.ProjectKinds.First(k => k.Id == Projects.HousingRepair)));
+        Assert.AreEqual(t.Format("city.project_building", kind, (hebrew ? TownsHe : Towns)[City],
+            GddHexPanel.Turns(t, Projects.CityTurnsToBuild(C03, bridge.State, Projects.HousingRepair, 2, 0))), ui.Q<Label>("city-repair-state").text);
+        Assert.AreEqual(t["city.project_no_builder"], ui.Q<Label>("city-repair-builder").text);
+        Assert.AreEqual(t.Format("city.builders", 0, 1), ui.Q<Label>("city-builders").text, "the repair is the one project the count counts");
+        Assert.IsTrue(ui.Q<Button>("city-builders-more").enabledSelf, "4 people without a job, 1 project");
+        ui.Press("city-builders-more");
+        var turn = bridge.EndTurn();
+        Assert.IsEmpty(turn.Rejected, "the sim accepts the order the panel queued");
+        Assert.IsTrue(turn.State.CityProjects[repair].Builder);
+        panel.Show(home.Q, home.R);
+        Assert.AreEqual(t["city.project_builder"], ui.Q<Label>("city-repair-builder").text);
+    }
+
+    // R-CITY-011 (#2477 review): a city's own hex with its project being built and a repair being built shows both builder
+    // lines and one stepper for the city, whose count is the two projects on screen.
+    [Test]
+    public void ACitysOwnHexWithAProjectAndARepairShowsOneStepper_RCity011()
+    {
+        var home = C03.SettlementHexes.First(x => x.Id == City);
+        using var ui = new UiTestKit();
+        var (bridge, _) = Game(C03, En, "housing", turnsLeft: 2, edit: (s, id) =>
+        {
+            s.CityProjects[id] = new CityProject(id, "housing", City, home.Q, home.R, 2);
+            var repair = s.NextId++;
+            s.CityProjects.Add(repair, new CityProject(repair, Projects.HousingRepair, City, home.Q, home.R, 2).WithBuilder(true));
+        });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(home.Q, home.R);
+        Assert.AreEqual(En["city.project_no_builder"], ui.Q<Label>("city-project-builder").text);
+        Assert.AreEqual(En["city.project_builder"], ui.Q<Label>("city-repair-builder").text);
+        Assert.AreEqual(1, ui.Root.Query("city-builders-row").ToList().Count, "one stepper for the city");
+        Assert.AreEqual(En.Format("city.builders", 1, 2), ui.Q<Label>("city-builders").text);
+    }
+
+    // R-CITY-011 (#2477 review): + off only because the press would make End turn refuse another queued order (here a jobs
+    // order queued after the build order, which the raised count leaves short of people) shows that order's refusal.
+    [Test]
+    public void PlusOffForAnotherQueuedOrderSaysWhy_RCity011([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        using var ui = new UiTestKit();
+        var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) =>
+        {
+            var hex = C03.Hexes.Where(h => h.Land && (h.Q, h.R) != Hex(C03) && Projects.CitiesFor(C03, s, h.Q, h.R).Contains(City)).OrderBy(h => h.Q).ThenBy(h => h.R).First();
+            var second = s.NextId++;
+            s.CityProjects.Add(second, new CityProject(second, "housing", City, hex.Q, hex.R, 2));
+        });
+        using var panel = Panel(ui, bridge, t);
+        var (q, r) = Hex(C03);
+        panel.Show(q, r);
+        ui.Press("city-builders-more");
+        var jobs = new AssignWorkers(City, "job", 9);
+        Assert.IsNull(bridge.Queue(jobs), "precondition: 10 people, 1 ordered a builder, 9 in jobs");
+        panel.Show(q, r);
+        var press = new AssignWorkers(City, Projects.BuildRole, 2);
+        var queue = bridge.Queued.Select(x => x is AssignWorkers { Role: Projects.BuildRole } ? press : x).ToList();
+        var preview = Simulation.Preview(C03, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+        Assert.IsFalse(preview.Rejected.Any(x => ReferenceEquals(x.Command, press)), "precondition: the press itself is accepted");
+        var broken = preview.Rejected.SingleOrDefault(x => ReferenceEquals(x.Command, jobs));
+        Assert.IsNotNull(broken, "precondition: the jobs order after it is refused");
+        Assert.IsFalse(ui.Q<Button>("city-builders-more").enabledSelf);
+        Assert.AreEqual(SimBridge.ReasonText(t, broken!.Reason, C03, TownsHe), ui.Q<Label>("city-builders-reason").text);
+        if (hebrew) Assert.AreNotEqual(broken.Reason, ui.Q<Label>("city-builders-reason").text, "the Hebrew string, not the sim's English");
+    }
 }
