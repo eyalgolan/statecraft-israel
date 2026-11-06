@@ -49,9 +49,9 @@ namespace Statecraft.Game.Map.Units
         /// opacity in two layers it read as a near-opaque white plate under its dark rods (e21's AFTER captures of #2728).</summary>
         public const float PropellerBlurOpacity = 0.65f;
 
-        /// <summary>The names of the 101 Squadron Spitfire's propeller blur (a child of its propeller) and ground shadow (a child
-        /// of the aircraft), and of an authored model's propeller (a child of its prefab's root, turned by ShowcaseFlight).</summary>
-        public const string PropellerBlurName = "PropellerBlur", ShadowName = "Shadow", AuthoredPropellerName = "Propeller";
+        /// <summary>The names of the 101 Squadron Spitfire's propeller blur (a child of its propeller: the code-built one, then the
+        /// streamed model's, <see cref="CarryBlur"/>) and ground shadow (a child of the aircraft).</summary>
+        public const string PropellerBlurName = "PropellerBlur", ShadowName = "Shadow";
 
         /// <summary>A copy of <paramref name="source"/> (same shader, maps and colours) with <see cref="AircraftSmoothness"/>.
         /// The caller owns it.</summary>
@@ -101,32 +101,44 @@ namespace Statecraft.Game.Map.Units
             return go.transform;
         }
 
-        /// <summary>A flying Spitfire's look (coordinator, 5 November 2026): its propeller (<paramref name="codeProp"/>, or, when
-        /// that is null, the airframe's child named <see cref="AuthoredPropellerName"/>; since #2734 every caller passes the
-        /// code-built one) carries the light blur, sized to the propeller's own mesh;
-        /// a soft shadow, sized to the airframe as drawn, lies on the ground (ShowcaseFlight lays it); and the aircraft casts
-        /// no shadow of its own (<see cref="CastNoShadow"/>). Returns the propeller for ShowcaseFlight to turn (null when
-        /// there is none) and the shadow and its half size across and along the heading (m). Call before the aircraft is
-        /// placed or turned: the size is measured in its own frame.</summary>
-        internal static Transform? FlyingSpitfire(Transform plane, GameObject airframe, Transform? codeProp, Mesh blurMesh, Material blur,
+        /// <summary>A flying 101 Squadron Spitfire's look (coordinator, 5 November 2026), on its code-built model: its propeller
+        /// <paramref name="codeProp"/> carries the light blur; a soft shadow, sized to the airframe as drawn, lies on the ground
+        /// (ShowcaseFlight lays it); and the aircraft casts no shadow of its own (<see cref="CastNoShadow"/>). When the
+        /// Blender-built model streams in over it (<see cref="StreamedAircraft"/>), the blur moves to that model's propeller
+        /// (<see cref="CarryBlur"/>), the shadow stays, and the model casts none either. Returns the shadow and its half size
+        /// across and along the heading (m). Call before the aircraft is placed or turned: the size is measured in its own frame.</summary>
+        internal static void FlyingSpitfire(Transform plane, Transform codeProp, Mesh blurMesh, Material blur,
             Mesh shadowMesh, out Transform shadow, out Vector2 shadowHalf)
         {
             var size = SizeInFrame(plane);   // before the blur and the shadow are added
             shadowHalf = 0.5f * Collection.SeaAirCollection.ShadowShare * AircraftScale * new Vector2(size.x, size.z);
-            var prop = codeProp != null ? codeProp : airframe.transform.Find(AuthoredPropellerName);
-            if (prop != null)
-            {
-                // The code-built blades reach 1.6 (UnitModels.SpitfirePropeller); the blur reaches a little beyond any blades.
-                float reach = codeProp != null ? 1.6f : PropellerReach(prop);
-                PropellerBlur(prop, blurMesh, blur, reach > 0f ? reach * PropellerBlurRadius / 1.6f : PropellerBlurRadius);
-            }
+            PropellerBlur(codeProp, blurMesh, blur, BlurRadius(CodeBuiltPropellerReach));
             shadow = GroundShadow(plane, shadowMesh, blur);
             CastNoShadow(plane);
-            return prop;
+        }
+
+        /// <summary>How far the code-built Spitfire's blades reach from the hub (UnitModels.SpitfirePropeller).</summary>
+        const float CodeBuiltPropellerReach = 1.6f;
+
+        /// <summary>The blur's radius for blades reaching <paramref name="reach"/> from the hub: a little beyond them, as
+        /// <see cref="PropellerBlurRadius"/> is for the code-built blades (<see cref="PropellerBlurRadius"/> when there are none).</summary>
+        static float BlurRadius(float reach) => reach > 0f ? reach * PropellerBlurRadius / CodeBuiltPropellerReach : PropellerBlurRadius;
+
+        /// <summary>Moves a flying Spitfire's <paramref name="blur"/> (<see cref="PropellerBlur"/>, on the code-built propeller)
+        /// onto <paramref name="prop"/>, the streamed model's own propeller (StreamedAircraft, on the swap), so it turns with it
+        /// and keeps drawing: through its hub, facing along its +z, sized to its blades (<see cref="PropellerReach"/>, in its
+        /// own units). The blur's mesh and material stay the aircraft's own (MapRuntimeAssets frees them).</summary>
+        internal static void CarryBlur(Transform blur, Transform prop)
+        {
+            float reach = PropellerReach(prop);   // before the blur joins it
+            blur.SetParent(prop, false);
+            blur.localPosition = Vector3.zero;
+            blur.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            blur.localScale = Vector3.one * BlurRadius(reach);
         }
 
         /// <summary>The meshes under <paramref name="plane"/> measured in its own frame, in the model's units (metres for a
-        /// model to scale: the frame's own scale is taken out), so a code-built and an authored airframe size their shadow alike.</summary>
+        /// model to scale: the frame's own scale is taken out).</summary>
         static Vector3 SizeInFrame(Transform plane)
         {
             Bounds? box = null;
@@ -135,7 +147,7 @@ namespace Statecraft.Game.Map.Units
             return box?.size ?? Vector3.zero;
         }
 
-        /// <summary>How far an authored propeller's blades reach from its hub in its turning plane (its local X and Y), in its
+        /// <summary>How far a streamed propeller's blades reach from its hub in its turning plane (its local X and Y), in its
         /// own units: the largest of its meshes' extents along either axis (a bounding box's corner would overstate a
         /// blade by up to the square root of 2). 0 when it has no mesh.</summary>
         static float PropellerReach(Transform prop)
@@ -294,7 +306,7 @@ namespace Statecraft.Game.Map.Units
             var prop = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), aircraftPaint, Vector3.zero, Quaternion.identity, 1f).transform;
             prop.localPosition = UnitModels.SpitfirePropellerHub;
             // Its blur, shadow and no cast shadow (the streamed model takes the blur over when it arrives, StreamedAircraft).
-            FlyingSpitfire(plane.transform, airframe, prop, assets.Own(PropellerBlurMesh()), assets.Own(BlurMaterial()),
+            FlyingSpitfire(plane.transform, prop, assets.Own(PropellerBlurMesh()), assets.Own(BlurMaterial()),
                 assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), out var shadow, out var shadowHalf);
             plane.transform.localScale = Vector3.one * AircraftScale;
             var loopCentre = map.Frame.ToWorld(LoopCentre.lon, LoopCentre.lat, 0);

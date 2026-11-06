@@ -51,6 +51,8 @@ parked; the S-199 stays code-built):
   that draws nothing);
 - when it arrives it stands in the code-built model's frame (real metres, facing +Z, its centre of gravity at the
   origin), the code-built airframe and propeller stop drawing, and the flight turns the model's own `Propeller` child;
+- a flying Spitfire keeps its look (#2728): the propeller's light blur moves onto the model's `Propeller`
+  (`UnitShowcase.CarryBlur`), sized to its blades, the soft ground shadow stays, and the model casts no shadow of its own;
 - a missing or damaged bundle, or a model without a `Propeller` child, keeps the whole code-built aircraft;
 - in edit mode nothing is asked for unless `StreamedAircraft.Source` is set: `MapCapture.Promo` and `MapCapture.Aircraft`
   answer from the AssetDatabase at once.

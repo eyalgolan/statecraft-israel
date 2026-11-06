@@ -1067,7 +1067,7 @@ namespace Statecraft.Game.Map.Units
             // over when it arrives, StreamedAircraft).
             if (spitfire && t.Flying)
             {
-                UnitShowcase.FlyingSpitfire(plane.transform, airframeGo, prop, aircraftBlurMesh ??= assets.Own(UnitShowcase.PropellerBlurMesh()), AircraftBlur(),
+                UnitShowcase.FlyingSpitfire(plane.transform, prop, aircraftBlurMesh ??= assets.Own(UnitShowcase.PropellerBlurMesh()), AircraftBlur(),
                     aircraftShadowMesh ??= assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), out var laid, out shadowHalf);
                 shadow = laid;
             }

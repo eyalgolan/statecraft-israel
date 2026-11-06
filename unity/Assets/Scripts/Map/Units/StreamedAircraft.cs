@@ -13,7 +13,10 @@ namespace Statecraft.Game.Map.Units
     /// token's Aircraft) whose code-built airframe and propeller are built first and drawn until the model arrives. Then the
     /// model stands under the holder in the code-built model's frame (real metres, nose +Z, its centre of gravity at the
     /// origin), its renderers cast shadows as the code-built airframe's do, the code-built airframe and propeller stop drawing,
-    /// and the holder's flight (<see cref="ShowcaseFlight"/>) turns the model's own <see cref="PropellerName"/>. It fails open:
+    /// and the holder's flight (<see cref="ShowcaseFlight"/>) turns the model's own <see cref="PropellerName"/>. A flying
+    /// Spitfire's look (#2728, UnitShowcase.FlyingSpitfire) carries over: the code-built propeller's light blur moves onto the
+    /// model's propeller (UnitShowcase.CarryBlur) and keeps drawing, the soft ground shadow (the holder's own child) stays,
+    /// and the model casts no shadow, as the code-built airframe does not. It fails open:
     /// an answer of null (a missing or damaged bundle), a model with no <see cref="PropellerName"/> child, and edit mode with no
     /// <see cref="Source"/> keep the whole code-built aircraft. The model is asked for once the holder is first active (so a
     /// token built under a hidden layer asks when it is shown), its lease is released when the holder is destroyed, and an
@@ -50,6 +53,7 @@ namespace Statecraft.Game.Map.Units
             Source ?? (Application.isPlaying ? ProductionAcquire : null);
 
         Renderer[] codeBuilt = Array.Empty<Renderer>();
+        Transform? codeProp;
         IDisposable? lease;
         bool attached, released;
 
@@ -65,6 +69,7 @@ namespace Statecraft.Game.Map.Units
         {
             var swap = plane.AddComponent<StreamedAircraft>();
             swap.codeBuilt = airframe.GetComponentsInChildren<Renderer>(true).Concat(propeller.GetComponentsInChildren<Renderer>(true)).ToArray();
+            swap.codeProp = propeller;
             swap.attached = true;
             if (swap.isActiveAndEnabled) swap.Ask();
             return swap;
@@ -101,9 +106,14 @@ namespace Statecraft.Game.Map.Units
             go.SetActive(true);   // a streamed prefab may be stored inactive
             var shadows = codeBuilt.Length > 0 && codeBuilt[0] != null ? codeBuilt[0].shadowCastingMode : ShadowCastingMode.On;
             foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = shadows;
-            foreach (var r in codeBuilt) if (r != null) r.enabled = false;
+            var ownProp = go.transform.Find(PropellerName);
+            // A flying Spitfire's blur moves to the model's propeller, so it turns with it and keeps drawing; everything else
+            // code-built stops drawing.
+            var blur = codeProp != null ? codeProp.Find(UnitShowcase.PropellerBlurName) : null;
+            if (blur != null) UnitShowcase.CarryBlur(blur, ownProp);
+            foreach (var r in codeBuilt) if (r != null && !r.transform.IsChildOf(ownProp)) r.enabled = false;
             Streamed = go;
-            if (TryGetComponent<ShowcaseFlight>(out var flight)) flight.TurnPropeller(go.transform.Find(PropellerName));
+            if (TryGetComponent<ShowcaseFlight>(out var flight)) flight.TurnPropeller(ownProp);
         }
 
         void OnDestroy()
