@@ -391,7 +391,7 @@ def flat_roof() -> np.ndarray:
     for _ in range(9):     # repairs: squares of newer lime, lighter or darker, soft enough to stay off the eye far away
         x, y = rng.integers(0, N, 2)
         w, h = rng.integers(36, 110, 2)
-        tint(a, x, min(y, N - h), x + w, min(y, N - h) + h, rng.uniform(0.92, 1.05))
+        tint(a, x, min(y, N - h), x + w, min(y, N - h) + h, rng.uniform(0.97, 1.02))
     for x in range(N // 4, N, N // 2):
         a[:, x:x + 3] *= 0.90
         a[x:x + 3, :] *= 0.90
