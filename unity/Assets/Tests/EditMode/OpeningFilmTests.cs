@@ -237,6 +237,25 @@ cues:
         Assert.IsTrue(rig.Film.HoldsThePointer);
     }
 
+    /// <summary>#2609, one press, one layer: GameRoot's poll closes the film with Escape and the stills open in that call,
+    /// with the focus on their Next; the same key's Cancel, sent by UI Toolkit to that focus in the same frame, leaves them
+    /// open. An edit-mode test runs in one frame, so this is that frame.</summary>
+    [Test]
+    public void TheEscapeThatClosesTheFilmLeavesTheStillsItOpened()
+    {
+        using var rig = new Rig();
+        int finished = 0;
+        var stills = AssetDatabase.LoadAssetAtPath<OpeningContent>("Assets/Resources/OpeningContent.asset");
+        using var opening = new OpeningPresenter(rig.Ui.Root, stills, stills.Read(), Text("en"), _ => { }, _ => finished++);
+        rig.Film.Play(false, () => opening.Show(replay: false));
+        Assert.IsTrue(rig.Film.Escape(), "GameRoot's poll closes the film");
+        Assert.IsTrue(opening.IsOpen, "precondition: the stills follow it in the same call");
+        var next = rig.Ui.Q<Button>("opening-next");
+        using (var e = NavigationCancelEvent.GetPooled()) { e.target = next; next.SendEvent(e); }
+        Assert.IsTrue(opening.IsOpen, "the same press does not close the stills too");
+        Assert.AreEqual(0, finished);
+    }
+
     [Test]
     public void AFailedFilmGoesOnWithOneLogLine()
     {
