@@ -316,16 +316,20 @@ namespace Statecraft.Game.UI
             {
                 if (!rows.TryGetValue(person.Id, out var r)) continue;
                 (Rejection rejection, PreviewResult preview)? refused = null;
-                if (reason == null)
+                CabinetReason? held = null;
+                if (reason == null && current != null)
                 {
                     var press = new Appoint(Selected, person.Id);
-                    if (current != null && bridge.CanPay(press)) refused = PreviewRefusal(c, press, current);
+                    if (bridge.CanPay(press)) refused = PreviewRefusal(c, press, current);
+                    // Who holds which office once the queue is applied does not depend on Attention, so a person a queued
+                    // appointment puts in another office is disabled even when the press could not be paid for (#2743).
+                    else held = HeldAfterQueue(c, current, person.Id);
                 }
                 var previewReason = refused == null ? null : PreviewReason(c, refused.Value.rejection, refused.Value.preview);
                 r.appoint.text = Describe(person);
-                r.appoint.SetEnabled(reason == null && refused == null);
-                r.reason.text = shared != null ? "" : reason != null ? ReasonText(c, reason) : previewReason ?? "";
-                r.reason.style.display = shared == null && (reason != null || refused != null) ? DisplayStyle.Flex : DisplayStyle.None;
+                r.appoint.SetEnabled(reason == null && refused == null && held == null);
+                r.reason.text = shared != null ? "" : reason != null ? ReasonText(c, reason) : previewReason ?? (held != null ? ReasonText(c, held) : "");
+                r.reason.style.display = shared == null && (reason != null || refused != null || held != null) ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }
 
@@ -344,6 +348,14 @@ namespace Statecraft.Game.UI
                     && !current.Rejected.Any(r => ReferenceEquals(r.Command, x.Command)));
             return rejection == null ? null : (rejection, next);
         }
+
+        /// <summary>The reasons a queued appointment can create for <paramref name="person"/>: holding another office once the
+        /// queue is applied (Cabinet.CheckReason on the preview's state). Date-bound reasons (a death, an office's dates) are
+        /// left out: the preview's state is a turn later than the appointment.</summary>
+        static readonly string[] HolderKinds = { "is_president", "is_chief_of_staff", "already_holds" };
+
+        CabinetReason? HeldAfterQueue(Content c, PreviewResult current, string person) =>
+            Cabinet.CheckReason(c, current.State, Selected!, person) is CabinetReason r && Array.IndexOf(HolderKinds, r.Kind) >= 0 ? r : null;
 
         string PreviewReason(Content c, Rejection rejection, PreviewResult preview)
         {
