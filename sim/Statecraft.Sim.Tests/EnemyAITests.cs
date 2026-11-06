@@ -222,10 +222,14 @@ public class EnemyAITests
         Assert.All(Real.StartingForces.Where(f => f.Side == Movement.PlayerSide), f => Assert.Empty(f.Script));
     }
 
-    // R-ENEMY-002: an 11 June anchor on one non-Wikipedia source (with Wikipedia beside it) is not scripted; two are.
+    // R-ENEMY-002: an 11 June anchor on one non-Wikipedia source (with Wikipedia beside it) is not scripted; two are. One URL
+    // listed twice is one source, and a Wikipedia host in capitals is still Wikipedia (#2804).
     [Theory]
     [InlineData("['https://example.org/a', 'https://en.wikipedia.org/wiki/Isdud', 'https://www.wikidata.org/wiki/Q1']", false)]
     [InlineData("['https://example.org/a', 'https://example.org/b']", true)]
+    [InlineData("['https://example.org/a', 'https://example.org/a']", false)]
+    [InlineData("['https://example.org/a', 'https://EN.WIKIPEDIA.ORG/wiki/Isdud']", false)]
+    [InlineData("['https://example.org/a', 'https://www.WikiData.org/wiki/Q1']", false)]
     public void AScriptedAnchorNeedsTwoSources(string urls, bool scripted)
     {
         var sources = string.Join(", ", urls.Trim('[', ']').Split(", ").Select(u => "{ url: " + u + ", checked: '2026-10-13' }"));
@@ -466,16 +470,36 @@ public class EnemyAITests
         Assert.Equal(truce ? Orders.Fortifying : Combat.Attack, s.Units[2].Order);
     }
 
-    // R-ENEMY-004: no reinforcements in Phase 5 (Q-ENEMY-3). No turn adds an enemy unit.
+    // R-ENEMY-006: "The guard remains date-driven in every mode" (#2806 item 11). The cases above all build a Historical game
+    // (CombatTests.With); here the same game in Open mode, on both sides of the first truce's start. The day before it the
+    // enemy still attacks, so Open mode alone does not stop the attack; on 11 June the truce does.
+    [Theory]
+    [InlineData(1948, 6, 10, false)]
+    [InlineData(1948, 6, 11, true)]
+    public void TheTruceHoldsInOpenModeToo(int y, int m, int d, bool truce)
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10));
+        s.Mode = Mode.Open;
+        s.Date = new DateTime(y, m, d);
+        EnemyAI.Order(c, s, new List<Cause>());
+        Assert.Equal(truce ? (Orders.Fortifying, "2,0") : (Combat.Attack, "3,0"), (s.Units[2].Order, s.Units[2].OrderTarget));
+    }
+
+    // R-ENEMY-004: no reinforcements in Phase 5 (Q-ENEMY-3). No turn adds an enemy unit, and none grows: no enemy unit's
+    // strength goes above its start.
     [Fact]
     public void NoReinforcements()
     {
         var s = Simulation.NewGame(Real, 1, Mode.Historical);
         var ids = s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet();
+        var start = s.Units.Values.Where(IsEnemy).ToDictionary(u => u.Id, u => u.Strength);
         for (int i = 0; i < 8 && s.GameOver == null; i++)
         {
             s = Simulation.Step(Real, s, Array.Empty<Command>()).State;
             Assert.Subset(ids, s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet());   // xUnit: every id now is a starting one (B ⊆ A), so none arrived
+            foreach (var u in s.Units.Values.Where(IsEnemy))
+                Assert.True(u.Strength <= start[u.Id], $"enemy unit {u.Id} grew from {start[u.Id]} to {u.Strength}");
         }
     }
 
@@ -515,7 +539,8 @@ public class EnemyAITests
     {
         var c = Load();
         var fought = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10)), Array.Empty<Command>());
-        Assert.Equal(new[] { Combat.Attack }, fought.Why.Where(x => x.EnemyOrder != "").Select(x => x.EnemyOrder));
+        // #2534: the new order's own cause names it too, ahead of the engagement's.
+        Assert.Equal(new[] { Combat.Attack, Combat.Attack }, fought.Why.Where(x => x.EnemyOrder != "").Select(x => x.EnemyOrder));
         var mine = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 10), Enemy(2, 2, 0, 1)), new Command[] { new UnitOrder(1, Combat.Attack, 2, 0) });
         Assert.Contains(mine.Why, x => x.Message.StartsWith("The attack on hex 2,0", StringComparison.Ordinal));
         Assert.DoesNotContain(mine.Why, x => x.EnemyOrder == Combat.Attack);
@@ -545,11 +570,23 @@ public class EnemyAITests
             var r = Simulation.Step(c, s, Array.Empty<Command>());
             Assert.Equal((Combat.Attack, "3,0"), (r.State.Units[2].Order, r.State.Units[2].OrderTarget));
             Assert.Equal(4 - turn, r.State.Units[1].Strength);   // it engaged this turn
-            var attack = Assert.Single(r.Why, x => x.EnemyOrder == Combat.Attack);
+            var attack = Assert.Single(r.Why, x => x.EnemyOrder == Combat.Attack && x.Key == WhyKeys.Engagement);   // #2534: the order's own cause is marked too
             Assert.Equal("3,0", attack.Target);
             Assert.Equal(new[] { 2 }, attack.EnemyAttackers);
             s = r.State;
         }
+    }
+
+    // #2534: a newly issued enemy attack order names itself on its own cause, so the turn report's enemy-orders row can
+    // show it (the engagement names its attackers only when the attack engages, #1297).
+    [Fact]
+    public void ANewEnemyAttackOrderNamesItselfForTheReport()
+    {
+        var c = Load();
+        var r = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10)), Array.Empty<Command>());
+        var order = Assert.Single(r.Why, x => x.Key == WhyKeys.AttackOrdered && x.EnemyOrder == Combat.Attack);
+        Assert.Equal(new[] { 2 }, order.EnemyAttackers);
+        Assert.Equal("2", order.Target);
     }
     // R-ENEMY-005 (Q-ENEMY-5; owner, 31 October 2026, #749): an operation card's option gives a go-to order to a unit of a
     // units_1948.yaml row, toward one of that row's own anchor hexes, through the player's own go-to (Movement.GiveGoTo).
@@ -617,6 +654,39 @@ public class EnemyAITests
         Assert.Equal(Orders.RefusedCardOrder, Assert.Single(held.Rejected).Reason);
         Assert.Equal(("", 0, 0), (held.State.Units[0].Order, held.State.Units[0].Q, held.State.Units[0].R));
         Assert.Equal("An enemy unit holds that hex", Assert.Single(Simulation.Preview(c, s, new Command[] { new UnitOrder(0, Movement.GoTo, 4, 0) }).Rejected).Reason);
+    }
+
+    // R-ENEMY-005 (#2806 item 10): "the legacy loop has no units and ignores them". In the legacy loop, choosing the probe
+    // card's option with its unit order gives the state the same option with no order gives: the same hash, no card order
+    // and nothing refused. Fixture values.
+    [Fact]
+    public void TheLegacyLoopIgnoresACardsUnitOrders()
+    {
+        static Content Legacy(string orders) => ContentLoader.Load(Fixture.Write(null, new()
+        {
+            ["probe.yaml"] = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
+                + "  - id: ok\n    text: Accept\n    historical: true\n" + orders
+                + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n",
+        }));
+        var withOrders = Legacy("    unit_orders: [{ unit: brig, q: 4, r: 0 }]\n");
+        var without = Legacy("");
+        Assert.Equal(SaveGame.LegacyRuleset, withOrders.Ruleset);
+        Assert.Single(withOrders.Events.Single(e => e.Id == "probe").Options.Single().UnitOrders);
+
+        GameState Chosen(Content c, out IReadOnlyList<Rejection> rejected)
+        {
+            var s = Simulation.NewGame(c, 1, Mode.Historical);
+            Assert.Empty(s.Units);   // the legacy loop has no units
+            Assert.Contains("probe", s.PendingEvents);
+            var r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("probe", "ok") });
+            rejected = r.Rejected;
+            return r.State;
+        }
+        var ordered = Chosen(withOrders, out var refused);
+        var plain = Chosen(without, out _);
+        Assert.Empty(refused);
+        Assert.Empty(ordered.CardOrders);
+        Assert.Equal(plain.Hash(), ordered.Hash());
     }
 
     // R-ENEMY-005 (owner, 31 October 2026, #749: "Sourced anchors only"; 1 November 2026, #2087: "military operations must
@@ -824,6 +894,43 @@ public class EnemyAITests
         var c = CardGame(4, 0, "1949-01-01", MovementTests.Board());
         var r = Simulation.Step(c, Simulation.NewGame(c, 1, Mode.Historical), new Command[] { new Move(0, 1, 0) });
         Assert.Equal((3, 0, Movement.GoTo), (r.State.Units[0].Q, r.State.Units[0].R, r.State.Units[0].Order));
+    }
+
+    // R-ENEMY-005 (#2806 item 9): a card's orders are given in the option's list order. Two brigade rows, brig_a on (0, 0)
+    // and brig_b on (0, 1), are both sent to (2, 0), which already holds one Israeli unit (the fixture's stack limit is 2 a
+    // side). The order listed first arrives and fills the hex; the one listed second finds it full and stops where it
+    // stands (Movement.Advance). Listed the other way round, the other unit arrives. Fixture values, not history.
+    [Theory]
+    [InlineData("brig_a", "brig_b")]
+    [InlineData("brig_b", "brig_a")]
+    public void ACardsOrdersAreGivenInListOrder(string first, string second)
+    {
+        static string Row(string id) => "- id: " + id + "\n  service: army\n  side: israel\n  status: draft\n"
+            + "  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
+            + "  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n"
+            + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n";
+        const string Hexes = "anchors:\n  - { id: brig_a, anchor: 0, q: 0, r: 0 }\n  - { id: brig_a, anchor: 1, q: 2, r: 0 }\n"
+            + "  - { id: brig_b, anchor: 0, q: 0, r: 1 }\n  - { id: brig_b, anchor: 1, q: 2, r: 0 }\n";
+        var card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
+            + "  - id: ok\n    text: Accept\n    historical: true\n"
+            + "    unit_orders: [{ unit: " + first + ", q: 2, r: 0 }, { unit: " + second + ", q: 2, r: 0 }]\n"
+            + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
+            ["map/units_1948.yaml"] = "units:\n" + Row("brig_a") + Row("brig_b"), ["map/unit_anchor_hexes.yaml"] = Hexes,
+        }), new() { ["probe.yaml"] = card }));
+        int a = c.StartingForces.FindIndex(f => f.Row == first), b = c.StartingForces.FindIndex(f => f.Row == second);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var start = (s.Units[b].Q, s.Units[b].R);
+        s.Units.Add(9, Soldier(9, 2, 0, 3));
+
+        var r = Simulation.Preview(c, s, new Command[] { new ChooseEventOption("probe", "ok") });
+        Assert.Empty(r.Rejected);   // a full destination stops the march; it is no refusal
+        Assert.Equal((2, 0, ""), (r.State.Units[a].Q, r.State.Units[a].R, r.State.Units[a].Order));
+        Assert.Equal((start.Q, start.R, ""), (r.State.Units[b].Q, r.State.Units[b].R, r.State.Units[b].Order));
+        Assert.Contains(r.Why, x => x.Key == WhyKeys.StoppedFull && x.Args.Contains("2,0"));
+        Assert.Equal(new[] { a, 9 }, r.State.Units.Values.Where(u => (u.Q, u.R) == (2, 0)).Select(u => u.Id).OrderBy(x => x));
     }
 
     // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; the option: "A

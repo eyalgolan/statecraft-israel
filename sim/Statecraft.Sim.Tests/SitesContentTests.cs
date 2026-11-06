@@ -69,6 +69,27 @@ public class SitesContentTests
         Assert.Contains((site.Q, site.R), lineHexes);
     }
 
+    /// <summary>R-CTRL-020 (#2804): a depopulated place closes its target's hex, and Ramla's target (-3, 24) is not a
+    /// settlement's hex (ContentLoader.TargetOnANeighbour), so the site guard refuses a site on any target's hex too.</summary>
+    [Fact]
+    public void ASiteOnASettlementTargetsHexFailsLoad()
+    {
+        var root = RealContentTests.ContentRoot();
+        var events = Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
+        const string mefalsim = "    q: -11\n    r: 31\n";
+        Assert.Contains(mefalsim, File.ReadAllText(Path.Combine(root, "sites.yaml")));
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(root, rel);
+            if (!File.Exists(path)) return null;
+            var text = File.ReadAllText(path);
+            return rel == "sites.yaml" ? text.Replace(mefalsim, "    q: -3\n    r: 24\n") : text;
+        }, events));
+        Assert.Equal("sites.yaml", ex.File);
+        Assert.Equal("sites[mefalsim].q", ex.Field);
+        Assert.Contains("hex q=-3 r=24 is the settlement target ramla", ex.Message);
+    }
+
     /// <summary>R-SITE-004, Q-SITE-1 and Q-SITE-2 (owner, 17 October 2026, #782: "take all of the plan's recommendations"): the
     /// MVP's yishuv sites are the four of the settlements note whose founding day two sources agree on (criteria 1, 2 and 4 of
     /// Task 5.0). Each is founded inside the MVP's years and cites at least two sources with a checked date. Kiryat Shmona and

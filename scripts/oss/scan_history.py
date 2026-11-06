@@ -4,7 +4,8 @@
 # ///
 """Read-only scan of every ADDED line in every commit reachable from the given ref (merge commits included, diffed
 against each parent), plus every commit message and author/committer email, for secret shapes, personal emails and
-home paths (the patterns in oss_policy.py). Prints commit, file and pattern type, NEVER the matched text.
+home paths (the patterns in oss_policy.py). Prints commit, file and pattern type, NEVER the matched text; OPEN rows
+that are not secret-shaped print as one count per pattern type.
 
 Findings are information only (owner ruling 2026-10-11: no history rewriting, no history enforcement) and do not change
 the exit code. A command failure is non-zero because the scan is incomplete.
@@ -90,10 +91,18 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     done = accepted(args.repo)
     open_secrets = 0
+    # OPEN rows that are not secret-shaped (personal emails, home paths) print as one count per kind: on main they are
+    # over a thousand commit identities, and listed one by one they buried the summary line (#2655 item 7).
+    other_open: dict[str, int] = {}
     for commit, path, kind in hits:
         state = "accepted" if (commit, path, kind) in done else "OPEN"
         open_secrets += state == "OPEN" and kind in SECRET_KINDS
+        if state == "OPEN" and kind not in SECRET_KINDS:
+            other_open[kind] = other_open.get(kind, 0) + 1
+            continue
         print(f"{commit}  {path}  {kind}  {state}")
+    for kind, n in sorted(other_open.items()):
+        print(f"{kind}  {n} OPEN rows (not secret-shaped, not listed)")
     count = len(subprocess.run(["git", "-C", str(args.repo), "rev-list", *refs], capture_output=True, text=True,
                                check=True).stdout.split())
     print(f"scanned {count} commits ({' '.join(refs)}): {len(hits) or 'no'} findings, "

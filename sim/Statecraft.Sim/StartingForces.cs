@@ -21,6 +21,12 @@ namespace Statecraft.Sim
         public int R { get; set; }
         /// <summary>The row's review status (draft, to_verify, fact-checked); the release gate reads it (Q-START-3).</summary>
         public string Status { get; set; } = "";
+        /// <summary>A fact-checked row's `checked_on`, the day of its person check ('YYYY-MM-DD'); empty for any other row.
+        /// The release gate counts a field sourced after it as unchecked (#2722).</summary>
+        public string CheckedOn { get; set; } = "";
+        /// <summary>The latest `checked` day among the sources of the row's strength, each anchor and each order target, in
+        /// the file's order, with the field's name (#2722): "strength", "anchors[k] (place)", "order_targets[k] (place)".</summary>
+        public List<(string Field, string Checked)> SourcesChecked { get; } = new List<(string Field, string Checked)>();
         /// <summary>R-UNIT-009 (#1241): the day a row dated after the start arrives (its strength's as_of), or null for a row
         /// that starts the game. Its unit's id is reserved at the start and the resolver adds it on that day's turn.</summary>
         public DateTime? Arrives { get; set; }
@@ -68,6 +74,10 @@ namespace Statecraft.Sim
                 var id = Text(row, "id");
                 if (id == "") throw new ContentException(FileName, $"units[{i}].id", "required");
                 var at = $"units[{id}]";
+                // #2722: a fact-checked row records the day of its person check, so a field sourced later can be told apart.
+                if (Text(row, "status") == "fact-checked"
+                    && !DateTime.TryParseExact(Text(row, "checked_on"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+                    throw new ContentException(FileName, $"{at}.checked_on", "required on a fact-checked row, the day of its person check 'YYYY-MM-DD'");
                 if (row.ContainsKey("hidden") || Text(row, "service") != "army") continue;
                 if (!(row.TryGetValue("strength", out var so) && so is Dictionary<object, object> strength)) continue;
                 // R-UNIT-009: a strength dated after the start is the row's arrival day; one dated before starts nothing.
@@ -97,7 +107,14 @@ namespace Statecraft.Sim
                 {
                     Row = id, Anchor = Text(anchor, "place"), Type = TypeFor(c, side, at), Side = side,
                     Strength = units, Q = q, R = r, Status = Text(row, "status"), Arrives = day == start ? (DateTime?)null : asOf,
+                    CheckedOn = Text(row, "checked_on"),
                 };
+                force.SourcesChecked.Add(("strength", LatestCheck(strength)));
+                for (int j = 0; j < anchors.Count; j++)
+                    if (anchors[j] is Dictionary<object, object> a) force.SourcesChecked.Add((FormattableString.Invariant($"anchors[{j}] ({Text(a, "place")})"), LatestCheck(a)));
+                if (row.TryGetValue("order_targets", out var oo) && oo is List<object> targets)
+                    for (int j = 0; j < targets.Count; j++)
+                        if (targets[j] is Dictionary<object, object> t) force.SourcesChecked.Add((FormattableString.Invariant($"order_targets[{j}] ({Text(t, "place")})"), LatestCheck(t)));
                 if (side != Movement.PlayerSide) Script(c, force, anchors, id, at, hexes);
                 (day == start ? list : arrivals).Add(force);
             }
@@ -115,9 +132,12 @@ namespace Statecraft.Sim
             for (int j = 0; j < anchors.Count; j++)
             {
                 if (!(anchors[j] is Dictionary<object, object> a) || string.CompareOrdinal(Text(a, "from"), EnemyAI.ScriptDate) < 0) continue;
-                var sourced = a.TryGetValue("sources", out var so) && so is List<object> sources ? sources.Count(x =>
-                    x is Dictionary<object, object> m && Text(m, "url") is var url && url != ""
-                    && !url.Contains("wikipedia.org", StringComparison.Ordinal) && !url.Contains("wikidata.org", StringComparison.Ordinal)) : 0;
+                // Distinct URLs, so one source listed twice counts once; hosts are case-insensitive, so EN.WIKIPEDIA.ORG is Wikipedia.
+                var sourced = a.TryGetValue("sources", out var so) && so is List<object> sources ? sources
+                    .Select(x => x is Dictionary<object, object> m ? Text(m, "url") : "")
+                    .Where(url => url != "" && !url.Contains("wikipedia.org", StringComparison.OrdinalIgnoreCase)
+                        && !url.Contains("wikidata.org", StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.Ordinal).Count() : 0;
                 if (sourced < 2) continue;
                 if (!hexes.TryGetValue((id, j), out var qr))
                     throw new ContentException(HexesFileName, "anchors", $"no hex for {at}.anchors[{j}] ({FileName}); rerun tools/unit_anchor_hexes.py");
@@ -245,6 +265,12 @@ namespace Statecraft.Sim
         static int Int(Dictionary<object, object> m, string key, string at) =>
             int.TryParse(Text(m, key), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n)
                 ? n : throw new ContentException(HexesFileName, $"{at}.{key}", "required, a whole number");
+
+        /// <summary>The latest `checked` day among an entry's `sources` ('YYYY-MM-DD' compares as text), or "" with none.</summary>
+        static string LatestCheck(Dictionary<object, object> m) =>
+            m.TryGetValue("sources", out var so) && so is List<object> sources
+                ? sources.OfType<Dictionary<object, object>>().Select(x => Text(x, "checked")).OrderBy(x => x, StringComparer.Ordinal).LastOrDefault() ?? ""
+                : "";
 
         static string Text(Dictionary<object, object> m, string key) => m.TryGetValue(key, out var v) && v is string s ? s : "";
 

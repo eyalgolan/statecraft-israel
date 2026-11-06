@@ -10,8 +10,8 @@ namespace Statecraft.Game.Map.Units
     /// stand at their map places under it, so the root's position is an offset from where the unit now is. A move slides
     /// that offset from the old place to zero over <see cref="Duration"/>; the figures walk meanwhile and stand idle after.
     /// An attack plays the figures' fire take once, then they walk or stand again; a 65 mm gun on the token fires with
-    /// them (UnitGunFire, #2373). The component runs its LateUpdate only
-    /// while a move or an attack is under way. Disabling it (the token hidden or rebuilt) puts the token where the unit is.
+    /// them (UnitGunFire, #2373). A hit reaction composes a short shake with that slide. The component runs its LateUpdate
+    /// only while a move, attack or reaction is under way. Disabling it (the token hidden or rebuilt) clears every motion.
     /// A figure that turns near mid-move or mid-attack (UnitFigureDetail) or arrives then (UnitFigures) joins in at once.</summary>
     public sealed class UnitTokenMotion : MonoBehaviour
     {
@@ -21,14 +21,24 @@ namespace Statecraft.Game.Map.Units
         /// <summary>How long an attack waits for a figure that can play it. An engagement usually changes strengths, so the
         /// tokens are rebuilt just before it plays, and the new ones turn their near figures on at the next render.</summary>
         public const float AttackWaitS = 0.25f;
+        public const float HitDurationS = 0.28f, HitFlashS = 0.12f, HitShakeM = 160f;
+        public const int MoveDustPuffs = 3;
 
         /// <summary>The sim unit this token draws, or -1 for a row with no sim unit (the legacy loop).</summary>
         public int SimId { get; internal set; } = -1;
         /// <summary>Raised when the token's place changes, so UnitLayer redraws its badge and hit boxes there.</summary>
         internal Action? Changed;
+        internal CombatBursts? Effects;
+        internal Vector3 GroundHome;
+        internal Renderer? HitFlash;
 
-        Vector3 from;
-        float elapsed = Duration, attackLeft;
+        Vector3 from, moveOffset;
+
+        /// <summary>The slide under way (world offset from the token's place), without the hit's shake: where the token is,
+        /// as the hit's burst and a destroyed unit's dust read it (UnitLayer.DrawnAt).</summary>
+        internal Vector3 SlideOffset => moveOffset;
+        float elapsed = Duration, attackLeft, hitLeft, hitDelay;
+        int nextMoveDust;
         bool firing;   // a figure plays the attack (else it waits for one, up to AttackWaitS)
         bool fired;    // an attack just ended: its figures go back to walking or standing
         float attackLength, resumeAt;   // the playing take's length; where a continued attack picks up
@@ -36,17 +46,21 @@ namespace Statecraft.Game.Map.Units
         readonly List<Animator> animators = new List<Animator>();
         readonly List<UnitFigurePointFire> aims = new List<UnitFigurePointFire>();
         readonly List<UnitGunFire> guns = new List<UnitGunFire>();
+        Action? attackStarted, attackMissed;
 
         public bool Moving => elapsed < Duration;
         /// <summary>An attack plays, or waits for a figure to play it.</summary>
         public bool Attacking => attackLeft > 0f;
+        public bool Reacting => hitLeft > 0f;
+        /// <summary>A shake and flash wait to start (<see cref="PlayHit"/> with a delay).</summary>
+        public bool HitPending => hitDelay > 0f;
 
         /// <summary>Starts a slide from <paramref name="offset"/> (the old place less the new) to the unit's place.</summary>
         public void Begin(Vector3 offset)
         {
-            if (offset.sqrMagnitude < MinMoveM * MinMoveM) { if (Moving || Attacking) Snap(); return; }
-            from = offset; elapsed = 0f;
-            transform.position = from;
+            if (offset.sqrMagnitude < MinMoveM * MinMoveM) { if (Moving || Attacking || Reacting || HitPending) Snap(); return; }
+            from = moveOffset = offset; elapsed = 0f; nextMoveDust = 0;
+            ApplyPosition();
             enabled = true;
             Pose();
             Changed?.Invoke();
@@ -55,9 +69,15 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Plays the figures' attack take once from its start (again, if one is playing). True when a figure
         /// plays it now; else it waits <see cref="AttackWaitS"/> for one to turn near, and then is dropped. A hidden token
         /// does nothing. Nothing is kept to play later.</summary>
-        public bool PlayAttack()
+        public bool PlayAttack() => PlayAttack(null, null);
+
+        /// <summary>As <see cref="PlayAttack()"/>, reporting when a visible take actually starts, or when its short wait
+        /// ends without one. The callbacks let the defender react to the take rather than merely to its request.</summary>
+        internal bool PlayAttack(Action? started, Action? missed)
         {
-            if (!gameObject.activeInHierarchy) return false;
+            if (!gameObject.activeInHierarchy) { missed?.Invoke(); return false; }
+            DropAttackCue();
+            attackStarted = started; attackMissed = missed;
             attackLeft = AttackWaitS; firing = false; resumeAt = 0f;
             enabled = true;
             return Fire();
@@ -108,7 +128,70 @@ namespace Statecraft.Game.Map.Units
             attackLength = longest; attackLeft = longest - resumeAt; resumeAt = 0f; firing = true;
             foreach (var aim in aims) aim.Hold();
             foreach (var gun in guns) if (gun.Ready) gun.Fire(from);
+            var started = attackStarted; attackStarted = null; attackMissed = null;
+            started?.Invoke();
             return true;
+        }
+
+        /// <summary>Starts the defender's short presentation-only shake and badge flash, <paramref name="delayS"/> from now
+        /// (when the hit lands on it, CombatBursts.ImpactS), or at once.</summary>
+        public bool PlayHit(float delayS = 0f)
+        {
+            if (!gameObject.activeInHierarchy) return false;
+            enabled = true;
+            if (delayS > 0f) { hitDelay = delayS; return true; }
+            StartHit(0f);
+            return true;
+        }
+
+        /// <summary>The hit the token shows or waits to show: the shake's time left and the delay before it lands (both 0 when
+        /// none). A rebuild hands it to the unit's new token (<see cref="ContinueHit"/>).</summary>
+        internal (float left, float delay) HitState => (hitLeft, hitDelay);
+
+        /// <summary>Goes on with the hit the unit's previous token was showing (<paramref name="left"/> of its shake) or
+        /// waiting for (<paramref name="delay"/> until it lands), so a rebuild for another unit's loss cuts neither short.</summary>
+        internal void ContinueHit(float left, float delay)
+        {
+            if (!gameObject.activeInHierarchy || (left <= 0f && delay <= 0f)) return;
+            enabled = true;
+            if (delay > 0f) { hitDelay = delay; return; }
+            hitLeft = Mathf.Min(left, HitDurationS);
+            ApplyPosition();
+            Changed?.Invoke();
+        }
+
+        void StartHit(float late)
+        {
+            hitDelay = 0f;
+            hitLeft = Mathf.Max(0f, HitDurationS - late);
+            ApplyPosition();
+            Changed?.Invoke();
+        }
+
+        void EmitMoveDustThrough(float share)
+        {
+            while (nextMoveDust < MoveDustPuffs)
+            {
+                float mark = (nextMoveDust + 1f) / (MoveDustPuffs + 1f);
+                if (share < mark) break;
+                Effects?.March(GroundHome + Vector3.Lerp(from, Vector3.zero, mark));
+                nextMoveDust++;
+            }
+        }
+
+        void ApplyPosition()
+        {
+            float age = HitDurationS - hitLeft;
+            float falloff = Reacting ? hitLeft / HitDurationS : 0f;
+            float wave = Reacting ? Mathf.Sin(age * 4f * Mathf.PI / HitDurationS) : 0f;
+            transform.position = moveOffset + new Vector3(wave, 0f, -wave * 0.35f) * (HitShakeM * falloff);
+            if (HitFlash != null) HitFlash.enabled = hitLeft > HitDurationS - HitFlashS;
+        }
+
+        void DropAttackCue()
+        {
+            var missed = attackMissed; attackStarted = null; attackMissed = null;
+            missed?.Invoke();
         }
 
         /// <summary>The longest fire take on <paramref name="animator"/>'s controller (reading its clips allocates).</summary>
@@ -157,35 +240,50 @@ namespace Statecraft.Game.Map.Units
         internal void Tick(float seconds)
         {
             seconds = Mathf.Max(0f, seconds);
-            bool wasMoving = Moving, wasFiring = firing;
+            bool wasMoving = Moving, wasFiring = firing, wasReacting = Reacting;
             if (Moving)
             {
                 elapsed = Mathf.Min(Duration, elapsed + seconds);
-                transform.position = Vector3.Lerp(from, Vector3.zero, elapsed / Duration);
-                Changed?.Invoke();
+                float share = elapsed / Duration;
+                moveOffset = Vector3.Lerp(from, Vector3.zero, share);
+                EmitMoveDustThrough(share);
             }
+            if (Reacting) hitLeft = Mathf.Max(0f, hitLeft - seconds);
+            if (HitPending)
+            {
+                // The hit lands within this step: the shake starts then, already as old as the rest of the step.
+                if (seconds < hitDelay) hitDelay -= seconds; else { StartHit(seconds - hitDelay); wasReacting = false; }
+            }
+            if (wasMoving || wasReacting) { ApplyPosition(); Changed?.Invoke(); }
             if (Attacking)
             {
                 attackLeft = Mathf.Max(0f, attackLeft - seconds);
-                if (!Attacking) { fired = firing; firing = false; resumeAt = 0f; }
+                if (!Attacking)
+                {
+                    fired = firing; firing = false; resumeAt = 0f;
+                    if (!fired) DropAttackCue();
+                }
             }
             if (wasMoving != Moving || wasFiring != firing) Pose();
-            if (!Moving && !Attacking) enabled = false;   // an idle token costs nothing per frame
+            if (!Moving && !Attacking && !Reacting && !HitPending) enabled = false;   // an idle token costs nothing per frame
         }
 
         void LateUpdate() => Tick(Time.deltaTime);
 
         void OnDisable()
         {
-            if (Moving || Attacking) Snap();
+            if (Moving || Attacking || Reacting || HitPending) Snap();
         }
 
         void Snap()
         {
             bool moved = transform.position != Vector3.zero;
             fired = firing;
-            elapsed = Duration; attackLeft = 0f; firing = false; resumeAt = 0f; from = Vector3.zero;
+            elapsed = Duration; attackLeft = hitLeft = hitDelay = 0f; firing = false; resumeAt = 0f;
+            from = moveOffset = Vector3.zero; nextMoveDust = 0;
+            DropAttackCue();
             transform.position = Vector3.zero;
+            if (HitFlash != null) HitFlash.enabled = false;
             Pose();
             if (moved) Changed?.Invoke();
         }

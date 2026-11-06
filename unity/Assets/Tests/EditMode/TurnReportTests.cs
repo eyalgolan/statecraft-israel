@@ -321,6 +321,50 @@ public class TurnReportTests
         Assert.IsNull(k.Ui.Root.Q("turn-report-heading-" + TurnReportPresenter.WorkshopRow), "no workshop heading");
     }
 
+    static Cause Held(string city) => new Cause("city", city, 0, city + ": held by the enemy; no job income or project work this turn", key: CauseKeys.CityHeld);
+
+    /// <summary>R-CITY-010 (#1711): a city the enemy holds changes no number, so its sim line (Delta 0) gets a row of its own
+    /// after the stocks and before the enemy's orders, one line a city in the sim's order, named in the player's language.
+    /// The real content is gdd-0.1, which holds no city, so the lines are added; that the sim gives them under gdd-0.3 only is
+    /// NoCityLossDefeatTests.OnlyAGdd03HeldCityGetsTheLine's. The expected lines are literals in both languages.</summary>
+    [Test]
+    public void HeldCitiesAreReportedInBothLanguages()
+    {
+        var namesHe = NamesHe();
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var k = EndTurnWith(hebrew ? He : En, new[] { Held("tel_aviv"), Held("haifa") }, namesHe);
+            Assert.AreEqual(hebrew ? "ערים בשליטת האויב" : "Cities held by the enemy",
+                k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.HeldRow).text);
+            CollectionAssert.AreEqual(hebrew
+                    ? new[]
+                    {
+                        "תל אביב: בשליטת האויב: אין הכנסה מעבודה ואין עבודה על מיזמים בתור הזה",
+                        "חיפה: בשליטת האויב: אין הכנסה מעבודה ואין עבודה על מיזמים בתור הזה",
+                    }
+                    : new[]
+                    {
+                        "Tel Aviv: held by the enemy; no job income or project work this turn",
+                        "Haifa: held by the enemy; no job income or project work this turn",
+                    },
+                Causes(k.Ui, TurnReportPresenter.HeldRow));
+            var rows = k.Ui.Q<ScrollView>("turn-report-rows").Children().Select(r => r.name).ToList();
+            int held = rows.IndexOf("turn-report-" + TurnReportPresenter.HeldRow);
+            Assert.Greater(held, rows.IndexOf("turn-report-arms"), "after the stocks");
+            Assert.AreEqual(rows.IndexOf("turn-report-" + TurnReportPresenter.EnemyRow), held + 1, "just before the enemy's orders");
+        }
+    }
+
+    /// <summary>R-CITY-010 (#1711): a turn with no held city has no held row.</summary>
+    [Test]
+    public void ATurnWithNoHeldCityGivesNoHeldRow()
+    {
+        using var k = new Kit(En);
+        k.Bridge.EndTurn();
+        Assert.IsTrue(k.Report.IsOpen, "the report has its other rows");
+        Assert.IsNull(k.Ui.Root.Q("turn-report-" + TurnReportPresenter.HeldRow), "no held row");
+    }
+
     /// <summary>#1297: a standing enemy attack (R-ENEMY-003) is reported on every turn it engages, not only on the turn it is
     /// ordered. The opening turn is set up as a later one: the Arab Liberation Army already attacks Golani's hex, which it keeps
     /// (no order is given this turn) and which engages in step 2 (R-COMBAT-002).</summary>
@@ -357,6 +401,34 @@ public class TurnReportTests
         typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
             new StepResult(last.State, new[] { new Cause("map", "3,0", 0, "The attack on hex 3,0", Combat.Attack) }, last.Rejected));
         Assert.IsFalse(TurnReportPresenter.Lines(k.Bridge, En).Any(l => l.Meter == TurnReportPresenter.EnemyRow));
+    }
+
+    /// <summary>#2534 review (#2538): a new enemy attack order that also engages on its turn names the attacker once in the
+    /// enemy-orders row, not twice - the order's cause and the engagement's both carry the unit. The turn is replaced with
+    /// both causes through Session.Last's private setter, as in AnAttackThatNamesNoAttackersGivesNoLine.</summary>
+    [Test]
+    public void ANewAttackOrderThatEngagesNamesTheAttackerOnce()
+    {
+        var rows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        int ala = C.StartingForces.ToList().FindIndex(f => f.Row == "arab_liberation_army");
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var k = new Kit(text);
+            var a = k.Bridge.Session.State.Units[ala];
+            var order = new Cause("map", ala.ToString(System.Globalization.CultureInfo.InvariantCulture), 0, $"Unit {ala} will attack hex 3,0",
+                Combat.Attack, new[] { ala }, WhyKeys.AttackOrdered, new[] { new UnitRef(a) });
+            var engagement = new Cause("map", "3,0", 0, "The attack on hex 3,0",
+                Combat.Attack, new[] { ala }, WhyKeys.Engagement, new[] { new UnitRef(a) });
+            k.Bridge.EndTurn();
+            var last = k.Bridge.Session.Last!;
+            typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
+                new StepResult(last.State, new[] { order, engagement }, last.Rejected));
+            var row = TurnReportPresenter.Lines(k.Bridge, text, rows).Single(l => l.Meter == TurnReportPresenter.EnemyRow);
+            CollectionAssert.AreEqual(
+                new[] { hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : "Arab Liberation Army launched an attack on one of your units" },
+                row.Causes, "one line for the unit, though the order and the engagement both name it");
+        }
     }
 
     /// <summary>#2527 review: the Food shortage's line is informational (delta 0), and the turn report's Food row still

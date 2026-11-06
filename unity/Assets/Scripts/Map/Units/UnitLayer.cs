@@ -34,7 +34,7 @@ namespace Statecraft.Game.Map.Units
         UnitGround ground = null!;
         IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
         MapRuntimeAssets assets = null!;
-        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!;
+        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, hitPlate = null!, rim = null!;
         readonly Dictionary<string, Material[]> flagCloth = new Dictionary<string, Material[]>();   // per side, made on first use
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
         /// <summary>The meshes built for the tokens drawn now (each base's draped top, lip and ring follow its own ground):
@@ -119,7 +119,8 @@ namespace Statecraft.Game.Map.Units
         /// any view, the camera's yaw and steepness alike), its flag's pole from the middle (zero for none), the flag (null for
         /// none) and the box of the token's pieces that neither turn nor move (null for a flying aircraft alone). In the order
         /// of <see cref="badges"/> and <see cref="keepClear"/>.</summary>
-        readonly List<(Vector3 home, float back, Vector3 pole, MeshFilter? flag, Bounds? standing)> badgeHomes = new List<(Vector3, float, Vector3, MeshFilter?, Bounds?)>();
+        readonly List<(Vector3 home, float back, Vector3 pole, MeshFilter? flag, Bounds? standing, bool parkedAircraft)> badgeHomes =
+            new List<(Vector3, float, Vector3, MeshFilter?, Bounds?, bool)>();
         /// <summary>Each token's figures as laid out for camera yaw 0 (their place round the base's middle and their heading),
         /// the base's middle and radius, the badge's lift over the highest figure and the figures' meshes (none for an aircraft
         /// or a ship), in the order of <see cref="badges"/>. <see cref="FaceCamera"/> turns the figures and the flag's pole
@@ -133,6 +134,10 @@ namespace Statecraft.Game.Map.Units
         /// <see cref="BadgeAsideM"/> to the side away from its flag's pole on screen (a compact token's pole cannot stand
         /// further out than its base's edge).</summary>
         public const float BadgeBackShare = 0.6f, BadgeAsideM = 400f, BadgeOverFlagM = 150f;
+        /// <summary>#2729: a parked aircraft's badge must not cover its tail, the rear <see cref="BadgeTailShare"/> of its
+        /// length, as the camera sees it. When it would, the badge moves on screen by the least of down, left or right that
+        /// clears the tail by <see cref="BadgeTailGapPixels"/>, never up, so it stays by the aircraft and under the HUD.</summary>
+        public const float BadgeTailShare = 0.4f, BadgeTailGapPixels = 4f;
         readonly List<(Vector2 centre, float radius)> treeHoles = new List<(Vector2, float)>();
         List<Bounds[]> keepClear = new List<Bounds[]>();
         /// <summary>A slide moves the boxes in place, but the labels re-place only for a new list: FaceCamera then hands
@@ -153,6 +158,14 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Each token's move and attack (#1866, #1867), in the order of <see cref="badges"/>; null where the layer
         /// does not animate (an edit-mode build, such as the promo captures, whose tokens stand still at their places).</summary>
         readonly List<UnitTokenMotion?> motions = new List<UnitTokenMotion?>();
+        /// <summary>Each token's sim unit (-1 for a row with no sim unit), in the order of <see cref="badges"/>.</summary>
+        readonly List<int> drawnSims = new List<int>();
+        /// <summary>The sim units whose tokens the last rebuild dropped, and where each was drawn then: a destroyed unit's
+        /// dust rises there (<see cref="PlayDestroyed"/>).</summary>
+        readonly Dictionary<int, Vector3> gone = new Dictionary<int, Vector3>();
+        /// <summary>The attacks' hits and the losses' dust (owner, 4 November 2026), or null without the flipbooks.</summary>
+        CombatBursts? combat;
+        internal CombatBursts? Combat => combat;
         /// <summary>A rebuild slides a moved unit's token from where it was drawn (true in play; tests set it).</summary>
         internal bool AnimateMoves;
 
@@ -231,9 +244,12 @@ namespace Statecraft.Game.Map.Units
             layer.ringTemplate = ringTemplate;
             layer.badgePlate = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (plate)", color = UnitBadge.PlateColour });
             layer.badgeGlyph = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (glyph)", color = UnitBadge.GlyphColour });
+            layer.hitPlate = layer.assets.Own(new Material(ringTemplate)
+                { name = "UnitBadge (hit flash)", color = new Color(0.86f, 0.12f, 0.08f, 0.92f) });
             layer.rim = layer.assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
             layer.tokensRoot = new GameObject("Tokens").transform;
             layer.tokensRoot.SetParent(root.transform, false);
+            layer.combat = CombatBursts.Create(root.transform);
             // The kit trees under the figures are left out while the layer shows (issue #249), and come back with the layer
             // off: a plain screenshot run (HiddenInCaptures) keeps every tree, so its checkpoints stay comparable.
             layer.assets.OnTeardown(() => UnitShowcase.HideTrees(map, ToggleName, Array.Empty<(Vector2, float)>()));
@@ -258,7 +274,7 @@ namespace Statecraft.Game.Map.Units
         void OnEnable() => RenderPipelineManager.beginCameraRendering += FaceBadges;
         void OnDisable() => RenderPipelineManager.beginCameraRendering -= FaceBadges;
 
-        /// <summary>The kit trees under the drawn figures, left out while the layer shows (issue #249).</summary>
+        /// <summary>The kit trees under drawn figure plinths and parked-aircraft footprints, left out while the layer shows.</summary>
         public IReadOnlyList<(Vector2 centre, float radius)> TreeHoles => treeHoles;
 
         void HideTrees() => UnitShowcase.HideTrees(map, ToggleName, gameObject.activeSelf ? treeHoles : (IReadOnlyList<(Vector2, float)>)Array.Empty<(Vector2, float)>());
@@ -310,7 +326,7 @@ namespace Statecraft.Game.Map.Units
                 // A moving token's root stands off the origin by its slide (UnitTokenMotion); its pieces are placed in the
                 // world here, so they take the same offset, and the boxes follow the token as drawn, not its destination.
                 var slide = b.parent.position;
-                var (home, back, pole, flag, standing) = badgeHomes[i];
+                var (home, back, pole, flag, standing, parkedAircraft) = badgeHomes[i];
                 var (centre, radius, lift, figures, meshes) = trios[i];
                 if (turn && figures.Length > 0)
                 {
@@ -323,7 +339,7 @@ namespace Statecraft.Game.Map.Units
                         figure.SetPositionAndRotation(p + slide, Quaternion.Euler(0f, yaw + heading, 0f));
                     }
                     home.y = highest + lift;   // the badge clears the highest figure, wherever the turn set it
-                    badgeHomes[i] = (home, back, pole, flag, standing);
+                    badgeHomes[i] = (home, back, pole, flag, standing, parkedAircraft);
                     if (flag != null)
                     {
                         var foot = centre + turning * pole;
@@ -339,6 +355,22 @@ namespace Statecraft.Game.Map.Units
                 // stays where the full plate's is, clear of the flag and the figures; that move keeps the plate's depth.
                 float size = UnitBadge.SizeFor(Vector3.Dot(at - eye, forward), m11, orthographic);
                 at -= up * (0.5f * (UnitBadge.SizeM - size));
+                if (parkedAircraft && b.parent.Find("Aircraft") is Transform plane && TailScreenRect(plane, cam) is Rect tail)
+                    for (int k = 0; k < 3; k++)
+                    {
+                        float half = 0.5f * size;
+                        var plate = ScreenRect(cam, at - right * half - up * half, at - right * half + up * half,
+                            at + right * half - up * half, at + right * half + up * half);
+                        if (!plate.Overlaps(tail)) break;
+                        var c = cam.WorldToScreenPoint(at);
+                        float perUp = cam.WorldToScreenPoint(at + up).y - c.y, perRight = cam.WorldToScreenPoint(at + right).x - c.x;
+                        if (perUp <= 1e-5f || perRight <= 1e-5f) break;
+                        float down = plate.yMax - tail.yMin + BadgeTailGapPixels;
+                        float left = plate.xMax - tail.xMin + BadgeTailGapPixels, rightward = tail.xMax - plate.xMin + BadgeTailGapPixels;
+                        if (down <= left && down <= rightward) at -= up * (down / perUp);
+                        else if (left <= rightward) at -= right * (left / perRight);
+                        else at += right * (rightward / perRight);
+                    }
                 b.SetPositionAndRotation(at, rotation);
                 b.localScale = Vector3.one * size;
                 var boxes = keepClear[i];
@@ -628,6 +660,15 @@ namespace Statecraft.Game.Map.Units
 
         static Func<double, double, Vector2> XZ(MapScene map) => (lon, lat) => { var w = map.Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); };
 
+        Material? aircraftPaint, aircraftBlur;
+        Mesh? aircraftBlurMesh, aircraftShadowMesh;
+
+        /// <summary>The code-built Spitfire's glossy copy of the units' paint (UnitShowcase.Glossy), one for the layer.</summary>
+        Material AircraftPaint() => aircraftPaint ??= assets.Own(UnitShowcase.Glossy(paint));
+
+        /// <summary>The Spitfire's blur and shadow material (UnitShowcase.BlurMaterial), one for the layer.</summary>
+        Material AircraftBlur() => aircraftBlur ??= assets.Own(UnitShowcase.BlurMaterial());
+
         Mesh MeshFor(string key, Func<Mesh> build)
         {
             if (!meshes.TryGetValue(key, out var mesh))
@@ -668,13 +709,20 @@ namespace Statecraft.Game.Map.Units
             // drawn somewhere else after the rebuild slides from there (#1866). Keyed by the sim unit, else by the row.
             var drawnAt = new Dictionary<(int sim, string row), Vector3>();
             var firing = new Dictionary<(int sim, string row), float>();   // and how far into its fire take each attack is
+            var hits = new Dictionary<(int sim, string row), (float left, float delay)>();   // and each hit it shows or awaits
             for (int i = 0; slide && i < motions.Count && i < trios.Count; i++)
             {
                 var m = motions[i];
                 if (m == null) continue;
-                drawnAt[Key(m.SimId, m.name)] = trios[i].centre + m.transform.position;
+                // The slide only, not a hit's shake: a defender shaking when the tokens are rebuilt has not moved (its shake is
+                // handed on below instead).
+                drawnAt[Key(m.SimId, m.name)] = DrawnAt(i);
                 if (m.AttackPlayed > 0f) firing[Key(m.SimId, m.name)] = m.AttackPlayed;
+                if (m.HitState.left > 0f || m.HitState.delay > 0f) hits[Key(m.SimId, m.name)] = m.HitState;
             }
+            // Where each unit was drawn, so a unit the rebuild drops (destroyed, as the turn's lines say) raises its dust there.
+            gone.Clear();
+            for (int i = 0; i < drawnSims.Count && i < trios.Count; i++) if (drawnSims[i] >= 0) gone[drawnSims[i]] = DrawnAt(i);
             var outgoing = new List<GameObject>();
             for (int i = tokensRoot.childCount - 1; i >= 0; i--)
             {
@@ -688,18 +736,26 @@ namespace Statecraft.Game.Map.Units
             // The outgoing holders are destroyed only after the new tokens have acquired their models, as the player's
             // deferred Destroy already does: an edit-mode rebuild must not drop a model's last owner in between and ask the
             // source again for a request still in flight (or release an arrived model) only to re-acquire it.
-            try { BuildTokens(drawnAt, firing); }
+            try { BuildTokens(drawnAt, firing, hits); }
             finally { foreach (var old in outgoing) if (Application.isPlaying) Destroy(old); else DestroyImmediate(old); }
+            foreach (int id in drawnSims) gone.Remove(id);
         }
+
+        /// <summary>Where token <paramref name="i"/> is now: its place on the ground plus any slide under way, without the hit's
+        /// shake (a defender shaking from one hit still takes the next burst, or raises its dust, on its own spot).</summary>
+        Vector3 DrawnAt(int i) => trios[i].centre + (i < motions.Count && motions[i] is UnitTokenMotion m && m != null ? m.SlideOffset : Vector3.zero);
 
         static (int sim, string row) Key(int simId, string row) => simId >= 0 ? (simId, "") : (-1, row);
 
         void BuildTokens(IReadOnlyDictionary<(int sim, string row), Vector3> drawnAt,
-            IReadOnlyDictionary<(int sim, string row), float> firing)
+            IReadOnlyDictionary<(int sim, string row), float> firing,
+            IReadOnlyDictionary<(int sim, string row), (float left, float delay)> hits)
         {
             pickVersion++;
             FreeTokenMeshes();
             motions.Clear();
+            drawnSims.Clear();
+            foreach (var p in placed) drawnSims.Add(p.Token.StateUnit?.Id ?? -1);
             badges.Clear(); badgeHomes.Clear(); facedFor = null;
             trios.Clear(); turnedFor = null;   // the new figures stand as at yaw 0
             treeHoles.Clear();
@@ -778,6 +834,11 @@ namespace Statecraft.Game.Map.Units
                         break;
                     case UnitData.Air:
                         BuildAircraft(go.transform, t, centre);
+                        if (!t.Flying && StillBox(go.transform, null, Array.Empty<MeshFilter>()) is Bounds aircraft)
+                        {
+                            var flat = new Vector2(aircraft.center.x, aircraft.center.z);
+                            treeHoles.Add((flat, new Vector2(aircraft.extents.x, aircraft.extents.z).magnitude));
+                        }
                         top = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
                         break;
                     default:
@@ -803,9 +864,12 @@ namespace Statecraft.Game.Map.Units
                 var pole = flagT != null ? new Vector3(flagT.position.x - centre.x, 0f, flagT.position.z - centre.z) : Vector3.zero;
                 var meshes = figures.SelectMany(f => f.Item1.GetComponentsInChildren<MeshFilter>(true)).ToArray();
                 var standing = StillBox(go.transform, flag, meshes);
-                badges.Add(badge.transform); badgeHomes.Add((home, back, pole, flag, standing));
+                badges.Add(badge.transform); badgeHomes.Add((home, back, pole, flag, standing, t.Unit.Service == UnitData.Air && !t.Flying));
                 trios.Add((centre, plinth, lift, figures, meshes));
                 AddRenderer(badge.transform, "Plate", MeshFor("badge-plate", UnitBadge.PlateMesh), badgePlate, 0f);
+                var hitFlash = AddRenderer(badge.transform, "HitFlash", MeshFor("badge-plate", UnitBadge.PlateMesh),
+                    hitPlate, -UnitBadge.GlyphLift * 0.5f);
+                hitFlash.enabled = false;
                 AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
                 // The badge's cube and the pieces (the flag and the figures as they stand now); FaceCamera moves both with the camera.
                 var pieces = standing;
@@ -823,11 +887,15 @@ namespace Statecraft.Game.Map.Units
                 motion.enabled = false;   // runs only while it moves or attacks
                 motion.SimId = placed[i].Token.StateUnit?.Id ?? -1;
                 motion.Changed = () => { pickVersion++; facedFor = null; slid = true; };   // FaceCamera sets the badge and the boxes where the token is drawn
+                motion.Effects = combat;
+                motion.GroundHome = trios[i].centre;
+                motion.HitFlash = badges[i].Find("HitFlash").GetComponent<Renderer>();
                 motions.Add(motion);
                 // With the units hidden the token cannot be seen, and it would slide only once they are shown again.
                 if (tokensRoot.gameObject.activeInHierarchy && drawnAt.TryGetValue(Key(motion.SimId, token.name), out var was))
                     motion.Begin(was - trios[i].centre);
                 if (firing.TryGetValue(Key(motion.SimId, token.name), out var played)) motion.ContinueAttack(played);
+                if (hits.TryGetValue(Key(motion.SimId, token.name), out var hit)) motion.ContinueHit(hit.left, hit.delay);
             }
         }
 
@@ -838,6 +906,61 @@ namespace Statecraft.Game.Map.Units
             foreach (var motion in motions)
                 if (motion != null && motion.SimId == simId) return motion.PlayAttack();
             return false;
+        }
+
+        /// <summary>Plays an attack and reports its actual visible fire start, or the end of its brief wait without one.</summary>
+        internal bool PlayAttack(int simId, Action started, Action missed)
+        {
+            foreach (var motion in motions)
+                if (motion != null && motion.SimId == simId) return motion.PlayAttack(started, missed);
+            missed();
+            return false;
+        }
+
+        /// <summary>Briefly shakes and flashes every currently drawn defender when the engagement records aggregate
+        /// defender loss. The cause cannot identify an individual damaged unit, so the visible group reacts together.</summary>
+        public bool PlayDefenderHit(CombatHit hit)
+        {
+            if (hit.DefenderLoss <= 0 || !gameObject.activeInHierarchy) return false;
+            bool played = false;
+            foreach (int id in hit.Defenders)
+                foreach (var motion in motions)
+                {
+                    if (motion == null || motion.SimId != id) continue;
+                    played |= motion.PlayHit(CombatBursts.ImpactS(hit));   // with the hit on it, not the shot
+                    break;
+                }
+            return played;
+        }
+
+        /// <summary>Plays an attack's hit (owner, 4 November 2026: "Hit on target hex"): a shell's burst and the small arms'
+        /// dust on the first defender drawn (where its token is drawn now, or stood if the attack destroyed it), else on the
+        /// hit hex's centre. False when nothing plays (no flipbooks, the units hidden, or the hex is not on the map).</summary>
+        public bool PlayHit(CombatHit hit)
+        {
+            if (combat == null) return false;
+            Vector3? at = null;
+            foreach (int id in hit.Defenders)
+            {
+                int i = drawnSims.IndexOf(id);
+                if (i >= 0 && i < trios.Count) { at = DrawnAt(i); break; }
+                if (gone.TryGetValue(id, out var was)) { at = was; break; }
+            }
+            if (at == null && shownContent?.HexAt(hit.Q, hit.R) is MapHex hex)
+            {
+                var c = XZ(map)(hex.Lon, hex.Lat);
+                at = UnitShowcase.Ground(map, new Vector3(c.x, 0f, c.y));
+            }
+            return at is Vector3 p && combat.Hit(p, hit.Guns, hit.SmallArms);
+        }
+
+        /// <summary>Raises a destroyed sim unit's dust where its token stood when the rebuild dropped it (owner, 4 November
+        /// 2026: "Dust when a unit dies"), once. False when its token was not drawn, or nothing plays.</summary>
+        public bool PlayDestroyed(int simId, float delayS = 0f)
+        {
+            if (combat == null || !gone.TryGetValue(simId, out var at)) return false;
+            gone.Remove(simId);
+            return combat.Destroyed(at, delayS);
         }
 
         /// <summary>The world box of a mesh's bounds through its transform. From the mesh and the transform, not
@@ -875,7 +998,7 @@ namespace Statecraft.Game.Map.Units
             return piece;
         }
 
-        static void AddRenderer(Transform parent, string name, Mesh mesh, Material mat, float z)
+        static Renderer AddRenderer(Transform parent, string name, Mesh mesh, Material mat, float z)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -885,6 +1008,43 @@ namespace Statecraft.Game.Map.Units
             r.sharedMaterial = mat;
             r.shadowCastingMode = ShadowCastingMode.Off;
             r.receiveShadows = false;
+            return r;
+        }
+
+        /// <summary>The screen box of <paramref name="plane"/>'s tail, the rear <see cref="BadgeTailShare"/> of its meshes' box
+        /// along its own z axis (the way it faces), or null before any mesh has arrived.</summary>
+        static Rect? TailScreenRect(Transform plane, Camera cam)
+        {
+            Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
+            foreach (var f in plane.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (f.sharedMesh == null) continue;
+                var bounds = f.sharedMesh.bounds;
+                for (int c = 0; c < 8; c++)
+                {
+                    var p = plane.InverseTransformPoint(f.transform.TransformPoint(new Vector3((c & 1) == 0 ? bounds.min.x : bounds.max.x,
+                        (c & 2) == 0 ? bounds.min.y : bounds.max.y, (c & 4) == 0 ? bounds.min.z : bounds.max.z)));
+                    min = Vector3.Min(min, p); max = Vector3.Max(max, p);
+                }
+            }
+            if (min.x > max.x) return null;
+            max.z = Mathf.Lerp(min.z, max.z, BadgeTailShare);
+            var corners = new Vector3[8];
+            for (int c = 0; c < 8; c++)
+                corners[c] = plane.TransformPoint(new Vector3((c & 1) == 0 ? min.x : max.x, (c & 2) == 0 ? min.y : max.y, (c & 4) == 0 ? min.z : max.z));
+            return ScreenRect(cam, corners);
+        }
+
+        /// <summary>The screen box round <paramref name="points"/> as <paramref name="cam"/> projects them.</summary>
+        static Rect ScreenRect(Camera cam, params Vector3[] points)
+        {
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            foreach (var p in points)
+            {
+                var q = cam.WorldToScreenPoint(p);
+                x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+            }
+            return Rect.MinMaxRect(x0, y0, x1, y1);
         }
 
         void BuildAircraft(Transform parent, UnitToken t, Vector3 baseCentre)
@@ -894,21 +1054,33 @@ namespace Statecraft.Game.Map.Units
             bool spitfire = t.ArtType == UnitShowcase.SpitfireType;
             Func<Mesh> airframe = spitfire ? (Func<Mesh>)(() => UnitModels.Spitfire(t.ArtType))
                 : () => UnitModels.AviaS199(t.ArtType);
-            UnitShowcase.Piece(plane.transform, "Airframe", t.ArtType, () => MeshFor(t.ArtType, airframe), paint, Vector3.zero, Quaternion.identity, 1f, out bool authored);
-            Transform? prop = null;
+            // The code-built Spitfire's satin paint (UnitShowcase.AircraftSmoothness); the S-199 keeps the units' paint.
+            var mat = spitfire ? AircraftPaint() : paint;
+            var airframeGo = UnitShowcase.Piece(plane.transform, "Airframe", t.ArtType, () => MeshFor(t.ArtType, airframe), mat, Vector3.zero, Quaternion.identity, 1f, out bool authored);
+            Transform? prop = null, shadow = null;
+            Vector2 shadowHalf = default;
             if (!authored)
             {
                 var propKey = spitfire ? "spitfire-propeller" : "avia-s199-propeller";
                 var propMesh = MeshFor(propKey, spitfire ? (Func<Mesh>)(() => UnitModels.SpitfirePropeller(propKey)) : () => UnitModels.S199Propeller(propKey));
-                prop = UnitShowcase.Piece(plane.transform, "Propeller", propMesh, paint, Vector3.zero, Quaternion.identity, 1f).transform;
+                prop = UnitShowcase.Piece(plane.transform, "Propeller", propMesh, mat, Vector3.zero, Quaternion.identity, 1f).transform;
                 prop.localPosition = spitfire ? UnitModels.SpitfirePropellerHub : UnitModels.S199PropellerHub;
+            }
+            // A flying Spitfire's light propeller blur, soft ground shadow and no cast shadow, whichever model draws it (an
+            // authored one brings its own propeller, UnitShowcase.AuthoredPropellerName).
+            if (spitfire && t.Flying)
+            {
+                prop = UnitShowcase.FlyingSpitfire(plane.transform, airframeGo, prop, aircraftBlurMesh ??= assets.Own(UnitShowcase.PropellerBlurMesh()), AircraftBlur(),
+                    aircraftShadowMesh ??= assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), out var laid, out shadowHalf);
+                shadow = laid;
             }
             plane.transform.localScale = Vector3.one * UnitShowcase.AircraftScale;
             if (t.Flying)
             {
                 var flight = plane.AddComponent<ShowcaseFlight>();
                 flight.Configure(baseCentre, UnitShowcase.LoopRadiusM, UnitShowcase.LoopFloor(map, baseCentre, UnitShowcase.LoopRadiusM) + UnitShowcase.AltitudeM,
-                    UnitShowcase.LoopSeconds, UnitShowcase.BankDegrees, prop, still ? UnitShowcase.StillPhase : (float?)null);
+                    UnitShowcase.LoopSeconds, UnitShowcase.BankDegrees, prop, still ? UnitShowcase.StillPhase : (float?)null,
+                    shadow, map.Terrain, UnitShowcase.SeaLevelY(map), shadowHalf);
             }
             else
                 plane.transform.SetPositionAndRotation(baseCentre + Vector3.up * ParkedHeightM * UnitShowcase.AircraftScale,
