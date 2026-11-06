@@ -1217,7 +1217,7 @@ concepts:
     preferred: foreign currency
     avoid:
     - fx and forex in player text
-    - reserves for this meaning (see 'reserves')
+    - a bare "reserves" for this meaning in player text (see 'reserves'; "foreign currency reserves" is allowed)
     in_use:
     - form: Foreign currency
       where: strings.en.yaml hud.caption.fx
@@ -1252,34 +1252,44 @@ concepts:
 - id: reserves
   status: use-with-caution
   category: game-system
-  definition: 'A word with two meanings in the project: the military reserve the player calls up, and, in code and comments,
-    the foreign-currency stock.'
+  definition: 'A word with two meanings in the project: the military reserve the player calls up, and the foreign-currency
+    stock.'
   scope:
   - ui
   - code
   - docs
   en:
-    preferred: reserves, for the military reserve only
+    preferred: 'reserves, for the military reserve; for the money, "foreign currency reserves", always with the qualifier,
+      or with the currency named in the same phrase ("dollars in the reserves") (owner, 5 November 2026: "Allow both")'
     avoid:
-    - reserves for the currency in player text
+    - a bare "reserves" for the money in player text, where it could be read as the military reserve
     in_use:
     - form: '{0} of reserves called up'
       where: strings.en.yaml defence.mob
     - form: Reserve call-up
       where: strings.en.yaml defence.section_callup
+    - form: Foreign currency reserves are exhausted
+      where: strings.en.yaml why.cause.fx_crisis_began
+    - form: There are not enough dollars in the reserves
+      where: strings.en.yaml dollars.refused_reserves
     - form: 'id: fx_reserves'
       where: content/model.yaml
     - form: set so reserves run out in the last quarter of 1951
       where: content/rules.yaml comment
   he:
-    preferred: מילואים, for the military reserve
+    preferred: מילואים, for the military reserve; יתרות מטבע החוץ for the money
     avoid: []
     in_use:
     - form: גיוס מילואים
       where: strings.he.yaml defence.section_callup
+    - form: יתרות מטבע החוץ אזלו
+      where: strings.he.yaml why.cause.fx_crisis_began
+    - form: אין די דולרים ביתרות מטבע החוץ
+      where: strings.he.yaml dollars.refused_reserves
   recommendation:
-    en: In player text, use 'reserves' for the military reserve and 'foreign currency' for the money. The ids and comments
-      can keep 'reserves' for the currency.
+    en: 'Decided (owner, 5 November 2026, "Allow both", recorded on #2779 by an agent): ''reserves'' for the military
+      reserve, and ''foreign currency reserves'' for the money, with the qualifier. The ids and comments can keep ''reserves''
+      for the currency.'
     he: The strings already use different words for the two (מילואים and מטבע חוץ), so no change is proposed.
     reasons:
     - A player who reads 'reserves' in the Budget flow line could take it for either.
