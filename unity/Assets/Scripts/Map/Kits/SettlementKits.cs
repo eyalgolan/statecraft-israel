@@ -955,7 +955,7 @@ namespace Statecraft.Game.Map.Kits
                         float rw = roofW * rnd.Range(0.22f, 0.36f), rd = b.d * rnd.Range(0.3f, 0.45f);
                         float su = roofW * rnd.Range(-0.15f, 0.15f), sv = b.d * rnd.Range(-0.12f, 0.12f), ya = yaw * Mathf.Deg2Rad;
                         var s = roofC + new Vector2(su * Mathf.Cos(ya) - sv * Mathf.Sin(ya), su * Mathf.Sin(ya) + sv * Mathf.Cos(ya));
-                        km.Box(s.x, s.y, yaw, rw, rd, top + b.h - 2f, top + b.h, 2.8f * m, wall, roof, Facade.Plain, m);
+                        km.Box(s.x, s.y, yaw, rw, rd, top + b.h - 2f, top + b.h, 2.8f * m, wall, roof, Facade.Plaster, m);
                         if (white && RoofDetail && detail.Chance(RoofTankShare)) RoofTank(km, s, yaw, rw, rd, top + b.h + 2.8f * m, m);
                     }
                     // Many White City roofs carry a second room (the shared laundry room beside the stair head), at the
@@ -967,7 +967,7 @@ namespace Statecraft.Game.Map.Kits
                         float inset = parapet > 0f ? parapetT : 0f;
                         float u = (rnd.Chance(0.5f) ? 1f : -1f) * (0.5f * b.w - inset - 0.6f * rw), v = rnd.Range(-0.2f, 0.2f) * b.d;
                         km.Box(p.x + u * Mathf.Cos(a) - v * Mathf.Sin(a), p.y + u * Mathf.Sin(a) + v * Mathf.Cos(a), yaw, rw, rd, top + b.h - 2f, top + b.h,
-                            2.4f * m, wall, roof, Facade.Plain, m);
+                            2.4f * m, wall, roof, Facade.Plaster, m);
                     }
                     break;
                 }
@@ -980,9 +980,9 @@ namespace Statecraft.Game.Map.Kits
                     float parapet = RoofDetail ? DetailAt(p, 43).Range(StoneParapetMinM, StoneParapetMaxM) * m : 0f;
                     km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m, roofed: tiled, parapet: parapet,
                         parapetThickness: StoneParapetThicknessM * m);
-                    if (tiled) km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.6f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f));
+                    if (tiled) km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.6f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f), m);
                     else if (rnd.Chance(0.35f))
-                        km.Box(p.x, p.y, yaw, b.w * 0.3f, b.d * 0.35f, top + b.h - 2f, top + b.h, 2.6f * m, wall, roof, Facade.Plain, m);
+                        km.Box(p.x, p.y, yaw, b.w * 0.3f, b.d * 0.35f, top + b.h - 2f, top + b.h, 2.6f * m, wall, roof, Facade.Ashlar, m);
                     Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     break;
                 }
@@ -995,7 +995,7 @@ namespace Statecraft.Game.Map.Kits
                     if (tiled)
                     {
                         km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m, roofed: true);
-                        km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.2f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f));
+                        km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.2f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f), m);
                     }
                     else StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Stone, m, rnd.Chance(OldHouseDome), ref rnd);
                     Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
@@ -1011,8 +1011,8 @@ namespace Statecraft.Game.Map.Kits
                     // uphill ground with a flat yard round the house, so a village on a hillside steps down in terraces.
                     if (hill && top - bottom > TerraceRiseM * m)
                         km.Box(p.x, p.y, yaw, b.w + 2f * TerraceMarginM * m, b.d + 2f * TerraceMarginM * m, bottom, top, 0.15f * m,
-                            Jitter(TerraceStone, ref rnd, 0.05f), Jitter(TerraceYard, ref rnd, 0.04f), Facade.Plain, m);
-                    StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Village, m, dome, ref rnd);
+                            Jitter(TerraceStone, ref rnd, 0.05f), Jitter(TerraceYard, ref rnd, 0.04f), Facade.Rubble, m);
+                    StoneHouse(km, p, yaw, b, bottom, top, wall, roof, hill ? Facade.Village : Facade.Mud, m, dome, ref rnd);
                     Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     break;
                 }
@@ -1027,7 +1027,7 @@ namespace Statecraft.Game.Map.Kits
                     var wall = Jitter(C(0.86f, 0.79f, 0.66f), ref rnd, 0.04f);
                     var roof = Jitter(C(0.72f, 0.31f, 0.20f), ref rnd, 0.06f);
                     km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m, roofed: true);
-                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.55f, roof, wall);
+                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.55f, roof, wall, m, gableSurface: Facade.Ashlar);
                     Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     break;
                 }
@@ -1035,8 +1035,8 @@ namespace Statecraft.Game.Map.Kits
                 {
                     var wall = Jitter(C(0.92f, 0.89f, 0.82f), ref rnd, 0.04f);
                     var roof = Jitter(C(0.74f, 0.31f, 0.20f), ref rnd, 0.08f);
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Village, m, roofed: true);
-                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.42f, roof, wall);
+                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Moshava, m, roofed: true);
+                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.42f, roof, wall, m);
                     Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
                     break;
                 }
@@ -1125,7 +1125,7 @@ namespace Statecraft.Game.Map.Kits
             // The topmost flat roof's parapet (none under a dome): every town house's, half the village houses'; its height
             // the house's own, from its own stream (DetailAt), so rnd draws what it always has.
             var detail = DetailAt(p, 41);
-            bool village = facade == Facade.Village;
+            bool village = facade == Facade.Village || facade == Facade.Mud;
             float parapet = RoofDetail && !dome && (!village || detail.Chance(VillageParapetShare))
                 ? (village ? detail.Range(VillageParapetMinM, VillageParapetMaxM) : detail.Range(StoneParapetMinM, StoneParapetMaxM)) * m : 0f;
             float parapetT = (village ? VillageParapetThicknessM : StoneParapetThicknessM) * m;
@@ -1134,14 +1134,14 @@ namespace Statecraft.Game.Map.Kits
                 float low = b.h - storey;
                 km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, low, wall, roof, facade, m);
                 km.Box(uc.x, uc.y, yaw, uw, ud, top + low - 0.3f * m, top + low, storey, wall, roof, facade, m, parapet: parapet, parapetThickness: parapetT);
-                if (dome) km.Dome(uc.x, uc.y, top + b.h - 0.2f * m, Mathf.Min(uw, ud) * 0.4f, roof, rise: 0.6f);
+                if (dome) km.Dome(uc.x, uc.y, top + b.h - 0.2f * m, Mathf.Min(uw, ud) * 0.4f, roof, rise: 0.6f, metresPerReal: m);
                 return;
             }
             // A roof room (none under a dome) is the topmost roof, so the parapet goes on it: on the main roof the room's walls
             // would stand through the rim. The same roll as ever (only without a dome), drawn before the main block, which draws none.
             bool room = !dome && rnd.Chance(0.35f);
             km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, facade, m, parapet: room ? 0f : parapet, parapetThickness: parapetT);
-            if (dome) km.Dome(p.x, p.y, top + b.h - 0.2f * m, Mathf.Min(b.w, b.d) * 0.33f, roof, rise: 0.6f);
+            if (dome) km.Dome(p.x, p.y, top + b.h - 0.2f * m, Mathf.Min(b.w, b.d) * 0.33f, roof, rise: 0.6f, metresPerReal: m);
             else if (room)
                 km.Box(uc.x, uc.y, yaw, uw * 0.8f, ud * 0.8f, top + b.h - 0.3f * m, top + b.h, storey * 0.85f, wall, roof, facade, m,
                     parapet: parapet, parapetThickness: parapetT);
@@ -1180,7 +1180,7 @@ namespace Statecraft.Game.Map.Kits
                 for (int k = 1; k < storeys; k++)
                 {
                     float floor = ground + k * storey;
-                    km.Box(x, z, yaw, bw, proj, floor - slab, floor - slab, slab + parapet, rail, roof, Facade.Plain, m);
+                    km.Box(x, z, yaw, bw, proj, floor - slab, floor - slab, slab + parapet, rail, roof, Facade.BalconyRail, m);
                 }
             }
         }
@@ -1455,7 +1455,7 @@ namespace Statecraft.Game.Map.Kits
                         float rw = b.w * rnd.Range(0.25f, 0.4f), rd = b.d * rnd.Range(0.3f, 0.45f), a = yaw * Mathf.Deg2Rad;
                         float su = b.w * rnd.Range(-0.2f, 0.2f), sv = b.d * rnd.Range(-0.15f, 0.15f);
                         km.Box(p.x + su * Mathf.Cos(a) - sv * Mathf.Sin(a), p.y + su * Mathf.Sin(a) + sv * Mathf.Cos(a), yaw, rw, rd, top + b.h - 2f, top + b.h,
-                            2.8f * m, wall, roof, Facade.Plain, m);
+                            2.8f * m, wall, roof, Facade.Plaster, m);
                     }
                     return wall;
                 }
@@ -1467,7 +1467,7 @@ namespace Statecraft.Game.Map.Kits
                     if (rnd.Chance(0.03f))
                     {
                         km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Stone, m, roofed: true);
-                        km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.2f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f));
+                        km.Pyramid(p.x, p.y, yaw, b.w * 1.04f, b.d * 1.04f, top + b.h, 2.2f * m, Jitter(C(0.70f, 0.33f, 0.22f), ref rnd, 0.06f), m);
                     }
                     else StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Stone, m, rnd.Chance(OldHouseDome), ref rnd);
                     return wall;
@@ -1482,7 +1482,7 @@ namespace Statecraft.Game.Map.Kits
                     var wall = hill ? StoneWall(ref rnd) : Jitter(MudBrick, ref rnd, 0.06f);
                     var roof = Jitter(LimeRoof, ref rnd, 0.05f);
                     bool dome = rnd.Value() < VillageDome && hill;
-                    StoneHouse(km, p, yaw, b, bottom, top, wall, roof, Facade.Village, m, dome, ref detail);
+                    StoneHouse(km, p, yaw, b, bottom, top, wall, roof, hill ? Facade.Village : Facade.Mud, m, dome, ref detail);
                     return wall;
                 }
                 default:
@@ -1490,8 +1490,8 @@ namespace Statecraft.Game.Map.Kits
                     if (b.part != KibbutzPart.None) return KibbutzBuilding(km, p, yaw, b, bottom, top, m, ref rnd);
                     var wall = Jitter(C(0.92f, 0.89f, 0.82f), ref rnd, 0.04f);
                     var roof = Jitter(C(0.74f, 0.31f, 0.20f), ref rnd, 0.08f);
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Village, m, roofed: true);
-                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.42f, roof, wall);
+                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Moshava, m, roofed: true);
+                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.42f, roof, wall, m);
                     return wall;
                 }
             }
@@ -1547,7 +1547,7 @@ namespace Statecraft.Game.Map.Kits
                         // Low side walls under a peaked roof, so it reads as a tent rather than a shed.
                         var cloth = Jitter(C(0.33f, 0.27f, 0.21f), ref rnd, 0.08f);
                         km.Box(p.x, p.y, tyaw, tw, td, bottom, top, 1.1f * m, Jitter(C(0.42f, 0.35f, 0.27f), ref rnd, 0.06f), cloth, Facade.Plain, m, roofed: true);
-                        km.Gable(p.x, p.y, tyaw, tw, td, top + 1.1f * m, 1.4f * m, cloth, cloth);
+                        km.Gable(p.x, p.y, tyaw, tw, td, top + 1.1f * m, 1.4f * m, cloth, cloth, surface: Facade.Plain, gableSurface: Facade.Plain);
                         pitched++;
                     }
                     if (pitched == 0) continue;
