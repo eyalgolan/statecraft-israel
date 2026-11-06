@@ -486,7 +486,7 @@ public class BorderCivTests
 
     /// <summary>#2431: the stronger tier glows and nothing else does: Legacy, A, B and C draw as before, grey never glows,
     /// and the wash and the tint keep the style's colour, so the glow does not recolour the land (a brighter fill reddened
-    /// the hills: rose index +3 to +6 at gameplay03).</summary>
+    /// the hills: rose index +4 to +7 at gameplay03).</summary>
     [Test]
     public void OnlyTheStrongerTiersColourStripesGlow()
     {
@@ -514,7 +514,7 @@ public class BorderCivTests
     }
 
     /// <summary>#2431: at gameplay03 A2's stripes read as promo 03's lit lines and a soft halo runs along the inside of the band. The
-    /// blue stripe's saturation and the orange stripe's brightness pass the old colours' (0.44 and 0.79) towards the promo's
+    /// blue stripe's saturation and the orange stripe's brightness pass the old colours' (0.45 and 0.79) towards the promo's
     /// (0.59 and 0.69-0.90); the pixels just inside the light stripe are lighter than the wash farther in, on both sides; and
     /// the two halos stay apart for colour-blind players, with the bound the stripes meet (GradeTests).</summary>
     [UnityTest]
