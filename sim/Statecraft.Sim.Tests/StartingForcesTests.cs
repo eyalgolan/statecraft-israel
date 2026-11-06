@@ -78,8 +78,18 @@ public class StartingForcesTests
         Assert.DoesNotContain("yiftach", rows);   // no 15 May window
         // The real hidden rows have no anchor, so the fixture holds the case that would otherwise start a unit.
         var c = Load(Row("seen", "israel", 20), Row("unseen", "israel", 20, extra: "  hidden: \"no sourced place\"\n"),
-                     Row("unsized", "israel", null), Row("nobody", "israel", 0), Row("later", "israel", 20, from: "1948-06-01"));
+                     Row("unsized", "israel", null), Row("later", "israel", 20, from: "1948-06-01"));
         Assert.Equal(new[] { "seen" }, c.StartingForces.Select(f => f.Row));
+    }
+
+    // R-UNIT-006 (#2815, owner, 6 November 2026: option 1): a strength of nobody is a load error, since a force is never below 1.
+    [Fact]
+    public void AStrengthOfZeroIsALoadError()
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(Row("nobody", "israel", 0)));
+        Assert.Equal("map/units_1948.yaml", ex.File);
+        Assert.Equal("units[nobody].strength.value", ex.Field);
+        Assert.Contains("must be a whole number >= 1", ex.Message);
     }
 
     // R-UNIT-006, Q-UNIT-5 (owner, 15 October 2026): the squadron and the two ships stay presentation-only tokens.
