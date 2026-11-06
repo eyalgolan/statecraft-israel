@@ -1341,6 +1341,9 @@ public class UnitPlinthTests
             var figures = token.Cast<Transform>().Where(f => f.name.StartsWith("Rifleman")).ToList();
             var flag = token.Find(UnitPlinth.FlagName);
             var spots = figures.Select(f => f.position).ToList();
+            var baseParts = new[] { UnitPlinth.PlinthName, UnitPlinth.LipName, UnitPlinth.RimName }.Select(n => token.Find(n)).ToList();
+            var baseScales = baseParts.Select(p => p.localScale).ToList();   // as the opening view draws them
+            float baseRadius = plinth.localScale.x;
             Assert.AreEqual(UnitShowcase.FigureScale, figures[0].localScale.x, 1e-2f, "the opening view keeps the ruled scale");
             Assert.AreEqual(flagSize, flag.localScale.x, 1e-2f);
 
@@ -1348,10 +1351,10 @@ public class UnitPlinthTests
             foreach (var f in figures) Assert.AreEqual(1.3f * UnitShowcase.FigureScale, f.localScale.x, 1e-2f, $"{f.name} at 60 km");
             Assert.AreEqual(1.3f * flagSize, flag.localScale.x, 1e-2f, "the flag grows with them");
             for (int i = 0; i < figures.Count; i++) Assert.Less((figures[i].position - spots[i]).magnitude, 1f, $"{figures[i].name} stays on its spot");
-            Assert.AreEqual(plinth.localScale.x, token.Find(UnitPlinth.PlinthName).localScale.x, 0f, "the base keeps its size");
+            for (int i = 0; i < baseParts.Count; i++) Assert.AreEqual(baseScales[i], baseParts[i].localScale, $"{baseParts[i].name} keeps its size at 60 km");
             float boots = 0.2f * 1.3f * UnitShowcase.FigureScale;
             foreach (var f in figures)
-                Assert.Less((new Vector2(f.position.x, f.position.z) - new Vector2(centre.x, centre.z)).magnitude + boots, plinth.localScale.x, $"{f.name}'s boots stay on the base");
+                Assert.Less((new Vector2(f.position.x, f.position.z) - new Vector2(centre.x, centre.z)).magnitude + boots, baseRadius, $"{f.name}'s boots stay on the base");
 
             var badge = token.Find("Badge");
             float flagTop = flag.position.y + UnitFlags.PoleHeight * flag.localScale.y;

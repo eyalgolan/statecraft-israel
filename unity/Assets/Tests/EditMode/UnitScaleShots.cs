@@ -76,6 +76,8 @@ public class UnitScaleShots
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var doc = Object.FindFirstObjectByType<UIDocument>();
+        Camera.main.aspect = (float)Width / Height;   // CameraRig.Apply freezes the projection at the camera's own aspect: a batch run's
+                                                      // default is 4:3, which drew every still 1.33 times too wide
         rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         ps = Object.Instantiate(doc.panelSettings);
         ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.clear;
@@ -131,7 +133,7 @@ public class UnitScaleShots
         tex.SetPixels(outPx); tex.Apply();
         File.WriteAllBytes(Path.Combine(shotDir, name + ".png"), tex.EncodeToPNG());
         Object.DestroyImmediate(tex);
-        Debug.Log(FormattableString.Invariant($"SHOT {name}: rig {cam.GetComponent<CameraRig>().Distance:F0} m"));
+        Debug.Log(FormattableString.Invariant($"SHOT {name}: rig {cam.GetComponent<CameraRig>().Distance:F0} m, aspect {cam.aspect:F3}, m00/m11 {cam.projectionMatrix[0, 0] / cam.projectionMatrix[1, 1]:F3}"));
     }
 
     static void Aim(Vector3 at, float distance, float yaw = 10f)

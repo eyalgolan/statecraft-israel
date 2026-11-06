@@ -123,6 +123,39 @@ public class UnitBadgeScreenCapTests
                         }
             Assert.Greater(capped, 100, "nearer views shrink the plates");
 
+            // The gameplay band (#2430): the design's cap, as a literal, holds at 45 and 60 km, where main drew plates up to
+            // 0.095 of the screen. The plate's lower edge stands where it did at 30 km, raised with the flag: nothing at 45 km,
+            // the grown flag's 0.3 of a pole at 60 km (UnitShowcase.ZoomScale; the sweep above cannot assert this, its views
+            // are all below the ramp). A click on a plate still picks its unit.
+            const float DesignCap = 0.055f;
+            float pole = UnitFlags.PoleHeight * UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
+            int cappedAt45 = 0, seenInBand = 0;
+            foreach (var (distance, grown) in new[] { (45000f, 0f), (60000f, 0.3f) })
+                foreach (var yaw in Yaws)
+                    for (int i = 0; i < badges.Count; i++)
+                        foreach (var ahead in Ahead)
+                        {
+                            Look(i, distance, yaw, ahead);
+                            for (int j = 0; j < badges.Count; j++)
+                            {
+                                var (share, shown) = Drawn(badges[j]);
+                                if (!shown) continue;
+                                seenInBand++;
+                                Assert.LessOrEqual(share, DesignCap + 1e-4f, $"{distance / 1000f:0} km, yaw {yaw}, {ahead / 1000f:0} km beyond {badges[i].parent.name}: {badges[j].parent.name}'s plate is {share * 1080f:0} px of 1080");
+                                if (distance == 45000f && badges[j].lossyScale.x < UnitBadge.SizeM - 1f) cappedAt45++;
+                            }
+                            if (ahead != 0f) continue;
+                            var b = badges[i]; var token = b.parent;
+                            float raise = token.Find(UnitPlinth.FlagName) != null ? grown * pole : 0f;
+                            Assert.Less((LowerEdge(b) - (lowerAt30[(i, yaw)] + Vector3.up * raise)).magnitude, 1f, $"{distance / 1000f:0} km, yaw {yaw}, {token.name}: the plate's lower edge rises only with the flag");
+                            var centre = cam.WorldToScreenPoint(b.position);
+                            if (centre.z > 0f)
+                                Assert.AreEqual(token.name, layer.TokenAtScreen(cam, centre)?.Token.Unit.Id, $"{distance / 1000f:0} km, yaw {yaw}: a click on {token.name}'s plate picks its unit");
+                        }
+            Debug.Log($"BADGECAP gameplay band: {seenInBand} plates, {cappedAt45} capped at 45 km");
+            Assert.Greater(seenInBand, 1000, "plates seen in the gameplay band");
+            Assert.Greater(cappedAt45, 0, "the cap still acts at 45 km");
+
             // The QA view of 31 October (v0.3.2, turn1-gaza-12km): the Egyptian plate low on the screen at 12 km, as low as
             // it stays whole.
             float low = new[] { 6000f, 5000f, 4000f, 3000f, 2000f, 0f }.First(a => { Look(egypt, 12000f, 0f, a); return Drawn(badges[egypt]).shown; });
