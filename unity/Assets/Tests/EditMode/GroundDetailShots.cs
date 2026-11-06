@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Map;
@@ -70,7 +71,7 @@ public class GroundDetailShots
         RenderTexture.active = prev; frame.Release(); Object.DestroyImmediate(frame);
         File.WriteAllBytes(Path.Combine(dir, name + ".png"), tex.EncodeToPNG());
         Object.DestroyImmediate(tex);
-        Debug.Log(FormattableString.Invariant($"SHOT {name} trees planted {layer.Count} drawn {layer.LastDrawn} scrub tiles {detail?.LastTiles}"));
+        Debug.Log(FormattableString.Invariant($"SHOT {name} trees planted {layer.Count} drawn {layer.LastDrawn} scrub tiles {detail?.LastTiles} aspect {cam.aspect:F3}"));
     }
 
     /// <summary>The frame with the UI over it, at the UI texture's size (CivMovementShots.Shot).</summary>
@@ -92,8 +93,17 @@ public class GroundDetailShots
         yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
         UiTexture = rt;
         yield return Frames(5);
+        // CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3: every still
+        // would come out 1.33 times too wide (as UnitScaleShots). The opening's look-at follows the aspect, so it is set again.
+        Camera.main.aspect = 16f / 9f;
         var rig = Camera.main.GetComponent<CameraRig>();
+        var opening = Object.FindFirstObjectByType<MapScene>();
+        rig.LookAt = CameraRig.OpeningLookAt(opening.Frame, Camera.main.aspect, opening.Settlements.First(s => s.Id == "tel_aviv"), opening.Settlements.First(s => s.Id == "jaffa"));
+        rig.Apply();
         var start = rig.LookAt;
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        GroundDetail.FillTexels();
+        Debug.Log($"SHOT TIME texels {timer.Elapsed.TotalMilliseconds:0.0}");
         Shot("opening31", dir); UiShot("opening31-ui", dir);
         rig.Distance = 12000f; rig.Apply();
         yield return Frames(3);

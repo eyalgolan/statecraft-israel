@@ -80,7 +80,8 @@ namespace Statecraft.Game.Map
             var material = assets.Own(new Material(template) { name = Name, renderQueue = Queue });
             var size = terrain.terrainData.size; var o = terrain.transform.position;
             Shader.SetGlobalTexture(DetailId, assets.Own(BuildTexture()));
-            Shader.SetGlobalTexture(ClassId, assets.Own(BuildClassTexture(frame, hexes)));
+            var classes = FillClasses(frame, hexes, out int nx, out int nz);
+            Shader.SetGlobalTexture(ClassId, assets.Own(BuildClassTexture(classes, nx, nz)));
             Shader.SetGlobalTexture(KeepOutId, assets.Own(BuildKeepOutTexture(frame, keepOff, corridors)));
             Shader.SetGlobalTexture(HeightId, assets.Own(BuildHeightTexture(heights)));
             Shader.SetGlobalTexture(LandId, terrainMaterial.GetTexture("_ScLandTex"));
@@ -91,7 +92,7 @@ namespace Statecraft.Game.Map
             Shader.SetGlobalVector(ScrubId, new Vector4(size.y, o.y, ScrubFadeM, ScrubGoneM));
             var go = new GameObject(Name);
             go.transform.SetParent(parent, true);
-            go.AddComponent<MeshFilter>().sharedMesh = assets.Own(BuildMesh(terrain, frame, hexes));
+            go.AddComponent<MeshFilter>().sharedMesh = assets.Own(BuildMesh(terrain, frame, classes, nx, nz));
             var renderer = go.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
             renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = false;
@@ -147,10 +148,9 @@ namespace Statecraft.Game.Map
         /// <summary>The land as a coarse grid, every <see cref="MeshStepM"/>, at the terrain's height: a pixel's paint lands
         /// within the terrain's rough relief of where it lies, which grain and bushes cannot show. Quads with no land are left
         /// out (by the hexes' biome class).</summary>
-        public static Mesh BuildMesh(Terrain terrain, GeoFrame frame, HexFile hexes)
+        public static Mesh BuildMesh(Terrain terrain, GeoFrame frame, Color32[] classes, int nx, int nz)
         {
             var data = terrain.terrainData; var o = terrain.transform.position;
-            var classes = FillClasses(frame, hexes, out int nx, out int nz);
             float stepX = frame.WidthM / (nx - 1), stepZ = frame.LengthM / (nz - 1);
             var verts = new Vector3[nx * nz];
             for (int z = 0; z < nz; z++)
@@ -198,9 +198,8 @@ namespace Statecraft.Game.Map
             return px;
         }
 
-        static Texture2D BuildClassTexture(GeoFrame frame, HexFile hexes)
+        static Texture2D BuildClassTexture(Color32[] px, int nx, int nz)
         {
-            var px = FillClasses(frame, hexes, out int nx, out int nz);
             var tex = new Texture2D(nx, nz, TextureFormat.RGBA32, false, true) { name = "GroundDetailClass", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
             tex.SetPixels32(px); tex.Apply(false, true);
             return tex;
@@ -315,7 +314,7 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>The detail tile (<see cref="TextureSize"/> square, seamless, seeded, data: GroundDetail.shader says its
-        /// channels). r is value noise over 3 octaves; g and b are dots, one jittered dot per cell, each with its own peak so
+        /// channels). r is value noise over 3 octaves and a speckle; g and b are dots, one jittered dot per cell, each with its own peak so
         /// a lower threshold shows more of them, its shadow offset away from the sun; a is sparse small dots.</summary>
         public static Texture2D BuildTexture()
         {
@@ -342,25 +341,7 @@ namespace Statecraft.Game.Map
         {
             int n = TextureSize;
             var px = new byte[n * n * 4];
-            // r: the soil's grain, 3 octaves of periodic value noise.
-            var periods = new[] { 16, 64, 256, 512 }; var gains = new[] { 0.30f, 0.30f, 0.25f, 0.15f };
-            for (int o = 0; o < periods.Length; o++)
-            {
-                int p = periods[o]; float k = (float)p / n; int gain = (int)(gains[o] * 256f);
-                for (int y = 0; y < n; y++)
-                {
-                    float fy = y * k; int iy = (int)fy; float ty = fy - iy; ty = ty * ty * (3f - 2f * ty);
-                    int y0 = iy % p, y1 = (iy + 1) % p;
-                    for (int x = 0; x < n; x++)
-                    {
-                        float fx = x * k; int ix = (int)fx; float tx = fx - ix; tx = tx * tx * (3f - 2f * tx);
-                        int x0 = ix % p, x1 = (ix + 1) % p;
-                        float v0 = Mathf.Lerp(Hash(x0, y0, p), Hash(x1, y0, p), tx), v1 = Mathf.Lerp(Hash(x0, y1, p), Hash(x1, y1, p), tx);
-                        int at = (y * n + x) * 4;
-                        px[at] = (byte)Mathf.Min(255, px[at] + (int)(Mathf.Lerp(v0, v1, ty) * gain));
-                    }
-                }
-            }
+            FillGrain(px, n);
             // g and b: the bushes, in cells of 16 texels; a clump noise biases their peaks, so they gather as the promo's do.
             const int Cell = 12; int cells = n / Cell;
             for (int cy = 0; cy < cells; cy++)
@@ -388,6 +369,48 @@ namespace Statecraft.Game.Map
                     Stamp(px, n, (cx + Hash(cx, cy, 8)) * StoneCell, (cy + Hash(cx, cy, 9)) * StoneCell, 1.2f + 1.6f * Hash(cx, cy, 10), 1f, 3);
                 }
             return px;
+        }
+
+        /// <summary>The soil's grain into r: 3 octaves of periodic value noise on a quarter-size tile, spread over the full one
+        /// (boot time: the full tile's octaves cost about 140 ms in the editor), plus a fine per-texel speckle.</summary>
+        static void FillGrain(byte[] px, int n)
+        {
+            const int Small = 256;
+            var small = new float[Small * Small];
+            var periods = new[] { 4, 16, 64 }; var gains = new[] { 0.32f, 0.32f, 0.26f };
+            var t = new float[Small]; var cell = new int[Small];
+            for (int o = 0; o < periods.Length; o++)
+            {
+                int p = periods[o]; float k = (float)p / Small;
+                var lattice = new float[p * p];
+                for (int i = 0; i < lattice.Length; i++) lattice[i] = Hash(i % p, i / p, p);
+                for (int i = 0; i < Small; i++) { float f = i * k; cell[i] = (int)f; float u = f - cell[i]; t[i] = u * u * (3f - 2f * u); }
+                for (int y = 0; y < Small; y++)
+                {
+                    int y0 = cell[y] % p * p, y1 = (cell[y] + 1) % p * p; float ty = t[y];
+                    for (int x = 0; x < Small; x++)
+                    {
+                        int x0 = cell[x] % p, x1 = (cell[x] + 1) % p; float tx = t[x];
+                        float v0 = lattice[y0 + x0] + (lattice[y0 + x1] - lattice[y0 + x0]) * tx, v1 = lattice[y1 + x0] + (lattice[y1 + x1] - lattice[y1 + x0]) * tx;
+                        small[y * Small + x] += (v0 + (v1 - v0) * ty) * gains[o];
+                    }
+                }
+            }
+            int step = n / Small; float per = 1f / step;
+            uint noise = 2463534242u;
+            for (int y = 0; y < n; y++)
+            {
+                int sy = y / step; float ty = (y % step) * per;
+                int row0 = sy * Small, row1 = (sy + 1) % Small * Small;
+                for (int x = 0; x < n; x++)
+                {
+                    int sx = x / step, sx1 = (sx + 1) % Small; float tx = (x % step) * per;
+                    float a = small[row0 + sx], b = small[row0 + sx1], c = small[row1 + sx], d = small[row1 + sx1];
+                    float v = a + (b - a) * tx; v += (c + (d - c) * tx - v) * ty;
+                    noise ^= noise << 13; noise ^= noise >> 17; noise ^= noise << 5;
+                    px[(y * n + x) * 4] = (byte)(255f * (v + 0.1f * (noise >> 24) / 255f));
+                }
+            }
         }
 
         /// <summary>A soft dot into one channel, wrapping at the tile's edges, keeping the higher value.</summary>
