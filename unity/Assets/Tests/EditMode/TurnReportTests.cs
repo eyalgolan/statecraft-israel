@@ -359,6 +359,34 @@ public class TurnReportTests
         Assert.IsFalse(TurnReportPresenter.Lines(k.Bridge, En).Any(l => l.Meter == TurnReportPresenter.EnemyRow));
     }
 
+    /// <summary>#2534 review (#2538): a new enemy attack order that also engages on its turn names the attacker once in the
+    /// enemy-orders row, not twice - the order's cause and the engagement's both carry the unit. The turn is replaced with
+    /// both causes through Session.Last's private setter, as in AnAttackThatNamesNoAttackersGivesNoLine.</summary>
+    [Test]
+    public void ANewAttackOrderThatEngagesNamesTheAttackerOnce()
+    {
+        var rows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        int ala = C.StartingForces.ToList().FindIndex(f => f.Row == "arab_liberation_army");
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var k = new Kit(text);
+            var a = k.Bridge.Session.State.Units[ala];
+            var order = new Cause("map", ala.ToString(System.Globalization.CultureInfo.InvariantCulture), 0, $"Unit {ala} will attack hex 3,0",
+                Combat.Attack, new[] { ala }, WhyKeys.AttackOrdered, new[] { new UnitRef(a) });
+            var engagement = new Cause("map", "3,0", 0, "The attack on hex 3,0",
+                Combat.Attack, new[] { ala }, WhyKeys.Engagement, new[] { new UnitRef(a) });
+            k.Bridge.EndTurn();
+            var last = k.Bridge.Session.Last!;
+            typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
+                new StepResult(last.State, new[] { order, engagement }, last.Rejected));
+            var row = TurnReportPresenter.Lines(k.Bridge, text, rows).Single(l => l.Meter == TurnReportPresenter.EnemyRow);
+            CollectionAssert.AreEqual(
+                new[] { hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : "Arab Liberation Army launched an attack on one of your units" },
+                row.Causes, "one line for the unit, though the order and the engagement both name it");
+        }
+    }
+
     /// <summary>#2527 review: the Food shortage's line is informational (delta 0), and the turn report's Food row still
     /// names it, after the lines that have a number.</summary>
     [Test]

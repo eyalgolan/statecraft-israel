@@ -515,7 +515,8 @@ public class EnemyAITests
     {
         var c = Load();
         var fought = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10)), Array.Empty<Command>());
-        Assert.Equal(new[] { Combat.Attack }, fought.Why.Where(x => x.EnemyOrder != "").Select(x => x.EnemyOrder));
+        // #2534: the new order's own cause names it too, ahead of the engagement's.
+        Assert.Equal(new[] { Combat.Attack, Combat.Attack }, fought.Why.Where(x => x.EnemyOrder != "").Select(x => x.EnemyOrder));
         var mine = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 10), Enemy(2, 2, 0, 1)), new Command[] { new UnitOrder(1, Combat.Attack, 2, 0) });
         Assert.Contains(mine.Why, x => x.Message.StartsWith("The attack on hex 2,0", StringComparison.Ordinal));
         Assert.DoesNotContain(mine.Why, x => x.EnemyOrder == Combat.Attack);
@@ -545,11 +546,23 @@ public class EnemyAITests
             var r = Simulation.Step(c, s, Array.Empty<Command>());
             Assert.Equal((Combat.Attack, "3,0"), (r.State.Units[2].Order, r.State.Units[2].OrderTarget));
             Assert.Equal(4 - turn, r.State.Units[1].Strength);   // it engaged this turn
-            var attack = Assert.Single(r.Why, x => x.EnemyOrder == Combat.Attack);
+            var attack = Assert.Single(r.Why, x => x.EnemyOrder == Combat.Attack && x.Key == WhyKeys.Engagement);   // #2534: the order's own cause is marked too
             Assert.Equal("3,0", attack.Target);
             Assert.Equal(new[] { 2 }, attack.EnemyAttackers);
             s = r.State;
         }
+    }
+
+    // #2534: a newly issued enemy attack order names itself on its own cause, so the turn report's enemy-orders row can
+    // show it (the engagement names its attackers only when the attack engages, #1297).
+    [Fact]
+    public void ANewEnemyAttackOrderNamesItselfForTheReport()
+    {
+        var c = Load();
+        var r = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10)), Array.Empty<Command>());
+        var order = Assert.Single(r.Why, x => x.Key == WhyKeys.AttackOrdered && x.EnemyOrder == Combat.Attack);
+        Assert.Equal(new[] { 2 }, order.EnemyAttackers);
+        Assert.Equal("2", order.Target);
     }
     // R-ENEMY-005 (Q-ENEMY-5; owner, 31 October 2026, #749): an operation card's option gives a go-to order to a unit of a
     // units_1948.yaml row, toward one of that row's own anchor hexes, through the player's own go-to (Movement.GiveGoTo).
