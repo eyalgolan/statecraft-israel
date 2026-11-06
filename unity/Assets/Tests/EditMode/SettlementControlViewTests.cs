@@ -14,6 +14,7 @@ public class SettlementControlViewTests
     [TestCase(SettlementControl.AwaitingChoice, false, "awaiting_choice")]
     [TestCase(SettlementControl.Occupied, false, "occupied")]
     [TestCase(SettlementControl.AwaitingEnd, false, "awaiting_end")]
+    [TestCase(SettlementControl.Annexed, false, "annexed")]
     [TestCase("", true, "depopulated")]
     public void EveryRecordOnMainHasOneView(string state, bool depopulated, string expected)
     {
@@ -21,6 +22,16 @@ public class SettlementControlViewTests
         var record = new SettlementControl(owner, state, depopulated: depopulated,
             turns: state == SettlementControl.Occupied ? 4 : 0);
         Assert.AreEqual(expected, SettlementControlView.Key(record));
+    }
+
+    [Test]
+    public void AStayedLostMarkerHasAnEnemyHolderAndLostView()
+    {
+        var lost = new SettlementControl(since: new System.DateTime(1948, 6, 1));
+        Assert.AreEqual(false, SettlementControlView.PlayerHolds(lost));
+        Assert.AreEqual("lost", SettlementControlView.Key(lost));
+        Assert.AreEqual(true, SettlementControlView.PlayerHolds(new SettlementControl("israel", SettlementControl.Annexed)));
+        Assert.IsNull(SettlementControlView.PlayerHolds(null));
     }
 
     [Test]
@@ -56,7 +67,9 @@ public class SettlementControlViewTests
         var keys = new[]
         {
             "map.control.awaiting_choice", "map.control.occupied", "map.control.awaiting_end", "map.control.depopulated",
+            "map.control.annexed", "map.control.lost",
             "info.control.awaiting_choice", "info.control.occupied", "info.control.awaiting_end", "info.control.depopulated",
+            "info.control.annexed", "info.control.lost", "info.control.enemy_held",
             "hud.standing_displaced_places",
         };
         foreach (var key in keys)

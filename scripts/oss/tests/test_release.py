@@ -76,6 +76,51 @@ def test_release_gate_uses_a_temp_file_not_a_fixed_path():
     assert "mktemp" in text and "/tmp/oss-release-scan.txt" not in text
 
 
+def release_gate_with_fakes(tmp_path, *, status_code=0, scan_code=0):
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    commands = {
+        "git": """#!/bin/sh
+if [ "$1" = "rev-parse" ]; then echo main; exit 0; fi
+if [ "$1" = "status" ]; then exit "${FAKE_STATUS_CODE:-0}"; fi
+exit 0
+""",
+        "uv": """#!/bin/sh
+case "$*" in
+  *scan_history.py*)
+    echo "scanned 1 commits (main): no findings, 0 open secret-shape findings"
+    exit "${FAKE_SCAN_CODE:-0}"
+    ;;
+esac
+exit 0
+""",
+        "dotnet": "#!/bin/sh\nexit 0\n",
+    }
+    for name, source in commands.items():
+        command = bindir / name
+        command.write_text(source)
+        command.chmod(0o755)
+    env = dict(os.environ, PATH=f"{bindir}:{os.environ['PATH']}", FAKE_STATUS_CODE=str(status_code),
+               FAKE_SCAN_CODE=str(scan_code))
+    return subprocess.run(["bash", str(ROOT / "scripts/oss/release_gate.sh")], cwd=ROOT,
+                          capture_output=True, text=True, env=env)
+
+
+def test_release_gate_refuses_when_git_status_fails(tmp_path):
+    r = release_gate_with_fakes(tmp_path, status_code=2)
+    assert r.returncode == 1
+    assert "git status failed: cannot prove the tracked tree is clean" in r.stdout
+    assert "RELEASE GATE FAILED" in r.stdout and "RELEASE GATE OK" not in r.stdout
+
+
+def test_release_gate_refuses_when_history_scan_fails_after_an_all_clear_line(tmp_path):
+    r = release_gate_with_fakes(tmp_path, scan_code=3)
+    assert r.returncode == 1
+    assert "0 open secret-shape findings" in r.stdout
+    assert "HISTORY SCAN FAILED: cannot prove the history scan is complete" in r.stdout
+    assert "RELEASE GATE FAILED" in r.stdout and "RELEASE GATE OK" not in r.stdout
+
+
 def test_the_release_web_build_is_gzip_end_to_end():
     """Owner decision on #879 (17 Oct 2026, "gzip for both"): one gzip zip for GitHub Releases and itch.io. itch.io's
     CDN passes a Brotli `.data` to the player uncompressed but keeps a gzip `.data` compressed. The release recipe in

@@ -195,8 +195,10 @@ public class OpeningClipTests
     {
         using var r = new Rig("he");
         r.Opening.Show(replay: false);
+        Assert.AreEqual(r.Data.Panels[0].Image.AltHe, r.Photo.tooltip);
         Assert.AreEqual(LanguageDirection.LTR, r.Credit.languageDirection, "the photograph's English credit");
         r.Opening.HoldElapsed();
+        Assert.AreEqual(r.Data.Panels[0].Clip!.AltHe, r.Photo.tooltip);
         Assert.AreEqual(Text("he")["event.ai_label"], r.Credit.text);
         Assert.AreEqual("איור שנוצר בבינה מלאכותית", r.Credit.text);
         Assert.AreEqual(LanguageDirection.RTL, r.Credit.languageDirection, "the Hebrew label reads right to left");
@@ -219,6 +221,18 @@ public class OpeningClipTests
         Assert.AreEqual(LanguageDirection.RTL, r.Caption.languageDirection);
     }
 
+    [Test]
+    public void HebrewMediaAltFallsBackToEnglishWhenMissing()
+    {
+        using var r = new Rig("he");
+        r.Data.Panels[0].Image.AltHe = "";
+        r.Data.Panels[0].Clip!.AltHe = "";
+        r.Opening.Show(replay: false);
+        Assert.AreEqual(r.Data.Panels[0].Image.Alt, r.Photo.tooltip);
+        r.Opening.HoldElapsed();
+        Assert.AreEqual(r.Data.Panels[0].Clip!.Alt, r.Photo.tooltip);
+    }
+
     [TestCase("file: law_of_return.mp4", "file: ../law_of_return.mp4", TestName = "ClipFileMustBeABareMp4Name")]
     [TestCase("file: law_of_return.mp4", "file: law_of_return.webm", TestName = "ClipFileMustBeAnMp4")]
     [TestCase("shot: K04a", "shot: \"\"", TestName = "ClipNeedsItsShot")]
@@ -232,6 +246,8 @@ public class OpeningClipTests
     [TestCase("      he_review: approved\n    image:\n      file: opening_europe.jpg", "      he_review: yes\n    image:\n      file: opening_europe.jpg",
         TestName = "ACaptionHeReviewIsPendingOrApproved")]
     [TestCase("alt: \"Illustration: an immigrant ship", "alt: \"An immigrant ship", TestName = "ClipAltMustStartIllustration")]
+    [TestCase("      alt_he_review: agent-checked\n      ai_generated: true", "      alt_he_review: pending\n      ai_generated: true", TestName = "ClipAltHeReviewMustBeAgentChecked")]
+    [TestCase("      alt_he: \"עצירים יהודים עם צרורותיהם וארגזיהם לפני צריפי מחנה מעצר בקפריסין, פברואר 1949.\"\n", "", TestName = "PhotoAltHeReviewNeedsItsAlt")]
     [TestCase("      shot: K04a\n", "      shot: K04a\n      colour: sepia\n", TestName = "ClipUnknownFieldFailsClosed")]
     public void AMalformedClipRowFailsTheLoad(string from, string to)
     {
@@ -239,5 +255,34 @@ public class OpeningClipTests
         StringAssert.Contains(from, yaml, "precondition: the shipped row");
         Assert.DoesNotThrow(() => OpeningContent.Parse(yaml));
         Assert.Throws<InvalidOperationException>(() => OpeningContent.Parse(yaml.Replace(from, to)));
+    }
+
+    [Test]
+    public void AReviewedMediaAltLoadsWithoutTheAgentMarker()
+    {
+        var yaml = Asset.source.text;
+        Assert.DoesNotThrow(() => OpeningContent.Parse(yaml.Replace("      alt_he_review: agent-checked\n", "")));
+    }
+
+    [TestCase("")]
+    [TestCase("\"\"")]
+    [TestCase("'   '")]
+    public void PresentBlankClipAltReviewFailsTheLoad(string blank)
+    {
+        var yaml = Asset.source.text;
+        Assert.Throws<InvalidOperationException>(() => OpeningContent.Parse(yaml.Replace(
+            "      alt_he_review: agent-checked\n      ai_generated: true",
+            "      alt_he_review: " + blank + "\n      ai_generated: true")), "clip");
+    }
+
+    [TestCase("")]
+    [TestCase("\"\"")]
+    [TestCase("'   '")]
+    public void PresentBlankPhotographAltReviewFailsTheLoad(string blank)
+    {
+        var yaml = Asset.source.text;
+        Assert.Throws<InvalidOperationException>(() => OpeningContent.Parse(yaml.Replace(
+            "      alt_he_review: agent-checked\n      crop:",
+            "      alt_he_review: " + blank + "\n      crop:")), "photograph");
     }
 }

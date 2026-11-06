@@ -222,7 +222,7 @@ public class FoodArmsHudTests
     }
 
     // #2198: the panel says ahead of End turn when the amount would borrow past the debt ceiling, in the sim's own check;
-    // exactly at the ceiling says nothing. Buy stays available, and the sim decides when the turn runs.
+    // exactly at the ceiling says nothing. Buy stays available to explain the refusal, but queues nothing.
     [TestCase(false, false)] [TestCase(false, true)]
     [TestCase(true, false)] [TestCase(true, true)]
     public void TheAmountThatWouldBorrowPastTheDebtCeilingIsExplained(bool modern, bool he)
@@ -239,14 +239,32 @@ public class FoodArmsHudTests
         count.value = 2;
         Assert.AreEqual(t["arms.refused_debt_ceiling"], ui.Q<Label>("arms-refusal").text);
         Assert.IsTrue(ui.Q<Button>("buy-arms").enabledSelf, "a refusal remains explainable");
-        // Pressing Buy queues the order (the sim decides at End turn) and keeps the warning on screen (review of #2203).
         ui.Press("buy-arms");
-        Assert.AreEqual(2, ((BuyArms)b.Queued.Single()).Count);
-        Assert.AreEqual(t["arms.refused_debt_ceiling"], ui.Q<Label>("arms-refusal").text, "Buy does not clear the warning");
-        ui.Press("withdraw-arms");
+        Assert.IsEmpty(b.Queued);
+        Assert.AreEqual(t["arms.refused_debt_ceiling"], ui.Q<Label>("arms-refusal").text);
         b.State.Treasury = 2 * r.ArmsPrice!.Value;
         count.value = 1; count.value = 2;
         Assert.IsEmpty(ui.Q<Label>("arms-refusal").text, "paid from the Treasury, nothing is borrowed");
+    }
+
+    // #2590 (R-ARMS-002): exactly filling the stock is allowed; an amount that would overflow it remains explainable but is
+    // not queued. Build the Defence screen as GameRoot does and press through its real Buy button.
+    [TestCase(false)] [TestCase(true)]
+    public void AnAmountThatWouldOverflowTheStockIsExplainedAndNotQueued(bool he)
+    {
+        var b = Bridge(false, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        b.State.Arms = int.MaxValue - 1;
+        var count = ui.Q<IntegerField>("arms-count");
+        count.value = 1;
+        Assert.IsEmpty(ui.Q<Label>("arms-refusal").text, "exactly at the stock limit is allowed");
+        count.value = 2;
+        Assert.AreEqual(t["arms.refused_stock_capacity"], ui.Q<Label>("arms-refusal").text);
+        Assert.IsTrue(ui.Q<Button>("buy-arms").enabledSelf, "the refusal remains explainable");
+        ui.Press("buy-arms");
+        Assert.IsEmpty(b.Queued);
+        Assert.AreEqual(t["arms.refused_stock_capacity"], ui.Q<Label>("arms-refusal").text);
     }
 
     // #2206 (R-ARMS-002, R-MONEY-004): the ceiling warning counts the dollar conversion queued this turn, which End turn runs
@@ -279,7 +297,7 @@ public class FoodArmsHudTests
 
     // #2206 (R-ARMS-002): the warning runs the whole queue as End turn will, so spending queued before the purchase counts.
     // On the first turn one halutz group (IL 0.5m) and $4m (IL 1.332m) leave IL 20.832m: 271 Arms would borrow IL 250.168m,
-    // past the IL 250m ceiling, so the screen warns and End turn refuses them; 270 borrow IL 249.168m, and neither does.
+    // past the IL 250m ceiling, so the screen warns and the press queues nothing; 270 borrow IL 249.168m and is queued.
     [TestCase(false, false, 270)] [TestCase(false, false, 271)] [TestCase(false, true, 270)] [TestCase(false, true, 271)]
     [TestCase(true, false, 270)] [TestCase(true, false, 271)] [TestCase(true, true, 270)] [TestCase(true, true, 271)]
     public void TheCeilingWarningCountsTheTrainingQueuedBeforeThePurchase(bool modern, bool he, int arms)
@@ -294,9 +312,9 @@ public class FoodArmsHudTests
         var refused = arms == 271;
         Assert.AreEqual(refused ? t["arms.refused_debt_ceiling"] : "", ui.Q<Label>("arms-refusal").text);
         ui.Press("buy-arms");
-        Assert.AreEqual(3, b.Queued.Count);
+        Assert.AreEqual(refused ? 2 : 3, b.Queued.Count);
         var turn = b.EndTurn();
-        Assert.AreEqual(refused ? new[] { Pools.RefusedDebtCeiling } : new string[0], turn.Rejected.Select(x => x.Reason).ToArray());
+        Assert.IsEmpty(turn.Rejected);
     }
 
     [Test]

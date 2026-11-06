@@ -2,6 +2,7 @@
 # Tests read this file. To accept a deliberate change: STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln
 # rewrites this file, the snapshots and the GoldenRun.cs constants; then update docs/determinism.md and tools/web_check.py
 # (GoldenManifestTests names any place that is out of date) and add a row to the rebaseline history.
+# gdd-0.3 has no GoldenRun entries: its reference-player policy is not defined, so GoldenRun refuses that ruleset.
 hash1950 a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4
 hash1952 5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef
 smoke5 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79
@@ -12,4 +13,4 @@ scenario-mvp-absorb-first f289f8972cbc81f0fe4672c517008501142b5507b0a5de6b20de12
 mvp-end 5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef
 scenario-mvp-defeat 8c83f6e0dc1e10fcb753699848d88fda3921e6812214c095b0c7a8537dd4979b
 scenario-mvp-occupy-cost ad9af425c85e09c642bc05297925f374fce7cea3596761f356197555572f0fb4
-scenario-mvp-annex-nazareth e8a9dbf10a7cda254619bf0fc32f7444ea37977994e722ca8257c16c23b92ddf
+scenario-mvp-annex-nazareth d0372ca656fa65aae7b68d4623d3f6c69dfe5ce900d661db187e6ac85462d92c

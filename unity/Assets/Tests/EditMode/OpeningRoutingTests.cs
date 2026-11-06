@@ -11,6 +11,7 @@ using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -25,11 +26,20 @@ public class OpeningRoutingTests
     readonly List<(PanelSettings panel, RenderTexture texture)> panels = new List<(PanelSettings, RenderTexture)>();
     static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
     static bool StartOpen => Ui.Q("root").ClassListContains(StartScreenPresenter.OpenClass);
-    GameRoot Open(bool saved, out SaveStore store)
+    string NewDirectory()
     {
         var dir = Path.Combine(Path.GetTempPath(), "statecraft-opening-routing-" + Guid.NewGuid().ToString("N"));
-        directories.Add(dir); store = new SaveStore(dir);
+        directories.Add(dir);
+        return dir;
+    }
+    GameRoot Open(bool saved, out SaveStore store)
+    {
+        store = new SaveStore(NewDirectory());
         if (saved) store.WriteAutosave(GameSession.New(Inputs.Content, 23UL, Mode.Historical).Save.Write());
+        return Open(store);
+    }
+    GameRoot Open(SaveStore store)
+    {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var doc = Object.FindFirstObjectByType<UIDocument>();
         var panel = Object.Instantiate(doc.panelSettings);
@@ -58,7 +68,7 @@ public class OpeningRoutingTests
     }
 
     [UnityTest]
-    public IEnumerator SavedNewGameStillRequiresBothConfirmations()
+    public IEnumerator SavedNewGameStillRequiresBothConfirmationsAndTheNextRootLoadsIt()
     {
         var root = Open(saved: true, out var store);
         string save = File.ReadAllText(store.AutosavePath), hash = root.Bridge!.State.Hash();
@@ -72,8 +82,74 @@ public class OpeningRoutingTests
         yield return null;
         Assert.IsFalse(StartOpen);
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("opening-layer").resolvedStyle.display);
-        Assert.IsFalse(File.Exists(store.AutosavePath), "the confirmed new game uses the existing deletion flow");
         Assert.AreEqual(0, root.Bridge.State.Turn, "opening is before the first turn");
+        var newHash = root.Bridge.State.Hash();
+        Assert.IsTrue(File.Exists(store.AutosavePath), "the confirmed new game is saved before any order or turn");
+
+        var restarted = Open(store);
+        yield return null;
+        Assert.IsTrue(StartOpen);
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q<Button>("start-continue").style.display.value, "Continue is offered");
+        Assert.AreEqual(0, restarted.Bridge!.State.Turn);
+        Assert.AreEqual(newHash, restarted.Bridge.State.Hash(), "a second real GameRoot loads the immediate New Game save");
+    }
+
+    sealed class FailNextWriteStore : SaveStore
+    {
+        public bool FailNextWrite;
+        public FailNextWriteStore(string directory) : base(directory) { }
+        public override void WriteAutosave(string text)
+        {
+            if (FailNextWrite) { FailNextWrite = false; throw new IOException("locked"); }
+            base.WriteAutosave(text);
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator AFailedNewGameWriteKeepsTheOldSaveForTheNextRoot()
+    {
+        var store = new FailNextWriteStore(NewDirectory());
+        var old = new SimBridge(GameSession.New(Inputs.Content, 23UL, Mode.Historical),
+            UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text));
+        old.EndTurn(); old.EndTurn();
+        store.WriteAutosave(old.Session.Save.Write());
+        var oldHash = old.State.Hash();
+        var first = Open(store);
+        Assert.AreEqual(2, first.Bridge!.State.Turn, "precondition: the first root resumed the old game");
+        store.FailNextWrite = true;
+
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        yield return null;
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("^Autosave could not be written"));
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        yield return null;
+        Assert.AreEqual(0, first.Bridge.State.Turn, "the in-memory New Game proceeds despite the failed write");
+        Assert.AreEqual(UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text)["save.write_failed"],
+            Ui.Q<Label>("toast").text);
+
+        var restarted = Open(store);
+        yield return null;
+        Assert.IsTrue(StartOpen);
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q<Button>("start-continue").style.display.value, "the preserved save still offers Continue");
+        Assert.AreEqual(2, restarted.Bridge!.State.Turn);
+        Assert.AreEqual(oldHash, restarted.Bridge.State.Hash(), "a second real GameRoot resumes the untouched old autosave");
+    }
+
+    /// <summary>#2710: the recording plays over the still painting only (docs/declaration-recording.md), so pressing
+    /// "Replay the opening", whose pictures hide the start screen, stops it although the start screen stays open.</summary>
+    [UnityTest]
+    public IEnumerator ReplayingTheOpeningStopsTheRecording()
+    {
+        var root = Open(saved: true, out _);
+        for (int frame = 0; frame < 6; frame++) yield return null;
+        var start = (StartScreenPresenter)typeof(GameRoot).GetField("start", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(root)!;
+        var recording = (DeclarationRecording)typeof(StartScreenPresenter).GetField("recording", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(start)!;
+        UiTestKit.Press(Ui.Q<Button>("start-listen"));
+        Assert.IsTrue(recording.Playing, "precondition: its button plays it");
+        UiTestKit.Press(Ui.Q<Button>("start-opening-replay"));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(OpeningPresenter.OpenClass), "the opening replays");
+        Assert.IsTrue(StartOpen, "the start screen stays open under it");
+        Assert.IsFalse(recording.Playing, "the opening's pictures cover the painting: the recording stops");
     }
 
     [UnityTest]

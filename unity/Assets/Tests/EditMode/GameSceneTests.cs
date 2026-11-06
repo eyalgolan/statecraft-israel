@@ -4,15 +4,19 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
+using Statecraft.Game.Map.Collection;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -40,12 +44,13 @@ public class GameSceneTests
 
     /// <summary>Opens Map.unity, builds the map from the repository inputs and starts the game the way GameBoot.Ready does,
     /// with the saves in a temporary folder (never the player's real autosave).</summary>
-    GameRoot Boot(SaveStore? store = null)
+    GameRoot Boot(SaveStore? store = null, string? language = null)
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
         var root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = store ?? new SaveStore(saveDir);
+        root.Language = language;
         root.Begin(Inputs, 0);
         return root;
     }
@@ -65,6 +70,14 @@ public class GameSceneTests
         var play = (Func<int, bool>)typeof(UnitAttackPresenter).GetField("play", flags)!.GetValue(presenters[0])!;
         Assert.AreSame(root.Units, play.Target, "it plays on the game's unit layer");
         Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayAttack), play.Method.Name);
+        var defenderHit = (Func<Statecraft.Game.Map.Units.CombatHit, bool>)typeof(UnitAttackPresenter)
+            .GetField("defenderHit", flags)!.GetValue(presenters[0])!;
+        Assert.AreSame(root.Units, defenderHit.Target, "the defender reaction uses the game's unit layer");
+        Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayDefenderHit), defenderHit.Method.Name);
+        var timedPlay = (Func<int, Action, Action, bool>)typeof(UnitAttackPresenter)
+            .GetField("timedPlay", flags)!.GetValue(presenters[0])!;
+        Assert.AreSame(root.Units, timedPlay.Target, "the reaction is timed through the game's attack path");
+        Assert.AreEqual(nameof(Statecraft.Game.Map.Units.UnitLayer.PlayAttack), timedPlay.Method.Name);
     }
 
     [Test]
@@ -507,7 +520,7 @@ public class GameSceneTests
     }
 
     /// <summary>#1063 (player report: a city is hard to tell from the land round it and hard to click). Hovering Tel Aviv's
-    /// hex or its name pill lights the pill (GameRoot.HoverCity); a hex with no city lights nothing. A click on the hex and a
+    /// hex or its name pill lights the pill through GameRoot.LateUpdate; a hex with no city lights nothing. A click on the hex and a
     /// click on the pill each open the city panel, the pill's also where the land under the pill is another hex.</summary>
     [UnityTest]
     public IEnumerator ACitysHexAndItsNamePillBothOpenTheCityPanel()
@@ -519,8 +532,10 @@ public class GameSceneTests
         var camRt = new RenderTexture(1920, 1080, 24);   // the camera fills the panel, as in the game (MapLabelsPresenter)
         var ps = Object.Instantiate(doc.panelSettings);
         ps.targetTexture = rt;
+        var mouse = InputSystem.AddDevice<Mouse>();
         try
         {
+            Assert.AreSame(mouse, UnityEngine.InputSystem.Pointer.current, "precondition: LateUpdate reads the test mouse");
             doc.panelSettings = ps;
             cam.targetTexture = camRt;
             var map = Object.FindFirstObjectByType<MapScene>();
@@ -541,6 +556,15 @@ public class GameSceneTests
             root.Labels.Refresh(force: true); yield return null;
             Assert.AreEqual(Visibility.Visible, label.parent.style.visibility.value, "precondition: Tel Aviv is named");
 
+            int hoverPicks = 0; var realPillHex = pointer.PillHex;
+            pointer.PillHex = p => { hoverPicks++; return realPillHex?.Invoke(p); };
+            // LateUpdate reads Pointer.current, which cannot be placed at this projected fixture point without replacing
+            // the test's live Input System device. Drive the exact helper that LateUpdate calls so the coordinate stays deterministic.
+            root.UpdateMapHover(onHex);
+            Assert.AreEqual(1, hoverPicks, "city, route and hex hover share one map pick");
+            Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "the shared pick still lights the city pill");
+            pointer.PillHex = realPillHex;
+
             // The land under a screen point (camera pixels), asked of the terrain alone, as a click without the pills would be.
             (int q, int r)? Land(Vector2 px) =>
                 map.Terrain.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(px), out var hit, 1_000_000f) ? MapPointer.Pick(map, hit.point) : ((int, int)?)null;
@@ -552,7 +576,10 @@ public class GameSceneTests
 
             // The hex.
             Assert.AreEqual((tlv.Q, tlv.R), Land(onHex), "precondition: the probe is on Tel Aviv's hex");
-            Assert.AreEqual("tel_aviv", root.HoverCity(onHex), "the pointer over Tel Aviv's hex");
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = onHex });
+            InputSystem.Update();
+            // In edit mode GameRoot.LateUpdate runs only when the player loop is asked for (as HudTests does).
+            for (int i = 0; i < 5 && !label.ClassListContains(MapLabelsPresenter.HoverClass); i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
             Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights Tel Aviv's pill");
             Assert.IsTrue(pointer.HandleClick(onHex));
             Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
@@ -563,7 +590,9 @@ public class GameSceneTests
             var seaHex = Land(sea);
             Assert.IsNotNull(seaHex, "precondition: the sea probe is on the map");
             Assert.IsFalse(c.SettlementHexes.Any(x => (x.Q, x.R) == seaHex!.Value && root.Bridge!.State.Cities.ContainsKey(x.Id)), "precondition: no city there");
-            Assert.IsNull(root.HoverCity(sea), "no city under the pointer");
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = sea });
+            InputSystem.Update();
+            for (int i = 0; i < 5 && label.ClassListContains(MapLabelsPresenter.HoverClass); i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
             Assert.IsFalse(label.ClassListContains(MapLabelsPresenter.HoverClass), "Tel Aviv's pill is out");
             Assert.IsTrue(pointer.HandleClick(sea));
             Assert.AreNotEqual(DisplayStyle.Flex, host.style.display.value, "precondition: the panel shows the sea, no city");
@@ -575,7 +604,9 @@ public class GameSceneTests
             var off = points.Where(p => Land(CameraPixel(p)) is (int q, int r) && (q, r) != (tlv.Q, tlv.R)).Cast<Vector2?>().FirstOrDefault();
             Assert.IsNotNull(off, $"precondition: some point of the pill {pill} lies over another hex than Tel Aviv's");
             var onPill = ScreenFor(off!.Value);
-            Assert.AreEqual("tel_aviv", root.HoverCity(onPill), "the pointer over Tel Aviv's pill");
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = onPill });
+            InputSystem.Update();
+            for (int i = 0; i < 5 && !label.ClassListContains(MapLabelsPresenter.HoverClass); i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
             Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights the pill");
             Assert.IsTrue(pointer.HandleClick(onPill), "the pill takes the click");
             Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
@@ -583,12 +614,47 @@ public class GameSceneTests
         }
         finally
         {
+            if (mouse.added) InputSystem.RemoveDevice(mouse);
             cam.targetTexture = null;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             if (ps != null) Object.DestroyImmediate(ps);
             if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
             if (camRt != null) { camRt.Release(); Object.DestroyImmediate(camRt); }
         }
+    }
+
+    [Test]
+    public void ABridgeChangeRunsGameRootsCollectionRedraw()
+    {
+        var saved = SpecialBuildingModels.Request;
+        SpecialBuildingModels.Request = TalModelsShots.Answer(Array.Empty<string>());
+        try
+        {
+            // Arms workshops are drawn under gdd-0.3 only (SpecialBuildingModels.ArmsWorkshops), so the game runs gdd-0.3, on a
+            // fresh copy of the inputs (the cached Inputs stay gdd-0.1 for the other tests), as ArmsWorkshopVisibilityTests does.
+            var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+            foreach (var era in inputs.Content.Eras) { era.Systems.Ruleset = SaveGame.Gdd03Ruleset; era.Systems.Loop = EraSystems.Gdd; }
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            map.Build(inputs.Map);
+            // The layer answers its models through SpecialBuildingModels.Request (stubbed above) at once, as the collection tests'
+            // layer does; GameRoot's ShowAt keeps a layer that is already configured, so the redraw below is still GameRoot's.
+            CollectionGeometryFixture.Special(map, inputs.Content.Rules.Start);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            root.Begin(inputs, 0);
+            Assert.AreEqual(SaveGame.Gdd03Ruleset, root.Bridge!.Content.Ruleset, "precondition: the gdd-0.3 game, which draws arms workshops");
+            var state = root.Bridge!.State;
+            var city = root.Bridge.Content.SettlementHexes.Single(x => x.Id == "tel_aviv");
+            int id = state.NextId++;
+            state.CityProjects.Add(id, new CityProject(
+                id, Workshops.ArmsWorkshop, city.Id, city.Q, city.R, 0, state.Date));
+            root.Bridge.Skip(state.Units.Keys.First());
+            var layer = Object.FindFirstObjectByType<MapScene>().Terrain.transform.Find(SpecialBuildingModels.Name);
+            Assert.IsNotNull(layer?.Find(SpecialBuildingModels.WorkshopKey(id)),
+                "the real Changed hookup redraws a newly built workshop");
+        }
+        finally { SpecialBuildingModels.Request = saved; }
     }
 
     // One label each presenter writes on every change: HUD, toast, info panel, Why, Budget, Defence, Cabinet, event card
@@ -672,6 +738,29 @@ public class GameSceneTests
         StringAssert.StartsWith("Not done: ", lines[0]);
         Assert.AreEqual(Text["save.write_failed"], lines[1]);
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void WebSavePersistenceFailuresUseTheCurrentLanguagesExistingToast(bool hebrew)
+    {
+        var language = hebrew ? UiLanguage.Hebrew : UiLanguage.English;
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text,
+            hebrew ? "strings.he.yaml" : "strings.en.yaml");
+        var root = Boot(language: language);
+
+        root.OnSavePersistenceResult("fail save 1 1948-06-15 turn 1 hash aa");
+        Assert.AreEqual(text["save.write_failed"], Ui.Q<Label>("toast").text);
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
+    }
+
+    [Test]
+    public void SuccessfulWebPersistenceResultsDoNotShowAnError()
+    {
+        var root = Boot();
+        root.OnSavePersistenceResult("ok save 1 1948-06-15 turn 1 hash aa");
+        Assert.AreEqual("", Ui.Q<Label>("toast").text);
+        Assert.AreEqual(DisplayStyle.None, Ui.Q("toast").style.display.value);
     }
 
     /// <summary>#2152: the game reports earned achievements to the store set in PlatformServices.Current (a Steam build's).</summary>
@@ -1146,4 +1235,110 @@ public class GameSceneTests
         Assert.IsNull(units.Selected);
     }
 
+}
+
+/// <summary>#2340 L2 (#2521): with the start screen closed, Escape withdraws a New Game request armed from the top bar, and
+/// the key is used up there, so the map selection under it stays. Drives GameRoot's own Escape poll (Update) with a key
+/// pressed through the Input System test fixture, which is what makes wasPressedThisFrame read true in an EditMode test.</summary>
+public class GameRootEscapeTests : SharedCameraActionsFixture
+{
+    string saveDir = "";
+    static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+
+    [TearDown]
+    public void DiscardScene()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
+    }
+
+    /// <summary>Stands for a later frame: the card's Hide counts as an Escape's own only in the frame it happened
+    /// (EventCardPresenter.CollapsedThisFrame), and the Input System fixture cannot press keys in a [UnityTest] that
+    /// runs frames in edit mode.</summary>
+    static void LaterFrame(GameRoot root) =>
+        typeof(EventCardPresenter).GetField("collapsedAt", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(root.Card, -1);
+
+    [Test]
+    public void EscapeWithdrawsANewGameRequestArmedFromTheTopBar()
+    {
+        saveDir = Path.Combine(Path.GetTempPath(), "statecraft-scene-" + Guid.NewGuid().ToString("N"));
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(inputs, 0);                                             // no start screen
+        GameSceneTests.HideTheOpeningCard(Ui);
+        LaterFrame(root);                                                  // the Hide is not an Escape's
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        var bridge = root.Bridge!;
+        var info = (InfoPanelPresenter)typeof(GameRoot).GetField("info", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        var home = bridge.Content.SettlementHexes.First(x => x.Id == "tel_aviv");
+        info.Show(home.Q, home.R);
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        Assert.AreEqual(text["newgame.confirm"], Ui.Q<Label>("toast").text, "precondition: the top bar armed the request");
+        var newGame = (NewGamePresenter)typeof(GameRoot).GetField("newGame", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        void Escape()
+        {
+            (Ui.focusController?.focusedElement as VisualElement)?.Blur();   // Escape with no focus, as after a mouse press
+            Press(keyboard.escapeKey);
+            Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
+            typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+            Release(keyboard.escapeKey);
+        }
+        // The #2549 review note (comment 6636159055, an agent review): the open screen closes first (nav.Close); only
+        // an Escape it declines withdraws the request.
+        UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "precondition: a screen is open");
+        Escape();
+        Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "the first Escape closes the screen");
+        Assert.IsTrue(newGame.Armed, "the first Escape is the screen's: the request is still armed");
+        // The next key press is a later frame: the screen closed on the first press, and ScreenNav.ClosedThisFrame
+        // would still claim this one in the single EditMode frame (#2609).
+        var nav = typeof(GameRoot).GetField("nav", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        typeof(ScreenNav).GetField("closedFrame", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(nav, -1);
+        Escape();
+        Assert.IsFalse(newGame.Armed, "the next Escape withdraws the request");
+        Assert.AreEqual("", Ui.Q<Label>("toast").text, "the prompt is off the toast");
+        Assert.AreEqual((home.Q, home.R), info.Selected, "the Escape was used up: the map selection stays");
+        var session = bridge.Session;
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        Assert.AreSame(session, bridge.Session, "withdrawn: the next press only arms the request again");
+    }
+
+    // The #2595 review: a decision card over an armed New Game is the top thing (the top bar stays usable under it), so
+    // the first Escape hides the card and only the next one withdraws the request.
+    [Test]
+    public void EscapeHidesAnOpenDecisionCardBeforeItWithdrawsAnArmedNewGame()
+    {
+        saveDir = Path.Combine(Path.GetTempPath(), "statecraft-scene-" + Guid.NewGuid().ToString("N"));
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(inputs, 0);                                             // no start screen; the game opens on a card
+        GameSceneTests.HideTheOpeningCard(Ui);
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        UiTestKit.Press(Ui.Q<Button>("event-reopen"));
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("event-card").style.display.value, "precondition: the decision card is open");
+        UiTestKit.Press(Ui.Q<Button>("new-game"));
+        var newGame = (NewGamePresenter)typeof(GameRoot).GetField("newGame", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        Assert.IsTrue(newGame.Armed, "precondition: the top bar armed the request under the card");
+        void Escape()
+        {
+            (Ui.focusController?.focusedElement as VisualElement)?.Blur();   // Escape with no focus, as after a mouse press
+            Press(keyboard.escapeKey);
+            Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
+            typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+            Release(keyboard.escapeKey);
+        }
+        Escape();
+        Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("event-card").style.display.value, "the first Escape hides the card");
+        Assert.IsTrue(newGame.Armed, "the first Escape is the card's: the request is still armed");
+        LaterFrame(root);                                                  // the next key press
+        Escape();
+        Assert.IsFalse(newGame.Armed, "the next Escape withdraws the request");
+    }
 }

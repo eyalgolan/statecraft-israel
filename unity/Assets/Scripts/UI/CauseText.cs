@@ -89,7 +89,7 @@ namespace Statecraft.Game.UI
         // #1682: these branches use captured ids, values and resident flags, never the live GameState.
         static readonly HashSet<string> RemainingKeys = new HashSet<string>
         {
-            CauseKeys.WorkersAssigned, CauseKeys.WagesPaid, CauseKeys.ImmigrantsHoused, CauseKeys.HousingShortage, CauseKeys.ImmigrantsWaiting, CauseKeys.RecruitsVeteran, CauseKeys.CorridorStarted, CauseKeys.CorridorCancelled, CauseKeys.CorridorCompleted, CauseKeys.PioneersVeteran, CauseKeys.MapBorrowed, CauseKeys.MapBuilt, CauseKeys.LandWorkStarted, CauseKeys.SiteStarted, CauseKeys.SiteCancelled, CauseKeys.SiteCompleted, CauseKeys.ProjectStarted, CauseKeys.ProjectCancelled, CauseKeys.ProjectCompleted, CauseKeys.ProjectBuilder, CauseKeys.ProjectBuilderFreed, CauseKeys.ProjectWaiting, CauseKeys.ArmsBought, CauseKeys.WorkshopWorkers, CauseKeys.WorkshopArms, CauseKeys.WorkshopPaused, CauseKeys.DollarsConverted, CauseKeys.FoodHarvest, CauseKeys.FoodShortage, CauseKeys.FoodWithoutImports, CauseKeys.PrisonerFood, CauseKeys.PrisonerFoodShortage, CauseKeys.CraftsmenReturned, CauseKeys.CraftsmenReassigned, CauseKeys.PioneerReturned, CauseKeys.PioneersReassigned, CauseKeys.TrainingStarted, CauseKeys.TrainingArms, CauseKeys.TrainingCancelled, CauseKeys.TrainingArmsReturned, CauseKeys.ReplacementsStopped, CauseKeys.ReplacementsJoined, CauseKeys.MilitaryTrained, CauseKeys.PioneersTrained, CauseKeys.CraftsmenTrained, CauseKeys.Appointed, CauseKeys.Reshuffle, CauseKeys.AppointmentsEnded, CauseKeys.ApprovalStability, CauseKeys.CoalitionCollapsed, CauseKeys.LegislatureConvened, CauseKeys.GovernmentTookOffice, CauseKeys.CoalitionChanged, CauseKeys.EraEnded, CauseKeys.AdvisoryPolicyRejected, CauseKeys.PolicyRejected, CauseKeys.PolicySet, CauseKeys.AdvisoryBudgetRejected, CauseKeys.BudgetRejected, CauseKeys.PlaceCaptured, CauseKeys.EnemyRegained, CauseKeys.PlaceAnnexed, CauseKeys.PlaceWithdrawn, CauseKeys.PlaceDeported, CauseKeys.DeportEffect, CauseKeys.DeportCost, CauseKeys.OccupationStarted, CauseKeys.PendingBecameRaid, CauseKeys.OccupationLostUnit, CauseKeys.OccupationCountdown, CauseKeys.DepopulationSupport
+            CauseKeys.WorkersAssigned, CauseKeys.WagesPaid, CauseKeys.ImmigrantsHoused, CauseKeys.HousingShortage, CauseKeys.ImmigrantsWaiting, CauseKeys.RecruitsVeteran, CauseKeys.CorridorStarted, CauseKeys.CorridorCancelled, CauseKeys.CorridorCompleted, CauseKeys.PioneersVeteran, CauseKeys.MapBorrowed, CauseKeys.MapBuilt, CauseKeys.LandWorkStarted, CauseKeys.SiteStarted, CauseKeys.SiteCancelled, CauseKeys.SiteCompleted, CauseKeys.ProjectStarted, CauseKeys.ProjectCancelled, CauseKeys.ProjectCompleted, CauseKeys.ProjectBuilder, CauseKeys.ProjectBuilderFreed, CauseKeys.ProjectWaiting, CauseKeys.ArmsBought, CauseKeys.WorkshopWorkers, CauseKeys.WorkshopArms, CauseKeys.WorkshopPaused, CauseKeys.DollarsConverted, CauseKeys.DollarsConvertedFx, CauseKeys.FoodHarvest, CauseKeys.FoodShortage, CauseKeys.FoodWithoutImports, CauseKeys.FoodImported, CauseKeys.PrisonerFood, CauseKeys.PrisonerFoodShortage, CauseKeys.CraftsmenReturned, CauseKeys.CraftsmenReassigned, CauseKeys.PioneerReturned, CauseKeys.PioneersReassigned, CauseKeys.TrainingStarted, CauseKeys.TrainingArms, CauseKeys.TrainingCancelled, CauseKeys.TrainingArmsReturned, CauseKeys.ReplacementsStopped, CauseKeys.ReplacementsJoined, CauseKeys.MilitaryTrained, CauseKeys.PioneersTrained, CauseKeys.CraftsmenTrained, CauseKeys.Appointed, CauseKeys.Reshuffle, CauseKeys.AppointmentsEnded, CauseKeys.ApprovalStability, CauseKeys.CoalitionCollapsed, CauseKeys.LegislatureConvened, CauseKeys.GovernmentTookOffice, CauseKeys.CoalitionChanged, CauseKeys.EraEnded, CauseKeys.AdvisoryPolicyRejected, CauseKeys.PolicyRejected, CauseKeys.PolicySet, CauseKeys.AdvisoryBudgetRejected, CauseKeys.BudgetRejected, CauseKeys.PlaceCaptured, CauseKeys.EnemyRegained, CauseKeys.PlaceAnnexed, CauseKeys.PlaceWithdrawn, CauseKeys.PlaceDeported, CauseKeys.DeportEffect, CauseKeys.DeportCost, CauseKeys.OccupationStarted, CauseKeys.PendingBecameRaid, CauseKeys.OccupationLostUnit, CauseKeys.OccupationCountdown, CauseKeys.DepopulationSupport, CauseKeys.CityHeld
         };
 
         static string Remaining(Cause cause, Content c, UiText text, IReadOnlyDictionary<string, string>? namesHe)
@@ -100,6 +100,11 @@ namespace Statecraft.Game.UI
             string Site(string id) { var x = c.Sites.First(s => s.Id == id); return Pick(x.Name, x.NameHe); }
             string Groups(string count) => text["ui.lang"] == UiLanguage.Hebrew ? count
                 : count == "1" ? "1 group" : count + " groups";
+            // #2530: the same singular for the Food and occupation lines; the Hebrew names the count in a label, as for groups.
+            string Units(string count) => text["ui.lang"] == UiLanguage.Hebrew ? count
+                : count == "1" ? "1 unit" : count + " units";
+            string Turns(string count) => text["ui.lang"] == UiLanguage.Hebrew ? count
+                : count == "1" ? "1 turn" : count + " turns";
             string Course(string id) => text["why.cause.course." + id];
             string Residents(string fled) => text["why.cause.residents." + fled];
             string Parties(string ids) => string.Join(", ", ids.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
@@ -115,15 +120,15 @@ namespace Statecraft.Game.UI
             switch (cause.Key)
             {
                 case CauseKeys.WorkersAssigned:
-                    return text.Format(key, Settlement(cause.Target), A(0));
+                    return text.Format(key, Settlement(cause.Target), Groups(A(0)));
                 case CauseKeys.WagesPaid:
                     return text.Format(key, Settlement(cause.Target), PlayerText.MoneyChange(c, "treasury", cause.Delta));
                 case CauseKeys.ImmigrantsHoused:
-                    return text.Format(key, Settlement(cause.Target), A(0));
+                    return text.Format(key, Settlement(cause.Target), Groups(A(0)));
                 case CauseKeys.HousingShortage:
-                    return text.Format(key, Settlement(cause.Target), A(0));
+                    return text.Format(key, Settlement(cause.Target), Groups(A(0)));
                 case CauseKeys.ImmigrantsWaiting:
-                    return text.Format(key, Settlement(cause.Target), A(0));
+                    return text.Format(key, Settlement(cause.Target), Groups(A(0)));
                 case CauseKeys.RecruitsVeteran:
                     return text.Format(key);
                 case CauseKeys.CorridorStarted:
@@ -162,16 +167,21 @@ namespace Statecraft.Game.UI
                 case CauseKeys.WorkshopWorkers:   // R-ARMS-005 (#1701)
                     return text.Format(key, Settlement(cause.Target), A(0));
                 case CauseKeys.WorkshopArms:      // R-ARMS-006
+                case CauseKeys.CityHeld:          // R-CITY-010 (#1711)
                     return text.Format(key, Settlement(cause.Target));
                 case CauseKeys.WorkshopPaused:    // R-ARMS-006: why.cause.workshop_paused.<Workshops.NoWorker or .DebtCeiling>
                     return text.Format(key + "." + A(0), Settlement(cause.Target));
                 case CauseKeys.DollarsConverted:
                     return text.Format(key, Money(c, "fx_reserves", A(0)), PlayerText.MoneyChange(c, "treasury", cause.Delta));
+                case CauseKeys.DollarsConvertedFx:  // #2527: the reserves drop, worded as foreign currency, not a Money change
+                    return text.Format(key, Money(c, "fx_reserves", A(0)), PlayerText.MoneyChange(c, "fx_reserves", cause.Delta));
                 case CauseKeys.FoodHarvest:
-                    return text.Format(key, Site(A(0)), cause.Delta);
+                    return text.Format(key, Site(A(0)), Units(cause.Delta.ToString(CultureInfo.InvariantCulture)));
                 case CauseKeys.FoodShortage:
-                    return text.Format(key, -cause.Delta, A(0));
+                    return text.Format(key, A(0), A(1));   // the unmet, then the need: the line is informational (#2527)
                 case CauseKeys.FoodWithoutImports:
+                    return text.Format(key, A(0));
+                case CauseKeys.FoodImported:        // #2527
                     return text.Format(key, A(0));
                 case CauseKeys.PrisonerFood:
                     return text.Format(key, -cause.Delta);
@@ -253,7 +263,7 @@ namespace Statecraft.Game.UI
                     return text.Format(key, Settlement(cause.Target), Residents(A(0)));
                 case CauseKeys.OccupationCountdown:
                     if (cause.Delta == 0) return text.Format(key + "_ended", Settlement(cause.Target));
-                    return text.Format(key, Settlement(cause.Target), cause.Delta);
+                    return text.Format(key, Settlement(cause.Target), Turns(cause.Delta.ToString(CultureInfo.InvariantCulture)));
                 case CauseKeys.DepopulationSupport:
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta));
                 default: throw new InvalidOperationException("Unknown remaining Cause key: " + cause.Key);

@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map.Collection;
@@ -37,15 +38,32 @@ public class CollectionImportTests
     /// The timeout is 10 minutes, not Unity's default 3 (#759). Nearly all of the time is BuildAssetBundles: 0.1 s with
     /// the bundles already built, 5 s without them, 42 s in a fresh Library clone (its first build imports and compiles
     /// for the target), and 240-249 s in six fresh clones built at once at a load of about 20. 600 s is 2.4 times the
-    /// slowest run seen. Unity checks the timeout when the test returns; it does not abort a running build.</summary>
+    /// slowest run seen. Unity checks the timeout when the test returns; it does not abort a running build.
+    /// The build writes the shipped folder itself, so a folder that was not there before the test is deleted after it,
+    /// with its .meta, and the asset database forgets them: the nightly's EditMode run found 126 files left in Assets (#2655).</summary>
     [Test, Timeout(600000)]
     public void BuildBundlesWritesTheChecksBesideTheShippedBundles()
+    {
+        var dest = System.IO.Path.Combine(Application.streamingAssetsPath, CollectionCatalog.StreamingFolder);
+        var hadFolder = System.IO.Directory.Exists(dest);
+        try { BuildAndCheckTheShippedBundles(dest); }
+        finally
+        {
+            if (!hadFolder)
+            {
+                if (System.IO.Directory.Exists(dest)) System.IO.Directory.Delete(dest, true);
+                System.IO.File.Delete(dest + ".meta");
+                AssetDatabase.Refresh(); // the run's leftover check reads the asset database, which may have imported them
+            }
+        }
+    }
+
+    static void BuildAndCheckTheShippedBundles(string dest)
     {
         var t = Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor");
         Assert.IsNotNull(t, "CollectionImport");
         try { t!.GetMethod("BuildBundles")!.Invoke(null, new object[] { EditorUserBuildSettings.activeBuildTarget }); }
         catch (System.Reflection.TargetInvocationException e) when (e.InnerException != null) { throw e.InnerException; }
-        var dest = System.IO.Path.Combine(Application.streamingAssetsPath, CollectionCatalog.StreamingFolder);
         var checks = CollectionCatalog.ParseChecks(System.IO.File.ReadAllText(System.IO.Path.Combine(dest, CollectionCatalog.ChecksFile)));
         Assert.IsNotNull(checks, "a well-formed checks file");
         CollectionAssert.AreEquivalent(CollectionCatalog.Bundles.Select(b => b.Bundle), checks!.Keys);
@@ -59,6 +77,26 @@ public class CollectionImportTests
             Assert.AreEqual(CollectionCatalog.Sha256(file), check.Sha256, bundle);
             Assert.IsFalse(System.IO.File.Exists(file + ".manifest"), "the build ships no .manifest files");
         }
+    }
+
+    [Test]
+    public void ChecksUseUnsignedInvariantMachineFields()
+    {
+        var previous = CultureInfo.CurrentCulture;
+        try
+        {
+            var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            culture.NumberFormat.PositiveSign = "plus";
+            culture.NumberFormat.NegativeSign = "minus";
+            CultureInfo.CurrentCulture = culture;
+            var hash = new string('a', 64);
+
+            Assert.IsNull(CollectionCatalog.ParseChecks($"bundle plus1 2 {hash}\n"),
+                "the checks format accepts digits only");
+            Assert.AreEqual($"1 -2 {hash}",
+                new CollectionCatalog.BundleCheck(1, -2, hash).ToString());
+        }
+        finally { CultureInfo.CurrentCulture = previous; }
     }
 
     [Test]

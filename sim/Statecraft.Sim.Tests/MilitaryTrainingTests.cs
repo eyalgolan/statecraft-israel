@@ -238,6 +238,7 @@ public class MilitaryTrainingTests
     // R-UNIT-001, R-UNIT-004: content must not create a recruit that cannot pay upkeep or promotes to an unknown type.
     [Theory]
     [InlineData("side: israel, class: infantry, facility: military_camp", "facility: military_camp", "types[recruit].side")]
+    [InlineData("side: israel, class: infantry, facility: military_camp", "side: israel, class: armour, facility: military_camp", "types[recruit].class")]   // R-UNIT-003, #2601
     [InlineData("  - { id: veteran_soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n", "", "types[veteran_soldier]")]
     public void TrainingRequiresTheMilitaryTypes(string oldText, string newText, string field)
     {

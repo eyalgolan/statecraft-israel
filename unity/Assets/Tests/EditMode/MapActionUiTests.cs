@@ -99,6 +99,64 @@ public class MapActionUiTests
         Assert.AreEqual("A transit camp built here in August 1950", ui.Q<Label>("info-placement").text);
     }
 
+    // Red first on PR #2679 head 0401491db: the whole-queue preview rejected the unaffordable press for its Attention, so both
+    // buttons were hidden behind one shared reason. As on origin/main 0c976fb21, an action the Attention left cannot pay for
+    // keeps its button and the bridge refuses the press with order.no_attention (SimBridge.Queue).
+    [Test]
+    public void NoAttentionKeepsMapActionsAndTheBridgeRefusesTheirPresses()
+    {
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(C, g.State));
+        g.State.Attention = 0;
+        var bridge = new SimBridge(g, Text);
+        var refusals = new System.Collections.Generic.List<string>();
+        bridge.Refused += refusals.Add;
+        using var info = Panel(ui, bridge);
+        var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        var orders = new[] { new MapAction(MapActions.TransitCamp, tlv.Q, tlv.R), new MapAction(MapActions.Housing, tlv.Q, tlv.R) };
+        foreach (var order in orders)
+        {
+            Assert.IsNull(MapActions.CheckReason(C, bridge.State, order.Action, tlv.Q, tlv.R), order.Action + ": otherwise legal on this hex");
+            Assert.IsFalse(bridge.CanPay(order), order.Action + ": precondition: no Attention left");
+        }
+
+        info.Show(tlv.Q, tlv.R);
+
+        foreach (var name in new[] { "build-camp", "build-housing" })
+        {
+            Assert.IsTrue(ui.Q<Button>(name).enabledSelf, name + ": the rules allow it, so the button stays");
+            ui.Press(name);
+        }
+        Assert.IsEmpty(bridge.Queued, "the bridge queues no order it cannot pay for");
+        Assert.AreEqual(orders.Select(o => Text.Format("order.no_attention", bridge.Price(o)!.Value, 0.0)).ToArray(), refusals);
+    }
+
+    // Red first on PR #2679 head 4e25f657c: Refusal returns the current state's ma'abarot-policy reason before it previews
+    // the earlier SetPolicy order, so the transit-camp button is disabled even though End turn would accept the action.
+    [Test]
+    public void AQueuedMaabarotPolicyEnablesATransitCampMapAction()
+    {
+        using var ui = new UiTestKit();
+        var bridge = At(new DateTime(1950, 8, 1));
+        bridge.TurnStart.Policies[MapActions.MaabarotPolicy] = 0;
+        bridge.TurnStart.CoalitionStability = 1;
+        Assert.IsTrue(PoliticsSystem.HasMajority(C, bridge.TurnStart.Date), "precondition: the policy vote has a majority");
+        var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        Assert.AreEqual("maabarot_policy", MapActions.CheckReason(C, bridge.State, MapActions.TransitCamp, tlv.Q, tlv.R)?.Kind,
+            "precondition: without the queued policy the current state refuses the camp");
+        Assert.IsNull(bridge.Queue(new SetPolicy(MapActions.MaabarotPolicy, 1)));
+        Assert.AreEqual(1.0, Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(bridge.Queued).ToList()).State.Policies[MapActions.MaabarotPolicy],
+            "precondition: the policy vote passes before the map action runs");
+
+        using var info = Panel(ui, bridge);
+        info.Show(tlv.Q, tlv.R);
+
+        Assert.IsTrue(ui.Q<Button>("build-camp").enabledSelf);
+        Assert.AreEqual("", ui.Q<Label>("info-reason").text);
+    }
+
     /// <summary>#701: in the Hebrew UI the build date names its month in Hebrew (date.month_year), not "August 1950". The line
     /// is a date label with no verb (Beri, 17 October 2026), since a fixed "נבנה" is wrong for a feminine name ("מעברה").</summary>
     [Test]
@@ -243,19 +301,30 @@ public class MapActionUiTests
         foreach (var word in new[] { "yield", "food", "production", "gold", "income" }) StringAssert.DoesNotContain(word, shown);
     }
 
+    // Red first on origin/main 0c976fb21: the third hex's buttons remain enabled because the panel checks the turn-start state,
+    // so a third press enters the queue and is refused only at End turn.
     [Test]
-    public void ThePerTurnCapAndRefusalsComeFromTheSim()
+    public void ThePerTurnCapIncludesActionsAlreadyQueuedThisTurn()
     {
         using var ui = new UiTestKit();
         var bridge = At(new DateTime(1950, 8, 1));
-        new ToastPresenter(ui.Root, bridge, Text);
-        var info = Panel(ui, bridge);
-        var hexes = C.SettlementHexes.Select(h => (h.Q, h.R)).Distinct().Take(3).ToList();
-        foreach (var (q, r) in hexes) { info.Show(q, r); ui.Press("build-housing"); }
-        Assert.AreEqual(3, bridge.Queued.OfType<MapAction>().Count());      // the sim, not the UI, enforces the cap at End Turn
-        bridge.EndTurn();
-        Assert.AreEqual(1, bridge.Session.Last!.Rejected.Count);
-        StringAssert.Contains($"No more than {C.Rules.MapActionsPerTurn} map actions in one turn", ui.Q<Label>("toast").text);
+        using var info = Panel(ui, bridge);
+        var cap = C.RulesAt(bridge.State.Date).MapActionsPerTurn;
+        Assert.AreEqual(2, cap, "precondition: the legacy map-action cap");
+        var hexes = C.SettlementHexes.Select(h => (h.Q, h.R)).Distinct().Take(cap + 1).ToList();
+        Assert.AreEqual(cap + 1, hexes.Count, "precondition: one distinct target beyond the cap");
+        foreach (var (q, r) in hexes.Take(cap)) { info.Show(q, r); ui.Press("build-housing"); }
+        Assert.AreEqual(cap, bridge.Queued.OfType<MapAction>().Count());
+
+        info.Show(hexes[cap].Q, hexes[cap].R);
+        Assert.AreEqual(Text.Format("info.map_action_reason.turn_cap", cap), ui.Q<Label>("info-reason").text);
+        foreach (var name in new[] { "build-camp", "build-housing" })
+        {
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Button>(name).style.display.value, name + ": shared refusal hides the button");
+            Assert.IsFalse(ui.Q<Button>(name).enabledSelf, name + ": shared refusal disables the button");
+        }
+        Assert.AreEqual(cap, bridge.Queued.OfType<MapAction>().Count(), "the unavailable third action was not queued");
+        Assert.IsEmpty(bridge.EndTurn().Rejected);
     }
 
     [Test]

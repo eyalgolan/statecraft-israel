@@ -72,9 +72,11 @@ namespace Statecraft.Game.UI
         public event Action? FreshGameOpened;
 
         readonly DeclarationRecording? recording;
+        readonly Button reportButton, replayButton;
+        readonly Action onCovered;
 
         /// <param name="recording">The "Play the recording" button's player (null in tests that do not need it); the screen
-        /// stops it when it closes.</param>
+        /// stops it when it closes, and when Report or Replay the opening covers it.</param>
         /// <param name="text">The UI's strings for the source line and the two buttons (#193); null keeps Game.uxml's English
         /// (tests). The title is the game's name and the English lines are the Declaration's official translation: neither
         /// is translated.</param>
@@ -106,6 +108,11 @@ namespace Statecraft.Game.UI
             var quit = screen.Q<Button>("start-quit");   // #2153: desktop players only
             if (text != null) quit.text = text["ui.quit"];
             unbindQuit = QuitButton.BindInGame(quit);
+            // #2710: the recording plays over the still painting only (docs/declaration-recording.md). The report panel and
+            // the replayed opening cover the painting while the screen stays open under them, so their presses stop it too.
+            onCovered = () => recording?.Stop();
+            reportButton = screen.Q<Button>("start-report"); replayButton = screen.Q<Button>("start-opening-replay");
+            reportButton.clicked += onCovered; replayButton.clicked += onCovered;
             onContinue = Continue; onNewGame = NewGame; onStarted = Started;
             continueButton.clicked += onContinue;
             newGameButton.clicked += onNewGame;
@@ -218,13 +225,13 @@ namespace Statecraft.Game.UI
         void NewGame()
         {
             if (!IsOpen) return;
-            if (!Resumed) { Close(); FreshGameOpened?.Invoke(); return; }   // nothing to wipe: the session is already a new game
+            if (!Resumed) { Close(); FreshGameOpened?.Invoke(); return; }   // nothing to replace: the session is already a new game
             newGame.Press();                      // arms on the first press; the second starts the new game (Started closes)
         }
 
         void Started()
         {
-            Resumed = false;                      // the save is gone (or will be replaced): nothing to continue any more
+            Resumed = false;                      // the replacement is the current game: nothing older to continue any more
             Close();
         }
 
@@ -283,6 +290,7 @@ namespace Statecraft.Game.UI
             newGame.Started -= onStarted;
             unbindStar();
             unbindQuit();
+            reportButton.clicked -= onCovered; replayButton.clicked -= onCovered;
             starButton.generateVisualContent -= PaintStarSigns;
             languages.Dispose();
             screen.UnregisterCallback(onCancel);

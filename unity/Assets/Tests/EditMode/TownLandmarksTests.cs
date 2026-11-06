@@ -684,6 +684,20 @@ public class TownLandmarksTests
         finally { Object.DestroyImmediate(camera.gameObject); }
     }
 
+    [Test]
+    public void ASettledWholeTownTickAllocatesNothing()
+    {
+        var map = OpenMap();
+        TownLandmarks.Request = (id, detail, done) => { asked.Add((id, detail, done)); done(null); };
+        var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), ContentLoader.Load(Statecraft.Game.Paths.Content))!;
+        Assert.IsFalse(t.RefreshPending, "precondition: the layer is settled");
+        // LateUpdate is private; invoking it reflectively allocates the argument array/result that this assertion must exclude.
+        // Tick is LateUpdate's allocation-free production seam, while the neighbouring residency tests cover their wiring.
+        t.Tick();
+        Assert.That(() => { for (int i = 0; i < 8; i++) t.Tick(); }, UnityEngine.TestTools.Constraints.ConstraintExtensions.AllocatingGCMemory(Is.Not));
+        Assert.IsFalse(t.RefreshPending, "settled ticks leave no work pending");
+    }
+
     static void Render(TownLandmarks t, Camera camera) => ResidencyCall(t, typeof(TownLandmarks), "OnBeginCameraRendering",
         default(UnityEngine.Rendering.ScriptableRenderContext), camera);
 

@@ -124,7 +124,11 @@ public class TurnReportTests
         {
             // The heading is the bar's caption and the very change the bar shows next to the number.
             var heading = k.Ui.Q<Label>("turn-report-heading-" + id).text;
-            Assert.AreEqual(En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text), heading, id);
+            var expectedHeading = id == "immigration"
+                ? En.Format("report.immigration_line", En["hud.caption.immigration"], k.Ui.Q<Label>("immigration-delta").text,
+                    k.Ui.Q<Label>("immigration-value").text)
+                : En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text);
+            Assert.AreEqual(expectedHeading, heading, id);
             var causes = k.Ui.Root.Q("turn-report-causes-" + id);
             var expected = HudModel.Causes(turn, id, C, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
             if (expected.Count == 0) { Assert.IsNull(causes, id + ": no cause line without a cause"); continue; }
@@ -151,6 +155,54 @@ public class TurnReportTests
         var s = k.Bridge.State; var prev = k.Bridge.Session.Previous!;
         Assert.AreEqual((s.Treasury - s.Debt) - (prev.Treasury - prev.Debt), shown.Sum(w => w.Delta), 1e-9, "the lines add up to the Money (net) change");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
+    }
+
+    /// <summary>#2576 shape (b): Immigration keeps the change in arrivals as the report's number, while the current
+    /// arrival count and the population lines below it are labelled as this turn's arrivals, in both UI languages.</summary>
+    [Test]
+    public void ImmigrationReportsTheChangeAndLabelsThisTurnsArrivalsInBothLanguages()
+    {
+        foreach (var (text, heading, causesHeading, cause) in new[]
+        {
+            (En, "Immigration: change +20; arrivals this turn: 120", "Main arrivals this turn:", "120 immigrants arrived (Asia)"),
+            (He, "עלייה: שינוי של +20; עולים שהגיעו בתור הזה: 120", "הגעות עיקריות בתור הזה:", "עולים שהגיעו (אסיה): 120"),
+        })
+        {
+            var arrivals = new Queue<double>(new[] { 100d, 120d, 100d });
+            using var k = new Kit(text, (g, cmds) =>
+            {
+                var result = g.EndTurn(cmds);
+                var n = arrivals.Dequeue();
+                var arrival = new Cause("population", "asia", n,
+                    System.FormattableString.Invariant($"{n:N0} immigrants arrived (Asia)"), key: CauseKeys.Arrived);
+                var controlled = new StepResult(result.State,
+                    result.Why.Where(w => w.System != "population").Concat(new[] { arrival }).ToList(), result.Rejected);
+                typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(g, controlled);
+                return controlled;
+            });
+
+            k.Bridge.EndTurn();
+            k.Bridge.EndTurn();
+
+            var meter = HudModel.From(k.Bridge, text).Immigration;
+            Assert.AreEqual(text.Format("hud.people", 120), meter.Value);
+            Assert.AreEqual(text.Format("hud.delta_people", 20), meter.Delta);
+            var plain = k.Ui.Q<Label>("turn-report-heading-immigration").text.Replace(UiText.LeftToRightMark.ToString(), "");
+            Assert.AreEqual(heading, plain);
+            var reportCauses = Causes(k.Ui, "immigration");
+            CollectionAssert.AreEqual(new[] { cause }, reportCauses.Select(x => x.Replace(UiText.LeftToRightMark.ToString(), "")).ToList());
+
+            using var tip = new MeterTip(k.Ui.Root, k.Bridge, text, System.Array.Empty<VisualElement>());
+            var tipLines = tip.Lines(k.Q("meter-immigration"));
+            Assert.AreEqual(causesHeading, tipLines.words.Split('\n').Last());
+            CollectionAssert.AreEqual(reportCauses, tipLines.causes, "the report and MeterTip label the same current-turn arrivals");
+
+            // A fall: 120 then 100 reads as a change of -20 beside this turn's 100 arrivals.
+            k.Bridge.EndTurn();
+            var fell = text.Format("report.immigration_line", text["hud.caption.immigration"], text.Format("hud.delta_people", -20),
+                text.Format("hud.people", 100)).Replace(UiText.LeftToRightMark.ToString(), "");
+            Assert.AreEqual(fell, k.Ui.Q<Label>("turn-report-heading-immigration").text.Replace(UiText.LeftToRightMark.ToString(), ""));
+        }
     }
 
     /// <summary>#1293: the opening turn's enemy orders (R-ENEMY-001): the four scripted forces march (R-ENEMY-002) and the
@@ -269,6 +321,50 @@ public class TurnReportTests
         Assert.IsNull(k.Ui.Root.Q("turn-report-heading-" + TurnReportPresenter.WorkshopRow), "no workshop heading");
     }
 
+    static Cause Held(string city) => new Cause("city", city, 0, city + ": held by the enemy; no job income or project work this turn", key: CauseKeys.CityHeld);
+
+    /// <summary>R-CITY-010 (#1711): a city the enemy holds changes no number, so its sim line (Delta 0) gets a row of its own
+    /// after the stocks and before the enemy's orders, one line a city in the sim's order, named in the player's language.
+    /// The real content is gdd-0.1, which holds no city, so the lines are added; that the sim gives them under gdd-0.3 only is
+    /// NoCityLossDefeatTests.OnlyAGdd03HeldCityGetsTheLine's. The expected lines are literals in both languages.</summary>
+    [Test]
+    public void HeldCitiesAreReportedInBothLanguages()
+    {
+        var namesHe = NamesHe();
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var k = EndTurnWith(hebrew ? He : En, new[] { Held("tel_aviv"), Held("haifa") }, namesHe);
+            Assert.AreEqual(hebrew ? "ערים בשליטת האויב" : "Cities held by the enemy",
+                k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.HeldRow).text);
+            CollectionAssert.AreEqual(hebrew
+                    ? new[]
+                    {
+                        "תל אביב: בשליטת האויב: אין הכנסה מעבודה ואין עבודה על מיזמים בתור הזה",
+                        "חיפה: בשליטת האויב: אין הכנסה מעבודה ואין עבודה על מיזמים בתור הזה",
+                    }
+                    : new[]
+                    {
+                        "Tel Aviv: held by the enemy; no job income or project work this turn",
+                        "Haifa: held by the enemy; no job income or project work this turn",
+                    },
+                Causes(k.Ui, TurnReportPresenter.HeldRow));
+            var rows = k.Ui.Q<ScrollView>("turn-report-rows").Children().Select(r => r.name).ToList();
+            int held = rows.IndexOf("turn-report-" + TurnReportPresenter.HeldRow);
+            Assert.Greater(held, rows.IndexOf("turn-report-arms"), "after the stocks");
+            Assert.AreEqual(rows.IndexOf("turn-report-" + TurnReportPresenter.EnemyRow), held + 1, "just before the enemy's orders");
+        }
+    }
+
+    /// <summary>R-CITY-010 (#1711): a turn with no held city has no held row.</summary>
+    [Test]
+    public void ATurnWithNoHeldCityGivesNoHeldRow()
+    {
+        using var k = new Kit(En);
+        k.Bridge.EndTurn();
+        Assert.IsTrue(k.Report.IsOpen, "the report has its other rows");
+        Assert.IsNull(k.Ui.Root.Q("turn-report-" + TurnReportPresenter.HeldRow), "no held row");
+    }
+
     /// <summary>#1297: a standing enemy attack (R-ENEMY-003) is reported on every turn it engages, not only on the turn it is
     /// ordered. The opening turn is set up as a later one: the Arab Liberation Army already attacks Golani's hex, which it keeps
     /// (no order is given this turn) and which engages in step 2 (R-COMBAT-002).</summary>
@@ -305,6 +401,53 @@ public class TurnReportTests
         typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
             new StepResult(last.State, new[] { new Cause("map", "3,0", 0, "The attack on hex 3,0", Combat.Attack) }, last.Rejected));
         Assert.IsFalse(TurnReportPresenter.Lines(k.Bridge, En).Any(l => l.Meter == TurnReportPresenter.EnemyRow));
+    }
+
+    /// <summary>#2534 review (#2538): a new enemy attack order that also engages on its turn names the attacker once in the
+    /// enemy-orders row, not twice - the order's cause and the engagement's both carry the unit. The turn is replaced with
+    /// both causes through Session.Last's private setter, as in AnAttackThatNamesNoAttackersGivesNoLine.</summary>
+    [Test]
+    public void ANewAttackOrderThatEngagesNamesTheAttackerOnce()
+    {
+        var rows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        int ala = C.StartingForces.ToList().FindIndex(f => f.Row == "arab_liberation_army");
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var k = new Kit(text);
+            var a = k.Bridge.Session.State.Units[ala];
+            var order = new Cause("map", ala.ToString(System.Globalization.CultureInfo.InvariantCulture), 0, $"Unit {ala} will attack hex 3,0",
+                Combat.Attack, new[] { ala }, WhyKeys.AttackOrdered, new[] { new UnitRef(a) });
+            var engagement = new Cause("map", "3,0", 0, "The attack on hex 3,0",
+                Combat.Attack, new[] { ala }, WhyKeys.Engagement, new[] { new UnitRef(a) });
+            k.Bridge.EndTurn();
+            var last = k.Bridge.Session.Last!;
+            typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
+                new StepResult(last.State, new[] { order, engagement }, last.Rejected));
+            var row = TurnReportPresenter.Lines(k.Bridge, text, rows).Single(l => l.Meter == TurnReportPresenter.EnemyRow);
+            CollectionAssert.AreEqual(
+                new[] { hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : "Arab Liberation Army launched an attack on one of your units" },
+                row.Causes, "one line for the unit, though the order and the engagement both name it");
+        }
+    }
+
+    /// <summary>#2527 review: the Food shortage's line is informational (delta 0), and the turn report's Food row still
+    /// names it, after the lines that have a number.</summary>
+    [Test]
+    public void AShortageTurnStillNamesTheShortageInTheFoodRow()
+    {
+        using var k = new Kit(En);
+        k.Bridge.EndTurn();
+        var last = k.Bridge.Session.Last!;
+        var shortage = new Cause("economy", "food", 0, "Food ran out: 60 of 100 units of the month's need went unmet",
+            key: CauseKeys.FoodShortage, args: new[] { "60", "100" });
+        var import = new Cause("economy", "food", 260, "The month's eating and Food imports brought the stock to 300 units",
+            key: CauseKeys.FoodImported, args: new[] { "300" });
+        var turn = new StepResult(last.State, new[] { shortage, import }, last.Rejected);
+        CollectionAssert.AreEqual(
+            new[] { "The month's eating and Food imports brought the stock to 300 units",
+                "Food ran out: 60 of 100 units of the month's need went unmet" },
+            TurnReportPresenter.StockCauses(turn, Pools.FoodTarget, w => w.Message));
     }
 
     [Test]
@@ -509,20 +652,27 @@ public class TurnReportTests
                 go.SetActive(true);
                 var root = doc.rootVisualElement;
                 root.Q("root").RemoveFromClassList("loading");
-                if (hebrew) root.Q("root").AddToClassList(UiLanguage.HebrewClass);
                 var text = hebrew ? He : En;
+                root.Q("root").EnableInClassList(UiLanguage.HebrewClass, text["ui.lang"] == UiLanguage.Hebrew);   // as GameRoot
                 var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
                 var owned = new List<System.IDisposable>();
                 owned.Add(new HudPresenter(root, bridge, text));
                 var nav = new ScreenNav(root); owned.Add(nav);
                 owned.Add(new EventCardPresenter(root, bridge, text, null));
                 var report = new TurnReportPresenter(root, bridge, text, nav); owned.Add(report);
+                if (hebrew) owned.Add(new UiDirection(root, bridge));
                 try
                 {
                     bridge.EndTurn();
                     for (int i = 0; i < 30 && !(root.Q("turn-report-panel").layout.width > 0); i++) yield return null;
                     for (int i = 0; i < 3; i++) yield return null;
                     var window = root.worldBound; var panel = root.Q("turn-report-panel").worldBound;
+                    var causesStyle = root.Q("turn-report-causes-security").resolvedStyle;
+                    float expectedLeft = hebrew ? 2f : 14f, expectedRight = hebrew ? 14f : 2f;
+                    // The panel snaps layout to whole screen pixels, so a stylesheet px reads within one screen pixel of itself.
+                    float snap = 1f / HudPresenter.ScreenPxPerPanelPx(root.panel) + 0.01f;
+                    if (Mathf.Abs(causesStyle.paddingLeft - expectedLeft) > snap || Mathf.Abs(causesStyle.paddingRight - expectedRight) > snap)
+                        problems.Add($"{at}: Security causes padding is {causesStyle.paddingLeft}px left and {causesStyle.paddingRight}px right, expected {expectedLeft}px and {expectedRight}px");
                     if (!(panel.width > 0 && panel.height > 0)) problems.Add($"{at}: the report is not shown");
                     if (panel.xMin < window.xMin - 0.5f || panel.yMin < window.yMin - 0.5f || panel.xMax > window.xMax + 0.5f || panel.yMax > window.yMax + 0.5f)
                         problems.Add($"{at}: the report {panel} leaves the window {window}");

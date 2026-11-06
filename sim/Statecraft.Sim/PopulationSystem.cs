@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Statecraft.Sim
 {
-    /// <summary>Jewish population by origin group. Historical mode takes arrivals from the sourced aliyah series.</summary>
+    /// <summary>Population by origin group, plus the annexed residents' own group (R-CITY-008). Historical mode takes arrivals from the sourced aliyah series.</summary>
     public static class PopulationSystem
     {
         public static void Init(Content c, GameState s)

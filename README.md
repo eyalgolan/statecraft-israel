@@ -13,7 +13,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 [![Assets license: CC BY 4.0 / content CC BY-SA 4.0](https://img.shields.io/badge/assets-CC%20BY%20%2F%20BY--SA%204.0-lightgrey.svg)](LICENSING.md)
 [![Unity 6000.3.25f1](https://img.shields.io/badge/Unity-6000.3.25f1-black.svg)](unity/ProjectSettings/ProjectVersion.txt)
 ![Status: playable 1948–1951 prototype](https://img.shields.io/badge/status-playable%201948%E2%80%931951-orange.svg)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00.svg?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/eyalgolan)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00.svg?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/statecraftisrael)
 
 **A turn-based grand-strategy game about governing Israel. You are the prime minister on 15 May 1948. The ministers are the real ones, the map is real, and every historical fact comes with a source.**
 
@@ -147,7 +147,7 @@ Troubleshooting: `error CS0246 'PlayerPrefsBool'` means the Unity-MCP package (`
 
 ## History, sources and accuracy
 
-- Every event, minister, date and number in `content/` carries `sources:` with URLs and check dates. Wikipedia (English and Hebrew) is a primary cited source for many facts, which is why `content/` is CC BY-SA 4.0.
+- Every historical event, minister, date and number in `content/` carries `sources:` with URLs and check dates; game-balance values are design choices and need none. Wikipedia (English and Hebrew) is a primary cited source for many facts, which is why `content/` is CC BY-SA 4.0.
 - The model behind the game, and its framing, embed assumptions. It is not neutral, and this page says so.
 - No quotes are invented. Text paraphrases its sources.
 - The framing is Israeli. Contested narratives are not presented as parallel accounts.
@@ -197,7 +197,7 @@ Nothing is generated live while you play.
 - **3D models by Tal Heuberger:** [CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt).
 - **Third-party material:** fonts, public-domain, CC0, CC BY 4.0 and CC BY-SA 4.0 portraits, the archival event photographs, Ben-Gurion's 1948 recording, and the Unity engine and packages are under their own terms.
 
-Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml).
+Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml) and [ASSETS.portraits.yaml](ASSETS.portraits.yaml).
 
 ## Community and credits
 

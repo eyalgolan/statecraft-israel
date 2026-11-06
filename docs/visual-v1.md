@@ -45,7 +45,7 @@ models on them. New models and visual PRs are judged against these four referenc
 - Headed frame time: `uv run tools/headed.py profile --dpr 1` (`--dpr 2` is the fill-rate stress proxy). `--wait-unity`
   also waits for an interactive Unity editor that has any worktree open (it holds `unity/Temp/UnityLockfile`): close it,
   or the profile waits.
-- Screenshots: `tools/art_checkpoint.sh [--no-build] [--units] <name>` (WebGL `?shot` + editor renders of both tiers + side-by-side
+- Screenshots: `tools/art_checkpoint.sh [--no-build] [--units] [--borderproof] <name>` (WebGL `?shot` + editor renders of both tiers + side-by-side
   images and their deuteranopia/protanopia copies under `captures/visual/<name>/`, git-ignored; rows in the main
   checkout's `captures/visual/art-log.tsv` with the branch, short commit and the image's absolute path). It refuses to run
   while `QualitySettings.asset` (and, when it builds, `unity/Assets/Settings` or `ProjectSettings.asset`) has unstaged
@@ -53,6 +53,8 @@ models on them. New models and visual PRs are judged against these four referenc
   worktree's build target WebGL -> OSXUniversal (editor renders) and back at the next build, a reimport each way: budget
   a few minutes per checkpoint. `--units` adds the units (`docs/units.md`): `&units` on the WebGL shots and
   `-units` on the editor renders. That shows both the unit art slice and the units in play as a new game starts.
+  `--borderproof` adds the region borders' synthetic proof pattern (see "Region borders") to the editor renders only (a
+  release WebGL build ignores `&borderproof`); its art-log rows are named `<name>-borderproof`.
   Normal play draws the units in play, but a `?shot` run switches them off unless `&units` is given
   (`UnitLayer.HiddenInCaptures`), and the editor draws them only with `-units`. So plain checkpoints never show units, and
   the `--units` rows are named `<name>-units`, so they are never compared with plain ones.
@@ -745,7 +747,7 @@ beyond budget + the larger spread.
 | Baked shading texture | block-compressed | block-compressed | review minor 9: recorded, not changed (mobile browsers are outside the 1920x1080 target) |
 | WebGPU, GPU Resident Drawer, compute | not used | not used | research notes 2.1 (an M5 evaluation) |
 | Weak GPU | SwiftShader run passes golden and shots | — | `captures/visual/t10-swiftshader` (both GOLDEN OK lines and SHOT done; gameplay03 saturation / contrast / warmth 0.5656 / 0.1960 / 0.0773 against the GPU's 0.5655 / 0.1960 / 0.0771) |
-| Runtime quality fallback (issue #44) | on | off | see "Runtime quality fallback" below: when the frame-time p95 stays over the 30 fps floor, render scale 1.0 -> 0.9 -> 0.8, then the tilt-shift off; back up in reverse |
+| Runtime quality fallback (issue #44) | on | off | see "Runtime quality fallback" below: when the frame-time p95 stays over the 30 fps floor, render scale 1.0 -> 0.9 -> 0.8, then the tilt-shift off, then the town building models' far-off copies without shadows at every zoom; back up in reverse |
 
 Colour after the decisions (WebGL `?shot`, t10-tiers against t-merge-r3): diorama02 saturation 0.4694 -> 0.4686, contrast
 0.2034 -> 0.2032, warmth 0.1045 -> 0.1038 (bars: warmth 0.087-0.145, saturation <= 0.48); gameplay03 saturation 0.5646 ->
@@ -767,9 +769,14 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
 (pure logic) and `QualityFallbackDriver` (feeds it `Time.unscaledDeltaTime`, applies its step), attached by
 `CameraRig.Init` through the map's teardown like the visual toggles.
 - **Steps:** level 0 is the tier (scale 1.0, tilt-shift on); 1: scale 0.9; 2: scale 0.8 (the research's 0.8-1.0 dynamic
-  range, notes 2.3); 3: scale 0.8 and the tilt-shift off. One step per decision, up in reverse. The scale is the active
+  range, notes 2.3); 3: scale 0.8 and the tilt-shift off; 4 (v0.3.7): as 3, and the town building models draw their far-off
+  copies without shadows at every zoom (`TownModelLayer.LowTier`), the 30 km opening too. Since v0.3.5 the opening sits
+  below the close switch (40 km), so the originals and their shadows draw from the first frame; the nightly's start-screen
+  p95 on its software GPU went from 35-88 ms (v0.3.4) to 320-690 ms (v0.3.5, v0.3.6). The opening and the switch stay;
+  only a device still over the floor after step 3 loses the originals. One step per decision, up in reverse. The scale is the active
   URP asset's `renderScale` (never above the tier's own); the tilt-shift uses its own `TiltShift.FallbackOff`, so stepping
-  up never turns on a tilt-shift the player (`?notiltshift`) or a profile turned off. The map's teardown puts both back.
+  up never turns on a tilt-shift the player (`?notiltshift`) or a profile turned off. The map's teardown puts all three
+  back, and a fixed quality choice clears the last two.
 - **Window: 3 s, back to back, one decision each.** The p95 of a 3 s window is over only when at least 5% of its frames
   are (5 of 90 at 30 fps), so a one-off hitch (End Turn's redraw, a GC, a first shader compile) never trips it and a real
   shortfall does within 3 s. Nothing is measured in the first 3 s after the map is built, or 0.5 s after each change; a
@@ -788,23 +795,26 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
   capture target (its renders and `-vprofile` must show the tier's own look), and in the editor a scale change would
   change the URP asset. Even on WebGL it stays off under `?vprofile`, `?profile` and `?shot` (instruments that must see the
   tier as configured) and with `?nofallback`; every change logs `QUALITY level=<n> scale=<s> tiltshift=<on|off>
-  p95_ms=<ms>`.
+  towns=<close|far> p95_ms=<ms>`.
 - **The player's quality choice (#40).** Automatic in Settings is this behaviour. High (the PC tier at render scale 1.0)
   and Low (the Mobile tier at 0.8) fix the quality: the fallback holds while one is set (`QualityFallbackDriver.Feed`),
   and every switch starts it again from the top (`GraphicsQuality.Changed`).
-- **Presentation only:** it reads no sim state and writes only the render scale and the tilt-shift flag, so turns, hashes
-  and saves cannot change. The goldens and the 5-turn smoke match with it in the build: `uv run tools/web_check.py
-  unity/Builds/Web-disabled --query "golden&smoke=5"` with the three `--expect` values from `docs/determinism.md`: PASS.
+- **Presentation only:** it reads no sim state and writes only the render scale, the tilt-shift flag and the towns' low
+  tier, so turns, hashes and saves cannot change. The goldens and the 5-turn smoke match with the original #44 fallback
+  in that build: `uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&smoke=5"` with the three
+  `--expect` values from `docs/determinism.md`: PASS. This is #44's evidence; the v0.3.7 step changes no sim code.
 - **Tests** (`QualityFallbackTests`, EditMode, synthetic frame times): the step order and range, one step per window and
   not before a full window, nothing during start-up, hitches, a pause and 33/34 ms frames do not trigger, recovery in
   reverse only after 3 good windows, the dead band holds and restarts the count, a failed step up doubles the wait (capped);
   integration: no driver in the editor; with the web tier's answer forced, `MapScene.Build` attaches one, its steps reach
-  the URP asset and `TiltShift.FallbackOff` (not `TiltShift.Enabled`), and a rebuild or teardown removes it and restores the
-  scale.
-- **In a real browser** (headed Chrome for Testing, ANGLE Metal, 1920x1080 at DPR 1, under `machine_lock.py --exclusive
-  --wait-unity`, a scratch CDP script on `headed.Browser`): 30 s idle at `--cpu 1`, no `QUALITY` line. With CPU throttling
-  at 20x from t = 30 s: `QUALITY level=1 scale=0.90 tiltshift=on p95_ms=97.00`, `level=2 scale=0.80 tiltshift=on
-  p95_ms=97.00`, `level=3 scale=0.80 tiltshift=off p95_ms=107.00` (level 3 at t = 39.6 s). Throttling lifted at t = 49.6 s:
+  the URP asset, `TiltShift.FallbackOff` (not `TiltShift.Enabled`) and `TownModelLayer.LowTier`, and a rebuild or teardown
+  removes it and restores the scale and the town originals. `TownModelResidencyTests` checks that the low tier at the
+  opening draws Tel Aviv's far copies with no shadow casters, and that clearing it puts the originals back.
+- **Original #44 evidence in a real browser (predates the `towns=` field and level 4):** headed Chrome for Testing,
+  ANGLE Metal, 1920x1080 at DPR 1, under `machine_lock.py --exclusive --wait-unity`, a scratch CDP script on
+  `headed.Browser`: 30 s idle at `--cpu 1`, no `QUALITY` line. With CPU throttling at 20x from t = 30 s:
+  `QUALITY level=1 scale=0.90 tiltshift=on p95_ms=97.00`, `level=2 scale=0.80 tiltshift=on p95_ms=97.00`,
+  `level=3 scale=0.80 tiltshift=off p95_ms=107.00` (level 3 at t = 39.6 s). Throttling lifted at t = 49.6 s:
   `level=2 ... tiltshift=on p95_ms=17.00`, `level=1 scale=0.90`, `level=0 scale=1.00` (t = 77.4 s, about 9.5 s apart), then
   no line in the next 15 s. At DPR 2 (the fill-rate stress proxy, frame rate uncapped) 60 s idle: no `QUALITY` line, as the
   DPR-2 p95 (20 ms at diorama02) is under the floor.
@@ -1014,7 +1024,7 @@ from the Civ-like prototype's sheet (`captures/pr-1794`, `civ-borders/sheet.png`
 otherwise. Next to main's look, A2's bands keep their weight when the camera pulls out (no far fade); the colour stripe
 is never under 6 px, the light stripe 1 px and the wash 12 px, measured across the edge so they hold under the tilt.
 Both sides wash alike at 0.45, falling as 1 - x squared, so the wash holds well into the hex and reaches a quarter of
-its inradius (about 1,080 m); a light tint of the region's colour covers the territory, 0.12 up close and rising to
+its inradius (about 953 m on 4.4 km hexes); a light tint of the region's colour covers the territory, 0.12 up close and rising to
 0.25 at the overview. Band plus wash never pass half the inradius, so a far hex is not filled by its outline. The
 neutral grey keeps its 0.14 wash and its dashes, never shorter than 8 px. The other variants stay selectable for
 comparison: `?bordervariant=legacy` in the WebGL URL (or `-bordervariant legacy` on desktop and in the editor) draws
@@ -1022,7 +1032,7 @@ main's earlier look exactly, and `a`, `b`, `c`, `b2` and `c2` draw the prototype
 (`MapBorders.VariantRequested`). The paragraphs below describe the drawing every variant shares; their widths, wash
 strengths and the 2 px floor are Legacy's.
 
-**What is drawn.** `MapBorders` (C#) bakes one texel per hex (`RegionHexes`, RGBA8 linear, point-sampled, 47 x 58: r + 256 g
+**What is drawn.** `MapBorders` (C#) bakes one texel per hex (`RegionHexes`, RGBA8 linear, point-sampled, 54 x 66 on the current `hexes.json`: r + 256 g
 the region id, b the style; since issue #195, a's low six bits say which edges border another region) and sets the
 globals; `StatecraftBorders.hlsl`'s `ScBorderApply`, called last in the terrain
 function, draws the band along each edge whose neighbour is in another region. A pixel farther from its hex's edges than
@@ -1140,7 +1150,7 @@ the game's start: the Administrative Divisions (Amendment) Proclamation, 1947 (P
   480 px (`.map-layer`, was 160 px), so the longest label is three lines, checked beside a real event card at seven window
   shapes (`ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard`). The sub-district layer stays as the base
   while the lines leave gaps. A line is visible as a band only where it bounds a zone or is the Mandate frontier; at
-  5-km hexes two of the three Syrian DMZ parts take no hex (true-polyline overlay: #237).
+  4.4-km hexes two of the three Syrian DMZ parts take no hex (true-polyline overlay: #237).
 
 **Shared edges and the far line (refs #196, `.superpowers/borders-routes-r1/PLAN.md` B1 and B3).** Every sub-district
 is Primary, so where two meet both drew their full band: blue, white, white, blue, about 11-13 px across at gameplay03
@@ -1271,10 +1281,14 @@ D-C (owner-verify).
   renderer takes (`RegionLayer`). Every entry is submitted `fact-checked`; the owner sets `sensitivity-reviewed` before a
   shareable build (chapters design §13).
 - *Limits of the renderer's data seam (review M8), for the data work to plan around:*
-  1. Two drawn styles (Primary, Secondary) plus None. The 1949 lines set Israel against four neighbours; with two styles
-     the four share the red-orange band (the texel's style takes b's low two bits since the shared edges, so one more style fits; each new style needs colours that stay
-     apart for colour-blind players, so it is a design task, not a constant). Districts may want a neutral third style.
-  2. One layer at a time: districts and armistice lines cannot show together.
+  1. No longer true as written: there are now three drawn styles plus None, `Neutral = 3` (a grey band: contested,
+     no-man's land, a demilitarized zone, or the 1947 sub-districts before any side is sourced; owner ruling 2026-10-14;
+     `MapBorders.BorderStyle`). Originally two (Primary, Secondary): the 1949 lines set Israel against four neighbours,
+     and the four still share the red-orange band. The texel's style takes b's low two bits, which the four values now
+     fill, so a further style needs more bits as well as colours that stay apart for colour-blind players (a design task,
+     not a constant).
+  2. No longer true: layers do show together. `MapRegions` keeps the Mandate sub-districts as the base and draws each
+     front's 1949 armistice zones over them from the date that front switches (`unity/Assets/Scripts/Map/MapRegions.cs`).
   3. Styles are per region, not per edge: an edge's look comes from the regions on its two sides.
   4. Hex snapping moves a line by up to half a hex (see the owner decision below).
   Follow-up: more styles or per-edge styles when the data and the owner's ruling on snapping need them.
@@ -2066,7 +2080,9 @@ place carries on; Lydda and Ramle for the game settlements `lod` and `ramla`; Ne
 - **Labels:** smaller pills (`.map-label-locality`), only nearer than 40 km (`MapLabelsPresenter.LocalityDistanceM`), placed
   after every game settlement with the same declutter rules.
   - Hovering one shows its tooltip, in the UI's language (`ui.lang`).
-  - Touch and keyboard players have no route to the tooltip yet (#245).
+  - A touch tap on a pill shows it, and a second tap on the same pill, or a tap anywhere else, hides it (#245;
+    `MapLabelsPresenter.Tap`, called from `GameRoot`). Keyboard players still have no route to it: only a hovering
+    pointer or a touch reaches the pills.
 - **Units in play (review I5, merged with #250):** the unit tokens keep off the villages and camps as they keep off the
   game towns.
   - The units are placed before the kits are built, since their clearings feed the kit build. So
@@ -2892,9 +2908,9 @@ It describes the windows as small and recessed, not ribbon windows. The strips f
   that ignores `_ScTiltShiftNear` (near 0.19-0.33: the three render tests) and the near strength applied to both bands
   (far 0.34 at 60 km, 1.00 at diorama02: three render tests); the C# curve held at 1, or not reaching 0 at the
   overview, fails the unit test.
-- **Quality fallback.** Unchanged: `TiltShift.Draws` still needs `!FallbackOff`, so the fallback's last step still turns
-  both bands off (`QualityFallbackTests` pass). The pass draws as before whenever the tilt-shift is on, even where the near
-  band is 0, so frame time does not depend on the new strength.
+- **Quality fallback.** Unchanged: `TiltShift.Draws` still needs `!FallbackOff`, so level 3 and every lower-quality step
+  still turn both bands off (`QualityFallbackTests` pass). The pass draws as before whenever the tilt-shift is on, even
+  where the near band is 0, so frame time does not depend on the new strength.
 - **Fill rate.** Headed `?vprofile` at DPR 2 (`headed.py profile --dpr 2`), main, branch, branch, main under one
   `machine_lock.py --exclusive --wait-unity`, 2026-10-14. The machine was loaded by other sessions (load 6-13), so the
   spreads are 1.5-7 ms. diorama02 `all`: main 41.81 / 33.81 ms, branch 41.09 / 39.46; `none`: main 28.02 / 23.97, branch
@@ -2999,8 +3015,9 @@ It describes the windows as small and recessed, not ribbon windows. The strips f
 
 ## HUD round 1: the info panel and the gilt trim (#398, #397)
 
-Art-track gap 4, first step. The gap list and the later steps (the minimap and settlement badges; the top bar and card
-head, which wait for owner rulings) are in the issue.
+Art-track gap 4, first step. The gap list and the later steps (the minimap; the top bar and card head, which wait for
+owner rulings) are in the issue. The settlement badge, the population tier in a city's or town's pill, has shipped:
+owner-approved as shipped (#710, 18 October 2026, "Accept as shipped"; `MapLabelsPresenter.TierClass`).
 - The info panel: before a hex is chosen it is a one-line hint (promo 03 shows no panel until a tile is chosen). The
   hex's facts are icon rows with gold signs (`UiIcon` region, house, village, flag): the region, the settlements, the 1948
   localities and the placement. There are no yields (owner ruling) and no land-use name, because the land-use bake is

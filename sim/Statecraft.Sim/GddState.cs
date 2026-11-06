@@ -408,7 +408,7 @@ namespace Statecraft.Sim
         public string Id { get; }
         public IReadOnlyList<SegmentWork?> Segments { get; }
 
-        public CorridorWork(string id, SegmentWork?[] segments) { Id = id; Segments = (SegmentWork?[])segments.Clone(); }
+        public CorridorWork(string id, SegmentWork?[] segments) { Id = id; Segments = Array.AsReadOnly((SegmentWork?[])segments.Clone()); }
 
         /// <summary>The same corridor with segment <paramref name="index"/> (0-based) replaced; null when no segment is left
         /// with a record.</summary>

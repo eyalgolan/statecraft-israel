@@ -140,12 +140,12 @@ public class NoAttentionTests
         g.State.Units[99]=new Unit(99,"recruit",1,0,side:"israel",strength:1);g.State.NextId=100;
         Assert.Null(g.Commit(new Move(99,2,0)));Assert.Equal(55,g.Now.State.Attention);
         g.EndTurn(Array.Empty<Command>());Assert.Equal(55,g.State.Attention);
-        var text=g.Save.Write();Assert.Equal(4,SaveGame.Parse(text,c.Ruleset).Version);
+        var text=g.Save.Write();Assert.Equal(5,SaveGame.Parse(text,c.Ruleset).Version);
         // Use a fresh session without injected units for actual replay of an authored deferred command.
         var clean=GameSession.New(c,1,Mode.Historical);clean.Step(new[]{new AssignWorkers("town_a","job",1)});
         Assert.Equal(clean.State.Hash(),GameSession.Load(c,clean.Save.Write(),out _).State.Hash());
     }
-    [Fact] public void OpenTurnSchema4ReplaysWithoutInjectedStateAndRejectsTampering()
+    [Fact] public void OpenTurnSchema5ReplaysWithoutInjectedStateAndRejectsTampering()
     {
         var files=Fixture.Gdd(new Dictionary<string,string> {
             ["map/units_1948.yaml"]="units:\n- id: test_force\n  service: army\n  side: israel\n  status: draft\n  strength: { value: 1000, as_of: '1948-05-15' }\n  anchors:\n  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n",

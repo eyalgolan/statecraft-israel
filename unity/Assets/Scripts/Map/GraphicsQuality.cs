@@ -65,7 +65,8 @@ namespace Statecraft.Game.Map
             if (asset != null)
                 asset.renderScale = c == Choice.High ? HighRenderScale : c == Choice.Low ? LowRenderScale
                     : QualitySettings.names[level] == LowTier ? QualityTierValues.WebRenderScale : 1f;
-            TiltShift.FallbackOff = false;   // a fixed choice ends the fallback's last step; Auto starts it again from the top
+            TiltShift.FallbackOff = false;   // a fixed choice ends the fallback's last steps; Auto starts it again from the top
+            Kits.TownModelLayer.LowTier = false;
             Changed?.Invoke();
         }
     }

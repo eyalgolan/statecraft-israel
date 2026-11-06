@@ -1,5 +1,7 @@
 import subprocess
 
+import pytest
+
 import scan_history
 from conftest import commit_all, git
 
@@ -80,3 +82,41 @@ def test_ref_and_all_flags_parse(tmp_path, capsys):
     assert scan_history.main(["--repo", str(root), "--ref", "main"]) == 0
     assert scan_history.main(["--repo", str(root), "--all"]) == 0
     assert "no findings" in capsys.readouterr().out
+
+
+class FailedLog:
+    stdout = [b"COMMIT 0123456789abcdef\n", b"+++ b/partial.txt\n", b"+partial history\n"]
+
+    def wait(self):
+        return 128
+
+
+def test_a_failed_streaming_git_log_refuses_partial_results(tmp_path, monkeypatch):
+    monkeypatch.setattr(scan_history.subprocess, "Popen", lambda *a, **k: FailedLog())
+    with pytest.raises(subprocess.CalledProcessError) as e:
+        scan_history.scan(tmp_path, ["main"])
+    assert e.value.returncode == 128 and e.value.cmd[:4] == ["git", "-C", str(tmp_path), "log"]
+
+
+def test_the_cli_clearly_refuses_a_failed_streaming_git_log(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(scan_history.subprocess, "Popen", lambda *a, **k: FailedLog())
+    assert scan_history.main(["--repo", str(tmp_path), "--ref", "main"]) == 1
+    captured = capsys.readouterr()
+    assert "HISTORY SCAN FAILED" in captured.err and "incomplete" in captured.err
+    assert "scanned" not in captured.out and "open secret-shape findings" not in captured.out
+
+
+def test_open_rows_that_are_not_secret_shaped_print_as_one_count_per_kind(tmp_path, capsys):
+    # #2655 item 7: main's 1,311 OPEN personal-email rows (mostly commit identities) buried the gate's summary line.
+    root = new_repo(tmp_path)
+    for i in range(3):
+        write(root, f"{i}.txt", "x\n")
+        git(root, "add", "-A")
+        git(root, "-c", "user.name=t", "-c", f"user.email=person{i}" + "@" + "corp.com", "commit", "-qm", f"c{i}")
+    write(root, "promo/k.py", f'K = "{FAKE}"\n')
+    c4 = commit_all(root, "add tool")
+    scan_history.main(["--repo", str(root)])
+    out = capsys.readouterr().out
+    assert "(identity)  personal-email  OPEN" not in out
+    assert "personal-email  3 OPEN rows (not secret-shaped, not listed)" in out
+    assert f"{c4}  promo/k.py  elevenlabs-key  OPEN" in out and "1 open secret-shape findings" in out
