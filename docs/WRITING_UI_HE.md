@@ -76,11 +76,11 @@ For the native reviewer: choose the word for each open concept above and record 
 
 ### HE-03 Form of address
 Status: proposed, native; source read directly. Source: the Israeli National Digital Agency's guide to government language, section 1.3.3 (paraphrased; reuse terms not found). It says: do not address users only in the masculine singular; do not use slash or dot forms; first priority is a setting that adapts the form to the user; second, a second person without a gender marker (words ending in ך, ת or ה); then a neutral first person; then an action noun, an infinitive, or rephrasing such as "יש לשלוח".
-- The strings already follow this apart from one masculine imperative: "הסתר" (`event.hide`). Candidate: "הסתרה" or "להסתיר".
+- The strings follow this. The one masculine imperative, "הסתר" (`event.hide`), is now the action noun "הסתרה".
 - Examples using neutral instructions include "לחיצה על יחידה ואז על משבצת מזיזה אותה; לחיצה על המפה, או Tab ו־Enter, בודקת משבצת; גרירה מזיזה את המפה" (`info.hint`). Action-noun labels include "הקמת מעברה ({0})" (`info.build_camp`), "הגשת התקציב" (`budget.submit`), "העלאת הדרגה" (`defence.raise`), "השמעת ההקלטה" (`start.listen`) and "איפוס" (`budget.reset`). One uses the ך ending: "{0} (מינוי שלך)" (`card.appointed_name`).
 - Two forms the reviewer should look at: "טוען את ההקלטה…" (`start.loading`), a masculine present-tense form with the program as its implied subject; and "המשך" (`start.continue`), which reads as a noun and also matches a masculine imperative. The Hebrew README addresses the reader as "אתם" (plural), a different choice again.
 - A player setting for the form of address is the guide's first priority. It is a design decision for the owner and is not proposed here.
-For the native reviewer: confirm that "יש ל..." and action nouns are right for a game, rule on the two forms above, and choose between "הסתרה" and "להסתיר".
+For the native reviewer: confirm that "יש ל..." and action nouns are right for a game, and rule on the two forms above.
 
 ### HE-04 Counts and plurals
 Status: observed in the Hebrew strings, maintainer for a mechanism. Reason: Hebrew has three plural categories for cardinal numbers (one, two, other; Unicode CLDR 48), and the game has no general way to choose a form by count. Nine explicit selector families change the Hebrew wording by count. The top bar picks between two keys: "{0:0} נקודה" (`hud.say_point`) and "{0:0} נקודות" (`hud.say_points`). "החלטות ממתינות נוספות: {0}" (`event.more`) is written as "Label: N" and a repo test pins it; a count of one uses `event.more_one` (`EventCardTests`: "the owner's singular label (25 Oct)"). The objective early/late month messages have singular variants (`event.objective_early_one`, `event.objective_late_one`) selected in EventCardPresenter.ObjectiveLine. The city panel adds city.groups_one/city.groups and city.turns_one/city.turns (#869). The other three are `why.line.unit_moved_one` / `why.line.unit_moved`, `info.map_action_reason.too_far_one` / `info.map_action_reason.too_far_many` and `workshop.refused_built_one` / `workshop.refused_built`. These explicit selectors do not provide a general language-category mechanism; native review must assess their wording.
@@ -105,7 +105,7 @@ Status: proposed, native. Reason: the Academy's punctuation rules use a maqaf wh
 - Code: a placeholder written straight after a prefix ("ב{0}") is joined to a Hebrew value ("בתל אביב"), and UiText.Format adds the maqaf when the value starts with a digit or a Latin letter ("ב־Haifa", for a name with no Hebrew form yet). Write "ב־{0}" only where the value is always a numeral or a date.
 - Native review: owner, 25 Oct 2026 (recommendations page), #1636: direct joining before Hebrew names, the maqaf only before a numeral or Latin letters, and "10 ק״מ מדרום־מערב לחיפה" for `why.hex.away`.
 - Candidate: "יישובים ב־1948: {0}".
-- A second place: the map legend joins two colour words with a hyphen-minus, "כתום-אדום" (`map.legend_held`, also `map.legend_armistice`). r12a's note on the hyphen between compounds points to the maqaf there too. Candidate: "כתום־אדום".
+- A second place: the map legend joined two colour words with a hyphen-minus. `map.legend_held` and `map.legend_armistice` now use the maqaf, "כתום־אדום", as r12a's note on the hyphen between compounds suggests.
 For the native reviewer: confirm the maqaf for prefixes before numerals and Latin letters, for the colour compound, and the numeral range style in `why.turn`.
 
 ### HE-08 Numbers, dates and money
@@ -137,7 +137,7 @@ Status: observed in English, proposed for Hebrew. The settings.tiltshift string 
 Check: a pattern search over the strings files.
 
 ### HE-12 Content text (events, units, names)
-Status: implemented localisation, native review pending (#564). In the Hebrew UI, EventCardPresenter uses the Hebrew title, body and option labels where supplied through ContentNames.Fill; each missing field falls back to English. An alternate-timeline variant without Hebrew keeps its English variant text. UnitCard uses a sourced Hebrew unit name and optional Hebrew place, commander and sector text where supplied, otherwise the English value for that field. Names of offices, parties, governments, legislatures and places have sourced Hebrew forms in the content since #558, and Unity reads Hebrew names of places, Cabinet refusal names (#985), and the people, office, party, government and legislature forms handled by ContentNames.Of (#861). Since 15 October a Hebrew display name that an agent has checked against its sources and no person has read carries its own flag beside it, `name_he_review`, `title_he_review`, `title_he_f_review` or `body_he_review: agent-checked`. A native speaker, or an AI-assisted contributor who discloses it, removes the line once they have read the name (CONTENT_POLICY section 2, rule 6; #564; owner, 4 November 2026: "AI-assisted can clear it"). Localised content keeps the same rules: every historical claim keeps its sources, no quote is invented, and Hebrew names of people and places are checked against a source and not guessed. Sensitive events need review by a native reader and the existing sensitivity review, in addition to the historian review.
+Status: implemented localisation, native review pending (#564). In the Hebrew UI, EventCardPresenter uses the Hebrew title, body and option labels where supplied through ContentNames.Fill; each missing field falls back to English. An alternate-timeline variant without Hebrew keeps its English variant text. UnitCard uses a sourced Hebrew unit name and optional Hebrew place, commander and sector text where supplied, otherwise the English value for that field. Names of offices, parties, governments, legislatures and places have sourced Hebrew forms in the content since #558, and Unity reads Hebrew names of places, Cabinet refusal names (#985), and the people, office, party, government and legislature forms handled by ContentNames.Of (#861). Since 15 October a Hebrew display name that an agent has checked against its sources and no person has read carries its own flag beside it, `name_he_review`, `title_he_review`, `title_he_f_review` or `body_he_review: agent-checked`. A native speaker, or an AI-assisted contributor who discloses it, removes the line once they have read the name (CONTENT_POLICY section 2, rule 6; #564; owner, 4 November 2026: "AI-assisted can clear it"). Localised content keeps the same rules: every historical claim keeps its sources, no quote is invented, and Hebrew names of people and places are checked against a source and not guessed. Sensitive events must be `sensitivity-reviewed` (CONTENT_POLICY section 2, rule 1), and the Hebrew read of their text is done by a native speaker or by a disclosed AI-assisted contributor who clears the `agent-checked` flag (CONTENT_POLICY section 2, rule 6). Historian review is planned for M4 and is not yet a gate.
 For the maintainer: the remaining localisation scope and review ownership; the Hebrew fields and per-field English fallbacks above are already implemented.
 
 Media descriptions on event photographs, illustration loops, outcome clips and opening media follow the same per-field
@@ -161,15 +161,13 @@ For the native reviewer: review any new body name against these sentences and ma
 
 | Key | Today | Candidate | Rule |
 |---|---|---|---|
-| `event.hide` | הסתר | הסתרה, or להסתיר | HE-03 |
 | `info.localities` | יישובים ב-1948: {0} | יישובים ב־1948: {0} | HE-07 |
-| `map.legend_held` | כתום-אדום (in the line) | כתום־אדום | HE-07 |
 | `unit.national` | רמת ביטחון {1} מתוך 5 | the same word as `hud.level` (דרגה) | HE-02 |
 | `info.biome.valley`, `info.biome.lowland` | בקע, עמק | reviewer to say whether the two are swapped | HE-02 |
 | `start.loading` | טוען את ההקלטה… | reviewer to rule on the masculine present form | HE-03 |
 | `boot.failed` | ...את Statecraft: {0}. ... | check the display; isolate the Latin name | HE-09 |
 
-Addressed by #1081 and removed from this table: the three legislature vote strings (HE-15). Settled by the owner since 14 October and also removed: `card.competence` (now כישורים), `defence.section_ladder` (now המצב הביטחוני) and the separate unit for the Provisional State Council (`cabinet.seats_appointed`).
+Addressed by #1081 and removed from this table: the three legislature vote strings (HE-15). Done since, and also removed: `event.hide` (now "הסתרה", HE-03) and the colour compound in `map.legend_held` and `map.legend_armistice` (now "כתום־אדום", HE-07). Settled by the owner since 14 October and also removed: `card.competence` (now כישורים), `defence.section_ladder` (now המצב הביטחוני) and the separate unit for the Provisional State Council (`cabinet.seats_appointed`).
 
 ## Review checklist
 
