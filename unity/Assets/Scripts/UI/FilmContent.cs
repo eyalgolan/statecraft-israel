@@ -92,11 +92,14 @@ namespace Statecraft.Game.UI
             return null;
         }
 
-        /// <summary>The shipped file; null if it is not in the build.</summary>
+        /// <summary>The shipped file; null if it is not in the build, or if it is malformed (one error line): the opening then
+        /// goes on without the film, and GameRoot.Begin does not stop.</summary>
         public static Document? Load()
         {
             var asset = Resources.Load<TextAsset>(ResourcePath);
-            return asset == null ? null : Parse(asset.text);
+            if (asset == null) return null;
+            try { return Parse(asset.text); }
+            catch (InvalidOperationException e) { Debug.LogError("FILM " + e.Message + ": the opening goes on without it"); return null; }
         }
 
         /// <summary>A player build plays the film only once the owner has reviewed the final file (film.yaml,

@@ -158,7 +158,8 @@ and whether the picture is bundled under the 10 MiB file limit or hosted.
 - **Where it plays.** Before the stills on a new game (either route) and on "Replay the opening", then the stills as before.
   Continue plays neither. It never plays in the automated runs: it needs a video player (`CardVideo.ForcedOff`).
 - **The opening is the fallback.** No picture file, a load that fails or times out, or a skip all go on to the stills. A
-  missing file logs one plain line, not a warning, and is not asked for again that session. A player build
+  missing picture file logs one plain line, not a warning, and is not asked for again that session. Only the picture
+  is checked first: a missing or broken sound file is a failed load, one `ADVISOR MEDIA failed` warning. A player build
   plays nothing until `sensitivity_reviewed: true`, so it does not ask at all.
 - **Skip.** The Skip button shows and takes the focus from the first frame, before anything has loaded. Skip and Esc
   close the film only, one layer (#2609).

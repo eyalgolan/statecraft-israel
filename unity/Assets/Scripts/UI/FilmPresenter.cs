@@ -102,8 +102,13 @@ namespace Statecraft.Game.UI
             watch = layer.schedule.Execute(ProbeTimedOut).StartingIn(ProbeTimeoutMs);
         }
 
-        /// <summary>The check took too long (test seam: what the scheduled watch calls).</summary>
-        internal void ProbeTimedOut() { if (IsOpen && probing) Answered(false); }
+        /// <summary>The check took too long (test seam: what the scheduled watch calls): it is aborted, as Close aborts it.</summary>
+        internal void ProbeTimedOut()
+        {
+            if (!IsOpen || !probing) return;
+            var pending = request; request = null; pending?.Abort();
+            Answered(false);
+        }
 
         void Answered(bool found)
         {

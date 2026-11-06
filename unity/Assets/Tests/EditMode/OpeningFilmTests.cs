@@ -192,6 +192,7 @@ cues:
         rig.Play();
         rig.Film.ProbeTimedOut();
         Assert.AreEqual(1, rig.Then);
+        Assert.IsTrue(rig.Request.Aborted, "the check that timed out is aborted, not left running");
         rig.Answer!(true);
         Assert.AreEqual(1, rig.Then);
         Assert.IsFalse(rig.Layer || rig.Output.Played);
