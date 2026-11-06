@@ -64,9 +64,9 @@ namespace Statecraft.Sim
         /// accepts is still accepted whichever of them runs first.</summary>
         public static string? Check(Content c, GameState s, string city, int count, IEnumerable<Command> pending)
         {
-            if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
-            if (c.Ruleset != SaveGame.Gdd03Ruleset) return "There is no such role";
-            if (count < 0) return "The number of workers cannot be negative";
+            if (!s.Cities.TryGetValue(city, out var x)) return Training.RefusedNoCity;
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return Cities.RefusedNoRole;
+            if (count < 0) return Cities.RefusedNegativeWorkers;
             var name = PlayerText.Settlement(c, city);
             var built = Built(c, s, city);
             if (count > built) return built == 1 ? Refused(RefusedBuiltOne, name) : Refused(RefusedBuilt, name, built);

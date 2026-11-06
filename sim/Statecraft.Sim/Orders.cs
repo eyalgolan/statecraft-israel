@@ -32,6 +32,8 @@ namespace Statecraft.Sim
         /// operation card's go-to not carried out because the unit is the last Israeli unit on an occupied place
         /// (SettlementControl.LastGarrison), at the order or on a later turn of its march. Listed like <see cref="RefusedCardOrder"/>.</summary>
         public const string RefusedLastGarrison = "The unit stays: it is the last Israeli unit holding an occupied place";
+        /// <summary>#2707: an order other than a go-to or an attack that carries a hex (Simulation.Execute); the UI maps it to its own string.</summary>
+        public const string RefusedNamesNoHex = "That order names no hex";
 
         /// <summary>The player's side (units_1948.yaml's id). Only the player's military units take orders.</summary>
         const string PlayerSide = "israel";
