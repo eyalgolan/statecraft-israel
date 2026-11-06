@@ -7,10 +7,10 @@ public class Gdd03HousingFormulaTests
     static Gdd03HousingFormula Formula() => Gdd03HousingFormula.FromCatalogue(
         ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance ?? throw new InvalidOperationException("GDD 0.3 catalogue required"));
 
-    static Gdd03HousingInput Input(int surcharge = 10, int beforeArrival = 10,
+    static Gdd03HousingInput Input(int surcharge = 10, int residents = 10,
         int cohesion = 10, int population = 20, decimal capacity = 5m,
         decimal condition = 0.40m) =>
-        new Gdd03HousingInput(surcharge, beforeArrival, cohesion, population,
+        new Gdd03HousingInput(surcharge, residents, cohesion, population,
             capacity, condition);
 
     // Each fixture changes one coefficient before the existing reader validates/snapshots it.
@@ -68,10 +68,21 @@ public class Gdd03HousingFormulaTests
         const decimal overflowPp = 12.5m;
         var f = FormulaWithSyntheticScalar("housing.overflow_deterioration", overflowPp);
         var expectedLoss = (overflowPp / 100m) * Math.Max(0m, 20m - 8m) / 20m;
-        var r = f.Evaluate(Input(beforeArrival: 20, capacity: 8m,
+        var r = f.Evaluate(Input(residents: 20, capacity: 8m,
             condition: 0.40m));
         Assert.Equal(expectedLoss, r.OverflowConditionLoss);
         Assert.Equal(0.40m - expectedLoss, r.ConditionAfter);
+    }
+
+    [Fact] public void AnArrivalThisStepCountsTowardOverflow()
+    {
+        // R-HOUSE-005, 27M-15 (#2517): R is counted after the step's arrivals become civilians. 10 housed people at
+        // capacity 10 overflow by nothing; 2 arrivals this step make R 12, and those 2 overflow.
+        var f = Formula();
+        Assert.Equal(0m, f.Evaluate(new Gdd03HousingInput(10, residents: 10, 10, 20, 10m, 0.40m)).OverflowConditionLoss);
+        var r = f.Evaluate(new Gdd03HousingInput(12, residents: 12, 12, 20, 10m, 0.40m));
+        Assert.Equal((5m / 100m) * 2m / 12m, r.OverflowConditionLoss);   // overflow_deterioration 5 pp (owner, 2 November 2026)
+        Assert.Equal(0.40m - (5m / 100m) * 2m / 12m, r.ConditionAfter);
     }
 
     [Fact] public void NoUnpaidUpkeepTermAndTheDeclinedRowIsNotRead()
@@ -123,7 +134,7 @@ public class Gdd03HousingFormulaTests
     [Fact] public void ExplicitBoundaryCountsAreNeverSubstitutedForEachOther()
     {
         // R-HOUSE-002, R-HOUSE-003: does not select residents or settle timing.
-        var r = Formula().Evaluate(Input(surcharge: 10, beforeArrival: 20,
+        var r = Formula().Evaluate(Input(surcharge: 10, residents: 20,
             cohesion: 5, population: 20, capacity: 15m, condition: 0.125m));
         Assert.Equal(0.375m, r.SurchargeMoney);   // 10 x 0.375 x money_slope 0.1 (#1703; was 3.75 at slope 1)
         Assert.Equal(0.0125m, r.OverflowConditionLoss);
@@ -139,7 +150,7 @@ public class Gdd03HousingFormulaTests
         Assert.Equal(0.235m, r.ConditionAfter);
         Assert.Equal(0.12m, r.CohesionLossPoints);
         var a = f.Evaluate(Input(condition: 0.125m, capacity: 10m));
-        var b = f.Evaluate(Input(surcharge: 5, beforeArrival: 5, cohesion: 5,
+        var b = f.Evaluate(Input(surcharge: 5, residents: 5, cohesion: 5,
             condition: 0m, capacity: 5m));
         Assert.Equal(1m, a.CohesionLossPoints + b.CohesionLossPoints);
     }
@@ -147,12 +158,12 @@ public class Gdd03HousingFormulaTests
     [Fact] public void ZeroDenominatorsHaveNoLoss()
     {
         // R-HOUSE-002
-        var r = Formula().Evaluate(Input(surcharge: 0, beforeArrival: 0, cohesion: 0,
+        var r = Formula().Evaluate(Input(surcharge: 0, residents: 0, cohesion: 0,
             population: 0, capacity: 0m, condition: 0m));
         Assert.Equal(0m, r.OverflowConditionLoss);
         Assert.Equal(0m, r.CohesionLossPoints);
         Assert.Equal(0m, r.SurchargeMoney);
-        Assert.Equal(0m, Formula().Evaluate(Input(beforeArrival: 0, cohesion: 0, population: 0,
+        Assert.Equal(0m, Formula().Evaluate(Input(residents: 0, cohesion: 0, population: 0,
             condition: 0m)).CohesionLossPoints);
     }
 
@@ -180,7 +191,7 @@ public class Gdd03HousingFormulaTests
     [Fact] public void InvalidExplicitInputsAreRejectedWithoutState()
     {
         var f = Formula();
-        foreach (var input in new[] { Input(surcharge: -1), Input(beforeArrival: -1),
+        foreach (var input in new[] { Input(surcharge: -1), Input(residents: -1),
             Input(cohesion: -1), Input(population: -1), Input(capacity: -1m),
             Input(condition: -0.01m), Input(condition: 1.01m) })
             Assert.Throws<ArgumentOutOfRangeException>(() => f.Evaluate(input));

@@ -86,6 +86,15 @@ namespace Statecraft.Game.Map
         public Func<bool>? HoldsMouseDrag;
         /// <summary>The same for a one-finger drag and a tap (MapPointer.TouchTapCandidate).</summary>
         public Func<bool>? HoldsTouchDrag;
+        /// <summary>True while a screen is open (GameRoot: ScreenNav.Current), when the Up and Down arrows move between the
+        /// screen's rows (NavigationGuard.Step, accessibility audit L4; the owner's answer on #2340, Q27: "do the recommended
+        /// for all") and do not pan. Left, Right and WASD still pan. Null: the arrows always pan (B6).</summary>
+        public Func<bool>? ScreenTakesUpDown;
+        /// <summary>True while an open screen covers the whole map (GameRoot: a screen in the two-row or tight three-row HUD,
+        /// #2712): keyboard pan, orbit and the zoom keys are then off, as under the start screen, since they would move a map
+        /// the player cannot see. A partial desktop screen leaves the map beside it, so there the keys stay (plan amendment
+        /// A4). The wheel and the drag need no gate: over the screen they are the UI's already (IsOverUi). Null: never.</summary>
+        public Func<bool>? ScreenCoversMap;
         /// <summary>The trackpad pinch since the last frame, as the summed NSEvent magnification (positive = the fingers
         /// spread). macOS sends a pinch as magnify events, which Unity's player passes to neither the Input System nor the
         /// wheel (the owner found zooming did nothing in the macOS player, 27 Oct 2026), so TrackpadPinch.mm collects them
@@ -225,13 +234,28 @@ namespace Statecraft.Game.Map
                 }
             }
             var modifier = ModifierHeld(Keyboard.current);
-            var input = Gather(pan.ReadValue<Vector2>(), drag, zoomRaw, orbit.ReadValue<float>(), down, pointer, zoomKeys.ReadValue<float>(), modifier);
+            var keysOff = ScreenCoversMap?.Invoke() == true;
+            var keyPan = keysOff ? Vector2.zero : pan.ReadValue<Vector2>();
+            if (!keysOff && ScreenTakesUpDown?.Invoke() == true) keyPan = WithoutUpDownArrows(keyPan, Keyboard.current);
+            var input = Gather(keyPan, drag, zoomRaw, keysOff ? 0f : orbit.ReadValue<float>(), down, pointer,
+                keysOff ? 0f : zoomKeys.ReadValue<float>(), modifier);
             if (down) input.DragFromUi = fromUi; // latched at the actual press, even between camera frames
             // Classify and filter the current gesture before draining earlier, already-approved motion.
             // A new UI press owns only its own drag; OverUi must still block its wheel/magnify zoom.
             input.DragPan = (input.DragFromUi ? Vector2.zero : input.DragPan) + touchDrag.TakeLifted();
             input.DragFromUi = false;
             Step(rig, input, ClampDt(dt), Bounds, Ground, GroundTop, FixedNorth);
+        }
+
+        /// <summary>The keyboard pan with the Up and Down arrows taken out (ScreenTakesUpDown). The Pan action resolves its two
+        /// composites (WASD, the arrows) to one value, so while Up or Down is held the pan is rebuilt from the other keys:
+        /// across from A, D, Left and Right, along from W and S, a diagonal normalised as the composites do.</summary>
+        internal static Vector2 WithoutUpDownArrows(Vector2 pan, Keyboard? k)
+        {
+            if (k == null || !(k.upArrowKey.isPressed || k.downArrowKey.isPressed)) return pan;
+            var v = new Vector2((k.dKey.isPressed || k.rightArrowKey.isPressed ? 1f : 0f) - (k.aKey.isPressed || k.leftArrowKey.isPressed ? 1f : 0f),
+                                (k.wKey.isPressed ? 1f : 0f) - (k.sKey.isPressed ? 1f : 0f));
+            return v.sqrMagnitude > 1f ? v.normalized : v;
         }
 
         /// <summary>Position history scoped to one press. Begin resets even if release/repress happens between

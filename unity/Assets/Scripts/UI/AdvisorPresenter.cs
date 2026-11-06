@@ -101,6 +101,9 @@ namespace Statecraft.Game.UI
         AdvisorCatalog.Message? covered;
         /// <summary>The Budget screen's last word on its edit (BudgetUnsubmitted): true while an edit is not submitted.</summary>
         bool budgetUnsubmitted;
+        /// <summary>Sets that state without firing budget_unsubmitted again: a Budget screen built with a kept draft (#2708)
+        /// said it before this advisor listened; the old advisor already queued the warning, and the session is kept.</summary>
+        internal bool HoldsBudgetUnsubmitted { get => budgetUnsubmitted; set => budgetUnsubmitted = value; }
 
         public AdvisorPresenter(VisualElement root, SimBridge bridge, UiText text, AdvisorSession session,
             PortraitCatalog? portraits = null, AdvisorHooks? hooks = null)

@@ -31,10 +31,11 @@ namespace Statecraft.Sim
         /// Support), shown without a historical value (Q-END-2).</summary>
         public double SocialCohesion { get; }
         public double InternationalSupport { get; }
-        /// <summary>The Jewish population at the end (<see cref="GameState.TotalPopulation"/>).</summary>
+        /// <summary>The population at the end (<see cref="GameState.TotalPopulation"/>): every group, annexed residents included
+        /// (R-CITY-008), so no longer the Jewish population alone.</summary>
         public double Population { get; }
-        /// <summary>The one comparison with history (Q-END-2, R-END-006): the latest CBS anchor (population.yaml) dated on or
-        /// before <see cref="Date"/>, with its sources; null when the game ended before the first anchor.</summary>
+        /// <summary>The one comparison with history (Q-END-2, R-END-006): the latest CBS anchor of the Jewish population
+        /// (population.yaml) dated on or before <see cref="Date"/>, with its sources; null when the game ended before the first anchor.</summary>
         public PopulationAnchor? PopulationHistory { get; }
         /// <summary>The prisoners returned in the exchanges (Q-END-3, R-POW-004), in people as Defence shows them
         /// (<see cref="GameState.PrisonersReturned"/> units times the people per unit); 0 when none went home.</summary>

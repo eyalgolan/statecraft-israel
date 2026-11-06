@@ -8,8 +8,7 @@ using Statecraft.Game;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 
-/// <summary>Final review I4: a shareable build (Build.Web -shareable) is refused while any sensitive event lacks the owner's
-/// sensitivity review, and the refusal names each one.</summary>
+/// <summary>The content and review gates applied by every Unity player build made with -shareable.</summary>
 public class BuildGateTests
 {
     static Type SettlementReview => Type.GetType("Statecraft.Game.EditorTools.SettlementControlStringReview, Assembly-CSharp-Editor")!;
@@ -17,6 +16,9 @@ public class BuildGateTests
         SettlementReview.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object[] { yaml, file })!;
     static string? SettlementReviewRefusal(object? review, UiText en, UiText he) =>
         (string?)SettlementReview.GetMethod("Refusal", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new[] { review, en, he });
+    static bool IsSettlementControlKey(string key) =>
+        (bool)SettlementReview.GetMethod("IsSettlementControlKey", BindingFlags.Public | BindingFlags.Static)!
+            .Invoke(null, new object[] { key })!;
 
     internal static string? ReviewedSettlementControlStrings()
     {
@@ -77,6 +79,19 @@ public class BuildGateTests
         Assert.IsInstanceOf<InvalidOperationException>(unreadable!.InnerException);
     }
 
+    [TestCase("capture.fixture")]
+    [TestCase("map.control.fixture")]
+    [TestCase("info.control.fixture")]
+    [TestCase("hud.standing_displaced_places")]
+    public void SettlementControlStringsReviewRefusesAnOmittedEligibleKey(string omitted) // R-GATE-002
+    {
+        var en = UiText.Parse("a: English\n" + omitted + ": Fixture\n", "strings.en.yaml");
+        var he = UiText.Parse("a: עברית\n" + omitted + ": בדיקה\n", "strings.he.yaml");
+        var review = ParseSettlementReview(
+            "status: sensitivity-reviewed\nstrings:\n  - { key: a, en: English, he: עברית }\n", "fixture");
+        StringAssert.Contains(omitted, SettlementReviewRefusal(review, en, he));
+    }
+
     [Test]
     public void TheSettlementControlStringsRefusalJoinsTheShareableGateOnly() // R-GATE-002
     {
@@ -92,8 +107,8 @@ public class BuildGateTests
     public void TheShippedReviewManifestCoversTheWholeSettlementControlSurface() // R-GATE-002
     {
         var review = ParseSettlementReview(File.ReadAllText(UiPaths.SettlementControlStringsReview), UiPaths.SettlementControlStringsReview);
-        Assert.AreEqual("sensitivity-reviewed", SettlementReview.GetProperty("Status")!.GetValue(review),
-            "the owner signed off all 42 strings themselves (dbc70439, 26 October 2026); an AI-assisted change never sets this");
+        Assert.AreEqual(ReleaseGate.ReviewedStatus, SettlementReview.GetProperty("Status")!.GetValue(review),
+            "#2542 added agent-drafted English and Hebrew control strings; the owner's sensitivity review set the status (#2809, 5 November 2026)");
         var rows = ((System.Collections.IEnumerable)SettlementReview.GetProperty("Strings")!.GetValue(review)!).Cast<object>();
         var rowType = SettlementReview.GetNestedType("Row")!;
         var keys = rows.Select(x => (string)rowType.GetProperty("Key")!.GetValue(x)!).ToArray();
@@ -109,24 +124,30 @@ public class BuildGateTests
             "capture.refusal.no_one_to_deport", "capture.refusal.already_city", "capture.refusal.not_awaiting",
             "capture.refusal.unknown_outcome",
             "map.control.awaiting_choice", "map.control.occupied", "map.control.awaiting_end", "map.control.depopulated",
+            "map.control.annexed", "map.control.lost",
             "info.control.awaiting_choice", "info.control.occupied", "info.control.awaiting_end", "info.control.depopulated",
+            "info.control.annexed", "info.control.lost", "info.control.enemy_held",
             "hud.standing_displaced_places",
         }, keys);
         // A settlement-control key added to either strings file later (U6's dialog, #799's annex words) must join the manifest.
         foreach (var file in new[] { UiPaths.Strings, UiPaths.StringsHebrew })
             foreach (var key in new YamlDotNet.Serialization.Deserializer().Deserialize<System.Collections.Generic.Dictionary<string, string>>(File.ReadAllText(file)).Keys)
-                if (key.StartsWith("capture.", StringComparison.Ordinal) || key.StartsWith("map.control.", StringComparison.Ordinal)
-                    || key.StartsWith("info.control.", StringComparison.Ordinal) || key == "hud.standing_displaced_places")
+                if (IsSettlementControlKey(key))
                     CollectionAssert.Contains(keys, key, file + ": " + key + " is a settlement-control string, so R-GATE-002's manifest lists it");
     }
 
     /// <summary>The real content with its starting forces' rows fact-checked (R-UNIT-006, Q-START-3) and its settlement
     /// target rows sensitivity-reviewed (Q-TGT-3 (b), #793), as the owner's checks left them (#1240, #1241, #793), for the
-    /// tests about the other gates. In memory only, so these tests do not depend on the shipped statuses.</summary>
+    /// tests about the other gates. In memory only, so these tests do not depend on the shipped statuses. Each row's
+    /// checked_on moves to its latest source check too, as a person's check of the later fields would move it (#2722).</summary>
     internal static Content Checked()
     {
         var c = ContentLoader.Load(Paths.Content);
-        foreach (var f in c.StartingForces) f.Status = "fact-checked";
+        foreach (var f in c.StartingForces)
+        {
+            f.Status = "fact-checked";
+            f.CheckedOn = f.SourcesChecked.Select(x => x.Checked).Append(f.CheckedOn).OrderBy(x => x, System.StringComparer.Ordinal).Last();
+        }
         foreach (var t in c.SettlementTargets) t.Status = ReleaseGate.ReviewedStatus;
         return c;
     }
@@ -136,7 +157,9 @@ public class BuildGateTests
     public void AShareableBuildWaitsForTheStartingForcesRows()
     {
         var c = ContentLoader.Load(Paths.Content);
-        CollectionAssert.IsEmpty(ReleaseGate.StartingForcesUnchecked(c), "the owner person-checked the real rows (21 October 2026, #1240), and Etzioni and the 7th after them (#1241, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840)");
+        CollectionAssert.AreEqual(new[] { "brigade_7", "carmeli", "givati", "harel", "kiryati", "negev" },
+            ReleaseGate.StartingForcesUnchecked(c).Select(x => x.Split(':')[0]),
+            "the owner person-checked the real rows (21 October 2026, #1240), and Etzioni and the 7th after them (#1241, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840); these six got an order target sourced after that check (#2722)");
         foreach (var f in c.StartingForces) f.Status = "to_verify";   // in memory only: the rows as they were before that check
         var refusal = Refusal(c);
         Assert.IsNotNull(refusal, "a row that is not fact-checked blocks a shareable build");
@@ -154,6 +177,19 @@ public class BuildGateTests
         c.SettlementTargets.Add(target);
         StringAssert.Contains("fixture_target", Refusal(c));
         target.Status = ReleaseGate.ReviewedStatus;
+        Assert.IsNull(Refusal(c));
+    }
+
+    /// <summary>R-ALT-011: an unsigned consequence card blocks Unity's shareable-build gate and is named.</summary>
+    [Test]
+    public void AShareableBuildWaitsForAnUnsignedConsequenceCard()
+    {
+        var c = ReviewedContent();
+        var card = c.Events.Single(e => e.Id == "jerusalem_demilitarisation_guard");
+        var signer = card.ReviewedBy;
+        card.ReviewedBy = "";
+        StringAssert.Contains(card.Id, Refusal(c));
+        card.ReviewedBy = signer;
         Assert.IsNull(Refusal(c));
     }
 
@@ -326,6 +362,23 @@ public class BuildGateTests
             var j = photos.entries.FindIndex(e => e.eventId == "maabarot_policy");
             var m = photos.entries[j]; m.credit = "someone else"; photos.entries[j] = m;
             StringAssert.Contains("maabarot_policy", (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null, ReviewedSettlementControlStrings() }), "a changed credit");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(photos); }
+    }
+
+    [Test]
+    public void TheGateRefusesAStaleHebrewAltInTheCatalog()
+    {
+        var photos = ShippedPhotos();
+        try
+        {
+            var j = photos.entries.FindIndex(e => e.eventId == "maabarot_policy");
+            Assert.GreaterOrEqual(j, 0, "fixture photograph");
+            var entry = photos.entries[j]; entry.altHe += " ישן"; photos.entries[j] = entry;
+            var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, ReviewedContent(), photos, true, Mapping, null, ReviewedSettlementControlStrings() });
+            Assert.IsNotNull(refusal);
+            StringAssert.Contains("does not match", refusal);
+            StringAssert.Contains("maabarot_policy", refusal);
         }
         finally { UnityEngine.Object.DestroyImmediate(photos); }
     }

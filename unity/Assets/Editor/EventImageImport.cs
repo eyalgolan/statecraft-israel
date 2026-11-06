@@ -40,7 +40,8 @@ namespace Statecraft.Game.EditorTools
                 Configure(path);
                 catalog.entries.Add(new EventImageCatalog.Entry
                 {
-                    eventId = r.Event, image = AssetDatabase.LoadAssetAtPath<Texture2D>(path), alt = r.Alt, credit = r.Credit,
+                    eventId = r.Event, image = AssetDatabase.LoadAssetAtPath<Texture2D>(path), alt = r.Alt, altHe = r.AltHe,
+                    credit = r.Credit,
                     sensitive = r.Sensitive, sensitivityReviewed = r.SensitivityReviewed,
                 });
             }

@@ -32,6 +32,7 @@ namespace Statecraft.Game.Map
         /// <summary>Who held which areas (null: the older drawing, sub-districts with the armistice zones over them).</summary>
         public readonly Control1948? Control;
         readonly Dictionary<string, RegionLayer> composed = new Dictionary<string, RegionLayer>();
+        readonly Dictionary<string, RegionLayer> liveComposed = new Dictionary<string, RegionLayer>(StringComparer.Ordinal);
         RegionLayer? neutralSubdistricts;
 
         public MapRegions(Subdistricts1948 subdistricts, Armistice1949? armistice, Control1948? control = null, MapRegionNames? names = null)
@@ -134,6 +135,35 @@ namespace Statecraft.Game.Map
             return composed[key] = new RegionLayer(Subdistricts.Layer.Name + "+armistice_1949", hexes, styles);
         }
 
+        /// <summary>The dated layer with live settlement ownership overlaid on settlement hexes only. The tuples are the
+        /// displayed settlement hex and whether the player holds it. An overlay that does not change a colour returns the
+        /// dated layer itself, preserving the normal no-op redraw path.</summary>
+        public RegionLayer? LayerOn(DateTime date, IEnumerable<(int q, int r, bool player)> liveSettlements)
+        {
+            if (liveSettlements == null) throw new ArgumentNullException(nameof(liveSettlements));
+            var historical = LayerOn(date);
+            if (historical == null) return null;
+            var overrides = liveSettlements.OrderBy(x => x.q).ThenBy(x => x.r).ThenBy(x => x.player).ToList();
+            if (!overrides.Any(x => historical.StyleOf(historical.RegionOf(x.q, x.r))
+                != (x.player ? BorderStyle.Primary : BorderStyle.Secondary))) return historical;
+            var signature = string.Join(";", overrides.Select(x => FormattableString.Invariant($"{x.q},{x.r},{(x.player ? 1 : 0)}")));
+            var key = historical.Name + ":live:" + signature;
+            if (liveComposed.TryGetValue(key, out var cached)) return cached;
+            var hexes = historical.Hexes.ToDictionary(h => h, h => historical.RegionOf(h.q, h.r));
+            var styles = hexes.Values.Distinct().ToDictionary(id => id, id => historical.StyleOf(id));
+            // On a control layer ids 1 and 2 are the two sides, so a settlement joins its side's area with no outline. On any
+            // other layer they are sub-districts (Acre, Beisan) and zones sit at ZoneIdBase and up: take fresh ids above the
+            // highest one, else the overlay would restyle every hex of those regions (#2742).
+            var onControl = Control != null && Control.PeriodOn(date) != null;
+            var top = styles.Keys.DefaultIfEmpty(0).Max();
+            int primaryId = onControl ? Control1948.IsraelId : top + 1, secondaryId = onControl ? Control1948.ArabId : top + 2;
+            styles[primaryId] = BorderStyle.Primary;
+            styles[secondaryId] = BorderStyle.Secondary;
+            foreach (var x in overrides) if (hexes.ContainsKey((x.q, x.r)))
+                hexes[(x.q, x.r)] = x.player ? primaryId : secondaryId;
+            return liveComposed[key] = new RegionLayer(key, hexes, styles);
+        }
+
         bool? shownState; RegionLayer? drawn;
         /// <summary>Whether the last <see cref="Apply"/> drew a layer.</summary>
         public bool Shown => shownState == true;
@@ -143,6 +173,17 @@ namespace Statecraft.Game.Map
         public void Apply(DateTime date)
         {
             var layer = LayerOn(date);
+            if (shownState != null && ReferenceEquals(layer, drawn)) return;
+            shownState = layer != null;
+            if (layer != null) MapBorders.Use(layer);
+            else if (drawn != null && MapBorders.Current == drawn) MapBorders.Use(null);
+            drawn = layer;
+        }
+
+        /// <summary>Draws the dated layer with live settlement ownership overlaid.</summary>
+        public void Apply(DateTime date, IEnumerable<(int q, int r, bool player)> liveSettlements)
+        {
+            var layer = LayerOn(date, liveSettlements);
             if (shownState != null && ReferenceEquals(layer, drawn)) return;
             shownState = layer != null;
             if (layer != null) MapBorders.Use(layer);

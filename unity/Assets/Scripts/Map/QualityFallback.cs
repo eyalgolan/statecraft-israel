@@ -9,7 +9,8 @@ using UnityEngine.Rendering.Universal;
 namespace Statecraft.Game.Map
 {
     /// <summary>The web tier's runtime quality fallback (issue #44; visual v1 Deferred row "Runtime quality fallback"):
-    /// when the frame-time p95 stays over the 30 fps floor, lower the render scale, then turn the tilt-shift off; when it
+    /// when the frame-time p95 stays over the 30 fps floor, lower the render scale, then turn the tilt-shift off, then draw the
+    /// town building models' far-off copies at every zoom (<see cref="Steps"/>); when it
     /// stays comfortably under, step back up in reverse. Pure logic (frame times in, a step out), so tests drive it with
     /// synthetic frames; QualityFallbackDriver feeds it the player's frames and applies its step. Presentation only: it
     /// reads nothing from the sim and changes no sim state, so turns, hashes and saves are the same on every step.
@@ -47,13 +48,23 @@ namespace Statecraft.Game.Map
         public readonly struct Step
         {
             public readonly float RenderScale; public readonly bool TiltShift;
-            public Step(float renderScale, bool tiltShift) { RenderScale = renderScale; TiltShift = tiltShift; }
-            public override string ToString() => string.Format(CultureInfo.InvariantCulture, "scale={0:0.00} tiltshift={1}", RenderScale, TiltShift ? "on" : "off");
+            /// <summary>The town building models draw their far-off copies, without shadows, even below the close switch
+            /// (TownModelLayer.LowTier).</summary>
+            public readonly bool TownModelsFar;
+            public Step(float renderScale, bool tiltShift, bool townModelsFar = false) { RenderScale = renderScale; TiltShift = tiltShift; TownModelsFar = townModelsFar; }
+            public override string ToString() => string.Format(CultureInfo.InvariantCulture, "scale={0:0.00} tiltshift={1} towns={2}", RenderScale, TiltShift ? "on" : "off", TownModelsFar ? "far" : "close");
         }
 
         /// <summary>Level 0 is the tier's own look; each level down costs less. Render scale first, within the research's
-        /// 0.8-1.0 dynamic range (notes 2.3), then the tilt-shift.</summary>
-        public static readonly IReadOnlyList<Step> Steps = new[] { new Step(1f, true), new Step(0.9f, true), new Step(0.8f, true), new Step(0.8f, false) };
+        /// 0.8-1.0 dynamic range (notes 2.3), then the tilt-shift, then the town building models' far-off copies at every
+        /// zoom: since v0.3.5 the 30 km opening (owner, 3 November 2026, "Open at ~30 km, like the promo") sits below
+        /// TownModelLayer.CloseEnterM, so the full originals and their shadows draw from the first frame, and on a weak or
+        /// software GPU the nightly's start-screen p95 went from 35-88 ms (v0.3.4) to 320-690 ms (v0.3.5, v0.3.6). A device
+        /// that reaches this step still opens at 30 km, with the far copies; a capable one never reaches it.</summary>
+        public static readonly IReadOnlyList<Step> Steps = new[]
+        {
+            new Step(1f, true), new Step(0.9f, true), new Step(0.8f, true), new Step(0.8f, false), new Step(0.8f, false, townModelsFar: true),
+        };
 
         public const float FloorMs = 33f, OverMs = 34f, RecoverMs = 20f, WindowSeconds = 3f, SettleSeconds = 0.5f, StartupSeconds = 3f, PauseMs = 1000f, ResumeSettleSeconds = 1f;
         public const int MinWindowFrames = 3, RecoverWindows = 3, MaxRecoverWindows = 48, FailedRecoveryWindows = 2;
@@ -128,7 +139,7 @@ namespace Statecraft.Game.Map
 
     /// <summary>Feeds QualityFallback the player's frame times (unscaled, so a paused game still counts) and whether the page
     /// is hidden (document.hidden through DocumentVisibility.jslib, read every frame; never hidden outside the WebGL player), and applies its step:
-    /// the active URP asset's render scale (never above the tier's own) and TiltShift.FallbackOff. CameraRig.Init attaches it
+    /// the active URP asset's render scale (never above the tier's own), TiltShift.FallbackOff and TownModelLayer.LowTier. CameraRig.Init attaches it
     /// to the map camera through Attach, whose undo (run by the map's teardown) removes it and puts both back.</summary>
     public sealed class QualityFallbackDriver : MonoBehaviour
     {
@@ -156,6 +167,7 @@ namespace Statecraft.Game.Map
                 GraphicsQuality.Changed -= restart;
                 if (asset != null) asset.renderScale = tierScale;
                 TiltShift.FallbackOff = false;
+                Kits.TownModelLayer.LowTier = false;
                 if (driver != null) { if (Application.isPlaying) Destroy(driver); else DestroyImmediate(driver); }
             };
         }
@@ -169,6 +181,7 @@ namespace Statecraft.Game.Map
             var step = Controller.Current;
             setScale(Mathf.Min(tierScale, step.RenderScale));
             TiltShift.FallbackOff = !step.TiltShift;
+            Kits.TownModelLayer.LowTier = step.TownModelsFar;
             Debug.Log(Controller.Line());
         }
 

@@ -81,6 +81,33 @@ public class GameSessionTurnTests
         Assert.Equal(new[] { "move" }, loaded.Committed.Select(x => x.Kind));
     }
 
+    // R-SAVE-003 (#2653): with the same content, an open-turn order the sim refuses on load means the save was edited.
+    [Fact]
+    public void ARefusedOpenOrderWithTheSameContentIsAnError()
+    {
+        var session = Fresh();
+        var unit = session.State.Units[0];
+        session.Save.SetOpen(new Command[] { new Move(0, unit.Q, unit.R) });   // refused: the unit is already there
+        var e = Assert.Throws<SaveException>(() => GameSession.Load(C, session.Save.Write(), out _));
+        Assert.Contains("The open turn's order 'move' was refused", e.Message);
+    }
+
+    // R-SAVE-003 (#2653): with other content, the first refused open order ends the replay: it and every later order
+    // are dropped, and the load warns that the replay differs.
+    [Fact]
+    public void ARefusedOpenOrderWithOtherContentDropsItAndTheRest()
+    {
+        var session = Fresh();
+        var unit = session.State.Units[0];
+        var valid = GoldenRun.SmokeMove(C, session.State);
+        session.Save.SetOpen(new Command[] { new Move(0, unit.Q, unit.R), valid });
+        var text = session.Save.Write().Replace("content " + C.Hash, "content " + new string('0', 64));   // other content
+        var loaded = GameSession.Load(C, text, out var warnings);
+        Assert.Equal(new[] { GameSession.ContentChanged, GameSession.ReplayDiffers }, warnings);
+        Assert.Empty(loaded.Committed);
+        Assert.Null(Fresh().Commit(valid));   // the dropped order after it would have been taken on its own
+    }
+
     [Fact]
     public void StepRefusesWhileOrdersAreCommitted()
     {
@@ -94,10 +121,28 @@ public class GameSessionTurnTests
     public void ASchema2SaveWithAnAttackIsRefusedAsOlderRules()
     {
         var session = Fresh();
-        var text = session.Save.Write().Replace("statecraft-save 3", "statecraft-save 2")
+        var text = session.Save.Write().Replace("statecraft-save 5", "statecraft-save 2")
             .Replace("end ", "turn\norder 0 attack 10 10\nend ");
         var e = Assert.Throws<SaveException>(() => GameSession.Load(C, text, out _));
         Assert.Equal(SaveException.OlderRules, e.Code);
+    }
+
+    // R-SAVE-004: "Other schema 2 saves load". A GDD save with no attack whose replay ends on its saved hash loads with no
+    // warning, has the live game's hash, and is written back as schema 5 (R-SAVE-005).
+    [Fact]
+    public void AnOrdinarySchema2SaveLoads()
+    {
+        var session = Fresh();
+        session.Step(new Command[] { GoldenRun.SmokeMove(C, session.State), new BuyArms(1) });
+        session.Step(new Command[0]);
+        var five = session.Save.Write();
+        var two = five.Replace("statecraft-save 5\n", "statecraft-save 2\n");
+        Assert.Equal(2, SaveGame.Parse(two).Version);
+        Assert.DoesNotContain(" attack ", two);
+        var loaded = GameSession.Load(C, two, out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(session.State.Hash(), loaded.State.Hash());
+        Assert.Equal(five, loaded.Save.Write());
     }
 
     // R-SAVE-003: reloading keeps an attack's result; the same draw comes out.
@@ -136,15 +181,31 @@ public class GameSessionTurnTests
         throw new InvalidOperationException("precondition: no attack is possible at the start");
     }
 
-    // R-SAVE-004: a schema 2 GDD save that does not replay to its saved hash gets the clear older-rules message; a schema 3
-    // one that does not is still damaged (no code).
+    // R-SAVE-004: a schema 2 GDD save that does not replay to its saved hash gets the clear older-rules message. #2605: a
+    // schema 3 one was played before the soft-event cap kept left-out events waiting, so it loads with replay_differs; a
+    // current (schema 5) one that does not is still damaged (no code).
     [Fact]
     public void ASchema2SaveThatReplaysDifferentlyIsRefusedAsOlderRules()
     {
         static string WrongEnd(string text) { var end = text.Substring(text.LastIndexOf("end ", StringComparison.Ordinal) + 4, 64); return text.Replace("end " + end, "end " + new string('0', 64)); }
-        var two = WrongEnd(Fresh().Save.Write().Replace("statecraft-save 3", "statecraft-save 2"));
+        var two = WrongEnd(Fresh().Save.Write().Replace("statecraft-save 5", "statecraft-save 2"));
         Assert.Equal(SaveException.OlderRules, Assert.Throws<SaveException>(() => GameSession.Load(C, two, out _)).Code);
-        var three = WrongEnd(Fresh().Save.Write());
-        Assert.Null(Assert.Throws<SaveException>(() => GameSession.Load(C, three, out _)).Code);
+        var three = WrongEnd(Fresh().Save.Write().Replace("statecraft-save 5", "statecraft-save 3"));
+        GameSession.Load(C, three, out var warnings);
+        Assert.Equal(new[] { GameSession.ReplayDiffers }, warnings);
+        var five = WrongEnd(Fresh().Save.Write());
+        Assert.StartsWith("statecraft-save 5\n", five);
+        Assert.Null(Assert.Throws<SaveException>(() => GameSession.Load(C, five, out _)).Code);
+    }
+
+    // #2605: the same for a refused open-turn order. A schema 3 save's open turn follows a replay under the earlier soft-event
+    // cap, so an order the new replay refuses loads with replay_differs; in a current save it is damage.
+    [Fact]
+    public void ASchema3SaveWhoseOpenOrderIsRefusedLoadsWithReplayDiffers()
+    {
+        var bad = Fresh().Save.Write().Replace("end ", "open\nmove 999 1 1\nend ");
+        Assert.Throws<SaveException>(() => GameSession.Load(C, bad, out _));
+        GameSession.Load(C, bad.Replace("statecraft-save 5", "statecraft-save 3"), out var warnings);
+        Assert.Equal(new[] { GameSession.ReplayDiffers }, warnings);
     }
 }

@@ -81,6 +81,11 @@
 #   has checked yet (above; #1240, #1270). fact-checked = a person has checked the row against its sources; every row a
 #   new game starts a unit from must be, before a shareable build (the release gate; Q-START-3). A comment above it
 #   links the check.
+# checked_on: a fact-checked row's day of its person check, 'YYYY-MM-DD', quoted, from the check the comment above status
+#   links; the sim refuses a fact-checked row without it. The release gate counts a field of the row whose sources were
+#   checked after that day (its strength, an anchor or an order target) as unchecked, and names it (#2722, owner,
+#   option (c), 5 November 2026). A person who checks the new field moves checked_on, and the comment's link, to the day of
+#   that check; agents never move it (owner, 15 October 2026, #375; as reviewed_by).
 # reviewed_by and reviewed_on (both or neither, beside status): a person's sign-off, their GitHub handle and the day; only
 # that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md), or an AI-assisted contributor whose
 # pull request discloses the AI help and names the check, who may add or re-sign them but never remove them (owner,
@@ -111,6 +116,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   strength:
     value: 4095
     as_of: '1948-05-15'
@@ -175,6 +181,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   strength:
     value: 2289
     as_of: '1948-05-15'
@@ -291,6 +298,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   strength:
     value: 3588
     as_of: '1948-05-15'
@@ -347,6 +355,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   strength:
     value: 2504
     as_of: '1948-05-15'
@@ -421,6 +430,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   strength:
     value: 3229
     as_of: '1948-05-15'
@@ -508,6 +518,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row (#1241): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
   status: fact-checked
+  checked_on: '2026-10-22'
   strength:
     value: 3166
     as_of: '1948-05-15'
@@ -570,6 +581,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row (#1241): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
   status: fact-checked
+  checked_on: '2026-10-22'
   to_verify:
   - "The strength is a secondary-source figure (en.wiki, citing Morris, 1948, pp. 221-224, which was not opened), allowed until a primary source turns up (owner, 20 October 2026, on #743). Replace it from a primary source."
   # R-UNIT-009 (#1241, owner, 21 October 2026, answer 1(a)): the brigade has no sourced place or single strength on 15 May, so it arrives on its first anchor's day with its first sourced strength.
@@ -742,6 +754,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   strength:
     value: 1300
     as_of: '1948-05-15'
@@ -889,6 +902,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   strength:
     value: 1300
     as_of: '1948-05-15'
@@ -1160,6 +1174,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   strength:
     value: 10000
     as_of: '1948-05-15'
@@ -1255,6 +1270,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   strength:
     value: 5000
     as_of: '1948-05-15'
@@ -1336,6 +1352,7 @@ units:
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   # The owner person-checked the anchor from 8 July 1948 (#1270, S1) on 3 November 2026: https://github.com/eyalgolan/statecraft-israel/pull/2180#issuecomment-6606070287
   status: fact-checked
+  checked_on: '2026-11-03'
   to_verify:
   - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). Check both printed pages (the note, section 9)."
   strength:
@@ -1421,6 +1438,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   to_verify:
   - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). Check both printed pages (the note, section 9)."
   - "The 15 May window holds the game's first day only, by the owner's decision (17 October 2026, on #860), though Dupuy p. 51 has the force at Gesher on 16 and 17 May too and the diary of 16 May has it attacking farms in the Jordan Valley."
@@ -1563,6 +1581,7 @@ units:
   wikipedia_only: false
   # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
   status: fact-checked
+  checked_on: '2026-10-21'
   to_verify:
   - "al-Malikiyya on 15 May follows the owner's ruling for the later research (#226, ruling 2), which he.wiki reports; Lorch has a Lebanese counter-attack there. The anchor rests on he.wiki until the later research (the Lebanese official account) is read."
   strength:

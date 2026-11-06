@@ -20,7 +20,7 @@ namespace Statecraft.Sim
 
     /// <summary>#1693 pioneer slice: the turn-end producer R-VET-001 holds, on initialized gdd-0.3 ledger fixtures only.
     /// No game-loop caller: an initialized ledger refuses the aggregate systems (R-POP-002), and the switch is #1689's last
-    /// slice. Farmer work XP follows #1694; the tools charge is post-MVP (owner, 3 November 2026, answer 1).</summary>
+    /// slice. Farmer work XP is Gdd03FieldFixture.ResolveWorkXp (#2468); the tools charge is post-MVP (owner, 3 November 2026, answer 1).</summary>
     internal static class Gdd03PioneerWorkFixture
     {
         /// <summary>The caller supplies the turn-start state and the pioneer projects being built this turn, yishuv sites
@@ -52,14 +52,24 @@ namespace Statecraft.Sim
                     || p.Assignment.Target == null || !advancing.Contains(p.Assignment.Target)) continue;
                 var target = p.Assignment.Target;
                 var quote = CivilianProfessionRules.OutputAtTurnStart(content, turnStart, p.Id);
-                var next = CivilianProfessionRules.AfterWork(content, turnStart, p.Id,
-                    new[] { new CivilianWorkEvidence(p.Id, target, CivilianWorkKind.PioneerAdvancement, quote) });
-                // AfterWork returns the same record when it is not a working pioneer (e.g. reception not finished): no work.
-                if (ReferenceEquals(next, p)) continue;
-                work[target] = (work.TryGetValue(target, out var sum) ? sum : 0m) + quote;
                 // Maintainer call, not a rule (no ruling covers it): a veteran keeps working at its rate but its work XP
-                // stops at promotion, as a legacy veteran gains no more service (R-VET-001).
-                if (p.Tier != CivilianTier.Veteran) candidate.PopulationLedger.Replace(next);
+                // stops at promotion, as a legacy veteran gains no more service (R-VET-001). So a veteran never reaches
+                // AfterWork, whose checked increment throws at int.MaxValue work XP (#2804 item 12); it works when
+                // AfterWork's own gate would let it: a free civilian whose reception is done.
+                if (p.Tier == CivilianTier.Veteran)
+                {
+                    if (p.Status != PopulationStatus.FreeCivilian
+                        || p.ReceptionTicks != content.RequirePopulationInteger("reception.turns")) continue;
+                }
+                else
+                {
+                    var next = CivilianProfessionRules.AfterWork(content, turnStart, p.Id,
+                        new[] { new CivilianWorkEvidence(p.Id, target, CivilianWorkKind.PioneerAdvancement, quote) });
+                    // AfterWork returns the same record when it is not a working pioneer (e.g. reception not finished): no work.
+                    if (ReferenceEquals(next, p)) continue;
+                    candidate.PopulationLedger.Replace(next);
+                }
+                work[target] = (work.TryGetValue(target, out var sum) ? sum : 0m) + quote;
             }
             candidate.PopulationLedger.Reconcile();
             return new PioneerWorkTurn(candidate, work);

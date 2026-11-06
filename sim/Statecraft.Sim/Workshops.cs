@@ -94,6 +94,9 @@ namespace Statecraft.Sim
         public static int Staffed(GameState s, string city) =>
             s.Workshops.Values.Count(w => w.Staffed && s.CityProjects[w.Project].City == city);
 
+        // #2530: a count of 1 names the singular, as the UI's helper does.
+        static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
+
         /// <summary>R-ARMS-005 (27M-13: "Any free civilian. The cost tier follows the worker"): AssignWorkers(city, "workshop",
         /// count), a standing order: the city's first <paramref name="count"/> built workshops, in ascending id, are staffed and
         /// the rest are not. A newly staffed workshop takes one of the city's civilians and craftsmen who hold no job (it stays
@@ -112,7 +115,7 @@ namespace Statecraft.Sim
             if (employed != x.Employed)
             {
                 s.Cities[city] = x.WithCounts(x.Civilians, employed, x.Refugees);
-                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {employed} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
+                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {Groups(employed)} in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
             }
             for (int i = 0; i < built.Count; i++)
             {

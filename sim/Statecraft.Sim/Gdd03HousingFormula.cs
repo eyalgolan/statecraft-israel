@@ -65,16 +65,16 @@ namespace Statecraft.Sim
         internal Gdd03HousingResult Evaluate(Gdd03HousingInput input)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
-            if (input.SurchargeResidents < 0 || input.PreArrivalResidents < 0
+            if (input.SurchargeResidents < 0 || input.Residents < 0
                 || input.CohesionResidents < 0 || input.OwnPopulation < 0
                 || input.CohesionResidents > input.OwnPopulation || input.Capacity < 0m)
                 throw new ArgumentOutOfRangeException(nameof(input), "counts/capacity must be nonnegative; regional residents cannot exceed own population");
             ValidateCondition(input.ConditionBefore);
-            // GDD cities.md:29,33,35; loop-switch.md:29,33 at 605277df.
-            // Counts are independently supplied; this helper makes no timing/status decision.
+            // GDD cities.md:29,33,35 at 605277df. Overflow counts the housed residents after the step's arrivals become
+            // civilians (27M-15, owner, 1 November 2026). Counts are independently supplied; this helper selects no one.
             var surcharge = input.SurchargeResidents * Math.Max(0m, moneyThreshold - input.ConditionBefore) * moneySlope;
-            var overflow = input.PreArrivalResidents == 0 ? 0m :
-                (overflowPp / 100m) * Math.Max(0m, input.PreArrivalResidents - input.Capacity) / input.PreArrivalResidents;
+            var overflow = input.Residents == 0 ? 0m :
+                (overflowPp / 100m) * Math.Max(0m, input.Residents - input.Capacity) / input.Residents;
             // No unpaid-upkeep term: there is no housing upkeep (27M-17, R-HOUSE-005; #2516).
             var after = Clamp(input.ConditionBefore - overflow);
             // GDD cities.md:31,33 at 605277df. Contribution in displayed points, not indicator storage.
@@ -128,16 +128,17 @@ namespace Statecraft.Sim
     internal sealed class Gdd03HousingInput
     {
         internal int SurchargeResidents { get; }
-        internal int PreArrivalResidents { get; }
+        /// <summary>The housed residents after the step's arrivals become civilians (R-HOUSE-005, 27M-15).</summary>
+        internal int Residents { get; }
         internal int CohesionResidents { get; }
         internal int OwnPopulation { get; }
         internal decimal Capacity { get; }
         internal decimal ConditionBefore { get; }
 
-        internal Gdd03HousingInput(int surchargeResidents, int preArrivalResidents, int cohesionResidents,
+        internal Gdd03HousingInput(int surchargeResidents, int residents, int cohesionResidents,
             int ownPopulation, decimal capacity, decimal conditionBefore)
         {
-            SurchargeResidents = surchargeResidents; PreArrivalResidents = preArrivalResidents;
+            SurchargeResidents = surchargeResidents; Residents = residents;
             CohesionResidents = cohesionResidents; OwnPopulation = ownPopulation; Capacity = capacity;
             ConditionBefore = conditionBefore;
         }

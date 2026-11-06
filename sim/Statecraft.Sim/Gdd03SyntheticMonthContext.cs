@@ -6,7 +6,8 @@ using System.Linq;
 namespace Statecraft.Sim
 {
     /// <summary>Synthetic #1716 contract, test fixtures only. Not a live-state adapter.
-    /// GDD 605277df docs/gdd/loop-switch.md:17-39.
+    /// GDD 605277df docs/gdd/loop-switch.md:17-39, except its pre-arrival residents: housing effects count residents after
+    /// the step's arrivals (27M-15, owner, 1 November 2026), which an opening snapshot cannot hold, so it holds none.
     /// Frozen eligibility is only an upper bound: future consumers must recheck survival,
     /// location, control and facility availability immediately before using an entry.
     /// This object neither executes phases nor authorizes work, settlement or persistence.</summary>
@@ -14,7 +15,6 @@ namespace Statecraft.Sim
     {
         internal int MonthOrdinal { get; }
         internal IReadOnlyList<PopulationUnit> OpeningPeople { get; }
-        internal IReadOnlyList<int> PreArrivalResidentIds { get; }
         internal IReadOnlyList<int> WorkEligibleIds { get; }
         internal IReadOnlyList<int> CourseEligibleIds { get; }
         internal IReadOnlyList<int> ReceptionEligibleIds { get; }
@@ -22,12 +22,12 @@ namespace Statecraft.Sim
         internal IReadOnlyList<Gdd03SyntheticHousingSnapshot> Housing { get; }
         internal IReadOnlyList<Gdd03SyntheticPendingEntry> PendingEntries { get; }
 
-        private Gdd03SyntheticMonthContext(int monthOrdinal, PopulationUnit[] people, int[] residents,
+        private Gdd03SyntheticMonthContext(int monthOrdinal, PopulationUnit[] people,
             Gdd03SyntheticFacilitySnapshot[] facilities, Gdd03SyntheticHousingSnapshot[] housing,
             Gdd03SyntheticPendingEntry[] pending)
         {
             MonthOrdinal = monthOrdinal;
-            OpeningPeople = Freeze(people); PreArrivalResidentIds = Freeze(residents);
+            OpeningPeople = Freeze(people);
             Facilities = Freeze(facilities); Housing = Freeze(housing); PendingEntries = Freeze(pending);
             var available = new HashSet<string>(facilities.Where(f => f.AvailableAtMonthFreeze && f.OpeningCapacity > 0)
                 .Select(f => f.Id), StringComparer.Ordinal);
@@ -46,7 +46,6 @@ namespace Statecraft.Sim
         internal static Gdd03SyntheticMonthContext CreateSynthetic(string ruleset, int monthOrdinal,
             IEnumerable<PopulationUnit> openingPeople,
             IEnumerable<Gdd03SyntheticFacilitySnapshot> facilities,
-            IEnumerable<int> preArrivalResidentIds,
             IEnumerable<Gdd03SyntheticHousingSnapshot> housing,
             IEnumerable<Gdd03SyntheticPendingEntry> pendingEntries)
         {
@@ -56,16 +55,9 @@ namespace Statecraft.Sim
             var capacity = Materialize(facilities);
             var conditions = Materialize(housing);
             var pending = Materialize(pendingEntries);
-            if (preArrivalResidentIds == null) throw new ArgumentNullException(nameof(preArrivalResidentIds));
-            var residents = preArrivalResidentIds.OrderBy(id => id).ToArray();
-            if (people.Select(p => p.Id).Distinct().Count() != people.Length
-                || residents.Distinct().Count() != residents.Length)
-                throw new ArgumentException("Population and resident ids must be unique.");
+            if (people.Select(p => p.Id).Distinct().Count() != people.Length)
+                throw new ArgumentException("Population ids must be unique.");
             var peopleById = people.ToDictionary(p => p.Id);
-            if (residents.Any(id => !peopleById.ContainsKey(id)
-                || peopleById[id].Status == PopulationStatus.Captured
-                || peopleById[id].Status == PopulationStatus.CivilianInTransit))
-                throw new ArgumentException("Pre-arrival residents must reference present non-captive, non-transit people.");
             Unique(capacity.Select(f => f.Id)); Unique(conditions.Select(h => h.Id)); Unique(pending.Select(e => e.Key));
             var targets = new HashSet<string>(capacity.Select(f => f.Id), StringComparer.Ordinal);
             foreach (var person in people)
@@ -87,7 +79,7 @@ namespace Statecraft.Sim
                     || t.Assignment.Target != person.Assignment.Target))
                     throw new ArgumentException("Course teacher must reference an opening teacher at the same target.");
             }
-            return new Gdd03SyntheticMonthContext(monthOrdinal, people.OrderBy(p => p.Id).ToArray(), residents,
+            return new Gdd03SyntheticMonthContext(monthOrdinal, people.OrderBy(p => p.Id).ToArray(),
                 capacity.OrderBy(f => f.Id, StringComparer.Ordinal).ToArray(),
                 conditions.OrderBy(h => h.Id, StringComparer.Ordinal).ToArray(),
                 pending.OrderBy(e => e.Key, StringComparer.Ordinal).ToArray());

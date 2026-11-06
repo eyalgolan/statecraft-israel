@@ -21,6 +21,12 @@ namespace Statecraft.Sim
         public int R { get; set; }
         /// <summary>The row's review status (draft, to_verify, fact-checked); the release gate reads it (Q-START-3).</summary>
         public string Status { get; set; } = "";
+        /// <summary>A fact-checked row's `checked_on`, the day of its person check ('YYYY-MM-DD'); empty for any other row.
+        /// The release gate counts a field sourced after it as unchecked (#2722).</summary>
+        public string CheckedOn { get; set; } = "";
+        /// <summary>The latest `checked` day among the sources of the row's strength, each anchor and each order target, in
+        /// the file's order, with the field's name (#2722): "strength", "anchors[k] (place)", "order_targets[k] (place)".</summary>
+        public List<(string Field, string Checked)> SourcesChecked { get; } = new List<(string Field, string Checked)>();
         /// <summary>R-UNIT-009 (#1241): the day a row dated after the start arrives (its strength's as_of), or null for a row
         /// that starts the game. Its unit's id is reserved at the start and the resolver adds it on that day's turn.</summary>
         public DateTime? Arrives { get; set; }
@@ -68,6 +74,10 @@ namespace Statecraft.Sim
                 var id = Text(row, "id");
                 if (id == "") throw new ContentException(FileName, $"units[{i}].id", "required");
                 var at = $"units[{id}]";
+                // #2722: a fact-checked row records the day of its person check, so a field sourced later can be told apart.
+                if (Text(row, "status") == "fact-checked"
+                    && !DateTime.TryParseExact(Text(row, "checked_on"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+                    throw new ContentException(FileName, $"{at}.checked_on", "required on a fact-checked row, the day of its person check 'YYYY-MM-DD'");
                 if (row.ContainsKey("hidden") || Text(row, "service") != "army") continue;
                 if (!(row.TryGetValue("strength", out var so) && so is Dictionary<object, object> strength)) continue;
                 // R-UNIT-009: a strength dated after the start is the row's arrival day; one dated before starts nothing.
@@ -85,6 +95,8 @@ namespace Statecraft.Sim
                 if (people < 0 || people != decimal.Truncate(people)) throw new ContentException(FileName, $"{at}.strength.value", "must be a whole number >= 0");
                 var units = Cities.StartUnits(people, ppu);   // the nearest unit, a half up, at least 1 for a force with people
                 if (units == 0) continue;                     // a strength of nobody starts nothing
+                if (asOf > c.Rules.Start && side != Movement.PlayerSide)
+                    throw new ContentException(FileName, $"{at}.strength.as_of", "an enemy-side force may not arrive after the game starts (R-ENEMY-004)");
                 if (!hexes.TryGetValue((id, k), out var qr))
                     throw new ContentException(HexesFileName, "anchors", $"no hex for {at}.anchors[{k}] ({FileName}); rerun tools/unit_anchor_hexes.py");
                 var (q, r) = qr;
@@ -95,7 +107,14 @@ namespace Statecraft.Sim
                 {
                     Row = id, Anchor = Text(anchor, "place"), Type = TypeFor(c, side, at), Side = side,
                     Strength = units, Q = q, R = r, Status = Text(row, "status"), Arrives = day == start ? (DateTime?)null : asOf,
+                    CheckedOn = Text(row, "checked_on"),
                 };
+                force.SourcesChecked.Add(("strength", LatestCheck(strength)));
+                for (int j = 0; j < anchors.Count; j++)
+                    if (anchors[j] is Dictionary<object, object> a) force.SourcesChecked.Add((FormattableString.Invariant($"anchors[{j}] ({Text(a, "place")})"), LatestCheck(a)));
+                if (row.TryGetValue("order_targets", out var oo) && oo is List<object> targets)
+                    for (int j = 0; j < targets.Count; j++)
+                        if (targets[j] is Dictionary<object, object> t) force.SourcesChecked.Add((FormattableString.Invariant($"order_targets[{j}] ({Text(t, "place")})"), LatestCheck(t)));
                 if (side != Movement.PlayerSide) Script(c, force, anchors, id, at, hexes);
                 (day == start ? list : arrivals).Add(force);
             }
@@ -147,11 +166,15 @@ namespace Statecraft.Sim
         public static void Arrive(Content c, GameState s, DateTime next)
         {
             PopulationLedger.RefuseAggregate(s);
+            bool Due(StartingForce f) => f.Arrives is DateTime day && s.Date < day && day <= next;
+            // Every due force is checked before any is added, so a refusal leaves the state unchanged.
+            foreach (var f in c.StartingForces)
+                if (Due(f) && f.Side != Movement.PlayerSide)
+                    throw new InvalidOperationException($"Enemy-side starting force '{f.Row}' may not arrive after the game starts (R-ENEMY-004)");
             for (int i = 0; i < c.StartingForces.Count; i++)
             {
                 var f = c.StartingForces[i];
-                if (f.Arrives is DateTime day && s.Date < day && day <= next)
-                    s.Units.Add(i, new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
+                if (Due(f)) s.Units.Add(i, new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
             }
         }
 
@@ -239,6 +262,12 @@ namespace Statecraft.Sim
         static int Int(Dictionary<object, object> m, string key, string at) =>
             int.TryParse(Text(m, key), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n)
                 ? n : throw new ContentException(HexesFileName, $"{at}.{key}", "required, a whole number");
+
+        /// <summary>The latest `checked` day among an entry's `sources` ('YYYY-MM-DD' compares as text), or "" with none.</summary>
+        static string LatestCheck(Dictionary<object, object> m) =>
+            m.TryGetValue("sources", out var so) && so is List<object> sources
+                ? sources.OfType<Dictionary<object, object>>().Select(x => Text(x, "checked")).OrderBy(x => x, StringComparer.Ordinal).LastOrDefault() ?? ""
+                : "";
 
         static string Text(Dictionary<object, object> m, string key) => m.TryGetValue(key, out var v) && v is string s ? s : "";
 

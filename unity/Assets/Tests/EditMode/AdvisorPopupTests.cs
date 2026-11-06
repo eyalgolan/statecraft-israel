@@ -238,11 +238,12 @@ public class AdvisorPopupTests
     }
 
     /// <summary>Spec 16: one Escape with the focus in the popup closes the popup only, as in the report panel (#1169).
-    /// ScreenNav's Cancel asks it first (TakesEscape, as GameRoot wires it), and GameRoot's Escape poll asks it before it
+    /// This unit fixture injects ScreenNav's TakesEscape ordering; GameRoot's boot hookup is covered by AdvisorGameTests.
+    /// The Escape poll asks the popup before it
     /// closes the screen, also in the frame its Cancel already closed it. (Time.frameCount does not move in an edit-mode
     /// test, so after this the popup keeps saying "used this frame".)</summary>
     [Test]
-    public void OneEscapeInThePopupLeavesTheScreenUnderItOpen()
+    public void AnInjectedScreenNavHookLeavesTheScreenUnderThePopupOpen()
     {
         using var rig = new Rig();
         rig.Nav.TakesEscape = rig.Advisor.Escape;

@@ -70,6 +70,8 @@ namespace Statecraft.Sim
         public double Attention;
         public SortedSet<string> FiredEvents = new SortedSet<string>(StringComparer.Ordinal);
         public List<string> PendingEvents = new List<string>();
+        /// <summary>Soft events that were eligible but found no slot, by id (R-EVT-001). They remain here until they fire.</summary>
+        public SortedSet<string> CappedEvents = new SortedSet<string>(StringComparer.Ordinal);
         /// <summary>The option each resolved event was resolved with (chosen or delegated), for events' `requires`.</summary>
         public Dictionary<string, string> ChosenOptions = new Dictionary<string, string>();
         /// <summary>Player appointments by office id; valid while the government in AppointedUnder is in office (Cabinet).</summary>
@@ -170,6 +172,7 @@ namespace Statecraft.Sim
             c.playerRegions = new SortedDictionary<string, PlayerRegionPool>(playerRegions, StringComparer.Ordinal);
             c.FiredEvents = new SortedSet<string>(FiredEvents, StringComparer.Ordinal);
             c.PendingEvents = new List<string>(PendingEvents);
+            c.CappedEvents = new SortedSet<string>(CappedEvents, StringComparer.Ordinal);
             c.ChosenOptions = new Dictionary<string, string>(ChosenOptions);
             c.Appointments = new Dictionary<string, Appointment>(Appointments);
             c.Placements = new List<Placement>(Placements);
@@ -246,6 +249,8 @@ namespace Statecraft.Sim
             Num("mob", Mobilization); Num("stab", CoalitionStability); if (usesAttention) Num("att", Attention);
             List("fired", FiredEvents);
             List("pending", PendingEvents);
+            // R-EVT-001: absent when no event has waited for the cap, so all existing golden hashes stay byte-for-byte stable.
+            if (CappedEvents.Count > 0) Section("capped", '[', ']', CappedEvents);
             Nl(); sb.Append("chosen{");
             foreach (var kv in ChosenOptions.OrderBy(k => k.Key, StringComparer.Ordinal)) { Entry(); sb.Append(kv.Key).Append('=').Append(kv.Value); Sep(); }
             Close('}');

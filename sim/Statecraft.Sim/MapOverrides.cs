@@ -10,8 +10,12 @@ namespace Statecraft.Sim
 {
     public sealed class MapHexRef
     {
-        public int Q { get; set; }
-        public int R { get; set; }
+        // Nullable behind the int so Parse can refuse a coordinate the file left out instead of reading it as 0 (#2512).
+        int? q, r;
+        public int Q { get => q ?? 0; set => q = value; }
+        public int R { get => r ?? 0; set => r = value; }
+        internal bool HasQ => q.HasValue;
+        internal bool HasR => r.HasValue;
     }
 
     public sealed class TerrainOverride
@@ -151,6 +155,8 @@ namespace Statecraft.Sim
         static void Required(string file, string at, MapHexRef? hex)
         {
             if (hex == null) throw new ContentException(file, at + ".hex", "required");
+            if (!hex.HasQ) throw new ContentException(file, at + ".hex.q", "required");
+            if (!hex.HasR) throw new ContentException(file, at + ".hex.r", "required");
         }
 
         /// <summary>Checks terrain and location overrides against the map: a terrain override names a land hex of
@@ -503,7 +509,7 @@ namespace Statecraft.Sim
                 var at = $"targets[{t.Id}]";
                 if (!Land(t.Q, t.R)) Broken(at, FormattableString.Invariant($"target hex q={t.Q} r={t.R} is not a land hex of the map"));
                 if (!settlement.TryGetValue(t.Id, out var s)) { Broken(at, $"settlement '{t.Id}' has no hex"); continue; }
-                var bound = ContentLoader.TargetOnANeighbour.Contains(t.Id)
+                var bound = ContentLoader.TargetOnANeighbour.ContainsKey(t.Id)
                     ? Movement.Neighbours.Any(d => s.Q + d.Q == t.Q && s.R + d.R == t.R)
                     : s.Q == t.Q && s.R == t.R;
                 if (!bound)

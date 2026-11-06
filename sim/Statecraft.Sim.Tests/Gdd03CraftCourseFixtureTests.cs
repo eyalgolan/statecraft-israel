@@ -62,7 +62,7 @@ public class Gdd03CraftCourseFixtureTests
     static Gdd03SyntheticMonthContext Month(GameState s, int ordinal, bool coursesAvailable = true)
         => Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, ordinal, s.PopulationLedger.Units,
             Facilities.Select(f => new Gdd03SyntheticFacilitySnapshot(f, coursesAvailable || !f.Contains("craft", StringComparison.Ordinal), 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
 
     const string GraduationMonth = Gdd03TrainingCentreFixture.GraduationMonthReason;
     const string CourseAtOpening = Gdd03CraftCourseFixture.CourseAtOpeningReason;
