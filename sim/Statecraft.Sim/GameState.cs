@@ -155,7 +155,9 @@ namespace Statecraft.Sim
         public int DisplacedByPlayer;
 
         public double TotalPopulation => PopulationLedger.IsInitialized
-            ? PopulationLedger.TotalPeople : Population.Values.Sum();
+            ? PopulationLedger.TotalPeople
+            // R-FOOD-001: in ordinal key order, since .NET does not promise a Dictionary's enumeration order and the sum feeds the economy's per-capita tax and spending (EconomySystem), which is what moves the hashed debt and fx.
+            : Population.OrderBy(kv => kv.Key, StringComparer.Ordinal).Sum(kv => kv.Value);
 
         public GameState Clone()
         {

@@ -53,6 +53,7 @@ public class CivMovementShots
     internal static IEnumerator Boot(bool hebrew, string saveDir, Action<RenderTexture, PanelSettings, VisualElement, GameRoot> booted)
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        ShotCamera.Configure(Camera.main, Width, Height);
         var doc = Object.FindFirstObjectByType<UIDocument>();
         var rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         var ps = Object.Instantiate(doc.panelSettings);
@@ -101,6 +102,9 @@ public class CivMovementShots
     internal static void Shot(RenderTexture uiTexture, string name)
     {
         var cam = Camera.main;
+        // A camera at another aspect writes a stretched still (#2882): its rig skipped ShotCamera.Configure.
+        if (Mathf.Abs(cam.aspect - (float)Width / Height) > 0.001f)
+            throw new InvalidOperationException($"the camera's aspect is {cam.aspect:0.000}, its frame's {(float)Width / Height:0.000} ({Width} x {Height}): call ShotCamera.Configure after the scene opens");
         var frame = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         var before = cam.targetTexture;
         cam.targetTexture = frame; cam.Render(); cam.targetTexture = before;
