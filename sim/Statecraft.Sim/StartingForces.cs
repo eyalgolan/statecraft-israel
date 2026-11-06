@@ -115,9 +115,12 @@ namespace Statecraft.Sim
             for (int j = 0; j < anchors.Count; j++)
             {
                 if (!(anchors[j] is Dictionary<object, object> a) || string.CompareOrdinal(Text(a, "from"), EnemyAI.ScriptDate) < 0) continue;
-                var sourced = a.TryGetValue("sources", out var so) && so is List<object> sources ? sources.Count(x =>
-                    x is Dictionary<object, object> m && Text(m, "url") is var url && url != ""
-                    && !url.Contains("wikipedia.org", StringComparison.Ordinal) && !url.Contains("wikidata.org", StringComparison.Ordinal)) : 0;
+                // Distinct URLs, so one source listed twice counts once; hosts are case-insensitive, so EN.WIKIPEDIA.ORG is Wikipedia.
+                var sourced = a.TryGetValue("sources", out var so) && so is List<object> sources ? sources
+                    .Select(x => x is Dictionary<object, object> m ? Text(m, "url") : "")
+                    .Where(url => url != "" && !url.Contains("wikipedia.org", StringComparison.OrdinalIgnoreCase)
+                        && !url.Contains("wikidata.org", StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.Ordinal).Count() : 0;
                 if (sourced < 2) continue;
                 if (!hexes.TryGetValue((id, j), out var qr))
                     throw new ContentException(HexesFileName, "anchors", $"no hex for {at}.anchors[{j}] ({FileName}); rerun tools/unit_anchor_hexes.py");
