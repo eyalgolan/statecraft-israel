@@ -333,6 +333,13 @@ namespace Statecraft.Game.Map.Collection
         /// random stream or simulation state moves.</summary>
         public static Vector2? SeededSpot(string key, Vector2 anchor, float clearance, Func<Vector2, float, bool> free, float from = 0f)
         {
+            foreach (var p in SeededCandidates(key, anchor, clearance, from)) if (free(p, clearance)) return p;
+            return null;
+        }
+
+        /// <summary>The points <see cref="SeededSpot"/> tries, in order.</summary>
+        internal static IEnumerable<Vector2> SeededCandidates(string key, Vector2 anchor, float clearance, float from = 0f)
+        {
             uint h = 2166136261;
             foreach (char c in key) { h ^= c; h *= 16777619; }
             int start = (int)(h % SpotAttempts);
@@ -341,10 +348,8 @@ namespace Statecraft.Game.Map.Collection
                 int k = (start + i) % SpotAttempts;
                 float angle = 2f * Mathf.PI * k / SpotAttempts;
                 float radius = from + clearance * (1.5f + k / 8);
-                var p = anchor + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
-                if (free(p, clearance)) return p;
+                yield return anchor + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
             }
-            return null;
         }
 
         /// <summary>The first clear point just outside <paramref name="villageBounds"/>, on the side facing the nearest
@@ -651,9 +656,13 @@ namespace Statecraft.Game.Map.Collection
             if (wants.Any(KeepsOffFarms))
                 foreach (var (want, spot) in ruralPlan ?? RuralLife.PlanOf(map))
                     farms.Add((spot, RuralLife.SceneRadiusM(want.Model)));
-            bool FreeOn(Vector2 p, float r, DateTime on) => TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, footprints)
-                && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, on);
+            bool OffTaken(Vector2 p, float r) => TownLandmarks.Clear(p, r, taken);
+            bool OffFootprints(Vector2 p, float r) => TownLandmarks.Clear(p, r, footprints);
+            bool OnMap(Vector2 p, float r) => ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r);
+            bool Dry(Vector2 p, float r) => !ground.Water(p.x, p.y);
+            bool OffRoutes(Vector2 p, float r) => !ground.OnRoute(p, r);
+            bool FreeOn(Vector2 p, float r, DateTime on) => OffTaken(p, r) && OffFootprints(p, r) && OnMap(p, r) && Dry(p, r) && OffRoutes(p, r)
+                && !ground.OnToken(p, r, on);
             bool Free(Vector2 p, float r) => FreeOn(p, r, date);
             // The four props stand at a town's edge (owner on #2274: "Bigger, closer"): inside a footprint if need be, clear of the
             // towns' drawn buildings (a major city's kit blocks, every other town's building models: #2876), of the tokens
@@ -725,18 +734,28 @@ namespace Statecraft.Game.Map.Collection
                     float side = SizeOf(w), tan = SightTan;
                     var sight = hexBlocks.Count == 0 ? null : MajorCitySightBlocks(map, ground, anchor, tan);
                     bool Seen(Vector2 p, float yawDeg) => sight == null || InSight(p, yawDeg, side, ground.Y(p.x, p.y) + WorkshopTopShare * side, sight, tan);
-                    bool OnHex(Vector2 p, float r) => (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms)
-                        && ClearOfBoxes(p, r, hexBlocks) && ClearOfFigures(map, p, r, built) && FreeOn(p, r, built) && Seen(p, 0f);
-                    float inside = Inside(anchor, footprints);
-                    at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
+                    // The checks, named (WorkshopSightDiagnostic counts each), in the order they are tested.
+                    var onHex = new SpotCheck("hex", (p, r) => (p - anchor).magnitude + r <= HexInnerRadiusM);
+                    var offFarms = new SpotCheck("farms", (p, r) => TownLandmarks.Clear(p, r, farms));
+                    var offFigures = new SpotCheck("figures", (p, r) => ClearOfFigures(map, p, r, built));
+                    var offTaken = new SpotCheck("taken", OffTaken); var onMap = new SpotCheck("map", OnMap);
+                    var dry = new SpotCheck("water", Dry); var offRoutes = new SpotCheck("routes", OffRoutes);
+                    var offTokens = new SpotCheck("tokens", (p, r) => !ground.OnToken(p, r, built));
+                    var seeded = new[]
+                    {
+                        onHex, offFarms, new SpotCheck("blocks", (p, r) => ClearOfBoxes(p, r, hexBlocks)), offFigures,
+                        offTaken, new SpotCheck("footprints", OffFootprints), onMap, dry, offRoutes, offTokens,   // FreeOn's, in its order
+                        new SpotCheck("sight", (p, r) => Seen(p, 0f)),
+                    };
+                    var gapFree = new[] { onHex, offFarms, offTaken, offFigures, onMap, dry, offRoutes, offTokens };
+                    float inside = Inside(anchor, footprints), from = inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f;
+                    WorkshopProbe?.Invoke(new WorkshopSearch(w.Key, anchor, clearance, SeededCandidates(w.Key, anchor, clearance, from), seeded,
+                        inside > 0f ? TownGapPlan(map, w.Key, anchor, clearance, side, gapFree, Seen) : null));
+                    at = SeededSpot(w.Key, anchor, clearance, (p, r) => PassesAll(seeded, p, r), from);
                     // A town whose footprint covers the whole hex (Jerusalem, Tel Aviv): a gap between its drawn buildings (owner,
                     // 2 November 2026: "Among the houses"), or, between a major city's kit blocks, a street (#2876): the model then
                     // lies along it (dir), as a roadside model along its road.
-                    if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, side, (p, r) =>
-                        (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && TownLandmarks.Clear(p, r, taken)
-                        && ClearOfFigures(map, p, r, built)
-                        && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built), Seen, out dir);
+                    if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, side, gapFree, Seen, out dir);
                     // #2876 (coordinator, 6 November 2026: no quiet fallback to a hidden spot): where no spot on the hex passes
                     // every test, the camera's sight included, the b21 is not drawn, and the warning names the cities.
                     if (at == null && sight != null)
@@ -897,7 +916,28 @@ namespace Statecraft.Game.Map.Collection
         /// the horizon and one at its top edge at Pitch - Fov / 2, 32.5 degrees, the lowest (as <see cref="FigureShadowM"/>).
         /// The top bar's inset (CameraRig.TopInset) only lowers the map area's top edge, so it never looks lower. Toward the
         /// screen's top corners a ray looks lower still and turns off north; that is not modelled.</summary>
-        public static float SightTan => Mathf.Tan((CameraRig.Pitch - 0.5f * CameraRig.Fov) * Mathf.Deg2Rad);
+        public static float SightTan => Mathf.Tan(SightPitchDeg * Mathf.Deg2Rad);
+
+        /// <summary>The view's shallowest ray's depression (degrees), <see cref="SightTan"/>'s: CameraRig.Pitch - Fov / 2.</summary>
+        internal const float DefaultSightPitchDeg = CameraRig.Pitch - 0.5f * CameraRig.Fov;
+        /// <summary>A test seam (WorkshopSightDiagnostic, #2876): the depression <see cref="SightTan"/> takes; the game never changes it.</summary>
+        internal static float SightPitchDeg = DefaultSightPitchDeg;
+        /// <summary>A test seam (WorkshopSightDiagnostic, #2876): whether <see cref="RoofRiseOf"/> counts the roofs; the game never changes it.</summary>
+        internal static bool RoofRiseOn = true;
+        /// <summary>A test seam (WorkshopSightDiagnostic, #2876): given each workshop's search on a hex as the plan makes it,
+        /// before the plan searches; null in the game.</summary>
+        internal static Action<WorkshopSearch>? WorkshopProbe;
+
+        /// <summary>#2876 (WorkshopSightDiagnostic): a workshop's search as the plan makes it: the seeded candidates and their
+        /// checks, and, on a hex a town's footprint covers, TownGap's (<see cref="Gap"/>; null otherwise). Every check is called
+        /// with <see cref="Clearance"/>.</summary>
+        internal sealed class WorkshopSearch
+        {
+            public readonly string Key; public readonly Vector2 Anchor; public readonly float Clearance;
+            public readonly IEnumerable<Vector2> Seeded; public readonly IReadOnlyList<SpotCheck> SeededChecks; public readonly TownGapSearch? Gap;
+            public WorkshopSearch(string key, Vector2 anchor, float clearance, IEnumerable<Vector2> seeded, IReadOnlyList<SpotCheck> seededChecks, TownGapSearch? gap)
+            { Key = key; Anchor = anchor; Clearance = clearance; Seeded = seeded; SeededChecks = seededChecks; Gap = gap; }
+        }
 
         /// <summary>#2876: the b21's top over its ground, as a share of its <see cref="SizeOf(Want)"/>. Its FBX's vertex extents are
         /// 0.959 by 0.999 across and 0.549 high (b21-artisan-workshop-v2.fbx, read 6 November 2026) and Rebuild scales its wider
@@ -909,7 +949,7 @@ namespace Statecraft.Game.Map.Collection
         /// tank, 1.6 real m on that, at KitScale.CityBlocks. Another major city's buildings are white, stone and old blocks and
         /// houses at either scale (the most over a flat roof the same 4.4 real m) and Haifa's Templer houses, whose gable rises
         /// 0.55 of the house's narrower side (SettlementKits.ModelHeight's Templer).</summary>
-        internal static float RoofRiseOf(string id, float w, float d) => id == "tel_aviv" ? 4.4f * Kits.KitScale.CityBlocks
+        internal static float RoofRiseOf(string id, float w, float d) => !RoofRiseOn ? 0f : id == "tel_aviv" ? 4.4f * Kits.KitScale.CityBlocks
             : Mathf.Max(4.4f * Mathf.Max(Kits.KitScale.CityBlocks, Kits.KitScale.Houses), 0.55f * Mathf.Min(w, d));
 
         /// <summary>#2876: a major city's kit block as <see cref="InSight"/> reads it: its box (as KitMesh.Corners) and its top,
@@ -1007,49 +1047,108 @@ namespace Statecraft.Game.Map.Collection
         /// to lie along it. Both searches also take only a spot <paramref name="seen"/> passes, given the spot and the turn (degrees,
         /// as KitMesh.Corners) the model is drawn at: 0 in a gap, the street's on a street (#2876: <see cref="InSight"/> on a hex
         /// a major city's blocks reach, true elsewhere). Null when neither is clear.</summary>
-        internal static Vector2? TownGap(MapScene map, string key, Vector2 anchor, float clearance, float size, Func<Vector2, float, bool> free,
-            Func<Vector2, float, bool> seen, out Vector2? along)
+        internal static Vector2? TownGap(MapScene map, string key, Vector2 anchor, float clearance, float size, IReadOnlyList<SpotCheck> free,
+            Func<Vector2, float, bool> seen, out Vector2? along) =>
+            TownGap(TownGapPlan(map, key, anchor, clearance, size, free, seen), out along);
+
+        /// <summary>As TownGap,
+        /// on a search <see cref="TownGapPlan"/> made: the first candidate passing every gap check, or, where none does and
+        /// major-city blocks reach the hex, the first passing every street check.</summary>
+        static Vector2? TownGap(TownGapSearch search, out Vector2? along)
         {
             along = null;
+            var gap = FirstPassing(search.Candidates, search.Gap, search.Clearance);
+            if (gap != null || !search.HasStreets) return gap;
+            var street = FirstPassing(search.Candidates, search.Street, search.Clearance);
+            if (street != null) { float a = search.StreetYaw * Mathf.Deg2Rad; along = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); }
+            return street;
+        }
+
+        /// <summary>#2876 (WorkshopSightDiagnostic): one named test of a candidate spot, given the spot and the clearance.</summary>
+        internal readonly struct SpotCheck
+        {
+            public readonly string Name; public readonly Func<Vector2, float, bool> Test;
+            public SpotCheck(string name, Func<Vector2, float, bool> test) { Name = name; Test = test; }
+        }
+
+        /// <summary>Whether <paramref name="p"/> passes every check, in order (the first failing one ends it).</summary>
+        internal static bool PassesAll(IReadOnlyList<SpotCheck> checks, Vector2 p, float r)
+        {
+            for (int i = 0; i < checks.Count; i++) if (!checks[i].Test(p, r)) return false;
+            return true;
+        }
+
+        /// <summary>The first of <paramref name="candidates"/>, in order, passing every check; null if none does.</summary>
+        static Vector2? FirstPassing(IEnumerable<Vector2> candidates, IReadOnlyList<SpotCheck> checks, float r)
+        {
+            foreach (var p in candidates) if (PassesAll(checks, p, r)) return p;
+            return null;
+        }
+
+        /// <summary>#2876 (WorkshopSightDiagnostic): TownGap's
+        /// two searches: the candidates both visit, in order, the gap search's checks and the street search's, in the order
+        /// they are tested. The street checks' "street" check sets <see cref="StreetYaw"/> for the ones after it.</summary>
+        internal sealed class TownGapSearch
+        {
+            public IEnumerable<Vector2> Candidates = Array.Empty<Vector2>();
+            public readonly List<SpotCheck> Gap = new List<SpotCheck>(), Street = new List<SpotCheck>();
+            public float Clearance, StreetYaw;
+            /// <summary>Whether major-city blocks reach the hex, so the street search runs where the gap search finds nothing.</summary>
+            public bool HasStreets;
+        }
+
+        /// <summary>The candidates of TownGap:
+        /// rings half a clearance apart outward from <paramref name="anchor"/> while the clearance disc stays on the hex, each
+        /// from an FNV-1a bearing of <paramref name="key"/>.</summary>
+        internal static IEnumerable<Vector2> TownGapCandidates(string key, Vector2 anchor, float clearance)
+        {
+            uint h = 2166136261;
+            foreach (char c in key) { h ^= c; h *= 16777619; }
+            float step = 0.5f * clearance;
+            for (float radius = 0f; radius + clearance <= HexInnerRadiusM; radius += step)
+            {
+                int n = radius == 0f ? 1 : Mathf.Max(6, Mathf.CeilToInt(2f * Mathf.PI * radius / step));
+                int start = (int)(h % (uint)n);
+                for (int i = 0; i < n; i++)
+                {
+                    float angle = 2f * Mathf.PI * ((start + i) % n) / n;
+                    yield return anchor + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                }
+            }
+        }
+
+        /// <summary>TownGap's search on the hex about <paramref name="anchor"/>, its checks named, in the order they are tested.</summary>
+        internal static TownGapSearch TownGapPlan(MapScene map, string key, Vector2 anchor, float clearance, float size, IReadOnlyList<SpotCheck> free,
+            Func<Vector2, float, bool> seen)
+        {
             var houses = TownBuildings(map, anchor, out var names);
             var blocks = MajorCityBlocksNear(map, anchor);
             var landmarks = TownLandmarkBoxes(map, anchor);
-            uint h = 2166136261;
-            foreach (char c in key) { h ^= c; h *= 16777619; }
-            Vector2? Search(Func<Vector2, bool> clear)
-            {
-                float step = 0.5f * clearance;
-                for (float radius = 0f; radius + clearance <= HexInnerRadiusM; radius += step)
-                {
-                    int n = radius == 0f ? 1 : Mathf.Max(6, Mathf.CeilToInt(2f * Mathf.PI * radius / step));
-                    int start = (int)(h % (uint)n);
-                    for (int i = 0; i < n; i++)
-                    {
-                        float angle = 2f * Mathf.PI * ((start + i) % n) / n;
-                        var p = anchor + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
-                        if (clear(p)) return p;
-                    }
-                }
-                return null;
-            }
+            var search = new TownGapSearch { Candidates = TownGapCandidates(key, anchor, clearance), Clearance = clearance, HasStreets = blocks.Count > 0 };
             bool Named(Vector2 p)
             {
                 foreach (var (c, fr) in names) if (!ClearOfName(p, clearance, c, fr)) return true;
                 return false;
             }
-            var gap = Search(p =>
+            var unnamed = new SpotCheck("names", (p, _) => !Named(p));
+            var offHouses = new SpotCheck("houses", (p, _) => TownLandmarks.Clear(p, clearance, houses));
+            search.Gap.Add(unnamed);
+            search.Gap.Add(offHouses);
+            search.Gap.Add(new SpotCheck("blocks", (p, _) => ClearOfBoxes(p, clearance, blocks)));
+            search.Gap.Add(new SpotCheck("landmarks", (p, _) =>
             {
-                if (Named(p) || !TownLandmarks.Clear(p, clearance, houses) || !ClearOfBoxes(p, clearance, blocks)) return false;
                 foreach (var (bc, yaw, bw, bd) in landmarks) if (!ClearOfBox(p, clearance, bc, yaw, bw, bd)) return false;
-                return free(p, clearance) && seen(p, 0f);
-            });
-            if (gap != null || blocks.Count == 0) return gap;
-            float streetYaw = 0f;
-            var street = Search(p =>
+                return true;
+            }));
+            search.Gap.AddRange(free);
+            search.Gap.Add(new SpotCheck("sight", (p, _) => seen(p, 0f)));
+            search.Street.Add(unnamed);
+            search.Street.Add(offHouses);
+            // The street's turn: the nearest block's (a street runs square to its blocks); with no block within reach of
+            // the square, the disc search above has already judged the spot.
+            search.Street.Add(new SpotCheck("street", (p, _) =>
             {
-                if (Named(p) || !TownLandmarks.Clear(p, clearance, houses)) return false;
-                // The street's turn: the nearest block's (a street runs square to its blocks); with no block within reach of
-                // the square, the disc search above has already judged the spot.
+                search.StreetYaw = 0f;
                 float best = float.MaxValue; bool any = false;
                 foreach (var (bc, yaw, bw, bd) in blocks)
                 {
@@ -1059,20 +1158,28 @@ namespace Statecraft.Game.Map.Collection
                     var q = p - bc; float u = q.x * ca + q.y * sa, v = -q.x * sa + q.y * ca;
                     float du = Mathf.Max(0f, Mathf.Abs(u) - 0.5f * bw), dv = Mathf.Max(0f, Mathf.Abs(v) - 0.5f * bd);
                     float dist = du * du + dv * dv;
-                    if (dist < best) { best = dist; streetYaw = yaw; any = true; }
+                    if (dist < best) { best = dist; search.StreetYaw = yaw; any = true; }
                 }
-                if (!any) return false;
+                return any;
+            }));
+            search.Street.Add(new SpotCheck("street blocks", (p, _) =>
+            {
                 foreach (var (bc, yaw, bw, bd) in blocks)
                 {
                     float reach = size + 0.5f * (bw + bd);
                     if ((p - bc).sqrMagnitude > reach * reach) continue;
-                    if (!BoxesClear(p, streetYaw, size, size, bc, yaw, bw, bd)) return false;
+                    if (!BoxesClear(p, search.StreetYaw, size, size, bc, yaw, bw, bd)) return false;
                 }
-                foreach (var (bc, yaw, bw, bd) in landmarks) if (!BoxesClear(p, streetYaw, size, size, bc, yaw, bw, bd)) return false;
-                return free(p, clearance) && seen(p, streetYaw);
-            });
-            if (street != null) { float a = streetYaw * Mathf.Deg2Rad; along = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); }
-            return street;
+                return true;
+            }));
+            search.Street.Add(new SpotCheck("street landmarks", (p, _) =>
+            {
+                foreach (var (bc, yaw, bw, bd) in landmarks) if (!BoxesClear(p, search.StreetYaw, size, size, bc, yaw, bw, bd)) return false;
+                return true;
+            }));
+            search.Street.AddRange(free);
+            search.Street.Add(new SpotCheck("sight", (p, _) => seen(p, search.StreetYaw)));
+            return search;
         }
 
         void Rebuild()

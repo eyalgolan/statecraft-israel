@@ -1351,6 +1351,106 @@ namespace Statecraft.Game.Tests
             Assert.IsEmpty(failures, string.Join("\n", failures));
         }
 
+        /// <summary>#2876 diagnostic (coordinator, 6 November 2026), a measurement and not a check: the Tel Aviv and Jerusalem
+        /// workshops (the projects <see cref="AWorkshopInAMajorCityIsInTheCamerasSightPastItsKitBlocks"/> plans) get no spot at the
+        /// view's shallowest ray (32.5 degrees, with the roofs). For each sight depression of 50 (CameraRig.Pitch, the screen's
+        /// centre row), 45, 40 and 32.5 degrees, with the roof allowance on and off (the seams SpecialBuildingModels.SightPitchDeg
+        /// and RoofRiseOn), the plan is made as the layer makes it, and SpecialBuildingModels.WorkshopProbe hands this test each
+        /// workshop's search (its seeded candidates and checks, and TownGap's) at the moment the plan makes it, so every list it
+        /// reads (taken, farms, tokens) is the plan's own. Every candidate the seeded search, TownGap's gap search and its street
+        /// search visit, in their order, is tested against every one of that search's checks, in their order, none skipped. One
+        /// line (SIGHT-DIAG) per city, depression and allowance: the plan's outcome, then per search the points, those passing
+        /// every check but sight, those passing every check, how many each check rejects first and at all, and the first
+        /// passing point's offset from the hex centre. The seams are restored whatever happens; nothing is asserted.</summary>
+        [Test, Explicit("diagnostic for #2876, not a check")]
+        public void WorkshopSightDiagnostic()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var majors = c.SettlementHexes.Select(h => h.Id).Where(Statecraft.Game.Map.Kits.TownModels.IsMajorCity).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            var projects = majors.Select((city, i) => Workshop(c, 700 + i, city, Built)).ToList();
+            var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
+            var cities = projects.Where(x => x.City == "jerusalem" || x.City == "tel_aviv")
+                .Select(x => (key: SpecialBuildingModels.WorkshopKey(x.Id), city: x.City)).ToList();
+            try
+            {
+                foreach (float pitch in new[] { 50f, 45f, 40f, 32.5f })
+                    foreach (bool roof in new[] { true, false })
+                    {
+                        SpecialBuildingModels.SightPitchDeg = pitch; SpecialBuildingModels.RoofRiseOn = roof;
+                        var searched = new Dictionary<string, (Vector2 anchor, string counts)>(StringComparer.Ordinal);
+                        SpecialBuildingModels.WorkshopProbe = s =>
+                        {
+                            if (!cities.Any(x => x.key == s.Key)) return;
+                            var parts = new List<string> { SightCounts("seeded", s.Seeded, s.SeededChecks, s.Anchor, s.Clearance) };
+                            if (s.Gap == null) parts.Add("gap: not searched (the hex is outside every footprint)");
+                            else
+                            {
+                                parts.Add(SightCounts("gap", s.Gap.Candidates, s.Gap.Gap, s.Anchor, s.Clearance));
+                                parts.Add(s.Gap.HasStreets ? SightCounts("street", s.Gap.Candidates, s.Gap.Street, s.Anchor, s.Clearance)
+                                    : "street: not searched (no major-city block reaches the hex)");
+                            }
+                            searched[s.Key] = (s.Anchor, string.Join(" | ", parts));
+                        };
+                        var plan = SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var along);
+                        SpecialBuildingModels.WorkshopProbe = null;
+                        foreach (var (key, city) in cities)
+                        {
+                            string head = FormattableString.Invariant($"SIGHT-DIAG {city} ({key}) pitch {pitch:0.0} roof {(roof ? "on" : "off")}");
+                            if (!searched.TryGetValue(key, out var found)) { Log(head + " | not searched (no probe call)"); continue; }
+                            var row = plan.Where(x => x.want.Key == key).ToList();
+                            string outcome = row.Count == 0 ? "plan: no spot, not drawn"
+                                : "plan: " + Offset(row[0].at, found.anchor) + (along.TryGetValue(key, out var d)
+                                    ? FormattableString.Invariant($", on a street at {Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg:0} deg") : ", in a gap or seeded");
+                            Log(head + " | " + outcome + " | " + found.counts);
+                        }
+                    }
+            }
+            finally
+            {
+                SpecialBuildingModels.SightPitchDeg = SpecialBuildingModels.DefaultSightPitchDeg;
+                SpecialBuildingModels.RoofRiseOn = true;
+                SpecialBuildingModels.WorkshopProbe = null;
+            }
+
+            static void Log(string line) { TestContext.WriteLine(line); Debug.Log(line); }
+        }
+
+        /// <summary>WorkshopSightDiagnostic's counts for one search: every candidate tested against every check (with r, as the
+        /// plan calls them), in order.</summary>
+        static string SightCounts(string search, IEnumerable<Vector2> candidates, IReadOnlyList<SpecialBuildingModels.SpotCheck> checks, Vector2 anchor, float r)
+        {
+            int total = 0, allButSight = 0, all = 0;
+            var first = new int[checks.Count]; var any = new int[checks.Count];
+            Vector2? firstPass = null;
+            foreach (var p in candidates)
+            {
+                total++;
+                int failed = -1; bool othersPass = true;
+                for (int i = 0; i < checks.Count; i++)
+                {
+                    if (checks[i].Test(p, r)) continue;
+                    any[i]++;
+                    if (failed < 0) failed = i;
+                    if (checks[i].Name != "sight") othersPass = false;
+                }
+                if (failed >= 0) first[failed]++;
+                if (othersPass) allButSight++;
+                if (failed < 0) { all++; firstPass ??= p; }
+            }
+            string Counts(int[] n) => string.Join(", ", checks.Select((x, i) => FormattableString.Invariant($"{x.Name} {n[i]}")));
+            return FormattableString.Invariant($"{search}: {total} points, {allButSight} pass all but sight, {all} pass all; first fail: ")
+                + Counts(first) + "; fail at all: " + Counts(any) + "; first passing: " + (firstPass is Vector2 q ? Offset(q, anchor) : "none");
+        }
+
+        /// <summary>A point's offset from a hex centre: metres, compass bearing (0 north, 90 east) and the world point.</summary>
+        static string Offset(Vector2 p, Vector2 centre)
+        {
+            var d = p - centre;
+            float bearing = Mathf.Repeat(Mathf.Atan2(d.x, d.y) * Mathf.Rad2Deg, 360f);
+            return FormattableString.Invariant($"{d.magnitude:0} m at bearing {bearing:0} deg ({p.x:0}, {p.y:0})");
+        }
+
         /// <summary>Whether the ray from <paramref name="q"/> along <paramref name="dir"/> (rising: dir.y &gt; 0) meets the upright box
         /// centred at <paramref name="c"/> (x, z), turned <paramref name="yawDeg"/> anticlockwise in x-z (KitMesh.Corners), w along its
         /// turn and d across, from below the ground up to <paramref name="top"/> (world y). Slabs: the ray is inside the box for
