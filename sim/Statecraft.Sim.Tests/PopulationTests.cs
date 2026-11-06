@@ -26,6 +26,19 @@ public class PopulationTests
     public void NoArrivalsOutsideSeries() =>
         Assert.Empty(PopulationSystem.Arrivals(C, new DateTime(1950, 1, 1), new DateTime(1950, 4, 1)));
 
+    // R-FOOD-001: the national head count feeds the hashed FoodNeed, so it sums the groups in ordinal key order, never in the
+    // Dictionary's enumeration order, which .NET does not promise. These three doubles give a different sum in each order.
+    [Fact]
+    public void TotalPopulationSumsTheGroupsInOrdinalKeyOrder()
+    {
+        var s = new GameState();
+        s.Population["b"] = 1;
+        s.Population["c"] = 1;
+        s.Population["a"] = 1e16;
+        Assert.NotEqual((1e16 + 1) + 1, (1.0 + 1) + 1e16);   // precondition: the order changes the sum
+        Assert.Equal((1e16 + 1) + 1, s.TotalPopulation);
+    }
+
     [Fact]
     public void ApplyAddsNaturalIncreaseThenArrivals()
     {
