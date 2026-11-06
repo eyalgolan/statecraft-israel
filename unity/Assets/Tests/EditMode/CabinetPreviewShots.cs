@@ -138,6 +138,9 @@ public class CabinetPreviewShots
     {
         var lang = hebrew ? "he" : "en";
         yield return Boot(hebrew);
+        // The 1950 game pays for one appointment (1.5 Attention left after it, 2.5 for the next), and this state needs two
+        // queued, as CabinetScreenTests.ReplacingAChiefOfStaffOrderCannotNewlyBreakALaterAppointment gives itself.
+        Bridge.TurnStart.Attention += 5;
         Debug.Log($"SHOT queue chief_of_staff dayan -> {Bridge.Queue(new Appoint("chief_of_staff", "dayan")) ?? "queued"}");
         Debug.Log($"SHOT queue finance_minister maklef -> {Bridge.Queue(new Appoint("finance_minister", "maklef")) ?? "queued"}");
         yield return OpenAt("chief_of_staff", "maklef");
