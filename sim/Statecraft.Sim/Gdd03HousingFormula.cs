@@ -8,7 +8,7 @@ namespace Statecraft.Sim
     internal sealed class Gdd03HousingFormula
     {
         readonly decimal conditionMax, moneyThreshold, moneySlope, cohesionThreshold;
-        readonly decimal maxCohesionLoss, overflowPp, unpaidPp, repairPp;
+        readonly decimal maxCohesionLoss, overflowPp, repairPp;
         internal string OverflowBasis { get; }
 
         Gdd03HousingFormula(Gdd03BalanceCatalogue c)
@@ -20,7 +20,6 @@ namespace Statecraft.Sim
             cohesionThreshold = Scalar(c, "housing.cohesion_threshold", true);
             maxCohesionLoss = Scalar(c, "housing.max_cohesion_loss", false);
             overflowPp = Scalar(c, "housing.overflow_deterioration", false);
-            unpaidPp = Scalar(c, "housing.max_deterioration", false);
             OverflowBasis = c.Values["housing.overflow_deterioration"].Basis;
             if (conditionMax != 1m || moneyThreshold > conditionMax || cohesionThreshold > conditionMax)
                 throw Invalid("housing.condition_max", "condition is a fraction in [0,1]; thresholds must lie within it");
@@ -68,23 +67,21 @@ namespace Statecraft.Sim
             if (input == null) throw new ArgumentNullException(nameof(input));
             if (input.SurchargeResidents < 0 || input.Residents < 0
                 || input.CohesionResidents < 0 || input.OwnPopulation < 0
-                || input.CohesionResidents > input.OwnPopulation || input.Capacity < 0m
-                || input.UpkeepDue < 0m || input.UpkeepPaid < 0m || input.UpkeepPaid > input.UpkeepDue)
-                throw new ArgumentOutOfRangeException(nameof(input), "counts/capacity/upkeep must be nonnegative; regional residents cannot exceed own population; paid cannot exceed due");
+                || input.CohesionResidents > input.OwnPopulation || input.Capacity < 0m)
+                throw new ArgumentOutOfRangeException(nameof(input), "counts/capacity must be nonnegative; regional residents cannot exceed own population");
             ValidateCondition(input.ConditionBefore);
             // GDD cities.md:29,33,35 at 605277df. Overflow counts the housed residents after the step's arrivals become
             // civilians (27M-15, owner, 1 November 2026). Counts are independently supplied; this helper selects no one.
             var surcharge = input.SurchargeResidents * Math.Max(0m, moneyThreshold - input.ConditionBefore) * moneySlope;
             var overflow = input.Residents == 0 ? 0m :
                 (overflowPp / 100m) * Math.Max(0m, input.Residents - input.Capacity) / input.Residents;
-            var unpaid = input.UpkeepDue == 0m ? 0m :
-                (unpaidPp / 100m) * ((input.UpkeepDue - input.UpkeepPaid) / input.UpkeepDue);
-            var after = Clamp(input.ConditionBefore - overflow - unpaid);
+            // No unpaid-upkeep term: there is no housing upkeep (27M-17, R-HOUSE-005; #2516).
+            var after = Clamp(input.ConditionBefore - overflow);
             // GDD cities.md:31,33 at 605277df. Contribution in displayed points, not indicator storage.
             var cohesion = input.OwnPopulation == 0 ? 0m : maxCohesionLoss
                 * ((decimal)input.CohesionResidents / input.OwnPopulation)
                 * Math.Max(0m, (cohesionThreshold - after) / cohesionThreshold);
-            return new Gdd03HousingResult(surcharge, overflow, unpaid, after, cohesion);
+            return new Gdd03HousingResult(surcharge, overflow, after, cohesion);
         }
 
         /// <summary>R-HOUSE-005's live step for one city (#1703; Cities.UpdateCondition): Evaluate's surcharge, overflow
@@ -137,15 +134,13 @@ namespace Statecraft.Sim
         internal int OwnPopulation { get; }
         internal decimal Capacity { get; }
         internal decimal ConditionBefore { get; }
-        internal decimal UpkeepDue { get; }
-        internal decimal UpkeepPaid { get; }
 
         internal Gdd03HousingInput(int surchargeResidents, int residents, int cohesionResidents,
-            int ownPopulation, decimal capacity, decimal conditionBefore, decimal upkeepDue, decimal upkeepPaid)
+            int ownPopulation, decimal capacity, decimal conditionBefore)
         {
             SurchargeResidents = surchargeResidents; Residents = residents;
             CohesionResidents = cohesionResidents; OwnPopulation = ownPopulation; Capacity = capacity;
-            ConditionBefore = conditionBefore; UpkeepDue = upkeepDue; UpkeepPaid = upkeepPaid;
+            ConditionBefore = conditionBefore;
         }
     }
 
@@ -153,16 +148,15 @@ namespace Statecraft.Sim
     {
         internal decimal SurchargeMoney { get; }
         internal decimal OverflowConditionLoss { get; }
-        internal decimal UnpaidConditionLoss { get; }
-        internal decimal TotalConditionLossPp => (OverflowConditionLoss + UnpaidConditionLoss) * 100m;
+        internal decimal TotalConditionLossPp => OverflowConditionLoss * 100m;
         internal decimal ConditionAfter { get; }
         internal decimal CohesionLossPoints { get; }
 
         internal Gdd03HousingResult(decimal surchargeMoney, decimal overflowConditionLoss,
-            decimal unpaidConditionLoss, decimal conditionAfter, decimal cohesionLossPoints)
+            decimal conditionAfter, decimal cohesionLossPoints)
         {
             SurchargeMoney = surchargeMoney; OverflowConditionLoss = overflowConditionLoss;
-            UnpaidConditionLoss = unpaidConditionLoss; ConditionAfter = conditionAfter;
+            ConditionAfter = conditionAfter;
             CohesionLossPoints = cohesionLossPoints;
         }
     }
