@@ -179,7 +179,9 @@ public class UnitsInPlayTests
     [Test]
     public void HebrewUnitNumbersAreSourcedAndAgentChecked()
     {
-        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        var withNumberHe = Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)).ToList();
+        Assert.IsNotEmpty(withNumberHe);
+        foreach (var u in withNumberHe)
         {
             StringAssert.IsMatch("[א-ת]", u.NumberHe, u.Id);
             Assert.AreEqual("agent-checked", u.NumberHeReview, u.Id);
@@ -195,7 +197,9 @@ public class UnitsInPlayTests
     {
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
         var state = StateAt(C.Rules.Start, 5, 0.8);
-        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        var withNumberHe = Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)).ToList();
+        Assert.IsNotEmpty(withNumberHe);
+        foreach (var u in withNumberHe)
         {
             var anchor = u.Anchors.FirstOrDefault() ?? new UnitAnchor { Place = "test position" };
             var placed = new PlacedToken(new UnitToken(u, anchor, 0, "", false), default);
