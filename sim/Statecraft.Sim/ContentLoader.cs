@@ -1877,9 +1877,9 @@ namespace Statecraft.Sim
         static readonly string[] SiteKinds = { Projects.YishuvKind, "field", "swamp", "military_camp", "hakhshara" };
         static readonly string[] CampKinds = { "military_camp", "hakhshara" };
 
-        /// <summary>The designated sites (sites.yaml, Phase 1 PR 5): sourced facts on a land hex that holds no 1948 settlement,
-        /// founded inside the MVP's years (D-B1). The armistice line hexes are not checked: that file is display only, and a
-        /// site may sit on a line hex (#378, question 2).</summary>
+        /// <summary>The designated sites (sites.yaml, Phase 1 PR 5): sourced facts on a land hex that holds no 1948 settlement
+        /// and no settlement target, founded inside the MVP's years (D-B1). The armistice line hexes are not checked: that file
+        /// is display only, and a site may sit on a line hex (#378, question 2).</summary>
         static void ValidateSites(Content c)
         {
             const string sf = "sites.yaml";
@@ -1898,6 +1898,11 @@ namespace Statecraft.Sim
                 var settled = c.SettlementHexes.FirstOrDefault(h => h.Q == x.Q && h.R == x.R);
                 if (settled != null)
                     throw new ContentException(sf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} holds the 1948 settlement {settled.Id} ({SettlementHexesFileName})"));
+                // R-CTRL-020 (#2804): a depopulated place closes its target's hex, which for Ramla (TargetOnANeighbour) is not a
+                // settlement's hex, and pioneer work never asks DepopulatedAt; so no site may stand on a target's hex either.
+                var target = c.SettlementTargets.FirstOrDefault(t => t.Q == x.Q && t.R == x.R);
+                if (target != null)
+                    throw new ContentException(sf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is the settlement target {target.Id} ({SettlementTargetsFileName})"));
                 if (x.Kinds.Count == 0) throw new ContentException(sf, at + ".kinds", "required: one or more of " + string.Join(", ", SiteKinds));
                 foreach (var k in x.Kinds)
                     if (!SiteKinds.Contains(k)) throw new ContentException(sf, at + ".kinds", $"unknown kind '{k}' ({string.Join(", ", SiteKinds)})");
