@@ -139,7 +139,7 @@ public class OpeningRoutingTests
         Open(saved: false, out _);
         UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         Assert.AreEqual(0, FilmAsked, "the automated runs never meet the film");
-        Assert.IsFalse(Shows("film-layer"));
+        Assert.IsFalse(Shows("film-layer"), "no film is built, and its layer still reads hidden (FirstCardCheck reads it so)");
         Assert.IsTrue(Shows("opening-layer"));
     }
 

@@ -650,6 +650,9 @@ namespace Statecraft.Game.UI
             // A panel with a clip plays it after its photograph (owner ruling of 2 November 2026, OpeningPresenter).
             var replayOpening = root.Q<Button>("start-opening-replay");
             replayOpening.style.display = DisplayStyle.None;
+            // The film's layer is hidden inline as well as by its USS class: with no FilmPresenter (video off, no film) nothing
+            // else sets it, and the inline read (FirstCardCheck, the tests) would take an unset display for Flex.
+            root.Q("film-layer").style.display = DisplayStyle.None;
             if (enableOpening && OpeningContent.Load() is OpeningContent openingSource)
             {
                 var openingData = openingSource.Read();
