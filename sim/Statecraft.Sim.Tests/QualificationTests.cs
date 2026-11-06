@@ -285,11 +285,24 @@ public class QualificationTests
         var text = g.Save.Write();
         Assert.Contains("retcraft town_a 1", text);
         Assert.Contains("order " + unit + " return_civilian", text);
-        foreach (var cmd in new Command[] { new ReassignCraftsmen("town_a", 1), new ReassignPioneers("town_a", "halutz", 1) })
+        // R-QUAL-007 (#2806 item 3): the two reassignment tokens are pinned too, and parse back to the same city, track and count.
+        foreach (var (cmd, token) in new (Command, string)[] { (new ReassignCraftsmen("town_a", 2), "regcraft town_a 2"),
+                     (new ReassignPioneers("town_a", "veteran_halutz", 1), "regpioneer town_a veteran_halutz 1") })
         {
             var other = GameSession.New(c, 1, Mode.Historical);
             other.Step(new[] { cmd });   // refused here, but written and parsed back as the same order
-            Assert.Equal(cmd.GetType(), SaveGame.Parse(other.Save.Write()).Turns.Single().Single().GetType());
+            var saved = other.Save.Write();
+            Assert.Contains(token, saved);
+            var back = SaveGame.Parse(saved).Turns.Single().Single();
+            Assert.Equal(cmd.GetType(), back.GetType());
+            if (cmd is ReassignCraftsmen rc)
+                Assert.Equal((rc.City, rc.Count), (((ReassignCraftsmen)back).City, ((ReassignCraftsmen)back).Count));
+            else
+            {
+                var rp = (ReassignPioneers)cmd;
+                var bp = (ReassignPioneers)back;
+                Assert.Equal((rp.City, rp.Track, rp.Count), (bp.City, bp.Track, bp.Count));
+            }
         }
         var yaml = "name: q\nuntil: 1948-06-01\nsteps:\n  - on: 1948-05-15\n    commands:\n      - { kind: reassign_pioneers, city: town_a, track: halutz, count: 1 }\n";
         var built = Scenario.Parse(yaml).Steps.Single().Built.Single();
