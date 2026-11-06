@@ -332,9 +332,10 @@ namespace Statecraft.Game.UI
             {
                 if (result.StartsWith("fail save ", StringComparison.Ordinal))
                 {
-                    toast.Append(text["save.write_failed"]);
+                    toast.SaveFailed(text["save.write_failed"]);
                     Debug.Log("SAVE FAILURE SHOWN save.write_failed");
                 }
+                else if (result.StartsWith("ok save ", StringComparison.Ordinal)) toast.SaveSucceeded();   // #2707: the failure stays until then
             };
             unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
             var hudPresenter = Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
@@ -519,7 +520,7 @@ namespace Statecraft.Game.UI
             {
                 newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed, gameObject.name));
                 this.newGame = newGame;
-                Own(GameStart.Autosave(bridge, store, text, toast.Append, gameObject.name));   // appends: the turn's refusals stay visible
+                Own(GameStart.Autosave(bridge, store, text, toast.SaveFailed, gameObject.name, toast.SaveSucceeded));   // under the turn's refusals, until a save succeeds (#2707)
             }
             // Once the game is over, the sim's end report (#812); after the autosave, so the last turn is saved first. New Game
             // is its two presses; a smoke run has none.

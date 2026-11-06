@@ -1302,6 +1302,8 @@ arms.no_attention: "אין די תשומת לב לרכישה. יש לבטל הו
 arms.refused_debt_ceiling: "רכישת כמות כזאת של נשק תעלה את החוב מעל התקרה"
 # Agent-drafted Hebrew; for the native read in #564.
 arms.refused_stock_capacity: "כמות זו של נשק גדולה מכפי שהמלאי יכול להכיל"
+# #2707. Agent-drafted Hebrew; for the native read in #564.
+arms.refused_count: "יש לרכוש לפחות יחידת נשק אחת"
 
 # #731 stock summaries in the report and Why. Native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
 report.stock_line: "{0} במלאי: {1}"
@@ -1325,6 +1327,20 @@ unit.order_refused.card_order: "לא ניתן היה לבצע את פקודת ה
 # An operation card's go-to held back from the last Israeli unit on an occupied place (R-ENEMY-005, R-CTRL-013; #2087).
 # Agent-drafted Hebrew; native review pending (#564).
 unit.order_refused.last_garrison: "היחידה נשארת במקום: היא היחידה הישראלית האחרונה המחזיקה בו"
+
+# #2707: the move's and the go-to's refusals (Movement), Send home's with no armistice (Demobilization) and the reserve
+# call-up's range (SecuritySystem), shown in the toast. {0} is a number. Agent-drafted Hebrew; for the native read in #564.
+unit.move_refused.no_hex: "יש לבחור משבצת יעד"
+unit.move_refused.cannot_move: "היחידה אינה יכולה לנוע"
+unit.move_refused.already_there: "היחידה כבר נמצאת שם"
+unit.move_refused.off_land: "יחידות אינן יכולות להיכנס למים או לצאת מהמפה"
+unit.move_refused.enemy_hex: "יחידת אויב מחזיקה במשבצת הזאת"
+unit.move_refused.closed: "אי אפשר להיכנס ליישוב שבידי האויב לפני שאפשר לכבוש אותו"
+unit.move_refused.no_route: "אין דרך שמגיעה למשבצת הזאת"
+unit.move_refused.out_of_reach: "היחידה לא תגיע למשבצת הזאת בתור הזה"
+unit.move_refused.full: "במשבצת כבר יש {0} יחידות של הצד הזה, המספר המרבי במשבצת אחת"
+unit.send_home_refused.no_armistice: "עדיין לא נחתם הסכם שביתת נשק"
+defence.refused_mobilization: "שיעור גיוס המילואים חייב להיות בין 0 ל־1"
 
 # #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. A
 # settlement in {0}/{1} opens the line as its label or follows a prefix, so no verb agrees with its gender (HE-15).
