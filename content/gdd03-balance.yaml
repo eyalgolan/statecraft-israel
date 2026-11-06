@@ -73,7 +73,7 @@
     "values": [5, 10, 5]
   "start.prepared_fields":
     "basis": "Agreed"
-    "note": "Population and starting state: staffed farming slots, across multiple friendly regions; Derived from agreed farmers. Source: #1668 balance.md at 605277df."
+    "note": "Population and starting state: staffed farming slots, across multiple friendly regions. Owner, 1 November 2026, Q36 and MAN-1: the authored list from the owner-approved per-region split of 27 October 2026 (20 farmer units), kept as symbolic weighting; the Historical start's authored opening fields total this value (docs/gdd/balance.md). Agreed by that ruling, not derived from start.farmers, which is Default (D2). Owner, 6 November 2026, #2859: \"keep agreed\". Source: #1668 balance.md at 605277df."
     "values": [20]
   "start.trained_pioneers":
     "basis": "Default"

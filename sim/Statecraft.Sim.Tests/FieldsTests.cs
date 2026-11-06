@@ -198,7 +198,9 @@ public class FieldsTests
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var m = c.Rules.Mvp!;
         Assert.Equal((1, 3, 0.5), (m.FieldFoodPerTurn!.Value, m.PlowFieldsTurns, m.PlowFieldsCost!.Value));
-        foreach (var f in c.Sites.Where(x => x.Kinds.Contains(Projects.FieldKind)))
+        var fields = c.Sites.Where(x => x.Kinds.Contains(Projects.FieldKind)).ToList();
+        Assert.NotEmpty(fields);
+        foreach (var f in fields)
             Assert.Contains(c.Sites, y => (y.Kinds.Contains(Projects.YishuvKind) || y.Kinds.Contains(Projects.SwampKind)) && (y.Q, y.R) == (f.Q, f.R));
     }
 }
