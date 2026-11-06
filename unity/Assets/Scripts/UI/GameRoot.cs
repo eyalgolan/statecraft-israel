@@ -94,6 +94,10 @@ namespace Statecraft.Game.UI
         bool endClosed;
         /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
         bool keptResumed = true;
+        /// <summary>The Budget screen of the last Begin, whose unsubmitted draft a language switch hands to the next (#2708).</summary>
+        BudgetPresenter? budgetScreen;
+        /// <summary>Set by SwitchLanguage for its Begin (#2708): the old Budget screen's draft, for the rebuilt one.</summary>
+        IReadOnlyDictionary<string, double>? keptBudgetDraft;
         /// <summary>The save notices of <see cref="saveNoticeSession"/>, the session Begin last started, as language-independent
         /// keys, so a language switch can say them again in the new language (#2552). A New game replaces the bridge's session
         /// without Begin, so the keys are said only while the kept session is still the one that raised them.</summary>
@@ -366,7 +370,7 @@ namespace Statecraft.Game.UI
             outcomes = video == null ? null : Own(new OutcomePresenter(root, bridge, text, Own(new CardVideo()), mapping.outcomes,
                 () => card?.Render(), () => nav?.Close()));
             Own(new DefencePresenter(root, bridge, text, portraits));
-            var budget = Own(new BudgetPresenter(root, bridge, text));
+            var budget = budgetScreen = Own(new BudgetPresenter(root, bridge, text, keptBudgetDraft));
             var why = Own(new WhyPresenter(root, bridge, text));
             Own(new TimelinePresenter(root, bridge, text));
             Own(new ObjectivesPresenter(root, bridge, text));
@@ -753,6 +757,9 @@ namespace Statecraft.Game.UI
                     },
                 }));
             budget.UnsubmittedChanged += advisor.BudgetUnsubmitted;
+            // A kept draft (#2708) said "unsubmitted" while the screen was built, before this line listened: the advisor
+            // takes that state without a second Notice, so a put-off budget warning is not pruned after a language switch.
+            advisor.HoldsBudgetUnsubmitted = bridge.BudgetUnsubmitted(budget.Draft);
             // The advisors' encyclopedia (spec 10), which replaces How to play: after the advisor, whose Show me and opening
             // chain its buttons call; an advisor's Tell me more opens its pages (OpenPage above).
             encyclopedia = Own(new EncyclopediaPresenter(root, text, AdvisorSession.Catalog, nav!, advisor, bridge.Content.Ruleset));
@@ -817,7 +824,10 @@ namespace Statecraft.Game.UI
             endClosed = end != null && !end.IsOpen;   // read before Begin disposes it
             bool fromStart = start?.IsOpen == true;
             keptResumed = start?.Resumed ?? true;
-            Begin(inputs, 0, startScreen: fromStart, keep: Bridge);
+            keptBudgetDraft = budgetScreen?.Draft;   // read before Begin disposes it; the new screen copies it
+            // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
+            try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
+            finally { keptBudgetDraft = null; }
             if (!fromStart) nav?.Open("settings");
             // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
             // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
@@ -1020,7 +1030,7 @@ namespace Statecraft.Game.UI
             owned.Clear();
             savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
