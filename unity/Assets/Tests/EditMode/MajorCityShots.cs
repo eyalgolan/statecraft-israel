@@ -54,6 +54,8 @@ using Object = UnityEngine.Object;
 public class MajorCityShots
 {
     static readonly string[] Cities = { "tel_aviv", "jerusalem", "haifa", "jaffa" };
+    /// <summary>The day WorkshopProps builds the four workshops on (#2876): three months into the game.</summary>
+    static readonly DateTime WorkshopsBuilt = new DateTime(1948, 8, 15);
     static readonly float[] DistancesKm = { 250f, 60f, 39f, CameraRig.StartDistance / 1000f };
     const float PropDistanceM = 8000f;
     string shotDir = "", saveDir = "";
@@ -236,7 +238,25 @@ public class MajorCityShots
         var f = Scene.KitFootprints.FirstOrDefault(x => x.id == city);
         float fromCentre = f.id == null ? float.NaN : Vector2.Distance(new Vector2(at.x, at.z), f.centre);
         Debug.Log(FormattableString.Invariant($"SHOT {name}: prop {key} ({placed[0].Model}) on {root.Bridge!.State.Date:yyyy-MM-dd}, ")
-            + FormattableString.Invariant($"{fromCentre:F0} m from {city}'s kit centre (radius {f.radius:F0} m), {PropDistanceM / 1000f:F0} km; {state}; {Frame(at)}"));
+            + FormattableString.Invariant($"{fromCentre:F0} m from {city}'s kit centre (radius {f.radius:F0} m), {PropDistanceM / 1000f:F0} km; {state}; {Frame(at)}")
+            + NearestBlocks(new Vector2(at.x, at.z), city));
+    }
+
+    /// <summary>#2876: a spot's box distance (m) to the nearest kit block of <paramref name="city"/> and of any other major city
+    /// (MapScene.MajorCityBlocks), for the SHOT line.</summary>
+    string NearestBlocks(Vector2 at, string city)
+    {
+        float own = float.MaxValue, other = float.MaxValue; string otherId = "none";
+        foreach (var b in Scene.MajorCityBlocks)
+        {
+            float a = b.Yaw * Mathf.Deg2Rad;
+            var q = b.C - at; float qu = q.x * Mathf.Cos(a) + q.y * Mathf.Sin(a), qv = -q.x * Mathf.Sin(a) + q.y * Mathf.Cos(a);
+            float du = Mathf.Max(0f, Mathf.Abs(qu) - 0.5f * b.W), dv = Mathf.Max(0f, Mathf.Abs(qv) - 0.5f * b.D);
+            float d = Mathf.Sqrt(du * du + dv * dv);
+            if (b.Id == city) own = Mathf.Min(own, d);
+            else if (d < other) { other = d; otherId = b.Id; }
+        }
+        return own == float.MaxValue ? "" : FormattableString.Invariant($"; nearest kit block: {city}'s {own:F0} m, {otherId}'s {other:F0} m");
     }
 
     [UnityTest]
@@ -300,6 +320,9 @@ public class MajorCityShots
         yield return Frames(3);
         var state = root.Bridge!.State; var content = root.Bridge.Content;
         Assert.AreEqual(SaveGame.Gdd03Ruleset, content.Ruleset);
+        // #2876: built three months in (an arms workshop takes three monthly turns), where every major city's edge has ground
+        // the Israeli side holds (round Jerusalem, none before the first truce, 11 June 1948).
+        yield return SetDate(WorkshopsBuilt);
         var built = new List<(int id, string city)>();
         foreach (var city in Cities)
         {

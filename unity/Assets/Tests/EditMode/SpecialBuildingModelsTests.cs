@@ -1042,7 +1042,7 @@ namespace Statecraft.Game.Tests
                 if (Statecraft.Game.Map.Kits.TownModels.IsMajorCity(project.City))
                 {
                     var edge = new List<string>();
-                    AtTheCitysEdge(map, project.City, key, flat, r, edge);
+                    AtTheCitysEdge(map, project.City, key, flat, r, edge, Built, (project.Q, project.R));
                     Assert.IsEmpty(edge, string.Join("\n", edge));
                 }
                 else
@@ -1175,7 +1175,7 @@ namespace Statecraft.Game.Tests
                 float off = (flat - new Vector2(centre3.x, centre3.z)).magnitude;
                 TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre");
                 var edge = new List<string>();
-                AtTheCitysEdge(map, project.City, key, flat, r, edge);
+                AtTheCitysEdge(map, project.City, key, flat, r, edge, Built, (project.Q, project.R));
                 Assert.IsEmpty(edge, string.Join("\n", edge));
                 if (project.City == "jerusalem")
                 {
@@ -1401,8 +1401,13 @@ namespace Statecraft.Game.Tests
         ///   SettlementKits.OwnsFootprint) than in any other place's, and clear of every other place's plot reach
         ///   (SettlementKits.PlotReach of its radius), where its buildings stand;
         /// - clear of every place's name pill (<see cref="SpecialBuildingModels.ClearOfName"/>);
-        /// - on land, off the beach: its centre dry, and no open sea within the drawn full sand (BeachBands.FullSandAt) plus r.</summary>
-        static void AtTheCitysEdge(MapScene map, string city, string key, Vector2 at, float r, List<string> failures)
+        /// - on land, off the beach: its centre dry, and no open sea within the drawn full sand (BeachBands.FullSandAt) plus r;
+        /// - on ground the player's side holds on <paramref name="built"/>, the day it was built: its centre and 8 points round
+        ///   its disc each on the project's own hex <paramref name="home"/> (a player city, painted the player's) or on a hex the
+        ///   map's control wash (MapScene.Control, control_hexes_1948_49.yaml) gives the Israeli side that day; the other side,
+        ///   contested ground, no-man's land, a demilitarized zone, no colour and off the data all miss;
+        /// - nearer its own city's kit blocks than any other major city's (the nearest block of each, box distance).</summary>
+        static void AtTheCitysEdge(MapScene map, string city, string key, Vector2 at, float r, List<string> failures, DateTime built, (int q, int r) home)
         {
             string who = FormattableString.Invariant($"{city}: {key} at ({at.x:0}, {at.y:0})");
             var fp = map.KitFootprints.Single(f => f.id == city);
@@ -1428,6 +1433,17 @@ namespace Statecraft.Game.Tests
                 nearest = Mathf.Min(nearest, Mathf.Sqrt(du * du + dv * dv));
             }
             if (nearest > EdgeReach(r)) failures.Add(FormattableString.Invariant($"{who} is {nearest:0} m from {city}'s nearest kit block, past {EdgeReach(r):0} m"));
+            float other = float.MaxValue; string otherId = "none";
+            foreach (var b in map.MajorCityBlocks)
+            {
+                if (b.Id == city) continue;
+                float a = b.Yaw * Mathf.Deg2Rad;
+                var q = b.C - at; float qu = q.x * Mathf.Cos(a) + q.y * Mathf.Sin(a), qv = -q.x * Mathf.Sin(a) + q.y * Mathf.Cos(a);
+                float du = Mathf.Max(0f, Mathf.Abs(qu) - 0.5f * b.W), dv = Mathf.Max(0f, Mathf.Abs(qv) - 0.5f * b.D);
+                float d = Mathf.Sqrt(du * du + dv * dv);
+                if (d < other) { other = d; otherId = b.Id; }
+            }
+            if (!(nearest < other)) failures.Add(FormattableString.Invariant($"{who} is {nearest:0} m from {city}'s nearest kit block, not nearer than {otherId}'s ({other:0} m)"));
             float mine = dist / fp.radius;
             foreach (var f in map.KitFootprints)
             {
@@ -1442,7 +1458,20 @@ namespace Statecraft.Game.Tests
             var reaches = Statecraft.Game.Map.Kits.BeachBands.Reaches(map.Settlements.Concat(map.Localities.Select(l => l.Settlement)).ToList(), ground);
             float sand = Statecraft.Game.Map.Kits.BeachBands.FullSandAt(map.Frame, at.x, at.y, reaches);
             if (ground.SeaDistance(at.x, at.y, sand + r) != float.MaxValue) failures.Add(FormattableString.Invariant($"{who} is on the beach (the sea within {sand:0} m of full sand plus its {r:0} m)"));
-            TestContext.WriteLine(FormattableString.Invariant($"{key} ({city}): {Offset(at, fp.centre)} from the city's centre ({mine:0.00} of its radius); {nearest:0} m from its nearest kit block"));
+            var control = map.Control;
+            if (control == null) failures.Add(who + ": the map has no control data to check the held ground against");
+            else
+                for (int i = 0; i < 9; i++)
+                {
+                    float a = i * Mathf.PI / 4f;
+                    var s = i == 8 ? at : at + r * new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                    var (hq, hr) = ground.Hex(s.x, s.y);
+                    if ((hq, hr) == home) continue;
+                    var (side, holder) = control.At(hq, hr, built);
+                    if (side != Control1948.Side.Israel)
+                        failures.Add(FormattableString.Invariant($"{who}: its disc reaches hex {hq},{hr}, {side}{(holder != null ? " (" + holder + ")" : "")} on {built:yyyy-MM-dd}, not the Israeli side's"));
+                }
+            TestContext.WriteLine(FormattableString.Invariant($"{key} ({city}): {Offset(at, fp.centre)} from the city's centre ({mine:0.00} of its radius), hex {ground.Hex(at.x, at.y)}; {nearest:0} m from its nearest kit block, {other:0} m from {otherId}'s"));
         }
 
         /// <summary>#2876, the owner, 6 November 2026 (verbatim): "make the workshop at the edge of the city". A workshop built on
@@ -1481,7 +1510,7 @@ namespace Statecraft.Game.Tests
                 var hexCentre = new Vector2(centre3.x, centre3.z);
                 bool onHex = (at - hexCentre).magnitude + r <= SpecialBuildingModels.HexInnerRadiusM;
                 TestContext.WriteLine($"{key} ({city}): {Offset(at, hexCentre)} from its hex centre, {(onHex ? "wholly on" : "off")} its project's hex");
-                AtTheCitysEdge(map, city, key, at, r, failures);
+                AtTheCitysEdge(map, city, key, at, r, failures, Built, (project.Q, project.R));
                 bool street = along.TryGetValue(key, out var dir);
                 float yaw = street ? Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg : 0f;
                 var model = layer.transform.Find(key);
@@ -1490,6 +1519,98 @@ namespace Statecraft.Game.Tests
                 if ((new Vector2(mb.center.x, mb.center.z) - at).magnitude > 1f) failures.Add($"{city}: {key} is drawn at {mb.center}, not at its planned {at}");
                 var (hidden, first) = HiddenOnTop(map, tops, at, yaw, size, mb.max.y, toCamera);
                 if (hidden > 0) failures.Add($"{city}: {key}: {hidden} of 25 points on its top are hidden from the camera at {Shallowest:0.0} deg; first: {first}");
+            }
+            Assert.IsEmpty(failures, string.Join("\n", failures));
+        }
+
+        /// <summary>#2876 (coordinator, 6 November 2026): the front moves with the date, so a major city's workshop keeps the spot it
+        /// got on the day it was built (its held ground, tokens and figures read that day, Want.From), whatever day the plan is
+        /// made on. A workshop built in each major city on <see cref="Built"/> is planned on that day and on two later days on
+        /// which the control wash differs (the Jordan armistice, 3 April 1949, and the Syrian one, 20 July 1949, each a new
+        /// period of control_hexes_1948_49.yaml): it gets a spot each time, the same one.</summary>
+        [Test]
+        public void AMajorCitysWorkshopKeepsItsSpotAsTheFrontMoves()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            Assert.IsNotNull(map.Control, "the map reads its control wash");
+            var majors = c.SettlementHexes.Select(h => h.Id).Where(Statecraft.Game.Map.Kits.TownModels.IsMajorCity).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            var projects = majors.Select((city, i) => Workshop(c, 700 + i, city, Built)).ToList();
+            var workshops = SpecialBuildingModels.ArmsWorkshops(c, projects);
+            var dates = new[] { Built, new DateTime(1949, 4, 3), new DateTime(1949, 7, 20) };
+            Assert.AreEqual(dates.Length, dates.Select(d => map.Control!.PeriodOn(d)?.Id).Distinct().Count(), "three periods of the control wash");
+            var first = new Dictionary<string, Vector2>(StringComparer.Ordinal);
+            var failures = new List<string>();
+            foreach (var date in dates)
+            {
+                var plan = SpecialBuildingModels.Plan(map, date, SpecialBuildingModels.Placements(date).Concat(workshops).ToList(), _ => true, log: false);
+                foreach (var project in projects)
+                {
+                    string key = SpecialBuildingModels.WorkshopKey(project.Id);
+                    int changed = 0;
+                    for (int dq = -2; dq <= 2; dq++)
+                        for (int dr = -2; dr <= 2; dr++)
+                            if (map.Control!.At(project.Q + dq, project.R + dr, date) != map.Control.At(project.Q + dq, project.R + dr, Built)) changed++;
+                    var row = plan.Where(x => x.want.Key == key).ToList();
+                    if (row.Count == 0) { failures.Add($"{project.City}: {key} gets no spot when planned on {date:yyyy-MM-dd}"); continue; }
+                    TestContext.WriteLine(FormattableString.Invariant($"{key} ({project.City}) planned on {date:yyyy-MM-dd}: at ({row[0].at.x:0}, {row[0].at.y:0}); {changed} hexes near its own changed side or holder since {Built:yyyy-MM-dd}"));
+                    if (!first.TryGetValue(key, out var at)) first[key] = row[0].at;
+                    else if (at != row[0].at) failures.Add(FormattableString.Invariant($"{project.City}: {key} moves from ({at.x:0}, {at.y:0}) to ({row[0].at.x:0}, {row[0].at.y:0}) when planned on {date:yyyy-MM-dd}"));
+                }
+            }
+            Assert.IsEmpty(failures, string.Join("\n", failures));
+        }
+
+        /// <summary>#2876, coordinator's capture of 6 November 2026: the Jaffa b21 stood clear of the kit blocks but a palm's crown in
+        /// front of it (south, on the camera's side) covered it. The kit trees are 100 times life size (KitScale.Trees), the b21
+        /// 24 times (SettlementKits.ModelScale), so a tree a few kilometres south of it can hide it. For each major city's
+        /// workshop as the layer draws it, no kit tree is drawn (VegetationLayer.Drawable) whose crown reaches its sight lane:
+        /// across, the drawn model's width; along, from its north face south to where the ray from its south face's foot toward
+        /// the camera, at the view's shallowest depression (CameraRig.Pitch - Fov / 2), passes over that tree's top (the tree
+        /// mesh's top, Vegetation.BuildMesh, at the instance's scale, over the ground it stands on). Each lane's planted trees
+        /// left out are counted and logged.</summary>
+        [Test]
+        public void NoKitTreeStandsInAMajorCitysWorkshopSightLane()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var veg = map.GetComponentInChildren<Statecraft.Game.Map.Kits.VegetationLayer>(true);
+            Assert.IsNotNull(veg, "the map plants its kit trees");
+            var majors = c.SettlementHexes.Select(h => h.Id).Where(Statecraft.Game.Map.Kits.TownModels.IsMajorCity).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            var projects = majors.Select((city, i) => Workshop(c, 700 + i, city, Built)).ToList();
+            var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
+            AnswerAll();
+            var topM = new Dictionary<Statecraft.Game.Map.Kits.TreeKind, float>();
+            foreach (Statecraft.Game.Map.Kits.TreeKind k in Enum.GetValues(typeof(Statecraft.Game.Map.Kits.TreeKind)))
+            {
+                var mesh = Statecraft.Game.Map.Kits.Vegetation.BuildMesh(k);
+                topM[k] = mesh.bounds.max.y;
+                UnityEngine.Object.DestroyImmediate(mesh);
+            }
+            float tan = Mathf.Tan(Shallowest * Mathf.Deg2Rad);
+            var failures = new List<string>();
+            foreach (var project in projects)
+            {
+                string key = SpecialBuildingModels.WorkshopKey(project.Id);
+                var model = layer.transform.Find(key);
+                if (model == null) { failures.Add($"{project.City}: {key} is not drawn"); continue; }
+                var mb = model.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                bool InLane(Statecraft.Game.Map.Kits.TreeKind kind, Matrix4x4 m)
+                {
+                    var p = (Vector3)m.GetColumn(3);
+                    float crown = Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(kind, m);
+                    float top = p.y + topM[kind] * ((Vector3)m.GetColumn(1)).magnitude;
+                    return Mathf.Abs(p.x - mb.center.x) < mb.extents.x + crown && p.z - crown < mb.max.z
+                        && (mb.min.z - p.z) - crown < (top - mb.min.y) / tan;
+                }
+                int planted = veg.Planted().Count(t => InLane(t.kind, t.m));
+                var drawn = veg.Drawable().Where(t => InLane(t.kind, t.m)).ToList();
+                TestContext.WriteLine(FormattableString.Invariant($"{key} ({project.City}): {planted} planted trees in its sight lane, {planted - drawn.Count} left out, {drawn.Count} drawn"));
+                if (drawn.Count > 0)
+                {
+                    var p = drawn[0].m.GetColumn(3);
+                    failures.Add(FormattableString.Invariant($"{project.City}: {key}: {drawn.Count} kit trees drawn in its sight lane; first a {drawn[0].kind} at ({p.x:0}, {p.z:0})"));
+                }
             }
             Assert.IsEmpty(failures, string.Join("\n", failures));
         }
