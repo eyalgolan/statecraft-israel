@@ -652,7 +652,7 @@ public class GameSceneTests
             root.Bridge.Skip(state.Units.Keys.First());
             var layer = Object.FindFirstObjectByType<MapScene>().Terrain.transform.Find(SpecialBuildingModels.Name);
             Assert.IsNotNull(layer?.Find(SpecialBuildingModels.WorkshopKey(id)),
-                "the real Changed hookup redraws a newly built workshop");
+                "the real Changed hookup redraws a newly built workshop (tel_aviv's b21; #2876: none may also mean tel_aviv lost its spot)");
         }
         finally { SpecialBuildingModels.Request = saved; }
     }

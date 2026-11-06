@@ -364,7 +364,7 @@ public class MapLabelTests
                         for (int c = 0; c < 8; c++)
                         {
                             var corner = new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z);
-                            var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front);
+                            var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front, city + "'s workshop model is in front of the camera");
                             x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
                         }
                     }
@@ -392,7 +392,7 @@ public class MapLabelTests
                         if (pill.Overlaps(rect)) failures.Add($"{distance:0} m, {offset:0} m: {slot.name}'s pill {pill} covers the workshop model {rect}");
                     }
                 }
-            Assert.IsEmpty(failures, string.Join("\n", failures));
+            Assert.IsEmpty(failures, city + ": " + string.Join("\n" + city + ": ", failures));
         }
         finally
         {

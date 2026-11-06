@@ -1050,7 +1050,9 @@ namespace Statecraft.Game.Tests
             }
             CollectionAssert.AreEquivalent(new[] { "jerusalem", "tel_aviv" }, covered, "the cities whose footprint covers their own hex");
             var keys = projects.Select(p => SpecialBuildingModels.WorkshopKey(p.Id)).ToList();
-            CollectionAssert.IsSubsetOf(keys, layer.Placed.Select(p => p.Key), "a b21 at every built workshop");
+            // #2876: each town named on a loss (the b21 at 2.5x keeps a wider clearance, so a crowded town may lose its spot).
+            var lost = projects.Where(p => !layer.Placed.Any(x => x.Key == SpecialBuildingModels.WorkshopKey(p.Id))).Select(p => p.City).ToList();
+            Assert.IsEmpty(lost, "a b21 at every built workshop; none in: " + string.Join(", ", lost));
             Assert.AreEqual(keys.Count, layer.Placed.Count(p => p.Model == SpecialBuildingModels.Workshop), "exactly one b21 per built workshop");
             var ground = PlacementLayer.CampGround(map);
             var others = layer.Placed.Where(p => !keys.Contains(p.Key)).Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model))).ToList();
@@ -1058,9 +1060,9 @@ namespace Statecraft.Game.Tests
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(SpecialBuildingModels.Workshop, CollectionDetail.Near));
             foreach (var project in projects)
             {
-                var key = SpecialBuildingModels.WorkshopKey(project.Id);
+                var key = SpecialBuildingModels.WorkshopKey(project.Id); string who = key + " (" + project.City + ")";
                 var p = layer.Placed.Single(x => x.Key == key);
-                Assert.AreEqual(SpecialBuildingModels.Workshop, p.Model);
+                Assert.AreEqual(SpecialBuildingModels.Workshop, p.Model, who);
                 var hex = c.HexAt(project.Q, project.R)!; var centre3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
                 var flat = new Vector2(p.At.x, p.At.z); float r = SpecialBuildingModels.ClearanceOf(p.Model);
                 float off = (flat - new Vector2(centre3.x, centre3.z)).magnitude;
@@ -1075,29 +1077,29 @@ namespace Statecraft.Game.Tests
                 }
                 else
                 {
-                    Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its project's hex");
+                    Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, who + " wholly on its project's hex");
                     if (covered.Contains(project.City))
                         AmongTheHouses(map, key, flat, r, streets);
-                    else Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), key + " clear of the towns (and their labels)");
+                    else Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), who + " clear of the towns (and their labels)");
                 }
-                Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
-                Assert.IsFalse(ground.OnToken(flat, r, After), key + " clear of the unit tokens");
-                Assert.IsTrue(TownLandmarks.Clear(flat, r, others), key + " clear of the sourced building models");
-                Assert.IsTrue(TownLandmarks.Clear(flat, r, spots), key + " clear of the other workshops");
-                Assert.IsTrue(TownLandmarks.Clear(flat, r, props), key + " clear of the civilians, the wildlife and the farm scenes");
+                Assert.IsFalse(ground.OnRoute(flat, r), who + " clear of the routes");
+                Assert.IsFalse(ground.OnToken(flat, r, After), who + " clear of the unit tokens");
+                Assert.IsTrue(TownLandmarks.Clear(flat, r, others), who + " clear of the sourced building models");
+                Assert.IsTrue(TownLandmarks.Clear(flat, r, spots), who + " clear of the other workshops");
+                Assert.IsTrue(TownLandmarks.Clear(flat, r, props), who + " clear of the civilians, the wildlife and the farm scenes");
                 spots.Add((flat, r));
                 var go = layer.transform.Find(key)!;
                 if (streets.ContainsKey(key))
                 {
                     // On a street between a major city's kit blocks (#2876): turned about the vertical only, along the street.
                     var turn = go.localRotation * Quaternion.Inverse(prefab.transform.localRotation);
-                    Assert.Greater(Vector3.Dot(turn * Vector3.up, Vector3.up), 0.9999f, key + " upright: turned only about the vertical");
+                    Assert.Greater(Vector3.Dot(turn * Vector3.up, Vector3.up), 0.9999f, who + " upright: turned only about the vertical");
                 }
-                else Assert.Less(Quaternion.Angle(prefab.transform.localRotation, go.localRotation), 0.01f, key + " keeps the FBX axis conversion");
+                else Assert.Less(Quaternion.Angle(prefab.transform.localRotation, go.localRotation), 0.01f, who + " keeps the FBX axis conversion");
                 var rs = go.GetComponentsInChildren<Renderer>(true);
                 var b = rs.Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
-                Assert.AreEqual(p.At.y, b.min.y, 1f, key + " stands on the ground");
-                Assert.Less(b.size.y, Mathf.Max(b.size.x, b.size.z), key + " upright: lower than it is long");
+                Assert.AreEqual(p.At.y, b.min.y, 1f, who + " stands on the ground");
+                Assert.Less(b.size.y, Mathf.Max(b.size.x, b.size.z), who + " upright: lower than it is long");
                 // The size is the model's own: a street workshop's world-axis bounds also take in its turn along the street
                 // (#2876), so it is measured with that turn taken off for a moment (the FBX axis conversion alone), then put back.
                 var sized = b;
@@ -1112,15 +1114,19 @@ namespace Statecraft.Game.Tests
                 // chose 2.5x (720 m) on the coordinator's recommendation ("do it"). This assert moved on purpose, from the buildings'
                 // one world scale (12 m x 24 = 288 m) to 2.5 times it.
                 Assert.AreEqual(SpecialBuildingModels.RealLengthM(SpecialBuildingModels.Workshop) * SpecialBuildingModels.WorldScale * 2.5f, Mathf.Max(sized.size.x, sized.size.z), 1f,
-                    key + " (" + project.City + ") at 2.5 times the buildings' one world scale, 720 m (owner, 6 November 2026: \"the workshop should be bigger as it's barely visible\")");
-                Assert.IsTrue(rs.All(x => x.forceRenderingOff), key + " hidden until the close zoom");
+                    who + " at 2.5 times the buildings' one world scale, 720 m (owner, 6 November 2026: \"the workshop should be bigger as it's barely visible\")");
+                Assert.IsTrue(rs.All(x => x.forceRenderingOff), who + " hidden until the close zoom");
             }
             // Deterministic: a second layer from nothing puts every workshop on the same spot.
             var first = layer.Placed.Where(p => keys.Contains(p.Key)).ToDictionary(p => p.Key, p => p.At);
             UnityEngine.Object.DestroyImmediate(layer.gameObject);
             var again = CollectionGeometryFixture.Special(map, After, c, cities.Select((city, i) => Workshop(c, 100 + i, city, Built)).ToList())!;
             AnswerAll();
-            foreach (var key in keys) Assert.AreEqual(first[key], again.Placed.Single(p => p.Key == key).At, key + " on the same spot again");
+            foreach (var project in projects)
+            {
+                var key = SpecialBuildingModels.WorkshopKey(project.Id);
+                Assert.AreEqual(first[key], again.Placed.Single(p => p.Key == key).At, key + " (" + project.City + ") on the same spot again");
+            }
         }
 
         /// <summary>The street direction the plan gives each workshop that stands on a street between a major city's kit blocks
@@ -1199,7 +1205,7 @@ namespace Statecraft.Game.Tests
             var first = new Dictionary<string, Vector3>();
             foreach (var project in projects)
             {
-                string key = SpecialBuildingModels.WorkshopKey(project.Id);
+                string key = SpecialBuildingModels.WorkshopKey(project.Id), who = key + " (" + project.City + ")";
                 CollectionAssert.Contains(layer.Placed.Select(p => p.Key), key, project.City + " gets its b21");
                 var p = layer.Placed.Single(x => x.Key == key); first[key] = p.At;
                 var hex = c.HexAt(project.Q, project.R)!; var centre3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
@@ -1214,17 +1220,21 @@ namespace Statecraft.Game.Tests
                     var (oc, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(map.Frame);
                     var d = flat - oc;
                     TestContext.WriteLine($"{key}: {d.x:0} m east and {d.y:0} m north of the Old City's centre (walls' half side {half:0} m)");
-                    Assert.IsTrue(Mathf.Abs(d.x) >= half + r || Mathf.Abs(d.y) >= half + r, key + " outside the Old City's walls");
+                    Assert.IsTrue(Mathf.Abs(d.x) >= half + r || Mathf.Abs(d.y) >= half + r, who + " outside the Old City's walls");
                 }
-                Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
-                Assert.IsFalse(ground.OnToken(flat, r, After), key + " clear of the unit tokens");
+                Assert.IsFalse(ground.OnRoute(flat, r), who + " clear of the routes");
+                Assert.IsFalse(ground.OnToken(flat, r, After), who + " clear of the unit tokens");
                 var b = layer.transform.Find(key)!.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
-                Assert.Less(b.size.y, Mathf.Max(b.size.x, b.size.z), key + " upright");
+                Assert.Less(b.size.y, Mathf.Max(b.size.x, b.size.z), who + " upright");
             }
             UnityEngine.Object.DestroyImmediate(layer.gameObject);
             var again = CollectionGeometryFixture.Special(map, After, c, projects)!;
             AnswerAll();
-            foreach (var kv in first) Assert.AreEqual(kv.Value, again.Placed.Single(p => p.Key == kv.Key).At, kv.Key + " on the same spot again");
+            foreach (var project in projects)
+            {
+                string key = SpecialBuildingModels.WorkshopKey(project.Id);
+                Assert.AreEqual(first[key], again.Placed.Single(p => p.Key == key).At, key + " (" + project.City + ") on the same spot again");
+            }
             // The load gate's rebuild line: one full plan (the sourced buildings and both workshops at their city's edge), as
             // each Rebuild computes it.
             var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
@@ -1806,14 +1816,14 @@ namespace Statecraft.Game.Tests
             AnswerAll();   // b21 streams in after the labels read the boxes
             var first = layer.KeepClearFor(cam);
             Assert.AreNotSame(before, first, "a new list once the b21 is drawn");
-            Assert.AreEqual(1, first.Count);
+            Assert.AreEqual(1, first.Count, "rehovot's b21 drawn (#2876: none means rehovot lost its spot)");
             Assert.AreEqual(0, before.Count, "the list handed out before is unchanged");
             CollectionGeometryFixture.Special(map, After, c, new[] { one[0], Workshop(c, 52, "hadera", Built) });   // a second workshop
             AnswerAll();
             layer.Choose(default, cam);
             var second = layer.KeepClearFor(cam);
             Assert.AreNotSame(first, second, "a new list for the second b21");
-            Assert.AreEqual(2, second.Count);
+            Assert.AreEqual(2, second.Count, "rehovot's and hadera's b21 drawn (#2876: one means a town lost its spot)");
             Assert.AreEqual(1, first.Count, "the list handed out before is unchanged");
         }
 
@@ -1831,8 +1841,12 @@ namespace Statecraft.Game.Tests
             Assert.Greater(tokens, 0, "premise: some dated tokens end in between");
             var atBuilt = SpecialBuildingModels.Plan(map, Built, wants, _ => true, log: false).ToDictionary(x => x.want.Key, x => x.at);
             var later = SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false).ToDictionary(x => x.want.Key, x => x.at);
-            CollectionAssert.AreEquivalent(atBuilt.Keys, later.Keys, "the same workshops stand");
-            foreach (var kv in atBuilt) Assert.AreEqual(kv.Value, later[kv.Key], kv.Key + " on the same spot at the later date");
+            // #2876: each town named (the b21 at 2.5x keeps a wider clearance, so a crowded town may lose its spot).
+            var cityOf = projects.ToDictionary(p => SpecialBuildingModels.WorkshopKey(p.Id), p => p.City);
+            var lost = projects.Where(p => !atBuilt.ContainsKey(SpecialBuildingModels.WorkshopKey(p.Id))).Select(p => p.City).ToList();
+            TestContext.WriteLine(lost.Count == 0 ? "every town's workshop gets a spot" : "no spot for the workshop in: " + string.Join(", ", lost));
+            CollectionAssert.AreEquivalent(atBuilt.Keys.Select(k => cityOf[k]), later.Keys.Select(k => cityOf[k]), "the same towns' workshops stand");
+            foreach (var kv in atBuilt) Assert.AreEqual(kv.Value, later[kv.Key], kv.Key + " (" + cityOf[kv.Key] + ") on the same spot at the later date");
         }
 
         /// <summary>Review of #2281 (N1): the ground a unit spot's figures hide (SpecialBuildingModels.Hidden), edge by edge: north
@@ -1866,7 +1880,7 @@ namespace Statecraft.Game.Tests
             var built = new[] { Workshop(c, 9, "rehovot", Built) };
             CollectionGeometryFixture.Special(map, Built, c, built);
             AnswerAll();
-            CollectionAssert.Contains(layer.Placed.Select(p => p.Key), key, "from the turn the build completes");
+            CollectionAssert.Contains(layer.Placed.Select(p => p.Key), key, "rehovot's b21 from the turn the build completes");
             var model = layer.transform.Find(key)!.gameObject;
             CollectionGeometryFixture.Special(map, Built, c, new[] { Workshop(c, 9, "rehovot", Built) });
             Assert.IsTrue(model != null && model.transform.parent == layer.transform, "the same state keeps the same model");
