@@ -1839,6 +1839,21 @@ namespace Statecraft.Sim
                 if (o.PartOf != "" && (o.ReferenceDate < c.Rules.Start || o.ReferenceDate >= c.End))
                     throw new ContentException(ObjectivesFileName, at + ".reference_date",
                         FormattableString.Invariant($"must be inside the MVP ({c.Rules.Start:yyyy-MM-dd} to {c.End:yyyy-MM-dd})"));
+                // R-OBJ-003: the card fires at the end of the turn its objective is completed in, so nothing but the objective may
+                // hold it back: its window runs from the game's start to its end, and it has no requires or conditions. An event
+                // may not span an era boundary (EventRules), so with several eras the card's own era bounds it instead.
+                // EventRules has already checked the card exists; only the GDD loop fires it, so only it checks this.
+                var card = c.Events.First(e => e.Id == o.Card);
+                string CardField(string key) => $"events[{card.Id}].{key}";
+                var era = c.EraAt(card.From);
+                var opens = era?.From ?? c.Rules.Start;
+                var closes = era != null && era.To < c.End ? era.To : c.End;
+                if (card.From > opens)
+                    throw new ContentException(card.File, CardField("from"), FormattableString.Invariant($"an objective's card opens at the game's start, or its era's ({opens:yyyy-MM-dd}), so it fires the turn its objective is completed"));
+                if (card.To is DateTime to && to < closes)
+                    throw new ContentException(card.File, CardField("to"), FormattableString.Invariant($"an objective's card stays open to the game's end, or its era's ({closes:yyyy-MM-dd}), so it fires the turn its objective is completed"));
+                foreach (var (key, set) in new[] { ("requires", card.Requires.Count > 0), ("conditions", card.Conditions.Count > 0) })
+                    if (set) throw new ContentException(card.File, CardField(key), "an objective's card waits for nothing but its objective");
                 if (o.CompletesWhen!.Absorbed != null) continue;   // R-OBJ-004 has no site; the GDD loop always has cities
                 if (o.CompletesWhen.CorridorComplete != "")
                 {
