@@ -639,6 +639,15 @@ namespace Statecraft.Game.Map.Units
 
         static Func<double, double, Vector2> XZ(MapScene map) => (lon, lat) => { var w = map.Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); };
 
+        Material? aircraftPaint, aircraftBlur;
+        Mesh? aircraftBlurMesh, aircraftShadowMesh;
+
+        /// <summary>The code-built Spitfire's glossy copy of the units' paint (UnitShowcase.Glossy), one for the layer.</summary>
+        Material AircraftPaint() => aircraftPaint ??= assets.Own(UnitShowcase.Glossy(paint));
+
+        /// <summary>The Spitfire's blur and shadow material (UnitShowcase.BlurMaterial), one for the layer.</summary>
+        Material AircraftBlur() => aircraftBlur ??= assets.Own(UnitShowcase.BlurMaterial());
+
         Mesh MeshFor(string key, Func<Mesh> build)
         {
             if (!meshes.TryGetValue(key, out var mesh))
@@ -983,21 +992,33 @@ namespace Statecraft.Game.Map.Units
             bool spitfire = t.ArtType == UnitShowcase.SpitfireType;
             Func<Mesh> airframe = spitfire ? (Func<Mesh>)(() => UnitModels.Spitfire(t.ArtType))
                 : () => UnitModels.AviaS199(t.ArtType);
-            UnitShowcase.Piece(plane.transform, "Airframe", t.ArtType, () => MeshFor(t.ArtType, airframe), paint, Vector3.zero, Quaternion.identity, 1f, out bool authored);
-            Transform? prop = null;
+            // The code-built Spitfire's satin paint (UnitShowcase.AircraftSmoothness); the S-199 keeps the units' paint.
+            var mat = spitfire ? AircraftPaint() : paint;
+            var airframeGo = UnitShowcase.Piece(plane.transform, "Airframe", t.ArtType, () => MeshFor(t.ArtType, airframe), mat, Vector3.zero, Quaternion.identity, 1f, out bool authored);
+            Transform? prop = null, shadow = null;
+            Vector2 shadowHalf = default;
             if (!authored)
             {
                 var propKey = spitfire ? "spitfire-propeller" : "avia-s199-propeller";
                 var propMesh = MeshFor(propKey, spitfire ? (Func<Mesh>)(() => UnitModels.SpitfirePropeller(propKey)) : () => UnitModels.S199Propeller(propKey));
-                prop = UnitShowcase.Piece(plane.transform, "Propeller", propMesh, paint, Vector3.zero, Quaternion.identity, 1f).transform;
+                prop = UnitShowcase.Piece(plane.transform, "Propeller", propMesh, mat, Vector3.zero, Quaternion.identity, 1f).transform;
                 prop.localPosition = spitfire ? UnitModels.SpitfirePropellerHub : UnitModels.S199PropellerHub;
+            }
+            // A flying Spitfire's light propeller blur, soft ground shadow and no cast shadow, whichever model draws it (an
+            // authored one brings its own propeller, UnitShowcase.AuthoredPropellerName).
+            if (spitfire && t.Flying)
+            {
+                prop = UnitShowcase.FlyingSpitfire(plane.transform, airframeGo, prop, aircraftBlurMesh ??= assets.Own(UnitShowcase.PropellerBlurMesh()), AircraftBlur(),
+                    aircraftShadowMesh ??= assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), out var laid, out shadowHalf);
+                shadow = laid;
             }
             plane.transform.localScale = Vector3.one * UnitShowcase.AircraftScale;
             if (t.Flying)
             {
                 var flight = plane.AddComponent<ShowcaseFlight>();
                 flight.Configure(baseCentre, UnitShowcase.LoopRadiusM, UnitShowcase.LoopFloor(map, baseCentre, UnitShowcase.LoopRadiusM) + UnitShowcase.AltitudeM,
-                    UnitShowcase.LoopSeconds, UnitShowcase.BankDegrees, prop, still ? UnitShowcase.StillPhase : (float?)null);
+                    UnitShowcase.LoopSeconds, UnitShowcase.BankDegrees, prop, still ? UnitShowcase.StillPhase : (float?)null,
+                    shadow, map.Terrain, UnitShowcase.SeaLevelY(map), shadowHalf);
             }
             else
                 plane.transform.SetPositionAndRotation(baseCentre + Vector3.up * ParkedHeightM * UnitShowcase.AircraftScale,
