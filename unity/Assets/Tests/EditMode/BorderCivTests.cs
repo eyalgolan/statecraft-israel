@@ -555,7 +555,7 @@ public class BorderCivTests
                 apart.Add(RenderSample.DeltaE(RenderSample.SimulateCvd(haloP, kind), RenderSample.SimulateCvd(haloS, kind)));
         }
         TestContext.WriteLine($"blue stripe saturation {Median(sat):0.00}, orange stripe value {Median(val):0.00}; halo lift blue {Median(liftP):0.000}, orange {Median(liftS):0.000}; halos apart (colour-blind, least) {apart.Min():0.0}");
-        Assert.GreaterOrEqual(Median(sat), 0.40f, "the blue stripe keeps the ruled blue's saturation (89,119,156: 0.43), not paled by its halo");
+        Assert.GreaterOrEqual(Median(sat), 0.42f, "the blue stripe keeps the ruled blue's saturation, not paled by its halo: 89,119,156 has HSV saturation (156-89)/156 = 0.429, and 0.42 is the tightest bar under it");
         Assert.GreaterOrEqual(Median(val), 0.82f, "the orange stripe is bright");
         Assert.GreaterOrEqual(Median(liftP), 0.05f, "the blue side glows along its light stripe");
         Assert.GreaterOrEqual(Median(liftS), 0.05f, "the orange side glows along its light stripe");
