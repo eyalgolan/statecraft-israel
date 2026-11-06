@@ -343,9 +343,11 @@ public class SeaAirCollectionTests
     /// the 15 May turn only, at Tel Aviv's place. #2482 (owner, 4 November 2026: "make the visual 2 slightly smaller planes and
     /// not 0ne big one"; the sourced sortie was "גיחה של שני מטוסי הפצצה", two bombers): two Dakotas, each with its own stable
     /// key made from DakotaKey, the lead first, each slightly smaller than the one 12.2 km Dakota of #2274 (DakotaScale of the
-    /// unit tokens' aircraft scale). Changed from #2274's one-key test: it asserted one want and the full 420x size.</summary>
+    /// unit tokens' aircraft scale). Changed from #2274's one-key test: it asserted one want and the full 420x size. Changed
+    /// again for the second bombing period, 8 to 17 July 1948 (DakotaSecondFrom; owner: "(a) Add the Dakotas to the 15 July
+    /// 1948 turn, the second bombing period"): it asserted the 15 May turn only and no Dakota after 11 June.</summary>
     [Test]
-    public void TheTwoDakotasAreWantedOnlyInTheFirstBombingPeriod()
+    public void TheTwoDakotasAreWantedOnlyInTheTwoBombingPeriods()
     {
         bool Wanted(DateTime d)
         {
@@ -363,9 +365,13 @@ public class SeaAirCollectionTests
         Assert.IsTrue(Wanted(new DateTime(1948, 6, 11)));
         Assert.IsFalse(Wanted(new DateTime(1948, 6, 12)), "the first truce");
         Assert.IsFalse(Wanted(new DateTime(1948, 6, 15)));
+        Assert.IsFalse(Wanted(new DateTime(1948, 7, 7)), "the first truce, to 8 July");
+        Assert.IsTrue(Wanted(new DateTime(1948, 7, 8)), "the Ten Days: the second bombing period begins");
+        Assert.IsTrue(Wanted(new DateTime(1948, 7, 17)), "the last bombing of Tel Aviv");
+        Assert.IsFalse(Wanted(new DateTime(1948, 7, 18)), "the second truce");
         var turns = new List<DateTime>();
         for (var d = C.Rules.Start; d < C.End; d = d.AddMonths(1)) turns.Add(d);
-        CollectionAssert.AreEqual(new[] { new DateTime(1948, 5, 15) }, turns.Where(Wanted), "the 15 May 1948 turn only");
+        CollectionAssert.AreEqual(new[] { new DateTime(1948, 5, 15), new DateTime(1948, 7, 15) }, turns.Where(Wanted), "the 15 May and 15 July 1948 turns only");
         Assert.AreEqual(29.11f, SeaAirCollection.RealLengthM(SeaAirCollection.Dakota), 0.01f, "95 ft 6 in, en.wiki Douglas C-47 Skytrain");
         float old = 29.11f * Statecraft.Game.Map.Units.UnitShowcase.AircraftScale;   // #2274's one Dakota, 12.2 km across
         Assert.That(SeaAirCollection.DakotaScale, Is.InRange(0.6f, 0.95f), "slightly smaller, not a different kind of piece");
@@ -538,9 +544,9 @@ public class SeaAirCollectionTests
         return C.SettlementHexes.Any(h => h.Id == SeaAirCollection.DakotaTown && h.Q == q && h.R == r);
     }
 
-    /// <summary>Two Dakotas in the window, none outside it (#2482): on the turns of 14 May, 12 June and 15 June 1948 no Dakota,
-    /// no loop, and no marks object (flag, shadow, bombs) is drawn; on the 15 May turn exactly two looping Dakotas, each at
-    /// the smaller size.</summary>
+    /// <summary>Two Dakotas in the windows, none outside them (#2482): on the turns of 14 May, 12 June, 15 June, 7 July and 18
+    /// July 1948 no Dakota, no loop, and no marks object (flag, shadow, bombs) is drawn; on the 15 May and 15 July turns exactly
+    /// two looping Dakotas. Changed for the second bombing period (DakotaSecondFrom), which added 7, 15 and 18 July.</summary>
     [Test]
     public void TwoDakotasFlyInTheWindowAndNoneOutsideIt()
     {
@@ -549,6 +555,7 @@ public class SeaAirCollectionTests
         {
             (new DateTime(1948, 5, 14), false), (new DateTime(1948, 5, 15), true), (new DateTime(1948, 6, 11), true),
             (new DateTime(1948, 6, 12), false), (new DateTime(1948, 6, 15), false),
+            (new DateTime(1948, 7, 7), false), (new DateTime(1948, 7, 15), true), (new DateTime(1948, 7, 18), false),
         })
         {
             var layer = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll();

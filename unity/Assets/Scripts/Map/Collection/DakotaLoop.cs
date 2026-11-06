@@ -272,7 +272,7 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>One quad mesh per frame of a <paramref name="grid"/> x <paramref name="grid"/> flipbook, its UVs on that
         /// frame (frame 0 top left, then along the rows, as Unity's texture sheet animation), facing -z as the built-in quad,
         /// white (the particle shaders multiply the vertex colour).</summary>
-        static Mesh[] Frames(MapRuntimeAssets owned, int grid)
+        internal static Mesh[] Frames(MapRuntimeAssets owned, int grid)
         {
             var frames = new Mesh[grid * grid];
             float k = 1f / grid;

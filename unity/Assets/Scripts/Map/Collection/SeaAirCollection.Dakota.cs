@@ -40,8 +40,21 @@ namespace Statecraft.Game.Map.Collection
         /// הפצצות המצריות בכיכר מסריק" and Modi Alon shot down "שני מטוסי דקוטה מצרים ששימשו כמפציצים". he.wiki "מודי אלון",
         /// revision 43744773, calls them "זוג מטוסי DC-3 דקוטה מצריים"; en.wiki "Modi Alon", revision 1375428559, "a pair of
         /// Egyptian C-47s and their two Spitfire escorts" (all agent-read 4 November 2026). On the game's monthly turns (the
-        /// 15th) the Dakotas show on the 15 May 1948 turn only.</summary>
+        /// 15th) the Dakotas show on the 15 May 1948 turn only in this period (and again in the second, DakotaSecondFrom).</summary>
         public static readonly DateTime DakotaFrom = new DateTime(1948, 5, 15), DakotaTo = new DateTime(1948, 6, 11);
+
+        /// <summary>The second Egyptian bombing period over Tel Aviv, the Ten Days, 8 to 17 July 1948: the same he.wiki article and
+        /// revision, section "תקופת ההפצצות השנייה": "תקופת ההפצצות השנייה על תל אביב התרחשה במהלך קרבות עשרת הימים (8 עד 17
+        /// ביולי)" and "ב-17 ביולי הופצצה תל אביב בפעם האחרונה". That the bombers were Dakotas this time: en.wiki "1948
+        /// Arab–Israeli War", revision 1375001749, section on the Ten Days, citing Morris 2008, pp. 294-295: "The Egyptians
+        /// responded with raids on Tel Aviv by Dakota aircraft accompanied by a Spitfire fighter escort"; he.wiki's 13 July
+        /// paragraph has "שני מפציצים ושני מטוסי קרב מצרים", the type not named (all agent-read 5 November 2026, a person's
+        /// check pending; research_notes/GDD phase 7/tel-aviv-bombing-july-1948.md). On the game's monthly turns the Dakotas
+        /// show again on the 15 July 1948 turn, as on 15 May, with Tel Aviv's air defence (SeaAirCollection.AirDefence.cs).</summary>
+        public static readonly DateTime DakotaSecondFrom = new DateTime(1948, 7, 8), DakotaSecondTo = new DateTime(1948, 7, 17);
+
+        /// <summary>True in either bombing period (<see cref="DakotaFrom"/>, <see cref="DakotaSecondFrom"/>).</summary>
+        public static bool DakotaWanted(DateTime date) => (date >= DakotaFrom && date <= DakotaTo) || (date >= DakotaSecondFrom && date <= DakotaSecondTo);
 
         /// <summary>The C-47's wingspan, 95 ft 6 in (29.11 m): en.wiki "Douglas C-47 Skytrain", Specifications (C-47B-DK),
         /// revision 1383378030, agent-read 2 November 2026. At the unit tokens' aircraft scale (420x, as the Spitfire, #2014)
