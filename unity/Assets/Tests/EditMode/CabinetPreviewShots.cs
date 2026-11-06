@@ -15,8 +15,9 @@ using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 /// <summary>Writes the before and after stills for #2745 (refs #2743 item 1), in English and Hebrew, to
-/// `.superpowers/shots-2745/&lt;tag&gt;/` (local, not committed), as A11yKeyboardShots does: Assets/Map.unity drawn into a
-/// 1280x720 RenderTexture through a copy of its PanelSettings. Each state is the one the PR's own tests build
+/// `.superpowers/shots-2745/&lt;tag&gt;/` (local, not committed): Assets/Map.unity, its UI drawn through a copy of its
+/// PanelSettings into a transparent 1280x720 texture and laid over the main camera's own 1280x720 frame, as CivMovementShots
+/// does, so the map shows under the UI. Each state is the one the PR's own tests build
 /// (CabinetScreenTests.In1950: the historical game on the golden seed, played by HistoricalAI to 1 February 1950), which the
 /// root goes on with (GameRoot.Begin keep:); the Cabinet opens from the top bar's Cabinet button, and the office is picked with
 /// CabinetPresenter.Select, as the tests do. The candidate row is scrolled into view.
@@ -38,6 +39,7 @@ using Object = UnityEngine.Object;
 [Explicit("writes stills for a pull request, not a check")]
 public class CabinetPreviewShots
 {
+    const int Width = 1280, Height = 720;
     string saveDir = "";
     string shotDir = "";
     RenderTexture? rt; PanelSettings? ps;
@@ -73,9 +75,10 @@ public class CabinetPreviewShots
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var doc = Object.FindFirstObjectByType<UIDocument>();
-        rt = new RenderTexture(1280, 720, 24);
+        // The UI goes into a transparent texture and Shot puts it over the map camera's frame, as CivMovementShots does.
+        rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         ps = Object.Instantiate(doc.panelSettings);
-        ps.targetTexture = rt;
+        ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.clear;
         doc.panelSettings = ps;
         Object.FindFirstObjectByType<MapScene>().Build(MapFocusTests.Inputs.Map);
         root = Object.FindFirstObjectByType<GameRoot>();
@@ -91,6 +94,7 @@ public class CabinetPreviewShots
         var hide = ui.Q<Button>("event-hide");
         if (hide != null && hide.resolvedStyle.display != DisplayStyle.None && hide.enabledInHierarchy) UiTestKit.Press(hide);
         root.Card?.Collapse(takeFocus: false);
+        if (root.Advisor != null && root.Advisor.IsOpen) UiTestKit.Press(ui.Q<Button>("advisor-close"));   // as CivMovementShots.Boot
         yield return Frames(3);
     }
 
@@ -111,14 +115,37 @@ public class CabinetPreviewShots
         yield return Frames(5);
     }
 
-    void Shot(string name, string person)
+    static Color[] Read(RenderTexture from)
     {
         var prev = RenderTexture.active;
-        RenderTexture.active = rt;
-        var tex = new Texture2D(rt!.width, rt.height, TextureFormat.RGB24, false);
-        tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+        RenderTexture.active = from;
+        var tex = new Texture2D(from.width, from.height, TextureFormat.RGBA32, false);
+        tex.ReadPixels(new Rect(0, 0, from.width, from.height), 0, 0);
         tex.Apply();
         RenderTexture.active = prev;
+        var px = tex.GetPixels();
+        Object.DestroyImmediate(tex);
+        return px;
+    }
+
+    /// <summary>The map camera's frame with the UI texture over it (the UI's pixels are premultiplied by their alpha), copied
+    /// from CivMovementShots.Shot, which writes to its own folder.</summary>
+    void Shot(string name, string person)
+    {
+        var cam = Camera.main;
+        var frame = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+        var before = cam.targetTexture;
+        cam.targetTexture = frame; cam.Render(); cam.targetTexture = before;
+        var map = Read(frame); var over = Read(rt!);
+        frame.Release(); Object.DestroyImmediate(frame);
+        var outPx = new Color[map.Length];
+        for (int i = 0; i < map.Length; i++)
+        {
+            var u = over[i]; var m = map[i];
+            outPx[i] = new Color(u.r + m.r * (1f - u.a), u.g + m.g * (1f - u.a), u.b + m.b * (1f - u.a), 1f);
+        }
+        var tex = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+        tex.SetPixels(outPx); tex.Apply();
         File.WriteAllBytes(Path.Combine(shotDir, name + ".png"), tex.EncodeToPNG());
         Object.DestroyImmediate(tex);
         var button = ui.Q<Button>("appoint-" + person);
