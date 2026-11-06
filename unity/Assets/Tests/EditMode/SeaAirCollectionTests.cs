@@ -480,6 +480,55 @@ public class SeaAirCollectionTests
         Assert.AreNotSame(first, layer.KeepClear, "a new list a step on, so the labels re-place");
     }
 
+    /// <summary>#2604: in the 31 km opening view, names in frame hid for a Dakota off the frame's top edge. #2490's keep-clear
+    /// box held the aircraft at every heading and bank at once (half its box's 3D diagonal every way, about 6 km), so it
+    /// reached about 3.7 km under the aircraft and 1.1 km past its wingtips, and the board camera, 50 degrees down, saw that
+    /// overhang inside the frame. Now the box is the aircraft and its flag as they fly through the step: round the loop it
+    /// never reaches more than 400 m under the aircraft's own lowest point (a step's change of bank in the turns), and on the
+    /// pass in over Tel Aviv (nose east, level) it is no wider north-south than the wingspan and the pad.</summary>
+    [Test]
+    public void TheDakotasKeepClearBoxIsNoBiggerThanTheAircraftAndItsFlag()
+    {
+        var map = OpenMap();
+        var (layer, planes, loops, _) = DrawnDakotas(map);
+        float period = SeaAirCollection.DakotaLoopSeconds;
+        for (int i = 0; i < 60; i++)
+        {
+            float t = i * period / 60f;
+            for (int p = 0; p < planes.Length; p++)
+            {
+                loops[p].Place(t);
+                var pb = WorldBounds(planes[p].gameObject); var keep = DakotaKeepOf(layer, planes[p].gameObject)!.Value;
+                Assert.IsTrue(keep.Contains(pb.min) && keep.Contains(pb.max), $"{planes[p].name}'s box holds it at {t:0.0} s");
+                Assert.Greater(keep.min.y, pb.min.y - 400f, $"{planes[p].name}'s box stops near its underside at {t:0.0} s, not 3.7 km under it");
+            }
+        }
+        // On the pass in (the lead's first step, its clock lag 0): the box may be no wider north-south than the aircraft as drawn
+        // at the box's own sample points through that step (its heading turns about 0.03 rad in the step, so the swept span
+        // is wider than the level wingspan: by about 2 x half its length x 0.03, ~200 m, plus its bank and the path's drift),
+        // plus the pad on both sides (DakotaKeepPadM), plus one more pad's slack for the propeller discs' reach past the
+        // airframe and the bow between samples. #2613's first bound, the level wingspan + 300 m, ignored the step's turn.
+        float step = SeaAirCollection.DakotaKeepStepS; int samples = SeaAirCollection.DakotaKeepSamples;
+        Bounds swept = default;
+        for (int k = 0; k <= samples; k++)
+        {
+            loops[0].Place(Mathf.Min(k * step / samples, step - 1e-3f));   // the step's last point, still in the step
+            var drawn = WorldBounds(planes[0].gameObject);
+            if (k == 0) swept = drawn; else swept.Encapsulate(drawn);
+        }
+        loops[0].Place(0f);
+        var lead = WorldBounds(planes[0].gameObject); var box = DakotaKeepOf(layer, planes[0].gameObject)!.Value;
+        float widest = swept.size.z + 2f * SeaAirCollection.DakotaKeepPadM + SeaAirCollection.DakotaKeepPadM;
+        Assert.Less(box.size.z, widest, "on the pass in, no wider north-south than the aircraft through the step and the pad");
+        // The bound still catches an oversized box: twice as wide, or only a pad wider on each side.
+        var doubled = box; doubled.size = new Vector3(box.size.x, box.size.y, 2f * box.size.z);
+        Assert.GreaterOrEqual(doubled.size.z, widest, "a doubled box fails the bound");
+        var padded = box; padded.Expand(new Vector3(0f, 0f, 2f * SeaAirCollection.DakotaKeepPadM));
+        Assert.GreaterOrEqual(padded.size.z, widest, "a box a pad wider on each side fails the bound");
+        Assert.Less(box.size.x, lead.size.x + 0.5f * SeaAirCollection.SizeOf(SeaAirCollection.Dakota) + 2f * 640f,
+            "no longer east-west than its length, the flag over its tail and a step's flight");
+    }
+
 
     /// <summary>The world point is on one of Tel Aviv's hexes (content/map/settlement_hexes.yaml), by the map's own click
     /// picker (MapPointer.Pick: lon/lat and tools/hexgrid.py's rounding), a different route from the layer's own grid test.</summary>
@@ -978,6 +1027,80 @@ public class SeaAirCollectionTests
         }
         Assert.LessOrEqual(all.Count, SeaAirCollection.DakotaColumns * planes.Length, "capped");
         TestContext.WriteLine($"{all.Count} smoke columns over Tel Aviv");
+    }
+
+    /// <summary>#2604: the columns read in play as "two flat, dark-brown blobs" over the city, their feet hidden, dark top to
+    /// bottom. The column's curves now: its height share rises from 0 at the impact to 1 at the top, slowly at first; its
+    /// width only grows with height, from a thin foot (DakotaColumnFootM) under a quarter of the top's width; its shade (the tint times the flipbook's 0.44 grey) only lightens, from under
+    /// 0.15 at the foot to over 0.6 aloft; and above its first 1% (a newborn puff's fade-in) its alpha only falls, from over
+    /// 0.8 near the foot to under 0.1 at 90% of the height and nothing at the top.</summary>
+    [Test]
+    public void TheSmokeColumnsCurvesStartThinDarkAndDenseAndEndWidePaleAndThin()
+    {
+        Assert.AreEqual(0f, DakotaBombRun.ColumnHeightShare(0f), 1e-6f, "a puff starts on the impact");
+        Assert.AreEqual(1f, DakotaBombRun.ColumnHeightShare(1f), 1e-6f, "and ends at the column's top");
+        Assert.Less(DakotaBombRun.ColumnWidth(0f), 0.25f * DakotaBombRun.ColumnWidth(1f), "a thin foot under a wide top");
+        Assert.AreEqual(SeaAirCollection.DakotaColumnFootM, DakotaBombRun.ColumnWidth(0f), 1e-3f);
+        float lastH = 0f, lastW = DakotaBombRun.ColumnWidth(0f), lastShade = DakotaBombRun.ColumnTint(0f).r, lastA = float.MaxValue;
+        for (int i = 1; i <= 200; i++)
+        {
+            float x = i / 200f;
+            float h = DakotaBombRun.ColumnHeightShare(x);
+            Assert.Greater(h, lastH, $"it only rises ({x:0.000})");
+            Assert.Less(h, x + 1e-6f, $"slower than an even pace, so the puffs crowd at the foot ({x:0.000})");
+            float w = DakotaBombRun.ColumnWidth(x), shade = DakotaBombRun.ColumnTint(x).r, a = DakotaBombRun.ColumnAlphaAt(x);
+            Assert.Greater(w, lastW, $"it only widens with height ({x:0.000})");
+            Assert.GreaterOrEqual(shade, lastShade - 1e-6f, $"it only pales with height ({x:0.000})");
+            if (x > DakotaBombRun.ColumnFadeInShare) Assert.LessOrEqual(a, lastA + 1e-6f, $"above the fade-in its alpha only falls ({x:0.000})");
+            lastH = h; lastW = w; lastShade = shade; lastA = a;
+        }
+        const float FlipbookGrey = 0.44f;
+        Assert.Less(FlipbookGrey * DakotaBombRun.ColumnTint(0f).r, 0.15f, "near-black at the foot");
+        Assert.Greater(FlipbookGrey * DakotaBombRun.ColumnTint(1f).r, 0.6f, "light grey aloft");
+        Assert.Greater(DakotaBombRun.ColumnAlphaAt(0.05f), 0.8f, "dense near the foot");
+        Assert.Less(DakotaBombRun.ColumnAlphaAt(0.9f), 0.1f, "thin near the top");
+        Assert.AreEqual(0f, DakotaBombRun.ColumnAlphaAt(1f), 1e-6f, "gone at the top");
+        Assert.AreEqual(0f, DakotaBombRun.ColumnAlphaAt(0f), 1e-6f, "a newborn puff fades in, no pop");
+    }
+
+    /// <summary>#2604 in the scene, over Tel Aviv's hex: each standing column's puffs in its lowest quarter are under 0.6 of
+    /// the width of the widest in its upper part (above 60% of DakotaColumnM); its lowest puff is thin (under twice
+    /// DakotaColumnFootM) and its lower edge within 150 m of the ground, so the column's foot stands on its impact; its
+    /// lower quarter is on average over twice as opaque as its upper part, every upper puff under half opaque, and it is over
+    /// twice as light aloft as at the foot. Every puff is over Tel Aviv's hex (MapPointer.Pick).</summary>
+    [Test]
+    public void EachStandingColumnIsThinAndDarkAtItsFootAndWidePaleAndSeeThroughAloftOverTelAviv()
+    {
+        var map = OpenMap();
+        var (_, planes, loops, _) = DrawnDakotas(map);
+        float life = SeaAirCollection.DakotaColumnLifeS, M = SeaAirCollection.DakotaColumnM;
+        int P = SeaAirCollection.DakotaColumnPuffs;
+        for (int p = 0; p < planes.Length; p++)
+        {
+            var loop = loops[p]; var run = loop.Bombs!;
+            for (int c = 0; c < run.ColumnSites.Count; c++)
+            {
+                var site = run.ColumnSites[c]; float from = (float)run.ColumnFrom(c);
+                foreach (float later in new[] { 1.5f * life, 2.5f * life + 3.3f, 4f * life + 7.9f })
+                {
+                    loop.Place(loop.Lag + from + later);
+                    var on = run.Columns.Skip(c * P).Take(P).Where(r => r.enabled).ToList();
+                    Assert.AreEqual(P, on.Count, "standing whole");
+                    float Up(Renderer r) => r.transform.position.y - site.y;
+                    var low = on.Where(r => Up(r) < 0.25f * M).ToList(); var high = on.Where(r => Up(r) > 0.6f * M).ToList();
+                    string at = $"{planes[p].name} column {c}, {later:0.0} s after its first hit";
+                    Assert.IsNotEmpty(low, $"{at}: puffs at its foot"); Assert.IsNotEmpty(high, $"{at}: puffs aloft");
+                    Assert.Less(low.Max(r => r.transform.localScale.x), 0.6f * high.Max(r => r.transform.localScale.x), $"{at}: narrower at the foot");
+                    var lowest = on.OrderBy(Up).First();
+                    Assert.Less(lowest.transform.localScale.x, 2f * SeaAirCollection.DakotaColumnFootM, $"{at}: thin where it meets the impact");
+                    Assert.Less(Up(lowest) - 0.5f * lowest.transform.localScale.y, 150f, $"{at}: its foot on the ground");
+                    Assert.Greater(low.Average(r => DakotaBombRun.Colour(r).a), 2f * high.Average(r => DakotaBombRun.Colour(r).a), $"{at}: denser at the foot");
+                    Assert.Less(high.Max(r => DakotaBombRun.Colour(r).a), 0.5f, $"{at}: see-through aloft");
+                    Assert.Greater(high.Average(r => DakotaBombRun.Colour(r).r), 2f * low.Average(r => DakotaBombRun.Colour(r).r), $"{at}: paler aloft");
+                    foreach (var r in on) Assert.IsTrue(OnTelAviv(map, r.transform.position), $"{at}: over Tel Aviv ({r.transform.position})");
+                }
+            }
+        }
     }
 
     /// <summary>Sampling the bombs, blasts, dust and columns, and turning them to a camera, allocates nothing (DakotaBombRun),
