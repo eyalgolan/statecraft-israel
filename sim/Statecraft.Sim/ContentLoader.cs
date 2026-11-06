@@ -1951,7 +1951,7 @@ namespace Statecraft.Sim
                 var at = $"locations[{x.Id}]";
                 Named(lf, at + ".name", x.Name);
                 Named(lf, at + ".name_he", x.NameHe);   // the map labels it in both languages (#1008)
-                if (x.NameHeReview != "" && x.NameHeReview != "agent-checked")
+                if (x.NameHeReviewGiven && x.NameHeReview != "agent-checked")
                     throw new ContentException(lf, at + ".name_he_review", $"'{x.NameHeReview}' is not agent-checked (delete the line once a native speaker, or an AI-assisted contributor who discloses it, has reviewed the name, #564)");
                 if (x.NameHeSources.Count == 0) throw new ContentException(lf, at + ".name_he_sources", "required: a Hebrew name needs a source");
                 for (int i = 0; i < x.NameHeSources.Count; i++)
