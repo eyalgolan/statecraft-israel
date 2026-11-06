@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["websockets==15.0.1"]
+# dependencies = ["websockets==15.0.1", "pillow==12.3.0"]
 # ///
 """Serve a Unity WebGL build on http://localhost and open it in Chrome; pass when the console shows every expected line,
 fail on a failure line or a timeout. Uses Chrome for Testing from the Playwright cache (macOS only, no npm needed) in
@@ -15,7 +15,8 @@ Every run needs a positive check: a nonblank --expect, --startscreen, --persiste
 Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --fail REGEX (default: GOLDEN FAIL|SMOKE FAIL|BOOT FAIL),
 --timeout SECONDS (default 300), --stall SECONDS (fail when no console message arrives for that long; 0 = off),
 --swiftshader (software WebGL when there is no GPU), --dpr N (default 1), --shots DIR (reassemble the player's
-"SHOT" console lines, from ?shot, into DIR/<pose>.png; a "SHOT done" with an unfinished shot fails the run),
+"SHOT" console lines, from ?shot, into DIR/<pose>.png; a "SHOT done" with an unfinished shot, a blank or non-PNG shot, or a run that ends without "SHOT done" after a
+finished shot fails the run),
 --persistence (play one normal turn, wait for its matching IndexedDB commit, reload and Continue, then play another
 turn and reload as soon as its matching commit arrives; both reloads must report the saved date, turn and hash), --startscreen new|recording (#908: on a fresh
 profile, the real start screen every player sees first: "new" presses New game, "recording" first presses Play the
@@ -40,6 +41,7 @@ import base64
 import functools
 import hashlib
 import http.server
+import io
 import json
 import os
 import re
@@ -161,13 +163,15 @@ class Rejoin:
 class ShotCollector:
     """Reassembles the PNGs Statecraft.Game.Map.VisualShots logs: "SHOT <pose> begin <n> <sha256>" then n lines
     "SHOT <pose> <i>/<n> <base64>" (any order). A finished shot is checked against its SHA-256 and written to
-    <out_dir>/<pose>.png (out_dir None: checked, not written)."""
+    <out_dir>/<pose>.png (out_dir None: checked, not written). A shot that is not a decodable PNG, or has one colour
+    throughout (a blank capture), is rejected. `done` turns True at "SHOT done" once at least one shot has finished."""
 
     def __init__(self, out_dir: Path | None, size: tuple[int, int] | None = None):
         self.out_dir, self.size = out_dir, size
         self.expect: dict[str, tuple[int, str]] = {}
         self.parts: dict[str, dict[int, str]] = {}
         self.written: list[Path] = []
+        self.finished, self.done = 0, False
 
     def feed(self, text: str) -> bool:
         """True when text was a begin or part line (consumed: too long to print); False for anything else. "SHOT done"
@@ -175,6 +179,8 @@ class ShotCollector:
         if text == "SHOT done" and self.expect:
             unfinished = ", ".join(f"{n}: {len(self.parts.get(n, {}))} of {k} parts" for n, (k, _) in self.expect.items())
             raise ValueError(f"SHOT done with unfinished shots ({unfinished})")
+        if text == "SHOT done":
+            self.done = self.finished > 0
         m = SHOT_BEGIN.match(text)
         if m:
             if int(m.group(2)) < 1:
@@ -205,10 +211,21 @@ class ShotCollector:
             png = b""
         if hashlib.sha256(png).hexdigest() != digest:
             raise ValueError(f"SHOT {name}: SHA-256 mismatch (a console line was cut or lost)")
+        if png[:8] != b"\x89PNG\r\n\x1a\n":
+            raise ValueError(f"SHOT {name}: not a PNG")
         if self.size is not None:
             w, h = int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
             if (w, h) != self.size:
                 raise ValueError(f"SHOT {name}: {w}x{h}, expected {self.size[0]}x{self.size[1]}")
+        from PIL import Image                    # lazy, like websockets: a run that takes no shots never needs it
+        try:
+            with Image.open(io.BytesIO(png)) as img:
+                bands = img.convert("RGBA").getextrema()
+        except Exception as e:                   # a PNG with a good header and a damaged body
+            raise ValueError(f"SHOT {name}: not a PNG that decodes ({e})") from e
+        if all(lo == hi for lo, hi in bands):
+            raise ValueError(f"SHOT {name}: blank, one colour throughout")
+        self.finished += 1
         if self.out_dir is not None:
             self.out_dir.mkdir(parents=True, exist_ok=True)
             path = self.out_dir / f"{name}.png"
@@ -963,6 +980,15 @@ def run_plan(a, command, buttons: StartButtons, tail: ConsoleTail, units: UnitsO
     return driver, re.compile(fail), {"complete": lambda: driver.done, "complete_what": what, "grace": DRIVER_GRACE}
 
 
+def shots_complete(plan: dict, shots: ShotCollector) -> dict:
+    """`plan` (run_plan's watch keywords) made to wait for the shot run too: with --shots, PASS needs "SHOT done" after at
+    least one finished shot, however the other expectations are met (#2697 item 2)."""
+    driver_done, driver_what = plan.get("complete"), plan.get("complete_what")
+    what = "a finished shot and SHOT done"
+    return {**plan, "complete": (lambda: driver_done() and shots.done) if driver_done else (lambda: shots.done),
+            "complete_what": f"{driver_what} and {what}" if driver_what else what}
+
+
 def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("build", type=Path, nargs="?", help="a Unity WebGL build folder, served on localhost (or use --url)")
@@ -1068,6 +1094,8 @@ def main() -> int:
             page.open()
             print(f"viewport {w}x{h} at DPR {a.dpr:g}{' mobile' if a.mobile else ''} (expect res={res})")
             driver, fail, plan = run_plan(a, page.command, buttons, tail, units)
+            if a.shots is not None:
+                plan = shots_complete(plan, shots)
 
             def handle_text(text: str) -> bool:
                 consumed = on_text(text)
