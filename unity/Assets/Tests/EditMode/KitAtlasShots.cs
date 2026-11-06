@@ -99,7 +99,7 @@ public class KitAtlasShots
         tex.SetPixels(outPx); tex.Apply();
         File.WriteAllBytes(Path.Combine(shotDir, name + ".png"), tex.EncodeToPNG());
         Object.DestroyImmediate(tex);
-        Debug.Log(FormattableString.Invariant($"SHOT {name}: view {TownModelLayer.ViewDistance(cam):F0} m"));
+        Debug.Log(FormattableString.Invariant($"SHOT {name}: view {TownModelLayer.ViewDistance(cam):F0} m, aspect {cam.aspect:F3}, m11/m00 {cam.projectionMatrix[1, 1] / cam.projectionMatrix[0, 0]:F3}"));
     }
 
     IEnumerator Take(string name, Vector3 at, float viewM, float yaw = 0f)
@@ -109,10 +109,18 @@ public class KitAtlasShots
         Shot(name);
     }
 
+    /// <summary>CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3, which would
+    /// draw every still 1.33 times too wide: so the camera takes the still's aspect first, and each SHOT line states it.</summary>
+    IEnumerator Boot()
+    {
+        yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
+        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
+    }
+
     [UnityTest]
     public IEnumerator Close()
     {
-        yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
+        yield return Boot();
         Debug.Log("KITATLAS " + Scene.KitStats);
         // The pose the promo is measured at, the start view, then close: the four cities' blocks.
         var pose = PromoPose.Gameplay03;
@@ -135,7 +143,7 @@ public class KitAtlasShots
     [UnityTest]
     public IEnumerator KitsOnly()
     {
-        yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
+        yield return Boot();
         var towns = Scene.GetComponentInChildren<TownModelLayer>(true);
         towns.Draw = false;
         foreach (var (id, km) in new[] { ("nazareth", 14f), ("gaza", 14f), ("acre", 14f), ("petah_tikva", 14f), ("nahalal", 14f), ("degania_alef", 14f), ("rishon_lezion", 14f), ("qalqilya", 14f), ("beersheba", 14f) })
