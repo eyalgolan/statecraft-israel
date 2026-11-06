@@ -358,7 +358,7 @@ namespace Statecraft.Game.Map.Kits
                 var start = km.CutStart();
                 km.Box(cp.x, cp.y, 0f, 18f * m, 16f * m, y - 2f * m, y, 12f * m, stone, top, Facade.Stone, m);
                 km.Box(cp.x - 5f * m, cp.y + 4f * m, 0f, 7f * m, 7f * m, y + 12f * m - 1f, y + 12f * m, 6f * m, stone, top, Facade.Stone, m);
-                km.Shaft(new Vector3(cp.x + 6f * m, y, cp.y - 5f * m), new Vector3(cp.x + 6f * m, y + 30f * m, cp.y - 5f * m), 1.7f * m, 1.4f * m, stone, 8);
+                km.Shaft(new Vector3(cp.x + 6f * m, y, cp.y - 5f * m), new Vector3(cp.x + 6f * m, y + 30f * m, cp.y - 5f * m), 1.7f * m, 1.4f * m, stone, 8, Facade.Ashlar, m);
                 km.Cone(new Vector3(cp.x + 6f * m, y + 30f * m, cp.y - 5f * m), 1.6f * m, 3.5f * m, C(0.62f, 0.62f, 0.58f), 8);
                 AtWorldScale(s.Id, "citadel", km, start, cp, y, m);
                 Record(s.Id, "citadel", cp, 0f, 18f * m, 16f * m, 33.5f * m, stone);
@@ -521,8 +521,8 @@ namespace Statecraft.Game.Map.Kits
             float mx = p.x + 8.5f * m, mz = p.y - 6f * m;
             float my = ground.Y(mx, mz);
             var minaret = km.CutStart();
-            km.Shaft(new Vector3(mx, my - 2f * m, mz), new Vector3(mx, my + 26f * m, mz), 1.6f * m, 1.35f * m, stone, 8);
-            km.Shaft(new Vector3(mx, my + 20f * m, mz), new Vector3(mx, my + 21f * m, mz), 2.1f * m, 2.1f * m, stone, 8);   // the balcony
+            km.Shaft(new Vector3(mx, my - 2f * m, mz), new Vector3(mx, my + 26f * m, mz), 1.6f * m, 1.35f * m, stone, 8, Facade.Ashlar, m);
+            km.Shaft(new Vector3(mx, my + 20f * m, mz), new Vector3(mx, my + 21f * m, mz), 2.1f * m, 2.1f * m, stone, 8, Facade.Ashlar, m); // the balcony
             km.Cone(new Vector3(mx, my + 26f * m, mz), 1.5f * m, 4.5f * m, C(0.62f, 0.62f, 0.58f), 8);
             AtWorldScale(owner, "mosque", km, start, minaret, "minaret", 0f, p, y, m);
             Record(owner, "mosque", p, 0f, 14f * m, 14f * m, 30.5f * m, stone);
@@ -591,7 +591,7 @@ namespace Statecraft.Game.Map.Kits
                 var b = new Vector3(p.x + Mathf.Cos(a) * 2.6f * m, y - 2f * m, p.y + Mathf.Sin(a) * 2.6f * m);
                 km.Shaft(b, new Vector3(p.x + Mathf.Cos(a) * 1.8f * m, y + 9f * m, p.y + Mathf.Sin(a) * 1.8f * m), 0.35f * m, 0.3f * m, concrete, 4);
             }
-            km.Shaft(new Vector3(p.x, y + 9f * m, p.y), new Vector3(p.x, y + 13.5f * m, p.y), 3f * m, 3f * m, concrete, 10);
+            km.Shaft(new Vector3(p.x, y + 9f * m, p.y), new Vector3(p.x, y + 13.5f * m, p.y), 3f * m, 3f * m, concrete, 10, Facade.Plaster, m);
             km.Cone(new Vector3(p.x, y + 13.5f * m, p.y), 3.1f * m, 1.2f * m, C(0.66f, 0.64f, 0.60f), 10);
             if (model) km.CutEnd(cut);   // up close the model stands here instead
             return 1;

@@ -172,9 +172,17 @@ def door(a, x0, y0, w, h, colour, panels=2):
             tint(a, px, py, px + pw, py + ph, 0.82)
 
 
-def plinth(a, colour, px=14):
-    """The wall's foot, below the ground storey's openings. Kit.shader clamps a wall's buried part to this band."""
+def plinth(a, colour, px=14, courses=0):
+    """The wall's foot, below the ground storey's openings: a darker base, with joints when it is built of stone. Kit.shader
+    clamps a wall's buried part to this band."""
     a[:px, :] = a[:px, :] * colour
+    if courses:
+        h = px // courses
+        for c in range(courses):
+            a[c * h:c * h + 2, :] *= 0.8
+            shift = (c * 37) % 41
+            for x in range(shift, N, 41):
+                a[c * h:(c + 1) * h, x:x + 2] *= 0.82
 
 
 def voronoi_stones(seed: int, count: int, squash: float = 1.0):
@@ -243,8 +251,8 @@ def white_city() -> np.ndarray:
     rect(a, 1.26 * bay, 0.8 * STOREY, 1.74 * bay, 0.9 * STOREY, GLASS)
     casement(a, 2.15 * bay, 0.424 * STOREY, 0.7 * bay, 0.364 * STOREY, panes=3)
     slats(a, 3.1 * bay, 0.08 * STOREY, 0.8 * bay, 0.72 * STOREY, rgb(0.48, 0.47, 0.44), step=5)
-    street_dirt(a)
-    plinth(a, rgb(0.82, 0.81, 0.78), 6)
+    street_dirt(a, 0.18)
+    plinth(a, rgb(0.74, 0.72, 0.68), 26, courses=2)
     return np.clip(grain(a, 11, 0.03, 0.014, 0.10), 0, 1)
 
 
@@ -274,8 +282,8 @@ def stone_facade() -> np.ndarray:
         else:
             arched(a, x, 0.06 * STOREY, w, h, GLASS * 1.3, surround=1.1)
             rect(a, x, 0.06 * STOREY, x + w, 0.4 * STOREY, rgb(0.42, 0.34, 0.27))
-    street_dirt(a)
-    plinth(a, rgb(0.86, 0.84, 0.80), 8)
+    street_dirt(a, 0.18)
+    plinth(a, rgb(0.80, 0.77, 0.72), 22, courses=2)
     return np.clip(grain(a, 22, 0.05, 0.026, 0.10), 0, 1)
 
 
@@ -301,8 +309,8 @@ def village_facade() -> np.ndarray:
                           BROWN if (st * 2 + b) % 3 == 0 else GLASS)
     small_opening(a, 0.26 * bay, 0.05 * STOREY, 0.24 * bay, 0.72 * STOREY, TEAL * 0.9)
     small_opening(a, 1.56 * bay, 0.42 * STOREY, 0.2 * bay, 0.36 * STOREY, GLASS)
-    street_dirt(a)
-    plinth(a, rgb(0.85, 0.83, 0.80), 10)
+    street_dirt(a, 0.18)
+    plinth(a, rgb(0.78, 0.75, 0.70), 24)
     return np.clip(grain(a, 32, 0.05, 0.022, 0.08), 0, 1)
 
 
@@ -318,7 +326,7 @@ def mud_facade() -> np.ndarray:
     rect(a, 0.3 * bay, 0.04 * STOREY, 0.52 * bay, 0.74 * STOREY, BROWN)
     rect(a, 1.5 * bay, 0.42 * STOREY, 1.66 * bay, 0.76 * STOREY, GLASS)
     street_dirt(a, 0.16)
-    plinth(a, rgb(0.84, 0.81, 0.77), 12)
+    plinth(a, rgb(0.76, 0.72, 0.66), 28)
     return np.clip(grain(a, 43, 0.035, 0.02, 0.10), 0, 1)
 
 
@@ -334,8 +342,8 @@ def moshava_facade() -> np.ndarray:
     shuttered(a, 0.365 * bay, 0.28 * STOREY, 0.27 * bay, 0.54 * STOREY, OLIVE, 0)
     door(a, 1.31 * bay, 0.05 * STOREY, 0.38 * bay, 0.78 * STOREY, TEAL)
     shuttered(a, 2.365 * bay, 0.28 * STOREY, 0.27 * bay, 0.54 * STOREY, OLIVE, 0)
-    street_dirt(a)
-    plinth(a, rgb(0.84, 0.82, 0.78), 8)
+    street_dirt(a, 0.18)
+    plinth(a, rgb(0.72, 0.70, 0.66), 26, courses=2)
     return np.clip(grain(a, 51, 0.03, 0.016, 0.10), 0, 1)
 
 
@@ -375,14 +383,19 @@ def roof_tile() -> np.ndarray:
 
 
 def flat_roof() -> np.ndarray:
-    """A limed terrace: patched, seamed in big bays, a few darker repairs."""
+    """A limed terrace: gravelled, patched where it was repaired, dark along the joints where the rain sits."""
     a = fill(rgb(0.96, 0.95, 0.93))
-    a = grain(a, 101, 0.035, 0.018)
-    a *= (1.0 - 0.05 * np.clip((noise(102, 1.8) - 0.1) * 2.0, 0.0, 1.0))[..., None]
+    a = grain(a, 101, 0.05, 0.035)
+    a *= (1.0 - 0.09 * np.clip((noise(102, 2.2) + 0.1) * 1.4, 0.0, 1.0))[..., None]
+    rng = np.random.default_rng(103)
+    for _ in range(9):     # repairs: squares of newer lime, lighter or darker, soft enough to stay off the eye far away
+        x, y = rng.integers(0, N, 2)
+        w, h = rng.integers(36, 110, 2)
+        tint(a, x, min(y, N - h), x + w, min(y, N - h) + h, rng.uniform(0.92, 1.05))
     for x in range(N // 4, N, N // 2):
-        a[:, x:x + 2] *= 0.95
-        a[x:x + 2, :] *= 0.95
-    return normalise(a, 0.92)
+        a[:, x:x + 3] *= 0.90
+        a[x:x + 3, :] *= 0.90
+    return normalise(a, 0.90)
 
 
 def ribbon_glass() -> np.ndarray:
