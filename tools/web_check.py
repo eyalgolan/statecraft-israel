@@ -217,11 +217,11 @@ class ShotCollector:
             w, h = int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
             if (w, h) != self.size:
                 raise ValueError(f"SHOT {name}: {w}x{h}, expected {self.size[0]}x{self.size[1]}")
-        from PIL import Image                    # lazy, like websockets: a run that takes no shots never needs it
         try:
+            from PIL import Image                # lazy, like websockets: a run that takes no shots never needs it
             with Image.open(io.BytesIO(png)) as img:
                 bands = img.convert("RGBA").getextrema()
-        except Exception as e:                   # a PNG with a good header and a damaged body
+        except Exception as e:                   # a PNG with a good header and a damaged body, or no Pillow
             raise ValueError(f"SHOT {name}: not a PNG that decodes ({e})") from e
         if all(lo == hi for lo, hi in bands):
             raise ValueError(f"SHOT {name}: blank, one colour throughout")

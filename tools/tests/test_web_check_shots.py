@@ -226,3 +226,29 @@ def test_a_shot_that_is_not_a_png_is_rejected_even_without_a_size(tmp_path):
         for line in shot_lines("gameplay03", bytes(range(256)) * 3):
             c.feed(line)
     assert not list(tmp_path.glob("*.png"))
+
+
+def test_shots_run_with_a_blank_shot_then_shot_done_fails_and_writes_nothing(monkeypatch, capsys, tmp_path):
+    """#2697 item 6 through web_check.main: a one-colour PNG is no capture."""
+    console = shot_lines("gameplay03", png_of_size(100, 100), chunk=4000) + ["SHOT done"]
+    code, out = run_main(monkeypatch, capsys, tmp_path, console, "--expect", "SHOT done")
+    assert code == 1 and "PASS" not in out and "blank" in out and not list((tmp_path / "shots").glob("*"))
+
+
+def test_shots_run_with_non_png_bytes_then_shot_done_fails_and_writes_nothing(monkeypatch, capsys, tmp_path):
+    console = shot_lines("gameplay03", bytes(range(256)) * 3, chunk=4000) + ["SHOT done"]
+    code, out = run_main(monkeypatch, capsys, tmp_path, console, "--expect", "SHOT done")
+    assert code == 1 and "PASS" not in out and "not a PNG" in out and not list((tmp_path / "shots").glob("*"))
+
+
+def test_a_png_with_a_good_header_and_a_damaged_body_is_rejected(tmp_path):
+    """The SHA-256 is of the damaged bytes, so only the decode catches it."""
+    png = bytearray(png_of_size(64, 36, varied=True))
+    at = png.index(b"IDAT") + 12
+    for i in range(at, at + 6):
+        png[i] ^= 0xFF
+    c = wc.ShotCollector(tmp_path, size=(64, 36))
+    with pytest.raises(ValueError, match="not a PNG that decodes"):
+        for line in shot_lines("gameplay03", bytes(png), chunk=4000):
+            c.feed(line)
+    assert not list(tmp_path.glob("*.png"))
