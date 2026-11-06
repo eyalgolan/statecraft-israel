@@ -165,6 +165,11 @@ A small Python model of the trigger rule reproduced run 3 event for event. It wa
 - **The cap and Attention.** No turn has more than two soft events (15 March 1951), so the cap of 3 never binds. Some
   turns bring 3 hard cards: 15 July 1948, 15 October 1948, 15 January 1949 after the edits, and 15 March 1951 with two
   soft ones. `HistoricalAI` had no order refused in any run.
+- **Later change (#2833, recorded 6 November 2026).** Under R-TURN-002 (`docs/rules/mvp.md`), rows #29 and #31 now open
+  on the 15th on or before their decision: `iraqi_exodus` on 15 February 1951 (t33, was t34) and `forex_crisis_1951` on
+  15 October 1951 (t41, was t42), so each reaches the player on the turn before it. The owner chose "Move both
+  (Recommended)" (5 November 2026). With `iraqi_exodus` off 15 March 1951, that turn has one soft event (`hula_drainage`),
+  not two. #2574 (#2551) moved eight other cards the same way. This table keeps the October analysis as it was.
 
 ## 4. Content edits and owner decisions
 

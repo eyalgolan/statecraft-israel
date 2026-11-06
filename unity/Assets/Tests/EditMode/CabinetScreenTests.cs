@@ -219,6 +219,29 @@ public class CabinetScreenTests
         }
     }
 
+    // #2743 review: with an appointment queued the preview path runs, but a candidate the player can't pay for is never
+    // disabled for it; pressing gives the queue-time Attention refusal, as before (ARefusalAtQueueTimeIsShown).
+    [Test]
+    public void WithAnAppointmentQueuedACandidateIsNotDisabledForLackOfAttention()
+    {
+        using var ui = Shown();
+        var bridge = In1950();
+        new ToastPresenter(ui.Root, bridge, Text);
+        var cabinet = new CabinetPresenter(ui.Root, bridge, Text, null);
+        Assert.IsNull(bridge.Queue(new Appoint("chief_of_staff", "maklef")), "precondition: an appointment is queued");
+        var refused = false;
+        foreach (var p in C.Policies)
+            if (bridge.Queue(new SetPolicy(p.Id, 0.5)) != null) { refused = true; break; }
+        Assert.IsTrue(refused, "precondition: Attention runs out");
+        Assert.IsFalse(bridge.CanPay(new Appoint("finance_minister", "golda_meir")), "precondition: the appointment can't be paid for");
+        var queued = bridge.Queued.Count;
+        cabinet.Select("finance_minister");
+        Assert.IsTrue(ui.Q<Button>("appoint-golda_meir").enabledSelf, "not disabled for Attention");
+        UiTestKit.Press(ui.Q<Button>("appoint-golda_meir"));
+        StringAssert.StartsWith("Not done: Not enough attention", ui.Q<Label>("toast").text);
+        Assert.AreEqual(queued, bridge.Queued.Count, "nothing more is queued");
+    }
+
     [Test]
     public void ARefusalAtQueueTimeIsShown()
     {
@@ -232,6 +255,48 @@ public class CabinetScreenTests
         UiTestKit.Press(ui.Q<Button>("appoint-golda_meir"));
         StringAssert.StartsWith("Not done: Not enough attention", ui.Q<Label>("toast").text);
         Assert.AreEqual(2, bridge.Queued.Count);
+    }
+
+    [Test]
+    public void AQueuedChiefOfStaffAppointmentDisablesThatPersonsMinisterButton()
+    {
+        // Red-first prediction at ae4bfdaab: the button stays enabled because the candidate list ignores queued appointments.
+        using var ui = Shown();
+        var bridge = In1950();
+        using var cabinet = new CabinetPresenter(ui.Root, bridge, Text, null);
+        Assert.IsNull(bridge.Queue(new Appoint("chief_of_staff", "maklef")));
+
+        cabinet.Select("finance_minister");
+
+        Assert.IsFalse(ui.Q<Button>("appoint-maklef").enabledSelf);
+        var preview = Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+        Assert.AreEqual(Cabinet.Check(C, preview.State, "finance_minister", "maklef"), ui.Q<Label>("cand-maklef-reason").text);
+    }
+
+    [Test]
+    public void ReplacingAChiefOfStaffOrderCannotNewlyBreakALaterAppointment()
+    {
+        // Red-first prediction at ae4bfdaab: the button stays enabled because the replacement's effect on the later order is ignored.
+        using var ui = Shown();
+        var bridge = In1950();
+        // In1950's Attention pays for one appointment (1.5 left after it, 2.5 for the next), and this test needs two queued;
+        // Attention is not what it checks (WithAnAppointmentQueuedACandidateIsNotDisabledForLackOfAttention does that).
+        bridge.TurnStart.Attention += 5;
+        using var cabinet = new CabinetPresenter(ui.Root, bridge, Text, null);
+        Assert.IsNull(bridge.Queue(new Appoint("chief_of_staff", "dayan")));
+        Assert.IsNull(bridge.Queue(new Appoint("finance_minister", "maklef")));
+        var later = bridge.Queued[1];
+        var current = Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+        Assert.IsFalse(current.Rejected.Any(x => ReferenceEquals(x.Command, later)), "the current queue accepts the later appointment");
+
+        cabinet.Select("chief_of_staff");
+
+        Assert.IsFalse(ui.Q<Button>("appoint-maklef").enabledSelf);
+        var replacement = new Appoint("chief_of_staff", "maklef");
+        var hypothetical = Simulation.Preview(C, bridge.TurnStart,
+            bridge.Session.Committed.Concat(new Command[] { replacement, later }).ToList());
+        var rejection = hypothetical.Rejected.Single(x => ReferenceEquals(x.Command, later));
+        Assert.AreEqual(rejection.Reason, ui.Q<Label>("cand-maklef-reason").text);
     }
 
     [Test]

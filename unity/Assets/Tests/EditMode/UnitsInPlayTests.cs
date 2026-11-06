@@ -179,7 +179,9 @@ public class UnitsInPlayTests
     [Test]
     public void HebrewUnitNumbersAreSourcedAndAgentChecked()
     {
-        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        var withNumberHe = Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)).ToList();
+        Assert.IsNotEmpty(withNumberHe);
+        foreach (var u in withNumberHe)
         {
             StringAssert.IsMatch("[א-ת]", u.NumberHe, u.Id);
             Assert.AreEqual("agent-checked", u.NumberHeReview, u.Id);
@@ -195,7 +197,9 @@ public class UnitsInPlayTests
     {
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
         var state = StateAt(C.Rules.Start, 5, 0.8);
-        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        var withNumberHe = Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)).ToList();
+        Assert.IsNotEmpty(withNumberHe);
+        foreach (var u in withNumberHe)
         {
             var anchor = u.Anchors.FirstOrDefault() ?? new UnitAnchor { Place = "test position" };
             var placed = new PlacedToken(new UnitToken(u, anchor, 0, "", false), default);
@@ -415,7 +419,10 @@ public class UnitsInPlayTests
     // entries taken out, the logged rosters hash to those again).
     // #1536: Givati's token carries the armoured car from 12 June 1948 (was e11d180e... and b459d9a4...; only Givati's
     // lines from the week of 12 June on gain "+figure-vehicle-sandwich-convoy-1948-v2").
-    const string RosterGolden1950 = "2cdb0f00eac9b4ae63f69a9e8067a28ce91dfecddb369b029ba605d727c443a6";
+    // #2551 (#2574; the owner chose "Move them a turn earlier (Recommended)", 4 November 2026): armistice_egypt opens on
+    // 15 February 1949, so its set_rung: 2 comes a turn earlier and the 15 March 1949 roster is already the post-armistice
+    // one (was 2cdb0f00...; the hash comes from the wave-1e stacked gate's he_IL log).
+    const string RosterGolden1950 = "6165e0a830ff1ee24d5df0eec573b83819915aa1cc146800fa8474bc3d1da981";
     const string WeeklyGolden = "10926451645267fe6dbbf146b0e75d6cac84a21f098cf0eb8e2189a84eb7a46f";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------

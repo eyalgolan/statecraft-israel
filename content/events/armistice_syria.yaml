@@ -9,7 +9,10 @@ text_he: 'המשא ומתן הניב הסכם שביתת נשק עם סוריה.
 anchor: hard
 front_quiet: syria
 office: prime_minister
-from: 1949-07-20
+# R-TURN-002 (#2551; the owner chose "Move them a turn earlier (Recommended)" on 4 November 2026): the window opens on
+# the 15th on or before the decision (signed 20 July 1949; it opened on 1949-07-20), so the card reaches the player on
+# the turn before it.
+from: 1949-07-15
 # Hard anchor: fires on the first turn on or after `from`. `to` (exclusive, end of 1949) only makes the window finite,
 # so the {prime_minister} placeholder needs a holder through 1949 and not past the holder's death (#1).
 to: 1950-01-01

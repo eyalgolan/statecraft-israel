@@ -580,8 +580,8 @@ public class RealContentTests
 
     /// <summary>The m3 ruling "Event cap and gaps", restated in months (owner decision, 15 October 2026, Q-CUT-8, "6 months,
     /// 2 in wartime", #375): in the historical run to 1952, no more than 6 months pass from one card to the next. The longest
-    /// stretch is 6 months on both the legacy and the monthly turns (27 August 1949 to 27 February 1950 today; 15 May to
-    /// 15 November 1951 on monthly turns).</summary>
+    /// stretch is 6 months on both the legacy and the monthly turns (27 August 1949 to 27 February 1950 today; 15 July 1949
+    /// to 15 January 1950 on monthly turns, since #2551/#2833 moved forex_crisis_1951 to 15 October 1951).</summary>
     [Fact]
     public void NoMoreThanSixMonthsPassWithoutACard()
     {
