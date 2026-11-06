@@ -145,6 +145,10 @@ public class UnitBadgeScreenCapTests
                             }
                             if (ahead != 0f) continue;
                             var b = badges[i]; var token = b.parent;
+                            // The cap, not the raise, takes the "keeps its size" check off this band: it acts on a plate nearer than
+                            // about 40 km to the camera, the 45 km views have many (BADGECAP below), and at 60 km a plate low on the screen stands
+                            // near that depth (estimated). So the every-plate check starts at 90 km, and 60 km pins the plate in the view's centre.
+                            if (grown > 0f) Assert.AreEqual(UnitBadge.SizeM, b.lossyScale.x, 1e-2f, $"{distance / 1000f:0} km, yaw {yaw}, {token.name}: the plate in the view's centre keeps its size");
                             float raise = token.Find(UnitPlinth.FlagName) != null ? grown * pole : 0f;
                             Assert.Less((LowerEdge(b) - (lowerAt30[(i, yaw)] + Vector3.up * raise)).magnitude, 1f, $"{distance / 1000f:0} km, yaw {yaw}, {token.name}: the plate's lower edge rises only with the flag");
                             var centre = cam.WorldToScreenPoint(b.position);
