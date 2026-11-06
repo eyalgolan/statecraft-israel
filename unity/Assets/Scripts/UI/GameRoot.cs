@@ -61,6 +61,7 @@ namespace Statecraft.Game.UI
         NavigationGuard? navGuard;
         StartScreenPresenter? start;
         OpeningPresenter? opening;
+        FilmPresenter? film;
         EventCardPresenter? card;
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
@@ -530,7 +531,7 @@ namespace Statecraft.Game.UI
             if (smoke == 0) Own(new AchievementReporter(bridge, () => PlatformServices.Current));
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
-            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
+            Func<Vector2, bool> overUi = p => film?.HoldsThePointer == true || opening?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
             var terrain = map.Terrain;
             var size = terrain.terrainData.size;
             var oldBounds = cameraController.Bounds;
@@ -667,7 +668,21 @@ namespace Statecraft.Game.UI
                         video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
                     replayOpening.text = text["opening.replay"];
                     replayOpening.style.display = DisplayStyle.Flex;
-                    Action replayClick = () => { if (start?.IsOpen == true) opening?.Show(replay: true); };
+                    // The opening film plays before the stills, which stay its fallback: with no file, or none reviewed for a
+                    // player build, the route is the one above. Its own player and sound; never in the automated runs (no video).
+                    if (video != null && FilmContent.Load() is FilmContent.Document filmData && FilmContent.MayPlay(filmData, editorPreview))
+                    {
+                        var filmSound = new DeclarationRecording.SourceOutput();
+                        // Hebrew captions show once they are approved (film.yaml, he_review); the English until then.
+                        var filmCaptions = hebrew && !filmData.HebrewApproved ? UiText.Parse(strings.text) : text;
+                        film = Own(new FilmPresenter(root, filmData, text, shown =>
+                        {
+                            if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true;
+                            if (shown) filmSound.Volume = FilmContent.Volume(audio.Volume, music?.Volume ?? 0f);
+                        }, new AdvisorMedia(filmCaptions, new ClipPicture(Own(new CardVideo()), FilmContent.PrepareTimeoutMs), null, DeclarationRecording.WebFetchOgg,
+                            filmSound, file => FilmContent.Url(filmData, file), FilmContent.PrepareTimeoutMs)));
+                    }
+                    Action replayClick = () => { if (start?.IsOpen == true) PlayOpening(replay: true); };
                     replayOpening.clicked += replayClick;
                     owned.Add(new Undo(() => replayOpening.clicked -= replayClick));
                 }
@@ -678,7 +693,7 @@ namespace Statecraft.Game.UI
             {
                 var cam = cameraController;
                 var recording = Own(new DeclarationRecording(root, text, toast.Show));   // never built in automated runs (Skipped)
-                if (music != null) music.Duck = () => recording.Playing;           // the theme drops low under Ben-Gurion's voice
+                if (music != null) music.Duck = () => recording.Playing || film?.IsOpen == true;   // the theme drops low under Ben-Gurion's voice and under a replayed film
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
@@ -776,8 +791,8 @@ namespace Statecraft.Game.UI
             {
                 // The start screen's no-save New Game has no Started; its closing already starts the advisors when there
                 // is no opening, so that route only plays the opening.
-                Action freshGame = () => { if (opening != null) opening.Show(replay: false); else advisor?.NewGame(); };
-                Action freshOpened = () => opening?.Show(replay: false);
+                Action freshGame = () => { if (opening != null) PlayOpening(replay: false); else advisor?.NewGame(); };
+                Action freshOpened = () => PlayOpening(replay: false);
                 // #2712: a New Game keeps the map, so the camera goes back to the opening view here, as MapScene.Build sets it
                 // at boot: Tel Aviv and Jaffa in frame at the start zoom.
                 Action openingView = () =>
@@ -865,6 +880,13 @@ namespace Statecraft.Game.UI
         }
 
         T Own<T>(T d) where T : IDisposable { owned.Add(d); return d; }
+
+        /// <summary>The opening's whole route: the film when there is one to play, then the stills, which stay the fallback.</summary>
+        void PlayOpening(bool replay)
+        {
+            if (film != null) film.Play(replay, () => opening?.Show(replay));
+            else opening?.Show(replay);
+        }
 
         /// <summary>A map click: on a unit's hex it selects the unit (the ring and its card; the hex outline is cleared, so
         /// the unit has the promo's one highlight); a second click on it, or a click anywhere else, shows the hex (so a token
@@ -1048,7 +1070,7 @@ namespace Statecraft.Game.UI
             owned.Clear();
             savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; film = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1189,7 +1211,10 @@ namespace Statecraft.Game.UI
                 yield break;
             }
             if (!Press(root.Q<Button>("start-new-game"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
-            // A reviewed opening is part of the normal media path: the instrument uses its actual Skip control.
+            // A reviewed opening is part of the normal media path: the instrument uses its actual Skip control. A film comes
+            // first, and its Skip hands over to the opening.
+            if (root.Q("film-layer")?.style.display.value == DisplayStyle.Flex
+                && !Press(root.Q<Button>("film-skip"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
             if (hud.ClassListContains(OpeningPresenter.OpenClass)
                 && !Press(root.Q<Button>("opening-skip"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
             while (now() - began <= FirstCardBudgetSeconds)
@@ -1232,10 +1257,12 @@ namespace Statecraft.Game.UI
             // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
-            // Nor does the opening's (#530), over all but those two, in the frame it closes too.
+            // Nor does the opening's (#530), over all but those two, in the frame it closes too; the opening film is over the
+            // opening, and the press that closes it leaves the stills open (#2609).
             // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
             if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true
                 && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true
+                && film?.ClosedThisFrame != true && film?.Escape() != true
                 && opening?.ClosedThisFrame != true && opening?.Escape() != true)
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;

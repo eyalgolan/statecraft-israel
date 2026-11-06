@@ -1285,3 +1285,12 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .opening-source-en, .lang-he .opening-source-en { -unity-text-align: upper-left; white-space: normal; }
 .opening-open .top-bar, .opening-open .left-column, .opening-open .community-column, .opening-open .right-column, .opening-open .event-layer, .opening-open .info-panel, .opening-open .screen, .opening-open .map-labels, .opening-open .start-screen, .opening-open .advisor-layer { display: none; }
 .loading .opening-layer { display: none; }
+/* The opening film: the whole window, its picture letterboxed; the captions sit under the picture, never on it, in a band
+   of fixed height so the picture does not jump between lines. It wears .opening-open too (FilmPresenter), which hides the rest. */
+.film-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; padding: 16px; background-color: var(--navy-deep); }
+.film-picture { flex-grow: 1; flex-shrink: 1; min-height: 80px; background-size: contain; background-position-x: center; background-position-y: center; background-repeat: no-repeat; }
+.film-caption { flex-shrink: 0; min-height: 64px; font-size: 22px; white-space: normal; -unity-text-align: middle-center; margin: 8px 0 4px 0; }
+.film-foot { flex-shrink: 0; justify-content: space-between; align-items: center; }
+.film-label { flex-shrink: 1; font-size: 15px; white-space: normal; }
+.film-skip { flex-shrink: 0; min-height: 44px; }
+.loading .film-layer { display: none; }

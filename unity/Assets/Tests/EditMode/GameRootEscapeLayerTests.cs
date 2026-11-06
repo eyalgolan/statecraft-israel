@@ -13,6 +13,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
@@ -30,14 +31,16 @@ public class GameRootEscapeLayerTests : SharedCameraActionsFixture
     {
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
+        FilmPresenter.ProbeForTests = null; LogAssert.ignoreFailingMessages = false;
     }
 
-    GameRoot Open(GameInputs inputs, bool startScreen)
+    GameRoot Open(GameInputs inputs, bool startScreen, bool opening = false)
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
         var root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = new SaveStore(saveDir);
+        root.OpeningInEditMode = opening;
         root.Begin(inputs, 0, startScreen);
         keyboard = InputSystem.AddDevice<Keyboard>();
         return root;
@@ -50,6 +53,21 @@ public class GameRootEscapeLayerTests : SharedCameraActionsFixture
         Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
         typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
         Release(keyboard.escapeKey);
+    }
+
+    /// <summary>The film is a layer over the stills: the Escape that closes it leaves them open.</summary>
+    [Test]
+    public void EscapeClosesTheOpeningFilmAndLeavesTheStillsOpen()
+    {
+        LogAssert.ignoreFailingMessages = true;                        // the edit-mode VideoPlayer may log while it prepares
+        FilmPresenter.ProbeForTests = (url, found) => { found(true); return null; };
+        var root = Open(GameInputs.FromDisk(Paths.Content, Paths.StreamingMap), startScreen: true, opening: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("film-layer").style.display.value, "precondition: the film shows");
+
+        Escape(root);
+        Assert.AreEqual(DisplayStyle.None, Ui.Q("film-layer").style.display.value);
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("opening-layer").style.display.value, "the same press does not close the stills");
     }
 
     [SetUp]

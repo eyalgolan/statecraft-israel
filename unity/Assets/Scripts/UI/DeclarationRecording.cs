@@ -245,6 +245,15 @@ namespace Statecraft.Game.UI
         public sealed class SourceOutput : IOutput
         {
             GameObject? go; AudioSource? source;
+            float volume = 1f;
+
+            /// <summary>0 to 1, at once and for later plays. The recording and the advisors keep the default; the opening film
+            /// sets it from Settings (FilmContent.Volume).</summary>
+            public float Volume
+            {
+                get => volume;
+                set { volume = Mathf.Clamp01(value); if (source != null) source.volume = volume; }
+            }
 
             public bool? Ready(AudioClip clip) => ReadyState(clip);
 
@@ -269,6 +278,7 @@ namespace Statecraft.Game.UI
                     source.playOnAwake = false; source.loop = false; source.spatialBlend = 0f;
                 }
                 source!.clip = clip;
+                source.volume = volume;
                 source.Play();
             }
 

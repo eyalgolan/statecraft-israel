@@ -1,0 +1,47 @@
+# The opening film: a silent H.264 picture and a separate OGG sound file, with live captions (FilmContent, FilmPresenter;
+# docs/event-videos.md, "The opening film"). In Resources, not in content/: it is presentation, so the content hash, the
+# saves and the goldens never see it. Neither file exists yet: the names below are placeholders, and a missing picture
+# falls through to the three-photograph opening with no error.
+
+# OWNER DECISIONS, still open. Each is this one value (FilmContent reads it; the PR lists them).
+# 1. Does the film play by itself after New game? False: only Replay the opening plays it.
+auto_play_on_new_game: true
+# 2. May the real 1948 recording play in the film? D-R and docs/declaration-recording.md say it never plays on New game,
+#    so this stays false until the owner rules. True picks audio_with_recording and adds its credit to the label line.
+real_recording: false
+# 3. The on-screen AI label: a key of the strings files. This one is the advisors' existing line, in both languages.
+ai_label: advisor.media_label
+# 4. The 10 MiB per-file limit (scripts/oss/oss_policy.py) against hosted video. Empty: the picture is bundled in
+#    StreamingAssets/video and must stay under the limit. An https:// folder ending in / : the picture comes from there
+#    (that host must send CORS headers to play on itch.io; desktop builds then need the network).
+picture_host: ""
+
+# The picture: a bare .mp4 name in StreamingAssets/video (or picture_host). No audio track.
+picture: opening_film.mp4
+# The sound: bare .ogg names in StreamingAssets/audio/film. The script's voice is English, under both languages' captions.
+audio: opening_film.ogg
+audio_with_recording: opening_film_recording.ogg
+
+ai_generated: true
+sensitive: true
+# The owner's review of the final file: until then no player build plays it (FilmContent.MayPlay). Only the Editor does.
+sensitivity_reviewed: false
+# The Hebrew captions (film.cue.* in strings.he.yaml), script v7's lines: pending shows the English captions in the Hebrew
+# UI; the owner's or a native reader's approval makes them show.
+he_review: pending
+
+# Script v7's shot times, in seconds of the sound file, one cue per film.cue.<n> key in order. The real sound file sets the
+# final times; shot 10 holds two lines (cues 10 and 11), split here by estimate.
+cues:
+  - { start: 0.0, end: 6.0 }
+  - { start: 6.0, end: 13.0 }
+  - { start: 13.0, end: 21.0 }
+  - { start: 21.0, end: 28.0 }
+  - { start: 28.0, end: 34.0 }
+  - { start: 34.0, end: 43.0 }
+  - { start: 43.0, end: 50.0 }
+  - { start: 50.0, end: 60.0 }
+  - { start: 60.0, end: 67.0 }
+  - { start: 67.0, end: 71.0 }
+  - { start: 71.0, end: 74.0 }
+  - { start: 74.0, end: 80.0 }
