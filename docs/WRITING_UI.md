@@ -67,7 +67,7 @@ Status: observed. Reason: the file already does this, and it keeps lines scannab
 Check: manual.
 
 ### UI-04 Counts: write "Label: N"; no "(s)"
-Status: observed in Hebrew, proposed for English. Reason: Google advises against optional plurals such as "key(s)" because they are ambiguous and translate badly, and Hebrew needs a separate form for exactly 2 (Unicode CLDR 48). A "Label: N" line needs no plural form in either language. The game has no general plural mechanism (`UiText` is a key to `string.Format` lookup), so this pattern is the way to avoid the problem. The repo's own Hebrew test pins `event.more` as "Label: N" and names the test "count neutral" (`test_hebrew_review_wording_is_count_neutral_and_uses_knesset_terms`), so the maintainer already treats this as the rule for Hebrew. Some messages already choose singular and plural keys explicitly (UI-17), including the city-panel group and turn counts added in #869.
+Status: observed in both. Reason: Google advises against optional plurals such as "key(s)" because they are ambiguous and translate badly, and Hebrew needs a separate form for exactly 2 (Unicode CLDR 48). A "Label: N" line needs no plural form in either language. The game has no general plural mechanism (`UiText` is a key to `string.Format` lookup), so this pattern is the way to avoid the problem. The repo's own Hebrew test pins `event.more` as "Label: N" and names the test "count neutral" (`test_hebrew_review_wording_is_count_neutral_and_uses_knesset_terms`), so the maintainer already treats this as the rule for Hebrew. Some messages already choose singular and plural keys explicitly (UI-17), including the city-panel group and turn counts added in #869.
 - Done: English no longer writes "(s)". `event.more` is "{0} more decisions waiting" and `event.more_one` is "{0} more decision waiting", chosen by count (UI-17).
 - Good: the Hebrew counterpart "החלטות ממתינות נוספות: {0}" (`event.more`, Hebrew), which is already "Label: N".
 - Candidate English rewrite: "More decisions waiting: {0}".
@@ -133,7 +133,7 @@ Check: the repo's formatting tests and the actual caller for the screen being ed
 
 ### UI-14 Use the glossary's terms
 Status: proposed. Reason: terminology drifts between files and between English and Hebrew (see the glossary). A string should use the preferred term for its concept.
-- Spelling: the UI is British ("Defence"), and an office keeps the official US spelling of its title ("Minister of Defense"). The maintainer wrote this rule in a comment in `content/offices.yaml` ("Spelling is deliberate, do not \"fix\" it"), and `docs/UX_GLOSSARY.md` carries it in its `defence-screen-and-office` entry, so `defence.command` ("Minister of Defense {0} · Chief of Staff {1}") follows it. The check script skips "Minister of Defense" for that reason. The rule is not yet in a writing guide; that is the open point below.
+- Spelling: the UI is British ("Defence"), and an office keeps the official US spelling of its title ("Minister of Defense"). The maintainer wrote this rule in a comment in `content/offices.yaml` ("Spelling is deliberate, do not \"fix\" it"), and `docs/UX_GLOSSARY.md` carries it in its `defence-screen-and-office` entry, so `defence.command` ("Minister of Defense {0} · Chief of Staff {1}") follows it. The check script skips "Minister of Defense" for that reason. The rule is not yet in `docs/WRITING_GUIDE.md`; that is the open point below.
 - Resource and meter names: the owner decided on 15 October that the five resources are Money, Food, Arms, Social cohesion and International Support, with approval shown as Public support (`docs/gdd/cutover-resource-layer.md`). The current top bar uses Money (net), International support and Public support. Social cohesion is exposed for the GDD loop. These names are adopted; future screens must follow them. The glossary carries each name under `resources-and-meters`.
 Check: a pattern search over the strings files; the glossary lists the terms.
 
@@ -171,7 +171,7 @@ Check: manual.
 | `why.empty` | Nothing has happened yet: end the turn to see its causes. | Good, empty state with a next step | UI-10 |
 | `budget.queued` | Submitted: takes effect at End turn | Good, state and consequence | UI-03 |
 | `budget.unsaved` | Changed: submit to put it to the vote | Good, state and next step | UI-05 |
-| `event.more`, `event.more_one` (en) | {0} more decisions waiting; {0} more decision waiting | Good, the two-key plural | UI-04, UI-17 |
+| `event.more`, `event.more_one` (en) | {0} more decisions waiting; {0} more decision waiting | Fixed: two-key plural (UI-17) | UI-04, UI-17 |
 | `order.invalid` | That order is not valid | Weak | UI-06, UI-07 |
 | `order.failed` | The turn could not run. Your orders were cleared. Give them again. | Adopted recovery wording, #676 | UI-07 |
 | `order.unknown` | Unknown {0} | Fixed in #630 (kind only) | UI-07 |
@@ -213,7 +213,7 @@ For the maintainer:
 - Confirm the punctuation rule (UI-08). The capitalisation rule (UI-02, glossary `label-capitalisation`) is settled by #630.
 - The remaining refusal rewrites, such as order.no_attention (UI-05). The order.failed recovery wording is already adopted and implemented (#676).
 - Whether the two-key plural (`hud.say_point`, `hud.say_points`) is enough, or a general mechanism is wanted (UI-04, UI-17).
-- Where the spelling rule is written: a comment in `content/offices.yaml` and the glossary's `defence-screen-and-office` entry, not yet a writing guide (UI-14).
+- Where the spelling rule is written: a comment in `content/offices.yaml` and the glossary's `defence-screen-and-office` entry, not yet `docs/WRITING_GUIDE.md` (UI-14).
 - Optional: the "Majority" label (UI-03).
 
 For the native Hebrew reviewer: every point in UI-16, and the Hebrew of any candidate rewrite.
