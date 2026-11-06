@@ -60,6 +60,20 @@ public class SiteLabelTests
         Assert.IsNull(ui.Root.Q<VisualElement>("slot-" + site.Id), "no pill once the site is not built");
     }
 
+    /// <summary>Issue #2812 ("Ground change only"): the pills GameRoot gives the sites are SiteLayer.Places. Built Beit Kama and
+    /// built Beit Kama fields, both at (-9, 32), give one pill on that hex: the yishuv's.</summary>
+    [Test]
+    public void ABuiltYishuvAndItsBuiltFieldShowOnePillOnTheirHex()
+    {
+        var layer = new GameObject("Sites").AddComponent<SiteLayer>();
+        layer.Render(new[] { SiteWork.Built("beit_kama", new System.DateTime(1949, 4, 18)), SiteWork.Built("beit_kama_field", new System.DateTime(1949, 6, 30)) }, C, map);
+        using var ui = new UiTestKit();
+        using var labels = new MapLabelsPresenter(ui.Root, map, cam);
+        labels.SetSites(layer.Places.Select(p => (p, layer.Columns.TryGetValue(p.Id, out var c) ? c : (Bounds[]?)null)).ToList());
+        Assert.AreEqual(new[] { "Beit Kama" }, labels.SiteLabels.Select(l => l.text).ToArray(), "one pill, the yishuv's");
+        Assert.IsNull(ui.Root.Q<VisualElement>("slot-" + SiteLayer.Prefix + "beit_kama_field"), "no pill for the field");
+    }
+
     /// <summary>Issue #1219 item 1: in the Hebrew UI a built site's pill reads the row's name_he, in English its name.</summary>
     [Test]
     public void ABuiltSitesPillReadsItsHebrewNameInHebrewAndItsNameInEnglish()
