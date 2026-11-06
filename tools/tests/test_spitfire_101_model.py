@@ -1,6 +1,7 @@
-"""tools/spitfire_101_model.py: the Blender-built 101 Squadron Spitfire ships as its record says, in the frame UnitShowcase's
-art hook expects (real metres, nose +z, y up, the propeller a top-level node at the hub with identity rotation, its four
-blades at 20 + 90k degrees as the code-built propeller's), and its markings are painted where the sources put them.
+"""tools/spitfire_101_model.py: the Blender-built 101 Squadron Spitfire ships as its record says, in the frame the streamed
+model swap expects (StreamedAircraft: real metres, nose +z, y up, the propeller a top-level node at the hub with identity
+rotation, its four blades at 20 + 90k degrees as the code-built propeller's), and its markings are painted where the sources
+put them.
 The FBX is read with the tool's own stdlib reader; no Blender is needed.
 """
 import importlib.util
@@ -31,7 +32,7 @@ def test_verify_passes_on_the_shipped_files():
     assert record["triangles"] < 10000
 
 
-def test_the_fbx_is_in_the_frame_the_art_hook_expects():
+def test_the_fbx_is_in_the_frame_the_streamed_swap_expects():
     mod = tool()
     fbx = ROOT / mod.FBX_DIR / mod.FBX
     s = mod.fbx_summary(fbx)
@@ -106,9 +107,12 @@ def test_the_unity_files_point_at_each_other_with_unique_guids():
     mat = (d / f"{mod.TYPE}.mat").read_text(encoding="utf-8")
     assert mat.count(f"guid: {png_g}") == 2 and "guid: 933532a4fcc9baf4fa0491de14d08ed7" in mat, "URP Lit with the colour map"
     assert "- _Smoothness: 0.5\n" in mat and "- _Metallic: 0\n" in mat
-    # The model itself is the authored asset UnitShowcase loads: Resources/Units/Authored/ + UnitShowcase.SpitfireType.
-    assert mod.FBX_DIR == Path("unity/Assets/Resources/Units/Authored") and mod.FBX == "spitfire-mk9e-101sqn-1948.fbx"
-    assert not list((ROOT / mod.FBX_DIR).glob(f"{mod.TYPE}.prefab*")), "no prefab variant beside it"
+    # The model streams from its own Collection folder (CollectionCatalog.IsraeliSpitfire, #2734), beside its colour map and
+    # material; nothing of it is under a Resources folder (the WebGL player's first download).
+    assert mod.FBX_DIR == mod.MODEL_DIR == Path("unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948") and mod.FBX == "spitfire-mk9e-101sqn-1948.fbx"
+    tracked = subprocess.run(["git", "ls-files", "--", "unity/Assets"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split("\n")
+    assert not [p for p in tracked if mod.TYPE in p and "/Resources/" in p], "a copy under Resources"
+    assert "animationCompression: 0\n" in meta, "the FBX's import passes the Collection's lossless check (it has no takes)"
     for g in (fbx_g, png_g, mat_g):
         hits = subprocess.run(["git", "grep", "-l", "-e", f"^guid: {g}$", "--", "*.meta"], cwd=ROOT, capture_output=True, text=True).stdout.split()
         assert len(hits) <= 1, f"{g} is the guid of more than one asset: {hits}"

@@ -286,30 +286,213 @@ public class UnitShowcaseTests
         Assert.IsTrue(assets.All(o => o == null), "destroying the map destroys every mesh, the material and the palette");
     }
 
+    /// <summary>#2734 (coordinator's option 1): no unit model comes from a Resources folder any more. The art hook that loaded
+    /// one there (UnitShowcase.AuthoredModel, from Resources/Units/Authored/&lt;unit type&gt;) is gone, the figures and the ship
+    /// are always the code-built ones, and no unit type has a model left under Resources (the Blender-built Spitfire streams
+    /// instead, StreamedAircraft). Replaces AnAuthoredModelReplacesTheCodeBuiltOneForItsType, which stubbed that hook.</summary>
     [Test]
-    public void AnAuthoredModelReplacesTheCodeBuiltOneForItsType()
+    public void NoUnitModelComesFromResourcesAndTheFiguresAndTheShipStayCodeBuilt()
     {
-        var map = BuildMap();   // first: a new scene would destroy the stand-in models
-        var helmet = new GameObject("authored-helmet"); new GameObject("AuthoredMarker").transform.SetParent(helmet.transform);
-        var spitfire = new GameObject("authored-spitfire"); new GameObject("AuthoredMarker").transform.SetParent(spitfire.transform);
-        var saved = UnitShowcase.AuthoredModel;
-        UnitShowcase.AuthoredModel = type => type == UnitShowcase.RiflemanHelmetType ? helmet : type == UnitShowcase.SpitfireType ? spitfire : null;
+        var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+        Assert.IsNull(typeof(UnitShowcase).GetField("AuthoredModel", flags), "the Resources art hook is gone");
+        Assert.IsNull(typeof(UnitShowcase).GetField("AuthoredFolder", flags), "and its folder");
+        foreach (var type in new[] { UnitShowcase.RiflemanSlouchHatType, UnitShowcase.RiflemanHelmetType, UnitShowcase.RiflemanWoolCapType,
+            UnitShowcase.SpitfireType, UnitShowcase.CorvetteType, UnitShowcase.S199Type })
+            Assert.IsNull(Resources.Load<GameObject>("Units/Authored/" + type), type + ": nothing under Resources/Units/Authored");
+        var map = BuildMap();
         try
         {
             var root = UnitShowcase.Spawn(map, still: true);
-            Assert.IsNotNull(root.transform.Find("Rifleman1/AuthoredMarker"), "the helmet rifleman is the authored model");
-            Assert.IsNull(root.transform.Find("Rifleman1").GetComponent<MeshFilter>(), "no code-built mesh for it");
-            Assert.IsNotNull(root.transform.Find("Rifleman0").GetComponent<MeshFilter>(), "the others stay code-built");
-            Assert.AreEqual(UnitShowcase.FigureScale, root.transform.Find("Rifleman1").localScale.x, 1e-3f, "placed and scaled as the code-built one");
-            Assert.IsNotNull(root.transform.Find("Spitfire1948/Airframe/AuthoredMarker"));
-            Assert.IsNull(root.transform.Find("Spitfire1948/Propeller"), "an authored aircraft brings its own propeller");
-            Assert.IsNotNull(root.transform.Find("Corvette1948").GetComponent<MeshFilter>());
+            foreach (var name in new[] { "Rifleman0", "Rifleman1", "Rifleman2", "Corvette1948", "Spitfire1948/Airframe", "Spitfire1948/Propeller" })
+            {
+                var piece = root.transform.Find(name);
+                Assert.IsNotNull(piece, name);
+                Assert.IsNotNull(piece.GetComponent<MeshFilter>().sharedMesh, name + " is code-built");
+            }
+            Assert.AreEqual(UnitShowcase.FigureScale, root.transform.Find("Rifleman1").localScale.x, 1e-3f, "placed and scaled as before");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>A stand-in for the stream's lease, counting its releases.</summary>
+    sealed class CountedLease : System.IDisposable { public int Disposed; public void Dispose() => Disposed++; }
+
+    /// <summary>A stand-in for the streamed Spitfire's prefab, as the FBX's two top-level nodes: a body and, when asked, a
+    /// <see cref="StreamedAircraft.PropellerName"/> at the hub.</summary>
+    static GameObject StandInSpitfire(bool propeller)
+    {
+        var root = new GameObject("stand-in streamed spitfire");
+        void Part(string name, PrimitiveType shape, Vector3 at)
+        {
+            var go = GameObject.CreatePrimitive(shape); go.name = name;
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.SetParent(root.transform, false); go.transform.localPosition = at;
+        }
+        Part("Body", PrimitiveType.Cube, Vector3.zero);
+        if (propeller) Part(StreamedAircraft.PropellerName, PrimitiveType.Sphere, UnitModels.SpitfirePropellerHub);
+        return root;
+    }
+
+    /// <summary>Asks for the streamed Spitfire through a deferred stand-in for the stream: each request is kept, with its own
+    /// lease, until the test answers it. The caller restores <see cref="StreamedAircraft.Source"/> to null.</summary>
+    static List<(string id, Statecraft.Game.Map.Collection.CollectionDetail detail, System.Action<GameObject> done, CountedLease lease)> DeferredStream()
+    {
+        var asked = new List<(string, Statecraft.Game.Map.Collection.CollectionDetail, System.Action<GameObject>, CountedLease)>();
+        StreamedAircraft.Source = (id, detail, done) => { var lease = new CountedLease(); asked.Add((id, detail, done, lease)); return lease; };
+        return asked;
+    }
+
+    /// <summary>The code-built airframe's and propeller's renderers under an aircraft holder.</summary>
+    static Renderer[] CodeBuilt(Transform plane) =>
+        new[] { "Airframe", "Propeller" }.SelectMany(n => plane.Find(n).GetComponentsInChildren<Renderer>(true)).ToArray();
+
+    /// <summary>#2734: the showcase's Spitfire is drawn at once, code-built (its airframe and propeller), and the Blender-built
+    /// model is asked for from the Collection stream. When the stream answers, the model stands under the aircraft in the
+    /// code-built model's frame, the code-built airframe and propeller stop drawing, the aircraft keeps its place, heading and
+    /// symbolic scale, and the flight turns the model's own Propeller, not the hidden code-built one.</summary>
+    [Test]
+    public void TheShowcaseSpitfireStartsCodeBuiltAndSwapsToTheStreamedModelWhenItArrives()
+    {
+        var map = BuildMap();   // first: a new scene would destroy the stand-in model
+        var model = StandInSpitfire(propeller: true);
+        var asked = DeferredStream();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: false);
+            var plane = root.transform.Find("Spitfire1948");
+            Assert.AreEqual(1, asked.Count, "one request, for the 101 Squadron Spitfire");
+            Assert.AreEqual(Statecraft.Game.Map.Collection.CollectionCatalog.IsraeliSpitfire, asked[0].id);
+            Assert.AreEqual(UnitShowcase.SpitfireType, asked[0].id, "the unit type is the catalog id");
+            Assert.AreEqual(Statecraft.Game.Map.Collection.CollectionDetail.Far, asked[0].detail);
+            var code = CodeBuilt(plane);
+            Assert.AreEqual(2, code.Length);
+            Assert.IsTrue(code.All(r => r.enabled), "until the model arrives the code-built aircraft is drawn");
+            Assert.IsNull(plane.Find(StreamedAircraft.ModelName));
+            var flight = plane.GetComponent<ShowcaseFlight>();
+            var codeProp = plane.Find("Propeller");
+            Assert.AreSame(codeProp, flight.Propeller, "meanwhile the flight turns the code-built propeller");
+            var (position, rotation, scale) = (plane.position, plane.rotation, plane.localScale);
+
+            asked[0].done(model);
+
+            var streamed = plane.Find(StreamedAircraft.ModelName);
+            Assert.IsNotNull(streamed, "the streamed model stands under the aircraft");
+            Assert.AreEqual(Vector3.zero, streamed.localPosition, "in the code-built model's frame: its origin");
+            Assert.Less(Quaternion.Angle(Quaternion.identity, streamed.localRotation), 0.01f, "nose along the aircraft's");
+            Assert.AreEqual(Vector3.one, streamed.localScale, "real metres, as the code-built model");
+            Assert.IsTrue(streamed.gameObject.activeSelf);
+            var drawn = streamed.GetComponentsInChildren<Renderer>(true);
+            Assert.AreEqual(2, drawn.Length); Assert.IsTrue(drawn.All(r => r.enabled), "the streamed model draws");
+            Assert.IsTrue(code.All(r => !r.enabled), "the code-built airframe and propeller no longer draw");
+            Assert.AreEqual(position, plane.position, "the aircraft keeps its place");
+            Assert.Less(Quaternion.Angle(rotation, plane.rotation), 0.01f, "and its heading");
+            Assert.AreEqual(scale, plane.localScale, "and its symbolic scale");
+            Assert.AreEqual(Vector3.one * UnitShowcase.AircraftScale, plane.localScale);
+            Assert.AreEqual(0, asked[0].lease.Disposed, "the lease is held while the aircraft lives");
+
+            // The flight now turns the streamed propeller, and leaves the hidden code-built one alone.
+            var streamedProp = streamed.Find(StreamedAircraft.PropellerName);
+            Assert.AreSame(streamedProp, flight.Propeller, "the flight turns the streamed model's Propeller");
+            var hidden = Quaternion.Euler(0f, 0f, 33f);
+            codeProp.localRotation = hidden; streamedProp.localRotation = Quaternion.Euler(0f, 0f, 77f);
+            typeof(ShowcaseFlight).GetMethod("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(flight, null);
+            Assert.Less(Quaternion.Angle(Quaternion.Euler(0f, 0f, -Mathf.Repeat(Time.time * 1500f, 360f)), streamedProp.localRotation), 0.01f,
+                "a flight step sets the streamed propeller's angle");
+            Assert.Less(Quaternion.Angle(hidden, codeProp.localRotation), 0.01f, "and not the hidden code-built one's");
         }
         finally
         {
-            UnitShowcase.AuthoredModel = saved;
-            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(helmet); Object.DestroyImmediate(spitfire);
+            StreamedAircraft.Source = null;
+            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(model);
         }
+    }
+
+    /// <summary>#2734: the stream failing (a missing or damaged bundle answers null) keeps the whole code-built aircraft, and
+    /// so does a streamed model without a Propeller child (a model the flight could not turn): nothing of either is added.</summary>
+    [Test]
+    public void AFailedOrPropellerlessStreamedSpitfireKeepsTheWholeCodeBuiltAircraft()
+    {
+        var map = BuildMap();
+        var noPropeller = StandInSpitfire(propeller: false);
+        var asked = DeferredStream();
+        try
+        {
+            void KeepsTheCodeBuiltAircraft(GameObject root, string why)
+            {
+                var plane = root.transform.Find("Spitfire1948");
+                Assert.IsNull(plane.Find(StreamedAircraft.ModelName), why + ": no streamed model");
+                Assert.AreEqual(plane.GetComponentsInChildren<Renderer>(true).Length, CodeBuilt(plane).Length, why + ": nothing else under the aircraft");
+                Assert.IsTrue(CodeBuilt(plane).All(r => r.enabled), why + ": the code-built airframe and propeller still draw");
+                Assert.AreSame(plane.Find("Propeller"), plane.GetComponent<ShowcaseFlight>().Propeller, why + ": the flight turns the code-built propeller");
+            }
+            var first = UnitShowcase.Spawn(map, still: true);
+            asked[0].done(null);
+            KeepsTheCodeBuiltAircraft(first, "no model");
+            var second = UnitShowcase.Spawn(map, still: true);
+            Assert.AreEqual(1, asked[0].lease.Disposed, "the replaced showcase released its lease");
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("no Propeller"));
+            asked[1].done(noPropeller);
+            KeepsTheCodeBuiltAircraft(second, "a model without a Propeller");
+        }
+        finally
+        {
+            StreamedAircraft.Source = null;
+            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(noPropeller);
+        }
+    }
+
+    /// <summary>#2734: destroying the showcase (here the root; a map rebuild destroys it the same way) releases the aircraft's
+    /// lease exactly once, and the stream's answer coming after that instantiates nothing.</summary>
+    [Test]
+    public void DestroyingTheShowcaseReleasesTheSpitfireLeaseOnceAndALateAnswerDrawsNothing()
+    {
+        var map = BuildMap();
+        var model = StandInSpitfire(propeller: true);
+        var asked = DeferredStream();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: true);
+            Assert.AreEqual(1, asked.Count);
+            Assert.AreEqual(0, asked[0].lease.Disposed);
+            Object.DestroyImmediate(root);
+            Assert.AreEqual(1, asked[0].lease.Disposed, "destroying the aircraft releases its lease");
+            asked[0].done(model);   // the stream answers after all
+            Assert.AreEqual(1, asked[0].lease.Disposed, "once");
+            Assert.IsFalse(Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Any(t => t.name == StreamedAircraft.ModelName),
+                "a late answer instantiates nothing");
+            UnitShowcase.Spawn(map, still: true);
+            Object.DestroyImmediate(map.gameObject);
+            Assert.AreEqual(1, asked[1].lease.Disposed, "destroying the map releases the showcase's lease too");
+        }
+        finally
+        {
+            StreamedAircraft.Source = null;
+            if (map != null) Object.DestroyImmediate(map.gameObject);
+            Object.DestroyImmediate(model);
+        }
+    }
+
+    /// <summary>#2734: the game asks for the streamed Spitfire with the Collection stream's owned lease (CollectionStream.Acquire,
+    /// not Request, so the bundle is not pinned for good). In edit mode, with no stand-in, nothing is asked for (the stream's
+    /// coroutine never runs there, as UnitFigures has it), so the code-built aircraft stays.</summary>
+    [Test]
+    public void TheGameAsksForTheStreamedSpitfireWithCollectionStreamAcquireAndEditModeAsksNothing()
+    {
+        Assert.AreEqual(typeof(Statecraft.Game.Map.Collection.CollectionStream).GetMethod(nameof(Statecraft.Game.Map.Collection.CollectionStream.Acquire),
+                new[] { typeof(string), typeof(Statecraft.Game.Map.Collection.CollectionDetail), typeof(System.Action<GameObject>) }),
+            StreamedAircraft.ProductionAcquire.Method, "the production acquisition is CollectionStream.Acquire");
+        Assert.IsNull(StreamedAircraft.Source, "no stand-in is left set");
+        var map = BuildMap();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: true);
+            var streamed = root.transform.Find("Spitfire1948").GetComponent<StreamedAircraft>();
+            Assert.IsNotNull(streamed, "the showcase's Spitfire carries the swap");
+            Assert.IsFalse(streamed.Asked, "edit mode asks nothing of the stream");
+            Assert.IsTrue(CodeBuilt(streamed.transform).All(r => r.enabled));
+            Assert.IsNull(root.transform.Find("Corvette1948").GetComponent<StreamedAircraft>(), "only the aircraft");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
     }
 
     static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");
