@@ -268,6 +268,25 @@ public class CauseTextTests
         AssertHebrew(he, debt.Key);
     }
 
+    /// <summary>#2558: in the Money row (the turn report and the Money meter tip, HudModel.Causes) the Israel Bonds Debt
+    /// line reads as its Money effect (EconomySystem.MoneyLine), not as a Debt gain: "Money IL -18.6m (Israel Bonds)" in
+    /// English, and in Hebrew כסף with the same change and the Hebrew title, without חוב.</summary>
+    [Test]
+    public void TheEventDebtLineReadsAsItsMoneyEffectInTheMoneyRow()
+    {
+        var debt = new Cause("events", "debt", 18.564, $"{PlayerText.Change(C, "debt", 18.564)} (Israel Bonds)",
+            key: CauseKeys.EventAmount, args: new[] { "Israel Bonds", "מלווה העצמאות" });
+        var turn = new StepResult(new GameState(), new List<Cause> { debt }, new Rejection[0]);
+        CollectionAssert.AreEqual(new[] { "Money IL -18.6m (Israel Bonds)" },
+            HudModel.Causes(turn, "treasury", C, w => CauseText.Line(w, C, NoRows, En)));
+        var he = HudModel.Causes(turn, "treasury", C, w => CauseText.Line(w, C, NoRows, He)).Single();
+        StringAssert.Contains("כסף", he);
+        StringAssert.Contains(PlayerText.MoneyChange(C, "treasury", -18.564), he);
+        StringAssert.Contains("מלווה העצמאות", he);
+        StringAssert.DoesNotContain("חוב", he);
+        AssertHebrew(he, debt.Key);
+    }
+
     [Test]
     public void AResolvedEventUsesItsHistoricalContentSnapshots()
     {
