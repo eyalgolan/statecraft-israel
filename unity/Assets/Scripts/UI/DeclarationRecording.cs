@@ -12,7 +12,8 @@ namespace Statecraft.Game.UI
     /// The file is the archive's own Opus upload, cut by stream copy (no re-encode) and then decoded to 16-bit PCM WAV,
     /// which every browser and Unity's own reader play (the Web player could not load the Ogg Opus cut); it sits in StreamingAssets (its SHA-256 is pinned in a test), is fetched only when the player presses the button,
     /// and the browser decodes it. It plays only from that press, never by itself, never on Continue or New Game; it stops
-    /// when the start screen closes. While the file loads the button reads "Loading…" (pressing it again cancels); the
+    /// when the start screen closes or Report or Replay the opening covers it.
+    /// While the file loads the button reads "Loading…" (pressing it again cancels); the
     /// captions and "Stop" show only once the audio is actually playing; a failed or slow load ends with a message.
     /// GameRoot builds it only when the start screen is shown, which automated runs skip (StartScreenPresenter.Skipped),
     /// and the button's row is hidden by the stylesheet until this class shows it.</summary>
@@ -172,8 +173,8 @@ namespace Statecraft.Game.UI
             say(text["start.recording_failed"]);
         }
 
-        /// <summary>Stops it (the start screen closing, the button, the end of the clip) and releases the clip. Safe to
-        /// call when it is not playing.</summary>
+        /// <summary>Stops it (the start screen closing, Report or Replay the opening covering it, the button,
+        /// the end of the clip) and releases the clip. Safe to call when it is not playing.</summary>
         public void Stop()
         {
             generation++;

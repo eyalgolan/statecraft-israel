@@ -124,6 +124,33 @@ public class DollarConversionTests
         Assert.IsFalse(ui.Q<Button>("convert-dollars").enabledSelf);
     }
 
+    // Red-first prediction at ae4bfdaab: Render and Convert inspect reserves 10 before the queued choice spends 8,
+    // so the refusal is blank and the conversion is queued even though End turn rejects it for reserves.
+    [Test]
+    public void AQueuedChoiceThatSpendsReservesRefusesConversionBeforeItIsQueued()
+    {
+        var b = Bridge(false, false); var t = En; var c = b.Content;
+        b.State.Rung = EconomySystem.WarRung;
+        b.State.FxReserves = 10;
+        b.State.PendingEvents.Clear();
+        b.State.PendingEvents.Add("austerity_1949");
+        Assert.IsNull(b.Queue(new ChooseEventOption("austerity_1949", "decline")), "the reserve-spending choice is queued first");
+        var candidate = new ConvertDollars(4);
+        var preview = Simulation.Preview(c, b.TurnStart, b.Session.Committed.Concat(b.Queued).Append(candidate).ToList());
+        var rejected = preview.Rejected.Single(x => ReferenceEquals(x.Command, candidate));
+        Assert.AreEqual(EconomySystem.RefusedDollarsReserves, rejected.Reason, "precondition: the exact End-turn preview refuses reserves");
+
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var refusal = ui.Q<Label>("dollars-refusal");
+        Assert.AreEqual(SimBridge.ReasonText(t, rejected.Reason, c), refusal.text);
+        ui.Press("convert-dollars");
+        Assert.AreEqual(1, b.Queued.Count);
+        Assert.IsInstanceOf<ChooseEventOption>(b.Queued.Single());
+        Assert.IsFalse(b.Queued.OfType<ConvertDollars>().Any(), "the refused conversion is not queued");
+        Assert.AreEqual(SimBridge.ReasonText(t, rejected.Reason, c), refusal.text, "the preview's refusal stays shown");
+    }
+
     // R-MONEY-004 (owner, 2 November 2026: "Box shows queued order (Recommended)"): with a conversion queued, a new number
     // in the box replaces it at once, so the box, the Money line and what End turn converts agree; the reserve and the total
     // converted keep the turn's start until End turn. An amount the sim refuses clears the queue and shows the refusal.

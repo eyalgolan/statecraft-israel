@@ -16,7 +16,7 @@ using UnityEngine.UIElements;
 /// narration's position; one press or a covering layer stops both; the card's own loop is never stopped by the advisor.</summary>
 public class AdvisorMediaTests
 {
-    sealed class FakePicture : AdvisorMedia.IPicture
+    internal sealed class FakePicture : AdvisorMedia.IPicture
     {
         public bool Ready { get; set; }
         public double Time { get; set; }
@@ -29,7 +29,7 @@ public class AdvisorMediaTests
         public void Seek(double t) { Seeks.Add(t); Time = Seekable ? t : 0; }
     }
 
-    sealed class FakeOutput : DeclarationRecording.IOutput
+    internal sealed class FakeOutput : DeclarationRecording.IOutput
     {
         public bool Decoded = true; public bool IsPlaying { get; set; } public float Position { get; set; }
         public bool Played, Stopped;
@@ -40,7 +40,7 @@ public class AdvisorMediaTests
     }
 
     sealed class Done : DeclarationRecording.IRequest { public ulong Bytes => 0; public void Abort() { } }
-    static DeclarationRecording.Fetch Immediate => (url, done) => { done(AudioClip.Create("n", 4410, 1, 44100, false), null); return new Done(); };
+    internal static DeclarationRecording.Fetch Immediate => (url, done) => { done(AudioClip.Create("n", 4410, 1, 44100, false), null); return new Done(); };
 
     static readonly AdvisorCatalog.Media Row = new AdvisorCatalog.Media
     {

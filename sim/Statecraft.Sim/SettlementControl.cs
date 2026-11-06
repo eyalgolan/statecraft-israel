@@ -351,6 +351,9 @@ namespace Statecraft.Sim
             }
         }
 
+        // #2530: a count of 1 names the singular, as the UI's helper does.
+        static string TurnsLeft(int n) => n == 1 ? "1 turn" : FormattableString.Invariant($"{n} turns");
+
         /// <summary>Resolver step 10, the occupation timers, in ordinal id order (R-CTRL-011 to R-CTRL-013). An occupied place
         /// with no Israeli military unit left on its hex has been withdrawn from before the timer ended, which is a Raid
         /// (Q-OCC-2 (a)): its record becomes ownerless, so it is under enemy control again, its residents unchanged, and nothing is paid.
@@ -375,7 +378,7 @@ namespace Statecraft.Sim
                 s.Settlements[id] = new SettlementControl(x.Owner, left == 0 ? AwaitingEnd : Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, left, x.Fled);
                 why.Add(new Cause("map", id, left, left == 0
                     ? $"{name}: the occupation period has ended. It awaits a decision"
-                    : FormattableString.Invariant($"{name}: {left} turns of occupation left"), key: CauseKeys.OccupationCountdown));
+                    : FormattableString.Invariant($"{name}: {TurnsLeft(left)} of occupation left"), key: CauseKeys.OccupationCountdown));
             }
         }
 

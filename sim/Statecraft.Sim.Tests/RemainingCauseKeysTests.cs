@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Statecraft.Sim.Tests;
 
-/// <summary>#1682's 68 source producers, including rare branches. The pre-key constructor expressions are pinned to
+/// <summary>#1682's 68 source producers plus city_held (#1711), 69 in all, including rare branches. The pre-key constructor expressions are pinned to
 /// c7851de so Message, Target and Delta cannot drift while metadata is added. This is not runtime branch coverage.</summary>
 public class RemainingCauseKeysTests
 {
@@ -15,12 +15,13 @@ public class RemainingCauseKeysTests
 
     public static IEnumerable<object[]> Producers()
     {
-        yield return new object[] { "Cities.cs", "WorkersAssigned", "new Cause(\"city\", city, count - x.Employed, FormattableString.Invariant($\"{PlayerText.Settlement(c, city)}: {count} groups in work\")" };
+        yield return new object[] { "Cities.cs", "WorkersAssigned", "new Cause(\"city\", city, count - x.Employed, FormattableString.Invariant($\"{PlayerText.Settlement(c, city)}: {Groups(count)} in work\")" };
         yield return new object[] { "Cities.cs", "WagesPaid", "new Cause(\"city\", x.Id, paid, $\"{PlayerText.Settlement(c, x.Id)}: jobs paid {PlayerText.MoneyChange(c, \"treasury\", paid)}\"" };
-        yield return new object[] { "Cities.cs", "ImmigrantsHoused", "new Cause(\"city\", x.Id, absorbed, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {absorbed} groups of immigrants housed\")" };
-        yield return new object[] { "Cities.cs", "WorkersAssigned", "new Cause(\"city\", x.Id, work - housed.Employed, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {work} groups in work\")" };
-        yield return new object[] { "Cities.cs", "HousingShortage", "new Cause(\"city\", x.Id, over, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {over} groups more than its homes hold\")" };
-        yield return new object[] { "Cities.cs", "ImmigrantsWaiting", "new Cause(\"city\", x.Id, added, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {added} groups of immigrants arrived and wait for homes\")" };
+        yield return new object[] { "Cities.cs", "CityHeld", "new Cause(\"city\", x.Id, 0, $\"{PlayerText.Settlement(c, x.Id)}: held by the enemy; no job income or project work this turn\"" };   // R-CITY-010 (#1711)
+        yield return new object[] { "Cities.cs", "ImmigrantsHoused", "new Cause(\"city\", x.Id, absorbed, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {Groups(absorbed)} of immigrants housed\")" };
+        yield return new object[] { "Cities.cs", "WorkersAssigned", "new Cause(\"city\", x.Id, work - housed.Employed, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {Groups(work)} in work\")" };
+        yield return new object[] { "Cities.cs", "HousingShortage", "new Cause(\"city\", x.Id, over, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {Groups(over)} more than its homes hold\")" };
+        yield return new object[] { "Cities.cs", "ImmigrantsWaiting", "new Cause(\"city\", x.Id, added, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {Groups(added)} of immigrants arrived and wait for homes\")" };
         yield return new object[] { "Military.cs", "RecruitsVeteran", "new Cause(\"city\", \"units\", u.Strength, \"Recruits became veteran soldiers\"" };
         yield return new object[] { "Corridors.cs", "CorridorStarted", "new Cause(\"map\", def.Id, 1, $\"{name}: a group of halutzim began building, cost {PlayerText.Money(c, \"treasury\", cost)}\"" };
         yield return new object[] { "Corridors.cs", "CorridorCancelled", "new Cause(\"map\", work.Id, -1, $\"{SegmentName(def, index)}: the halutzim stopped building; the Money spent is not returned\"" };
@@ -37,7 +38,7 @@ public class RemainingCauseKeysTests
         yield return new object[] { "Projects.cs", "ProjectCancelled", "new Cause(\"city\", p.City, -1, $\"{PlayerText.Settlement(c, p.City)}: {k.Name} was cancelled; the Money spent is not returned\"" };
         yield return new object[] { "Projects.cs", "ProjectCompleted", "new Cause(\"city\", p.City, 1, $\"{PlayerText.Settlement(c, p.City)}: {k.Name} was finished\"" };
         yield return new object[] { "Pools.cs", "ArmsBought", "new Cause(\"economy\", \"arms\", count, FormattableString.Invariant($\"Bought {count} Arms, cost {PlayerText.Money(c, \"treasury\", cost)}\")" };
-        yield return new object[] { "Pools.cs", "FoodHarvest", "new Cause(\"economy\", \"food\", yield, FormattableString.Invariant($\"{f.Name}: the plowed land yielded {yield} units of Food\")" };
+        yield return new object[] { "Pools.cs", "FoodHarvest", "new Cause(\"economy\", \"food\", yield, FormattableString.Invariant($\"{f.Name}: the plowed land yielded {Units(yield)} of Food\")" };
         yield return new object[] { "Pools.cs", "FoodShortage", "new Cause(\"economy\", \"food\", 0, FormattableString.Invariant($\"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet\")" };
         yield return new object[] { "Pools.cs", "FoodWithoutImports", "new Cause(\"economy\", \"food\", -eaten, FormattableString.Invariant($\"No Food imported (foreign currency crisis): the stock fell to {s.Food} units\")" };
         yield return new object[] { "Prisoners.cs", "PrisonerFood", "new Cause(\"economy\", \"food\", -eaten, FormattableString.Invariant($\"The prisoners held ate {eaten} units of Food\")" };
@@ -81,7 +82,7 @@ public class RemainingCauseKeysTests
         yield return new object[] { "SettlementControl.cs", "OccupationStarted", "new Cause(\"map\", id, turns, FormattableString.Invariant($\"{name} is occupied for {turns} turns: an Israeli unit stays there. \") + Residents(x)" };
         yield return new object[] { "SettlementControl.cs", "PendingBecameRaid", "new Cause(\"map\", id, 0, $\"{c.SettlementNames[id]}: no decision was made before the game ended, so it counts as a raid\"" };
         yield return new object[] { "SettlementControl.cs", "OccupationLostUnit", "new Cause(\"map\", id, 0, $\"{name}: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. {Residents(x)}\"" };
-        yield return new object[] { "SettlementControl.cs", "OccupationCountdown", "new Cause(\"map\", id, left, left == 0\n                    ? $\"{name}: the occupation period has ended. It awaits a decision\"\n                    : FormattableString.Invariant($\"{name}: {left} turns of occupation left\")" };
+        yield return new object[] { "SettlementControl.cs", "OccupationCountdown", "new Cause(\"map\", id, left, left == 0\n                    ? $\"{name}: the occupation period has ended. It awaits a decision\"\n                    : FormattableString.Invariant($\"{name}: {TurnsLeft(left)} of occupation left\")" };
         yield return new object[] { "SettlementControl.cs", "DepopulationSupport", "new Cause(\"map\", SupportIndicator, change, $\"{PlayerText.Change(c, SupportIndicator, change)} (the places depopulated by Deport)\"" };
     }
 
@@ -97,9 +98,9 @@ public class RemainingCauseKeysTests
     }
 
     [Fact]
-    public void InventoryContainsExactly68ProducerSites()
+    public void InventoryContainsExactly69ProducerSites()
     {
-        Assert.Equal(68, Producers().Count());
+        Assert.Equal(69, Producers().Count());
     }
 
     [Fact]
@@ -115,7 +116,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(123, sites);   // 123 with #2471's gdd-0.3 field Food line (R-FIELD-002); 122 with #2527's FoodImported and the conversion's fx_reserves line; 120 with #2457's event Debt line (R-EFX-009); 119 with #1700 slice B's ProjectBuilderFreed; 118 with #1700's builders (R-CITY-011: two ProjectBuilder lines, ProjectWaiting, the build order's job-default line); 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
+        Assert.Equal(126, sites);   // 126 with #2558: EconomySystem.MoneyLine, the event Debt line worded for the Money row; 125 with #1711's CityHeld (R-CITY-010); 124 with #2534's enemy attack-order line (Combat.Give marks the order's own cause); 123 with #2471's gdd-0.3 field Food line (R-FIELD-002); 122 with #2527's FoodImported and the conversion's fx_reserves line; 120 with #2457's event Debt line (R-EFX-009); 119 with #1700 slice B's ProjectBuilderFreed; 118 with #1700's builders (R-CITY-011: two ProjectBuilder lines, ProjectWaiting, the build order's job-default line); 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
     }
 
     [Fact]

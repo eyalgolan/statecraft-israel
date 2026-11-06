@@ -69,6 +69,23 @@ public class DefenceScreenTests
         }
     }
 
+    /// <summary>#2530: the legacy loop's ceasefire clock names one week in the singular ("in 1 week"); the sim's English
+    /// and the Hebrew label are unchanged for every other count.</summary>
+    [Test]
+    public void TheCeasefireClockNamesOneWeekInTheSingular()
+    {
+        var ui = new UiTestKit();
+        using (ui)
+        {
+            ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
+            var bridge = new SimBridge(GameSession.New(SimBridgeGddTests.Legacy, GoldenRun.Seed, Mode.Historical), Text);
+            bridge.Session.State.Rung = 5;
+            bridge.Session.State.CeasefireWeeksLeft = 1;
+            using var defence = new DefencePresenter(ui.Root, bridge, Text);
+            Assert.AreEqual("If full war goes on, the UN imposes a ceasefire in 1 week", ui.Q<Label>("ceasefire").text);
+        }
+    }
+
     [Test]
     public void OrdersAreQueuedAndTheTurnCarriesThemOut()
     {

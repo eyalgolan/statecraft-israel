@@ -489,7 +489,7 @@ namespace Statecraft.Sim
                 c.ProjectKindsOfOtherRulesets = kinds.Except(c.ProjectKinds).ToList();
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
                 if (c.Ruleset == SaveGame.Gdd03Ruleset) ApplyGdd03Start(readFile, c);
-                ValidateGdd(c, settlementIds);
+                ValidateGdd(c, settlementIds, settlements.Where(x => x.type is "city" or "town").Select(x => x.id).ToList());
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
@@ -1312,7 +1312,7 @@ namespace Statecraft.Sim
         }
 
         /// <summary>The GDD v0.1 city data and rules (Phase 1 PR 3), checked only when systems.loop is gdd.</summary>
-        static void ValidateGdd(Content c, List<string> settlementIds)
+        static void ValidateGdd(Content c, List<string> settlementIds, List<string> cityAndTownIds)
         {
             const string cf = "cities.yaml", uf = "unit_types.yaml";
             Unique(cf, "cities", c.Cities.Select(x => x.Id));
@@ -1410,6 +1410,18 @@ namespace Statecraft.Sim
                 throw new ContentException(uf, "types[veteran_soldier]", "required as an Israeli infantry unit for recruit promotion");
             // R-CITY-003: the arrivals are spread over the cities, so there must be one to take them.
             if (c.Cities.Count == 0) throw new ContentException(cf, "cities", "the GDD loop needs at least one city to take the arrivals");
+            // R-CITY-006 (#2732): the cities are exactly the settlement file's city and town rows, in that file's order.
+            foreach (var x in c.Cities)
+                if (!cityAndTownIds.Contains(x.Id))
+                    throw new ContentException(cf, $"cities[{x.Id}].id", $"is not a city or town row of {SettlementsFileName}");
+            for (int i = 0; i < cityAndTownIds.Count; i++)
+            {
+                if (i >= c.Cities.Count)
+                    throw new ContentException(cf, "cities", $"is missing {cityAndTownIds[i]}, a city or town row of {SettlementsFileName}");
+                if (c.Cities[i].Id != cityAndTownIds[i])
+                    throw new ContentException(cf, FormattableString.Invariant($"cities[{i}].id"),
+                        $"is {c.Cities[i].Id}; {SettlementsFileName}'s city and town rows give {cityAndTownIds[i]} here");
+            }
             foreach (var (file, r) in new[] { ("rules.yaml", c.Rules) }.Concat(c.EraRules.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => ("rules/" + kv.Key + ".yaml", kv.Value))))
             {
                 var m = r.Mvp ?? throw new ContentException(file, "mvp", "required when eras.yaml systems.loop is gdd");
@@ -1668,7 +1680,8 @@ namespace Statecraft.Sim
                 if (e.From > c.Rules.Start)
                     throw new ContentException(e.File, $"events[{e.Id}].from", FormattableString.Invariant($"a Deport card opens at the game's start ({c.Rules.Start:yyyy-MM-dd}), so a Deport on any turn fires it"));
                 foreach (var (key, set) in new[] { ("conditions", e.Conditions.Count > 0), ("requires", e.Requires.Count > 0), ("site", e.Site != ""),
-                             ("objective", e.Objective != ""), ("kind", e.Kind != EventKinds.Historical), ("variants", e.Variants.Count > 0) })
+                             ("objective", e.Objective != ""), ("kind", e.Kind != EventKinds.Historical), ("variants", e.Variants.Count > 0),
+                             ("front_quiet", e.FrontQuiet != "") })
                     if (set) throw new ContentException(e.File, $"events[{e.Id}].{key}", "a Deport card waits for nothing but its Deport");
                 if (cardOf.TryGetValue(e.Deported, out var first))
                     throw new ContentException(e.File, $"events[{e.Id}].deported", $"'{e.Deported}' already has a card, '{first}': one Deport raises one card");
@@ -1826,6 +1839,21 @@ namespace Statecraft.Sim
                 if (o.PartOf != "" && (o.ReferenceDate < c.Rules.Start || o.ReferenceDate >= c.End))
                     throw new ContentException(ObjectivesFileName, at + ".reference_date",
                         FormattableString.Invariant($"must be inside the MVP ({c.Rules.Start:yyyy-MM-dd} to {c.End:yyyy-MM-dd})"));
+                // R-OBJ-003: the card fires at the end of the turn its objective is completed in, so nothing but the objective may
+                // hold it back: its window runs from the game's start to its end, and it has no requires or conditions. An event
+                // may not span an era boundary (EventRules), so with several eras the card's own era bounds it instead.
+                // EventRules has already checked the card exists; only the GDD loop fires it, so only it checks this.
+                var card = c.Events.First(e => e.Id == o.Card);
+                string CardField(string key) => $"events[{card.Id}].{key}";
+                var era = c.EraAt(card.From);
+                var opens = era?.From ?? c.Rules.Start;
+                var closes = era != null && era.To < c.End ? era.To : c.End;
+                if (card.From > opens)
+                    throw new ContentException(card.File, CardField("from"), FormattableString.Invariant($"an objective's card opens at the game's start, or its era's ({opens:yyyy-MM-dd}), so it fires the turn its objective is completed"));
+                if (card.To is DateTime to && to < closes)
+                    throw new ContentException(card.File, CardField("to"), FormattableString.Invariant($"an objective's card stays open to the game's end, or its era's ({closes:yyyy-MM-dd}), so it fires the turn its objective is completed"));
+                foreach (var (key, set) in new[] { ("requires", card.Requires.Count > 0), ("conditions", card.Conditions.Count > 0) })
+                    if (set) throw new ContentException(card.File, CardField(key), "an objective's card waits for nothing but its objective");
                 if (o.CompletesWhen!.Absorbed != null) continue;   // R-OBJ-004 has no site; the GDD loop always has cities
                 if (o.CompletesWhen.CorridorComplete != "")
                 {
@@ -1865,9 +1893,9 @@ namespace Statecraft.Sim
         static readonly string[] SiteKinds = { Projects.YishuvKind, "field", "swamp", "military_camp", "hakhshara" };
         static readonly string[] CampKinds = { "military_camp", "hakhshara" };
 
-        /// <summary>The designated sites (sites.yaml, Phase 1 PR 5): sourced facts on a land hex that holds no 1948 settlement,
-        /// founded inside the MVP's years (D-B1). The armistice line hexes are not checked: that file is display only, and a
-        /// site may sit on a line hex (#378, question 2).</summary>
+        /// <summary>The designated sites (sites.yaml, Phase 1 PR 5): sourced facts on a land hex that holds no 1948 settlement
+        /// and no settlement target, founded inside the MVP's years (D-B1). The armistice line hexes are not checked: that file
+        /// is display only, and a site may sit on a line hex (#378, question 2).</summary>
         static void ValidateSites(Content c)
         {
             const string sf = "sites.yaml";
@@ -1886,6 +1914,11 @@ namespace Statecraft.Sim
                 var settled = c.SettlementHexes.FirstOrDefault(h => h.Q == x.Q && h.R == x.R);
                 if (settled != null)
                     throw new ContentException(sf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} holds the 1948 settlement {settled.Id} ({SettlementHexesFileName})"));
+                // R-CTRL-020 (#2804): a depopulated place closes its target's hex, which for Ramla (TargetOnANeighbour) is not a
+                // settlement's hex, and pioneer work never asks DepopulatedAt; so no site may stand on a target's hex either.
+                var target = c.SettlementTargets.FirstOrDefault(t => t.Q == x.Q && t.R == x.R);
+                if (target != null)
+                    throw new ContentException(sf, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is the settlement target {target.Id} ({SettlementTargetsFileName})"));
                 if (x.Kinds.Count == 0) throw new ContentException(sf, at + ".kinds", "required: one or more of " + string.Join(", ", SiteKinds));
                 foreach (var k in x.Kinds)
                     if (!SiteKinds.Contains(k)) throw new ContentException(sf, at + ".kinds", $"unknown kind '{k}' ({string.Join(", ", SiteKinds)})");
@@ -1951,7 +1984,7 @@ namespace Statecraft.Sim
                 var at = $"locations[{x.Id}]";
                 Named(lf, at + ".name", x.Name);
                 Named(lf, at + ".name_he", x.NameHe);   // the map labels it in both languages (#1008)
-                if (x.NameHeReview != "" && x.NameHeReview != "agent-checked")
+                if (x.NameHeReviewGiven && x.NameHeReview != "agent-checked")
                     throw new ContentException(lf, at + ".name_he_review", $"'{x.NameHeReview}' is not agent-checked (delete the line once a native speaker, or an AI-assisted contributor who discloses it, has reviewed the name, #564)");
                 if (x.NameHeSources.Count == 0) throw new ContentException(lf, at + ".name_he_sources", "required: a Hebrew name needs a source");
                 for (int i = 0; i < x.NameHeSources.Count; i++)
@@ -2040,8 +2073,9 @@ namespace Statecraft.Sim
 
         /// <summary>Targets whose capture hex is a neighbour of their settlement's hex, not that hex (owner on #1796, 26 October
         /// 2026, "Contested + move target"): at 4.4 km (#1183) Ramla shares (-4, 24) with Rehovot, so a unit on Rehovot's hex
-        /// would capture Ramla. Its target is the neighbour nearest Ramla's point, cited in settlement_targets.yaml.</summary>
-        internal static readonly HashSet<string> TargetOnANeighbour = new HashSet<string>(StringComparer.Ordinal) { "ramla" };
+        /// would capture Ramla. Its target is the neighbour nearest Ramla's point, cited in settlement_targets.yaml.
+        /// The ruling names the hex, so the loader pins it (#2804): another neighbour is a load error too.</summary>
+        internal static readonly Dictionary<string, (int Q, int R)> TargetOnANeighbour = new Dictionary<string, (int Q, int R)>(StringComparer.Ordinal) { ["ramla"] = (-3, 24) };
 
         /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex that is
         /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), or for a
@@ -2058,8 +2092,10 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(x.Q, x.R);
                 if (hex == null || !hex.Land)
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
-                if (TargetOnANeighbour.Contains(x.Id))
+                if (TargetOnANeighbour.TryGetValue(x.Id, out var ruled))
                 {
+                    if ((x.Q, x.R) != ruled)
+                        throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not q={ruled.Q} r={ruled.R}, the hex R-CTRL-001 names for {x.Id} (the neighbour nearest its point; owner on #1796)"));
                     if (!c.SettlementHexes.Any(h => h.Id == x.Id && Movement.Neighbours.Any(d => h.Q + d.Q == x.Q && h.R + d.R == x.R)))
                         throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not next to {x.Id}'s hex in {SettlementHexesFileName}"));
                 }

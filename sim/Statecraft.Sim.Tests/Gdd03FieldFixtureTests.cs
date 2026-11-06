@@ -36,7 +36,7 @@ public class Gdd03FieldFixtureTests
     static Gdd03SyntheticMonthContext MonthAt(Content c, GameState s, int ordinal, params string[] notHeldAtFreeze) =>
         Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, ordinal, s.PopulationLedger.Units,
             Gdd03FieldFixture.Fields(c).Select(f => new Gdd03SyntheticFacilitySnapshot(f.Id, !notHeldAtFreeze.Contains(f.Id), 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
     static HashSet<string> AllHeld(Content c) => Gdd03FieldFixture.Fields(c).Select(f => f.Id).ToHashSet(StringComparer.Ordinal);
     static void Refused(GameState s, Action a, string? message = null)
     {
@@ -239,7 +239,7 @@ public class Gdd03FieldFixtureTests
         Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, s.PopulationLedger.Units,
             Gdd03FieldFixture.Fields(c).Select(f => new Gdd03SyntheticFacilitySnapshot(f.Id, !notHeldAtFreeze.Contains(f.Id), 1))
                 .Concat(new[] { new Gdd03SyntheticFacilitySnapshot(industry, true, 1), new Gdd03SyntheticFacilitySnapshot(Course, true, 3) }),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
 
     // R-VET-001, R-VET-002 (#2468): one worked, still-held field month gives its farmer exactly one work XP. A field lost
     // after the freeze, one not held at the freeze, a farmer moved to another field after the freeze (the wrong target), an
@@ -299,6 +299,26 @@ public class Gdd03FieldFixtureTests
         Assert.Equal(start.Equipment.Canonical(), vet.Equipment.Canonical());
         Assert.Equal((start.Qualification, start.CombatXp), (vet.Qualification, vet.CombatXp));
         Assert.Equal(5, f.Yield(r, WorkMonth(c, s, industry.Id), AllHeld(c)).Fields[V1]);
+    }
+
+    // R-VET-001 (#2804 item 12): the producer checks for a veteran before AfterWork, so a veteran farmer at int.MaxValue
+    // work XP (the ledger allows any nonnegative work XP) keeps its XP instead of overflowing, and its field still yields
+    // the veteran 5. TEST-ONLY SYNTHETIC work XP.
+    [Fact] public void AVeteranFarmerAtMaxWorkXpKeepsItsXp()
+    {
+        var c = Real(); var r = Rules(c);
+        var industry = new Gdd03FixtureSlot("synthetic-industry", Gdd03FixtureWork.Industry, 1, "winery");
+        var s = WorkState(c, industry, new PopulationUnit(0, PopulationStatus.FreeCivilian, c.RequirePopulationInteger("reception.turns"),
+            InValleys, PopulationAssignment.Unassigned, CivilianProfession.Farmer, CivilianTier.Veteran, int.MaxValue, "infantry", 4,
+            new PopulationEquipment(toolsId: "tools/0", toolsPaid: true)));
+        var f = new Gdd03FieldFixture(c, s, new[] { industry });
+        f.Staff(0, V1, israeliHeld: true);
+        var month = WorkMonth(c, s, industry.Id);
+        var before = s.Describe();
+        var next = Gdd03FieldFixture.ResolveWorkXp(c, s, month, AllHeld(c));
+        Assert.Equal((int.MaxValue, CivilianTier.Veteran), (next.PopulationLedger.Get(0).WorkXp, next.PopulationLedger.Get(0).Tier));
+        Assert.Equal(before, s.Describe());
+        Assert.Equal(5, f.Yield(r, month, AllHeld(c)).Fields[V1]);
     }
 
     // #2468 review: a snapshot with more working farmers on a field than its `field.slots` (1) is refused whole, as
@@ -384,7 +404,7 @@ public class Gdd03FieldFixtureTests
         Assert.Throws<InvalidOperationException>(() => new Gdd03FieldFixture(c, s, Array.Empty<Gdd03FixtureSlot>()));
         Assert.Throws<InvalidOperationException>(() => Gdd03FieldFixture.ResolveWorkXp(c, s,
             Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, Array.Empty<PopulationUnit>(),
-                Array.Empty<Gdd03SyntheticFacilitySnapshot>(), Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(),
+                Array.Empty<Gdd03SyntheticFacilitySnapshot>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(),
                 Array.Empty<Gdd03SyntheticPendingEntry>()), new HashSet<string>()));
         Assert.Equal(before, s.Describe());
     }

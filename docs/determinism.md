@@ -149,8 +149,9 @@ turn 35), `hash1952` `62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8
 R-LOOP-003) and `scenario-mvp-absorb-first` `59ea3181`. The owner tags the last pre-cutover commit `pre-gdd-v0.1`.
 
 `Scenario` lives in `Statecraft.Sim` next to `GoldenRun`, so Unity, which gets only `Statecraft.Sim.dll` and
-`YamlDotNet.dll` from `tools/build_sim_for_unity.sh`, can play the same runs (#394). The scenario files, the manifest and the
-snapshots stay with the tests and are not shipped to the player.
+`YamlDotNet.dll` from `tools/build_sim_for_unity.sh`, can play the same runs (#394). `ContentSync` copies the manifest and the scenario files into the
+player (`Assets/StreamingAssets/golden`) before every player build, for the player's own golden check (`?golden` on WebGL,
+`-golden` on desktop). Of these, only the snapshots (the `golden/*.txt` files other than the manifest) stay with the tests.
 
 **Invariants.** A hash says something changed; `sim/Statecraft.Sim.Tests/golden/invariants.yaml` says whether it is
 still plausible. Each entry names a golden run (`1950` or `1952`), a value (an indicator id, or `treasury`, `debt`,

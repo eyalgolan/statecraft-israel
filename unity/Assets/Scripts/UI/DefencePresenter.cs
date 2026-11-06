@@ -124,6 +124,11 @@ namespace Statecraft.Game.UI
             if (SameAsToday(level)) Withdraw(new SetMobilization(0)); else bridge.Queue(new SetMobilization(level));
         }
 
+        /// <summary>#2530: "1 week" in English; the Hebrew names the number in a label, grammatical for any count.</summary>
+        static string Weeks(UiText text, int weeks) => text["ui.lang"] == UiLanguage.Hebrew
+            ? weeks.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            : weeks == 1 ? "1 week" : weeks + " weeks";
+
         /// <summary>The string key for a turn length. A switch, so a new TurnLength value fails loudly (and in a test).</summary>
         public static string TurnKey(TurnLength length)
         {
@@ -172,7 +177,7 @@ namespace Statecraft.Game.UI
             }
             var ceasefire = screen.Q<Label>("ceasefire");
             if (c.IsGdd) ceasefire.text = "";   // the GDD loop retires the clock (R-WAR-003): no ceasefire to promise
-            else if (s.Rung == 5 && target == 5) ceasefire.text = text.Format("defence.ceasefire", s.CeasefireWeeksLeft);
+            else if (s.Rung == 5 && target == 5) ceasefire.text = text.Format("defence.ceasefire", Weeks(text, s.CeasefireWeeksLeft));
             else if (s.Rung == 5) ceasefire.text = text["defence.ceasefire_stops"];                       // a lowering is queued
             else if (target == 5) ceasefire.text = text.Format("defence.ceasefire_starts", SecuritySystem.CeasefireWeeksAfter(c, s.Date, s.Rung, s.CeasefireWeeksLeft, target));
             else ceasefire.text = "";

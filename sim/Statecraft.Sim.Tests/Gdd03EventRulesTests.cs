@@ -436,6 +436,23 @@ public class Gdd03EventRulesTests
         Assert.EndsWith("(Fixture)", line.Message);
         Assert.Equal((CauseKeys.EventAmount, 26.0), (Assert.Single(shown).Key, shown[0].Delta));
     }
+    // R-EFX-009 under legacy (#2733 item 17): the plain fixture has no GDD loop at all, and debt_dollars still adds no
+    // Debt, takes no Treasury, and neither the choice nor its preview has a debt line.
+    [Fact]
+    public void DebtDollarsDoNothingUnderLegacy()
+    {
+        var c = ContentLoader.Load(Fixture.Write(null, new() { ["probe.yaml"] = Card(option: "    debt_dollars: 52\n") }));
+        Assert.False(c.IsGdd);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.PendingEvents.Add("probe");
+        var (debt, treasury) = (s.Debt, s.Treasury);
+        var preview = EventSystem.OptionEffects(c, s, c.Events.Single(e => e.Id == "probe").Options[0]);
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal((debt, treasury), (s.Debt, s.Treasury));
+        Assert.DoesNotContain(why, x => x.Target == "debt");
+        Assert.DoesNotContain(preview, x => x.Target == "debt");
+    }
     // R-EFX-009, R-EVT-003: a disloyal minister's half share halves the Debt with the foreign currency.
     [Fact]
     public void DelegatedHalfShareHalvesTheDebt()
@@ -502,6 +519,25 @@ public class Gdd03EventRulesTests
         Assert.Equal(new DateTime(1950, 4, 15), CardDate("maabarot_policy"));
         Assert.Equal(new DateTime(1951, 3, 15), CardDate("iraqi_exodus"));
         Assert.Equal(new DateTime(1951, 11, 15), CardDate("forex_crisis_1951"));
+    }
+    // #2558: in the Money row the launch's Debt line reads as its Money effect, Money IL -18.6m, not as a Debt gain; the
+    // title and its Hebrew stay in the Args, so CauseText words it from why.cause.event_amount_from in both languages.
+    // Any other line is passed through as it is.
+    [Fact]
+    public void IsraelBondsDebtLineReadsAsItsMoneyEffectInTheMoneyRow()
+    {
+        var c = Real(true);
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        s.Date = new DateTime(1951, 5, 15); s.PendingEvents.Add("israel_bonds");
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "israel_bonds", "launch", why));
+        var debt = why.Single(x => x.Target == "debt" && x.Key == CauseKeys.EventAmount);
+        var line = EconomySystem.MoneyLine(c, debt);
+        Assert.Equal(("treasury", CauseKeys.EventAmount, "Money IL -18.6m (Israel Bonds)"), (line.Target, line.Key, line.Message));
+        Assert.Equal(EconomySystem.MoneyDelta(debt), line.Delta, 12);
+        Assert.Equal(debt.Args, line.Args);
+        Assert.True(EconomySystem.MovesMoney(line));
+        foreach (var other in why.Where(x => x != debt)) Assert.Same(other, EconomySystem.MoneyLine(c, other));
     }
     static readonly string[] SourceBytes =
     {

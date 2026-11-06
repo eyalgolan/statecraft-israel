@@ -226,6 +226,54 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
         Assert.Contains(why, w => w.Target == "town_a.housing_capacity" && w.Delta == -old);
     }
 
+    // Red-first prediction at ae4bfdaab: +10 wraps to a cut; R-EFX-004 requires saturation with the applied gain of 5.
+    [Fact]
+    public void HousingCapacityGainSaturatesAtIntMaxValue()
+    {
+        var c = Load(Event("    city_effects:\n      - { city: town_a, field: housing_capacity, delta: 10 }\n"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var city = s.Cities["town_a"];
+        s.Cities["town_a"] = new City(city.Id, int.MaxValue - 5, city.JobSlots, city.Civilians, city.Employed,
+            city.Refugees, city.Recruits, city.Condition, city.Craftsmen, city.JobsDefault, city.Qualified);
+        var why = new List<Cause>();
+
+        Assert.Null(EventSystem.Choose(c, s, "arms", "accept", why));
+
+        Assert.Equal(int.MaxValue, s.Cities["town_a"].HousingCapacity);
+        Assert.Equal(5.0, Assert.Single(why, w => w.Target == "town_a.housing_capacity").Delta);
+    }
+
+    // Red-first prediction at ae4bfdaab: +10 wraps to employed; R-EFX-004 requires saturation with the applied gain of 5.
+    [Fact]
+    public void JobSlotGainSaturatesAtIntMaxValue()
+    {
+        var c = Load(Event("    city_effects:\n      - { city: town_a, field: job_slots, delta: 10 }\n"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var city = s.Cities["town_a"];
+        s.Cities["town_a"] = new City(city.Id, city.HousingCapacity, int.MaxValue - 5, city.Civilians, city.Employed,
+            city.Refugees, city.Recruits, city.Condition, city.Craftsmen, city.JobsDefault, city.Qualified);
+        var why = new List<Cause>();
+
+        Assert.Null(EventSystem.Choose(c, s, "arms", "accept", why));
+
+        Assert.Equal(int.MaxValue, s.Cities["town_a"].JobSlots);
+        Assert.Equal(5.0, Assert.Single(why, w => w.Target == "town_a.job_slots").Delta);
+    }
+
+    // Red-first prediction at ae4bfdaab: already passes; R-EFX-004 must keep the exact in-range result and cause unchanged.
+    [Fact]
+    public void InRangeHousingCapacityGainIsUnchanged()
+    {
+        var c = Load(Event("    city_effects:\n      - { city: town_a, field: housing_capacity, delta: 10 }\n"));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var why = new List<Cause>();
+
+        Assert.Null(EventSystem.Choose(c, s, "arms", "accept", why));
+
+        Assert.Equal(22, s.Cities["town_a"].HousingCapacity);
+        Assert.Equal(10.0, Assert.Single(why, w => w.Target == "town_a.housing_capacity").Delta);
+    }
+
     // Structured effects act on GDD records, so the legacy loop (no cities, no units) refuses them at load.
     [Fact]
     public void TheLegacyLoopRefusesThem()
@@ -331,6 +379,23 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
         Assert.Null(EventSystem.Choose(c, s, "arms", "accept", why));
         Assert.Contains(why, w => w.System == "events" && w.Target == "industry" && w.Delta == 1);
         Assert.Null(Projects.CheckCity(c, s, "industry", "town_a", 1, 1));
+    }
+
+    // R-EFX-008 (#2733 item 16): the refusal of a locked kind changes nothing. Attention is refunded (start_project's base cost is
+    // 1 in the fixture), the state is the no-order preview's, and no project or Why line is added.
+    [Fact]
+    public void ALockedProjectsRefusalChangesNothing()
+    {
+        var c = Load(Event(UnlockIndustry), projects: LockedIndustry);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal(1.0, c.Rules.AttentionCost[Projects.StartProjectKind]);
+        var none = Simulation.Preview(c, s, Array.Empty<Command>());
+        var r = Simulation.Preview(c, s, new Command[] { new StartProject("industry", "town_a", 1, 1) });
+        Assert.Equal("An industry project is not available yet", Assert.Single(r.Rejected).Reason);
+        Assert.Equal(s.Attention, r.State.Attention);
+        Assert.Equal(none.State.Hash(), r.State.Hash());
+        Assert.Empty(r.State.CityProjects);
+        Assert.Equal(none.Why.Select(w => (w.Key, w.Target, w.Message)), r.Why.Select(w => (w.Key, w.Target, w.Message)));
     }
 
     // R-EFX-008: the unlock is game state, so a save replays it to the same hash.

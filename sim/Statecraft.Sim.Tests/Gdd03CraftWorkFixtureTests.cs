@@ -43,7 +43,7 @@ public class Gdd03CraftWorkFixtureTests
     static Gdd03SyntheticMonthContext Month(GameState s, int ordinal) => Gdd03SyntheticMonthContext.CreateSynthetic(
         SaveGame.Gdd03Ruleset, ordinal, s.PopulationLedger.Units,
         new[] { Industry, Workshop, Builder, Field, Course, "teacher" }.Select(f => new Gdd03SyntheticFacilitySnapshot(f, true, 9)),
-        Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+        Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
 
     // R-CRAFT-002: an apprentice at 35 Industry or workshop months reaches 36 and turns expert. That month's output is
     // quoted at the snapshot's apprentice tier (2x); the next month's snapshot holds an expert (3x). Id, assignment,

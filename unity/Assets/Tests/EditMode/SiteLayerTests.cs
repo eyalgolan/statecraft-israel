@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Map;
+using Statecraft.Game.Map.Kits;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -65,6 +66,74 @@ public class SiteLayerTests
                 Assert.IsTrue(layer.Columns.ContainsKey(SiteLayer.Prefix + Id), "its columns are kept for the name pill");
             }
             else Assert.AreEqual("Cube", place.GetComponent<MeshFilter>().sharedMesh.name, "with the kits off, the kibbutz marker box");
+        }
+        finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
+    }
+
+    /// <summary>Issue #2812 ("Ground change only"): a built field site in a yishuv's hex is no place of its own. Built Beit
+    /// Kama and built Beit Kama fields, both at (-9, 32) in sites.yaml, give one place (one pill) and one kit or box there.</summary>
+    [Test]
+    public void ABuiltYishuvAndItsBuiltFieldGiveOnePlaceAndOneKitOnTheirHex()
+    {
+        var yishuv = C.Sites.Single(x => x.Id == "beit_kama"); var field = C.Sites.Single(x => x.Id == "beit_kama_field");
+        Assert.AreEqual((-9, 32), (yishuv.Q, yishuv.R)); Assert.AreEqual((yishuv.Q, yishuv.R), (field.Q, field.R), "one hex");
+        Assert.Contains(Projects.YishuvKind, yishuv.Kinds); Assert.Contains(Projects.FieldKind, field.Kinds);
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        try
+        {
+            var map = Map();
+            var layer = new GameObject("Sites").AddComponent<SiteLayer>();
+            layer.Render(new[] { SiteWork.Built(yishuv.Id, new DateTime(1949, 4, 18)), SiteWork.Built(field.Id, new DateTime(1949, 6, 30)) }, C, map);
+            Assert.AreEqual(new[] { SiteLayer.Prefix + yishuv.Id }, layer.Places.Select(p => p.Id).ToArray(), "the yishuv is the hex's one place");
+            Assert.AreEqual(1, layer.transform.childCount, "one kit or box on the hex");
+            Assert.AreEqual(SiteLayer.Prefix + yishuv.Id, layer.transform.GetChild(0).name);
+            Assert.IsFalse(layer.Columns.ContainsKey(SiteLayer.Prefix + field.Id), "no kit for the field");
+        }
+        finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
+    }
+
+    /// <summary>Issue #2812 ("Ground change only"): a drained swamp (the built hula site, kinds [swamp]) is no place: no
+    /// pill, no kit and no box.</summary>
+    [Test]
+    public void ADrainedSwampGivesNoPlaceAndNoKit()
+    {
+        var swamp = C.Sites.Single(x => x.Id == "hula");
+        Assert.Contains(Projects.SwampKind, swamp.Kinds);
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        try
+        {
+            var map = Map();
+            var layer = new GameObject("Sites").AddComponent<SiteLayer>();
+            layer.Render(new[] { SiteWork.Built(swamp.Id, new DateTime(1951, 6, 30)) }, C, map);
+            Assert.IsEmpty(layer.Places, "no place, so no pill");
+            Assert.AreEqual(0, layer.transform.childCount, "no kit and no box");
+            Assert.IsEmpty(layer.Columns);
+        }
+        finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
+    }
+
+    /// <summary>Issue #2812: a built camp site (tzrifin, kinds [military_camp]) is still a place with its own camp kit.</summary>
+    [Test]
+    public void ABuiltCampStillGetsItsOwnKit()
+    {
+        var camp = C.Sites.Single(x => x.Id == "tzrifin");
+        Assert.IsTrue(Projects.IsCamp(camp));
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        try
+        {
+            var map = Map();
+            var layer = new GameObject("Sites").AddComponent<SiteLayer>();
+            layer.Render(new[] { SiteWork.Built(camp.Id, new DateTime(1949, 6, 30)) }, C, map);
+            Assert.AreEqual(new[] { SiteLayer.Prefix + camp.Id }, layer.Places.Select(p => p.Id).ToArray(), "the camp is a place");
+            Assert.AreEqual(1, layer.transform.childCount);
+            Assert.AreEqual(SettlementKits.CampType, SiteLayer.KitOf(camp, layer.Places[0]).Type, "its kit is the camp's");
+            var mesh = layer.transform.GetChild(0).GetComponent<MeshFilter>().sharedMesh;
+            if (map.KitsShown)
+            {
+                Assert.AreNotEqual("Cube", mesh.name, "a camp kit, not the marker box");
+                Assert.IsTrue(layer.Columns.ContainsKey(SiteLayer.Prefix + camp.Id));
+            }
+            else Assert.AreEqual("Cube", mesh.name, "with the kits off, the marker box");
         }
         finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
     }

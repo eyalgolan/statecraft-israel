@@ -193,6 +193,23 @@ public class StartingForcesTests
         Assert.False(s.Units.ContainsKey(1));
     }
 
+    // R-UNIT-009: like a starting force, a due arrival ignores the stack limit and what else stands on its hex (#2806 item
+    // 13). Two starting rows fill hex (1, 0) to the fixture's limit of two; the row due on 20 June still arrives there.
+    [Fact]
+    public void ADueArrivalIgnoresAFullStack()
+    {
+        var c = Load(Row("late", "israel", 20, from: "1948-06-20", asOf: "1948-06-20"), Row("first", "israel", 30), Row("second", "israel", 30));
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        Assert.Equal(new[] { (0, 1, 0), (1, 1, 0) }, s.Units.Values.Select(u => (u.Id, u.Q, u.R)));
+        Assert.Equal(2, Movement.StackLimit(c, s));
+        var late = new Unit(2, "veteran_soldier", 1, 0, side: "israel", strength: 2);
+        Assert.NotNull(Movement.Full(c, s, late, 1, 0));   // the hex is full for any other unit of the side
+        while (s.Date < new DateTime(1948, 6, 20)) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        var u = s.Units[2];
+        Assert.Equal(("late", "veteran_soldier", "israel", 2, 1, 0), (c.StartingForces[2].Row, u.Type, u.Side, u.Strength, u.Q, u.R));
+        Assert.Equal(3, s.Units.Values.Count(x => (x.Q, x.R) == (1, 0)));
+    }
+
     // R-ENEMY-004: no enemy-side starting force may be authored to arrive after the game starts. The loader names the
     // units_1948.yaml row and field, before a turn can add the unit.
     [Fact]
@@ -240,13 +257,57 @@ public class StartingForcesTests
 
     // R-UNIT-006, Q-START-3 (#743, owner, 20 October 2026): a shareable build waits until every row the sim starts a unit
     // from is fact-checked. The owner person-checked the twelve real ones on 21 October 2026 (#1240), and Etzioni and the
-    // 7th (#1241) after them (https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840), so none waits.
+    // 7th (#1241) after them (https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840). Six of
+    // them got an order target later (#2135), sourced on 1 November 2026, which no person has checked yet (#2722), so
+    // those six wait, naming the target.
     [Fact]
     public void TheReleaseGateWaitsForEveryStartingRowToBeFactChecked()
     {
         Assert.Equal(14, Real.StartingForces.Count);
-        Assert.Empty(ReleaseGate.StartingForcesUnchecked(Real));
-        var c = Load(Row("b", "israel", 20), Row("a", "israel", 20, q: 2, status: "fact-checked"));
+        Assert.Equal(new[]
+        {
+            "brigade_7: order_targets[0] (al-Malikiyya), sources checked 2026-11-01, row checked 2026-10-22",
+            "carmeli: order_targets[0] (Manara), sources checked 2026-11-01, row checked 2026-10-21",
+            "givati: order_targets[0] (Huleiqat), sources checked 2026-11-01, row checked 2026-10-21",
+            "harel: order_targets[0] (Latrun police fort), sources checked 2026-11-01, row checked 2026-10-21",
+            "kiryati: order_targets[0] (Ramle), sources checked 2026-11-01, row checked 2026-10-21",
+            "negev: order_targets[0] (Beersheba), sources checked 2026-11-01, row checked 2026-10-21",
+        }, ReleaseGate.StartingForcesUnchecked(Real));
+        var c = Load(Row("b", "israel", 20), Row("a", "israel", 20, q: 2, status: "fact-checked", extra: "  checked_on: '2026-10-21'\n"));
         Assert.Equal(new[] { "b" }, ReleaseGate.StartingForcesUnchecked(c));
+    }
+
+    /// <summary>A fact-checked row checked on 21 October 2026 whose strength, anchor and order target cite sources checked on
+    /// the given days.</summary>
+    static Content Checked(string strength, string anchor, string target, string checkedOn = "  checked_on: '2026-10-21'\n") =>
+        Load("anchors:\n  - { id: a, anchor: 0, q: 1, r: 0 }\norder_targets:\n  - { id: a, target: 0, q: 1, r: 0 }\n",
+            ("- id: a\n  service: army\n  side: israel\n  status: fact-checked\n" + checkedOn
+                + $"  strength: {{ value: 20, as_of: '1948-05-15', sources: [{{ url: 'https://example.org/s', checked: '{strength}' }}] }}\n"
+                + $"  anchors:\n  - {{ place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01', sources: [{{ url: 'https://example.org/a', checked: '{anchor}' }}] }}\n"
+                + $"  order_targets:\n  - {{ place: Manara, lon: 35.54, lat: 33.2, from: '1948-10-29', to: '1949-03-23', sources: [{{ url: 'https://example.org/t', checked: '{target}' }}] }}\n", ""));
+
+    // #2722 (owner, option (c), 5 November 2026): a field whose sources were checked after the row's person check
+    // (checked_on) counts as unchecked: the gate refuses the row and names the field.
+    [Theory]
+    [InlineData("2026-11-01", "2026-10-21", "2026-10-21", "a: strength, sources checked 2026-11-01, row checked 2026-10-21")]
+    [InlineData("2026-10-21", "2026-11-01", "2026-10-21", "a: anchors[0] (Here), sources checked 2026-11-01, row checked 2026-10-21")]
+    [InlineData("2026-10-21", "2026-10-21", "2026-11-01", "a: order_targets[0] (Manara), sources checked 2026-11-01, row checked 2026-10-21")]
+    public void AFieldSourcedAfterTheRowsCheckIsRefusedByName(string strength, string anchor, string target, string refused) =>
+        Assert.Equal(new[] { refused }, ReleaseGate.StartingForcesUnchecked(Checked(strength, anchor, target)));
+
+    // #2722: a field sourced on or before the row's check day is covered by that check.
+    [Fact]
+    public void AFieldSourcedOnOrBeforeTheRowsCheckPasses() =>
+        Assert.Empty(ReleaseGate.StartingForcesUnchecked(Checked("2026-10-13", "2026-10-21", "2026-10-21")));
+
+    // #2722: a fact-checked row records the day of its person check, so a row without one is a load error.
+    [Theory]
+    [InlineData("")]
+    [InlineData("  checked_on: 21 October 2026\n")]
+    public void AFactCheckedRowNeedsItsCheckDay(string checkedOn)
+    {
+        var ex = Assert.Throws<ContentException>(() => Checked("2026-10-21", "2026-10-21", "2026-10-21", checkedOn));
+        Assert.Equal("map/units_1948.yaml", ex.File);
+        Assert.Equal("units[a].checked_on", ex.Field);
     }
 }

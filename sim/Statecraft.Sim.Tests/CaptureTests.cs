@@ -9,7 +9,8 @@ using Statecraft.Sim;
 /// halutz holds nothing, "enemy-held" means mvp.enemy_held_localities, and enemy units alone on an awaiting_choice target
 /// take it back. The fixture's places are fixture values, not
 /// history: town_a and town_c are arab_town targets the fixture lists as enemy-held, town_d an arab_town target that is
-/// not, and town_e an enemy-held arab_town that is not a target.</summary>
+/// not, and town_e an enemy-held arab_town that is not a target. town_h, a town on (0, 2), is the fixture's one city: the loader
+/// holds cities.yaml to the city and town rows (R-CITY-006).</summary>
 public class CaptureTests
 {
     const string Types = Fixture.GddUnitTypes
@@ -48,9 +49,11 @@ public class CaptureTests
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
-            ["map/settlement_hexes.yaml"] = "settlements:\n" + string.Concat(Places.Select(p => FormattableString.Invariant($"  - {{ id: {p.Id}, q: {p.Q}, r: {p.R} }}\n"))),
+            ["map/settlement_hexes.yaml"] = "settlements:\n" + string.Concat(Places.Select(p => FormattableString.Invariant($"  - {{ id: {p.Id}, q: {p.Q}, r: {p.R} }}\n"))) + "  - { id: town_h, q: 0, r: 2 }\n",
             ["map/settlements_1948.yaml"] = "settlements:\n" + string.Concat(Places.Select(p => FormattableString.Invariant(
-                $"  - {{ id: {p.Id}, name: {p.Id.Replace("town_", "Town ").ToUpperInvariant()}, lon: 34.29, lat: 33.35, type: {p.Type}, founded: 1900, pre_modern: false }}\n"))),
+                $"  - {{ id: {p.Id}, name: {p.Id.Replace("town_", "Town ").ToUpperInvariant()}, lon: 34.29, lat: 33.35, type: {p.Type}, founded: 1900, pre_modern: false }}\n")))
+                + "  - { id: town_h, name: Town H, lon: 34.29, lat: 33.15, type: town, founded: 1900, pre_modern: false }\n",
+            ["cities.yaml"] = "cities:\n" + Fixture.City("town_h", 12, 8, 10, 6, "[military_camp, hakhshara]"),
             ["settlement_targets.yaml"] = targets.Length == 0 ? "targets: []\n" : "targets:\n" + string.Concat(targets.Select(id => { var p = Places.Single(x => x.Id == id); return Target(p.Id, p.Q, p.R, fled.Contains(p.Id)); })),
         });
         files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities: []", "enemy_held_localities: [town_a, town_c, town_e]");
