@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Statecraft.Sim;
 
@@ -197,6 +198,31 @@ options:
 
         var early = At(c, new DateTime(1949, 1, 15), 2, 0);
         Assert.Equal(new[] { "armistice_egypt", "a1", "a2" }, Fire(c, early));   // early, it is soft: a3 waits
+    }
+
+    // R-TURN-002 (#2551), R-WAR-008, R-EVT-001: each real armistice card's `from` is now the 15th on or before its signing,
+    // so on that turn a quiet front's card comes as a hard anchor: it cannot wait, it comes after the soft events of an
+    // earlier `from`, and like every hard anchor it counts against the cap of 3, so the third soft event waits. Before #2551
+    // its `from` was a turn later: on this turn the card came early and soft, ahead of the soft events (R-EVT-002). The card's
+    // `from` is read from the real content; the rest is the fixture's.
+    [Theory]
+    [InlineData("egypt", "1949-02-15")]
+    [InlineData("jordan", "1949-03-15")]
+    [InlineData("lebanon", "1949-03-15")]
+    [InlineData("syria", "1949-07-15")]
+    public void R_TURN_002_OnTheTurnBeforeTheSigningAQuietFrontsCardComesAsAHardAnchor(string front, string turn)
+    {
+        var real = ContentLoader.Load(RealContentTests.ContentRoot()).Events.Single(e => e.Id == $"armistice_{front}");
+        var f = Gdd03MovementFortTests.Files(SaveGame.Gdd03Ruleset);
+        f[$"events/armistice_{front}.yaml"] = Card(front, real.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        foreach (var id in new[] { "s1", "s2", "s3" })
+            f[$"events/{id}.yaml"] = $"id: {id}\ntitle: {id}\ntext: 'Ordinary.'\nfrom: 1949-01-01\nto: 1950-01-01\nsources: [{{ url: \"https://example.org/event\", checked: 2026-10-18 }}]\noptions:\n  - id: ok\n    text: Ok\n";
+        var c = ContentLoader.Load(Fixture.Write(f));
+        var s = CombatTests.With(c);
+        s.Date = DateTime.ParseExact(turn, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        s.QuietTurns[front] = 5;
+        Assert.Equal(new[] { "s1", "s2", $"armistice_{front}" }, Fire(c, s));
+        Assert.Equal(new[] { "s3" }, s.CappedEvents);
     }
 
     // R-WAR-006, R-WAR-008 (Q49: "Two full quiet turns must follow the refusal"): a card refused on turn T does not come at
