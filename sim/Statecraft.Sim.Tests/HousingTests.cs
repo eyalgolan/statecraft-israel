@@ -83,6 +83,16 @@ public class HousingTests
         Assert.Contains(r.Why, w => w.System == "city" && w.Target == "town_a" && w.Message == "Town A: 3 groups more than its homes hold");
     }
 
+    // R-HOUSE-002, #2530: a count of 1 names the singular.
+    [Fact]
+    public void ASingleGroupOfOverflowNamesTheSingular()
+    {
+        var c = Town();
+        var s = With(Simulation.NewGame(c, 1, Mode.Historical), "town_a", 10, 6, 3);   // 13 people, housing for 12
+        var r = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.Contains(r.Why, w => w.System == "city" && w.Target == "town_a" && w.Message == "Town A: 1 group more than its homes hold");
+    }
+
     // R-HOUSE-002
     [Fact]
     public void ConditionNeverFallsBelowZero()
