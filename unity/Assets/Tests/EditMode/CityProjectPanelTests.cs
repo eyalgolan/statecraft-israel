@@ -1116,5 +1116,6 @@ public class WorkshopPanelTests
         Assert.IsNotNull(broken, "precondition: the jobs order after it is refused");
         Assert.IsFalse(ui.Q<Button>("city-builders-more").enabledSelf);
         Assert.AreEqual(SimBridge.ReasonText(t, broken!.Reason, C03, TownsHe), ui.Q<Label>("city-builders-reason").text);
+        if (hebrew) Assert.AreNotEqual(broken.Reason, ui.Q<Label>("city-builders-reason").text, "the Hebrew string, not the sim's English");
     }
 }
