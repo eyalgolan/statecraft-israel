@@ -193,6 +193,23 @@ public class StartingForcesTests
         Assert.False(s.Units.ContainsKey(1));
     }
 
+    // R-UNIT-009: like a starting force, a due arrival ignores the stack limit and what else stands on its hex (#2806 item
+    // 13). Two starting rows fill hex (1, 0) to the fixture's limit of two; the row due on 20 June still arrives there.
+    [Fact]
+    public void ADueArrivalIgnoresAFullStack()
+    {
+        var c = Load(Row("late", "israel", 20, from: "1948-06-20", asOf: "1948-06-20"), Row("first", "israel", 30), Row("second", "israel", 30));
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        Assert.Equal(new[] { (0, 1, 0), (1, 1, 0) }, s.Units.Values.Select(u => (u.Id, u.Q, u.R)));
+        Assert.Equal(2, Movement.StackLimit(c, s));
+        var late = new Unit(2, "veteran_soldier", 1, 0, side: "israel", strength: 2);
+        Assert.NotNull(Movement.Full(c, s, late, 1, 0));   // the hex is full for any other unit of the side
+        while (s.Date < new DateTime(1948, 6, 20)) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        var u = s.Units[2];
+        Assert.Equal(("late", "veteran_soldier", "israel", 2, 1, 0), (c.StartingForces[2].Row, u.Type, u.Side, u.Strength, u.Q, u.R));
+        Assert.Equal(3, s.Units.Values.Count(x => (x.Q, x.R) == (1, 0)));
+    }
+
     // R-ENEMY-004: no enemy-side starting force may be authored to arrive after the game starts. The loader names the
     // units_1948.yaml row and field, before a turn can add the unit.
     [Fact]
