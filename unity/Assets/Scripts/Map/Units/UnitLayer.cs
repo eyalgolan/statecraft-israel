@@ -34,7 +34,7 @@ namespace Statecraft.Game.Map.Units
         UnitGround ground = null!;
         IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
         MapRuntimeAssets assets = null!;
-        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!;
+        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, hitPlate = null!, rim = null!;
         readonly Dictionary<string, Material[]> flagCloth = new Dictionary<string, Material[]>();   // per side, made on first use
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
         /// <summary>The meshes built for the tokens drawn now (each base's draped top, lip and ring follow its own ground):
@@ -153,6 +153,14 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Each token's move and attack (#1866, #1867), in the order of <see cref="badges"/>; null where the layer
         /// does not animate (an edit-mode build, such as the promo captures, whose tokens stand still at their places).</summary>
         readonly List<UnitTokenMotion?> motions = new List<UnitTokenMotion?>();
+        /// <summary>Each token's sim unit (-1 for a row with no sim unit), in the order of <see cref="badges"/>.</summary>
+        readonly List<int> drawnSims = new List<int>();
+        /// <summary>The sim units whose tokens the last rebuild dropped, and where each was drawn then: a destroyed unit's
+        /// dust rises there (<see cref="PlayDestroyed"/>).</summary>
+        readonly Dictionary<int, Vector3> gone = new Dictionary<int, Vector3>();
+        /// <summary>The attacks' hits and the losses' dust (owner, 4 November 2026), or null without the flipbooks.</summary>
+        CombatBursts? combat;
+        internal CombatBursts? Combat => combat;
         /// <summary>A rebuild slides a moved unit's token from where it was drawn (true in play; tests set it).</summary>
         internal bool AnimateMoves;
 
@@ -231,9 +239,12 @@ namespace Statecraft.Game.Map.Units
             layer.ringTemplate = ringTemplate;
             layer.badgePlate = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (plate)", color = UnitBadge.PlateColour });
             layer.badgeGlyph = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (glyph)", color = UnitBadge.GlyphColour });
+            layer.hitPlate = layer.assets.Own(new Material(ringTemplate)
+                { name = "UnitBadge (hit flash)", color = new Color(0.86f, 0.12f, 0.08f, 0.92f) });
             layer.rim = layer.assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
             layer.tokensRoot = new GameObject("Tokens").transform;
             layer.tokensRoot.SetParent(root.transform, false);
+            layer.combat = CombatBursts.Create(root.transform);
             // The kit trees under the figures are left out while the layer shows (issue #249), and come back with the layer
             // off: a plain screenshot run (HiddenInCaptures) keeps every tree, so its checkpoints stay comparable.
             layer.assets.OnTeardown(() => UnitShowcase.HideTrees(map, ToggleName, Array.Empty<(Vector2, float)>()));
@@ -668,13 +679,20 @@ namespace Statecraft.Game.Map.Units
             // drawn somewhere else after the rebuild slides from there (#1866). Keyed by the sim unit, else by the row.
             var drawnAt = new Dictionary<(int sim, string row), Vector3>();
             var firing = new Dictionary<(int sim, string row), float>();   // and how far into its fire take each attack is
+            var hits = new Dictionary<(int sim, string row), (float left, float delay)>();   // and each hit it shows or awaits
             for (int i = 0; slide && i < motions.Count && i < trios.Count; i++)
             {
                 var m = motions[i];
                 if (m == null) continue;
-                drawnAt[Key(m.SimId, m.name)] = trios[i].centre + m.transform.position;
+                // The slide only, not a hit's shake: a defender shaking when the tokens are rebuilt has not moved (its shake is
+                // handed on below instead).
+                drawnAt[Key(m.SimId, m.name)] = DrawnAt(i);
                 if (m.AttackPlayed > 0f) firing[Key(m.SimId, m.name)] = m.AttackPlayed;
+                if (m.HitState.left > 0f || m.HitState.delay > 0f) hits[Key(m.SimId, m.name)] = m.HitState;
             }
+            // Where each unit was drawn, so a unit the rebuild drops (destroyed, as the turn's lines say) raises its dust there.
+            gone.Clear();
+            for (int i = 0; i < drawnSims.Count && i < trios.Count; i++) if (drawnSims[i] >= 0) gone[drawnSims[i]] = DrawnAt(i);
             var outgoing = new List<GameObject>();
             for (int i = tokensRoot.childCount - 1; i >= 0; i--)
             {
@@ -688,18 +706,26 @@ namespace Statecraft.Game.Map.Units
             // The outgoing holders are destroyed only after the new tokens have acquired their models, as the player's
             // deferred Destroy already does: an edit-mode rebuild must not drop a model's last owner in between and ask the
             // source again for a request still in flight (or release an arrived model) only to re-acquire it.
-            try { BuildTokens(drawnAt, firing); }
+            try { BuildTokens(drawnAt, firing, hits); }
             finally { foreach (var old in outgoing) if (Application.isPlaying) Destroy(old); else DestroyImmediate(old); }
+            foreach (int id in drawnSims) gone.Remove(id);
         }
+
+        /// <summary>Where token <paramref name="i"/> is now: its place on the ground plus any slide under way, without the hit's
+        /// shake (a defender shaking from one hit still takes the next burst, or raises its dust, on its own spot).</summary>
+        Vector3 DrawnAt(int i) => trios[i].centre + (i < motions.Count && motions[i] is UnitTokenMotion m && m != null ? m.SlideOffset : Vector3.zero);
 
         static (int sim, string row) Key(int simId, string row) => simId >= 0 ? (simId, "") : (-1, row);
 
         void BuildTokens(IReadOnlyDictionary<(int sim, string row), Vector3> drawnAt,
-            IReadOnlyDictionary<(int sim, string row), float> firing)
+            IReadOnlyDictionary<(int sim, string row), float> firing,
+            IReadOnlyDictionary<(int sim, string row), (float left, float delay)> hits)
         {
             pickVersion++;
             FreeTokenMeshes();
             motions.Clear();
+            drawnSims.Clear();
+            foreach (var p in placed) drawnSims.Add(p.Token.StateUnit?.Id ?? -1);
             badges.Clear(); badgeHomes.Clear(); facedFor = null;
             trios.Clear(); turnedFor = null;   // the new figures stand as at yaw 0
             treeHoles.Clear();
@@ -806,6 +832,9 @@ namespace Statecraft.Game.Map.Units
                 badges.Add(badge.transform); badgeHomes.Add((home, back, pole, flag, standing));
                 trios.Add((centre, plinth, lift, figures, meshes));
                 AddRenderer(badge.transform, "Plate", MeshFor("badge-plate", UnitBadge.PlateMesh), badgePlate, 0f);
+                var hitFlash = AddRenderer(badge.transform, "HitFlash", MeshFor("badge-plate", UnitBadge.PlateMesh),
+                    hitPlate, -UnitBadge.GlyphLift * 0.5f);
+                hitFlash.enabled = false;
                 AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
                 // The badge's cube and the pieces (the flag and the figures as they stand now); FaceCamera moves both with the camera.
                 var pieces = standing;
@@ -823,11 +852,15 @@ namespace Statecraft.Game.Map.Units
                 motion.enabled = false;   // runs only while it moves or attacks
                 motion.SimId = placed[i].Token.StateUnit?.Id ?? -1;
                 motion.Changed = () => { pickVersion++; facedFor = null; slid = true; };   // FaceCamera sets the badge and the boxes where the token is drawn
+                motion.Effects = combat;
+                motion.GroundHome = trios[i].centre;
+                motion.HitFlash = badges[i].Find("HitFlash").GetComponent<Renderer>();
                 motions.Add(motion);
                 // With the units hidden the token cannot be seen, and it would slide only once they are shown again.
                 if (tokensRoot.gameObject.activeInHierarchy && drawnAt.TryGetValue(Key(motion.SimId, token.name), out var was))
                     motion.Begin(was - trios[i].centre);
                 if (firing.TryGetValue(Key(motion.SimId, token.name), out var played)) motion.ContinueAttack(played);
+                if (hits.TryGetValue(Key(motion.SimId, token.name), out var hit)) motion.ContinueHit(hit.left, hit.delay);
             }
         }
 
@@ -838,6 +871,61 @@ namespace Statecraft.Game.Map.Units
             foreach (var motion in motions)
                 if (motion != null && motion.SimId == simId) return motion.PlayAttack();
             return false;
+        }
+
+        /// <summary>Plays an attack and reports its actual visible fire start, or the end of its brief wait without one.</summary>
+        internal bool PlayAttack(int simId, Action started, Action missed)
+        {
+            foreach (var motion in motions)
+                if (motion != null && motion.SimId == simId) return motion.PlayAttack(started, missed);
+            missed();
+            return false;
+        }
+
+        /// <summary>Briefly shakes and flashes every currently drawn defender when the engagement records aggregate
+        /// defender loss. The cause cannot identify an individual damaged unit, so the visible group reacts together.</summary>
+        public bool PlayDefenderHit(CombatHit hit)
+        {
+            if (hit.DefenderLoss <= 0 || !gameObject.activeInHierarchy) return false;
+            bool played = false;
+            foreach (int id in hit.Defenders)
+                foreach (var motion in motions)
+                {
+                    if (motion == null || motion.SimId != id) continue;
+                    played |= motion.PlayHit(CombatBursts.ImpactS(hit));   // with the hit on it, not the shot
+                    break;
+                }
+            return played;
+        }
+
+        /// <summary>Plays an attack's hit (owner, 4 November 2026: "Hit on target hex"): a shell's burst and the small arms'
+        /// dust on the first defender drawn (where its token is drawn now, or stood if the attack destroyed it), else on the
+        /// hit hex's centre. False when nothing plays (no flipbooks, the units hidden, or the hex is not on the map).</summary>
+        public bool PlayHit(CombatHit hit)
+        {
+            if (combat == null) return false;
+            Vector3? at = null;
+            foreach (int id in hit.Defenders)
+            {
+                int i = drawnSims.IndexOf(id);
+                if (i >= 0 && i < trios.Count) { at = DrawnAt(i); break; }
+                if (gone.TryGetValue(id, out var was)) { at = was; break; }
+            }
+            if (at == null && shownContent?.HexAt(hit.Q, hit.R) is MapHex hex)
+            {
+                var c = XZ(map)(hex.Lon, hex.Lat);
+                at = UnitShowcase.Ground(map, new Vector3(c.x, 0f, c.y));
+            }
+            return at is Vector3 p && combat.Hit(p, hit.Guns, hit.SmallArms);
+        }
+
+        /// <summary>Raises a destroyed sim unit's dust where its token stood when the rebuild dropped it (owner, 4 November
+        /// 2026: "Dust when a unit dies"), once. False when its token was not drawn, or nothing plays.</summary>
+        public bool PlayDestroyed(int simId, float delayS = 0f)
+        {
+            if (combat == null || !gone.TryGetValue(simId, out var at)) return false;
+            gone.Remove(simId);
+            return combat.Destroyed(at, delayS);
         }
 
         /// <summary>The world box of a mesh's bounds through its transform. From the mesh and the transform, not
@@ -875,7 +963,7 @@ namespace Statecraft.Game.Map.Units
             return piece;
         }
 
-        static void AddRenderer(Transform parent, string name, Mesh mesh, Material mat, float z)
+        static Renderer AddRenderer(Transform parent, string name, Mesh mesh, Material mat, float z)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -885,6 +973,7 @@ namespace Statecraft.Game.Map.Units
             r.sharedMaterial = mat;
             r.shadowCastingMode = ShadowCastingMode.Off;
             r.receiveShadows = false;
+            return r;
         }
 
         void BuildAircraft(Transform parent, UnitToken t, Vector3 baseCentre)
