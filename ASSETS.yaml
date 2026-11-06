@@ -3523,21 +3523,21 @@ rules:
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
     note: "Ramla whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Ramla by TownLandmarks.ById in place of the stone village (owner, 2 November 2026: \"Yes, Tal's Ramla (Recommended)\"). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
   # The Blender-built 101 Squadron Spitfire LF Mk IXe (owner, 5 November 2026: "start the blender built 101 squadron in
-  # parralel to everything else"), by tools/spitfire_101_model.py: the model (in Resources/Units/Authored, the asset UnitShowcase's art hook
-  # loads), its colour map and its material.
-  - glob: "unity/Assets/Resources/Units/Authored/spitfire-mk9e-101sqn-1948.fbx"
+  # parralel to everything else"), by tools/spitfire_101_model.py: the model, its colour map and its material, in its own Collection
+  # folder and bundle (CollectionCatalog.IsraeliSpitfire; #2734: streamed over the code-built Spitfire, never under Resources).
+  - glob: "unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.fbx"
     licence: CC-BY-4.0
     ai_generated: false
     source: "Built from primitives in Blender 5.2.2 (pip bpy) by tools/spitfire_101_model.py --build: lofted fuselage, clipped elliptical NACA 22xx wing, tail, radiators, canopy, exhausts and a separate four-blade propeller; 7,696 triangles; byte-reproducible. SHA-256 e59361bf4cbc1b2966d4c02e5700230eacfc1e14c09ba66449bca3c3d609159b."
     status: verified
     note: "Not AI. Original art: no third-party model, scan, photograph, font or flag image; the Star of David roundel and the markings are drawn by the tool from their sourced description (Efrati, Colors & Markings of the Israeli Air Force, 2005, pp. 6, 12, 14, as UnitModels.Spitfire and docs/units.md cite it). CC BY 4.0 like the project's other original art (LICENSING.md). Dimensions: en.wikipedia 'Supermarine Spitfire' and 'Supermarine Spitfire variants: specifications, performance and armament', read 5 November 2026; every other number is a DESIGN VALUE named in the tool. Record: the folder's provenance.json."
-  - glob: "unity/Assets/Art/Units/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948_basecolor.png"
+  - glob: "unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948_basecolor.png"
     licence: CC-BY-4.0
     ai_generated: false
     source: "The model's 1024x1024 colour map, painted by tools/spitfire_101_model.py --build from a colour function of each texel's 3D point (camouflage in UnitPalette's colours, roundels, red spinner, rudder stripes, panel lines); byte-reproducible. SHA-256 397dda00d3de72e1a03c909bd29c08faad324dd4820f26eb3fdd86a073465ed2."
     status: verified
     note: "Not AI. Original art: no third-party model, scan, photograph, font or flag image; the Star of David roundel and the markings are drawn by the tool from their sourced description (Efrati, Colors & Markings of the Israeli Air Force, 2005, pp. 6, 12, 14, as UnitModels.Spitfire and docs/units.md cite it). CC BY 4.0 like the project's other original art (LICENSING.md). Dimensions: en.wikipedia 'Supermarine Spitfire' and 'Supermarine Spitfire variants: specifications, performance and armament', read 5 November 2026; every other number is a DESIGN VALUE named in the tool. Record: the folder's provenance.json."
-  - glob: "unity/Assets/Art/Units/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.mat"
+  - glob: "unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.mat"
     licence: CC-BY-4.0
     ai_generated: false
     source: "URP Lit material for the model (the Egyptian Spitfire's material settings with this colour map, smoothness 0.5, metallic 0, back faces culled), written by hand. SHA-256 739b60772288946cdbfe8b5b871f450bc66fdda87ce224600bcc2cf05f600dee."

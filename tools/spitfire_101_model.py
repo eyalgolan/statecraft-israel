@@ -1,7 +1,8 @@
 """Builds the 101 Squadron Supermarine Spitfire LF Mk IXe (as flown from October 1948) as an authored unit model, in
 Blender's bpy module (no paid tool, no third-party model): a smooth lofted body and a separate four-blade propeller, with
-the squadron's 1948 markings PAINTED INTO ONE COLOUR MAP (no decal geometry), for UnitShowcase's art hook
-(Resources/Units/Authored/spitfire-mk9e-101sqn-1948, UnitShowcase.AuthoredFolder + UnitShowcase.SpitfireType).
+the squadron's 1948 markings PAINTED INTO ONE COLOUR MAP (no decal geometry), streamed in a Collection bundle of its own
+(CollectionCatalog.IsraeliSpitfire, unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948) over the code-built Spitfire
+(StreamedAircraft; #2734: never under Resources, so not in the WebGL player's first download).
 
 Owner, 5 November 2026, of the code-built Spitfire (UnitModels.Spitfire): "still doesnt look good. thr air force signs on
 the sides are not on the airplanes fueoladge but appear as their own 3d obects almost seperate from the plane, and the
@@ -19,7 +20,8 @@ How:
      roundels, rudder stripes, panel lines, exhaust soot. So each roundel lies on the skin wherever its island is.
   3. Exported as one FBX (two top-level nodes, "Body" and "Propeller", the axis conversion baked into the vertices so
      both nodes have identity rotation and scale) with no texture inside; the colour map is a PNG beside it, and the
-     FBX itself sits in Resources (FBX_DIR), its importer remapping the material to the .mat beside the colour map.
+     FBX's importer (its committed .fbx.meta) remaps the material to the .mat beside them. Unity makes the streamed
+     prefab beside them (CollectionImport.MakeAuthoredUnitPrefabs).
 
     uv run --no-project --python 3.13 --with bpy==5.2.2 python -I tools/spitfire_101_model.py --build     # FBX + PNG
     uv run --no-project --python 3.13 --with bpy==5.2.2 python -I tools/spitfire_101_model.py --check --stills DIR
@@ -58,9 +60,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 TYPE = "spitfire-mk9e-101sqn-1948"                       # UnitShowcase.SpitfireType
-MODEL_DIR = Path("unity/Assets/Art/Units") / TYPE         # the colour map, the material, provenance.json
-# The FBX itself is what UnitShowcase.AuthoredModel loads (Resources.Load of AuthoredFolder + the type): no prefab variant.
-FBX_DIR = Path("unity/Assets/Resources/Units/Authored")
+MODEL_DIR = Path("unity/Assets/Art/Collection") / TYPE    # the FBX, the colour map, the material, provenance.json
+# The FBX sits beside them in its Collection folder (CollectionCatalog.SourceModelPath), never under Resources (#2734).
+FBX_DIR = MODEL_DIR
 FBX = f"{TYPE}.fbx"
 PNG = f"{TYPE}_basecolor.png"
 MATERIAL_NAME = f"{TYPE}-paint"                           # the FBX's material name, remapped to the .mat by the .fbx.meta

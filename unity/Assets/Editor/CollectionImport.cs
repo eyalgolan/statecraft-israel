@@ -45,6 +45,7 @@ namespace Statecraft.Game.EditorTools
             MakeBuildingPrefabs();
             MakeGeneratedTownPrefabs();
             MakeTokenFigureExtras();
+            MakeAuthoredUnitPrefabs();
             Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(id => !CollectionCatalog.IsBuilding(id) && !CollectionCatalog.IsGenerated(id))} collection models"));
         }
 
@@ -100,6 +101,34 @@ namespace Statecraft.Game.EditorTools
             }
             AssetDatabase.SaveAssets();
             Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(CollectionCatalog.IsGeneratedTown)} generated town prefabs"));
+        }
+
+        /// <summary>#2734: the project's own authored unit models (CollectionCatalog.IsAuthoredUnit: the Blender-built 101 Squadron
+        /// Spitfire), one prefab beside each FBX (CollectionCatalog.PrefabPath), made as the generated towns' are: the model with
+        /// the .mat beside it on every renderer (the .fbx.meta already remaps its one material there). Their import settings
+        /// (the .meta files beside the FBX and the PNG colour map) are left as they are: nothing here imports or reimports them.
+        /// Throws when a model has no direct child named StreamedAircraft.PropellerName, the propeller the flight turns.
+        /// Headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.MakeAuthoredUnitPrefabs</summary>
+        [MenuItem("Statecraft/Collection/Make authored unit prefabs")]
+        public static void MakeAuthoredUnitPrefabs()
+        {
+            foreach (var id in CollectionCatalog.Ids.Where(CollectionCatalog.IsAuthoredUnit))
+            {
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.SourceModelPath(id)) ?? throw new InvalidOperationException($"{id}: no model");
+                var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(id)}/{id}.mat") ?? throw new InvalidOperationException($"{id}: no material");
+                if (model.transform.Find(StreamedAircraft.PropellerName) == null)
+                    throw new InvalidOperationException($"{id}: no {StreamedAircraft.PropellerName} child for the flight to turn");
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                try
+                {
+                    foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+                        r.sharedMaterials = Enumerable.Repeat(mat, Math.Max(1, r.sharedMaterials.Length)).ToArray();
+                    PrefabUtility.SaveAsPrefabAsset(go, CollectionCatalog.PrefabPath(id, CollectionDetail.Far));
+                }
+                finally { UnityEngine.Object.DestroyImmediate(go); }
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(CollectionCatalog.IsAuthoredUnit)} authored unit prefabs"));
         }
 
         /// <summary>#2083 and #2084: Tal Heuberger's weapons and the C06 point-fire pose source for the token figures.
