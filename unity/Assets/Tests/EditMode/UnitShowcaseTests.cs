@@ -9,6 +9,12 @@ using UnityEngine;
 
 public class UnitShowcaseTests
 {
+    // These tests are about the code-built models. An authored model in Resources/Units/Authored (#2734's Spitfire) would
+    // replace one in every Spawn, so each test starts with none; the authored tests set their own (AuthoredModel is a seam).
+    System.Func<string, GameObject> realAuthoredModel;
+    [SetUp] public void CodeBuiltModels() { realAuthoredModel = UnitShowcase.AuthoredModel; UnitShowcase.AuthoredModel = _ => null; }
+    [TearDown] public void RestoreAuthoredModels() { if (realAuthoredModel != null) UnitShowcase.AuthoredModel = realAuthoredModel; }
+
     static Mesh[] AllMeshes() => new[]
     {
         UnitModels.Rifleman(UnitModels.Headgear.SlouchHat, UnitModels.RiflePose.Ready, false, "a"),
@@ -171,13 +177,16 @@ public class UnitShowcaseTests
         return map;
     }
 
-    /// <summary>Everything a spawn made that must be freed with it: meshes, the palette material and its texture.</summary>
+    /// <summary>Everything a spawn made that must be freed with it: meshes, the palette material and its texture, and the
+    /// aircraft's glossy paint and its blur and shadow material.</summary>
     static List<Object> SpawnedAssets(GameObject root)
     {
         var list = new List<Object>();
         foreach (var f in root.GetComponentsInChildren<MeshFilter>(true)) list.Add(f.sharedMesh);
         var paint = root.transform.Find("Rifleman0").GetComponent<MeshRenderer>().sharedMaterial;
         list.Add(paint); list.Add(paint.GetTexture("_BaseMap"));
+        list.Add(root.transform.Find("Spitfire1948/Airframe").GetComponent<MeshRenderer>().sharedMaterial);
+        list.Add(root.transform.Find("Spitfire1948/" + UnitShowcase.ShadowName).GetComponent<MeshRenderer>().sharedMaterial);
         Assert.IsTrue(list.All(o => o != null));
         return list;
     }
@@ -292,6 +301,11 @@ public class UnitShowcaseTests
         var map = BuildMap();   // first: a new scene would destroy the stand-in models
         var helmet = new GameObject("authored-helmet"); new GameObject("AuthoredMarker").transform.SetParent(helmet.transform);
         var spitfire = new GameObject("authored-spitfire"); new GameObject("AuthoredMarker").transform.SetParent(spitfire.transform);
+        // An authored model's own propeller: a child named UnitShowcase.AuthoredPropellerName, turning about its local +z.
+        var bladesMesh = UnitModels.SpitfirePropeller("authored-blades");
+        var blades = new GameObject(UnitShowcase.AuthoredPropellerName);
+        blades.transform.SetParent(spitfire.transform, false);
+        blades.AddComponent<MeshFilter>().sharedMesh = bladesMesh; blades.AddComponent<MeshRenderer>();
         var saved = UnitShowcase.AuthoredModel;
         UnitShowcase.AuthoredModel = type => type == UnitShowcase.RiflemanHelmetType ? helmet : type == UnitShowcase.SpitfireType ? spitfire : null;
         try
@@ -303,13 +317,186 @@ public class UnitShowcaseTests
             Assert.AreEqual(UnitShowcase.FigureScale, root.transform.Find("Rifleman1").localScale.x, 1e-3f, "placed and scaled as the code-built one");
             Assert.IsNotNull(root.transform.Find("Spitfire1948/Airframe/AuthoredMarker"));
             Assert.IsNull(root.transform.Find("Spitfire1948/Propeller"), "an authored aircraft brings its own propeller");
+            Assert.IsFalse(root.transform.Find("Spitfire1948/Airframe").GetComponentsInChildren<Renderer>(true)
+                .Any(r => r.sharedMaterial != null && r.sharedMaterial.name.EndsWith(" (glossy)")), "nor the code-built glossy paint: it brings its own materials");
+            // The flight's look applies to it all the same: its own propeller turns and carries the blur, sized to its blades,
+            // and a soft shadow lies on the ground while it casts none.
+            var ownProp = root.transform.Find("Spitfire1948/Airframe/" + UnitShowcase.AuthoredPropellerName);
+            Assert.IsNotNull(ownProp, "fixture: the authored propeller");
+            var flight = root.GetComponentInChildren<ShowcaseFlight>();
+            Assert.AreSame(ownProp, typeof(ShowcaseFlight).GetField("propeller", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(flight),
+                "the flight turns the authored propeller");
+            var blur = ownProp.Find(UnitShowcase.PropellerBlurName);
+            Assert.IsNotNull(blur, "the blur on the authored propeller");
+            Assert.That(blur.localScale.x, Is.InRange(1.4f, 1.9f), "sized to its blades (the code-built blades here, reaching about 1.6)");
+            Assert.IsNotNull(flight.transform.Find(UnitShowcase.ShadowName), "the soft shadow under an authored aircraft too");
+            Assert.IsTrue(flight.GetComponentsInChildren<Renderer>(true).All(r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off),
+                "and it casts no shadow of its own");
             Assert.IsNotNull(root.transform.Find("Corvette1948").GetComponent<MeshFilter>());
         }
         finally
         {
             UnitShowcase.AuthoredModel = saved;
-            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(helmet); Object.DestroyImmediate(spitfire);
+            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(helmet); Object.DestroyImmediate(spitfire); Object.DestroyImmediate(bladesMesh);
         }
+    }
+
+    /// <summary>The coordinator-approved Spitfire plan, step 1 (5 November 2026): the code-built 101 Squadron Spitfire's
+    /// propeller carries a light, see-through blur that turns with it: pale, clear at the rim, at most about half opaque,
+    /// brighter at its four blades than between them, casting and taking no shadow.</summary>
+    [Test]
+    public void TheCodeBuiltSpitfiresPropellerCarriesALightBlur()
+    {
+        bool readable = UnitPlinth.KeepMeshesReadable; UnitPlinth.KeepMeshesReadable = true;   // the blur's colours are read below
+        var map = BuildMap();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: true);
+            var prop = root.transform.Find("Spitfire1948/Propeller");
+            var blur = prop.Find(UnitShowcase.PropellerBlurName);
+            Assert.IsNotNull(blur, "a blur, a child of the turning propeller, so it turns with it");
+            var r = blur.GetComponent<MeshRenderer>();
+            Assert.AreEqual(UnityEngine.Rendering.ShadowCastingMode.Off, r.shadowCastingMode); Assert.IsFalse(r.receiveShadows);
+            Assert.AreNotSame(root.transform.Find("Rifleman0").GetComponent<MeshRenderer>().sharedMaterial, r.sharedMaterial, "a see-through material, not the paint");
+            Assert.Greater(Mathf.Abs(Vector3.Dot(blur.up, prop.forward)), 0.999f, "the disc faces along the propeller's axis (+z)");
+            var colours = blur.GetComponent<MeshFilter>().sharedMesh.colors32;
+            Assert.IsTrue(colours.All(c => c.r > 180 && c.g > 180 && c.b > 180), "light, not the dark rods' colour");
+            float max = colours.Max(c => c.a) / 255f;
+            Assert.That(max, Is.InRange(0.3f, 0.6f), "see-through");
+            // e21's AFTER captures of #2728: two layers read as a near-opaque plate under the dark rods. One layer, lighter
+            // than the Egyptian Spitfire's haze at the same angle.
+            var positions = blur.GetComponent<MeshFilter>().sharedMesh.vertices;
+            Assert.IsTrue(positions.All(v => Mathf.Abs(v.y - positions[0].y) < 1e-5f), "one layer");
+            Assert.Less(max, Statecraft.Game.Map.Collection.SeaAirCollection.PropBlurAlpha(0f, 90f, 0f) - 0.1f, "lighter than the Egyptian haze at a blade");
+            Assert.AreEqual(0, colours.Min(c => c.a), "clear at its rim");
+            Assert.Greater(max - colours.Where(c => c.a > 0).Min(c => c.a) / 255f, 0.15f, "brighter at the blades: streaked, not a flat disc");
+            // The streaks sit at the four rods (UnitModels.SpitfirePropeller: up turned 90 b + 20 degrees about +z, so at 110 +
+            // 90 b from +x) and trail them: the propeller turns clockwise seen from behind (ShowcaseFlight, -z), so just behind a
+            // rod is a little more angle. Read in the propeller's own frame.
+            var verts = blur.GetComponent<MeshFilter>().sharedMesh.vertices;
+            float near = 0f, far = 0f; int nearN = 0, farN = 0;
+            for (int i = 0; i < verts.Length; i++)
+            {
+                var p = prop.InverseTransformPoint(blur.TransformPoint(verts[i]));
+                if (new Vector2(p.x, p.y).magnitude < 0.5f * UnitShowcase.PropellerBlurRadius || colours[i].a == 0) continue;   // the outer rings
+                float behind = Mathf.Repeat(Mathf.Atan2(p.y, p.x) * Mathf.Rad2Deg - 110f, 90f);
+                if (behind < 15f) { near += colours[i].a; nearN++; } else if (behind > 45f && behind < 75f) { far += colours[i].a; farN++; }
+            }
+            Assert.Greater(nearN, 0); Assert.Greater(farN, 0);
+            Assert.Greater(near / nearN - far / farN, 0.1f * 255f, "brighter just behind each of the four rods than between them");
+        }
+        finally { UnitPlinth.KeepMeshesReadable = readable; Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>The coordinator-approved Spitfire plan, step 2: the code-built Spitfire wears a glossy copy of the units' paint
+    /// (the same palette, smoothness UnitShowcase.AircraftSmoothness), its own: the riflemen and the corvette keep theirs.</summary>
+    [Test]
+    public void TheCodeBuiltSpitfireWearsAGlossyCopyOfTheUnitsPaint()
+    {
+        var map = BuildMap();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: true);
+            var paint = root.transform.Find("Rifleman0").GetComponent<MeshRenderer>().sharedMaterial;
+            var gloss = root.transform.Find("Spitfire1948/Airframe").GetComponent<MeshRenderer>().sharedMaterial;
+            Assert.AreNotSame(paint, gloss, "its own material");
+            Assert.AreSame(gloss, root.transform.Find("Spitfire1948/Propeller").GetComponent<MeshRenderer>().sharedMaterial, "the propeller too");
+            Assert.AreSame(paint, root.transform.Find("Corvette1948").GetComponent<MeshRenderer>().sharedMaterial, "the corvette keeps the units' paint");
+            Assert.AreEqual(UnitShowcase.AircraftSmoothness, gloss.GetFloat("_Smoothness"), 1e-6f);
+            Assert.Greater(gloss.GetFloat("_Smoothness"), paint.GetFloat("_Smoothness"), "glossier than the units' paint");
+            Assert.AreSame(paint.shader, gloss.shader); Assert.AreSame(paint.GetTexture("_BaseMap"), gloss.GetTexture("_BaseMap"), "the same palette");
+            Assert.AreEqual(paint.GetFloat("_Metallic"), gloss.GetFloat("_Metallic"), "painted, not bare metal");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>The coordinator-approved Spitfire plan, step 3: the flying code-built Spitfire casts a soft shadow on the ground,
+    /// as the Egyptian Spitfire does: on the map sun's ray from SpitfireLoop.ShadowHeightShare of its height, a little over the
+    /// ground there, turned with its heading, about as long and as wide as the aircraft seen from above, going with it.</summary>
+    [Test]
+    public void TheFlyingCodeBuiltSpitfireCastsASoftShadowOnTheGround()
+    {
+        var map = BuildMap();
+        var sun = new GameObject("TEST ONLY sun").AddComponent<Light>();
+        var sunWas = RenderSettings.sun;
+        try
+        {
+            sun.type = LightType.Directional; MapLighting.Apply(sun);
+            var root = UnitShowcase.Spawn(map, still: true);
+            var flight = root.GetComponentInChildren<ShowcaseFlight>();
+            var shadow = flight.transform.Find(UnitShowcase.ShadowName);
+            Assert.IsNotNull(shadow, "a shadow, a child of the aircraft, so it goes with it");
+            Assert.IsTrue(flight.GetComponentsInChildren<Renderer>(true).All(x => x.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off),
+                "its only shadow: the aircraft casts none (one would lie about 7 km off at its drawn height)");
+            var r = shadow.GetComponent<MeshRenderer>();
+            Assert.AreEqual(UnityEngine.Rendering.ShadowCastingMode.Off, r.shadowCastingMode); Assert.IsFalse(r.receiveShadows);
+            var model = UnitModels.Spitfire("span"); float span = model.bounds.size.x * UnitShowcase.AircraftScale; Object.DestroyImmediate(model);
+            float y0 = map.Terrain.transform.position.y, sea = UnitShowcase.SeaLevelY(map);
+            float Surface(Vector3 p) => Mathf.Max(map.Terrain.SampleHeight(p) + y0, sea);
+            var ray = sun.transform.forward;
+            for (int i = 0; i < 12; i++)
+            {
+                flight.Place(i / 12f);
+                var drawn = flight.transform.position; var s = shadow.position;
+                Assert.That(s.y - Surface(s), Is.InRange(0f, Statecraft.Game.Map.Collection.SpitfireLoop.ShadowLiftM + 400f), $"on the ground at phase {i}/12");
+                float under = Surface(drawn);
+                var low = new Vector3(drawn.x, under + Statecraft.Game.Map.Collection.SpitfireLoop.ShadowHeightShare * (drawn.y - under), drawn.z);
+                var cast = low + ray * ((low.y - Surface(s)) / -ray.y);
+                Assert.Less(new Vector2(s.x - cast.x, s.z - cast.z).magnitude, 50f + 0.03f * (low.y - Surface(s)), $"on the sun's ray from its lowered height at phase {i}/12");
+                Assert.Greater(Vector3.Dot(shadow.forward, Vector3.ProjectOnPlane(flight.transform.forward, Vector3.up).normalized), 0.999f, "turned with its heading");
+                Assert.That(shadow.lossyScale.x / span, Is.InRange(0.4f, 0.6f), "about half the span across (a little narrowed in the bank)");
+                Assert.That(shadow.lossyScale.z / span, Is.InRange(0.3f, 0.6f), "about half its length along");
+            }
+        }
+        finally { RenderSettings.sun = sunWas; Object.DestroyImmediate(sun.gameObject); Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>The authored 101 Squadron Spitfire (#2734), once it is in Resources/Units/Authored: the prefab the game loads
+    /// for the type has a DIRECT child named UnitShowcase.AuthoredPropellerName (UnitShowcase.FlyingSpitfire finds it under
+    /// the root Piece renames "Airframe"), with a mesh, its pivot on the centre line ahead of the airframe, at rest
+    /// (identity rotation, as ShowcaseFlight overwrites it), so the flight turns it and its blur fits its blades. Ignored
+    /// until the model lands.</summary>
+    [Test]
+    public void TheAuthoredSpitfireHasADirectPropellerChildTheFlightCanTurn()
+    {
+        var prefab = Resources.Load<GameObject>(UnitShowcase.AuthoredFolder + UnitShowcase.SpitfireType);
+        if (prefab == null) Assert.Ignore("no authored Spitfire in Resources yet (#2734)");
+        var prop = prefab.transform.Find(UnitShowcase.AuthoredPropellerName);
+        Assert.IsNotNull(prop, $"a direct child named {UnitShowcase.AuthoredPropellerName}");
+        Assert.IsNotNull(prop.GetComponentInChildren<MeshFilter>()?.sharedMesh, "its blades are a mesh");
+        Assert.AreEqual(Quaternion.identity, prop.localRotation, "at rest: ShowcaseFlight sets its turn about local +z");
+        Assert.AreEqual(Vector3.one, prop.localScale);
+        Assert.AreEqual(0f, prop.localPosition.x, 0.01f, "the hub on the centre line");
+        var others = prefab.GetComponentsInChildren<MeshFilter>(true).Where(f => !f.transform.IsChildOf(prop)).Select(f => f.sharedMesh.bounds).ToList();
+        Assert.IsNotEmpty(others, "an airframe besides the propeller");
+        Assert.Greater(prop.localPosition.z, others.Max(b => b.center.z), "the propeller is at the nose (+z)");
+
+        // And through the real showcase: the flight turns that propeller and it carries the blur.
+        UnitShowcase.AuthoredModel = realAuthoredModel;
+        var map = BuildMap();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: true);
+            var spawned = root.transform.Find("Spitfire1948/Airframe/" + UnitShowcase.AuthoredPropellerName);
+            Assert.IsNotNull(spawned, "Airframe/Propeller after Piece renames the prefab's root");
+            var flight = root.GetComponentInChildren<ShowcaseFlight>();
+            Assert.AreSame(spawned, typeof(ShowcaseFlight).GetField("propeller", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(flight));
+            Assert.IsNotNull(spawned.Find(UnitShowcase.PropellerBlurName), "the blur on it");
+            Assert.IsNotNull(flight.transform.Find(UnitShowcase.ShadowName), "the soft shadow");
+            // And the flight really turns it about its local +z, 1500 degrees a second, once it flies (not held still).
+            typeof(ShowcaseFlight).GetField("still", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(flight, null);
+            var update = typeof(ShowcaseFlight).GetMethod("Update", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var clock = ShowcaseFlight.Clock;
+            try
+            {
+                ShowcaseFlight.Clock = () => 0f; update.Invoke(flight, null); var q0 = spawned.localRotation;
+                ShowcaseFlight.Clock = () => 0.01f; update.Invoke(flight, null);
+                Assert.AreEqual(15f, Quaternion.Angle(q0, spawned.localRotation), 0.1f, "15 degrees in a hundredth of a second");
+                Assert.Greater(Mathf.Abs(Vector3.Dot(spawned.localRotation * Vector3.forward, Vector3.forward)), 0.999f, "about its local +z");
+            }
+            finally { ShowcaseFlight.Clock = clock; }
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
     }
 
     static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");

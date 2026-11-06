@@ -45,7 +45,7 @@ models on them. New models and visual PRs are judged against these four referenc
 - Headed frame time: `uv run tools/headed.py profile --dpr 1` (`--dpr 2` is the fill-rate stress proxy). `--wait-unity`
   also waits for an interactive Unity editor that has any worktree open (it holds `unity/Temp/UnityLockfile`): close it,
   or the profile waits.
-- Screenshots: `tools/art_checkpoint.sh [--no-build] [--units] <name>` (WebGL `?shot` + editor renders of both tiers + side-by-side
+- Screenshots: `tools/art_checkpoint.sh [--no-build] [--units] [--borderproof] <name>` (WebGL `?shot` + editor renders of both tiers + side-by-side
   images and their deuteranopia/protanopia copies under `captures/visual/<name>/`, git-ignored; rows in the main
   checkout's `captures/visual/art-log.tsv` with the branch, short commit and the image's absolute path). It refuses to run
   while `QualitySettings.asset` (and, when it builds, `unity/Assets/Settings` or `ProjectSettings.asset`) has unstaged
@@ -53,6 +53,8 @@ models on them. New models and visual PRs are judged against these four referenc
   worktree's build target WebGL -> OSXUniversal (editor renders) and back at the next build, a reimport each way: budget
   a few minutes per checkpoint. `--units` adds the units (`docs/units.md`): `&units` on the WebGL shots and
   `-units` on the editor renders. That shows both the unit art slice and the units in play as a new game starts.
+  `--borderproof` adds the region borders' synthetic proof pattern (see "Region borders") to the editor renders only (a
+  release WebGL build ignores `&borderproof`); its art-log rows are named `<name>-borderproof`.
   Normal play draws the units in play, but a `?shot` run switches them off unless `&units` is given
   (`UnitLayer.HiddenInCaptures`), and the editor draws them only with `-units`. So plain checkpoints never show units, and
   the `--units` rows are named `<name>-units`, so they are never compared with plain ones.
@@ -1277,10 +1279,14 @@ D-C (owner-verify).
   renderer takes (`RegionLayer`). Every entry is submitted `fact-checked`; the owner sets `sensitivity-reviewed` before a
   shareable build (chapters design §13).
 - *Limits of the renderer's data seam (review M8), for the data work to plan around:*
-  1. Two drawn styles (Primary, Secondary) plus None. The 1949 lines set Israel against four neighbours; with two styles
-     the four share the red-orange band (the texel's style takes b's low two bits since the shared edges, so one more style fits; each new style needs colours that stay
-     apart for colour-blind players, so it is a design task, not a constant). Districts may want a neutral third style.
-  2. One layer at a time: districts and armistice lines cannot show together.
+  1. No longer true as written: there are now three drawn styles plus None, `Neutral = 3` (a grey band: contested,
+     no-man's land, a demilitarized zone, or the 1947 sub-districts before any side is sourced; owner ruling 2026-10-14;
+     `MapBorders.BorderStyle`). Originally two (Primary, Secondary): the 1949 lines set Israel against four neighbours,
+     and the four still share the red-orange band. The texel's style takes b's low two bits, which the four values now
+     fill, so a further style needs more bits as well as colours that stay apart for colour-blind players (a design task,
+     not a constant).
+  2. No longer true: layers do show together. `MapRegions` keeps the Mandate sub-districts as the base and draws each
+     front's 1949 armistice zones over them from the date that front switches (`unity/Assets/Scripts/Map/MapRegions.cs`).
   3. Styles are per region, not per edge: an edge's look comes from the regions on its two sides.
   4. Hex snapping moves a line by up to half a hex (see the owner decision below).
   Follow-up: more styles or per-edge styles when the data and the owner's ruling on snapping need them.

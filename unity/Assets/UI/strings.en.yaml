@@ -360,7 +360,7 @@ defence.turn_quarter: "turns of a quarter"
 defence.turn_month: "turns of a month"
 defence.turn_week: "turns of a week"
 defence.command: "Minister of Defense {0} · Chief of Staff {1}"
-defence.ceasefire: "If full war goes on, the UN imposes a ceasefire in {0} weeks"
+defence.ceasefire: "If full war goes on, the UN imposes a ceasefire in {0}"   # {0} is "1 week"/"N weeks" (DefencePresenter.Weeks, #2530)
 defence.order: "Ordered: level {0} to {1}"
 defence.mob: "{0} of reserves called up (level {1} needs at least {2})"
 defence.mob_cost: "Costs {0} a year in pay and lost work"
@@ -850,8 +850,8 @@ city.workshop_held: "Paused: the enemy holds {0}"
 # A workshop staffing order's refusals (R-ARMS-005): the sim's own English (Workshops.Refused*), {0} the city, {1} a count.
 workshop.refused_built_one: "{0} has 1 arms workshop"
 workshop.refused_built: "{0} has {1} arms workshops"
-workshop.refused_people: "{0} has {1} civilians and craftsmen"
-workshop.refused_people_no_job: "{0} has {1} civilians and craftsmen without a job"
+workshop.refused_people: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
+workshop.refused_people_no_job: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
 site.available: "A designated site for a new yishuv"
 site.group: "halutz group {0}"
 site.build: "Build a yishuv with {0}: {1}, {2}"
@@ -1099,15 +1099,15 @@ unit.reinforce_refused.count: "Train at least one group"
 unit.reinforce_refused.no_camp: "{0} has no military camp"
 unit.reinforce_refused.no_industry: "{0} has no completed industry project"
 unit.reinforce_refused.no_hakhshara: "{0} has no Hakhshara"
-unit.reinforce_refused.idle: "{0} has {1} civilians without work"
+unit.reinforce_refused.idle: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
 unit.reinforce_refused.arms: "{0}: not enough Arms for {1} (need {2}, have {3})"
 
 # #1682 remaining Cause producers. English report wording preserved.
-why.cause.workers_assigned: "{0}: {1} groups in work"
+why.cause.workers_assigned: "{0}: {1} in work"   # {1} is "1 group"/"N groups" (CauseText.Groups, #2530)
 why.cause.wages_paid: "{0}: jobs paid {1}"
-why.cause.immigrants_housed: "{0}: {1} groups of immigrants housed"
-why.cause.housing_shortage: "{0}: {1} groups more than its homes hold"
-why.cause.immigrants_waiting: "{0}: {1} groups of immigrants arrived and wait for homes"
+why.cause.immigrants_housed: "{0}: {1} of immigrants housed"   # {1} is "1 group"/"N groups" (#2530)
+why.cause.housing_shortage: "{0}: {1} more than its homes hold"   # {1} is "1 group"/"N groups" (#2530)
+why.cause.immigrants_waiting: "{0}: {1} of immigrants arrived and wait for homes"   # {1} is "1 group"/"N groups" (#2530)
 why.cause.recruits_veteran: "Recruits became veteran soldiers"
 why.cause.corridor_started: "{0}: a group of halutzim began building, cost {1}"
 why.cause.corridor_cancelled: "{0}: the halutzim stopped building; the Money spent is not returned"
@@ -1133,7 +1133,7 @@ why.cause.workshop_workers: "{0}: arms workshops staffed: {1}"
 why.cause.workshop_arms: "{0}: an arms workshop made 1 Arms"
 why.cause.workshop_paused.no_worker: "{0}: an arms workshop has no worker without a job this month"
 why.cause.workshop_paused.debt_ceiling: "{0}: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling"
-why.cause.food_harvest: "{0}: the plowed land yielded {1} units of Food"
+why.cause.food_harvest: "{0}: the plowed land yielded {1} of Food"   # {1} is "1 unit"/"N units" (CauseText.Units, #2530)
 why.cause.food_shortage: "Food ran out: {0} of {1} units of the month's need went unmet"
 why.cause.food_without_imports: "No Food imported (foreign currency crisis): the stock fell to {0} units"
 why.cause.food_imported: "The month's eating and Food imports brought the stock to {0} units"
@@ -1176,7 +1176,7 @@ why.cause.deport_cost: "{0} {1} (Deport of {2})"
 why.cause.occupation_started: "{0} is occupied for {1} turns: an Israeli unit stays there. {2}"
 why.cause.pending_became_raid: "{0}: no decision was made before the game ended, so it counts as a raid"
 why.cause.occupation_lost_unit: "{0}: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. {1}"
-why.cause.occupation_countdown: "{0}: {1} turns of occupation left"
+why.cause.occupation_countdown: "{0}: {1} of occupation left"   # {1} is "1 turn"/"N turns" (CauseText.Turns, #2530)
 why.cause.depopulation_support: "{0} {1} (the places depopulated by Deport)"
 why.cause.work.plow: "plowing"
 why.cause.work.drain: "draining the swamp"

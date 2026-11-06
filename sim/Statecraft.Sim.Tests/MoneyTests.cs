@@ -65,6 +65,29 @@ public class MoneyTests
         Assert.Equal(debt + upkeep - jobIncome, shortTreasury.Debt, 9);
     }
 
+    // R-ARMS-004: a built arms workshop pays no upkeep (R-MONEY-002 has no rate for it). The same non-zero rates as
+    // UpkeepIsPaidInStepSeven, under gdd-0.3, so a branch that charged a workshop any of them would change the total.
+    [Fact]
+    public void ABuiltArmsWorkshopPaysNoUpkeep()
+    {
+        var files = ArmsWorkshopTests.Files(true);
+        files["rules.yaml"] = files["rules.yaml"]
+            .Replace("city_upkeep_per_year: 0", "city_upkeep_per_year: 1")
+            .Replace("housing_upkeep_per_year: 0", "housing_upkeep_per_year: 2")
+            .Replace("industry_upkeep_per_year: 0", "industry_upkeep_per_year: 3")
+            .Replace("transit_camp_upkeep_per_year: 0", "transit_camp_upkeep_per_year: 4")
+            .Replace("military_camp_upkeep_per_year: 0", "military_camp_upkeep_per_year: 5")
+            .Replace("hakhshara_upkeep_per_year: 0", "hakhshara_upkeep_per_year: 6");
+        var c = ContentLoader.Load(Fixture.Write(files));
+        Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var without = Cities.AnnualUpkeep(c, s, c.Rules.Mvp!);
+        Assert.True(without > 0);   // the rates are live: town_a pays the city rate and its camps' rates
+        s.CityProjects.Add(1, new CityProject(1, "arms_workshop", "town_a", 1, 1, 0, s.Date));
+
+        Assert.Equal(without, Cities.AnnualUpkeep(c, s, c.Rules.Mvp!));
+    }
+
     static string Camp(string id, string name, string kind, int q) => Fixture.GddSites.Replace("sites:\n", "")
         .Replace("site_a", id).Replace("Site A", name).Replace("q: 2", $"q: {q}").Replace("kinds: [yishuv]", $"kinds: [{kind}]")
         .Replace("    founded: 1949-06-12\n", "    city: town_a\n");

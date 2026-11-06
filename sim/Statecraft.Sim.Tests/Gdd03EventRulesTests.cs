@@ -436,6 +436,23 @@ public class Gdd03EventRulesTests
         Assert.EndsWith("(Fixture)", line.Message);
         Assert.Equal((CauseKeys.EventAmount, 26.0), (Assert.Single(shown).Key, shown[0].Delta));
     }
+    // R-EFX-009 under legacy (#2733 item 17): the plain fixture has no GDD loop at all, and debt_dollars still adds no
+    // Debt, takes no Treasury, and neither the choice nor its preview has a debt line.
+    [Fact]
+    public void DebtDollarsDoNothingUnderLegacy()
+    {
+        var c = ContentLoader.Load(Fixture.Write(null, new() { ["probe.yaml"] = Card(option: "    debt_dollars: 52\n") }));
+        Assert.False(c.IsGdd);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.PendingEvents.Add("probe");
+        var (debt, treasury) = (s.Debt, s.Treasury);
+        var preview = EventSystem.OptionEffects(c, s, c.Events.Single(e => e.Id == "probe").Options[0]);
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal((debt, treasury), (s.Debt, s.Treasury));
+        Assert.DoesNotContain(why, x => x.Target == "debt");
+        Assert.DoesNotContain(preview, x => x.Target == "debt");
+    }
     // R-EFX-009, R-EVT-003: a disloyal minister's half share halves the Debt with the foreign currency.
     [Fact]
     public void DelegatedHalfShareHalvesTheDebt()

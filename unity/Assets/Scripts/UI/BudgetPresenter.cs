@@ -23,7 +23,9 @@ namespace Statecraft.Game.UI
         Dictionary<string, double> draft = new Dictionary<string, double>();
         GameSession session;
 
-        public BudgetPresenter(VisualElement root, SimBridge bridge, UiText text)
+        /// <param name="keptDraft">The draft of the screen this one replaces over the same game (a language switch, #2708);
+        /// copied, so the old screen's edits cannot reach it.</param>
+        public BudgetPresenter(VisualElement root, SimBridge bridge, UiText text, IReadOnlyDictionary<string, double>? keptDraft = null)
         {
             screen = root.Q<VisualElement>("screen-budget"); this.bridge = bridge; this.text = text;
             reset = screen.Q<Button>("budget-reset"); submit = screen.Q<Button>("budget-submit");
@@ -32,7 +34,7 @@ namespace Statecraft.Game.UI
             reset.text = text["budget.reset"]; submit.text = text["budget.submit"];
             reset.clicked += Reset; submit.clicked += Submit;
             session = bridge.Session;
-            draft = Current();
+            draft = keptDraft != null ? new Dictionary<string, double>(keptDraft) : Current();
             bridge.Changed += OnChanged;
             Render();
         }

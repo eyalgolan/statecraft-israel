@@ -70,7 +70,7 @@ public class HexUnitTests
     /// <summary>Each Collection figure drawn faces as its proto figure faced (the units and tiles turn figures by that
     /// frame): of the four quarter turns, the proto's vertices lie nearest the drawn figure's as they are, unless another
     /// turn is within a fifth of it. Ignored without the local proto figures.</summary>
-    [Test]
+    [Test, Category("LocalOnly")]   // needs gitignored local art; the nightly leaves it out (#2655)
     public void CollectionFiguresFaceAsTheirProtoFigures()
     {
         var wrong = new List<string>(); int compared = 0;
