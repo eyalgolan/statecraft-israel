@@ -605,7 +605,9 @@ namespace Statecraft.Game.Tests
             var workshops = before.Select((f, i) =>
             {
                 var (lon, lat) = map.Frame.ToLonLat(new Vector3(f.spot.x, 0f, f.spot.y));
-                return new SpecialBuildingModels.Want(SpecialBuildingModels.WorkshopKey(400 + i), SpecialBuildingModels.Workshop, Opening, lon, lat, "test: at a farm scene");
+                // At b21's drawn scale, as ArmsWorkshops' rows (#2876), so its ground is the one ClearanceOf(Workshop) reads.
+                return new SpecialBuildingModels.Want(SpecialBuildingModels.WorkshopKey(400 + i), SpecialBuildingModels.Workshop, Opening, null, lon, lat, "test: at a farm scene",
+                    SpecialBuildingModels.Siting.Seeded, "", SpecialBuildingModels.WorkshopScale);
             }).ToList();
             var buildings = SpecialBuildingModels.Placements(Opening).Concat(workshops).ToList();
             Dictionary<string, Vector2> B21(IReadOnlyList<(RuralLife.Want want, Vector2 spot)> plan) =>

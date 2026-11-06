@@ -441,6 +441,16 @@ namespace Statecraft.Game.Tests
                 Assert.AreEqual(1, g.Select(w => w.NearOnly).Distinct().Count(), g.Key + ": one near-only value for all its rows");
                 Assert.AreEqual(1, g.Select(w => w.Scale).Distinct().Count(), g.Key + ": one scale for all its rows");
             }
+            // #2876: b21's rows are built per city project (ArmsWorkshops, not in EveryPlacement): one near-only value and one
+            // scale for all of them, in ordinary towns and major cities alike, and the scale ScaleOf(Workshop) reads, 2.5 (the
+            // owner, 6 November 2026: "the workshop should be bigger as it's barely visible"; 2.5x chosen with "do it").
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var towns = new[] { "rehovot", "hadera", "tel_aviv", "jerusalem" };
+            var workshops = SpecialBuildingModels.ArmsWorkshops(c, towns.Select((city, i) => Workshop(c, 30 + i, city, Built)));
+            CollectionAssert.AreEqual(towns, workshops.Select(w => w.City).ToArray(), "premise: a b21 row for each built workshop");
+            Assert.AreEqual(1, workshops.Select(w => w.NearOnly).Distinct().Count(), SpecialBuildingModels.Workshop + ": one near-only value for all its rows");
+            CollectionAssert.AreEqual(new[] { 2.5f }, workshops.Select(w => w.Scale).Distinct().ToArray(), SpecialBuildingModels.Workshop + ": one scale for all its rows, 2.5");
+            Assert.AreEqual(2.5f, SpecialBuildingModels.ScaleOf(SpecialBuildingModels.Workshop), SpecialBuildingModels.Workshop + ": ScaleOf by model name reads the rows' scale");
         }
 
         /// <summary>The residency anchors' radius (FillResidencyAnchors, the row's own ClearanceOf(w), from #2274) is the radius
@@ -508,6 +518,24 @@ namespace Statecraft.Game.Tests
                 Assert.AreEqual(SpecialBuildingModels.RealLengthM(w.Model) * SpecialBuildingModels.WorldScale * w.Scale, SpecialBuildingModels.SizeOf(w.Model), 0.01f, w.Key);
             }
             Assert.AreEqual(3.75f * 24f * 3f, SpecialBuildingModels.SizeOf(SpecialBuildingModels.Well), 0.01f, "the well, 270 m across");
+            // #2876, the owner, 6 November 2026 (verbatim): "the workshop should be bigger as it's barely visible"; 2.5x (720 m)
+            // chosen with "do it". b21's rows are built per city project (ArmsWorkshops, not in EveryPlacement): in an ordinary
+            // town and in a major city alike at 2.5 times the world scale, not at a town's edge, its size by row and by model
+            // name the same.
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var workshops = SpecialBuildingModels.ArmsWorkshops(c, new[] { Workshop(c, 31, "rehovot", Built), Workshop(c, 32, "tel_aviv", Built) });
+            Assert.AreEqual(2, workshops.Count, "premise: a b21 row in rehovot and in tel_aviv");
+            foreach (var w in workshops)
+            {
+                string who = w.Key + " (" + w.City + ")";
+                Assert.AreEqual(2.5f, w.Scale, who + "'s scale");
+                Assert.IsFalse(w.TownEdge, who + " does not stand at a town's edge as a prop does");
+                Assert.AreEqual(SpecialBuildingModels.RealLengthM(w.Model) * SpecialBuildingModels.WorldScale * 2.5f, SpecialBuildingModels.SizeOf(w), 0.01f, who + " by row");
+                Assert.AreEqual(SpecialBuildingModels.SizeOf(w), SpecialBuildingModels.SizeOf(w.Model), 0.01f, who + ": by row and by model name agree");
+                Assert.AreEqual(SpecialBuildingModels.ClearanceOf(w), SpecialBuildingModels.ClearanceOf(w.Model), 0.01f, who + ": its clearance by row and by model name agree");
+            }
+            Assert.AreEqual(12f * 24f * 2.5f, SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), 0.01f, "the b21, 720 m long");
+            Assert.AreEqual(0.71f * 720f, SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop), 0.01f, "the b21's clearance, about 511 m");
             var map = OpenMap();
             var layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 6, 15))!; AnswerAll();
             foreach (var key in props)
@@ -1080,7 +1108,11 @@ namespace Statecraft.Game.Tests
                     sized = rs.Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
                     go.localRotation = along;
                 }
-                Assert.AreEqual(SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), Mathf.Max(sized.size.x, sized.size.z), 1f, key + " at the buildings' one world scale");
+                // #2876, the owner, 6 November 2026 (verbatim): "the workshop should be bigger as it's barely visible"; the owner then
+                // chose 2.5x (720 m) on the coordinator's recommendation ("do it"). This assert moved on purpose, from the buildings'
+                // one world scale (12 m x 24 = 288 m) to 2.5 times it.
+                Assert.AreEqual(SpecialBuildingModels.RealLengthM(SpecialBuildingModels.Workshop) * SpecialBuildingModels.WorldScale * 2.5f, Mathf.Max(sized.size.x, sized.size.z), 1f,
+                    key + " (" + project.City + ") at 2.5 times the buildings' one world scale, 720 m (owner, 6 November 2026: \"the workshop should be bigger as it's barely visible\")");
                 Assert.IsTrue(rs.All(x => x.forceRenderingOff), key + " hidden until the close zoom");
             }
             // Deterministic: a second layer from nothing puts every workshop on the same spot.
@@ -1710,7 +1742,8 @@ namespace Statecraft.Game.Tests
                 var near = fortAt + 400f * side;
                 var (lon, lat) = map.Frame.ToLonLat(new Vector3(near.x, 0f, near.y));
                 wants = SpecialBuildingModels.Placements(After)
-                    .Append(new SpecialBuildingModels.Want(key41, SpecialBuildingModels.Workshop, Built, lon, lat, "test: by the fort's spot"))
+                    .Append(new SpecialBuildingModels.Want(key41, SpecialBuildingModels.Workshop, Built, null, lon, lat, "test: by the fort's spot",
+                        SpecialBuildingModels.Siting.Seeded, "", SpecialBuildingModels.WorkshopScale))
                     .ToList();
                 full = SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false).ToDictionary(x => x.want.Key, x => x.at);
                 var withoutFort = SpecialBuildingModels.Plan(map, After, wants.Where(w => w.Key != "latrun_tegart").ToList(), _ => true, log: false)
@@ -1876,7 +1909,8 @@ namespace Statecraft.Game.Tests
                 for (int i = 0; i < farms.Count; i++)
                 {
                     var (lon, lat) = map.Frame.ToLonLat(new Vector3(farms[i].spot.x, 0f, farms[i].spot.y));
-                    wants.Add(new SpecialBuildingModels.Want(SpecialBuildingModels.WorkshopKey(500 + i), SpecialBuildingModels.Workshop, Built, lon, lat, "test: at a farm scene"));
+                    wants.Add(new SpecialBuildingModels.Want(SpecialBuildingModels.WorkshopKey(500 + i), SpecialBuildingModels.Workshop, Built, null, lon, lat, "test: at a farm scene",
+                        SpecialBuildingModels.Siting.Seeded, "", SpecialBuildingModels.WorkshopScale));   // at its drawn scale, as ArmsWorkshops' rows (#2876)
                 }
                 SpecialBuildingModels Layer()
                 {
