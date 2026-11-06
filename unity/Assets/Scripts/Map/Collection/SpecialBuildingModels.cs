@@ -635,7 +635,8 @@ namespace Statecraft.Game.Map.Collection
         /// roadside (<see cref="Siting.Road"/>) or seeded spot, clear of the towns, the routes, the tokens of <paramref name="date"/>,
         /// the civilians, the wildlife and each other (a workshop also of its hex's edge and the farm scenes' plan, and on a hex
         /// a major city's kit blocks reach, in the camera's sight past them, <see cref="InSight"/>; a major city's workshop at
-        /// the edge of the city's kit blocks instead, <see cref="EdgeSpot"/>; one of Tal's
+        /// the edge of the city's kit blocks instead, <see cref="EdgeSpot"/>, and another town's, where its hex has no spot, at
+        /// the edge of its drawn buildings, <see cref="TownEdgeSpot"/>; one of Tal's
         /// four props, <see cref="Want.TownEdge"/>, at a town's edge, within <see cref="MaxPropOffset"/> of its point); the list
         /// keeps those whose model <paramref name="available"/> holds. A row with no spot (no clear ground, or past the cap) is left
         /// out whatever <paramref name="available"/> says, so no layer keeps clear of a prop that is not drawn. It reads only the
@@ -649,7 +650,18 @@ namespace Statecraft.Game.Map.Collection
         /// model to lie along the road; only rows that got a spot have one.</summary>
         internal static List<(Want want, Vector2 at)> PlanWithRoutes(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log,
             IReadOnlyList<(RuralLife.Want want, Vector2 spot)>? ruralPlan, out IReadOnlyDictionary<string, Vector2> along)
+            => PlanWithRoutes(map, date, wants, available, log, ruralPlan, out along, out _);
+
+        /// <summary>Whether a town's workshop with no spot on its hex falls back to the town's edge (<see cref="TownEdgeSpot"/>):
+        /// always, but for a test that plans without it to show the fallback moves no other spot.</summary>
+        internal static bool TownEdgeFallback = true;
+
+        /// <summary>As the PlanWithRoutes above, also giving the keys of the workshops that stand at their town's edge because their hex had no spot
+        /// (<see cref="TownEdgeSpot"/>), in plan order.</summary>
+        internal static List<(Want want, Vector2 at)> PlanWithRoutes(MapScene map, DateTime date, IReadOnlyList<Want> wants, Func<string, bool> available, bool log,
+            IReadOnlyList<(RuralLife.Want want, Vector2 spot)>? ruralPlan, out IReadOnlyDictionary<string, Vector2> along, out IReadOnlyList<string> atTownEdge)
         {
+            var edged = new List<string>(); atTownEdge = edged;
             var roads = new Dictionary<string, Vector2>(StringComparer.Ordinal); along = roads;
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
@@ -780,6 +792,31 @@ namespace Statecraft.Game.Map.Collection
                         && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                         && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built)
                         && OnHeldGround(map, ground, p, r, built, home), Seen, out dir);
+                    // #2876 (coordinator, 6 November 2026): at 2.5x a crowded town's hex can leave no spot (Petah Tikva's, by
+                    // Tel Aviv's): only then, the b21 stands at the edge of the town's drawn buildings (TownEdgeSpot), as a
+                    // major city's does at its blocks, on ground held the day it was built, in the camera's sight, clear of
+                    // the names, blocks, landmarks, houses, beach, farms, models, routes, tokens and figures. A spot found
+                    // above is never searched again, so it stays where it was. No edge spot either: not drawn, and the
+                    // warning names the town.
+                    if (at == null && TownEdgeFallback && map.KitFootprints.Any(f => f.id == w.City))
+                    {
+                        at = TownEdgeSpot(map, ground, w.City, w.Key, anchor, clearance, side, new[]
+                        {
+                            new SpotCheck("held", (p, r) => OnHeldGround(map, ground, p, r, built, home)),
+                            new SpotCheck("farms", (p, r) => TownLandmarks.Clear(p, r, farms)),
+                            new SpotCheck("taken", (p, r) => TownLandmarks.Clear(p, r, taken)),
+                            new SpotCheck("routes", (p, r) => !ground.OnRoute(p, r)),
+                            new SpotCheck("tokens", (p, r) => !ground.OnToken(p, r, built)),
+                            new SpotCheck("figures", (p, r) => ClearOfFigures(map, p, r, built)),
+                        }, out var tally);
+                        if (at == null)
+                        {
+                            if (log && available(w.Model))
+                                Debug.LogWarning($"BUILDINGS: no spot on the hex of {w.Key} passes every test, nor at the edge of {w.City} ({tally}); its {w.Model} is not drawn.");
+                            continue;
+                        }
+                        if (available(w.Model)) edged.Add(w.Key);
+                    }
                     // #2876 (coordinator, 6 November 2026: no quiet fallback to a hidden spot): where no spot on the hex passes
                     // every test, the camera's sight included, the b21 is not drawn, and the warning names the cities.
                     if (at == null && sight != null)
@@ -1103,15 +1140,68 @@ namespace Statecraft.Game.Map.Collection
         internal static Vector2? EdgeSpot(MapScene map, Kits.KitGround ground, string city, string key, Vector2 anchor, float clearance, float size,
             IReadOnlyList<SpotCheck> free, out string tally)
         {
+            var blocks = new List<(Vector2 c, float yaw, float w, float d)>();
+            foreach (var b in map.MajorCityBlocks) if (b.Id == city) blocks.Add((b.C, b.Yaw, b.W, b.D));
+            return EdgeSpotOf(map, ground, city, key, anchor, clearance, size, blocks, 0f, "its kit blocks", Array.Empty<SpotCheck>(), free, out tally);
+        }
+
+        /// <summary>#2876 (coordinator, 6 November 2026: at 2.5x a crowded town's own hex can leave the b21 no spot, Petah
+        /// Tikva's, and it is then not drawn): the spot of last resort for a town that is not a major city, when the searches
+        /// on its hex (<see cref="SeededSpot"/>, then <see cref="TownGap"/>) find none: <see cref="EdgeSpot"/>'s walk and tests
+        /// round the edge of what the town draws. That edge is its building models as the kit placed them at map build
+        /// (TownModelLayer.InstancesOf, never what has streamed, each as its fitted box, SettlementKits.ModelInstance.Corners):
+        /// the towns a player builds in draw them up close, where the b21 is drawn (and their far-off copies beyond, #2378), so
+        /// the outermost of them is the town's edge as the player sees it. A town with none (its kit drawn at every zoom: no
+        /// model list) takes the reach of its kit's plots, its footprint radius times SettlementKits.PlotReach, past which no
+        /// kit building stands. The "near" bound (<see cref="EdgeGapM"/>) is from that edge. Every other test is EdgeSpot's
+        /// (the town's ground and name pill, every major city's blocks and sight, the landmarks, the beach and
+        /// <paramref name="free"/>), and a spot also keeps clear of every town's drawn building models (each a disc of its half
+        /// diagonal, as <see cref="TownBuildings"/>).</summary>
+        internal static Vector2? TownEdgeSpot(MapScene map, Kits.KitGround ground, string town, string key, Vector2 anchor, float clearance, float size,
+            IReadOnlyList<SpotCheck> free, out string tally)
+        {
+            var home = map.KitFootprints.First(f => f.id == town);
+            var layer = map.GetComponentInChildren<Kits.TownModelLayer>(true);
+            var blocks = new List<(Vector2 c, float yaw, float w, float d)>();
+            if (layer != null) foreach (var b in layer.InstancesOf(town)) blocks.Add((b.C, b.Yaw, b.W, b.D));
+            float disc = blocks.Count == 0 ? home.radius * Kits.SettlementKits.PlotReach : 0f;
+            // Every town's drawn building models that a point's disc can meet: within the farthest a point stands from the
+            // town's centre (the edge, EdgeGapM and the clearance past it) plus the clearance and the model's half diagonal.
+            float edge = disc;
+            foreach (var (bc, _, bw, bd) in blocks) edge = Mathf.Max(edge, (bc - home.centre).magnitude + 0.5f * (bw + bd));
+            float extent = edge + EdgeGapM + 2f * clearance;
+            var houses = new List<(Vector2 centre, float radius)>();
+            if (layer != null)
+                foreach (var f in map.KitFootprints)
+                {
+                    if (Kits.TownModels.IsMajorCity(f.id) || (f.centre - home.centre).magnitude > extent + f.radius * Kits.SettlementKits.PlotReach) continue;
+                    foreach (var b in layer.InstancesOf(f.id))
+                    {
+                        float half = 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D);
+                        if ((b.C - home.centre).magnitude <= extent + half) houses.Add((b.C, half));
+                    }
+                }
+            return EdgeSpotOf(map, ground, town, key, anchor, clearance, size, blocks, disc,
+                blocks.Count > 0 ? "its building models" : "its kit's plot reach",
+                new[] { new SpotCheck("houses", (p, r) => TownLandmarks.Clear(p, r, houses)) }, free, out tally);
+        }
+
+        /// <summary><see cref="EdgeSpot"/>'s walk and tests round the edge of place <paramref name="city"/>: its drawn
+        /// <paramref name="edgeBlocks"/> (centre, yaw as KitMesh.Corners, width, depth), or, with none, a disc of
+        /// <paramref name="disc"/> m about its footprint's centre; <paramref name="edgeName"/> names that edge in the tally, and
+        /// <paramref name="extra"/> are tests run after the kits' landmarks (none for a major city).</summary>
+        static Vector2? EdgeSpotOf(MapScene map, Kits.KitGround ground, string city, string key, Vector2 anchor, float clearance, float size,
+            List<(Vector2 c, float yaw, float w, float d)> edgeBlocks, float disc, string edgeName, IReadOnlyList<SpotCheck> extra,
+            IReadOnlyList<SpotCheck> free, out string tally)
+        {
             var home = map.KitFootprints.First(f => f.id == city);
             Vector2 c = home.centre;
-            // The city's blocks: each one's centre from the city's centre, its sides' directions (as KitMesh.Corners) and half sides.
+            // The place's blocks: each one's centre from its centre, its sides' directions (as KitMesh.Corners) and half sides.
             var own = new List<(Vector2 q, Vector2 u, Vector2 v, float hw, float hd)>();
-            foreach (var b in map.MajorCityBlocks)
+            foreach (var b in edgeBlocks)
             {
-                if (b.Id != city) continue;
-                float a = b.Yaw * Mathf.Deg2Rad; var bu = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
-                own.Add((b.C - c, bu, new Vector2(-bu.y, bu.x), 0.5f * b.W, 0.5f * b.D));
+                float a = b.yaw * Mathf.Deg2Rad; var bu = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                own.Add((b.c - c, bu, new Vector2(-bu.y, bu.x), 0.5f * b.w, 0.5f * b.d));
             }
             // Every other major city's blocks, the same way (from the city's centre too).
             var others = new List<(Vector2 q, Vector2 u, Vector2 v, float hw, float hd)>();
@@ -1139,6 +1229,7 @@ namespace Statecraft.Game.Map.Collection
                     float reach = Vector2.Dot(q, dir) + along;
                     if (reach > 0f && Mathf.Abs(Vector2.Dot(q, across)) - wide < clearance) edge = Mathf.Max(edge, reach);
                 }
+                if (own.Count == 0 && disc > 0f) edge = disc;   // no blocks: the disc's edge, on every bearing
                 if (float.IsNegativeInfinity(edge)) continue;
                 for (int j = 0; j <= steps; j++) points.Add(c + dir * (edge + clearance + j * step));
             }
@@ -1160,9 +1251,10 @@ namespace Statecraft.Game.Map.Collection
                     f.radius * Kits.SettlementKits.PlotReach + clearance);
                 if ((f.centre - c).magnitude < extent + matters) places.Add(f);
             }
-            // The box distance (m) from a point to the nearest of <boxes>.
+            // The box distance (m) from a point to the nearest of <boxes> (the place's own with no blocks: to its disc).
             float Nearest(Vector2 p, List<(Vector2 q, Vector2 u, Vector2 v, float hw, float hd)> boxes)
             {
+                if (boxes == own && own.Count == 0 && disc > 0f) return Mathf.Max(0f, (p - c).magnitude - disc);
                 float best = float.MaxValue;
                 foreach (var (q, u, v, hw, hd) in boxes)
                 {
@@ -1211,6 +1303,7 @@ namespace Statecraft.Game.Map.Collection
                 }),
                 new SpotCheck("beach", OffBeach),
             };
+            checks.AddRange(extra);
             checks.AddRange(free);
             checks.Add(new SpotCheck("sight", (p, r) => InSight(p, 0f, size, ground.Y(p.x, p.y) + WorkshopTopShare * size, sight, tan)));
             // Per pass, how many points each test turned away first (the warning reports both passes).
@@ -1228,7 +1321,7 @@ namespace Statecraft.Game.Map.Collection
             }
             string Tally(int pass) => string.Join(", ", checks.Select((x, i) => (x, i)).Where(t => t.i >= pass)
                 .Select(t => FormattableString.Invariant($"{t.x.Name} {turned[pass][t.i]}")));
-            tally = FormattableString.Invariant($"{points.Count} points past its kit blocks, none on or off its hex passing; turned away first, on its hex by ")
+            tally = FormattableString.Invariant($"{points.Count} points past {edgeName}, none on or off its hex passing; turned away first, on its hex by ")
                 + Tally(0) + "; off it by " + Tally(1);
             return null;
         }

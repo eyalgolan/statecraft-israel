@@ -1019,7 +1019,9 @@ namespace Statecraft.Game.Tests
         /// but those of the two cities whose footprint covers the whole hex gets its b21, wholly on that hex, clear of the towns' footprints (and so their labels), the routes, the unit tokens,
         /// the civilians, the wildlife, the farm scenes and every other building model, upright, on the ground, hidden until the
         /// close zoom, and on the same spot when placed again. A major city's (TownModels.IsMajorCity) stands at the city's edge
-        /// instead (owner, 6 November 2026: "make the workshop at the edge of the city"; <see cref="AtTheCitysEdge"/>).</summary>
+        /// instead (owner, 6 November 2026: "make the workshop at the edge of the city"; <see cref="AtTheCitysEdge"/>), and so does
+        /// another town's whose hex leaves it no spot (#2876: SpecialBuildingModels.TownEdgeSpot; <see cref="AtTheTownsEdge"/>),
+        /// in the camera's sight past every major city's kit blocks; the run lists those towns ("fallback towns").</summary>
         [Test]
         public void OnTheMapEachBuiltWorkshopStandsOnItsHexClearAndUpright()
         {
@@ -1045,8 +1047,14 @@ namespace Statecraft.Game.Tests
                 .Concat(rural.Placed.Select(p => (new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model)))).ToList();
             var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
             Assert.AreEqual(1, asked.Count(a => a.id == SpecialBuildingModels.Workshop), "b21 is asked for once, whatever the number of workshops");
-            var streets = Streets(map, c, projects);
+            var streets = Streets(map, c, projects, out var edged);
             AnswerAll();
+            // #2876 (coordinator, 6 November 2026): the towns whose own hex leaves the b21 at 2.5x no spot, so that it stands at
+            // the town's edge instead (SpecialBuildingModels.TownEdgeSpot). Not a fixed count: it is what the map leaves.
+            var fallback = projects.Where(p => edged.Contains(SpecialBuildingModels.WorkshopKey(p.Id))).Select(p => p.City).ToList();
+            TestContext.WriteLine($"fallback towns: {fallback.Count} ({string.Join(", ", fallback)})");
+            CollectionAssert.IsEmpty(fallback.Where(Statecraft.Game.Map.Kits.TownModels.IsMajorCity).ToList(),
+                "a major city's b21 stands at its edge by its own search (EdgeSpot), never by the town fallback");
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             float r0 = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
             // A town whose footprint covers its own hex (Jerusalem and Tel Aviv today: footprints of several hexes,
@@ -1067,6 +1075,7 @@ namespace Statecraft.Game.Tests
             Assert.IsEmpty(lost, "a b21 at every built workshop; none in: " + string.Join(", ", lost));
             Assert.AreEqual(keys.Count, layer.Placed.Count(p => p.Model == SpecialBuildingModels.Workshop), "exactly one b21 per built workshop");
             var ground = PlacementLayer.CampGround(map);
+            var tops = BlockTops(map, ground); var toCamera = ToCamera();
             var others = layer.Placed.Where(p => !keys.Contains(p.Key)).Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model))).ToList();
             var spots = new List<(Vector2, float)>();
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(SpecialBuildingModels.Workshop, CollectionDetail.Near));
@@ -1086,6 +1095,19 @@ namespace Statecraft.Game.Tests
                     var edge = new List<string>();
                     AtTheCitysEdge(map, project.City, key, flat, r, edge, Built, (project.Q, project.R));
                     Assert.IsEmpty(edge, string.Join("\n", edge));
+                }
+                else if (edged.Contains(key))
+                {
+                    // #2876: its hex left it no spot, so it stands at the edge of the town's drawn buildings, off its hex if
+                    // need be, in the camera's sight past every major city's kit blocks.
+                    Assert.IsFalse(covered.Contains(project.City), who + ": a covered town stands among its houses, not at its edge");
+                    var edge = new List<string>();
+                    AtTheTownsEdge(map, project.City, key, flat, r, edge, Built, (project.Q, project.R));
+                    Assert.IsEmpty(edge, string.Join("\n", edge));
+                    var model = layer.transform.Find(key)!;
+                    var top = model.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; }).max.y;
+                    var (hiddenTop, firstHidden) = HiddenOnTop(map, tops, flat, 0f, SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), top, toCamera);
+                    Assert.AreEqual(0, hiddenTop, $"{who}: {hiddenTop} of 25 points on its top are hidden from the camera; first: {firstHidden}");
                 }
                 else
                 {
@@ -1141,12 +1163,51 @@ namespace Statecraft.Game.Tests
             }
         }
 
+        /// <summary>#2876 (coordinator, 6 November 2026): the town's-edge fallback (SpecialBuildingModels.TownEdgeSpot) runs only
+        /// for a workshop whose hex has no spot, so it moves nothing else: with a workshop built in every place a player can build
+        /// one in (<see cref="CityBuilt"/>), the plan with the fallback is the plan without it (every row's spot and street the
+        /// same), plus the fallback towns' b21s, each of a town that is not a major city and that got no spot without it.</summary>
+        [Test]
+        public void TheTownEdgeFallbackMovesNoOtherSpot()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var projects = CityBuilt(c).Select((city, i) => Workshop(c, 100 + i, city, Built)).ToList();
+            var cityOf = projects.ToDictionary(p => SpecialBuildingModels.WorkshopKey(p.Id), p => p.City);
+            var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
+            var planned = SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var along, out var edged)
+                .ToDictionary(x => x.want.Key, x => x.at);
+            Dictionary<string, Vector2> without; IReadOnlyDictionary<string, Vector2> alongWithout;
+            try
+            {
+                SpecialBuildingModels.TownEdgeFallback = false;
+                without = SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out alongWithout, out var none)
+                    .ToDictionary(x => x.want.Key, x => x.at);
+                CollectionAssert.IsEmpty(none, "no town's edge without the fallback");
+            }
+            finally { SpecialBuildingModels.TownEdgeFallback = true; }
+            TestContext.WriteLine($"fallback towns: {edged.Count} ({string.Join(", ", edged.Select(k => cityOf[k]))})");
+            foreach (var k in edged)
+            {
+                Assert.IsTrue(cityOf.ContainsKey(k), k + " is a workshop");
+                Assert.IsFalse(Statecraft.Game.Map.Kits.TownModels.IsMajorCity(cityOf[k]), k + " (" + cityOf[k] + ") is not a major city's");
+                Assert.IsFalse(without.ContainsKey(k), k + " (" + cityOf[k] + ") had no spot without the fallback");
+            }
+            CollectionAssert.AreEquivalent(without.Keys.Concat(edged).ToList(), planned.Keys.ToList(), "the fallback adds only the fallback towns' b21s");
+            foreach (var kv in without)
+                Assert.AreEqual(kv.Value, planned[kv.Key], kv.Key + (cityOf.TryGetValue(kv.Key, out var city) ? " (" + city + ")" : "") + " on the same spot with the fallback");
+            CollectionAssert.AreEquivalent(alongWithout.OrderBy(x => x.Key, StringComparer.Ordinal).ToList(), along.OrderBy(x => x.Key, StringComparer.Ordinal).ToList(),
+                "the same streets and roads with the fallback");
+        }
+
         /// <summary>The street direction the plan gives each workshop that stands on a street between a major city's kit blocks
-        /// (#2876; SpecialBuildingModels.PlanWithRoutes, the plan the layer draws), by key.</summary>
-        static IReadOnlyDictionary<string, Vector2> Streets(MapScene map, Statecraft.Sim.Content c, IEnumerable<Statecraft.Sim.CityProject> projects)
+        /// (#2876; SpecialBuildingModels.PlanWithRoutes, the plan the layer draws), by key, and in <paramref name="atTownEdge"/>
+        /// the keys of the workshops it stands at their town's edge because their hex had no spot (TownEdgeSpot, #2876).</summary>
+        static IReadOnlyDictionary<string, Vector2> Streets(MapScene map, Statecraft.Sim.Content c, IEnumerable<Statecraft.Sim.CityProject> projects,
+            out IReadOnlyList<string> atTownEdge)
         {
             var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
-            SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var along);
+            SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var along, out atTownEdge);
             return wants.Where(w => w.Model == SpecialBuildingModels.Workshop && along.ContainsKey(w.Key)).ToDictionary(w => w.Key, w => along[w.Key]);
         }
 
@@ -1499,12 +1560,29 @@ namespace Statecraft.Game.Tests
             }
             if (!(nearest < other)) failures.Add(FormattableString.Invariant($"{who} is {nearest:0} m from {city}'s nearest kit block, not nearer than {otherId}'s ({other:0} m)"));
             float mine = dist / fp.radius;
+            OnThePlacesGround(map, city, who, fp.centre, fp.radius, at, r, failures, built, home);
+            var ground = PlacementLayer.CampGround(map);
+            TestContext.WriteLine(FormattableString.Invariant($"{key} ({city}): {Offset(at, fp.centre)} from the city's centre ({mine:0.00} of its radius), hex {ground.Hex(at.x, at.y)}; {nearest:0} m from its nearest kit block, {other:0} m from {otherId}'s"));
+        }
+
+        /// <summary>The checks <see cref="AtTheCitysEdge"/> and <see cref="AtTheTownsEdge"/> share, each miss added to
+        /// <paramref name="failures"/> as <paramref name="who"/>'s: the b21 at <paramref name="at"/> (its disc <paramref name="r"/>)
+        /// is on <paramref name="place"/>'s ground (its footprint at <paramref name="centre"/>, <paramref name="radius"/>): deeper
+        /// in it (distance over radius, SettlementKits.OwnsFootprint's partition) than in any other place's, and clear of every
+        /// other place's plot reach (SettlementKits.PlotReach of its radius); clear of every place's name pill; its centre dry and
+        /// no open sea within the drawn full sand (BeachBands.FullSandAt) plus r; and on ground the player's side holds on
+        /// <paramref name="built"/> (its centre and 8 points round its disc each on <paramref name="home"/> or on a hex the
+        /// control wash gives the Israeli side that day).</summary>
+        static void OnThePlacesGround(MapScene map, string place, string who, Vector2 centre, float radius, Vector2 at, float r, List<string> failures,
+            DateTime built, (int q, int r) home)
+        {
+            float mine = (at - centre).magnitude / radius;
             foreach (var f in map.KitFootprints)
             {
                 if (!SpecialBuildingModels.ClearOfName(at, r, f.centre, f.radius)) failures.Add($"{who} is under {f.id}'s name pill");
-                if (f.id == city) continue;
+                if (f.id == place) continue;
                 float d = (at - f.centre).magnitude;
-                if (d / f.radius <= mine) failures.Add(FormattableString.Invariant($"{who} reads as {f.id}'s: {d / f.radius:0.00} of its radius, {mine:0.00} of {city}'s"));
+                if (d / f.radius <= mine) failures.Add(FormattableString.Invariant($"{who} reads as {f.id}'s: {d / f.radius:0.00} of its radius, {mine:0.00} of {place}'s"));
                 if (d < f.radius * Statecraft.Game.Map.Kits.SettlementKits.PlotReach + r) failures.Add($"{who} is on {f.id}'s ground (its plot reach)");
             }
             var ground = PlacementLayer.CampGround(map);
@@ -1525,7 +1603,81 @@ namespace Statecraft.Game.Tests
                     if (side != Control1948.Side.Israel)
                         failures.Add(FormattableString.Invariant($"{who}: its disc reaches hex {hq},{hr}, {side}{(holder != null ? " (" + holder + ")" : "")} on {built:yyyy-MM-dd}, not the Israeli side's"));
                 }
-            TestContext.WriteLine(FormattableString.Invariant($"{key} ({city}): {Offset(at, fp.centre)} from the city's centre ({mine:0.00} of its radius), hex {ground.Hex(at.x, at.y)}; {nearest:0} m from its nearest kit block, {other:0} m from {otherId}'s"));
+        }
+
+        /// <summary>#2876 (coordinator, 6 November 2026: at 2.5x Petah Tikva's hex left its b21 no spot): whether the b21 of a
+        /// town that is not a major city, planned at <paramref name="at"/> (its disc <paramref name="r"/>) at the town's edge
+        /// because its hex had no spot (SpecialBuildingModels.TownEdgeSpot), stands at the edge of what the town draws, as this
+        /// test reads it off the map (the town layer's building models as placed at map build, TownModelLayer.InstancesOf, or
+        /// with none the reach of its kit's plots, its footprint radius times SettlementKits.PlotReach), not off the layer's
+        /// search; each miss is added to <paramref name="failures"/>, naming the town:
+        /// - clear of every major city's kit block (its disc against each census box), of every town's building models (a disc
+        ///   of each one's half diagonal) and of the kits' walls, platforms, landmarks and landmark parts;
+        /// - past the town's buildings: none of them that the band <paramref name="r"/> either side of the ray from the town's
+        ///   centre through the spot meets reaches farther out along that ray than the disc's near edge (with none, the disc's
+        ///   near edge past the plots' reach);
+        /// - near them: within <see cref="EdgeReach"/> of the nearest of them (or of the plots' reach);
+        /// - nearer them than any major city's kit block;
+        /// - and <see cref="OnThePlacesGround"/>: the town's ground, no name pill, dry, off the beach, held on
+        ///   <paramref name="built"/>.</summary>
+        static void AtTheTownsEdge(MapScene map, string town, string key, Vector2 at, float r, List<string> failures, DateTime built, (int q, int r) home)
+        {
+            string who = FormattableString.Invariant($"{town}: {key} at ({at.x:0}, {at.y:0})");
+            var fp = map.KitFootprints.First(f => f.id == town);
+            var layer = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
+            Assert.IsNotNull(layer, "the town layer");
+            var own = layer!.InstancesOf(town);
+            float disc = own.Count == 0 ? fp.radius * Statecraft.Game.Map.Kits.SettlementKits.PlotReach : 0f;
+            foreach (var b in map.MajorCityBlocks)
+                if (!SpecialBuildingModels.ClearOfBox(at, r, b.C, b.Yaw, b.W, b.D))
+                    failures.Add(FormattableString.Invariant($"{who} overlaps {b.Id}'s {b.Kind} at {b.C}"));
+            foreach (var f in map.KitFootprints)
+            {
+                if (Statecraft.Game.Map.Kits.TownModels.IsMajorCity(f.id)) continue;   // its models are never drawn (#2876)
+                foreach (var b in layer.InstancesOf(f.id))
+                    if ((b.C - at).magnitude < r + 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D))
+                        failures.Add(FormattableString.Invariant($"{who} overlaps {f.id}'s {b.Model} at {b.C}"));
+            }
+            foreach (var l in map.KitStats.Landmarks)
+                if (!SpecialBuildingModels.ClearOfBox(at, r, l.C, l.Yaw, l.W, l.D)) failures.Add(FormattableString.Invariant($"{who} overlaps {l.Id}'s {l.Kind} at {l.C}"));
+            foreach (var part in map.KitStats.LandmarkParts)
+                if (!SpecialBuildingModels.ClearOfBox(at, r, new Vector2(part.Near.center.x, part.Near.center.z), 0f, part.Near.size.x, part.Near.size.z))
+                    failures.Add(FormattableString.Invariant($"{who} overlaps {part.Owner}'s {part.Kind} at {part.Near.center}"));
+            var toward = at - fp.centre; float dist = toward.magnitude;
+            var u = toward / dist; var n = new Vector2(-u.y, u.x);
+            float nearest = float.MaxValue;
+            if (own.Count == 0)
+            {
+                if (dist - r < disc - 0.5f) failures.Add(FormattableString.Invariant($"{who} is not past {town}'s plots' reach ({disc:0} m): the disc from {dist - r:0} m"));
+                nearest = Mathf.Max(0f, dist - disc);
+            }
+            foreach (var b in own)
+            {
+                float a = b.Yaw * Mathf.Deg2Rad;
+                var bu = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); var bv = new Vector2(-bu.y, bu.x);
+                float hu = 0.5f * b.W * Mathf.Abs(Vector2.Dot(bu, u)) + 0.5f * b.D * Mathf.Abs(Vector2.Dot(bv, u));
+                float hn = 0.5f * b.W * Mathf.Abs(Vector2.Dot(bu, n)) + 0.5f * b.D * Mathf.Abs(Vector2.Dot(bv, n));
+                float tc = Vector2.Dot(b.C - fp.centre, u), sc = Vector2.Dot(b.C - fp.centre, n);
+                if (Mathf.Abs(sc) - hn < r - 0.5f && tc + hu > 0f && tc + hu > dist - r + 0.5f)
+                    failures.Add(FormattableString.Invariant($"{who} is not past {town}'s {b.Model} at {b.C} on its bearing: it reaches {tc + hu:0} m out, the disc from {dist - r:0} m"));
+                var q = b.C - at; float qu = q.x * bu.x + q.y * bu.y, qv = q.x * bv.x + q.y * bv.y;
+                float du = Mathf.Max(0f, Mathf.Abs(qu) - 0.5f * b.W), dv = Mathf.Max(0f, Mathf.Abs(qv) - 0.5f * b.D);
+                nearest = Mathf.Min(nearest, Mathf.Sqrt(du * du + dv * dv));
+            }
+            if (nearest > EdgeReach(r)) failures.Add(FormattableString.Invariant($"{who} is {nearest:0} m from {town}'s nearest building, past {EdgeReach(r):0} m"));
+            float other = float.MaxValue; string otherId = "none";
+            foreach (var b in map.MajorCityBlocks)
+            {
+                float a = b.Yaw * Mathf.Deg2Rad;
+                var q = b.C - at; float qu = q.x * Mathf.Cos(a) + q.y * Mathf.Sin(a), qv = -q.x * Mathf.Sin(a) + q.y * Mathf.Cos(a);
+                float du = Mathf.Max(0f, Mathf.Abs(qu) - 0.5f * b.W), dv = Mathf.Max(0f, Mathf.Abs(qv) - 0.5f * b.D);
+                float d = Mathf.Sqrt(du * du + dv * dv);
+                if (d < other) { other = d; otherId = b.Id; }
+            }
+            if (!(nearest < other)) failures.Add(FormattableString.Invariant($"{who} is {nearest:0} m from {town}'s nearest building, not nearer than {otherId}'s kit blocks ({other:0} m)"));
+            OnThePlacesGround(map, town, who, fp.centre, fp.radius, at, r, failures, built, home);
+            var ground = PlacementLayer.CampGround(map);
+            TestContext.WriteLine(FormattableString.Invariant($"{key} ({town}) at its town's edge: {Offset(at, fp.centre)} from the town's centre ({dist / fp.radius:0.00} of its radius), hex {ground.Hex(at.x, at.y)}; {nearest:0} m from its nearest {(own.Count > 0 ? "building" : "plot reach")}, {other:0} m from {otherId}'s kit blocks"));
         }
 
         /// <summary>#2876, the owner, 6 November 2026 (verbatim): "make the workshop at the edge of the city". A workshop built on
