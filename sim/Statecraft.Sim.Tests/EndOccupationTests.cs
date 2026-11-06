@@ -47,6 +47,13 @@ public class EndOccupationTests
         var s = CombatTests.With(c, Soldier(1, 1, 0));
         var result = Simulation.Step(c, s, new Command[] { new EndOccupation("town_a", SettlementControl.Annex) });
         Assert.Contains("not awaiting the end of its occupation", Assert.Single(result.Rejected).Reason);
+        // #2733 item 1: with a cost the Attention could pay, the refused order's Attention comes back.
+        var costly = CaptureTests.Load(f => f["rules.yaml"] = f["rules.yaml"].Replace("end_occupation: 0", "end_occupation: 2"), CaptureTests.AllTargets);
+        s.Attention = 5;
+        Assert.InRange(AttentionSystem.Cost(costly, s, SettlementControl.EndKind), 0.1, s.Attention);
+        var refused = Simulation.Preview(costly, s, new Command[] { new EndOccupation("town_a", SettlementControl.Annex) });
+        Assert.Contains("not awaiting the end of its occupation", Assert.Single(refused.Rejected).Reason);
+        Assert.Equal(s.Attention, refused.State.Attention);
     }
 
     // R-CTRL-015: Annex then Withdraw, nothing else, no puppet.
