@@ -14,9 +14,9 @@ namespace Statecraft.Game.Map.Units
         /// (<see cref="MaxScreenShare"/>).</summary>
         public const float SizeM = 1400f;
         /// <summary>The largest share of the screen's height a plate is drawn at (owner, 31 October 2026, "Shrink up close
-        /// (Recommended)": a nearer camera draws it smaller, so it never grows past this). #2430: 0.15 left the plate as wide
-        /// as the figures are tall at 31 km, the darkest thing on the token, where promo 03's is about half their height.
-        /// DESIGN VALUE 0.055, 59 of 1080 pixels; from about 80 km out a plate is <see cref="SizeM"/> wide and no taller than
+        /// (Recommended)": a nearer camera draws it smaller, so it never grows past this). #2430: 0.15 left the plate nearly
+        /// as wide as the figures are tall at 31 km, the darkest thing on the token, where promo 03's is about half their
+        /// height. DESIGN VALUE 0.055, 59 of 1080 pixels; from about 60 km out a plate is <see cref="SizeM"/> wide and no taller than
         /// this, and the plate, not the figures, is what reads (UnitBadgeScreenCapTests).</summary>
         public const float MaxScreenShare = 0.055f;
         /// <summary>Clearance (m) between the token's top and the plate's lower edge.</summary>

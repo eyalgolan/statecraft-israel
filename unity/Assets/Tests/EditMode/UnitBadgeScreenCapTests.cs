@@ -123,8 +123,7 @@ public class UnitBadgeScreenCapTests
                         }
             Assert.Greater(capped, 100, "nearer views shrink the plates");
 
-            // The gameplay band (#2430): the design's cap, as a literal, holds at 45 and 60 km, where main drew plates up to
-            // 0.095 of the screen. The plate's lower edge stands where it did at 30 km, raised with the flag: nothing at 45 km,
+            // The gameplay band (#2430): the design's cap, as a literal, holds at 45 and 60 km. The plate's lower edge stands where it did at 30 km, raised with the flag: nothing at 45 km,
             // the grown flag's 0.3 of a pole at 60 km (UnitShowcase.ZoomScale; the sweep above cannot assert this, its views
             // are all below the ramp). A click on a plate still picks its unit.
             const float DesignCap = 0.055f;

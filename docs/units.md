@@ -465,8 +465,8 @@ and a unit the sim moves is placed without the control layer.
   camera before the names are placed, and each token's keep-clear boxes follow (`UnitLayer.KeepClear`). A fixed box round
   every place the camera's yaw could take the badge, about 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03
   (`MapLabelTests.PillsKeepClearOfTheUnitTokens`; test `TheKeepClearBoxesFollowTheBadgeAndTheFlagAsTheCameraTurns`).
-  Up close the badge is capped on the screen (owner, 31 October 2026: "Shrink up close (Recommended)"): from about 80 km
-  out it keeps its 1.4 km width (#2430: about 30 km until then, where the plate was as wide as the figures are tall), and a
+  Up close the badge is capped on the screen (owner, 31 October 2026: "Shrink up close (Recommended)"): from about 60 km
+  out it keeps its 1.4 km width (#2430: about 30 km until then, where the plate was nearly as wide as the figures are tall), and a
   nearer camera draws it no taller than `UnitBadge.MaxScreenShare` of the screen's
   height, shrinking about its lower edge, which stays clear of the flag (test `UnitBadgeScreenCapTests`).
 - **Ring:** the white ring appears only on selection.
