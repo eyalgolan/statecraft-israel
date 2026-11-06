@@ -364,7 +364,8 @@ public class UnitsInPlayTests
     /// <summary>#2734: the live 101 Squadron token's Spitfire swaps as the showcase's does (UnitShowcaseTests): it is drawn
     /// code-built at once and asks the Collection stream for the Blender-built model; when that arrives, the model stands
     /// under the token's aircraft, the code-built airframe and propeller stop drawing, the aircraft keeps its place and scale,
-    /// and a flying one's flight turns the model's Propeller. A token rebuilt after the model arrived (here parked) draws it at once. The Avia S-199 (before 15
+    /// and a flying one's flight turns the model's Propeller, which takes over its light blur (#2728), while its ground shadow
+    /// stays and nothing casts a shadow of its own. A token rebuilt after the model arrived (here parked) draws it at once. The Avia S-199 (before 15
     /// October 1948) stays code-built and asks for nothing. A rebuilt token releases its lease.</summary>
     [Test]
     public void TheSquadronsSpitfireStreamsInOverTheCodeBuiltOneAndTheS199StaysCodeBuilt()
@@ -406,6 +407,11 @@ public class UnitsInPlayTests
             Assert.IsTrue(streamed.GetComponentsInChildren<Renderer>(true).All(r => r.enabled), "the streamed model draws");
             Assert.IsTrue(Code(plane).All(r => !r.enabled), "the code-built airframe and propeller no longer draw");
             Assert.AreSame(streamed.Find(StreamedAircraft.PropellerName), flight.Propeller, "the flight turns the streamed Propeller");
+            var blur = streamed.Find(StreamedAircraft.PropellerName + "/" + UnitShowcase.PropellerBlurName);
+            Assert.IsTrue(blur != null && blur.GetComponent<MeshRenderer>().enabled, "the streamed Propeller carries the blur, turning with it");
+            Assert.IsFalse(plane.Find("Propeller").GetComponentsInChildren<Renderer>(true).Any(r => r.enabled), "nothing drawn is left on the code-built propeller");
+            Assert.IsTrue(plane.Find(UnitShowcase.ShadowName) is Transform laid && laid.GetComponent<MeshRenderer>().enabled, "the ground shadow stays");
+            Assert.IsTrue(plane.GetComponentsInChildren<Renderer>(true).All(r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off), "and nothing casts a shadow of its own");
             Assert.AreEqual(position, plane.position); Assert.AreEqual(scale, plane.localScale);
             Assert.AreEqual(Vector3.one * UnitShowcase.AircraftScale, plane.localScale, "the symbolic scale");
 
@@ -416,6 +422,7 @@ public class UnitsInPlayTests
             Assert.AreEqual(2, asked.Count, "the parked Spitfire asks too, for a lease of its own");
             Assert.IsNotNull(plane.Find(StreamedAircraft.ModelName), "the model has arrived, so the rebuilt token draws it at once");
             Assert.IsTrue(Code(plane).All(r => !r.enabled), "no frame of the code-built aircraft after a rebuild");
+            Assert.IsFalse(plane.GetComponentsInChildren<Transform>(true).Any(c => c.name == UnitShowcase.PropellerBlurName), "a parked Spitfire has no blur");
             asked[1].done(model);
             Assert.AreEqual(1, plane.Cast<Transform>().Count(c => c.name == StreamedAircraft.ModelName), "its own answer adds no second model");
             Assert.IsTrue(Code(plane).All(r => !r.enabled));

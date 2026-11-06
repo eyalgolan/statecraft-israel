@@ -354,7 +354,9 @@ public class UnitShowcaseTests
     /// <summary>#2734: the showcase's Spitfire is drawn at once, code-built (its airframe and propeller), and the Blender-built
     /// model is asked for from the Collection stream. When the stream answers, the model stands under the aircraft in the
     /// code-built model's frame, the code-built airframe and propeller stop drawing, the aircraft keeps its place, heading and
-    /// symbolic scale, and the flight turns the model's own Propeller, not the hidden code-built one.</summary>
+    /// symbolic scale, and the flight turns the model's own Propeller, not the hidden code-built one. The flying look
+    /// (#2728) carries over to the streamed model: its Propeller carries the light blur, turning with it, the soft ground
+    /// shadow stays, and nothing casts a shadow of its own.</summary>
     [Test]
     public void TheShowcaseSpitfireStartsCodeBuiltAndSwapsToTheStreamedModelWhenItArrives()
     {
@@ -377,6 +379,11 @@ public class UnitShowcaseTests
             var codeProp = plane.Find("Propeller");
             Assert.AreSame(codeProp, flight.Propeller, "meanwhile the flight turns the code-built propeller");
             var (position, rotation, scale) = (plane.position, plane.rotation, plane.localScale);
+            var codeBlur = codeProp.Find(UnitShowcase.PropellerBlurName);
+            Assert.IsNotNull(codeBlur, "fixture: #2728's blur on the code-built propeller");
+            var (blurMesh, blurMaterial) = (codeBlur.GetComponent<MeshFilter>().sharedMesh, codeBlur.GetComponent<MeshRenderer>().sharedMaterial);
+            var shadow = plane.Find(UnitShowcase.ShadowName);
+            Assert.IsNotNull(shadow, "fixture: #2728's ground shadow under the aircraft");
 
             asked[0].done(model);
 
@@ -387,7 +394,8 @@ public class UnitShowcaseTests
             Assert.AreEqual(Vector3.one, streamed.localScale, "real metres, as the code-built model");
             Assert.IsTrue(streamed.gameObject.activeSelf);
             var drawn = streamed.GetComponentsInChildren<Renderer>(true);
-            Assert.AreEqual(2, drawn.Length); Assert.IsTrue(drawn.All(r => r.enabled), "the streamed model draws");
+            Assert.AreEqual(2, drawn.Count(r => r.name != UnitShowcase.PropellerBlurName), "the model's body and propeller");
+            Assert.IsTrue(drawn.All(r => r.enabled), "the streamed model draws");
             Assert.IsTrue(code.All(r => !r.enabled), "the code-built airframe and propeller no longer draw");
             Assert.AreEqual(position, plane.position, "the aircraft keeps its place");
             Assert.Less(Quaternion.Angle(rotation, plane.rotation), 0.01f, "and its heading");
@@ -404,6 +412,28 @@ public class UnitShowcaseTests
             Assert.Less(Quaternion.Angle(Quaternion.Euler(0f, 0f, -Mathf.Repeat(Time.time * 1500f, 360f)), streamedProp.localRotation), 0.01f,
                 "a flight step sets the streamed propeller's angle");
             Assert.Less(Quaternion.Angle(hidden, codeProp.localRotation), 0.01f, "and not the hidden code-built one's");
+
+            // #2728's flying look, on the streamed model: the light blur on its Propeller (so it turns with it), as on the
+            // code-built one (TheCodeBuiltSpitfiresPropellerCarriesALightBlur), sized to its blades; nothing drawn is left on
+            // the hidden code-built propeller; the soft shadow stays under the aircraft; and nothing casts a shadow of its own.
+            var blur = streamedProp.Find(UnitShowcase.PropellerBlurName);
+            Assert.IsNotNull(blur, "the blur, a child of the streamed propeller, so it turns with it");
+            var blurRenderer = blur.GetComponent<MeshRenderer>();
+            Assert.IsTrue(blurRenderer.enabled && blur.gameObject.activeInHierarchy, "and it draws");
+            Assert.AreSame(blurMesh, blur.GetComponent<MeshFilter>().sharedMesh, "the same light, streaked disc");
+            Assert.AreSame(blurMaterial, blurRenderer.sharedMaterial, "with the same see-through material");
+            Assert.AreEqual(UnityEngine.Rendering.ShadowCastingMode.Off, blurRenderer.shadowCastingMode); Assert.IsFalse(blurRenderer.receiveShadows);
+            Assert.Greater(Mathf.Abs(Vector3.Dot(blur.up, streamedProp.forward)), 0.999f, "the disc faces along the propeller's axis (+z)");
+            Assert.AreEqual(Vector3.zero, blur.localPosition, "through the hub");
+            // The stand-in's propeller is a unit sphere: its blades reach 0.5 from the hub, so the blur a little beyond.
+            Assert.That(blur.localScale.x, Is.InRange(0.5f, 0.6f), "sized to the streamed blades, not the code-built ones (1.6)");
+            Assert.IsFalse(codeProp.GetComponentsInChildren<Renderer>(true).Any(r => r.enabled), "nothing drawn is left on the hidden code-built propeller");
+            Assert.AreSame(shadow, plane.Find(UnitShowcase.ShadowName), "the soft shadow stays");
+            Assert.IsTrue(shadow.GetComponent<MeshRenderer>().enabled, "and draws");
+            Assert.AreSame(shadow, typeof(ShowcaseFlight).GetField("shadow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(flight),
+                "and the flight still lays it on the ground");
+            Assert.IsTrue(plane.GetComponentsInChildren<Renderer>(true).All(r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off),
+                "the streamed model casts no shadow of its own either (one would lie about 7 km off at its drawn height)");
         }
         finally
         {
@@ -430,6 +460,9 @@ public class UnitShowcaseTests
                     CodeBuilt(plane).Length, why + ": nothing else under the aircraft but its blur and its shadow");
                 Assert.IsTrue(CodeBuilt(plane).All(r => r.enabled), why + ": the code-built airframe and propeller still draw");
                 Assert.AreSame(plane.Find("Propeller"), plane.GetComponent<ShowcaseFlight>().Propeller, why + ": the flight turns the code-built propeller");
+                var blur = plane.Find("Propeller/" + UnitShowcase.PropellerBlurName);
+                Assert.IsTrue(blur != null && blur.GetComponent<MeshRenderer>().enabled, why + ": the code-built propeller keeps its blur");
+                Assert.IsNotNull(plane.Find(UnitShowcase.ShadowName), why + ": and the aircraft its shadow");
             }
             var first = UnitShowcase.Spawn(map, still: true);
             asked[0].done(null);
@@ -647,6 +680,7 @@ public class UnitShowcaseTests
             Assert.IsNotNull(spawned, "the streamed model's Propeller under the showcase's Spitfire");
             var flight = root.GetComponentInChildren<ShowcaseFlight>();
             Assert.AreSame(spawned, flight.Propeller);
+            Assert.IsNotNull(spawned.Find(UnitShowcase.PropellerBlurName), "the blur on it");
             Assert.IsNotNull(flight.transform.Find(UnitShowcase.ShadowName), "the soft shadow");
             // And the flight really turns it about its local +z, 1500 degrees a second, once it flies (not held still).
             typeof(ShowcaseFlight).GetField("still", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(flight, null);
