@@ -526,7 +526,7 @@ public class Gdd03EventRulesTests
         "frumkin_commission:c7bfb21991dc41bfcbaaf4778c47c5226913a8289ba208474c87128768ba622c", // re-pinned for #1065 (Beri's native Hebrew read)
         "hula_drainage:b7ec7159b5cb6ecc009e1ff7e12a7f2426ee1c4b992b8c91c4675c8df3cc1bf5", // re-pinned for #1065 (Beri's native Hebrew read)
         "idf_founding:caad7affcf0309a41c56956c10dd15936ec319ac996ddff6f2cd85efbcebc51e", // re-pinned for #1065 (Beri's native Hebrew read)
-        "iraqi_exodus:ac4fe1b69f39fbd3529606de2221d23ef722de69a2b10c40f8411027657652ee", // re-pinned for #1065 (Beri's native Hebrew read), then for #2833 (R-TURN-002: `from` a turn earlier and its comment)
+        "iraqi_exodus:7a94f2e5edc36a272323bf1702e74b3ee8a7e6da709d2effda14c55a7ae6de70", // re-pinned for #1065 (Beri's native Hebrew read), then for #2833 (R-TURN-002: `from` a turn earlier and its comment), then for the text before the 10 March 1951 law (the 1 March emigration deadline, JTA 19 January 1951) and its source row
         "israel_bonds:db9b8cf0754fd62166effed2ee3b563aa06bfdba7cf6d43f4965cab44997786a", // re-pinned for #1065 (Beri's native Hebrew read), then for #2457 (R-EFX-009: launch's debt_dollars: 52 and its comment; owner, 2 November 2026, #2224, "Add equal Debt"), then for the donations-only wording and pending Hebrew review marker
         "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
         "jerusalem_demilitarisation_guard:a9693784deafaad901268afd8a0c47a2f5b7d5f75eba33d6180f94b62913fb53", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
