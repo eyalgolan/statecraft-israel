@@ -10,10 +10,11 @@ namespace Statecraft.Game.Map
 {
     /// <summary>GDD Phase 1 PR 8 (#381): the designated sites the player builds on (sites.yaml, State.Sites).
     /// <list type="bullet">
-    /// <item>A built site is drawn as a rural kit on its hex (SettlementKits, as a kibbutz: the one archetype a new yishuv has
+    /// <item>A built yishuv site is drawn as a rural kit on its hex (SettlementKits, as a kibbutz: the one archetype a new yishuv has
     /// in Phase 1), or a built camp as a camp kit (SettlementKits.Camp.cs, #792; <see cref="KitOf"/>), named
     /// <see cref="Prefix"/> + its id. With the map's "kits" toggle off, it is the kibbutz marker box, as the settlements are
     /// (KitLayer).</item>
+    /// <item>A built field or drained swamp site draws nothing and has no pill (#2812, "Ground change only").</item>
     /// <item>A site being built is a scaffold marker: an open frame of raw timber on its hex, named Prefix + id +
     /// <see cref="ScaffoldSuffix"/>.</item>
     /// <item>An available site, with no record, draws nothing.</item>
@@ -74,6 +75,9 @@ namespace Statecraft.Game.Map
                 var at = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
                 at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
                 if (w.BuiltOn == null) { Scaffold(Prefix + w.Site + ScaffoldSuffix, at, cube, map, block); continue; }
+                // #2812 ("Ground change only"): a built field or drained swamp is no place, so no kit, box or pill; it is left to
+                // the hex's ground. Only a yishuv or a camp site becomes a place.
+                if (!Projects.IsYishuvSite(site) && !Projects.IsCamp(site)) continue;
                 built.Add(new Settlement { Id = Prefix + w.Site, Name = site.Name, NameHe = site.NameHe, Type = "kibbutz", Lon = hex.Lon, Lat = hex.Lat });
                 kitPlaces.Add(KitOf(site, built[built.Count - 1]));
             }
