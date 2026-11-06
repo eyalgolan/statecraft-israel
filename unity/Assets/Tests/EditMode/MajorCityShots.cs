@@ -115,6 +115,9 @@ public class MajorCityShots
     /// layer's view distance (to the y = 0 plane: the rig's distance plus the look-at's height along the view ray).</summary>
     static void Aim(Vector3 at, float viewM)
     {
+        // CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3: without this every
+        // still came out 1.33 times too wide (found by #2880; its UnitScaleShots sets the same).
+        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
         var rig = Camera.main.GetComponent<CameraRig>();
         rig.LookAt = at; rig.Yaw = 0f; rig.Distance = viewM; rig.Apply();
         float down = -Camera.main.transform.forward.y;
@@ -194,7 +197,8 @@ public class MajorCityShots
     {
         var rig = Camera.main.GetComponent<CameraRig>(); var towns = Towns;
         return FormattableString.Invariant($"look-at {at}, view {TownModelLayer.ViewDistance(Camera.main):F0} m (rig {rig.Distance:F0} m), ")
-            + FormattableString.Invariant($"layer drew {towns.LastDrawn} instances, close={towns.LastClose}");
+            + FormattableString.Invariant($"layer drew {towns.LastDrawn} instances, close={towns.LastClose}, ")
+            + FormattableString.Invariant($"aspect {Camera.main.aspect:F3}, m00/m11 {Camera.main.projectionMatrix[0, 0] / Camera.main.projectionMatrix[1, 1]:F3}");
     }
 
     /// <summary>Sets the game's date (the state the map shows and the turn's start) and lets GameRoot redraw on it.</summary>
