@@ -3548,24 +3548,24 @@ human review flag, licence declaration or release gate changed.
 Branch `visual/2431`, on #2427's lighting. The band's width was not the gap: at gameplay03 A2 draws about 10 px against the promo's 8. The colour was: the blue stripe's saturation was 0.44 against the promo's 0.59 (72,114,176), and nothing marked the band as lit.
 
 - **What changed.** On A2, B2 and C2 (the stronger tier; Legacy, A, B and C are as they were): a brighter edge stripe, `_ScBorderStripe` (blue sRGB 0.26, 0.40, 0.61; orange 0.92, 0.37, 0.14; C2 keeps its own blue), and a halo along the inside of the light stripe (`_ScBorderGlow`: pale blue 0.66, 0.78, 0.97 and warm 1.02, 0.57, 0.22, opacity 0.72 at the stripe, falling as a square over 320 m, at least 6 px). Grey does not glow, so contested ground stays flat and dashed. The tint and wash keep `Style.Colour`.
-- **Why a split colour.** A brighter `Colour` also brightens the fill: in the first fit the hills went redder (rose index +2 to +5) and the palette distance rose from 0.286 to 0.308. With the stripe apart from the fill, the land's numbers do not move.
+- **Why a split colour.** A brighter `Colour` also brightens the fill. At gameplay03 the fill at the new colours gave rose +3 -> +6, land warmth 0.235 -> 0.251, saturation 0.430 -> 0.440 and palette distance 0.307 -> 0.346, though its hue came nearer the promo (28.7 -> 27.2). With the stripe apart from the fill, the land's numbers do not move. B2's rim is drawn from the stripe colour, so it follows the brighter stripe.
 - **Why in the shader.** Bloom is a full-screen pass and #2427 kept it off. The halo is drawn in the wash's room: no fetch (`TheBordersReadOneTexelAPixel`), no wider reach (it is never wider than the wash, `GlowWidthPx`, so the early-out stays exact, `TheEarlyOutIsExactInEveryVariant`, and a far hex whose wash has given way has no glow). Not under the stripes or a rim.
-- **The tint is not the golden gap.** Editor frames at gameplay03, composited with the UI, one session, the same state; the crop as in "Issue #38: grade retune", and #2427's hypothesis was that the tint explains much of what is left. It does not:
+- **The tint is not the golden gap.** Editor frames at gameplay03, composited with the UI, one session, the same state, the projection at 16:9 (the rig sets `cam.aspect`: #2882); the crop as in "Issue #38: grade retune". #2427's hypothesis was that the tint explains much of what is left. It does not:
 
 | Land at gameplay03 | hue | rose | saturation | palette distance |
 |---|---|---|---|---|
 | promo | 26.6 | +5 | 0.364 | |
-| as played (tint 0.12, wash 0.45) | 29.0 | +2 | 0.426 | 0.286 |
-| tint 0.06 | 29.3 | +1 | 0.425 | 0.283 |
-| tint 0 | 29.5 | +1 | 0.424 | 0.281 |
-| tint 0, wash 0.25 | 29.6 | +1 | 0.424 | 0.282 |
-| borders off | 33.9 | -7 | 0.416 | 0.309 |
+| as played (tint 0.12, wash 0.45) | 28.7 | +3 | 0.430 | 0.307 |
+| tint 0.06 | 28.9 | +2 | 0.429 | 0.305 |
+| tint 0 | 29.2 | +2 | 0.428 | 0.302 |
+| tint 0, wash 0.25 | 29.3 | +1 | 0.428 | 0.303 |
+| borders off | 33.6 | -7 | 0.413 | 0.312 |
 
-  (The issue's 0.40 is the Primary style's own strength; A2 draws 0.45, `StrongWashStrength`.) Taking the tint away moves the hue half a degree, away from the promo, and leaves the saturation. With the borders off the land is further from the promo on hue, rose and distance, so the territory colour helps. The tint and wash stay as they were; the rest of the gap is not the borders (hypothesis: the land and town art).
+  (The issue's 0.40 is the Primary style's own strength; A2 draws 0.45, `StrongWashStrength`.) Taking the tint away moves the hue half a degree, away from the promo, takes 0.002 off the saturation and 0.005 off the distance. With the borders off the land is further from the promo on hue, rose and distance, and nearer on saturation (0.413), so the territory colour helps more than it costs. The tint and wash stay as they were; the rest of the gap is not the borders (hypothesis: the land and town art).
 - **Rendered (`TheStripesGlowAtGameplay03`, proof edge on the coastal plain).** Old colours against this pass: blue stripe saturation 0.44 -> 0.52, orange stripe value 0.79 -> 0.91, the glow's lift over the far wash -0.003 -> 0.130 (blue) and -0.015 -> 0.074 (orange). The two halos stand 38.4 apart under simulated deuteranopia and protanopia at worst (bar 15), and `ColourBlindPlayersTellTheStylesApartInEveryVariant` passes on every variant, Neutral included.
 - **The owner's blue.** `ThePrimaryStripeIsTheDeeperBlueOfTheRuling` (bar 10) goes from 2.6 to 8.8 deltaE76, still nearer the ruling's 89,119,156 than main's lighter blue (10.0). The blue was brought back to pass it: a stronger one (0.24, 0.40, 0.64) measured 12.9. Going nearer the promo's blue means re-deciding that ruling.
 - **WebGL `?shot`, gameplay03, against #2427's draft.** Land mean (145, 115, 86), hue 29.6, saturation 0.426, palette distance 0.32 on both sides; whole-frame warmth 0.098 on both; d02 sand 0.352 -> 0.354 and sea -0.225 -> -0.228, both inside their bands; Negev clipped 0.088% on both. `art_checkpoint.sh` passed: goldens, shots and material guards.
-- **Cost: NOT MEASURED.** `?vprofile` needs `machine_lock.py --exclusive`, which the lanes may not take. By construction it adds a few ALU instructions inside the band's branch: no fetch, pass or variant; that is an argument, not a number. Boot: NOT MEASURED. Web size: not recorded (the build was deleted when the checkpoint ended; only a shader and C# changed, no asset).
+- **Cost: NOT MEASURED.** `?vprofile` needs `machine_lock.py --exclusive`, which the lanes may not take. From the source: on every land pixel of a drawn region, two colour selects, a max and a lerp; inside the band's branch, the halo (a division, a min, a max, a square). No fetch, pass or variant. That is an argument, not a number. Boot: NOT MEASURED. Web size: not recorded (the build was deleted when the checkpoint ended; only a shader and C# changed, no asset).
 - **Colour-blind copies.** In the deuteranopia copy of gameplay03 the blue reads clearly; the orange reads as a pale yellow band, near the land's own hue on the plain and carried by its contrast. The rendered bars above pass; a player's eye on it is the owner's call.
 - **Readability.** Looked at in composited frames, before and after: label pills, the map legend, English and Hebrew; a Move pick (#2201's lit hexes) over the Jordan Valley front: its fill and outline draw over the bands, as before. The sea and the Negev are unchanged by eye and in the numbers (`TheSunlitDesertDoesNotClip`: 0.00%).
 

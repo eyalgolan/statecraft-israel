@@ -114,13 +114,14 @@ namespace Statecraft.Game.Map
         /// shader draws it. Brighter edge stripes (on screen, about the promo's stripes: 72-92,114-132,176-189 and 176-230,83-114,50-67),
         /// and a soft halo of a lighter colour along the inside of the light stripe, GlowOpacity at the stripe and gone
         /// GlowM metres in, never under GlowMinPx. The tint and the wash keep <see cref="Style.Colour"/>: a brighter fill reddened
-        /// the hills (rose index +2 to +5, palette distance 0.286 to 0.308 at gameplay03). Neutral has no glow: grey stays flat
+        /// the hills (rose index +3 to +6, palette distance 0.307 to 0.346 at gameplay03). Neutral has no glow: grey stays flat
         /// and dashed, a third cue beside the colour. Not a variant of its own: A2, B2 and C2 draw it (C2 keeps its own blue stripe).</summary>
         public static readonly Color GlowStripePrimary = new Color(0.26f, 0.40f, 0.61f), GlowStripeSecondary = new Color(0.92f, 0.37f, 0.14f),
             GlowHaloPrimary = new Color(0.66f, 0.78f, 0.97f), GlowHaloSecondary = new Color(1.02f, 0.57f, 0.22f);
         public const float GlowOpacity = 0.72f, GlowM = 320f, GlowMinPx = 6f;
-        /// <summary>The halo's on-screen width (px) at <paramref name="metresPerPx"/>: the mirror of the shader's. It lives in the wash's
-        /// room (<paramref name="washPx"/>, BandWidths), so a far hex whose wash has given way has no glow.</summary>
+        /// <summary>The halo's on-screen width (px) at <paramref name="metresPerPx"/> beside a full band: the shader's, which also takes
+        /// ScSharedBand of it on a shared edge (<paramref name="washPx"/> is already that side's there). It lives in the wash's room
+        /// (<paramref name="washPx"/>, BandWidths), so a far hex whose wash has given way has no glow.</summary>
         public static float GlowWidthPx(float metresPerPx, float washPx) => Mathf.Min(Mathf.Max(GlowM / metresPerPx, GlowMinPx), washPx);
 
         /// <summary>Legacy: main's styles, exactly (shape: band m, colour share, wash width times the band, wash strength),

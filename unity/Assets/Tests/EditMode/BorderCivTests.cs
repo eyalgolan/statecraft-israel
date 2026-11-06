@@ -486,7 +486,7 @@ public class BorderCivTests
 
     /// <summary>#2431: the stronger tier glows and nothing else does: Legacy, A, B and C draw as before, grey never glows,
     /// and the wash and the tint keep the style's colour, so the glow does not recolour the land (a brighter fill reddened
-    /// the hills: rose index +2 to +5 at gameplay03).</summary>
+    /// the hills: rose index +3 to +6 at gameplay03).</summary>
     [Test]
     public void OnlyTheStrongerTiersColourStripesGlow()
     {
@@ -504,14 +504,17 @@ public class BorderCivTests
             if (!MapBorders.StrongBlue(v)) Assert.AreEqual(new Vector4(blue.r, blue.g, blue.b, 1f), G("_ScBorderColour1"), $"{at}: the wash and the tint");
             Assert.AreEqual(new Vector4(orange.r, orange.g, orange.b, 1f), G("_ScBorderColour2"), $"{at}: the wash and the tint");
             if (v == BorderVariant.Legacy) continue;
-            var want = (glows ? MapBorders.GlowStripeSecondary : MapBorders.Secondary.Colour).linear;
-            Assert.AreEqual(new Vector4(want.r, want.g, want.b, 1f), G("_ScBorderStripe2"), at);
+            void Stripe(string name, Color c) { var l = c.linear; Assert.AreEqual(new Vector4(l.r, l.g, l.b, 1f), G(name), $"{at}: {name}"); }
+            // C2 keeps its own blue stripe; it glows, but that blue is the variant's point.
+            Stripe("_ScBorderStripe1", MapBorders.StrongBlue(v) ? MapBorders.PrimaryStrongBlue.Colour : glows ? MapBorders.GlowStripePrimary : MapBorders.Primary.Colour);
+            Stripe("_ScBorderStripe2", glows ? MapBorders.GlowStripeSecondary : MapBorders.Secondary.Colour);
+            Stripe("_ScBorderStripe3", MapBorders.Neutral.Colour);
         }
         Assert.IsNotNull(map);
     }
 
     /// <summary>#2431: at gameplay03 A2's stripes read as promo 03's lit lines and a soft halo runs along the inside of the band. The
-    /// blue stripe's saturation and the orange stripe's brightness pass the old colours' (0.43 and 0.74) towards the promo's
+    /// blue stripe's saturation and the orange stripe's brightness pass the old colours' (0.44 and 0.79) towards the promo's
     /// (0.59 and 0.69-0.90); the pixels just inside the light stripe are lighter than the wash farther in, on both sides; and
     /// the two halos stay apart for colour-blind players, with the bound the stripes meet (GradeTests).</summary>
     [UnityTest]
