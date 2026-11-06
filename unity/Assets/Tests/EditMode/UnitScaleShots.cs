@@ -76,8 +76,8 @@ public class UnitScaleShots
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var doc = Object.FindFirstObjectByType<UIDocument>();
-        Camera.main.aspect = (float)Width / Height;   // CameraRig.Apply freezes the projection at the camera's own aspect: a batch run's
-                                                      // default is 4:3, which drew every still 1.33 times too wide
+        ShotCamera.Configure(Camera.main, Width, Height);   // CameraRig.Apply freezes the projection at the camera's own aspect: a
+                                                           // batch run's default is 4:3, which drew every still 1.33 times too wide
         rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         ps = Object.Instantiate(doc.panelSettings);
         ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.clear;
@@ -215,7 +215,7 @@ public class UnitScaleShots
         var (map, layer, state) = ((MapScene map, UnitLayer layer, GameState state))generated.GetMethod("CampaignStage", Any)!.Invoke(null, new object[] { new DateTime(1948, 5, 20) });
         var render = generated.GetMethod("RenderMap", Any)!;
         var cam = Object.FindFirstObjectByType<CameraRig>().GetComponent<Camera>(); var rig = cam.GetComponent<CameraRig>();
-        cam.aspect = 16f / 9f;
+        ShotCamera.Configure(cam, 1920, 1080);   // the size RenderMap renders
         var todo = new Dictionary<string, Func<PlacedToken, bool>>
         {
             ["lebanon"] = t => t.Token.Unit.Side == "lebanon" && t.Token.Unit.Service == UnitData.Army,
