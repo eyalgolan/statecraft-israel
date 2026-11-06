@@ -1202,21 +1202,23 @@ namespace Statecraft.Game.Map.Collection
             };
             checks.AddRange(free);
             checks.Add(new SpotCheck("sight", (p, r) => InSight(p, 0f, size, ground.Y(p.x, p.y) + WorkshopTopShare * size, sight, tan)));
-            var turned = new int[checks.Count];
+            // Per pass, how many points each test turned away first (the warning reports both passes).
+            var turned = new[] { new int[checks.Count], new int[checks.Count] };
             // First on the project's hex (every test), then anywhere (every test but "hex", the first).
             for (int pass = 0; pass < 2; pass++)
             {
-                Array.Clear(turned, 0, turned.Length);
                 foreach (var p in points)
                 {
                     int failed = -1;
                     for (int i = pass; i < checks.Count && failed < 0; i++) if (!checks[i].Test(p, clearance)) failed = i;
                     if (failed < 0) { tally = ""; return p; }
-                    turned[failed]++;
+                    turned[pass][failed]++;
                 }
             }
-            tally = FormattableString.Invariant($"{points.Count} points past its kit blocks, none on or off its hex passing; turned away first by ")
-                + string.Join(", ", checks.Select((x, i) => FormattableString.Invariant($"{x.Name} {turned[i]}")));
+            string Tally(int pass) => string.Join(", ", checks.Select((x, i) => (x, i)).Where(t => t.i >= pass)
+                .Select(t => FormattableString.Invariant($"{t.x.Name} {turned[pass][t.i]}")));
+            tally = FormattableString.Invariant($"{points.Count} points past its kit blocks, none on or off its hex passing; turned away first, on its hex by ")
+                + Tally(0) + "; off it by " + Tally(1);
             return null;
         }
 

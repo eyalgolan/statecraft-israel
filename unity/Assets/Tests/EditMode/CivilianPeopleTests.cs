@@ -259,7 +259,7 @@ public sealed class CivilianPeopleTests
 
         var arabTowns = map.Settlements.Where(s => s.Type == "arab_town").Select(s => s.Id).ToList();
         CollectionAssert.AreEquivalent(new[] { "jaffa", "acre", "nazareth", "lod", "ramla", "gaza", "beersheba" }, arabTowns,
-            "the seven Arab towns: the stone village (TownLandmarks.ByType) but Ramla, its own town (ById, owner 2 November 2026), and Jaffa, which draws its buildings at every zoom");
+            "the seven Arab towns: the stone village (TownLandmarks.ByType) but Ramla, its own town (ById, owner 2 November 2026), and Jaffa, a major city that draws its kit at every zoom (owner, 6 November 2026, \"Big blocks, every zoom\")");
         var villages = CivilianPeople.Served(rural, RuralLife.Sheep, RuralLife.Donkey).Select(w => w.Key).ToList();
         Assert.That(villages.Count, Is.InRange(RuralLife.MaxAnchorsPerModel, 2 * RuralLife.MaxAnchorsPerModel));
         Assert.IsTrue(villages.All(v => types[v] == "village"), "the flocks' villages");
@@ -494,7 +494,9 @@ public sealed class CivilianPeopleTests
     /// streams is in some layer's placement table, but five, each by an owner ruling: b21, the artisan workshop, which waits
     /// for a sourced location (owner: wait); #507's first Jerusalem, which "stays in the repository, unused on the map"
     /// (owner, 21 October 2026, #708); and the whole towns of Tel Aviv, Jerusalem (#336's second) and Haifa, whose cities
-    /// draw their building models at every zoom instead (owner, 2 November 2026, "Yes, small buildings at every zoom").</summary>
+    /// draw their kit blocks at every zoom (owner, 6 November 2026, "Big blocks, every zoom"; it superseded 2 November's
+    /// "Yes, small buildings at every zoom"). Their building kinds stay in TownModels.Ids, catalogued, though only those
+    /// cities placed some of them.</summary>
     [Test]
     public void EveryCatalogModelIsPlacedButThoseTheOwnerHeldBack()
     {
@@ -521,8 +523,8 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(Statecraft.Game.Map.Units.UnitWeapons.ByFigure.Values);   // #2083: held by the token figures
         placed.Add(Statecraft.Game.Map.Units.UnitFigurePointFire.PoseFor(Statecraft.Game.Map.Units.UnitFigures.YoungRecruit)!);   // #2084
         placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: 18 originals and five generated houses are catalogued and requested by TownModelLayer
-        // Tel Aviv's, Jerusalem's and Haifa's whole towns stay catalogued but unused: the four cities draw their buildings at
-        // every zoom (owner, 2 November 2026, "Yes, small buildings at every zoom").
+        // Tel Aviv's, Jerusalem's and Haifa's whole towns stay catalogued but unused: the four major cities draw their kit
+        // blocks at every zoom (owner, 6 November 2026, "Big blocks, every zoom", superseding 2 November's small buildings).
         // #336's soldier as delivered has no rig; the tokens draw his rigged copy in his place (#2384; owner, 3 November 2026:
         // "rig Tal's later"), and the delivered file stays catalogued, unchanged and unplaced.
         CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem, TownLandmarks.TelAviv, TownLandmarks.Jerusalem3D, TownLandmarks.Haifa, "figure-soldier-1948-v1" },
