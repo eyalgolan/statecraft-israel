@@ -1,6 +1,6 @@
 # Accessibility audit, 14 October 2026
 
-Issue #41. An audit only: nothing here is fixed yet. Each finding says what fails, where, how it was found, the WCAG 2.1
+Issue #41. An audit: the findings are as of 14 October 2026, and the later sections record the fixes made after it. Each finding says what fails, where, how it was found, the WCAG 2.1
 criterion it is measured against, and a proposed fix. The fixes go in later, small PRs.
 
 ## How it was tested
@@ -365,13 +365,15 @@ movement slices (#1527) are on main, so the turn gives one now (2 November 2026,
   sent as the UI Toolkit events the Input System's UI provider makes of them (Tab and Shift+Tab: `NavigationMoveEvent`;
   Enter: `KeyDownEvent` then `NavigationSubmitEvent`; Escape: `NavigationCancelEvent`), as `MapFocusTests` does. No
   pointer event is sent after the game starts.
-- **The turn:** Tab once from the card to its first option, Enter (focus to End Turn). Tab to Budget, Enter, about 16 Tabs
-  to the screen's first control (the screens come after the HUD in the order), Tab to a line's +, Enter (focus stays,
-  H2), Tab to Submit, Enter. Tab to Cabinet, Enter, Tab to a minister's seat, Enter, Tab once to the first candidate,
-  Enter. Escape (focus to the Cabinet button, M1). Tab to the map stop, pan to Tel Aviv, Enter (the city panel shows),
+- **The turn:** Tab once from the card to its first option, Enter (focus to the turn's second card, Degania), Tab once to
+  its first option, Enter (focus to End Turn). Tab to Budget, Enter (the focus goes to the screen's first control, K5
+  below, so the 16 Tabs of the first run are gone), Tab to a line's +, Enter (focus stays, H2), Tab to Submit, Enter.
+  Tab to Cabinet, Enter, Tab to a minister's seat, Enter (the focus goes to the first candidate that can be appointed,
+  #2340 M2), Enter. Tab to the Cabinet button (the Tab after the last seat leaves the screen for it), Escape (the
+  screen closes and the focus is on the Cabinet button, M1). Tab to the map stop, pan to Tel Aviv, Enter (the city panel shows),
   Tab to Train halutzim, Enter. Tab to the map stop, pan to Golani, Enter (Golani is selected and its Move pick opens,
-  as in Civ), pan to a lit hex, Enter (Golani moves there; the focus stays on the map stop). Tab to End Turn, Enter:
-  the turn ends and the turn report takes the focus; Enter on its Close hands it to the next card, or to End Turn when
+  as in Civ), pan to a lit hex, Enter (Golani moves there; the focus stays on the map stop). Tab to End Turn (a unit still waiting for
+  an order is given Skip first), Enter: the turn ends and the turn report takes the focus; Enter on its Close hands it to the next card, or to End Turn when
   none opens.
 - **Attention:** the opening turn has 4 Attention; answering the card and Train halutzim cost 2 each, a budget and an
   appointment 4 each, so the five steps take more than one turn's Attention. That is the game's rule, not the keyboard's:
