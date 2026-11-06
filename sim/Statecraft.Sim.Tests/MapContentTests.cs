@@ -100,6 +100,8 @@ public class MapContentTests
     [InlineData("    name_he_sources: [{ url: 'https://example.org/town-a-he', checked: 2026-10-18 }]\n", "", "locations[town_a].name_he_sources", "needs a source")]
     [InlineData("    name_he: עיר א\n", "    name_he: עיר א\n    name_he_review: checked\n", "locations[town_a].name_he_review", "not agent-checked")]
     [InlineData("    name_he: עיר א\n", "    name_he: עיר א\n    name_he_review: checked\n", "locations[town_a].name_he_review", "an AI-assisted contributor who discloses it")]   // #564
+    [InlineData("    name_he: עיר א\n", "    name_he: עיר א\n    name_he_review: \"\"\n", "locations[town_a].name_he_review", "not agent-checked")]   // #2804 item 9: blank is not a review
+    [InlineData("    name_he: עיר א\n", "    name_he: עיר א\n    name_he_review:\n", "locations[town_a].name_he_review", "not agent-checked")]
     [InlineData("q: 1", "q: 9", "locations[town_a].q", "not a land hex")]
     [InlineData("    sources: [{ url: 'https://example.org/town-a', checked: 2026-10-18 }]\n", "", "locations[town_a].sources", "required")]
     [InlineData("    status: draft", "    starting_control: arab_forces\n    status: draft", "locations[town_a].control_date", "required with starting_control")]
