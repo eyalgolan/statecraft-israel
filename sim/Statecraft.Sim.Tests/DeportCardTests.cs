@@ -140,6 +140,17 @@ public class DeportCardTests
         Assert.Contains(message, ex.Message);
     }
 
+    // R-EVT-007: front_quiet joins a fired card to the quiet set (gdd-0.3), where its front's early offer could fire it
+    // again, so a Deport card refuses it too. The card takes an armistice id, so front_quiet's own check lets it through.
+    [Fact]
+    public void TheLoaderRefusesFrontQuietOnACard()
+    {
+        var ex = Assert.Throws<ContentException>(() => DeportTests.Load(files => files["events/armistice_egypt.yaml"] =
+            Card.Replace("id: after_town_a\n", "id: armistice_egypt\n").Replace("from: 1948-05-15\n", "from: 1948-05-15\nfront_quiet: egypt\n")));
+        Assert.Equal("events[armistice_egypt].front_quiet", ex.Field);
+        Assert.Contains("waits for nothing but its Deport", ex.Message);
+    }
+
     // R-EVT-007: one card per place, so one Deport cannot raise two.
     [Fact]
     public void TheLoaderRefusesASecondCardForThePlace()
