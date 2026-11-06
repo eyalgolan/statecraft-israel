@@ -127,6 +127,24 @@ public class GameSessionTurnTests
         Assert.Equal(SaveException.OlderRules, e.Code);
     }
 
+    // R-SAVE-004: "Other schema 2 saves load". A GDD save with no attack whose replay ends on its saved hash loads with no
+    // warning, has the live game's hash, and is written back as schema 5 (R-SAVE-005).
+    [Fact]
+    public void AnOrdinarySchema2SaveLoads()
+    {
+        var session = Fresh();
+        session.Step(new Command[] { GoldenRun.SmokeMove(C, session.State), new BuyArms(1) });
+        session.Step(new Command[0]);
+        var five = session.Save.Write();
+        var two = five.Replace("statecraft-save 5\n", "statecraft-save 2\n");
+        Assert.Equal(2, SaveGame.Parse(two).Version);
+        Assert.DoesNotContain(" attack ", two);
+        var loaded = GameSession.Load(C, two, out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(session.State.Hash(), loaded.State.Hash());
+        Assert.Equal(five, loaded.Save.Write());
+    }
+
     // R-SAVE-003: reloading keeps an attack's result; the same draw comes out.
     [Fact]
     public void AReloadKeepsAnAttacksResult()

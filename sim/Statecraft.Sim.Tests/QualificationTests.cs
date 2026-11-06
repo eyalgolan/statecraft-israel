@@ -92,9 +92,14 @@ public class QualificationTests
         Assert.Equal("Town A has 1 civilians without work", Assert.Single(r.Rejected).Reason);
         Assert.Equal(Step(c, busy).State.Hash(), r.State.Hash());
         var none = WithCity(c, new City("town_a", 12, 8, 4, 0, 0, jobsDefault: false, qualified: q));
-        Assert.Equal("Town A has 2 qualified craftsmen", Assert.Single(Step(c, none, new ReassignCraftsmen("town_a", 3)).Rejected).Reason);
-        Assert.Equal("Reassign at least one group", Assert.Single(Step(c, none, new ReassignCraftsmen("town_a", 0)).Rejected).Reason);
-        Assert.Equal("There is no such city", Assert.Single(Step(c, none, new ReassignCraftsmen("x", 1)).Rejected).Reason);
+        foreach (var (cmd, why) in new (Command, string)[] {
+            (new ReassignCraftsmen("town_a", 3), "Town A has 2 qualified craftsmen"), (new ReassignCraftsmen("town_a", 0), "Reassign at least one group"),
+            (new ReassignCraftsmen("x", 1), "There is no such city") })
+        {
+            var refused = Step(c, none, cmd);
+            Assert.Equal(why, Assert.Single(refused.Rejected).Reason);
+            Assert.Equal(Step(c, none).State.Hash(), refused.State.Hash());   // R-QUAL-004: refused, state untouched
+        }
     }
 
     // Owner ruling 2: a qualified civilian is an ordinary civilian for jobs, income and housing.
@@ -170,8 +175,19 @@ public class QualificationTests
         var busy = Step(c, working, new UnitOrder(7, Qualification.ReturnOrder));
         Assert.Equal("That unit is at work; stop the work first", Assert.Single(busy.Rejected).Reason);
         Assert.Contains(7, busy.State.Units.Keys);
-        Assert.Equal("Only a pioneer unit takes that order", Assert.Single(Step(c, s, new UnitOrder(8, Qualification.ReturnOrder)).Rejected).Reason);
-        Assert.Equal("There is no such unit", Assert.Single(Step(c, s, new UnitOrder(99, Qualification.ReturnOrder)).Rejected).Reason);
+        Assert.Equal(Step(c, working).State.Hash(), busy.State.Hash());   // R-QUAL-003: refused, state unchanged
+        var notPioneer = Step(c, s, new UnitOrder(8, Qualification.ReturnOrder));
+        Assert.Equal("Only a pioneer unit takes that order", Assert.Single(notPioneer.Rejected).Reason);
+        Assert.Equal(Step(c, s).State.Hash(), notPioneer.State.Hash());
+        var unknown = Step(c, s, new UnitOrder(99, Qualification.ReturnOrder));
+        Assert.Equal("There is no such unit", Assert.Single(unknown.Rejected).Reason);
+        Assert.Equal(Step(c, s).State.Hash(), unknown.State.Hash());
+        // Projects.IsBusy counts a corridor segment as work too (#2806 item 1)
+        var road = Step(c, s, new PioneerWork(7, Corridors.BuildRoad, "road_a:1")).State;
+        Assert.True(Projects.IsBusy(road, 7));
+        var onRoad = Step(c, road, new UnitOrder(7, Qualification.ReturnOrder));
+        Assert.Equal("That unit is at work; stop the work first", Assert.Single(onRoad.Rejected).Reason);
+        Assert.Equal(Step(c, road).State.Hash(), onRoad.State.Hash());
         Assert.Equal("That order names no hex", Assert.Single(Step(c, s, new UnitOrder(7, Qualification.ReturnOrder, 1, 0)).Rejected).Reason);
         // stopped, it goes at once
         var stopped = Step(c, working, new StopWork(7), new UnitOrder(7, Qualification.ReturnOrder));
@@ -269,11 +285,24 @@ public class QualificationTests
         var text = g.Save.Write();
         Assert.Contains("retcraft town_a 1", text);
         Assert.Contains("order " + unit + " return_civilian", text);
-        foreach (var cmd in new Command[] { new ReassignCraftsmen("town_a", 1), new ReassignPioneers("town_a", "halutz", 1) })
+        // R-QUAL-007 (#2806 item 3): the two reassignment tokens are pinned too, and parse back to the same city, track and count.
+        foreach (var (cmd, token) in new (Command, string)[] { (new ReassignCraftsmen("town_a", 2), "regcraft town_a 2"),
+                     (new ReassignPioneers("town_a", "veteran_halutz", 1), "regpioneer town_a veteran_halutz 1") })
         {
             var other = GameSession.New(c, 1, Mode.Historical);
             other.Step(new[] { cmd });   // refused here, but written and parsed back as the same order
-            Assert.Equal(cmd.GetType(), SaveGame.Parse(other.Save.Write()).Turns.Single().Single().GetType());
+            var saved = other.Save.Write();
+            Assert.Contains(token, saved);
+            var back = SaveGame.Parse(saved).Turns.Single().Single();
+            Assert.Equal(cmd.GetType(), back.GetType());
+            if (cmd is ReassignCraftsmen rc)
+                Assert.Equal((rc.City, rc.Count), (((ReassignCraftsmen)back).City, ((ReassignCraftsmen)back).Count));
+            else
+            {
+                var rp = (ReassignPioneers)cmd;
+                var bp = (ReassignPioneers)back;
+                Assert.Equal((rp.City, rp.Track, rp.Count), (bp.City, bp.Track, bp.Count));
+            }
         }
         var yaml = "name: q\nuntil: 1948-06-01\nsteps:\n  - on: 1948-05-15\n    commands:\n      - { kind: reassign_pioneers, city: town_a, track: halutz, count: 1 }\n";
         var built = Scenario.Parse(yaml).Steps.Single().Built.Single();

@@ -25,7 +25,10 @@ namespace Statecraft.Game.Map.Collection
     /// <item>two Egyptian Dakotas, a pair on one loop over Tel Aviv, bombing the city (<see cref="DakotaLoop"/>; owner, 4
     /// November 2026, #2482: "1 + make the visual 2 slightly smaller planes and not 0ne big one"), banked into their turns,
     /// their propellers turning, their shadows on the ground and Egypt's flag over each tail, on the turns of the first
-    /// bombing period, 15 May to 11 June 1948 (<see cref="DakotaFrom"/>, <see cref="DakotaTo"/>; SeaAirCollection.Dakota.cs).</item>
+    /// bombing period, 15 May to 11 June 1948 (<see cref="DakotaFrom"/>, <see cref="DakotaTo"/>; SeaAirCollection.Dakota.cs), and
+    /// of the second, 8 to 17 July 1948 (<see cref="DakotaSecondFrom"/>), when Tel Aviv's air defence flies against them: two
+    /// of 101 Squadron's Avia S-199s attack the lead, hitting it but never bringing it down, and anti-aircraft fire brings
+    /// the wing down (<see cref="TelAvivAirDefence"/>; SeaAirCollection.AirDefence.cs).</item>
     /// </list>
     /// The boats lie on the open sea past the surf, where SeaCraft's own boats sail (SeaCraft.OffshoreNearM to OffshoreM out
     /// from the same shore points), each hull clear of the harbour works, of SeaCraft's boats and of each other
@@ -129,7 +132,7 @@ namespace Statecraft.Game.Map.Collection
                 wants.Add(new Want("tel-aviv-altalena", Altalena, "tel_aviv"));
             if (date >= C54From && date <= C54To) wants.Add(new Want("lod-c54", C54, "lod"));
             if (date >= SpitfireFrom && date <= SpitfireTo) wants.Add(new Want("el-arish-spitfire", Spitfire, "el_arish"));
-            if (date >= DakotaFrom && date <= DakotaTo) foreach (var key in DakotaKeys) wants.Add(new Want(key, Dakota, DakotaTown));
+            if (DakotaWanted(date)) foreach (var key in DakotaKeys) wants.Add(new Want(key, Dakota, DakotaTown));
             return wants;
         }
 
@@ -344,7 +347,7 @@ namespace Statecraft.Game.Map.Collection
                 var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
                 if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
-            Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>(); keepOf.Clear(); dakotaKeeps.Clear();
+            Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>(); keepOf.Clear(); dakotaKeeps.Clear(); airDefenceKeeps.Clear(); AirDefence = null;
             originals.Clear();
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
@@ -373,6 +376,7 @@ namespace Statecraft.Game.Map.Collection
         List<(Vector2 centre, float radius)> taken = new List<(Vector2, float)>();
         List<WildlifeLayer.Want>? wildlife;
         DateTime date;
+        bool airDefenceShown;   // AirDefenceWanted at the last rebuild: 15 May and 15 July want the same craft, so the date alone must rebuild (#2649)
 
         /// <summary>The craft drawn (key, model, spot at the water's or ground's height; the centre of the Spitfire's loop, in the air): a test aid.</summary>
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
@@ -389,12 +393,20 @@ namespace Statecraft.Game.Map.Collection
             {
                 if (!isActiveAndEnabled) return Array.Empty<Bounds[]>();
                 FollowDakotas();
+                FollowAirDefence();
                 return keepAll;
             }
         }
-        /// <summary>A new <see cref="KeepClear"/> list from every drawn craft's own boxes.</summary>
-        void RebuildKeepAll() =>
-            keepAll = originals.Values.SelectMany(list => list).Where(go => go != null && keepOf.ContainsKey(go)).Select(go => keepOf[go]).ToList();
+        /// <summary>A new <see cref="KeepClear"/> list from every drawn craft's own boxes, and the air defence's fighters' (keyed
+        /// by each fighter's plane, a child of the air defence, which is one of the Dakotas' originals: kept while it is).</summary>
+        void RebuildKeepAll()
+        {
+            var drawn = originals.Values.SelectMany(list => list).Where(go => go != null).ToList();
+            keepAll = drawn.Where(keepOf.ContainsKey).Select(go => keepOf[go])
+                .Concat(airDefenceKeeps.Where(k => k.Go != null && k.Defence != null && keepOf.ContainsKey(k.Go) && drawn.Contains(k.Defence.gameObject))
+                    .Select(k => keepOf[k.Go]))
+                .ToList();
+        }
         List<Bounds[]> keepAll = new List<Bounds[]>();
         readonly Dictionary<GameObject, Bounds[]> keepOf = new Dictionary<GameObject, Bounds[]>();
         void Keep(GameObject go, Bounds box) { var boxes = new[] { box }; keepAll.Add(boxes); keepOf[go] = boxes; }
@@ -419,8 +431,9 @@ namespace Statecraft.Game.Map.Collection
         {
             date = at;
             var others = next.Any(w => w.Model == C54) ? Taken() : new List<(Vector2, float)>();
-            if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken)) return;
-            wants = next; placements = placed; taken = others;
+            bool defence = AirDefenceWanted(at);
+            if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken) && defence == airDefenceShown) return;
+            wants = next; placements = placed; taken = others; airDefenceShown = defence;
             OriginalModelRequests.WhenVisible(this, () => RefreshResidency());
         }
 
@@ -471,6 +484,7 @@ namespace Statecraft.Game.Map.Collection
                 Placed.Add((w.Key, w.Model, pos));
                 Keep(go, Bounds(go));
             }
+            FlyAirDefence(ground);   // the S-199s and the anti-aircraft fire beside the Dakotas, on the second period's turns
             // The kit trees under the C-54 are left out at draw time, as under the unit figures (VegetationLayer.Hide, #249).
             var plane = Placed.Where(p => p.Model == C54).Select(p => (new Vector2(p.At.x, p.At.z), 0.5f * SizeOf(C54))).ToList();
             Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, plane);
