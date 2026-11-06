@@ -222,10 +222,14 @@ public class EnemyAITests
         Assert.All(Real.StartingForces.Where(f => f.Side == Movement.PlayerSide), f => Assert.Empty(f.Script));
     }
 
-    // R-ENEMY-002: an 11 June anchor on one non-Wikipedia source (with Wikipedia beside it) is not scripted; two are.
+    // R-ENEMY-002: an 11 June anchor on one non-Wikipedia source (with Wikipedia beside it) is not scripted; two are. One URL
+    // listed twice is one source, and a Wikipedia host in capitals is still Wikipedia (#2804).
     [Theory]
     [InlineData("['https://example.org/a', 'https://en.wikipedia.org/wiki/Isdud', 'https://www.wikidata.org/wiki/Q1']", false)]
     [InlineData("['https://example.org/a', 'https://example.org/b']", true)]
+    [InlineData("['https://example.org/a', 'https://example.org/a']", false)]
+    [InlineData("['https://example.org/a', 'https://EN.WIKIPEDIA.ORG/wiki/Isdud']", false)]
+    [InlineData("['https://example.org/a', 'https://www.WikiData.org/wiki/Q1']", false)]
     public void AScriptedAnchorNeedsTwoSources(string urls, bool scripted)
     {
         var sources = string.Join(", ", urls.Trim('[', ']').Split(", ").Select(u => "{ url: " + u + ", checked: '2026-10-13' }"));
