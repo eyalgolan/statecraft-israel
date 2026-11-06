@@ -698,7 +698,11 @@ public class EnemyAITests
         {
             files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities: []", "enemy_held_localities: [town_a]");
             files["settlement_targets.yaml"] = "targets:\n" + CaptureTests.Target("town_a", 1, 0);
-            files["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("type: town", "type: arab_town");
+            // town_a is now an Arab town, so the fixture's city moves to town_h, a town on a far corner (R-CITY-006).
+            files["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("type: town", "type: arab_town")
+                + "  - { id: town_h, name: Town H, lon: 34.79, lat: 33.15, type: town, founded: 1900, pre_modern: false }\n";
+            files["map/settlement_hexes.yaml"] = Fixture.Files["map/settlement_hexes.yaml"] + "  - { id: town_h, q: 5, r: 2 }\n";
+            files["cities.yaml"] = "cities:\n" + Fixture.City("town_h", 12, 8, 10, 6, "[military_camp, hakhshara]");
         }
         return ContentLoader.Load(Fixture.Write(files, new() { ["probe.yaml"] = card }));
     }

@@ -68,6 +68,33 @@ public class CitiesContentTests
         Assert.Equal(towns, ContentLoader.Load(root).Cities.Select(x => x.Id));   // in the settlements file's order
     }
 
+    /// <summary>The fixture's town_a, then town_b (a town row) and kibbutz_c (a kibbutz row, no city), with the cities given.
+    /// Fixture values, not history.</summary>
+    static Dictionary<string, string> TwoTowns(params string[] ids) => new Dictionary<string, string>
+    {
+        ["map/settlement_hexes.yaml"] = Fixture.Files["map/settlement_hexes.yaml"] + "  - { id: town_b, q: 2, r: 1 }\n  - { id: kibbutz_c, q: 3, r: 1 }\n",
+        ["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"]
+            + "  - { id: town_b, name: Town B, lon: 34.42, lat: 33.28, type: town, founded: 1900, pre_modern: false }\n"
+            + "  - { id: kibbutz_c, name: Kibbutz C, lon: 34.51, lat: 33.28, type: kibbutz, founded: 1930, pre_modern: false }\n",
+        ["cities.yaml"] = "cities:\n" + string.Concat(ids.Select(id => Fixture.City(id, 12, 8, 10, 6))),
+    };
+
+    // R-CITY-006 (#2732): the loader holds cities.yaml to the settlement file's city and town rows, in that file's order.
+    [Fact]
+    public void TheCitiesInTheSettlementOrderLoad() =>
+        Assert.Equal(new[] { "town_a", "town_b" }, Load(TwoTowns("town_a", "town_b")).Cities.Select(x => x.Id));
+
+    [Theory]
+    [InlineData(new[] { "town_a" }, "cities", "is missing town_b, a city or town row of map/settlements_1948.yaml")]
+    [InlineData(new[] { "town_b", "town_a" }, "cities[0].id", "is town_b; map/settlements_1948.yaml's city and town rows give town_a here")]
+    [InlineData(new[] { "town_a", "town_b", "kibbutz_c" }, "cities[kibbutz_c].id", "is not a city or town row of map/settlements_1948.yaml")]
+    public void CitiesThatAreNotTheSettlementCityAndTownRowsInOrderFail(string[] ids, string field, string message)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(TwoTowns(ids)));
+        Assert.Equal(("cities.yaml", field), (ex.File, ex.Field));
+        Assert.Contains(message, ex.Message);
+    }
+
     /// <summary>Each city's census start (the Phase 3 plan, PR 1, from #569) and its units at people_per_unit 1,000: people
     /// to the nearest unit with at least 1 for a city with people (Q-START-2: Rosh Pinna's 350 is 1), employed to the nearest
     /// unit of people times the working share (Q-START-1: the city's CBS share, or the national 43.9% where none exists).</summary>
