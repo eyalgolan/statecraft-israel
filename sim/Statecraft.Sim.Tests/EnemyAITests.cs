@@ -843,6 +843,43 @@ public class EnemyAITests
         Assert.Equal((3, 0, Movement.GoTo), (r.State.Units[0].Q, r.State.Units[0].R, r.State.Units[0].Order));
     }
 
+    // R-ENEMY-005 (#2806 item 9): a card's orders are given in the option's list order. Two brigade rows, brig_a on (0, 0)
+    // and brig_b on (0, 1), are both sent to (2, 0), which already holds one Israeli unit (the fixture's stack limit is 2 a
+    // side). The order listed first arrives and fills the hex; the one listed second finds it full and stops where it
+    // stands (Movement.Advance). Listed the other way round, the other unit arrives. Fixture values, not history.
+    [Theory]
+    [InlineData("brig_a", "brig_b")]
+    [InlineData("brig_b", "brig_a")]
+    public void ACardsOrdersAreGivenInListOrder(string first, string second)
+    {
+        static string Row(string id) => "- id: " + id + "\n  service: army\n  side: israel\n  status: draft\n"
+            + "  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
+            + "  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n"
+            + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n";
+        const string Hexes = "anchors:\n  - { id: brig_a, anchor: 0, q: 0, r: 0 }\n  - { id: brig_a, anchor: 1, q: 2, r: 0 }\n"
+            + "  - { id: brig_b, anchor: 0, q: 0, r: 1 }\n  - { id: brig_b, anchor: 1, q: 2, r: 0 }\n";
+        var card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
+            + "  - id: ok\n    text: Accept\n    historical: true\n"
+            + "    unit_orders: [{ unit: " + first + ", q: 2, r: 0 }, { unit: " + second + ", q: 2, r: 0 }]\n"
+            + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
+            ["map/units_1948.yaml"] = "units:\n" + Row("brig_a") + Row("brig_b"), ["map/unit_anchor_hexes.yaml"] = Hexes,
+        }), new() { ["probe.yaml"] = card }));
+        int a = c.StartingForces.FindIndex(f => f.Row == first), b = c.StartingForces.FindIndex(f => f.Row == second);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var start = (s.Units[b].Q, s.Units[b].R);
+        s.Units.Add(9, Soldier(9, 2, 0, 3));
+
+        var r = Simulation.Preview(c, s, new Command[] { new ChooseEventOption("probe", "ok") });
+        Assert.Empty(r.Rejected);   // a full destination stops the march; it is no refusal
+        Assert.Equal((2, 0, ""), (r.State.Units[a].Q, r.State.Units[a].R, r.State.Units[a].Order));
+        Assert.Equal((start.Q, start.R, ""), (r.State.Units[b].Q, r.State.Units[b].R, r.State.Units[b].Order));
+        Assert.Contains(r.Why, x => x.Key == WhyKeys.StoppedFull && x.Args.Contains("2,0"));
+        Assert.Equal(new[] { a, 9 }, r.State.Units.Values.Where(u => (u.Q, u.R) == (2, 0)).Select(u => u.Id).OrderBy(x => x));
+    }
+
     // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; the option: "A
     // delegated order never pulls the last unit out of an occupied town; Golani's order is skipped (or another unit goes) and
     // the card says so"). mvp-occupy-cost's state on 15 December 1948: Golani (unit 0) alone on Nazareth, which awaits the end
