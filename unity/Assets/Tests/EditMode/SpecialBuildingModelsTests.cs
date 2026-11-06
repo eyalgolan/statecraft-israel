@@ -1523,6 +1523,32 @@ namespace Statecraft.Game.Tests
             Assert.IsEmpty(failures, string.Join("\n", failures));
         }
 
+        /// <summary>#2876: SpecialBuildingModels.OnHeldGround, on the control wash's own hexes (control_hexes_1948_49.yaml): a
+        /// hex the other side holds (-1,28, south of Jerusalem: "M" on 1 March 1949) is not held, unless it is the project's own;
+        /// a contested hex (-3,26, west of Jerusalem: "c" on 15 May 1948) is not held that day and is from the first truce on
+        /// ("I" on 1 March 1949); Tel Aviv's (-3,21) is held.</summary>
+        [Test]
+        public void HeldGroundIsTheIsraeliSidesOnTheDayAsked()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            Assert.IsNotNull(map.Control, "the map reads its control wash");
+            var ground = PlacementLayer.CampGround(map);
+            Vector2 Centre(int q, int r)
+            {
+                var hex = c.HexAt(q, r)!; var w = map.Frame.ToWorld(hex.Lon, hex.Lat, 0); var p = new Vector2(w.x, w.z);
+                Assert.AreEqual((q, r), ground.Hex(p.x, p.y), $"hex {q},{r}'s centre is on that hex");
+                return p;
+            }
+            var none = (int.MinValue, int.MinValue);
+            var opening = new DateTime(1948, 5, 15);
+            Assert.IsFalse(SpecialBuildingModels.OnHeldGround(map, ground, Centre(-1, 28), 50f, Built, none), "the other side's hex");
+            Assert.IsTrue(SpecialBuildingModels.OnHeldGround(map, ground, Centre(-1, 28), 50f, Built, (-1, 28)), "the project's own hex");
+            Assert.IsFalse(SpecialBuildingModels.OnHeldGround(map, ground, Centre(-3, 26), 50f, opening, none), "a contested hex");
+            Assert.IsTrue(SpecialBuildingModels.OnHeldGround(map, ground, Centre(-3, 26), 50f, Built, none), "the same hex once held");
+            Assert.IsTrue(SpecialBuildingModels.OnHeldGround(map, ground, Centre(-3, 21), 50f, Built, none), "Tel Aviv's hex");
+        }
+
         /// <summary>#2876 (coordinator, 6 November 2026): the front moves with the date, so a major city's workshop keeps the spot it
         /// got on the day it was built (its held ground, tokens and figures read that day, Want.From), whatever day the plan is
         /// made on. A workshop built in each major city on <see cref="Built"/> is planned on that day and on two later days on

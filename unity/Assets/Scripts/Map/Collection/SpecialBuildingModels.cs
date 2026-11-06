@@ -718,12 +718,14 @@ namespace Statecraft.Game.Map.Collection
                 {
                     // #2876, the owner, 6 November 2026 (verbatim): "make the workshop at the edge of the city". In a major city
                     // (its kit blocks drawn at every zoom) the b21 stands at the edge of the city's blocks, on the project's hex
-                    // where it can, in the camera's sight (EdgeSpot), clear of the farm scenes, the other models, the routes and
-                    // the tokens and figures of the day it was built, as below. No spot: it is not drawn, and the warning names
-                    // the city.
-                    var built = w.From;
+                    // where it can, in the camera's sight (EdgeSpot), on ground the player's side holds (OnHeldGround), clear of
+                    // the farm scenes, the other models, the routes and the tokens and figures, each of the day it was built (as
+                    // below: the spot is fixed at the build and kept as the front moves). No spot: it is not drawn, and the
+                    // warning names the city.
+                    var built = w.From; var home = ground.Hex(anchor.x, anchor.y);
                     at = EdgeSpot(map, ground, w.City, w.Key, anchor, clearance, SizeOf(w), new[]
                     {
+                        new SpotCheck("held", (p, r) => OnHeldGround(map, ground, p, r, built, home)),
                         new SpotCheck("farms", (p, r) => TownLandmarks.Clear(p, r, farms)),
                         new SpotCheck("taken", (p, r) => TownLandmarks.Clear(p, r, taken)),
                         new SpotCheck("routes", (p, r) => !ground.OnRoute(p, r)),
@@ -744,7 +746,7 @@ namespace Statecraft.Game.Map.Collection
                     // figures are those of the map's planned unit spots (MapScene.UnitClearings and UnitTokens, built with the map
                     // from units_1948, not the units' live places) on the day the workshop was built (w.From), so its spot does not
                     // move as the game's date passes a token's last day (review of #2281, S2).
-                    var built = w.From;
+                    var built = w.From; var home = ground.Hex(anchor.x, anchor.y);
                     // #2876: clear of the major cities' kit blocks too, which reach past their footprints (out to
                     // SettlementKits.PlotReach of the radius), so a spot just outside one keeps off its outer blocks.
                     var hexBlocks = MajorCityBlocksNear(map, anchor);
@@ -754,7 +756,8 @@ namespace Statecraft.Game.Map.Collection
                     var sight = hexBlocks.Count == 0 ? null : MajorCitySightBlocks(map, ground, anchor, tan);
                     bool Seen(Vector2 p, float yawDeg) => sight == null || InSight(p, yawDeg, side, ground.Y(p.x, p.y) + WorkshopTopShare * side, sight, tan);
                     bool OnHex(Vector2 p, float r) => (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms)
-                        && ClearOfBoxes(p, r, hexBlocks) && ClearOfFigures(map, p, r, built) && FreeOn(p, r, built) && Seen(p, 0f);
+                        && ClearOfBoxes(p, r, hexBlocks) && ClearOfFigures(map, p, r, built) && FreeOn(p, r, built) && Seen(p, 0f)
+                        && OnHeldGround(map, ground, p, r, built, home);
                     float inside = Inside(anchor, footprints);
                     at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
                     // A town whose footprint covers the whole hex (Jerusalem, Tel Aviv): a gap between its drawn buildings (owner,
@@ -764,7 +767,8 @@ namespace Statecraft.Game.Map.Collection
                         (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && TownLandmarks.Clear(p, r, taken)
                         && ClearOfFigures(map, p, r, built)
                         && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built), Seen, out dir);
+                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built)
+                        && OnHeldGround(map, ground, p, r, built, home), Seen, out dir);
                     // #2876 (coordinator, 6 November 2026: no quiet fallback to a hidden spot): where no spot on the hex passes
                     // every test, the camera's sight included, the b21 is not drawn, and the warning names the cities.
                     if (at == null && sight != null)
@@ -837,6 +841,29 @@ namespace Statecraft.Game.Map.Collection
         {
             foreach (var (c, radius) in map.UnitClearings) if (Hidden(p, r, c, radius)) return false;
             foreach (var (c, radius, until) in map.UnitTokens) if (until > on && Hidden(p, r, c, radius)) return false;   // as KitGround.OnToken
+            return true;
+        }
+
+        /// <summary>#2876 (coordinator, 6 November 2026: the Jerusalem b21 stood on the other side's ground): whether a disc of
+        /// <paramref name="r"/> at <paramref name="p"/> stands on ground the player's side holds on <paramref name="on"/>, as the
+        /// map draws it: its centre and 8 points round it each on <paramref name="home"/>, the project's own hex (a player city:
+        /// the sim builds there only for the player, and the wash's live overlay, MapRegions.LayerOn, paints a settlement the
+        /// player holds as the player's), or on a hex the control wash (MapScene.Control, control_hexes_1948_49.yaml, the
+        /// layer GameRoot draws through MapRegions) gives the Israeli side that day. The other side, contested ground, no-man's
+        /// land, a demilitarized zone, no colour and off the data are not held. A workshop reads it on the day it was built
+        /// (Want.From), so its spot stays as the front moves. A map without control data draws no wash: every disc passes.</summary>
+        internal static bool OnHeldGround(MapScene map, Kits.KitGround ground, Vector2 p, float r, DateTime on, (int, int) home)
+        {
+            var control = map.Control;
+            if (control == null) return true;
+            for (int i = 0; i < 9; i++)
+            {
+                float a = i * Mathf.PI / 4f;
+                var s = i == 8 ? p : p + r * new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                var hex = ground.Hex(s.x, s.y);
+                if (hex == home) continue;
+                if (control.At(hex.Item1, hex.Item2, on).side != Control1948.Side.Israel) return false;
+            }
             return true;
         }
 
@@ -1053,14 +1080,15 @@ namespace Statecraft.Game.Map.Collection
         /// Two passes over the points: first only those whose disc is wholly on the project's hex (about
         /// <paramref name="anchor"/>, as every other workshop stands), then any (the edge of Tel Aviv and Jerusalem lies off
         /// their hexes: their footprints cover them). A point passes, in this order: on the map and dry; within EdgeGapM plus
-        /// its clearance of a block of the city; on the city's ground (deeper in its footprint, distance over radius, than in any
+        /// its clearance of a block of the city, and nearer the city's blocks than any other major city's (box distance); on the
+        /// city's ground (deeper in its footprint, distance over radius, than in any
         /// other place's, the kits' partition, SettlementKits.OwnsFootprint; and clear of every other place's plot reach,
         /// SettlementKits.PlotReach of its radius, where that place's buildings stand), so it reads as that city's; clear of
         /// every place's name pill (<see cref="ClearOfName"/>), of every major city's kit block and of the kits' landmarks
         /// (<see cref="TownLandmarkBoxes"/>); off the beach (no open sea, KitGround.SeaDistance, within the drawn full sand,
-        /// BeachBands.FullSandAt, plus its clearance); <paramref name="free"/> (the plan's farms, models, routes, tokens and
-        /// figures); and in the camera's sight past every major city's blocks (<see cref="InSight"/>). The points and the tests
-        /// read only the map, the key and the caller's lists, so the spot is the same whenever the plan is made.</summary>
+        /// BeachBands.FullSandAt, plus its clearance); <paramref name="free"/> (the plan's held ground, farms, models, routes,
+        /// tokens and figures); and in the camera's sight past every major city's blocks (<see cref="InSight"/>). The points and
+        /// the tests read only the map, the key and the caller's lists, so the spot is the same whenever the plan is made.</summary>
         internal static Vector2? EdgeSpot(MapScene map, Kits.KitGround ground, string city, string key, Vector2 anchor, float clearance, float size,
             IReadOnlyList<SpotCheck> free, out string tally)
         {
@@ -1073,6 +1101,14 @@ namespace Statecraft.Game.Map.Collection
                 if (b.Id != city) continue;
                 float a = b.Yaw * Mathf.Deg2Rad; var bu = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
                 own.Add((b.C - c, bu, new Vector2(-bu.y, bu.x), 0.5f * b.W, 0.5f * b.D));
+            }
+            // Every other major city's blocks, the same way (from the city's centre too).
+            var others = new List<(Vector2 q, Vector2 u, Vector2 v, float hw, float hd)>();
+            foreach (var b in map.MajorCityBlocks)
+            {
+                if (b.Id == city) continue;
+                float a = b.Yaw * Mathf.Deg2Rad; var bu = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                others.Add((b.C - c, bu, new Vector2(-bu.y, bu.x), 0.5f * b.W, 0.5f * b.D));
             }
             uint h = 2166136261;
             foreach (char ch in key) { h ^= ch; h *= 16777619; }
@@ -1113,16 +1149,17 @@ namespace Statecraft.Game.Map.Collection
                     f.radius * Kits.SettlementKits.PlotReach + clearance);
                 if ((f.centre - c).magnitude < extent + matters) places.Add(f);
             }
-            bool Near(Vector2 p)
+            // The box distance (m) from a point to the nearest of <boxes>.
+            float Nearest(Vector2 p, List<(Vector2 q, Vector2 u, Vector2 v, float hw, float hd)> boxes)
             {
-                float most = EdgeGapM + clearance;
-                foreach (var (q, u, v, hw, hd) in own)
+                float best = float.MaxValue;
+                foreach (var (q, u, v, hw, hd) in boxes)
                 {
                     var d = c + q - p;
                     float du = Mathf.Max(0f, Mathf.Abs(Vector2.Dot(d, u)) - hw), dv = Mathf.Max(0f, Mathf.Abs(Vector2.Dot(d, v)) - hd);
-                    if (du * du + dv * dv <= most * most) return true;
+                    best = Mathf.Min(best, du * du + dv * dv);
                 }
-                return false;
+                return Mathf.Sqrt(best);
             }
             bool CitysGround(Vector2 p, float r)
             {
@@ -1151,7 +1188,8 @@ namespace Statecraft.Game.Map.Collection
                 new SpotCheck("hex", (p, r) => (p - anchor).magnitude + r <= HexInnerRadiusM),
                 new SpotCheck("map", (p, r) => ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)),
                 new SpotCheck("water", (p, r) => !ground.Water(p.x, p.y)),
-                new SpotCheck("near", (p, r) => Near(p)),
+                new SpotCheck("near", (p, r) => Nearest(p, own) <= EdgeGapM + clearance),
+                new SpotCheck("nearer", (p, r) => Nearest(p, own) < Nearest(p, others)),
                 new SpotCheck("ground", CitysGround),
                 new SpotCheck("names", Unnamed),
                 new SpotCheck("blocks", (p, r) => ClearOfBoxes(p, r, blocks)),
@@ -1272,6 +1310,7 @@ namespace Statecraft.Game.Map.Collection
             Replan(log: false);
             var ground = PlacementLayer.CampGround(map);
             var holes = new List<(Vector2 centre, float radius)>();
+            var lanes = new List<(Vector2 at, float half, float baseY, float tan)>();
             var boxes = new List<Bounds[]>();
             foreach (var w in wants)
             {
@@ -1298,13 +1337,20 @@ namespace Statecraft.Game.Map.Collection
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.On; r.forceRenderingOff = !LastClose; renderers.Add(r); }
                 Placed.Add((w.Key, w.Model, pos));
                 if (w.Model == Workshop) boxes.Add(new[] { Bounds(go) });
+                // #2876 (coordinator, 6 November 2026: a palm in front of the Jaffa b21 covered it): a major city's b21 also
+                // keeps the kit trees out of its sight lane toward the camera (south), across its clearance (it holds the
+                // model at any turn) and as far south as a tree's top would rise into the ray from its foot at the view's
+                // shallowest depression (SightTan): the trees are 100 times life size (KitScale.Trees), the b21 24 times.
+                if (w.Model == Workshop && Kits.TownModels.IsMajorCity(w.City)) lanes.Add((spot.at, ClearanceOf(w), pos.y, SightTan));
             }
             // Published once, whole (review of #2281, M1): a list handed to the labels is never changed after.
             workshopBoxes = boxes;
             // No kit tree stands on a building: the trees whose crowns reach its ground are left out at draw time, as under
-            // the unit figures (Kits.VegetationLayer.Hide).
-            Units.UnitShowcase.HideTrees(map, Name, holes);
-            if (prefabs.Count > 0) Debug.Log($"BUILDINGS: {Placed.Count} of {wants.Count} special buildings placed ({string.Join(", ", Placed.Select(p => p.Key))})");
+            // the unit figures (Kits.VegetationLayer.Hide), and none in a major city's b21's sight lane.
+            var veg = map.GetComponentInChildren<Kits.VegetationLayer>(true);
+            if (veg != null) veg.Hide(Name, holes, lanes);
+            if (prefabs.Count > 0) Debug.Log($"BUILDINGS: {Placed.Count} of {wants.Count} special buildings placed ({string.Join(", ", Placed.Select(p => p.Key))})"
+                + (lanes.Count > 0 && veg != null ? FormattableString.Invariant($"; {veg.SightHidden} kit trees left out of {lanes.Count} b21 sight lanes") : ""));
         }
 
         static Bounds Bounds(GameObject go)

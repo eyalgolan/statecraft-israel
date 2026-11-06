@@ -8,6 +8,8 @@
 - An arms workshop built in one of these four cities stands at the edge of the city (owner, 6 November 2026: "make the
   workshop at the edge of the city"), just past the city's outermost blocks, on its hex where it can be and otherwise on
   the land beside the city, with the camera's side (the south) tried first, so the map's camera can see it past the big
-  blocks: no block between it and the camera rises above it. It keeps off the sea and the beach, the routes, the units,
-  the names and the other buildings. Where no such spot is left, the workshop is not drawn and the game logs a warning
-  naming the city, rather than standing it hidden behind the blocks.
+  blocks: no block between it and the camera rises above it, and no tree in front of it is drawn. It stands on ground the
+  map shows Israeli-held on the day it was built, and keeps that spot as the front moves. It keeps off the sea and the
+  beach, the routes, the units, the names and the other buildings, and stands nearer its own city's blocks than any other
+  city's. Where no such spot is left, the workshop is not drawn and the game logs a warning naming the city, rather than
+  standing it hidden behind the blocks.
