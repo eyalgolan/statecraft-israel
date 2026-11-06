@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Statecraft.Game.Map.Units;
 using Statecraft.Sim;
 
@@ -44,6 +45,9 @@ namespace Statecraft.Game.UI
             "armoured_car" => text["city.track_armoured_car"],
             _ => null,
         };
+
+        /// <summary>A run of Latin words: from a Latin letter to the last Latin letter or digit, across spaces and . ' &amp; -.</summary>
+        static readonly Regex LatinRun = new Regex(@"[A-Za-z][A-Za-z0-9]*(?:[ .'&-]+[A-Za-z][A-Za-z0-9]*)*", RegexOptions.CultureInvariant);
 
         public static UnitCard For(PlacedToken placed, GameState state, UiText text, bool gddLoop = false, Content? content = null,
             IReadOnlyDictionary<string, string>? settlementNamesHe = null)
@@ -89,7 +93,11 @@ namespace Statecraft.Game.UI
             if (!string.IsNullOrEmpty(u.Formed)) lines.Add(text.Format("unit.formed", Local(When(u.Formed!), u.FormedHe)));
             // The English decides whether the line exists: a Hebrew commander never adds one (owner, #558).
             if (!string.IsNullOrEmpty(u.FirstCommander)) lines.Add(text.Format("unit.commander", Local(u.FirstCommander!, u.FirstCommanderHe)));
-            if (!t.Raised) lines.Add(Local(u.Sector, u.SectorHe));   // a raised unit has no sourced sector
+            // A raised unit has no sourced sector. A Hebrew sector can name a ship or an agency in Latin ("HMCS Norsyd",
+            // "CIA"): each Latin run goes between left-to-right marks, as UiText.Format marks an inserted value (#543), so
+            // it stays one run in the right-to-left line (HE-09, #2735). Format alone would not: it leaves Hebrew values alone.
+            if (!t.Raised) lines.Add(hebrew && !string.IsNullOrEmpty(u.SectorHe)
+                ? LatinRun.Replace(u.SectorHe!, UiText.LeftToRightMark + "$0" + UiText.LeftToRightMark) : u.Sector);
             // Israel's call-up and security level set only Israel's tokens; an Arab force's token reflects neither (#665).
             var national = u.Side != UnitData.Israel ? ""
                 : !gddLoop ? text.Format("unit.national", PlayerText.Percent(state.Mobilization), state.Rung)
