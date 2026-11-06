@@ -13,3 +13,5 @@
   beach, the routes, the units, the names and the other buildings, and stands nearer its own city's blocks than any other
   city's. Where no such spot is left, the workshop is not drawn and the game logs a warning naming the city, rather than
   standing it hidden behind the blocks.
+- Tel Aviv's three port sheds are shorter along the shore, so they read as three sheds up close rather than one long
+  strip.

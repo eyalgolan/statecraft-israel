@@ -470,17 +470,22 @@ namespace Statecraft.Game.Map.Kits
             }
             if (pieces > 0) { Record(s.Id, "port", sea + new Vector2(-12f * m, 6f * m), 0f, 24f * m, 18f * m, 2.2f * m, stone); n++; }
             var shed = C(0.82f, 0.79f, 0.72f);
+            // #2876: 8 m along the row (was 15 m), on the same lots. The row runs north-south, the way the camera looks, and
+            // the four major cities draw these kit sheds at every zoom (TownModels.IsMajorCity): on the 17 m pitch a 15 m shed
+            // left a 2 m gap, which the shed in front hides, so the three drew as one strip. An 8 m shed leaves 9 m, more
+            // than a 5 m shed hides behind it at the camera's shallowest ray (TownCensusTests.TelAvivsPortShedsStandApart).
+            const float shedL = 8f, shedW = 6f;
             for (int i = 0; i < 3; i++)
             {
                 // Behind the beach strip (BeachSetbackM), so the sand stays open in front of them.
                 if (!Claim(lots, l + new Vector2(BeachSetbackM + 4f * m, (i - 1) * 17f * m), 8.5f * m, s.Id, ground, out var q)) continue;
-                var (bt, gy) = GroundSpan(q, 90f, 15f * m, 6f * m, ground, m);
-                AddModel(s.Id, TownModel.B32CargoShed, q, 90f, 15f * m, 6f * m, 5f * m, bt, gy, km, m, exactHeight: false, flip: false);   // #659
+                var (bt, gy) = GroundSpan(q, 90f, shedL * m, shedW * m, ground, m);
+                AddModel(s.Id, TownModel.B32CargoShed, q, 90f, shedL * m, shedW * m, 5f * m, bt, gy, km, m, exactHeight: false, flip: false);   // #659
                 var cut = km.CutStart();
-                km.Box(q.x, q.y, 90f, 15f * m, 6f * m, bt, gy, 3.2f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plain, m, roofed: true);
-                km.Gable(q.x, q.y, 90f, 15f * m, 6f * m, gy + 3.2f * m, 1.8f * m, C(0.60f, 0.58f, 0.55f), shed);
+                km.Box(q.x, q.y, 90f, shedL * m, shedW * m, bt, gy, 3.2f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plain, m, roofed: true);
+                km.Gable(q.x, q.y, 90f, shedL * m, shedW * m, gy + 3.2f * m, 1.8f * m, C(0.60f, 0.58f, 0.55f), shed);
                 km.CutEnd(cut);
-                Record(s.Id, "warehouse", q, 90f, 15f * m, 6f * m, 5f * m, shed);
+                Record(s.Id, "warehouse", q, 90f, shedL * m, shedW * m, 5f * m, shed);
                 n++;
             }
             return n;
