@@ -170,8 +170,19 @@ public class QualificationTests
         var busy = Step(c, working, new UnitOrder(7, Qualification.ReturnOrder));
         Assert.Equal("That unit is at work; stop the work first", Assert.Single(busy.Rejected).Reason);
         Assert.Contains(7, busy.State.Units.Keys);
-        Assert.Equal("Only a pioneer unit takes that order", Assert.Single(Step(c, s, new UnitOrder(8, Qualification.ReturnOrder)).Rejected).Reason);
-        Assert.Equal("There is no such unit", Assert.Single(Step(c, s, new UnitOrder(99, Qualification.ReturnOrder)).Rejected).Reason);
+        Assert.Equal(Step(c, working).State.Hash(), busy.State.Hash());   // R-QUAL-003: refused, state unchanged
+        var notPioneer = Step(c, s, new UnitOrder(8, Qualification.ReturnOrder));
+        Assert.Equal("Only a pioneer unit takes that order", Assert.Single(notPioneer.Rejected).Reason);
+        Assert.Equal(Step(c, s).State.Hash(), notPioneer.State.Hash());
+        var unknown = Step(c, s, new UnitOrder(99, Qualification.ReturnOrder));
+        Assert.Equal("There is no such unit", Assert.Single(unknown.Rejected).Reason);
+        Assert.Equal(Step(c, s).State.Hash(), unknown.State.Hash());
+        // Projects.IsBusy counts a corridor segment as work too (#2806 item 1)
+        var road = Step(c, s, new PioneerWork(7, Corridors.BuildRoad, "road_a:1")).State;
+        Assert.True(Projects.IsBusy(road, 7));
+        var onRoad = Step(c, road, new UnitOrder(7, Qualification.ReturnOrder));
+        Assert.Equal("That unit is at work; stop the work first", Assert.Single(onRoad.Rejected).Reason);
+        Assert.Equal(Step(c, road).State.Hash(), onRoad.State.Hash());
         Assert.Equal("That order names no hex", Assert.Single(Step(c, s, new UnitOrder(7, Qualification.ReturnOrder, 1, 0)).Rejected).Reason);
         // stopped, it goes at once
         var stopped = Step(c, working, new StopWork(7), new UnitOrder(7, Qualification.ReturnOrder));
