@@ -14,7 +14,7 @@ def shot_lines(name: str, png: bytes, chunk: int = 10) -> list[str]:
 
 
 def test_a_shot_is_reassembled_and_written(tmp_path):
-    png = bytes(range(256)) * 3
+    png = png_of_size(32, 18, varied=True)
     c = wc.ShotCollector(tmp_path)
     assert all(c.feed(line) for line in shot_lines("gameplay03", png))
     assert (tmp_path / "gameplay03.png").read_bytes() == png
@@ -24,7 +24,7 @@ def test_a_shot_is_reassembled_and_written(tmp_path):
 
 
 def test_parts_may_arrive_out_of_order(tmp_path):
-    png = b"\x89PNG" + bytes(200)
+    png = png_of_size(32, 18, varied=True)
     lines = shot_lines("diorama02", png)
     c = wc.ShotCollector(tmp_path)
     for line in [lines[0]] + list(reversed(lines[1:])):
@@ -63,11 +63,15 @@ def test_headless_chrome_runs_uncapped_at_dpr_1():
     assert "--use-angle=swiftshader" in wc.chrome_flags("/tmp/p", swiftshader=True)
 
 
-def png_of_size(w: int, h: int) -> bytes:
+def png_of_size(w: int, h: int, varied: bool = False) -> bytes:
+    """A PNG; varied=True gives it a gradient, since a one-colour (blank) shot is now rejected."""
     import io
     from PIL import Image
+    img = Image.new("RGB", (w, h), (10, 20, 30))
+    if varied:
+        img.putdata([(x * 255 // max(w - 1, 1), y * 255 // max(h - 1, 1), 99) for y in range(h) for x in range(w)])
     buf = io.BytesIO()
-    Image.new("RGB", (w, h), (10, 20, 30)).save(buf, "PNG")
+    img.save(buf, "PNG")
     return buf.getvalue()
 
 
@@ -78,7 +82,7 @@ def test_a_shot_of_the_wrong_size_fails(tmp_path):
         for line in shot_lines("gameplay03", png_of_size(1920, 937), chunk=4000):
             c.feed(line)
     ok = wc.ShotCollector(tmp_path, size=(64, 36))
-    assert all(ok.feed(line) for line in shot_lines("diorama02", png_of_size(64, 36), chunk=4000))
+    assert all(ok.feed(line) for line in shot_lines("diorama02", png_of_size(64, 36, varied=True), chunk=4000))
 
 
 @pytest.mark.parametrize("bad", ["SHOT gameplay03 0/3 AAAA", "SHOT gameplay03 4/3 AAAA", "SHOT gameplay03 1/2 AAAA"])
@@ -180,3 +184,95 @@ def test_rejoin_holds_an_open_line_across_batches_and_leaves_ordinary_lines_alon
     joined = rejoin.feed('BBBB", source: x (2)\n')
     assert [wc.CONSOLE.search(l).group(1) for l in joined] == ["SHOT a 1/2 AAAABBBB"]
     assert rejoin.flush() == []
+
+
+# --- #2697 items 2 and 6: a --shots run that captured nothing usable must fail ---------------------------------------
+
+def run_main(monkeypatch, capsys, tmp_path, console: list[str], *argv: str) -> tuple[int, str]:
+    """web_check.main against a fake browser whose stderr is `console` as Chrome prints it; no Chrome, no network."""
+    import io
+    import sys
+
+    class FakeBrowser:
+        stderr = io.StringIO("".join(f'[1105/1.1:INFO:CONSOLE:1] "{t}", source: x (1)\n' for t in console))
+        def poll(self): return 0
+        def terminate(self): pass
+        def wait(self, timeout=None): return 0
+
+    class FakePage:
+        def __init__(self, *a): pass
+        def open(self): pass
+        def close(self): pass
+        def command(self, name): pass
+
+    monkeypatch.setattr(wc, "find_chrome", lambda: tmp_path / "chrome")
+    monkeypatch.setattr(wc.subprocess, "Popen", lambda *a, **k: FakeBrowser())
+    monkeypatch.setattr(wc, "Page", FakePage)
+    monkeypatch.setattr(sys, "argv", ["web_check.py", "--url", "http://x.invalid/index.html", "--viewport", "100x100",
+                                      "--shots", str(tmp_path / "shots"), *argv])
+    code = wc.main()
+    return code, capsys.readouterr().out
+
+
+def test_shots_run_with_an_unrelated_expect_and_no_shot_at_all_fails(monkeypatch, capsys, tmp_path):
+    code, out = run_main(monkeypatch, capsys, tmp_path, ["GAME OK 1948-05-15"], "--expect", "GAME OK")
+    assert code == 1 and "PASS" not in out and not list((tmp_path / "shots").glob("*.png"))
+
+
+def test_shots_run_that_never_logs_shot_done_fails_even_with_a_shot(monkeypatch, capsys, tmp_path):
+    console = ["GAME OK 1948-05-15"] + shot_lines("gameplay03", png_of_size(100, 100, varied=True), chunk=4000)
+    code, out = run_main(monkeypatch, capsys, tmp_path, console, "--expect", "GAME OK")
+    assert code == 1 and "PASS" not in out
+
+
+def test_shots_run_with_shot_done_but_no_shot_fails(monkeypatch, capsys, tmp_path):
+    code, out = run_main(monkeypatch, capsys, tmp_path, ["SHOT done"], "--expect", "SHOT done")
+    assert code == 1 and "PASS" not in out
+
+
+def test_shots_run_that_finishes_one_good_shot_passes(monkeypatch, capsys, tmp_path):
+    console = shot_lines("gameplay03", png_of_size(100, 100, varied=True), chunk=4000) + ["SHOT done"]
+    code, out = run_main(monkeypatch, capsys, tmp_path, console, "--expect", "SHOT done")
+    assert code == 0 and (tmp_path / "shots" / "gameplay03.png").exists()
+
+
+def test_a_blank_shot_is_rejected(tmp_path):
+    c = wc.ShotCollector(tmp_path, size=(64, 36))
+    with pytest.raises(ValueError, match="blank"):
+        for line in shot_lines("gameplay03", png_of_size(64, 36), chunk=4000):
+            c.feed(line)
+    assert not list(tmp_path.glob("*.png"))
+
+
+def test_a_shot_that_is_not_a_png_is_rejected_even_without_a_size(tmp_path):
+    c = wc.ShotCollector(tmp_path)
+    with pytest.raises(ValueError, match="not a PNG"):
+        for line in shot_lines("gameplay03", bytes(range(256)) * 3):
+            c.feed(line)
+    assert not list(tmp_path.glob("*.png"))
+
+
+def test_shots_run_with_a_blank_shot_then_shot_done_fails_and_writes_nothing(monkeypatch, capsys, tmp_path):
+    """#2697 item 6 through web_check.main: a one-colour PNG is no capture."""
+    console = shot_lines("gameplay03", png_of_size(100, 100), chunk=4000) + ["SHOT done"]
+    code, out = run_main(monkeypatch, capsys, tmp_path, console, "--expect", "SHOT done")
+    assert code == 1 and "PASS" not in out and "blank" in out and not list((tmp_path / "shots").glob("*"))
+
+
+def test_shots_run_with_non_png_bytes_then_shot_done_fails_and_writes_nothing(monkeypatch, capsys, tmp_path):
+    console = shot_lines("gameplay03", bytes(range(256)) * 3, chunk=4000) + ["SHOT done"]
+    code, out = run_main(monkeypatch, capsys, tmp_path, console, "--expect", "SHOT done")
+    assert code == 1 and "PASS" not in out and "not a PNG" in out and not list((tmp_path / "shots").glob("*"))
+
+
+def test_a_png_with_a_good_header_and_a_damaged_body_is_rejected(tmp_path):
+    """The SHA-256 is of the damaged bytes, so only the decode catches it."""
+    png = bytearray(png_of_size(64, 36, varied=True))
+    at = png.index(b"IDAT") + 12
+    for i in range(at, at + 6):
+        png[i] ^= 0xFF
+    c = wc.ShotCollector(tmp_path, size=(64, 36))
+    with pytest.raises(ValueError, match="not a PNG that decodes"):
+        for line in shot_lines("gameplay03", bytes(png), chunk=4000):
+            c.feed(line)
+    assert not list(tmp_path.glob("*.png"))

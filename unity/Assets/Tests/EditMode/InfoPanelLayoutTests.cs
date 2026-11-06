@@ -279,7 +279,7 @@ public class InfoPanelLayoutTests
     /// of the minimap, the left column and the top bar, and every shown label lies inside the panel (or the panel scrolls to
     /// it) with its text fitting its box, as TheGddCityAndSitePanelsFitEveryWindow asks of the city's own hex.</summary>
     [UnityTest]
-    public IEnumerator ACityHexWithARepairBeingBuiltFitsEveryWindow_RCity011()
+    public IEnumerator ACityHexWithARepairBeingBuiltFitsEveryWindow_RCity011([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var c = WorkshopPanelTests.Load03();
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
@@ -291,7 +291,7 @@ public class InfoPanelLayoutTests
                 var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
                 var id = g.State.NextId++;
                 g.State.CityProjects.Add(id, new CityProject(id, Projects.HousingRepair, city.Id, city.Q, city.R, 2));
-                var at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                var at = $"{(hebrew ? "he" : "en")} {w}x{h} at {uiScale}%";
                 yield return Rendered(w, h, g, (root, info) => info.Show(city.Q, city.R), root =>
                 {
                     var panel = root.Q("info-panel"); var window = root.worldBound;
@@ -305,7 +305,7 @@ public class InfoPanelLayoutTests
                         if (!InsideOrScrollsTo(l.worldBound, root.Q<ScrollView>("info-panel"))) problems.Add($"{at}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");
                         if (!TextFits(l)) problems.Add($"{at}: '{l.text}' does not fit its box {l.contentRect} ({l.name})");
                     }
-                }, hebrew ? he : Text, hebrew);
+                }, hebrew ? he : Text, hebrew, uiScale: uiScale);
             }
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
