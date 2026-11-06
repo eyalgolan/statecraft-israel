@@ -655,23 +655,27 @@ namespace Statecraft.Game.Map.Collection
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, on);
             bool Free(Vector2 p, float r) => FreeOn(p, r, date);
             // The four props stand at a town's edge (owner on #2274: "Bigger, closer"): inside a footprint if need be, clear of the
-            // towns' building models, of the tokens standing in towns and of every settlement's and locality's name point instead,
-            // and of the farm scenes' plan, as the workshops (coordinator, 2 November 2026, on #2274: Q3).
+            // towns' drawn buildings (a major city's kit blocks, every other town's building models: #2876), of the tokens
+            // standing in towns and of every settlement's and locality's name point instead, and of the farm scenes' plan, as the
+            // workshops (coordinator, 2 November 2026, on #2274: Q3).
             List<(Vector2, float)>? buildings = null, clearings = null; List<Vector2>? names = null;
+            List<(Vector2 c, float yaw, float w, float d)>? blocks = null;
             bool FreeAtEdge(Vector2 p, float r)
             {
                 if (buildings == null)
                 {
                     var towns = map.GetComponentInChildren<Kits.TownModelLayer>(true);
                     buildings = towns == null ? new List<(Vector2, float)>()
-                        : map.KitFootprints.SelectMany(f => towns.InstancesOf(f.id)).Select(i => (i.C, 0.5f * new Vector2(i.W, i.D).magnitude)).ToList();
+                        : map.KitFootprints.Where(f => !Kits.TownModels.IsMajorCity(f.id)).SelectMany(f => towns.InstancesOf(f.id))
+                            .Select(i => (i.C, 0.5f * new Vector2(i.W, i.D).magnitude)).ToList();
+                    blocks = map.MajorCityBlocks.Select(b => (b.C, b.Yaw, b.W, b.D)).ToList();
                     clearings = map.UnitClearings.ToList();
                     names = map.Settlements.Concat(map.Localities.Select(l => l.Settlement))
                         .Select(s => { var n = map.Frame.ToWorld(s.Lon, s.Lat, 0); return new Vector2(n.x, n.z); }).ToList();
                 }
                 foreach (var n in names!) if ((n - p).sqrMagnitude <= r * r) return false;
-                return TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, buildings) && TownLandmarks.Clear(p, r, clearings!)
-                    && TownLandmarks.Clear(p, r, farms)
+                return TownLandmarks.Clear(p, r, taken) && TownLandmarks.Clear(p, r, buildings) && ClearOfBoxes(p, r, blocks!)
+                    && TownLandmarks.Clear(p, r, clearings!) && TownLandmarks.Clear(p, r, farms)
                     && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                     && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
             }
@@ -712,17 +716,21 @@ namespace Statecraft.Game.Map.Collection
                     // from units_1948, not the units' live places) on the day the workshop was built (w.From), so its spot does not
                     // move as the game's date passes a token's last day (review of #2281, S2).
                     var built = w.From;
+                    // #2876: clear of the major cities' kit blocks too, which reach past their footprints (out to
+                    // SettlementKits.PlotReach of the radius), so a spot just outside one keeps off its outer blocks.
+                    var hexBlocks = MajorCityBlocksNear(map, anchor);
                     bool OnHex(Vector2 p, float r) => (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms)
-                        && ClearOfFigures(map, p, r, built) && FreeOn(p, r, built);
+                        && ClearOfBoxes(p, r, hexBlocks) && ClearOfFigures(map, p, r, built) && FreeOn(p, r, built);
                     float inside = Inside(anchor, footprints);
                     at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
                     // A town whose footprint covers the whole hex (Jerusalem, Tel Aviv): a gap between its drawn buildings (owner,
-                    // 2 November 2026: "Among the houses").
-                    if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, (p, r) =>
+                    // 2 November 2026: "Among the houses"), or, between a major city's kit blocks, a street (#2876): the model then
+                    // lies along it (dir), as a roadside model along its road.
+                    if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, SizeOf(w), (p, r) =>
                         (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && TownLandmarks.Clear(p, r, taken)
                         && ClearOfFigures(map, p, r, built)
                         && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built));
+                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built), out dir);
                 }
                 else if (at == null)
                 {
@@ -828,7 +836,9 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The drawn buildings on the hex about <paramref name="anchor"/>: each town model instance the kit planned at
         /// map build (TownModelLayer.InstancesOf; never what has streamed) for every footprint that reaches the hex, as a disc of
-        /// its half diagonal; <paramref name="names"/>: those footprints (their names stand above them).</summary>
+        /// its half diagonal, but a major city's (TownModels.IsMajorCity), which draws its kit blocks at every zoom and never its
+        /// models (#2876: <see cref="MajorCityBlocksNear"/>); <paramref name="names"/>: those footprints, a major city's
+        /// included (their names stand above them).</summary>
         internal static List<(Vector2 centre, float radius)> TownBuildings(MapScene map, Vector2 anchor, out List<(Vector2 centre, float radius)> names)
         {
             var discs = new List<(Vector2 centre, float radius)>(); names = new List<(Vector2 centre, float radius)>();
@@ -837,43 +847,128 @@ namespace Statecraft.Game.Map.Collection
             {
                 if ((anchor - f.centre).magnitude >= f.radius + HexInnerRadiusM) continue;
                 names.Add((f.centre, f.radius));
-                if (layer == null) continue;
+                if (layer == null || Kits.TownModels.IsMajorCity(f.id)) continue;
                 foreach (var b in layer.InstancesOf(f.id)) discs.Add((b.C, 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D)));
             }
             return discs;
         }
 
-        /// <summary>#1701 slice F, owner 2 November 2026 ("Among the houses"): a workshop on a hex a town's footprint covers stands
-        /// in a gap between the drawn buildings on the hex (<see cref="TownBuildings"/>), off the kits' walls, platforms and
-        /// landmarks (<see cref="TownLandmarkBoxes"/>), clear of every name there
-        /// (<see cref="ClearOfName"/>) and <paramref name="free"/> (the hex, the routes, the tokens, the other models). A fixed search: rings
-        /// half a clearance apart outward from the hex centre, each from an FNV-1a bearing of the key. Null when no gap is
-        /// clear.</summary>
-        internal static Vector2? TownGap(MapScene map, string key, Vector2 anchor, float clearance, Func<Vector2, float, bool> free)
+        /// <summary>#2876: the major cities' kit blocks (MapScene.MajorCityBlocks: every "building" and "wing" their kits placed,
+        /// drawn at every zoom) that may reach the hex about <paramref name="anchor"/>, as boxes (their yaw as KitMesh.Corners),
+        /// in placement order. A block's reach is taken as half its width plus half its depth (no less than its half diagonal).</summary>
+        internal static List<(Vector2 c, float yaw, float w, float d)> MajorCityBlocksNear(MapScene map, Vector2 anchor)
         {
+            var boxes = new List<(Vector2 c, float yaw, float w, float d)>();
+            foreach (var b in map.MajorCityBlocks)
+                if ((b.C - anchor).magnitude <= HexInnerRadiusM + 0.5f * (b.W + b.D)) boxes.Add((b.C, b.Yaw, b.W, b.D));
+            return boxes;
+        }
+
+        /// <summary>Whether a disc of <paramref name="r"/> at <paramref name="p"/> keeps clear of every box of
+        /// <paramref name="boxes"/> (<see cref="ClearOfBox"/>; a box whose centre is past r plus half its width and half its depth
+        /// cannot reach it and is skipped).</summary>
+        internal static bool ClearOfBoxes(Vector2 p, float r, List<(Vector2 c, float yaw, float w, float d)> boxes)
+        {
+            foreach (var (c, yaw, w, d) in boxes)
+            {
+                float reach = r + 0.5f * (w + d);
+                if ((p - c).sqrMagnitude > reach * reach) continue;
+                if (!ClearOfBox(p, r, c, yaw, w, d)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>Whether two boxes, each centred at c, turned yaw degrees anticlockwise in x-z (KitMesh.Corners), w along its
+        /// turn and d across, are apart (touching counts as apart): one of their four side axes separates them.</summary>
+        public static bool BoxesClear(Vector2 c1, float yaw1, float w1, float d1, Vector2 c2, float yaw2, float w2, float d2)
+        {
+            float a1 = yaw1 * Mathf.Deg2Rad, a2 = yaw2 * Mathf.Deg2Rad;
+            var u1 = new Vector2(Mathf.Cos(a1), Mathf.Sin(a1)); var v1 = new Vector2(-u1.y, u1.x);
+            var u2 = new Vector2(Mathf.Cos(a2), Mathf.Sin(a2)); var v2 = new Vector2(-u2.y, u2.x);
+            var t = c2 - c1;
+            bool Apart(Vector2 n) => Mathf.Abs(Vector2.Dot(t, n)) >= 0.5f * w1 * Mathf.Abs(Vector2.Dot(u1, n)) + 0.5f * d1 * Mathf.Abs(Vector2.Dot(v1, n))
+                + 0.5f * w2 * Mathf.Abs(Vector2.Dot(u2, n)) + 0.5f * d2 * Mathf.Abs(Vector2.Dot(v2, n));
+            return Apart(u1) || Apart(v1) || Apart(u2) || Apart(v2);
+        }
+
+        /// <summary>#1701 slice F, owner 2 November 2026 ("Among the houses"): a workshop on a hex a town's footprint covers stands
+        /// in a gap between the drawn buildings on the hex (<see cref="TownBuildings"/>, and a major city's kit blocks,
+        /// <see cref="MajorCityBlocksNear"/>, #2876), off the kits' walls, platforms and landmarks (<see cref="TownLandmarkBoxes"/>),
+        /// clear of every name there (<see cref="ClearOfName"/>) and <paramref name="free"/> (the hex, the routes, the tokens, the
+        /// other models). A fixed search: rings half a clearance apart outward from the hex centre, each from an FNV-1a bearing of
+        /// the key. Where no gap is clear and major-city blocks reach the hex (their streets are narrower than the clearance disc:
+        /// Tel Aviv's 60x blocks stand 180 to 360 m apart, the disc is about 409 m across), the same search for a street: the
+        /// model's ground taken as its square, <paramref name="size"/> a side (b21 is nearly square from above: vertex extents
+        /// 0.959 by 0.999 FBX units, read from b21-artisan-workshop-v2.fbx on 6 November 2026, centred, so its square holds it),
+        /// turned with the nearest block within reach, clear of every block and kit landmark as boxes, every other test
+        /// unchanged (the disc); <paramref name="along"/> is then that street's direction (world x, z, unit length), for the model
+        /// to lie along it. Null when neither is clear.</summary>
+        internal static Vector2? TownGap(MapScene map, string key, Vector2 anchor, float clearance, float size, Func<Vector2, float, bool> free,
+            out Vector2? along)
+        {
+            along = null;
             var houses = TownBuildings(map, anchor, out var names);
+            var blocks = MajorCityBlocksNear(map, anchor);
             var landmarks = TownLandmarkBoxes(map, anchor);
             uint h = 2166136261;
             foreach (char c in key) { h ^= c; h *= 16777619; }
-            float step = 0.5f * clearance;
-            for (float radius = 0f; radius + clearance <= HexInnerRadiusM; radius += step)
+            Vector2? Search(Func<Vector2, bool> clear)
             {
-                int n = radius == 0f ? 1 : Mathf.Max(6, Mathf.CeilToInt(2f * Mathf.PI * radius / step));
-                int start = (int)(h % (uint)n);
-                for (int i = 0; i < n; i++)
+                float step = 0.5f * clearance;
+                for (float radius = 0f; radius + clearance <= HexInnerRadiusM; radius += step)
                 {
-                    float angle = 2f * Mathf.PI * ((start + i) % n) / n;
-                    var p = anchor + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
-                    bool named = false;
-                    foreach (var (c, fr) in names) if (!ClearOfName(p, clearance, c, fr)) { named = true; break; }
-                    if (named || !TownLandmarks.Clear(p, clearance, houses)) continue;
-                    bool onLandmark = false;
-                    foreach (var (bc, yaw, bw, bd) in landmarks) if (!ClearOfBox(p, clearance, bc, yaw, bw, bd)) { onLandmark = true; break; }
-                    if (onLandmark || !free(p, clearance)) continue;
-                    return p;
+                    int n = radius == 0f ? 1 : Mathf.Max(6, Mathf.CeilToInt(2f * Mathf.PI * radius / step));
+                    int start = (int)(h % (uint)n);
+                    for (int i = 0; i < n; i++)
+                    {
+                        float angle = 2f * Mathf.PI * ((start + i) % n) / n;
+                        var p = anchor + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                        if (clear(p)) return p;
+                    }
                 }
+                return null;
             }
-            return null;
+            bool Named(Vector2 p)
+            {
+                foreach (var (c, fr) in names) if (!ClearOfName(p, clearance, c, fr)) return true;
+                return false;
+            }
+            var gap = Search(p =>
+            {
+                if (Named(p) || !TownLandmarks.Clear(p, clearance, houses) || !ClearOfBoxes(p, clearance, blocks)) return false;
+                foreach (var (bc, yaw, bw, bd) in landmarks) if (!ClearOfBox(p, clearance, bc, yaw, bw, bd)) return false;
+                return free(p, clearance);
+            });
+            if (gap != null || blocks.Count == 0) return gap;
+            float streetYaw = 0f;
+            var street = Search(p =>
+            {
+                if (Named(p) || !TownLandmarks.Clear(p, clearance, houses)) return false;
+                // The street's turn: the nearest block's (a street runs square to its blocks); with no block within reach of
+                // the square, the disc search above has already judged the spot.
+                float best = float.MaxValue; bool any = false;
+                foreach (var (bc, yaw, bw, bd) in blocks)
+                {
+                    float reach = size + 0.5f * (bw + bd);
+                    if ((p - bc).sqrMagnitude > reach * reach) continue;
+                    float a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+                    var q = p - bc; float u = q.x * ca + q.y * sa, v = -q.x * sa + q.y * ca;
+                    float du = Mathf.Max(0f, Mathf.Abs(u) - 0.5f * bw), dv = Mathf.Max(0f, Mathf.Abs(v) - 0.5f * bd);
+                    float dist = du * du + dv * dv;
+                    if (dist < best) { best = dist; streetYaw = yaw; any = true; }
+                }
+                if (!any) return false;
+                foreach (var (bc, yaw, bw, bd) in blocks)
+                {
+                    float reach = size + 0.5f * (bw + bd);
+                    if ((p - bc).sqrMagnitude > reach * reach) continue;
+                    if (!BoxesClear(p, streetYaw, size, size, bc, yaw, bw, bd)) return false;
+                }
+                foreach (var (bc, yaw, bw, bd) in landmarks) if (!BoxesClear(p, streetYaw, size, size, bc, yaw, bw, bd)) return false;
+                return free(p, clearance);
+            });
+            if (street != null) { float a = streetYaw * Mathf.Deg2Rad; along = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); }
+            return street;
         }
 
         void Rebuild()

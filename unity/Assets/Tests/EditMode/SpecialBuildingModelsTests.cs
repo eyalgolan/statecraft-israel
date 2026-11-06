@@ -528,12 +528,16 @@ namespace Statecraft.Game.Tests
             var flat = new Vector2(p.At.x, p.At.z); float r = SpecialBuildingModels.ClearanceOf(p.Model);
             var ground = PlacementLayer.CampGround(map);
             // The owner, 2 November 2026, on #2274: "Bigger, closer (Recommended)" ("let them stand at the town's edge right by the
-            // sourced spot"): the four props may stand inside a town's kit footprint, but clear of its building models, of the
-            // unit tokens standing in towns and of every settlement's and locality's name point.
+            // sourced spot"): the four props may stand inside a town's kit footprint, but clear of its drawn buildings (its building
+            // models; a major city's kit blocks, which it draws at every zoom in their place: #2876), of the unit tokens standing in
+            // towns and of every settlement's and locality's name point.
             var towns = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
             Assert.IsNotNull(towns, "the town building models");
-            var buildings = map.KitFootprints.SelectMany(f => towns.InstancesOf(f.id)).Select(i => (i.C, 0.5f * new Vector2(i.W, i.D).magnitude)).ToList();
+            var buildings = map.KitFootprints.Where(f => !Statecraft.Game.Map.Kits.TownModels.IsMajorCity(f.id)).SelectMany(f => towns.InstancesOf(f.id))
+                .Select(i => (i.C, 0.5f * new Vector2(i.W, i.D).magnitude)).ToList();
             Assert.IsTrue(TownLandmarks.Clear(flat, r, buildings), key + " clear of the towns' buildings");
+            foreach (var block in map.MajorCityBlocks)
+                Assert.IsTrue(SpecialBuildingModels.ClearOfBox(flat, r, block.C, block.Yaw, block.W, block.D), $"{key} clear of {block.Id}'s kit {block.Kind} at {block.C}");
             Assert.IsTrue(TownLandmarks.Clear(flat, r, map.UnitClearings.ToList()), key + " clear of the tokens in the towns");
             foreach (var s in map.Settlements.Concat(map.Localities.Select(l => l.Settlement)))
             {
@@ -1000,6 +1004,7 @@ namespace Statecraft.Game.Tests
                 .Concat(rural.Placed.Select(p => (new Vector2(p.At.x, p.At.z), RuralLife.SceneRadiusM(p.Model)))).ToList();
             var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
             Assert.AreEqual(1, asked.Count(a => a.id == SpecialBuildingModels.Workshop), "b21 is asked for once, whatever the number of workshops");
+            var streets = Streets(map, c, projects);
             AnswerAll();
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             float r0 = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
@@ -1033,7 +1038,7 @@ namespace Statecraft.Game.Tests
                 TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre, clearance {r:0} m");
                 Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its project's hex");
                 if (covered.Contains(project.City))
-                    AmongTheHouses(map, key, flat, r);
+                    AmongTheHouses(map, key, flat, r, streets);
                 else Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), key + " clear of the towns (and their labels)");
                 Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
                 Assert.IsFalse(ground.OnToken(flat, r, After), key + " clear of the unit tokens");
@@ -1042,7 +1047,13 @@ namespace Statecraft.Game.Tests
                 Assert.IsTrue(TownLandmarks.Clear(flat, r, props), key + " clear of the civilians, the wildlife and the farm scenes");
                 spots.Add((flat, r));
                 var go = layer.transform.Find(key)!;
-                Assert.Less(Quaternion.Angle(prefab.transform.localRotation, go.localRotation), 0.01f, key + " keeps the FBX axis conversion");
+                if (streets.ContainsKey(key))
+                {
+                    // On a street between a major city's kit blocks (#2876): turned about the vertical only, along the street.
+                    var turn = go.localRotation * Quaternion.Inverse(prefab.transform.localRotation);
+                    Assert.Greater(Vector3.Dot(turn * Vector3.up, Vector3.up), 0.9999f, key + " upright: turned only about the vertical");
+                }
+                else Assert.Less(Quaternion.Angle(prefab.transform.localRotation, go.localRotation), 0.01f, key + " keeps the FBX axis conversion");
                 var rs = go.GetComponentsInChildren<Renderer>(true);
                 var b = rs.Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
                 Assert.AreEqual(p.At.y, b.min.y, 1f, key + " stands on the ground");
@@ -1058,16 +1069,39 @@ namespace Statecraft.Game.Tests
             foreach (var key in keys) Assert.AreEqual(first[key], again.Placed.Single(p => p.Key == key).At, key + " on the same spot again");
         }
 
-        /// <summary>Owner, 2 November 2026 ("Among the houses"): a b21 on a hex a town's footprint covers overlaps none of the town
-        /// layer's drawn buildings, whatever they are (read from the layer, not listed here). The names' pills are checked on
-        /// screen by MapLabelTests.NoNamePillCoversAWorkshopModelInTelAviv and ...InJerusalem.</summary>
-        static void AmongTheHouses(MapScene map, string key, Vector2 flat, float r)
+        /// <summary>The street direction the plan gives each workshop that stands on a street between a major city's kit blocks
+        /// (#2876; SpecialBuildingModels.PlanWithRoutes, the plan the layer draws), by key.</summary>
+        static IReadOnlyDictionary<string, Vector2> Streets(MapScene map, Statecraft.Sim.Content c, IEnumerable<Statecraft.Sim.CityProject> projects)
+        {
+            var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
+            SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var along);
+            return wants.Where(w => w.Model == SpecialBuildingModels.Workshop && along.ContainsKey(w.Key)).ToDictionary(w => w.Key, w => along[w.Key]);
+        }
+
+        /// <summary>Owner, 2 November 2026 ("Among the houses"): a b21 on a hex a town's footprint covers overlaps none of the
+        /// drawn buildings, whatever they are (read from the map, not listed here): the town layer's models, and a major city's
+        /// kit blocks, which it draws at every zoom in their place (#2876). A b21 on a street between kit blocks
+        /// (<paramref name="streets"/>) is checked as its square along the street, SizeOf a side, against the blocks and the kit
+        /// landmarks; else as its clearance disc. The names' pills are checked on screen by
+        /// MapLabelTests.NoNamePillCoversAWorkshopModelInTelAviv and ...InJerusalem.</summary>
+        static void AmongTheHouses(MapScene map, string key, Vector2 flat, float r, IReadOnlyDictionary<string, Vector2> streets)
         {
             var layer = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
             Assert.IsNotNull(layer, "the town layer");
+            bool street = streets.TryGetValue(key, out var dir);
+            float yaw = street ? Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg : 0f, size = SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop);
+            bool Clear(Vector2 c, float boxYaw, float w, float d) =>
+                street ? BoxesApart(flat, yaw, size, size, c, boxYaw, w, d) : SpecialBuildingModels.ClearOfBox(flat, r, c, boxYaw, w, d);
             int n = 0;
+            foreach (var b in map.MajorCityBlocks)
+            {
+                if ((b.C - flat).magnitude > SpecialBuildingModels.HexInnerRadiusM + 0.5f * (b.W + b.D)) continue;
+                n++;
+                Assert.IsTrue(Clear(b.C, b.Yaw, b.W, b.D), $"{key} overlaps {b.Id}'s kit {b.Kind} at {b.C}");
+            }
             foreach (var f in map.KitFootprints)
             {
+                if (Statecraft.Game.Map.Kits.TownModels.IsMajorCity(f.id)) continue;   // its models are never drawn (#2876)
                 foreach (var b in layer!.InstancesOf(f.id))
                 {
                     n++;
@@ -1086,12 +1120,12 @@ namespace Statecraft.Game.Tests
             {
                 if ((l.C - flat).magnitude > SpecialBuildingModels.HexInnerRadiusM + 0.5f * (l.W + l.D)) continue;
                 m++;
-                Assert.IsTrue(SpecialBuildingModels.ClearOfBox(flat, r, l.C, l.Yaw, l.W, l.D), $"{key} stands on {l.Id}'s {l.Kind} at {l.C}");
+                Assert.IsTrue(Clear(l.C, l.Yaw, l.W, l.D), $"{key} stands on {l.Id}'s {l.Kind} at {l.C}");
             }
             foreach (var part in stats.LandmarkParts)
-                Assert.IsTrue(SpecialBuildingModels.ClearOfBox(flat, r, new Vector2(part.Near.center.x, part.Near.center.z), 0f, part.Near.size.x, part.Near.size.z),
+                Assert.IsTrue(Clear(new Vector2(part.Near.center.x, part.Near.center.z), 0f, part.Near.size.x, part.Near.size.z),
                     $"{key} stands on {part.Owner}'s {part.Kind}");
-            TestContext.WriteLine($"{key}: clear of {n} drawn buildings and {m} kit landmarks near it");
+            TestContext.WriteLine($"{key}: clear of {n} drawn buildings and {m} kit landmarks near it{(street ? $" (on a street at {yaw:0} deg)" : "")}");
             Assert.Greater(m, 0, key + ": the kits drew landmarks near it to keep clear of");
         }
 
@@ -1107,6 +1141,7 @@ namespace Statecraft.Game.Tests
             var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
             AnswerAll();
             var ground = PlacementLayer.CampGround(map);
+            var streets = Streets(map, c, projects);
             var first = new Dictionary<string, Vector3>();
             foreach (var project in projects)
             {
@@ -1118,7 +1153,7 @@ namespace Statecraft.Game.Tests
                 float off = (flat - new Vector2(centre3.x, centre3.z)).magnitude;
                 TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre");
                 Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its hex");
-                AmongTheHouses(map, key, flat, r);
+                AmongTheHouses(map, key, flat, r, streets);
                 if (project.City == "jerusalem")
                 {
                     var (oc, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(map.Frame);
