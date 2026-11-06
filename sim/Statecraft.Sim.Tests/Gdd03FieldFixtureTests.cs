@@ -301,6 +301,26 @@ public class Gdd03FieldFixtureTests
         Assert.Equal(5, f.Yield(r, WorkMonth(c, s, industry.Id), AllHeld(c)).Fields[V1]);
     }
 
+    // R-VET-001 (#2804 item 12): the producer checks for a veteran before AfterWork, so a veteran farmer at int.MaxValue
+    // work XP (the ledger allows any nonnegative work XP) keeps its XP instead of overflowing, and its field still yields
+    // the veteran 5. TEST-ONLY SYNTHETIC work XP.
+    [Fact] public void AVeteranFarmerAtMaxWorkXpKeepsItsXp()
+    {
+        var c = Real(); var r = Rules(c);
+        var industry = new Gdd03FixtureSlot("synthetic-industry", Gdd03FixtureWork.Industry, 1, "winery");
+        var s = WorkState(c, industry, new PopulationUnit(0, PopulationStatus.FreeCivilian, c.RequirePopulationInteger("reception.turns"),
+            InValleys, PopulationAssignment.Unassigned, CivilianProfession.Farmer, CivilianTier.Veteran, int.MaxValue, "infantry", 4,
+            new PopulationEquipment(toolsId: "tools/0", toolsPaid: true)));
+        var f = new Gdd03FieldFixture(c, s, new[] { industry });
+        f.Staff(0, V1, israeliHeld: true);
+        var month = WorkMonth(c, s, industry.Id);
+        var before = s.Describe();
+        var next = Gdd03FieldFixture.ResolveWorkXp(c, s, month, AllHeld(c));
+        Assert.Equal((int.MaxValue, CivilianTier.Veteran), (next.PopulationLedger.Get(0).WorkXp, next.PopulationLedger.Get(0).Tier));
+        Assert.Equal(before, s.Describe());
+        Assert.Equal(5, f.Yield(r, month, AllHeld(c)).Fields[V1]);
+    }
+
     // #2468 review: a snapshot with more working farmers on a field than its `field.slots` (1) is refused whole, as
     // Yield refuses it, so no farmer is credited for a slot another farmer holds; the turn-start state is unchanged.
     [Fact] public void AnOverOccupiedFieldMonthIsRefused()
