@@ -148,7 +148,9 @@ public class SitesContentTests
     public void EachYishuvSiteHasOneFieldSiteInItsHex()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
-        foreach (var y in c.Sites.Where(x => x.Kinds.Contains("yishuv")))
+        var yishuvs = c.Sites.Where(x => x.Kinds.Contains("yishuv")).ToList();
+        Assert.NotEmpty(yishuvs);
+        foreach (var y in yishuvs)
         {
             var others = c.Sites.Where(x => x != y && x.Q == y.Q && x.R == y.R).ToList();
             var field = Assert.Single(others);
