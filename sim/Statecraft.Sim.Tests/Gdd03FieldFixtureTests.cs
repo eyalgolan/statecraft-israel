@@ -36,7 +36,7 @@ public class Gdd03FieldFixtureTests
     static Gdd03SyntheticMonthContext MonthAt(Content c, GameState s, int ordinal, params string[] notHeldAtFreeze) =>
         Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, ordinal, s.PopulationLedger.Units,
             Gdd03FieldFixture.Fields(c).Select(f => new Gdd03SyntheticFacilitySnapshot(f.Id, !notHeldAtFreeze.Contains(f.Id), 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
     static HashSet<string> AllHeld(Content c) => Gdd03FieldFixture.Fields(c).Select(f => f.Id).ToHashSet(StringComparer.Ordinal);
     static void Refused(GameState s, Action a, string? message = null)
     {
@@ -239,7 +239,7 @@ public class Gdd03FieldFixtureTests
         Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, s.PopulationLedger.Units,
             Gdd03FieldFixture.Fields(c).Select(f => new Gdd03SyntheticFacilitySnapshot(f.Id, !notHeldAtFreeze.Contains(f.Id), 1))
                 .Concat(new[] { new Gdd03SyntheticFacilitySnapshot(industry, true, 1), new Gdd03SyntheticFacilitySnapshot(Course, true, 3) }),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
 
     // R-VET-001, R-VET-002 (#2468): one worked, still-held field month gives its farmer exactly one work XP. A field lost
     // after the freeze, one not held at the freeze, a farmer moved to another field after the freeze (the wrong target), an
@@ -384,7 +384,7 @@ public class Gdd03FieldFixtureTests
         Assert.Throws<InvalidOperationException>(() => new Gdd03FieldFixture(c, s, Array.Empty<Gdd03FixtureSlot>()));
         Assert.Throws<InvalidOperationException>(() => Gdd03FieldFixture.ResolveWorkXp(c, s,
             Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, Array.Empty<PopulationUnit>(),
-                Array.Empty<Gdd03SyntheticFacilitySnapshot>(), Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(),
+                Array.Empty<Gdd03SyntheticFacilitySnapshot>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(),
                 Array.Empty<Gdd03SyntheticPendingEntry>()), new HashSet<string>()));
         Assert.Equal(before, s.Describe());
     }

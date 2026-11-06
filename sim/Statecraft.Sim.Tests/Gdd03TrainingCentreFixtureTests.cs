@@ -65,7 +65,7 @@ public class Gdd03TrainingCentreFixtureTests
     static Gdd03SyntheticMonthContext Month(GameState s, int ordinal, bool centresAvailable = true)
         => Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, ordinal, s.PopulationLedger.Units,
             Facilities.Select(f => new Gdd03SyntheticFacilitySnapshot(f, centresAvailable || !f.Contains("centre", StringComparison.Ordinal), 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
     static (int teacher, int trainee) Pair(CivilianProfession p) => p == CivilianProfession.Farmer ? (0, 1) : (2, 3);
 
     // A ruled #1668 Q42 or Q43 refusal is a plain ArgumentException with its reason; only unbuilt cases say "Deferred:".
@@ -469,7 +469,7 @@ public class Gdd03TrainingCentreFixtureTests
         var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
         var noPlace = Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, s.PopulationLedger.Units,
             Facilities.Select(id => new Gdd03SyntheticFacilitySnapshot(id, true, id == CentreA ? 0 : 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
         f.Start(1, 0, CentreA, Month(s, 0));
         Unchanged(s, () => f.Advance(1, noPlace), typeof(NotSupportedException), MonthFreezeDeferred);
         Assert.Equal(0, s.PopulationLedger.Get(1).Assignment.ProgressTicks);
@@ -965,7 +965,7 @@ public class Gdd03TrainingCentreFixtureTests
         var without = Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 1,
             l.Units.Where(p => p.Id != trainee && p.Id != teacher),
             Facilities.Select(x => new Gdd03SyntheticFacilitySnapshot(x, true, 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
         new Gdd03TrainingCentreFixture(c, s, Centres(operating: false)).Advance(trainee, without);
         CancelledByTheLoss(s, before, teacherBefore, 100, 7);
     }
