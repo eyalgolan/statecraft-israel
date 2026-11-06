@@ -52,7 +52,7 @@ it, and there are no level-of-detail switches yet.
 | Piece | Model | Where (PromoPose.Gameplay03) |
 |---|---|---|
 | Rifle trio | three 1948 IDF riflemen: bush hat with rifle held ready, Mk II steel helmet with rifle grounded, Palmach stocking cap with rifle slung | on the centre of the hex nearest 34.88 E, 32.01 N (east of Tel Aviv, clear of the settlement labels), inside a white selection ring that fits within the hex |
-| Aircraft | Supermarine Spitfire LF Mk IXe of 101 Squadron, from October 1948: clipped wing, red spinner and diagonal red-and-white rudder stripes, filled Star of David roundels with no outer ring (Efrati pp. 12 and 14) | a 16 km loop over Tel Aviv and the coast, 4.2 km above the highest ground under it, banked 28 degrees, its shadow cast on the ground by the sun |
+| Aircraft | Supermarine Spitfire LF Mk IXe of 101 Squadron, from October 1948: clipped wing, red spinner and diagonal red-and-white rudder stripes, filled Star of David roundels with no outer ring (Efrati pp. 12 and 14) | a 16 km-radius loop over Tel Aviv and the coast, 4.2 km above the highest ground under it, banked 28 degrees, its shadow cast on the ground by the sun |
 | Navy | modified Flower-class corvette INS Haganah (K-20), 1948, 63.4 m | off Jaffa (34.63 E, 32.02 N) |
 
 Not in the slice:
@@ -117,7 +117,7 @@ After the staff review the controller ruled:
   asks for them (`&units`, `-units`). The editor's promo renders draw them only with `-units`.
 - **The promo's badge, a wider trio, sourced headgear; the ring stays selection-only (I6).** See "Look".
 
-### The Arab forces: two drawn, the rest data only
+### The Arab forces: drawn with their own figures
 
 The file also holds the Arab forces of 15 May and 11 June 1948 (#740, Phase 5 PR 1), one row per force, with `side`,
 `echelon` and one `strength` (owner's decision on #570). The source is `research_notes/GDD phase 5/arab-forces-1948.md`,
@@ -281,6 +281,9 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | C09 irregular | the Arab Liberation Army's first two figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
 | ALA infantry (Tal Heuberger, generated) | the Arab Liberation Army's third figure, beside two C09; the token waits only for C09, and the third joins when its own bundle arrives | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "Third figure (Recommended)") | the row's windows |
 | Egyptian infantry (Tal Heuberger, generated) | the Egyptian Expeditionary Force's three figures, one token (in the legacy loop the first anchor whose window holds the date) | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "One token") | the row's windows |
+| Syrian infantry (Tal Heuberger, generated) | the Syrian Army's three figures | the row; owner, 27 October 2026 (#756: "Sign off all 19") | the row's windows |
+| Iraqi infantry (Tal Heuberger, generated) | the Iraqi Expeditionary Force's three figures | the row; owner, 27 October 2026 (#756: "Sign off all 19") | the row's windows |
+| Lebanese regular (Tal Heuberger, generated) | the Lebanese Army's three figures, on its map-only token at al-Malikiyya | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "Map-only token (Recommended)") | the row's window, 6 June to 8 July 1948 |
 | H02 65 mm gun ("Napoleonchik") | on the front of the base, before the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
 | H01 sandwich armoured car | on the front of the base, before the trio: Givati | Wikimedia Commons, "Givati force" (GPO, Zoltan Kluger, 12 June 1948): a jeep leading an armoured unit of the Givati Brigade; the type is read from the picture (#1536) | 12 June 1948 |
 | H03 Willys jeep | on the front of the base, before the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
@@ -300,7 +303,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
   missing or damaged; a vehicle is not drawn until its model arrives. An Arab force's token waits for its figure too, and
   is drawn with the built-in figure if that fails (`UnitLayer.cs:379-381`).
-- Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
+- Tests: `UnitFiguresTests` (every one of the sixteen is placed on some day of the war; the table; the swap; arms down;
   fail open; the close-zoom swap and its idle clip, the missing near model and C05).
 
 ### Weapons and the C06 point-fire aim (#2083, #2084)
