@@ -279,6 +279,9 @@ public class CabinetScreenTests
         // Red-first prediction at ae4bfdaab: the button stays enabled because the replacement's effect on the later order is ignored.
         using var ui = Shown();
         var bridge = In1950();
+        // In1950's Attention pays for one appointment (1.5 left after it, 2.5 for the next), and this test needs two queued;
+        // Attention is not what it checks (WithAnAppointmentQueuedACandidateIsNotDisabledForLackOfAttention does that).
+        bridge.TurnStart.Attention += 5;
         using var cabinet = new CabinetPresenter(ui.Root, bridge, Text, null);
         Assert.IsNull(bridge.Queue(new Appoint("chief_of_staff", "dayan")));
         Assert.IsNull(bridge.Queue(new Appoint("finance_minister", "maklef")));
