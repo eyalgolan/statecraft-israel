@@ -75,6 +75,8 @@ public class FocusScrollTests
         using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = from; from.SendEvent(e); }
     }
 
+    /// <summary>H3, K6 (#2479): the info panel's label-only facts page from the keyboard (KeyScroll), so its bar is out
+    /// of the Tab order like every other; once a screen covers the panel the keys go to the screen and the facts stay.</summary>
     [UnityTest]
     public IEnumerator TheInfoPanelsLabelOnlyOverflowIsKeyboardReachableUntilCovered()
     {
@@ -98,26 +100,17 @@ public class FocusScrollTests
         FocusScroll.NoScrollBarIsATabStop(r.Root); // The policy GameRoot applies after constructing the views.
         yield return Frames(4);
         var slider = view.verticalScroller.slider;
-        Assert.IsTrue(slider.focusable, "label-only facts retain a keyboard scroll stop");
+        Assert.IsFalse(slider.focusable, "the facts' bar is no Tab stop: the paging keys reach them");
         Assert.Greater(view.verticalScroller.highValue, 0f, "precondition: the facts overflow");
         Assert.IsFalse(Inside(last, view), "precondition: the bottom fact is below the viewport");
         before.Focus();
-        for (int i = 0; i < 8 && r.Focused != slider; i++)
-        {
-            Tab((VisualElement)r.Focused!);
-            yield return Frames(1);
-        }
-        Assert.AreSame(slider, r.Focused, "Tab reaches the info panel's slider with no card or screen open");
-        using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.End }))
-        { key.target = slider; slider.SendEvent(key); }
+        Assert.IsTrue(KeyScroll.Press(r.Root, null, false, KeyScroll.Key.End), "End with no card or screen open scrolls the facts");
         yield return Frames(3);
-        Assert.IsTrue(Inside(last, view), "End on the slider reaches the bottom label");
+        Assert.IsTrue(Inside(last, view), "End reaches the bottom label");
         nav.Open("cabinet");
-        before.Focus();
-        Assert.IsFalse(slider.canGrabFocus, "the covered slider cannot take keyboard focus");
+        yield return Frames(2);
         float coveredOffset = view.scrollOffset.y;
-        using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.Home }))
-        { key.target = slider; slider.SendEvent(key); }
+        KeyScroll.Press(r.Root, "cabinet", false, KeyScroll.Key.Home);
         yield return Frames(2);
         Assert.AreEqual(coveredOffset, view.scrollOffset.y, "keys cannot scroll the covered facts");
     }
