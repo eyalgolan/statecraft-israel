@@ -1254,6 +1254,125 @@ namespace Statecraft.Game.Tests
             }
         }
 
+        /// <summary>#2876, coordinator's captures of 6 November 2026: clear of the major cities' kit blocks, the Tel Aviv b21 (on a
+        /// street between two tall blocks) and the Jerusalem b21 (in a gap with a tall block south of it) were still hidden. The
+        /// camera looks north (CameraRig yaw 0; fixed north under gdd-0.3, the only ruleset with workshops,
+        /// CameraHeadingPolicy.IsFixedNorth) and down at CameraRig.Pitch on the screen's centre row, less toward the top of the
+        /// screen, to CameraRig.Pitch - CameraRig.Fov / 2 at its top edge: the shallowest ray, the one a block hides most behind.
+        /// For each major city's workshop, as the layer draws it, a 5 by 5 grid of points on its top (the drawn model's highest
+        /// point, over its square, SizeOf a side, turned along its street if it has one) each sees the camera along that
+        /// shallowest ray: the ray toward the camera (south and up) meets no major-city kit block, each taken as its box (the
+        /// census footprint, Placed.C, Yaw, W, D) from the ground up to its wall top (the highest of the ground at its corners
+        /// and centre, where the kit stands it, plus Placed.H). Also, again: each workshop gets a spot, wholly on its hex, clear
+        /// of the blocks, drawn where it was planned, and the plan is the same when made twice. Every city's failures are
+        /// listed together, by city.</summary>
+        [Test]
+        public void AWorkshopInAMajorCityIsInTheCamerasSightPastItsKitBlocks()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var blocks = map.MajorCityBlocks;
+            var majors = c.SettlementHexes.Select(h => h.Id).Where(Statecraft.Game.Map.Kits.TownModels.IsMajorCity).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            CollectionAssert.AreEqual(new[] { "haifa", "jaffa", "jerusalem", "tel_aviv" }, majors, "the major cities with a settlement hex");
+            var projects = majors.Select((city, i) => Workshop(c, 700 + i, city, Built)).ToList();
+            var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
+            var plan = SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var along);
+            var again = SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var alongAgain);
+            CollectionAssert.AreEqual(plan.Select(x => (x.want.Key, x.at)).ToList(), again.Select(x => (x.want.Key, x.at)).ToList(), "the same spots when planned again");
+            CollectionAssert.AreEquivalent(along.OrderBy(x => x.Key, StringComparer.Ordinal).ToList(), alongAgain.OrderBy(x => x.Key, StringComparer.Ordinal).ToList(),
+                "the same streets when planned again");
+            var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
+            AnswerAll();
+            var ground = PlacementLayer.CampGround(map);
+            // The ray from a point toward the camera: the camera turns Euler(pitch, yaw 0, 0) and stands at LookAt - forward x
+            // Distance (CameraRig.Apply), so back along forward; at the shallowest pitch.
+            float shallowest = CameraRig.Pitch - 0.5f * CameraRig.Fov;
+            var toCamera = -(Quaternion.Euler(shallowest, 0f, 0f) * Vector3.forward);
+            Assert.Greater(toCamera.y, 0f, "the camera is above the ground");
+            Assert.Less(toCamera.z, 0f, "the camera is south of what it looks at (x east, z north)");
+            Assert.AreEqual(0f, toCamera.x, 1e-6f, "the camera looks due north");
+            // Each block's box: its wall top over the ground the kit stands it on (SettlementKits.GroundSpan's: the highest of its
+            // corners and centre).
+            var tops = blocks.Select(b =>
+            {
+                float a = b.Yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a), hi = float.MinValue;
+                for (int i = 0; i < 5; i++)
+                {
+                    float u = i == 4 ? 0f : ((i & 1) == 0 ? -0.5f : 0.5f) * b.W, v = i == 4 ? 0f : ((i & 2) == 0 ? -0.5f : 0.5f) * b.D;
+                    hi = Mathf.Max(hi, ground.Y(b.C.x + u * ca - v * sa, b.C.y + u * sa + v * ca));
+                }
+                return hi + b.H;
+            }).ToList();
+            float size = SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), r = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
+            var failures = new List<string>();
+            foreach (var project in projects)
+            {
+                string city = project.City, key = SpecialBuildingModels.WorkshopKey(project.Id);
+                var row = plan.Where(x => x.want.Key == key).ToList();
+                if (row.Count == 0) { failures.Add($"{city}: {key} gets no planned spot, so it is not drawn"); continue; }
+                var at = row[0].at;
+                var hex = c.HexAt(project.Q, project.R)!; var centre3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                float off = (at - new Vector2(centre3.x, centre3.z)).magnitude;
+                if (off + r > SpecialBuildingModels.HexInnerRadiusM) failures.Add($"{city}: {key} at {at} is not wholly on its hex ({off:0} m from its centre)");
+                bool street = along.TryGetValue(key, out var dir);
+                float yaw = street ? Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg : 0f;
+                foreach (var b in blocks)
+                {
+                    if ((b.C - at).magnitude > r + 0.5f * (b.W + b.D)) continue;
+                    bool clear = street ? BoxesApart(at, yaw, size, size, b.C, b.Yaw, b.W, b.D) : SpecialBuildingModels.ClearOfBox(at, r, b.C, b.Yaw, b.W, b.D);
+                    if (!clear) failures.Add($"{city}: {key} at {at} overlaps {b.Id}'s {b.Kind} at {b.C}");
+                }
+                var model = layer.transform.Find(key);
+                if (model == null) { failures.Add($"{city}: {key} is planned at {at} but not drawn"); continue; }
+                var mb = model.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                if ((new Vector2(mb.center.x, mb.center.z) - at).magnitude > 1f) failures.Add($"{city}: {key} is drawn at {mb.center}, not at its planned {at}");
+                // Its top: a 5 by 5 grid over its square (inset 2%, so a point is on the model's top, not on its edge).
+                float ya = yaw * Mathf.Deg2Rad, half = 0.49f * size;
+                var su = new Vector2(Mathf.Cos(ya), Mathf.Sin(ya)); var sv = new Vector2(-su.y, su.x);
+                int hidden = 0; string? first = null;
+                for (int i = 0; i < 5; i++)
+                    for (int j = 0; j < 5; j++)
+                    {
+                        var p2 = at + su * (half * (i / 2f - 1f)) + sv * (half * (j / 2f - 1f));
+                        var q = new Vector3(p2.x, mb.max.y, p2.y);
+                        for (int k = 0; k < blocks.Count; k++)
+                        {
+                            var b = blocks[k];
+                            if (!RayMeetsBox(q, toCamera, b.C, b.Yaw, b.W, b.D, tops[k])) continue;
+                            hidden++;
+                            first ??= FormattableString.Invariant($"{b.Id}'s {b.Kind} at {b.C} ({b.W:0} x {b.D:0} m, {b.Yaw:0} deg, top {tops[k]:0} m) hides its top at {q}");
+                            break;
+                        }
+                    }
+                TestContext.WriteLine(FormattableString.Invariant(
+                    $"{key} ({city}): at {at}, {off:0} m from its hex centre{(street ? $", on a street at {yaw:0} deg" : "")}, top {mb.max.y:0} m; {hidden} of 25 points on its top hidden at {shallowest:0.0} deg"));
+                if (hidden > 0) failures.Add($"{city}: {key}: {hidden} of 25 points on its top are hidden from the camera at {shallowest:0.0} deg; first: {first}");
+            }
+            Assert.IsEmpty(failures, string.Join("\n", failures));
+        }
+
+        /// <summary>Whether the ray from <paramref name="q"/> along <paramref name="dir"/> (rising: dir.y &gt; 0) meets the upright box
+        /// centred at <paramref name="c"/> (x, z), turned <paramref name="yawDeg"/> anticlockwise in x-z (KitMesh.Corners), w along its
+        /// turn and d across, from below the ground up to <paramref name="top"/> (world y). Slabs: the ray is inside the box for
+        /// the parameters t within both side slabs and below the top; touching counts as missing.</summary>
+        static bool RayMeetsBox(Vector3 q, Vector3 dir, Vector2 c, float yawDeg, float w, float d, float top)
+        {
+            if (q.y >= top) return false;   // the ray rises, so from above the top it never comes down into the box
+            float a = yawDeg * Mathf.Deg2Rad;
+            var u = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); var v = new Vector2(-u.y, u.x);
+            var rel = new Vector2(q.x - c.x, q.z - c.y); var flat = new Vector2(dir.x, dir.z);
+            float t0 = 0f, t1 = (top - q.y) / dir.y;
+            foreach (var (axis, halfSide) in new[] { (u, 0.5f * w), (v, 0.5f * d) })
+            {
+                float o = Vector2.Dot(rel, axis), s = Vector2.Dot(flat, axis);
+                if (Mathf.Abs(s) < 1e-7f) { if (Mathf.Abs(o) >= halfSide) return false; continue; }
+                float ta = (-halfSide - o) / s, tb = (halfSide - o) / s;
+                t0 = Mathf.Max(t0, Mathf.Min(ta, tb)); t1 = Mathf.Min(t1, Mathf.Max(ta, tb));
+                if (t0 >= t1) return false;
+            }
+            return true;
+        }
+
         /// <summary>Whether two boxes, each centred at c, turned yaw degrees anticlockwise in x-z (KitMesh.Corners), w along its turn
         /// and d across, are apart (touching counts as apart): some side's axis separates them (the separating axis test).</summary>
         static bool BoxesApart(Vector2 c1, float yaw1, float w1, float d1, Vector2 c2, float yaw2, float w2, float d2)
