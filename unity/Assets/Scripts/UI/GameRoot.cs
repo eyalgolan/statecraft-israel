@@ -1211,11 +1211,15 @@ namespace Statecraft.Game.UI
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;
+                // One press closes one layer, the topmost (#2609): each step below runs only while nothing above took it. The
+                // start screen covers an ended save's end screen and everything else under it: open, it takes the press,
+                // withdrawing an armed New Game or doing nothing.
+                if (!done && start?.IsOpen == true) { start.Escape(); done = true; }
                 if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true;
                 if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true;
-                done |= start?.Escape() == true;
-                // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
-                done |= cabinet?.Escape() == true || nav?.Close() == true;
+                // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2). A screen the
+                // focused element's Cancel already closed this frame took the press too (ClosedThisFrame), as for end and report.
+                if (!done) done = cabinet?.Escape() == true || nav?.Close() == true || nav?.ClosedThisFrame == true;
                 // With nothing above it to close, Escape withdraws a New Game request armed from the top bar too, the start
                 // screen closed (#2340 L2, #2521), and is used up there, so it does not also clear the map selection. A
                 // decision card or capture dialog open over it is above it (the top bar stays usable under them): that
