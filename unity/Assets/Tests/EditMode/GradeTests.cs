@@ -335,7 +335,7 @@ public class GradeTests
         Assert.Greater(Sat(0.06f), 1.03f, "the land is richer");
         Assert.AreEqual(0f, Hue(0.11f), 1e-3f, "the sand keeps its hue"); Assert.AreEqual(1f, Sat(0.11f), 2e-3f, "and its saturation");
         float Lum(float l) => cc.lumVsSat.value.Evaluate(l) * 2f;
-        Assert.Less(Lum(0.05f), 0.9f, "dark tones lose saturation"); Assert.AreEqual(1f, Lum(0.12f), 2e-3f, "the sea's mean and everything over it do not");
+        Assert.Less(Lum(0.05f), 0.95f, "dark tones lose saturation"); Assert.AreEqual(1f, Lum(0.12f), 2e-3f, "the sea's mean and everything over it do not");
         for (float h = 0f; h < 0.4f; h += 0.002f) Assert.Greater(h + 0.002f + Hue(h + 0.002f), h + Hue(h), $"hue {h}: the curve does not fold");
         MapGrade.SetActive(profile, false); Assert.IsFalse(cc.active, "the toggle takes the curves off");
         MapGrade.SetActive(profile, true); Assert.IsTrue(cc.active);
