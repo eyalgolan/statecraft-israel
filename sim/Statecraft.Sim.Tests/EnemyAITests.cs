@@ -466,16 +466,20 @@ public class EnemyAITests
         Assert.Equal(truce ? Orders.Fortifying : Combat.Attack, s.Units[2].Order);
     }
 
-    // R-ENEMY-004: no reinforcements in Phase 5 (Q-ENEMY-3). No turn adds an enemy unit.
+    // R-ENEMY-004: no reinforcements in Phase 5 (Q-ENEMY-3). No turn adds an enemy unit, and none grows: no enemy unit's
+    // strength goes above its start.
     [Fact]
     public void NoReinforcements()
     {
         var s = Simulation.NewGame(Real, 1, Mode.Historical);
         var ids = s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet();
+        var start = s.Units.Values.Where(IsEnemy).ToDictionary(u => u.Id, u => u.Strength);
         for (int i = 0; i < 8 && s.GameOver == null; i++)
         {
             s = Simulation.Step(Real, s, Array.Empty<Command>()).State;
             Assert.Subset(ids, s.Units.Values.Where(IsEnemy).Select(u => u.Id).ToHashSet());   // xUnit: every id now is a starting one (B ⊆ A), so none arrived
+            foreach (var u in s.Units.Values.Where(IsEnemy))
+                Assert.True(u.Strength <= start[u.Id], $"enemy unit {u.Id} grew from {start[u.Id]} to {u.Strength}");
         }
     }
 
