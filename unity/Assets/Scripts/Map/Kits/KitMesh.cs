@@ -21,6 +21,9 @@ namespace Statecraft.Game.Map.Kits
         readonly List<int> tri = new List<int>();
 
         public int VertexCount => pos.Count;
+        /// <summary>The vertex colours and uvs so far (test aids: ToMesh's upload drops the CPU copy).</summary>
+        internal IReadOnlyList<Color32> Colours => col;
+        internal IReadOnlyList<Vector2> Uvs => uv;
         // ---- Issue #659: the close mesh (owner ruling on #700: "Models up close only") --------------------------------
         // Up close the towns' buildings are Tal Heuberger's models (TownModelLayer); far off they are this mesh's kit buildings, as
         // before. The close mesh is this mesh without its buildings (their vertex and index spans, CutStart/CutEnd), plus
@@ -313,7 +316,7 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>A gable roof on a w x d box whose walls end at <paramref name="eaves"/>: the ridge runs along the longer
         /// side, <paramref name="rise"/> above the eaves, with a small overhang.</summary>
-        public void Gable(float x, float z, float yawDeg, float w, float d, float eaves, float rise, Color32 roof, Color32 gableWall)
+        public void Gable(float x, float z, float yawDeg, float w, float d, float eaves, float rise, Color32 roof, Color32 gableWall, float metresPerReal = 1f)
         {
             if (d > w) { yawDeg += 90f; (w, d) = (d, w); }
             float ow = w * 1.06f, od = d * 1.12f;
