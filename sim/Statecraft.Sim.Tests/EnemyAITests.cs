@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Statecraft.Sim;
 
@@ -813,6 +814,29 @@ public class EnemyAITests
         var lapsed = Assert.Single(why);
         Assert.Equal(CauseKeys.OperationLapsed, lapsed.Key);
         Assert.Contains("Golani Brigade", lapsed.Message); Assert.Contains("Southern Coast", lapsed.Message);
+    }
+
+    // R-ENEMY-007 (the owner's words as recorded on #2543, 4 November 2026: "Postpone until they are in the right area and
+    // if the operation is still relevant"): an ordinary card whose window lies wholly inside the turn just played still
+    // late-fires at the turn's end, but an operation card does not first appear once its window has closed. Fixture dates:
+    // the turn runs 15 May to 15 June 1948, and both windows run from 20 May to 1 June. With the operation's window still
+    // open at the turn's end (to 20 June), it comes as usual.
+    [Theory]
+    [InlineData("1948-06-01", false)]
+    [InlineData("1948-06-20", true)]
+    public void AnOperationWhoseWindowClosedInsideTheTurnDoesNotFirstAppear(string to, bool fires)
+    {
+        var c = CardGame(4, 0, "1949-01-01", MovementTests.Board());
+        var probe = c.Events.Single(e => e.Id == "probe");
+        probe.From = new DateTime(1948, 5, 20); probe.To = DateTime.ParseExact(to, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        c.Events.Add(new GameEvent { Id = "ordinary", Title = "Ordinary", Text = "Ordinary.", From = probe.From, To = new DateTime(1948, 6, 1),
+            Options = { new EventOption { Id = "ok", Text = "Ok" } } });
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.PendingEvents.Clear(); s.FiredEvents.Clear();
+        s.Date = new DateTime(1948, 6, 15);
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 5, 15));
+        Assert.Contains("ordinary", s.PendingEvents);
+        Assert.Equal(fires, s.PendingEvents.Contains("probe"));
     }
 
     [Fact]
