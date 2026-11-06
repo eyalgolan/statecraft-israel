@@ -16,19 +16,27 @@ using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 /// <summary>Writes the before and after stills for #2744 (refs #2740), in English and Hebrew, to
-/// `.superpowers/shots-2744/&lt;tag&gt;/` (local, not committed), as A11yKeyboardShots does: Assets/Map.unity drawn into a
-/// 1280x720 RenderTexture through a copy of its PanelSettings. Each state is the one the PR's own tests build, on a golden-seed
+/// `.superpowers/shots-2744/&lt;tag&gt;/` (local, not committed): Assets/Map.unity, its UI drawn through a copy of its
+/// PanelSettings into a transparent 1280x720 texture and laid over the main camera's own 1280x720 frame, as CivMovementShots
+/// does, so the map shows under the UI. Each state is the one the PR's own tests build, on a golden-seed
 /// game the root goes on with (GameRoot.Begin keep:), so the shot is the real screen over the real map.
 ///
 /// Shots (`{lang}` is `en` or `he`):
-/// - `dollars-refused-{lang}`: the Defence screen's dollar panel at the war rung with reserves 10, after the queued
-///   `austerity_1949` "decline" (fx_reserves -8), with the box at 4 (DollarConversionTests.AQueuedChoiceThatSpendsReserves...).
+/// - `dollars-refused-{lang}`: the Defence screen's dollar panel at the war rung with reserves 10 and nothing converted yet,
+///   after the queued `austerity_1949` "decline" (fx_reserves -8), with the box at 4
+///   (DollarConversionTests.AQueuedChoiceThatSpendsReserves...). The golden game is played by HistoricalAI to the first turn
+///   on or after 10 March 1949, the day the card's office, rationing_minister, first has a holder (content/people.yaml,
+///   Dov Yosef from 1949-03-10; content/offices.yaml, the office from 1949-03-10): the card cannot be drawn on 15 May 1948.
+///   The war rung (EconomySystem.WarRung) is set, as the test sets it, in case the run has left it by then.
 ///   After: the reserves refusal line under Convert. Before: no refusal line, as the panel read the state without the queue.
 /// - `dollars-refused-pressed-{lang}`: the same panel after the player presses Convert. After: nothing more queued, the refusal
 ///   still shown. Before: the conversion shows as queued, which End turn then refuses.
 /// - `reinforce-after-reassign-{lang}`: Golani's unit card, one strength short, in Tel Aviv, whose only idle civilian a queued
 ///   ReassignCraftsmen takes (UnitOrdersTests.AQueuedCraftsmanReassignmentHidesReinforce...). After: no Reinforce button, the
-///   sim's refusal ("0 civilians without work") among the card's lines. Before: Reinforce is offered.
+///   sim's refusal ("0 civilians without work") in the card's reason line (info-reason). Before: Reinforce is offered and
+///   enabled. On 15 May 1948; the pending events (the opening idf_founding card) are cleared before the root draws the game,
+///   so no event card covers the map, and the button or the reason line is scrolled into the info panel's view. The SHOT
+///   line logs their world bounds and whether each lies inside the 1280x720 texture.
 ///
 /// Run (Unity closed on the project; the same file, unchanged, on both trees, at the same resolution):
 ///   AFTER, with the PR head checked out:
@@ -39,6 +47,7 @@ using Object = UnityEngine.Object;
 [Explicit("writes stills for a pull request, not a check")]
 public class PanelPreviewShots
 {
+    const int Width = 1280, Height = 720;
     string saveDir = "";
     string shotDir = "";
     RenderTexture? rt; PanelSettings? ps;
@@ -74,9 +83,10 @@ public class PanelPreviewShots
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var doc = Object.FindFirstObjectByType<UIDocument>();
-        rt = new RenderTexture(1280, 720, 24);
+        // The UI goes into a transparent texture and Shot puts it over the map camera's frame, as CivMovementShots does.
+        rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         ps = Object.Instantiate(doc.panelSettings);
-        ps.targetTexture = rt;
+        ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.clear;
         doc.panelSettings = ps;
         Object.FindFirstObjectByType<MapScene>().Build(MapFocusTests.Inputs.Map);
         root = Object.FindFirstObjectByType<GameRoot>();
@@ -90,12 +100,13 @@ public class PanelPreviewShots
         yield return Frames(5);
     }
 
-    /// <summary>Puts any open event card away, as its Hide button does, so the screen under it can be seen.</summary>
+    /// <summary>Puts any open event card away, as its Hide button does, and closes the advisor, so the screen under it can be seen.</summary>
     IEnumerator PutCardsAway()
     {
         var hide = ui.Q<Button>("event-hide");
         if (hide != null && hide.resolvedStyle.display != DisplayStyle.None && hide.enabledInHierarchy) UiTestKit.Press(hide);
         root.Card?.Collapse(takeFocus: false);
+        if (root.Advisor != null && root.Advisor.IsOpen) UiTestKit.Press(ui.Q<Button>("advisor-close"));   // as CivMovementShots.Boot
         yield return Frames(3);
     }
 
@@ -105,14 +116,46 @@ public class PanelPreviewShots
         e.GetFirstAncestorOfType<ScrollView>()?.ScrollTo(e);
     }
 
-    void Shot(string name)
+    /// <summary>An element's world bound and whether it lies inside the panel, which the 1280x720 texture shows whole.</summary>
+    string Bound(VisualElement? e)
+    {
+        if (e == null) return "(missing)";
+        var b = e.worldBound; var all = ui.worldBound;
+        var inside = b.width > 0 && b.height > 0 && b.xMin >= all.xMin && b.yMin >= all.yMin && b.xMax <= all.xMax && b.yMax <= all.yMax;
+        return $"at {b} inside={inside} (panel {all})";
+    }
+
+    static Color[] Read(RenderTexture from)
     {
         var prev = RenderTexture.active;
-        RenderTexture.active = rt;
-        var tex = new Texture2D(rt!.width, rt.height, TextureFormat.RGB24, false);
-        tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+        RenderTexture.active = from;
+        var tex = new Texture2D(from.width, from.height, TextureFormat.RGBA32, false);
+        tex.ReadPixels(new Rect(0, 0, from.width, from.height), 0, 0);
         tex.Apply();
         RenderTexture.active = prev;
+        var px = tex.GetPixels();
+        Object.DestroyImmediate(tex);
+        return px;
+    }
+
+    /// <summary>The map camera's frame with the UI texture over it (the UI's pixels are premultiplied by their alpha), copied
+    /// from CivMovementShots.Shot, which writes to its own folder.</summary>
+    void Shot(string name)
+    {
+        var cam = Camera.main;
+        var frame = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+        var before = cam.targetTexture;
+        cam.targetTexture = frame; cam.Render(); cam.targetTexture = before;
+        var map = Read(frame); var over = Read(rt!);
+        frame.Release(); Object.DestroyImmediate(frame);
+        var outPx = new Color[map.Length];
+        for (int i = 0; i < map.Length; i++)
+        {
+            var u = over[i]; var m = map[i];
+            outPx[i] = new Color(u.r + m.r * (1f - u.a), u.g + m.g * (1f - u.a), u.b + m.b * (1f - u.a), 1f);
+        }
+        var tex = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+        tex.SetPixels(outPx); tex.Apply();
         File.WriteAllBytes(Path.Combine(shotDir, name + ".png"), tex.EncodeToPNG());
         Object.DestroyImmediate(tex);
         Debug.Log($"SHOT {name} -> {shotDir}");
@@ -123,8 +166,12 @@ public class PanelPreviewShots
         var lang = hebrew ? "he" : "en";
         yield return Boot(hebrew, g =>
         {
+            // The first turn with a holder of rationing_minister (from 10 March 1949), as CabinetScreenTests.In1950 plays to 1950.
+            while (g.State.Date < new DateTime(1949, 3, 10)) g.Step(HistoricalAI.Commands(C, g.State));
+            Debug.Log($"SHOT dollars: game on {g.State.Date:yyyy-MM-dd}, rung {g.State.Rung}, reserves {g.State.FxReserves}, converted {g.State.DollarsConverted}");
             g.State.Rung = EconomySystem.WarRung;
             g.State.FxReserves = 10;
+            g.State.DollarsConverted = 0;
             g.State.PendingEvents.Clear();
             g.State.PendingEvents.Add("austerity_1949");
         });
@@ -136,7 +183,7 @@ public class PanelPreviewShots
         amount.value = 4;
         IntoView(ui.Q("defence-dollars"));
         yield return Frames(5);
-        Debug.Log($"SHOT dollars-refused-{lang}: refusal \"{ui.Q<Label>("dollars-refusal")?.text}\"");
+        Debug.Log($"SHOT dollars-refused-{lang}: refusal \"{ui.Q<Label>("dollars-refusal")?.text}\" {Bound(ui.Q("dollars-refusal"))}; convert {Bound(ui.Q("convert-dollars"))}");
         Shot($"dollars-refused-{lang}");
 
         UiTestKit.Press(ui.Q<Button>("convert-dollars"));
@@ -158,6 +205,8 @@ public class PanelPreviewShots
             var telAviv = g.State.Cities[city.Id];
             g.State.Cities[city.Id] = telAviv.WithCounts(1, 0, 0).WithCraftsmen(0).WithQualified(new Qualified(1, 0, Array.Empty<int>()));
             g.State.Arms = 100;
+            // The opening decision (idf_founding) and any other waiting card would cover the map and the unit card.
+            g.State.PendingEvents.Clear();
         });
         yield return PutCardsAway();
         Debug.Log($"SHOT reinforce: queue reassign -> {Bridge.Queue(new ReassignCraftsmen(city.Id, 1)) ?? "queued"}");
@@ -165,7 +214,12 @@ public class PanelPreviewShots
         root.FocusUnit("golani");
         yield return Frames(8);
         var button = ui.Q<Button>("info-reinforce");
-        Debug.Log($"SHOT reinforce-after-reassign-{lang}: Reinforce {(button == null ? "missing" : button.style.display.value.ToString())}");
+        var reason = ui.Q<Label>("info-reason");
+        var offered = button != null && button.style.display.value != DisplayStyle.None;
+        IntoView(offered ? button : reason);
+        yield return Frames(5);
+        Debug.Log($"SHOT reinforce-after-reassign-{lang}: Reinforce {(button == null ? "missing" : button.style.display.value.ToString())}"
+            + $" enabled={button?.enabledInHierarchy} {Bound(button)}; reason \"{reason?.text}\" {Bound(reason)}");
         Shot($"reinforce-after-reassign-{lang}");
     }
 
