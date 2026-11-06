@@ -979,7 +979,8 @@ namespace Statecraft.Game.Tests
         /// <summary>A built arms workshop on each city's own hex (the hardest ground: the town's footprint is there): every one
         /// but those of the two cities whose footprint covers the whole hex gets its b21, wholly on that hex, clear of the towns' footprints (and so their labels), the routes, the unit tokens,
         /// the civilians, the wildlife, the farm scenes and every other building model, upright, on the ground, hidden until the
-        /// close zoom, and on the same spot when placed again.</summary>
+        /// close zoom, and on the same spot when placed again. A major city's (TownModels.IsMajorCity) stands at the city's edge
+        /// instead (owner, 6 November 2026: "make the workshop at the edge of the city"; <see cref="AtTheCitysEdge"/>).</summary>
         [Test]
         public void OnTheMapEachBuiltWorkshopStandsOnItsHexClearAndUpright()
         {
@@ -1036,10 +1037,21 @@ namespace Statecraft.Game.Tests
                 var flat = new Vector2(p.At.x, p.At.z); float r = SpecialBuildingModels.ClearanceOf(p.Model);
                 float off = (flat - new Vector2(centre3.x, centre3.z)).magnitude;
                 TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre, clearance {r:0} m");
-                Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its project's hex");
-                if (covered.Contains(project.City))
-                    AmongTheHouses(map, key, flat, r, streets);
-                else Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), key + " clear of the towns (and their labels)");
+                // The owner, 6 November 2026 (verbatim): "make the workshop at the edge of the city": a major city's b21 stands at
+                // its edge, off its project's hex where no edge spot is on it; every other city's wholly on its hex, as before.
+                if (Statecraft.Game.Map.Kits.TownModels.IsMajorCity(project.City))
+                {
+                    var edge = new List<string>();
+                    AtTheCitysEdge(map, project.City, key, flat, r, edge);
+                    Assert.IsEmpty(edge, string.Join("\n", edge));
+                }
+                else
+                {
+                    Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its project's hex");
+                    if (covered.Contains(project.City))
+                        AmongTheHouses(map, key, flat, r, streets);
+                    else Assert.IsTrue(TownLandmarks.Clear(flat, r, footprints), key + " clear of the towns (and their labels)");
+                }
                 Assert.IsFalse(ground.OnRoute(flat, r), key + " clear of the routes");
                 Assert.IsFalse(ground.OnToken(flat, r, After), key + " clear of the unit tokens");
                 Assert.IsTrue(TownLandmarks.Clear(flat, r, others), key + " clear of the sourced building models");
@@ -1139,11 +1151,12 @@ namespace Statecraft.Game.Tests
             Assert.Greater(m, 0, key + ": the kits drew landmarks near it to keep clear of");
         }
 
-        /// <summary>Owner, 2 November 2026 ("Among the houses"): a workshop built on Jerusalem's or Tel Aviv's own hex, which the
-        /// town's footprint covers, gets its b21 in a gap between the town's drawn buildings, wholly on the hex, clear of the
-        /// routes and the tokens, upright, and on the same spot when placed again.</summary>
+        /// <summary>A workshop built on Jerusalem's or Tel Aviv's own hex, which the town's footprint covers, gets its b21 at the
+        /// city's edge (owner, 6 November 2026, verbatim: "make the workshop at the edge of the city", which replaces "Among the
+        /// houses" of 2 November 2026 for the major cities; <see cref="AtTheCitysEdge"/>), outside the Old City's walls, clear of
+        /// the routes and the tokens, upright, and on the same spot when placed again; one plan with both stays under 50 ms.</summary>
         [Test]
-        public void AWorkshopInJerusalemOrTelAvivStandsAmongTheHouses()
+        public void AWorkshopInJerusalemOrTelAvivStandsAtTheCitysEdge()
         {
             var map = OpenMap();
             var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
@@ -1151,7 +1164,6 @@ namespace Statecraft.Game.Tests
             var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
             AnswerAll();
             var ground = PlacementLayer.CampGround(map);
-            var streets = Streets(map, c, projects);
             var first = new Dictionary<string, Vector3>();
             foreach (var project in projects)
             {
@@ -1162,8 +1174,9 @@ namespace Statecraft.Game.Tests
                 var flat = new Vector2(p.At.x, p.At.z); float r = SpecialBuildingModels.ClearanceOf(p.Model);
                 float off = (flat - new Vector2(centre3.x, centre3.z)).magnitude;
                 TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre");
-                Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its hex");
-                AmongTheHouses(map, key, flat, r, streets);
+                var edge = new List<string>();
+                AtTheCitysEdge(map, project.City, key, flat, r, edge);
+                Assert.IsEmpty(edge, string.Join("\n", edge));
                 if (project.City == "jerusalem")
                 {
                     var (oc, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(map.Frame);
@@ -1180,8 +1193,8 @@ namespace Statecraft.Game.Tests
             var again = CollectionGeometryFixture.Special(map, After, c, projects)!;
             AnswerAll();
             foreach (var kv in first) Assert.AreEqual(kv.Value, again.Placed.Single(p => p.Key == kv.Key).At, kv.Key + " on the same spot again");
-            // The load gate's rebuild line: one full plan (the sourced buildings and both workshops among the houses), as each
-            // Rebuild computes it.
+            // The load gate's rebuild line: one full plan (the sourced buildings and both workshops at their city's edge), as
+            // each Rebuild computes it.
             var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
             SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false);   // warm
             var clock = System.Diagnostics.Stopwatch.StartNew();
@@ -1190,15 +1203,15 @@ namespace Statecraft.Game.Tests
             double ms = clock.Elapsed.TotalMilliseconds / Runs;
             TestContext.WriteLine($"PLAN-TIMING Jerusalem+Tel Aviv workshops: {ms:0.0} ms per plan");
             // A design bound, not a budget: a plan runs on a prefab answer or a change of date or workshops, never per frame.
-            Assert.Less(ms, 50.0, "one plan with two workshops among the houses");
+            Assert.Less(ms, 50.0, "one plan with two workshops at their city's edge");
         }
 
         /// <summary>#2876 ("Big blocks, every zoom", owner, 6 November 2026): the four major cities (TownModels.IsMajorCity) draw
         /// their kit blocks at every zoom and never their building models, so a b21 among their houses (owner, 2 November 2026:
         /// "Among the houses") and Tal Heuberger's props at their edge keep off those blocks (MapScene.MajorCityBlocks), not off
-        /// the models no longer drawn there. A workshop on each major city's own hex gets a planned spot, wholly on the hex,
-        /// whose ground (its clearance disc, or on a street its square, SizeOf a side, along the street) overlaps no major
-        /// city's kit block; the Altalena sandbags (15 June 1948) and the Haifa quay crates, where planned, keep off them too.
+        /// the models no longer drawn there. A workshop on each major city's own hex gets a planned spot (at the city's edge,
+        /// on or off the hex: owner, 6 November 2026, "make the workshop at the edge of the city"), whose ground (its clearance
+        /// disc, or on a street its square, SizeOf a side, along the street) overlaps no major city's kit block; the Altalena sandbags (15 June 1948) and the Haifa quay crates, where planned, keep off them too.
         /// The plan is the one the layer draws (every model available), placed twice to the same spots.</summary>
         [Test]
         public void AWorkshopOrPropInAMajorCityKeepsOffItsKitBlocks()
@@ -1223,7 +1236,7 @@ namespace Statecraft.Game.Tests
                 var at = plan.Single(x => x.want.Key == key).at;
                 var hex = c.HexAt(project.Q, project.R)!; var centre3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
                 float off = (at - new Vector2(centre3.x, centre3.z)).magnitude;
-                Assert.LessOrEqual(off + r, SpecialBuildingModels.HexInnerRadiusM, key + " wholly on its hex");
+                // Owner, 6 November 2026 (verbatim): "make the workshop at the edge of the city": it may stand off its hex.
                 bool street = along.TryGetValue(key, out var dir);
                 float yaw = street ? Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg : 0f;
                 int near = 0;
@@ -1263,9 +1276,9 @@ namespace Statecraft.Game.Tests
         /// point, over its square, SizeOf a side, turned along its street if it has one) each sees the camera along that
         /// shallowest ray: the ray toward the camera (south and up) meets no major-city kit block, each taken as its box (the
         /// census footprint, Placed.C, Yaw, W, D) from the ground up to its wall top (the highest of the ground at its corners
-        /// and centre, where the kit stands it, plus Placed.H). Also, again: each workshop gets a spot, wholly on its hex, clear
-        /// of the blocks, drawn where it was planned, and the plan is the same when made twice. Every city's failures are
-        /// listed together, by city.</summary>
+        /// and centre, where the kit stands it, plus Placed.H). Also, again: each workshop gets a spot (on or off its hex: owner,
+        /// 6 November 2026, "make the workshop at the edge of the city"), clear of the blocks, drawn where it was planned, and the
+        /// plan is the same when made twice. Every city's failures are listed together, by city.</summary>
         [Test]
         public void AWorkshopInAMajorCityIsInTheCamerasSightPastItsKitBlocks()
         {
@@ -1284,25 +1297,8 @@ namespace Statecraft.Game.Tests
             var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
             AnswerAll();
             var ground = PlacementLayer.CampGround(map);
-            // The ray from a point toward the camera: the camera turns Euler(pitch, yaw 0, 0) and stands at LookAt - forward x
-            // Distance (CameraRig.Apply), so back along forward; at the shallowest pitch.
-            float shallowest = CameraRig.Pitch - 0.5f * CameraRig.Fov;
-            var toCamera = -(Quaternion.Euler(shallowest, 0f, 0f) * Vector3.forward);
-            Assert.Greater(toCamera.y, 0f, "the camera is above the ground");
-            Assert.Less(toCamera.z, 0f, "the camera is south of what it looks at (x east, z north)");
-            Assert.AreEqual(0f, toCamera.x, 1e-6f, "the camera looks due north");
-            // Each block's box: its wall top over the ground the kit stands it on (SettlementKits.GroundSpan's: the highest of its
-            // corners and centre).
-            var tops = blocks.Select(b =>
-            {
-                float a = b.Yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a), hi = float.MinValue;
-                for (int i = 0; i < 5; i++)
-                {
-                    float u = i == 4 ? 0f : ((i & 1) == 0 ? -0.5f : 0.5f) * b.W, v = i == 4 ? 0f : ((i & 2) == 0 ? -0.5f : 0.5f) * b.D;
-                    hi = Mathf.Max(hi, ground.Y(b.C.x + u * ca - v * sa, b.C.y + u * sa + v * ca));
-                }
-                return hi + b.H;
-            }).ToList();
+            var toCamera = ToCamera();
+            var tops = BlockTops(map, ground);
             float size = SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), r = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
             var failures = new List<string>();
             foreach (var project in projects)
@@ -1313,7 +1309,8 @@ namespace Statecraft.Game.Tests
                 var at = row[0].at;
                 var hex = c.HexAt(project.Q, project.R)!; var centre3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
                 float off = (at - new Vector2(centre3.x, centre3.z)).magnitude;
-                if (off + r > SpecialBuildingModels.HexInnerRadiusM) failures.Add($"{city}: {key} at {at} is not wholly on its hex ({off:0} m from its centre)");
+                // The owner, 6 November 2026 (verbatim): "make the workshop at the edge of the city": a major city's b21 may
+                // stand off its project's hex (AWorkshopInAMajorCityStandsAtTheCitysEdge), so its hex is not asserted here.
                 bool street = along.TryGetValue(key, out var dir);
                 float yaw = street ? Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg : 0f;
                 foreach (var b in blocks)
@@ -1326,124 +1323,178 @@ namespace Statecraft.Game.Tests
                 if (model == null) { failures.Add($"{city}: {key} is planned at {at} but not drawn"); continue; }
                 var mb = model.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
                 if ((new Vector2(mb.center.x, mb.center.z) - at).magnitude > 1f) failures.Add($"{city}: {key} is drawn at {mb.center}, not at its planned {at}");
-                // Its top: a 5 by 5 grid over its square (inset 2%, so a point is on the model's top, not on its edge).
-                float ya = yaw * Mathf.Deg2Rad, half = 0.49f * size;
-                var su = new Vector2(Mathf.Cos(ya), Mathf.Sin(ya)); var sv = new Vector2(-su.y, su.x);
-                int hidden = 0; string? first = null;
-                for (int i = 0; i < 5; i++)
-                    for (int j = 0; j < 5; j++)
-                    {
-                        var p2 = at + su * (half * (i / 2f - 1f)) + sv * (half * (j / 2f - 1f));
-                        var q = new Vector3(p2.x, mb.max.y, p2.y);
-                        for (int k = 0; k < blocks.Count; k++)
-                        {
-                            var b = blocks[k];
-                            if (!RayMeetsBox(q, toCamera, b.C, b.Yaw, b.W, b.D, tops[k])) continue;
-                            hidden++;
-                            first ??= FormattableString.Invariant($"{b.Id}'s {b.Kind} at {b.C} ({b.W:0} x {b.D:0} m, {b.Yaw:0} deg, top {tops[k]:0} m) hides its top at {q}");
-                            break;
-                        }
-                    }
+                var (hidden, first) = HiddenOnTop(map, tops, at, yaw, size, mb.max.y, toCamera);
                 TestContext.WriteLine(FormattableString.Invariant(
-                    $"{key} ({city}): at {at}, {off:0} m from its hex centre{(street ? $", on a street at {yaw:0} deg" : "")}, top {mb.max.y:0} m; {hidden} of 25 points on its top hidden at {shallowest:0.0} deg"));
-                if (hidden > 0) failures.Add($"{city}: {key}: {hidden} of 25 points on its top are hidden from the camera at {shallowest:0.0} deg; first: {first}");
+                    $"{key} ({city}): at {at}, {off:0} m from its hex centre{(street ? $", on a street at {yaw:0} deg" : "")}, top {mb.max.y:0} m; {hidden} of 25 points on its top hidden at {Shallowest:0.0} deg"));
+                if (hidden > 0) failures.Add($"{city}: {key}: {hidden} of 25 points on its top are hidden from the camera at {Shallowest:0.0} deg; first: {first}");
             }
             Assert.IsEmpty(failures, string.Join("\n", failures));
         }
 
-        /// <summary>#2876 diagnostic (coordinator, 6 November 2026), a measurement and not a check: the Tel Aviv and Jerusalem
-        /// workshops (the projects <see cref="AWorkshopInAMajorCityIsInTheCamerasSightPastItsKitBlocks"/> plans) get no spot at the
-        /// view's shallowest ray (32.5 degrees, with the roofs). For each sight depression of 50 (CameraRig.Pitch, the screen's
-        /// centre row), 45, 40 and 32.5 degrees, with the roof allowance on and off (the seams SpecialBuildingModels.SightPitchDeg
-        /// and RoofRiseOn), the plan is made as the layer makes it, and SpecialBuildingModels.WorkshopProbe hands this test each
-        /// workshop's search (its seeded candidates and checks, and TownGap's) at the moment the plan makes it, so every list it
-        /// reads (taken, farms, tokens) is the plan's own. Every candidate the seeded search, TownGap's gap search and its street
-        /// search visit, in their order, is tested against every one of that search's checks, in their order, none skipped. One
-        /// line (SIGHT-DIAG) per city, depression and allowance: the plan's outcome, then per search the points, those passing
-        /// every check but sight, those passing every check, how many each check rejects first and at all, and the first
-        /// passing point's offset from the hex centre. The seams are restored whatever happens; nothing is asserted.</summary>
-        [Test, Explicit("diagnostic for #2876, not a check")]
-        public void WorkshopSightDiagnostic()
+        /// <summary>The view's shallowest ray's depression (degrees): the screen's top edge, CameraRig.Pitch - Fov / 2.</summary>
+        static float Shallowest => CameraRig.Pitch - 0.5f * CameraRig.Fov;
+
+        /// <summary>The ray from a point toward the camera: the camera turns Euler(pitch, yaw 0, 0) and stands at LookAt - forward x
+        /// Distance (CameraRig.Apply), so back along forward; at the shallowest pitch.</summary>
+        static Vector3 ToCamera()
+        {
+            var toCamera = -(Quaternion.Euler(Shallowest, 0f, 0f) * Vector3.forward);
+            Assert.Greater(toCamera.y, 0f, "the camera is above the ground");
+            Assert.Less(toCamera.z, 0f, "the camera is south of what it looks at (x east, z north)");
+            Assert.AreEqual(0f, toCamera.x, 1e-6f, "the camera looks due north");
+            return toCamera;
+        }
+
+        /// <summary>Each major-city block's wall top (world y), in MapScene.MajorCityBlocks order: its wall height over the ground
+        /// the kit stands it on (SettlementKits.GroundSpan's: the highest of its corners and centre).</summary>
+        static List<float> BlockTops(MapScene map, Statecraft.Game.Map.Kits.KitGround ground) => map.MajorCityBlocks.Select(b =>
+        {
+            float a = b.Yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a), hi = float.MinValue;
+            for (int i = 0; i < 5; i++)
+            {
+                float u = i == 4 ? 0f : ((i & 1) == 0 ? -0.5f : 0.5f) * b.W, v = i == 4 ? 0f : ((i & 2) == 0 ? -0.5f : 0.5f) * b.D;
+                hi = Mathf.Max(hi, ground.Y(b.C.x + u * ca - v * sa, b.C.y + u * sa + v * ca));
+            }
+            return hi + b.H;
+        }).ToList();
+
+        /// <summary>How many of 25 points on a b21's top (a 5 by 5 grid over its square, <paramref name="size"/> a side, turned
+        /// <paramref name="yaw"/>, inset 2% so a point is on the top, not its edge, at world y <paramref name="top"/>) a major-city
+        /// block hides from the camera (<see cref="RayMeetsBox"/> along <paramref name="toCamera"/>), and the first.</summary>
+        static (int hidden, string? first) HiddenOnTop(MapScene map, List<float> tops, Vector2 at, float yaw, float size, float top, Vector3 toCamera)
+        {
+            var blocks = map.MajorCityBlocks;
+            float ya = yaw * Mathf.Deg2Rad, half = 0.49f * size;
+            var su = new Vector2(Mathf.Cos(ya), Mathf.Sin(ya)); var sv = new Vector2(-su.y, su.x);
+            int hidden = 0; string? first = null;
+            for (int i = 0; i < 5; i++)
+                for (int j = 0; j < 5; j++)
+                {
+                    var p2 = at + su * (half * (i / 2f - 1f)) + sv * (half * (j / 2f - 1f));
+                    var q = new Vector3(p2.x, top, p2.y);
+                    for (int k = 0; k < blocks.Count; k++)
+                    {
+                        var b = blocks[k];
+                        if (!RayMeetsBox(q, toCamera, b.C, b.Yaw, b.W, b.D, tops[k])) continue;
+                        hidden++;
+                        first ??= FormattableString.Invariant($"{b.Id}'s {b.Kind} at {b.C} ({b.W:0} x {b.D:0} m, {b.Yaw:0} deg, top {tops[k]:0} m) hides its top at {q}");
+                        break;
+                    }
+                }
+            return (hidden, first);
+        }
+
+        /// <summary>How far past the outermost kit block of its city a major city's b21 may stand (m), centre to the block's
+        /// nearest point: the layer's design bound of 1 km past the block's face to the model's ground, plus the model's clearance
+        /// disc (r) and the band r either side of its bearing that the outermost block is taken from.</summary>
+        static float EdgeReach(float r) => 1000f + 2f * r;
+
+        /// <summary>The owner, 6 November 2026, on #2876 (verbatim): "make the workshop at the edge of the city". Whether the b21
+        /// planned at <paramref name="at"/> (its clearance disc <paramref name="r"/>) stands at the edge of the major city
+        /// <paramref name="city"/>, as this test reads it off the map (the kit census, the footprints, the ground), not off the
+        /// layer's search; each miss is added to <paramref name="failures"/>, naming the city:
+        /// - clear of every major city's kit block (its disc against each census box);
+        /// - past the city's blocks: no block of the city that the band <paramref name="r"/> either side of the ray from the city's
+        ///   centre through the spot meets reaches farther out along that ray than the disc's near edge;
+        /// - near them: within <see cref="EdgeReach"/> of the nearest block of the city;
+        /// - the city's ground: deeper in the city's footprint (distance over radius, the kits' partition,
+        ///   SettlementKits.OwnsFootprint) than in any other place's, and clear of every other place's plot reach
+        ///   (SettlementKits.PlotReach of its radius), where its buildings stand;
+        /// - clear of every place's name pill (<see cref="SpecialBuildingModels.ClearOfName"/>);
+        /// - on land, off the beach: its centre dry, and no open sea within the drawn full sand (BeachBands.FullSandAt) plus r.</summary>
+        static void AtTheCitysEdge(MapScene map, string city, string key, Vector2 at, float r, List<string> failures)
+        {
+            string who = FormattableString.Invariant($"{city}: {key} at ({at.x:0}, {at.y:0})");
+            var fp = map.KitFootprints.Single(f => f.id == city);
+            var own = map.MajorCityBlocks.Where(b => b.Id == city).ToList();
+            if (own.Count == 0) { failures.Add(who + ": the city has no kit blocks"); return; }
+            foreach (var b in map.MajorCityBlocks)
+                if (!SpecialBuildingModels.ClearOfBox(at, r, b.C, b.Yaw, b.W, b.D))
+                    failures.Add(FormattableString.Invariant($"{who} overlaps {b.Id}'s {b.Kind} at {b.C}"));
+            var toward = at - fp.centre; float dist = toward.magnitude;
+            var u = toward / dist; var n = new Vector2(-u.y, u.x);
+            float nearest = float.MaxValue;
+            foreach (var b in own)
+            {
+                float a = b.Yaw * Mathf.Deg2Rad;
+                var bu = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); var bv = new Vector2(-bu.y, bu.x);
+                float hu = 0.5f * b.W * Mathf.Abs(Vector2.Dot(bu, u)) + 0.5f * b.D * Mathf.Abs(Vector2.Dot(bv, u));
+                float hn = 0.5f * b.W * Mathf.Abs(Vector2.Dot(bu, n)) + 0.5f * b.D * Mathf.Abs(Vector2.Dot(bv, n));
+                float tc = Vector2.Dot(b.C - fp.centre, u), sc = Vector2.Dot(b.C - fp.centre, n);
+                if (Mathf.Abs(sc) - hn < r - 0.5f && tc + hu > 0f && tc + hu > dist - r + 0.5f)
+                    failures.Add(FormattableString.Invariant($"{who} is not past {city}'s {b.Kind} at {b.C} on its bearing: the block reaches {tc + hu:0} m out, the disc from {dist - r:0} m"));
+                var q = b.C - at; float qu = q.x * bu.x + q.y * bu.y, qv = q.x * bv.x + q.y * bv.y;
+                float du = Mathf.Max(0f, Mathf.Abs(qu) - 0.5f * b.W), dv = Mathf.Max(0f, Mathf.Abs(qv) - 0.5f * b.D);
+                nearest = Mathf.Min(nearest, Mathf.Sqrt(du * du + dv * dv));
+            }
+            if (nearest > EdgeReach(r)) failures.Add(FormattableString.Invariant($"{who} is {nearest:0} m from {city}'s nearest kit block, past {EdgeReach(r):0} m"));
+            float mine = dist / fp.radius;
+            foreach (var f in map.KitFootprints)
+            {
+                if (!SpecialBuildingModels.ClearOfName(at, r, f.centre, f.radius)) failures.Add($"{who} is under {f.id}'s name pill");
+                if (f.id == city) continue;
+                float d = (at - f.centre).magnitude;
+                if (d / f.radius <= mine) failures.Add(FormattableString.Invariant($"{who} reads as {f.id}'s: {d / f.radius:0.00} of its radius, {mine:0.00} of {city}'s"));
+                if (d < f.radius * Statecraft.Game.Map.Kits.SettlementKits.PlotReach + r) failures.Add($"{who} is on {f.id}'s ground (its plot reach)");
+            }
+            var ground = PlacementLayer.CampGround(map);
+            if (ground.Water(at.x, at.y)) failures.Add(who + " is in the water");
+            var reaches = Statecraft.Game.Map.Kits.BeachBands.Reaches(map.Settlements.Concat(map.Localities.Select(l => l.Settlement)).ToList(), ground);
+            float sand = Statecraft.Game.Map.Kits.BeachBands.FullSandAt(map.Frame, at.x, at.y, reaches);
+            if (ground.SeaDistance(at.x, at.y, sand + r) != float.MaxValue) failures.Add(FormattableString.Invariant($"{who} is on the beach (the sea within {sand:0} m of full sand plus its {r:0} m)"));
+            TestContext.WriteLine(FormattableString.Invariant($"{key} ({city}): {Offset(at, fp.centre)} from the city's centre ({mine:0.00} of its radius); {nearest:0} m from its nearest kit block"));
+        }
+
+        /// <summary>#2876, the owner, 6 November 2026 (verbatim): "make the workshop at the edge of the city". A workshop built on
+        /// each major city's hex (haifa, jaffa, jerusalem, tel_aviv: TownModels.IsMajorCity, which draw their tall kit blocks at
+        /// every zoom) gets a planned spot (none is a failure naming the city: the layer then draws no b21), at the city's edge
+        /// (<see cref="AtTheCitysEdge"/>), drawn where planned, whose top the camera sees past every major city's kit blocks
+        /// along the view's shallowest ray (<see cref="HiddenOnTop"/>, the test's own ray test), and the plan is the same when
+        /// made twice. It may stand off its project's hex where no edge spot is on it; each spot's offset from its hex is
+        /// logged. Every city's failures are listed together, by city.</summary>
+        [Test]
+        public void AWorkshopInAMajorCityStandsAtTheCitysEdge()
         {
             var map = OpenMap();
             var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
             var majors = c.SettlementHexes.Select(h => h.Id).Where(Statecraft.Game.Map.Kits.TownModels.IsMajorCity).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            CollectionAssert.AreEqual(new[] { "haifa", "jaffa", "jerusalem", "tel_aviv" }, majors, "the major cities with a settlement hex");
             var projects = majors.Select((city, i) => Workshop(c, 700 + i, city, Built)).ToList();
             var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
-            var cities = projects.Where(x => x.City == "jerusalem" || x.City == "tel_aviv")
-                .Select(x => (key: SpecialBuildingModels.WorkshopKey(x.Id), city: x.City)).ToList();
-            try
+            var plan = SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var along);
+            var again = SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out _);
+            CollectionAssert.AreEqual(plan.Select(x => (x.want.Key, x.at)).ToList(), again.Select(x => (x.want.Key, x.at)).ToList(), "the same spots when planned again");
+            var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
+            AnswerAll();
+            var ground = PlacementLayer.CampGround(map);
+            var toCamera = ToCamera();
+            var tops = BlockTops(map, ground);
+            float size = SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), r = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
+            var failures = new List<string>();
+            foreach (var project in projects)
             {
-                foreach (float pitch in new[] { 50f, 45f, 40f, 32.5f })
-                    foreach (bool roof in new[] { true, false })
-                    {
-                        SpecialBuildingModels.SightPitchDeg = pitch; SpecialBuildingModels.RoofRiseOn = roof;
-                        var searched = new Dictionary<string, (Vector2 anchor, string counts)>(StringComparer.Ordinal);
-                        SpecialBuildingModels.WorkshopProbe = s =>
-                        {
-                            if (!cities.Any(x => x.key == s.Key)) return;
-                            var parts = new List<string> { SightCounts("seeded", s.Seeded, s.SeededChecks, s.Anchor, s.Clearance) };
-                            if (s.Gap == null) parts.Add("gap: not searched (the hex is outside every footprint)");
-                            else
-                            {
-                                parts.Add(SightCounts("gap", s.Gap.Candidates, s.Gap.Gap, s.Anchor, s.Clearance));
-                                parts.Add(s.Gap.HasStreets ? SightCounts("street", s.Gap.Candidates, s.Gap.Street, s.Anchor, s.Clearance)
-                                    : "street: not searched (no major-city block reaches the hex)");
-                            }
-                            searched[s.Key] = (s.Anchor, string.Join(" | ", parts));
-                        };
-                        var plan = SpecialBuildingModels.PlanWithRoutes(map, After, wants, _ => true, false, null, out var along);
-                        SpecialBuildingModels.WorkshopProbe = null;
-                        foreach (var (key, city) in cities)
-                        {
-                            string head = FormattableString.Invariant($"SIGHT-DIAG {city} ({key}) pitch {pitch:0.0} roof {(roof ? "on" : "off")}");
-                            if (!searched.TryGetValue(key, out var found)) { Log(head + " | not searched (no probe call)"); continue; }
-                            var row = plan.Where(x => x.want.Key == key).ToList();
-                            string outcome = row.Count == 0 ? "plan: no spot, not drawn"
-                                : "plan: " + Offset(row[0].at, found.anchor) + (along.TryGetValue(key, out var d)
-                                    ? FormattableString.Invariant($", on a street at {Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg:0} deg") : ", in a gap or seeded");
-                            Log(head + " | " + outcome + " | " + found.counts);
-                        }
-                    }
+                string city = project.City, key = SpecialBuildingModels.WorkshopKey(project.Id);
+                var row = plan.Where(x => x.want.Key == key).ToList();
+                if (row.Count == 0) { failures.Add($"{city}: {key} gets no planned spot, so it is not drawn"); continue; }
+                var at = row[0].at;
+                var hex = c.HexAt(project.Q, project.R)!; var centre3 = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                var hexCentre = new Vector2(centre3.x, centre3.z);
+                bool onHex = (at - hexCentre).magnitude + r <= SpecialBuildingModels.HexInnerRadiusM;
+                TestContext.WriteLine($"{key} ({city}): {Offset(at, hexCentre)} from its hex centre, {(onHex ? "wholly on" : "off")} its project's hex");
+                AtTheCitysEdge(map, city, key, at, r, failures);
+                bool street = along.TryGetValue(key, out var dir);
+                float yaw = street ? Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg : 0f;
+                var model = layer.transform.Find(key);
+                if (model == null) { failures.Add($"{city}: {key} is planned at {at} but not drawn"); continue; }
+                var mb = model.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                if ((new Vector2(mb.center.x, mb.center.z) - at).magnitude > 1f) failures.Add($"{city}: {key} is drawn at {mb.center}, not at its planned {at}");
+                var (hidden, first) = HiddenOnTop(map, tops, at, yaw, size, mb.max.y, toCamera);
+                if (hidden > 0) failures.Add($"{city}: {key}: {hidden} of 25 points on its top are hidden from the camera at {Shallowest:0.0} deg; first: {first}");
             }
-            finally
-            {
-                SpecialBuildingModels.SightPitchDeg = SpecialBuildingModels.DefaultSightPitchDeg;
-                SpecialBuildingModels.RoofRiseOn = true;
-                SpecialBuildingModels.WorkshopProbe = null;
-            }
-
-            static void Log(string line) { TestContext.WriteLine(line); Debug.Log(line); }
+            Assert.IsEmpty(failures, string.Join("\n", failures));
         }
 
-        /// <summary>WorkshopSightDiagnostic's counts for one search: every candidate tested against every check (with r, as the
-        /// plan calls them), in order.</summary>
-        static string SightCounts(string search, IEnumerable<Vector2> candidates, IReadOnlyList<SpecialBuildingModels.SpotCheck> checks, Vector2 anchor, float r)
-        {
-            int total = 0, allButSight = 0, all = 0;
-            var first = new int[checks.Count]; var any = new int[checks.Count];
-            Vector2? firstPass = null;
-            foreach (var p in candidates)
-            {
-                total++;
-                int failed = -1; bool othersPass = true;
-                for (int i = 0; i < checks.Count; i++)
-                {
-                    if (checks[i].Test(p, r)) continue;
-                    any[i]++;
-                    if (failed < 0) failed = i;
-                    if (checks[i].Name != "sight") othersPass = false;
-                }
-                if (failed >= 0) first[failed]++;
-                if (othersPass) allButSight++;
-                if (failed < 0) { all++; firstPass ??= p; }
-            }
-            string Counts(int[] n) => string.Join(", ", checks.Select((x, i) => FormattableString.Invariant($"{x.Name} {n[i]}")));
-            return FormattableString.Invariant($"{search}: {total} points, {allButSight} pass all but sight, {all} pass all; first fail: ")
-                + Counts(first) + "; fail at all: " + Counts(any) + "; first passing: " + (firstPass is Vector2 q ? Offset(q, anchor) : "none");
-        }
-
-        /// <summary>A point's offset from a hex centre: metres, compass bearing (0 north, 90 east) and the world point.</summary>
+        /// <summary>A point's offset from a centre: metres, compass bearing (0 north, 90 east) and the world point.</summary>
         static string Offset(Vector2 p, Vector2 centre)
         {
             var d = p - centre;
