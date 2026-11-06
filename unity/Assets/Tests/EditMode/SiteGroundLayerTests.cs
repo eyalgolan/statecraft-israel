@@ -101,6 +101,13 @@ public class SiteGroundLayerTests
     }
 
     [Test]
+    public void TheSeedIsFixedAcrossRuns()
+    {
+        // FNV-1a by hand: string.GetHashCode would give another field layout in each run.
+        Assert.AreEqual(3907230421u, SiteGroundLayer.Hash("gilat_field"));
+    }
+
+    [Test]
     public void OnlyASiteThatChangedIsBuilt()
     {
         var map = OpenMap();
@@ -137,7 +144,8 @@ public class SiteGroundLayerTests
     {
         var material = SiteGroundLayer.MaterialFor();
         Assert.NotNull(material, "Resources/" + SiteGroundLayer.MaterialResource);
-        Assert.Less(material.renderQueue, Resources.Load<Material>(RouteLayer.RailMaterialResource).renderQueue, "a road crosses a field on top");
+        Assert.Less(material.renderQueue, Resources.Load<Material>(RouteLayer.RailMaterialResource).renderQueue, "a railway crosses a field on top");
+        Assert.Less(material.renderQueue, Resources.Load<Material>(RouteLayer.RoadMaterialResource).renderQueue, "a road crosses a field on top");
         Assert.GreaterOrEqual(material.renderQueue, (int)RenderQueue.GeometryLast + 1, "after the ground and the kits");
         CollectionAssert.IsEmpty(ShaderChecks.Gles3Errors(material.shader));
     }

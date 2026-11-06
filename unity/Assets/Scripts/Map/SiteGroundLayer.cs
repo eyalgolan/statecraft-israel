@@ -141,7 +141,7 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>A stable hash of a site's id (never string.GetHashCode: it differs between runs on some runtimes).</summary>
-        static uint Hash(string id)
+        internal static uint Hash(string id)
         {
             uint h = 2166136261u;
             foreach (char c in id) h = (h ^ c) * 16777619u;
@@ -172,6 +172,10 @@ namespace Statecraft.Game.Map
             var terrain = map.Terrain; var data = terrain.terrainData; var origin = terrain.transform.position;
             int n = Mathf.CeilToInt(sizeM / StepM), side = 2 * n + 1;
             var index = new int[side * side];
+            var around = new[] { new Vector2(0.5f * StepM, 0f), new Vector2(-0.5f * StepM, 0f), new Vector2(0f, 0.5f * StepM), new Vector2(0f, -0.5f * StepM) };
+            // Only the footprints that can reach a vertex: the hex's rim is within two steps of its corner radius.
+            float reach = sizeM + 2f * StepM + ClearFadeM;
+            var near = map.KitFootprints.Where(f => (f.centre - centre).magnitude - ClearShare * f.radius < reach).ToList();
             var verts = new List<Vector3>(); var normals = new List<Vector3>(); var uvs = new List<Vector2>(); var colours = new List<Color32>();
             for (int j = 0; j < side; j++)
                 for (int i = 0; i < side; i++)
@@ -183,10 +187,10 @@ namespace Statecraft.Game.Map
                     if (!ground.Inside(p.x, p.y)) continue;
                     index[j * side + i] = verts.Count;
                     float y = RouteLayer.Ground(data, origin, p), low = y;
-                    foreach (var d in new[] { new Vector2(StepM, 0f), new Vector2(-StepM, 0f), new Vector2(0f, StepM), new Vector2(0f, -StepM) })
+                    foreach (var d in around)
                     {
-                        float around = RouteLayer.Ground(data, origin, p + 0.5f * d);
-                        y = Mathf.Max(y, around); low = Mathf.Min(low, around);
+                        float h = RouteLayer.Ground(data, origin, p + d);
+                        y = Mathf.Max(y, h); low = Mathf.Min(low, h);
                     }
                     verts.Add(new Vector3(p.x, y + LiftM, p.y));
                     normals.Add(data.GetInterpolatedNormal((p.x - origin.x) / data.size.x, (p.y - origin.z) / data.size.z));
@@ -194,7 +198,7 @@ namespace Statecraft.Game.Map
                     float mask = Mathf.Clamp01((EdgeDistance(rel, sizeM) - EdgeInsetM) / EdgeFadeM);
                     if (mask > 0f && (y - low > SteepM || ground.Hex(p.x, p.y) != (site.Q, site.R) || ground.Water(p.x, p.y))) mask = 0f;
                     if (mask > 0f)
-                        foreach (var f in map.KitFootprints)
+                        foreach (var f in near)
                             mask = Mathf.Min(mask, Mathf.Clamp01(((f.centre - p).magnitude - ClearShare * f.radius) / ClearFadeM));
                     colours.Add(new Color32((byte)(look == Drained ? 255 : 0), 0, 0, (byte)Mathf.RoundToInt(255f * mask)));
                 }
