@@ -28,8 +28,8 @@ macOS IL2CPP parity check is not an MVP release gate.
    uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 e4a90c5b1d0049332cc5036e7951bd008910e2fae46e65c1b1512a7397ec1688"
-   # and "GOLDEN OK hash1952 7b8594b51e161a1947a5c38faf7a5e6d41191e34b4a9a0d1bddb4e968eb4bfe1"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 b2dd73874b2ee5ddeda19c82dcd8f7971af94e3739c1658e1e45d43fc48ceb1e"
+   # and "GOLDEN OK hash1952 488d99fe5198f85770cc45ad9178e2f1fd76346746c378f27964ddad42018a5f"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
      --expect "SMOKE OK 5 turns 1948-10-15 3803636fdc5dae42a0ac1f298b957652514a3ffc210ce68a06c8ddbb279f0150"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
