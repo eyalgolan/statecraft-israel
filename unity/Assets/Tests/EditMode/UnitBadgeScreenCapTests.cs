@@ -10,7 +10,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 
 /// <summary>The owner, 31 October 2026, asked "Should badges shrink when you're close?": "Shrink up close (Recommended)". A
-/// unit badge's plate keeps its world size (UnitBadge.SizeM) from a 30 km view out, and a nearer camera draws it no taller
+/// unit badge's plate keeps its world size (UnitBadge.SizeM) from far (#2430: from a 90 km view out, the 30 km of #2077 left it
+/// as wide as the figures are tall), and a nearer camera draws it no taller
 /// than UnitBadge.MaxScreenShare of the screen (at 12 km over Gaza the Egyptian force's plate was about 700 of 1080 px).
 /// Each view renders the units of the first turn at 1920x1080 with no top bar (the inset only moves the view's lower edge
 /// further out, where badges are smaller), the look-at point swept from the token past the view's lower edge.</summary>
@@ -67,16 +68,19 @@ public class UnitBadgeScreenCapTests
             }
             Vector3 LowerEdge(Transform badge) => badge.position - badge.up * (0.5f * badge.lossyScale.y);
 
-            // From 30 km out every plate on the screen is today's: SizeM wide, and so no taller than the cap.
-            float largest = 0f; int seen = 0; var changed = new List<string>();
+            // Where each plate's lower edge stands in a 30 km view, which nearer views keep.
             var lowerAt30 = new Dictionary<(int, float), Vector3>();
-            foreach (var distance in new[] { 30000f, 45000f, 60000f })
+            foreach (var yaw in Yaws)
+                for (int i = 0; i < badges.Count; i++) { Look(i, 30000f, yaw, 0f); lowerAt30[(i, yaw)] = LowerEdge(badges[i]); }
+
+            // From 90 km out every plate on the screen is SizeM wide, and so no taller than the cap.
+            float largest = 0f; int seen = 0; var changed = new List<string>();
+            foreach (var distance in new[] { 90000f, 120000f, 250000f })
                 foreach (var yaw in Yaws)
                     for (int i = 0; i < badges.Count; i++)
                         foreach (var ahead in Ahead)
                         {
                             Look(i, distance, yaw, ahead);
-                            if (distance == 30000f && ahead == 0f) lowerAt30[(i, yaw)] = LowerEdge(badges[i]);
                             for (int j = 0; j < badges.Count; j++)
                             {
                                 var (share, shown) = Drawn(badges[j]);
@@ -86,14 +90,14 @@ public class UnitBadgeScreenCapTests
                                     changed.Add($"{distance / 1000f:0} km, yaw {yaw}, {ahead / 1000f:0} km beyond {badges[i].parent.name}: {badges[j].parent.name}'s plate is {badges[j].lossyScale.x:0} m ({share * 1080f:0} px of 1080)");
                             }
                         }
-            Debug.Log($"BADGECAP from 30 km out: the largest plate on the screen is {largest:0.0000} of its height ({largest * 1080f:0} px of 1080), over {seen} plates; the cap is {UnitBadge.MaxScreenShare}");
-            Assert.Greater(seen, 1000, "plates seen from 30 km out");
-            Assert.IsEmpty(changed, $"from 30 km out every plate keeps its size; {changed.Count} did not, first: {string.Join("; ", changed.Take(5))}");
+            Debug.Log($"BADGECAP from 90 km out: the largest plate on the screen is {largest:0.0000} of its height ({largest * 1080f:0} px of 1080), over {seen} plates; the cap is {UnitBadge.MaxScreenShare}");
+            Assert.Greater(seen, 1000, "plates seen from 90 km out");
+            Assert.IsEmpty(changed, $"from 90 km out every plate keeps its size; {changed.Count} did not, first: {string.Join("; ", changed.Take(5))}");
 
             // Nearer, no plate on the screen is taller than the cap; it shrinks about its lower edge, which stays where it
             // was at 30 km (the camera's yaw alone places it), clear of the flag and the figures; clicks follow the plate.
             int capped = 0;
-            foreach (var distance in new[] { CameraController.MinDistance, 8000f, 12000f, 20000f })
+            foreach (var distance in new[] { CameraController.MinDistance, 8000f, 12000f, 20000f, 30000f })
                 foreach (var yaw in Yaws)
                     for (int i = 0; i < badges.Count; i++)
                         foreach (var ahead in Ahead)

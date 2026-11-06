@@ -10,13 +10,15 @@ namespace Statecraft.Game.Map.Units
     /// glyph says the service: two figures for a brigade, an aircraft for the squadron, a ship for the navy.</summary>
     public sealed class UnitBadge : MonoBehaviour
     {
-        /// <summary>The plate's width at map scale (m): about a third of a figure's height, as in the promo.</summary>
+        /// <summary>The plate's width at map scale (m) from a far camera; nearer it is capped on the screen
+        /// (<see cref="MaxScreenShare"/>).</summary>
         public const float SizeM = 1400f;
         /// <summary>The largest share of the screen's height a plate is drawn at (owner, 31 October 2026, "Shrink up close
-        /// (Recommended)"): a badge as big as it is in a 30 km view keeps <see cref="SizeM"/>; a nearer camera draws it smaller,
-        /// so it never grows past this. Just over the largest a plate is drawn from 30 km out (0.142, 154 of 1080 pixels, at the
-        /// view's lower edge; UnitBadgeScreenCapTests), so every view from there out is unchanged.</summary>
-        public const float MaxScreenShare = 0.15f;
+        /// (Recommended)": a nearer camera draws it smaller, so it never grows past this). #2430: 0.15 left the plate as wide
+        /// as the figures are tall at 31 km, the darkest thing on the token, where promo 03's is about half their height.
+        /// DESIGN VALUE 0.055, 59 of 1080 pixels; from about 80 km out a plate is <see cref="SizeM"/> wide and no taller than
+        /// this, and the plate, not the figures, is what reads (UnitBadgeScreenCapTests).</summary>
+        public const float MaxScreenShare = 0.055f;
         /// <summary>Clearance (m) between the token's top and the plate's lower edge.</summary>
         public const float LiftM = 1300f;
         /// <summary>A rifleman's height (m, real) and the corvette's mast top (m, real): the token's top before scaling.</summary>

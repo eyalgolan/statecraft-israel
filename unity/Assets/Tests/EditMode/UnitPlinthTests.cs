@@ -1154,8 +1154,9 @@ public class UnitPlinthTests
                     layer.FaceCamera(cam);
                     var boxes = layer.KeepClear[i]; var badge = token.Find("Badge");
                     Assert.Less((boxes[0].center - badge.position).magnitude, 1f, $"yaw {yaw} {token.name}: the badge's box is round the badge as drawn");
-                    Assert.AreEqual(UnitBadge.SizeM, boxes[0].size.x, 1f, $"yaw {yaw} {token.name}: the badge's box is its own width");
-                    Assert.AreEqual(UnitBadge.SizeM, boxes[0].size.z, 1f, $"yaw {yaw} {token.name}: the badge's box is its own depth");
+                    Assert.LessOrEqual(badge.lossyScale.x, UnitBadge.SizeM + 1e-2f, $"yaw {yaw} {token.name}: the plate is never wider than SizeM");
+                    Assert.AreEqual(badge.lossyScale.x, boxes[0].size.x, 1f, $"yaw {yaw} {token.name}: the badge's box is its own width");
+                    Assert.AreEqual(badge.lossyScale.x, boxes[0].size.z, 1f, $"yaw {yaw} {token.name}: the badge's box is its own depth");
                     var flag = token.Find(UnitPlinth.FlagName); if (flag == null) continue;
                     var grown = boxes[1]; grown.Expand(1f);
                     var m = flag.localToWorldMatrix;
@@ -1289,6 +1290,132 @@ public class UnitPlinthTests
             Assert.AreSame(figureMat, flags[0].GetComponent<MeshRenderer>().sharedMaterials[0], "the pole in the palette");
             Assert.AreSame(Resources.Load<Material>(UnitMaterials.RingResource).shader, flags[0].GetComponent<MeshRenderer>().sharedMaterials[1].shader, "the cloth unlit");
             Assert.Less(flags[0].GetComponent<MeshFilter>().sharedMesh.triangles.Length / 3, 300, "the flag is low-poly");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    // ---- Readable at the gameplay zoom (#2430) ----------------------------------------------------------------------
+
+    /// <summary>The game camera's pose at <paramref name="viewM"/> over <paramref name="ground"/>, as CameraRig.Apply sets it.</summary>
+    static void Aim(Camera cam, Vector3 ground, float viewM)
+    {
+        cam.fieldOfView = CameraRig.Fov; cam.aspect = 16f / 9f; cam.farClipPlane = 1000000f;
+        cam.transform.rotation = Quaternion.Euler(CameraRig.Pitch, 0f, 0f);
+        ground.y = 0f;
+        cam.transform.position = ground - cam.transform.forward * viewM;
+    }
+
+    /// <summary>Up to the far edge of the close switch a figure keeps UnitShowcase.FigureScale, so the house ratio of #197 holds
+    /// wherever a close building model draws and SpecialBuildingModels.FigureShadowM wherever a workshop does; from there it
+    /// grows, and stops at the 60 km view.</summary>
+    [Test]
+    public void AFiguresScaleHoldsUpCloseAndGrowsToTheFarBand()
+    {
+        foreach (var near in new[] { CameraController.MinDistance, 12000f, CameraRig.StartDistance, Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM, Statecraft.Game.Map.Kits.TownModelLayer.CloseExitM })
+            Assert.AreEqual(1f, UnitShowcase.ZoomScale(near), 1e-6f, $"{near} m");
+        Assert.AreEqual(1.3f, UnitShowcase.ZoomScale(60000f), 1e-6f, "the 60 km view");
+        Assert.AreEqual(1.3f, UnitShowcase.ZoomScale(CameraController.MaxDistance), 1e-6f, "and it stops there");
+        Assert.AreEqual(1.3f, UnitShowcase.ZoomScale(float.PositiveInfinity), 1e-6f, "a camera that sees no ground");
+        Assert.That(UnitShowcase.ZoomScale(52500f), Is.InRange(1.1f, 1.2f), "between the two it ramps, with no step");
+    }
+
+    /// <summary>The token as a far camera draws it: figures and flag at the zoom's scale, on the same spots on the same base,
+    /// the badge over the grown flag, and the click and the names' boxes round the figures as drawn. A closer camera gives
+    /// the figures back their scale, and a rebuild made from far draws the new tokens at the far scale.</summary>
+    [Test]
+    public void AFarCameraGrowsTheFiguresAndFlagOnTheirBase()
+    {
+        var map = BuildMap();
+        try
+        {
+            var cam = Camera.main;
+            var layer = UnitLayer.Create(map, UnitData.Parse(CommittedYaml), C.Hexes, still: true);
+            layer.Show(C, StateAt(Dates[0]));
+            var tokensRoot = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+            var token = tokensRoot.Cast<Transform>().First(t => t.Cast<Transform>().Count(f => f.name.StartsWith("Rifleman")) == 3);
+            int index = layer.Tokens.ToList().FindIndex(t => t.Token.Unit.Id == token.name);
+            var plinth = token.Find(UnitPlinth.PlinthName); var centre = plinth.position;
+            float flagSize = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
+
+            Aim(cam, centre, CameraRig.StartDistance); layer.FaceCamera(cam);
+            var figures = token.Cast<Transform>().Where(f => f.name.StartsWith("Rifleman")).ToList();
+            var flag = token.Find(UnitPlinth.FlagName);
+            var spots = figures.Select(f => f.position).ToList();
+            Assert.AreEqual(UnitShowcase.FigureScale, figures[0].localScale.x, 1e-2f, "the opening view keeps the ruled scale");
+            Assert.AreEqual(flagSize, flag.localScale.x, 1e-2f);
+
+            Aim(cam, centre, 60000f); layer.FaceCamera(cam);
+            foreach (var f in figures) Assert.AreEqual(1.3f * UnitShowcase.FigureScale, f.localScale.x, 1e-2f, $"{f.name} at 60 km");
+            Assert.AreEqual(1.3f * flagSize, flag.localScale.x, 1e-2f, "the flag grows with them");
+            for (int i = 0; i < figures.Count; i++) Assert.Less((figures[i].position - spots[i]).magnitude, 1f, $"{figures[i].name} stays on its spot");
+            Assert.AreEqual(plinth.localScale.x, token.Find(UnitPlinth.PlinthName).localScale.x, 0f, "the base keeps its size");
+            float boots = 0.2f * 1.3f * UnitShowcase.FigureScale;
+            foreach (var f in figures)
+                Assert.Less((new Vector2(f.position.x, f.position.z) - new Vector2(centre.x, centre.z)).magnitude + boots, plinth.localScale.x, $"{f.name}'s boots stay on the base");
+
+            var badge = token.Find("Badge");
+            float flagTop = flag.position.y + UnitFlags.PoleHeight * flag.localScale.y;
+            Assert.Greater(badge.position.y - 0.5f * badge.lossyScale.y, flagTop, "the badge clears the grown flag's top");
+            var head = figures[1].position + Vector3.up * (1.3f * flagSize * 0.95f);
+            Assert.IsTrue(layer.KeepClear[index][1].Contains(head), "the names' and the click's box holds the grown figure's head");
+            float farTop = layer.KeepClear[index][1].max.y;
+            Assert.AreEqual(token.name, layer.TokenAtScreen(cam, cam.WorldToScreenPoint(head))?.Token.Unit.Id, "a click on the head picks the unit");
+
+            Aim(cam, centre, CameraRig.StartDistance); layer.FaceCamera(cam);
+            foreach (var f in figures) Assert.AreEqual(UnitShowcase.FigureScale, f.localScale.x, 1e-2f, $"{f.name} back at the opening view");
+            Assert.AreEqual(flagSize, flag.localScale.x, 1e-2f, "and the flag");
+            Assert.Less(layer.KeepClear[index][1].max.y, farTop - 0.2f * flagSize, "and the box shrinks back with them");
+
+            Aim(cam, centre, 60000f); layer.FaceCamera(cam);
+            Assert.IsTrue(layer.Show(C, StateAt(Dates[1])), "the roster changes");
+            var rebuilt = tokensRoot.Cast<Transform>().First(t => t.Cast<Transform>().Any(f => f.name.StartsWith("Rifleman")));
+            Assert.AreEqual(1.3f * UnitShowcase.FigureScale, rebuilt.Cast<Transform>().First(f => f.name.StartsWith("Rifleman")).localScale.x, 1e-2f,
+                "a rebuild from far draws the new tokens at the far scale");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>The badge is a small marker over the figures at the gameplay zoom, as in promo 03, not the token's largest dark
+    /// shape: at the opening view it is well under a figure's height on the screen, and from far it keeps its map size.</summary>
+    [Test]
+    public void TheBadgeStaysSmallerThanTheFiguresAtTheGameplayZoom()
+    {
+        float m11 = 1f / Mathf.Tan(0.5f * CameraRig.Fov * Mathf.Deg2Rad), depth = CameraRig.StartDistance;
+        float plate = UnitBadge.SizeFor(depth, m11, false) * m11 / (2f * depth);
+        float figure = UnitBadge.FigureHeightM * UnitShowcase.FigureScale * Mathf.Cos(CameraRig.Pitch * Mathf.Deg2Rad) * m11 / (2f * depth);
+        Assert.Less(plate, 0.7f * figure, $"the plate is {plate * 1080f:0} px of 1080, a figure {figure * 1080f:0} px");
+        Assert.AreEqual(UnitBadge.SizeM, UnitBadge.SizeFor(120000f, m11, false), 1e-2f, "at 120 km the plate keeps its map size");
+    }
+
+    /// <summary>A compact token's three figures stand apart enough to read as three (at the compact ring's half spacing they
+    /// merged into one shape), and its ring stays clear inside the selection ring, which stands at the radius of the clearing a
+    /// town keeps for it (#588), so a selected token shows two rings.</summary>
+    [Test]
+    public void ACompactTokensFiguresReadAsThreeAndItsRingFitsTheClearing()
+    {
+        var map = BuildMap();
+        try
+        {
+            var layer = UnitLayer.Create(map, UnitData.Parse(CommittedYaml), C.Hexes, still: true);
+            float hex = map.Hexes.hex_size_km * 1000f, clearing = UnitShowcase.RingRadius * hex * UnitGround.CompactScale;
+            float selectionInner = clearing - 0.5f * UnitShowcase.RingWidth * clearing / UnitShowcase.RingRadius;
+            float width = 2f * UnitPlinth.FigureHalfWidthM * UnitShowcase.FigureScale;
+            int seen = 0;
+            foreach (var date in Dates)
+            {
+                layer.Show(C, StateAt(date));
+                foreach (var p in layer.Tokens.Where(t => t.Spot.Compact && t.Token.Unit.Service == UnitData.Army))
+                {
+                    var token = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").Find(p.Token.Unit.Id);
+                    var plinth = token.Find(UnitPlinth.PlinthName);
+                    Assert.Less(plinth.localScale.x * UnitPlinth.RimOuter, selectionInner - 50f, $"{token.name}: the ring clear inside the selection ring");
+                    var figures = token.Cast<Transform>().Where(f => f.name.StartsWith("Rifleman") || f.name.StartsWith("Figure")).ToList();
+                    for (int i = 0; i + 1 < figures.Count; i++)
+                        Assert.Greater((figures[i].position - figures[i + 1].position).magnitude, 0.5f * width, $"{token.name}: figures {i} and {i + 1} stand apart");
+                    seen++;
+                }
+            }
+            Assert.Greater(seen, 0, "compact tokens were found (not a vacuous pass)");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
