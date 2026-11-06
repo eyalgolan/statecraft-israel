@@ -244,12 +244,12 @@ def test_a_gating_material_missing_from_the_capture_exits_4_not_3(tmp_path, caps
 
 
 STUB_UV = r"""#!/usr/bin/env bash
-# A stand-in for uv: Unity (through machine_lock) and the browser do nothing; web_check writes each pose's PNG (every
+# A stand-in for uv: machine_lock just runs its command (the Unity stub below) and the browser does nothing; web_check writes each pose's PNG (every
 # PromoPose.cs pose VisualShots shoots: All, CloseChecks and #659's CloseUps and TownChecks);
 # art_compare writes a compare image, prints what STUB_ART_OUT holds and exits STUB_ART_EXIT.
 shift
 case "$1" in
-  tools/machine_lock.py) exit 0 ;;
+  tools/machine_lock.py) while [[ "$1" != -- ]]; do shift; done; shift; "$@" ;;   # the lock is a no-op, the command (the Unity stub) runs
   tools/web_check.py) while [[ $# -gt 0 && "$1" != --shots ]]; do shift; done
     for p in gameplay03 diorama02 hero06judea hero06negev tel_aviv30 jaffa12 jerusalem12 haifa12 rishon08 degania06 nazareth08 nahalal06 start120; do echo x > "$2/$p.png"; done ;;
   tools/art_compare.py) mkdir -p "$2/editor"; echo x > "$2/gameplay03-compare.png"; echo x > "$2/editor/a-compare.png"
@@ -258,23 +258,35 @@ esac
 """
 
 
-def run_checkpoint(tmp_path, art_exit, art_out=""):
+STUB_UNITY = """#!/usr/bin/env bash
+# A stand-in for Unity: MapCapture.Promo writes <tier>-<pose>.png per quality tier and PromoPose.All pose into -captureDir,
+# except the one render named by STUB_MISSING (a file name, e.g. PC-diorama02.png), left out to play a failed capture.
+while [[ $# -gt 0 && "$1" != -captureDir ]]; do shift; done
+mkdir -p "$2"
+for f in Mobile-gameplay03 Mobile-diorama02 PC-gameplay03 PC-diorama02; do [[ "$f.png" == "${STUB_MISSING:-}" ]] || echo x > "$2/$f.png"; done
+"""
+
+
+def run_checkpoint(tmp_path, art_exit, art_out="", missing=""):
     """tools/art_checkpoint.sh in a scratch git repository holding only what it reads, with uv stubbed (no Unity)."""
     import shutil
     import subprocess
     repo, tools = tmp_path / "repo", Path(__file__).resolve().parents[1]
-    for rel, text in {"unity/ProjectSettings/QualitySettings.asset": "q\n", "unity/Builds/Web-disabled/index.html": "x\n",
+    for rel, text in {"unity/Builds/Web-disabled/index.html": "x\n",
                       "sim/Statecraft.Sim.Tests/golden/manifest.txt": "hash1950 aa\nhash1952 bb\n"}.items():
         (repo / rel).parent.mkdir(parents=True, exist_ok=True); (repo / rel).write_text(text)
     (repo / "tools").mkdir(); shutil.copy(tools / "art_checkpoint.sh", repo / "tools")
     (repo / "unity/Assets/Scripts/Map").mkdir(parents=True)
     shutil.copy(tools.parent / "unity/Assets/Scripts/Map/PromoPose.cs", repo / "unity/Assets/Scripts/Map")
+    (repo / "unity/ProjectSettings").mkdir(parents=True, exist_ok=True)
+    shutil.copy(tools.parent / "unity/ProjectSettings/QualitySettings.asset", repo / "unity/ProjectSettings")
     git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@example.com"]
     subprocess.run(git + ["init", "-q"], check=True); subprocess.run(git + ["add", "-A"], check=True)
     subprocess.run(git + ["commit", "-qm", "t"], check=True)
     stub = tmp_path / "bin"; stub.mkdir(); (stub / "uv").write_text(STUB_UV); (stub / "uv").chmod(0o755)
-    env = {**os.environ, "PATH": f"{stub}:{os.environ['PATH']}", "UNITY": "/bin/true",
-           "STUB_ART_EXIT": str(art_exit), "STUB_ART_OUT": art_out}
+    (stub / "unity").write_text(STUB_UNITY); (stub / "unity").chmod(0o755)
+    env = {**os.environ, "PATH": f"{stub}:{os.environ['PATH']}", "UNITY": str(stub / "unity"),
+           "STUB_MISSING": missing, "STUB_ART_EXIT": str(art_exit), "STUB_ART_OUT": art_out}
     return subprocess.run(["bash", "tools/art_checkpoint.sh", "--no-build", "cp"], cwd=repo, env=env, capture_output=True, text=True)
 
 
@@ -343,3 +355,11 @@ def test_the_material_guard_and_main_leave_a_navy_minimap_out_of_the_sea(tmp_pat
                 promos={"gameplay03": promo, "diorama02": promo})
     sea = [l.split(" vs ")[0] for l in capsys.readouterr().out.splitlines() if l.startswith("MATERIAL diorama02.png sea")]
     assert len(sea) == 2 and sea[0] == sea[1], sea
+
+
+def test_the_checkpoint_fails_when_an_editor_render_is_missing(tmp_path):
+    """#2697 item 3: art_compare measures only the renders it finds, so a tier's missing pose render passed unseen."""
+    assert run_checkpoint(tmp_path / "ok", 0).returncode == 0
+    for missing in ("PC-diorama02.png", "Mobile-gameplay03.png"):
+        r = run_checkpoint(tmp_path / missing, 0, missing=missing)
+        assert r.returncode == 1 and f"editor/{missing} is missing" in r.stderr and "ART CHECKPOINT" not in r.stdout, missing
