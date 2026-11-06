@@ -3543,3 +3543,25 @@ Captures and colour-blind comparison images were retained locally with hashes. L
 are in-engine captures at the source above; right panels are the existing AI-generated promo references,
 not gameplay. Pending: a person's look at judea30 and the transport anomaly noted above. No simulation hash,
 human review flag, licence declaration or release gate changed.
+
+## Issue #2428: one shared atlas for the town kits
+The kits drew vertex colours and a procedural window pattern. They now also sample one shared atlas,
+`unity/Assets/Art/Kits/kit_atlas.png`, painted by `asset-sources/kit-atlas/make_kit_atlas.py` (`uv run`; no input files, no
+image model, same bytes every run). It is a 4 x 4 sheet of 512 px cells imported as one `Texture2DArray` (16 layers), so a cell
+tiles and has its own mipmaps with no bleeding. The cells: five facades (White City, stone, hill village, mud plaster, moshava),
+plaster, ashlar, rubble, roof tile, flat roof, ribbon glass, balcony rail, corrugated iron, planks, and two spare white ones.
+- **Mesh:** the vertex layout, the meshes and the one material are as before, so no town gains a draw (`KITS ... draws=65` before
+  and after). The colour's alpha is now the surface, `KitMesh.Facade`: the layer + 1, times 17. uv0 is in cells; on a facade v
+  counts storeys, and `Kit.shader` lays out one ground storey under three repeating ones. A facade wall counts whole bays, so a
+  corner never cuts a window, and starts at a phase hashed from its position, so no random stream moves. Plain (trees, boats,
+  tents, the ma'abara's patched sheet) has no cell.
+- **Light:** the atlas is albedo only. Stains and street dust are dirt in the colour, not shadow; `KitAtlasTests` checks that a
+  solid cell has no brighter side. The shader's old contact darkening at a wall's foot stays.
+- **Far off:** mipmaps replace the window pattern's box filter; a wall fades to its mean with no moire. The atlas is
+  sampled with explicit gradients taken outside the branch, because `fwidth` inside it is undefined on WebGL 2.
+- **Ribbon windows** start one storey up, so the ground storey shows the facade's doors and shop.
+- **Size:** the build's `.data` gzips (level 6, the player built with `-compression disabled`) 1,316,744 bytes larger, about 3.2%
+  of the download, so the PR carries a nightly size budget line.
+- **Frame time, not measured to this document's standard:** `?vprofile` needs the exclusive lock, which this lane did not take. A
+  run under the shared lock at load 11-16, main against the branch, read gameplay03 23.53 -> 22.12 ms (spreads 2.93, 3.93) and
+  diorama02 25.78 -> 28.03 ms (spreads 1.56, 2.98): a noisy reading, not a cost.
