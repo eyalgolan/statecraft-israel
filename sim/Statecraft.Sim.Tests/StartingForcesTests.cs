@@ -264,15 +264,9 @@ public class StartingForcesTests
     public void TheReleaseGateWaitsForEveryStartingRowToBeFactChecked()
     {
         Assert.Equal(14, Real.StartingForces.Count);
-        Assert.Equal(new[]
-        {
-            "brigade_7: order_targets[0] (al-Malikiyya), sources checked 2026-11-01, row checked 2026-10-22",
-            "carmeli: order_targets[0] (Manara), sources checked 2026-11-01, row checked 2026-10-21",
-            "givati: order_targets[0] (Huleiqat), sources checked 2026-11-01, row checked 2026-10-21",
-            "harel: order_targets[0] (Latrun police fort), sources checked 2026-11-01, row checked 2026-10-21",
-            "kiryati: order_targets[0] (Ramle), sources checked 2026-11-01, row checked 2026-10-21",
-            "negev: order_targets[0] (Beersheba), sources checked 2026-11-01, row checked 2026-10-21",
-        }, ReleaseGate.StartingForcesUnchecked(Real));
+        // Every starting row is fact-checked with no field sourced after its checked_on: the owner checked the six order targets
+        // sourced on 1 November (#2757, 6 November 2026, "all approved").
+        Assert.Empty(ReleaseGate.StartingForcesUnchecked(Real));
         var c = Load(Row("b", "israel", 20), Row("a", "israel", 20, q: 2, status: "fact-checked", extra: "  checked_on: '2026-10-21'\n"));
         Assert.Equal(new[] { "b" }, ReleaseGate.StartingForcesUnchecked(c));
     }
