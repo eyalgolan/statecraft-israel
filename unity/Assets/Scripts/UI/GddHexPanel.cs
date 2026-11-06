@@ -366,6 +366,7 @@ namespace Statecraft.Game.UI
                     var cancelled = bridge.QueuedLike(new CancelProject(project.Id)) != null;
                     OrderButton(host, bridge, "city-project-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
                         !cancelled, () => bridge.Queue(new CancelProject(project.Id)));
+                    BuilderPart(host, bridge, text, project);
                 }
                 // R-HOUSE-006 (#1700): the sim takes a gdd-0.3 housing repair on its city's own hex whatever that hex holds
                 // (Projects.CheckCityReason), so on a city's own hex the repair is still offered under the project; every other
@@ -496,6 +497,52 @@ namespace Statecraft.Game.UI
             var paused = (bridge.Session.Last?.Why ?? Array.Empty<Cause>()).Where(x => x.Key == CauseKeys.WorkshopPaused && x.Target == city)
                 .Select(x => CauseText.Line(x, c, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text, bridge.TownNamesHe)).Distinct().ToList();
             for (int i = 0; i < paused.Count; i++) Line(host, "city-workshop-paused-" + i.ToString(CultureInfo.InvariantCulture), paused[i]);
+        }
+
+        /// <summary>R-CITY-011 (#1700, #2477), gdd-0.3 only: on a city project being built, whether it has a builder, and its
+        /// city's builder stepper. AssignWorkers(city, "build", n) sets how many of the city's projects being built have one
+        /// (Projects.AssignBuilders), so the stepper is the city's count (Projects.Builders, or the queued order's) of its
+        /// projects being built; stepping back to the current count withdraws the order. + asks End turn's own order runner
+        /// (Simulation.Preview, as Train does) whether n + 1 in the order's slot would be refused, or would make it refuse an
+        /// order of the queue it accepts now, so the queue's job, training, workshop, start and builder orders all count
+        /// whichever runs first. While a project is left without one, that refusal shows in the UI's language.</summary>
+        static void BuilderPart(VisualElement host, SimBridge bridge, UiText text, CityProject project)
+        {
+            var c = bridge.Content; var s = bridge.State;
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return;
+            var city = project.City;
+            Line(host, "city-project-builder", text[project.Builder ? "city.project_builder" : "city.project_no_builder"]);
+            var building = s.CityProjects.Values.Count(p => p.City == city && p.BuiltOn == null);
+            var builders = Projects.Builders(s, city);
+            var queued = bridge.QueuedLike(new AssignWorkers(city, Projects.BuildRole, 0)) as AssignWorkers;
+            var target = queued?.Count ?? builders;
+            string? refusal = null;
+            var accepted = true;
+            // A finished game's preview refuses every order: OrderButton already disables + there (#2669), with no reason line.
+            if (s.GameOver == null && target < building)
+            {
+                var press = new AssignWorkers(city, Projects.BuildRole, target + 1);
+                var queue = bridge.Queued.ToList();
+                var slot = queued == null ? -1 : queue.IndexOf(queued);
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                var current = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                refusal = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press))?.Reason;
+                // Nor may the press make End turn refuse a queued order it accepts now (a Train or a workshop's worker).
+                accepted = refusal == null && !queue.Any(x => !ReferenceEquals(x, press)
+                    && preview.Rejected.Any(r => ReferenceEquals(r.Command, x)) && !current.Rejected.Any(r => ReferenceEquals(r.Command, x)));
+            }
+            var row = Row(host, "city-builders-row");
+            OrderButton(row, bridge, "city-builders-less", "−", target > 0, () => Build(bridge, city, builders, target - 1));
+            Line(row, "city-builders", text.Format(queued == null ? "city.builders" : "city.builders_ordered", target, building));
+            OrderButton(row, bridge, "city-builders-more", "+", target < building && accepted, () => Build(bridge, city, builders, target + 1));
+            if (refusal != null) Line(host, "city-builders-reason", SimBridge.ReasonText(text, refusal, c, bridge.TownNamesHe));
+        }
+
+        static void Build(SimBridge bridge, string city, int current, int count)
+        {
+            if (count != current) { bridge.Queue(new AssignWorkers(city, Projects.BuildRole, count)); return; }
+            if (bridge.QueuedLike(new AssignWorkers(city, Projects.BuildRole, 0)) is Command order) bridge.Withdraw(order);
         }
 
         static void Staff(SimBridge bridge, string city, int current, int count)

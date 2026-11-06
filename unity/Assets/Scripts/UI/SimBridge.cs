@@ -298,6 +298,9 @@ namespace Statecraft.Game.UI
             (Workshops.RefusedBuilt, "workshop.refused_built"),
             (Workshops.RefusedPeople, "workshop.refused_people"),
             (Workshops.RefusedPeopleNoJob, "workshop.refused_people_no_job"),
+            // R-CITY-011 (#2477): a builder order past the city's projects being built (Projects.AssignBuilders).
+            (Projects.RefusedBeingBuiltOne, "builder.refused_being_built_one"),
+            (Projects.RefusedBeingBuilt, "builder.refused_being_built"),
             // R-PROJ-001 under gdd-0.3 (#1700 slice B): a second city project start in one city in one turn.
             (Projects.RefusedCityCap, "city.project_reason.city_cap"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
