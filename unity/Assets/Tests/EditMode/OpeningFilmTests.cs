@@ -102,8 +102,8 @@ cues:
     public void TheShippedFileKeepsTheRulesUntilTheOwnerDecides()
     {
         var film = FilmContent.Parse(Shipped);
-        Assert.IsFalse(film.RealRecording, "D-R and docs/declaration-recording.md: the recording never plays on New game");
-        Assert.AreEqual(film.Audio, film.SoundFile);
+        Assert.IsTrue(film.RealRecording, "the owner's exception to D-R (6 November 2026, docs/declaration-recording.md): the real recording plays in this opening film");
+        Assert.AreEqual(film.AudioWithRecording, film.SoundFile, "so the film's sound is the file with the recording in it");
         Assert.IsFalse(film.SensitivityReviewed, "the final file does not exist, so nothing has reviewed it");
         Assert.IsFalse(FilmContent.MayPlay(film, editorPreview: false), "no player build plays an unreviewed film");
         Assert.IsTrue(FilmContent.MayPlay(film, editorPreview: true));

@@ -6,9 +6,10 @@
 # OWNER DECISIONS, still open. Each is this one value (FilmContent reads it; the PR lists them).
 # 1. Does the film play by itself after New game? False: only Replay the opening plays it.
 auto_play_on_new_game: true
-# 2. May the real 1948 recording play in the film? D-R and docs/declaration-recording.md say it never plays on New game,
-#    so this stays false until the owner rules. True picks audio_with_recording and adds its credit to the label line.
-real_recording: false
+# 2. May the real 1948 recording play in the film? Yes, in this opening film only: the owner accepted that recommendation
+#    on 6 November 2026 ("all your picks"); docs/declaration-recording.md records the exception to D-R. True picks
+#    audio_with_recording and adds its credit to the label line.
+real_recording: true
 # 3. The on-screen AI label: a key of the strings files. This one is the advisors' existing line, in both languages.
 ai_label: advisor.media_label
 # 4. The 10 MiB per-file limit (scripts/oss/oss_policy.py) against hosted video. Empty: the picture is bundled in
