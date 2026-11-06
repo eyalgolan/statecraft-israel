@@ -3543,3 +3543,32 @@ Captures and colour-blind comparison images were retained locally with hashes. L
 are in-engine captures at the source above; right panels are the existing AI-generated promo references,
 not gameplay. Pending: a person's look at judea30 and the transport anomaly noted above. No simulation hash,
 human review flag, licence declaration or release gate changed.
+
+## Issue #2877: a plowed field or drained swamp on its hex's ground
+
+The owner's answer on #2812 was "Ground change only", so a built field or a drained swamp has no kit and no pill and the
+hex's ground shows it. `SiteGroundLayer` drapes one mesh per site over the terrain (about 2,100 vertices), drawn by
+`Statecraft/SiteGround` after the ground and before the roads, in the order of `HulaPapyrusLayer`: `GameRoot` calls it on
+every `Changed`, it reads `State.Sites`, and it builds a mesh only for a site that changed, so a loaded save draws its own.
+A repaint of `_ScBiomeTex` was rejected: it is one map-wide upload, which would fall on End turn. A zero-area mesh draws from
+the first frame, so the shader's first draw does not fall on the End turn that finishes the first site.
+The look is a design value (no field layout or crop is sourced): seeded parcels of ploughed earth, young crop and stubble with
+pale tracks; a drained swamp is dark earth with straight canals. The patch keeps off water, off ground that rises over 45 m
+(world) round a vertex and off the inner 70% of every locality's footprint, and it fades out short of the hex's edge, so the
+grid and the region borders stay on top. A hex with both the swamp and its field shows the field.
+
+Cost, on a WebGL build (`Build.Web -compression disabled`), `?vprofile` under the **shared** machine lock on a busy machine
+(load 4-9), so these are not the "How to measure" idle numbers. A throwaway patch, never committed, built seven sites and
+limited the run to `all` against `-siteground` at the poses below, 3 interleaved runs of 300 frames each:
+
+| Pose | `all` ms (spread) | `-siteground` ms (spread) | cost ms |
+|---|---|---|---|
+| Beit Kama, 60 km | 21.94 (3.43) | 21.66 (0.31) | +0.28 |
+| Beit Kama, 15 km | 19.89 (0.47) | 20.14 (0.16) | -0.25 |
+| Beit Kama, 6 km | 16.14 (0.24) | 16.36 (0.16) | -0.22 |
+| Hula, 6 km | 15.27 (0.52) | 15.91 (0.19) | -0.64 |
+| gameplay03 | 25.27 (0.20) | 25.41 (0.29) | -0.14 |
+
+All are inside the 2.5 ms budget and within this busy machine's noise, so they say "no measurable cost here", not a number. The
+first run at the first pose (24.85 ms, p95 48) is the 3.43 spread; the two runs after it were 21.42 and 21.94 ms.
+Not measured: the same run under the exclusive lock, and the time `ShowAt` takes on the End turn in a browser.
