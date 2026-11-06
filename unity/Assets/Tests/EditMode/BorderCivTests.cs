@@ -505,8 +505,9 @@ public class BorderCivTests
             Assert.AreEqual(new Vector4(orange.r, orange.g, orange.b, 1f), G("_ScBorderColour2"), $"{at}: the wash and the tint");
             if (v == BorderVariant.Legacy) continue;
             void Stripe(string name, Color c) { var l = c.linear; Assert.AreEqual(new Vector4(l.r, l.g, l.b, 1f), G(name), $"{at}: {name}"); }
-            // C2 keeps its own blue stripe; it glows, but that blue is the variant's point.
-            Stripe("_ScBorderStripe1", MapBorders.StrongBlue(v) ? MapBorders.PrimaryStrongBlue.Colour : glows ? MapBorders.GlowStripePrimary : MapBorders.Primary.Colour);
+            // The blue stripe is the style's own blue on every tier, the owner's ruled blue (#519; C and C2 keep their own blue,
+            // the variant's point): on the stronger tier the halo carries the Israeli side's glow.
+            Stripe("_ScBorderStripe1", MapBorders.StrongBlue(v) ? MapBorders.PrimaryStrongBlue.Colour : MapBorders.Primary.Colour);
             Stripe("_ScBorderStripe2", glows ? MapBorders.GlowStripeSecondary : MapBorders.Secondary.Colour);
             Stripe("_ScBorderStripe3", MapBorders.Neutral.Colour);
         }
@@ -514,8 +515,10 @@ public class BorderCivTests
     }
 
     /// <summary>#2431: at gameplay03 A2's stripes read as promo 03's lit lines and a soft halo runs along the inside of the band. The
-    /// blue stripe's saturation and the orange stripe's brightness pass the old colours' (0.45 and 0.79) towards the promo's
-    /// (0.59 and 0.69-0.90); the pixels just inside the light stripe are lighter than the wash farther in, on both sides; and
+    /// orange stripe's brightness passes the old colour's (0.79) towards the promo's (0.69-0.90); the blue stripe stays the
+    /// owner's ruled blue (#519, ControlTests.ThePrimaryStripeIsTheDeeperBlueOfTheRuling), so its saturation only has to hold
+    /// about that blue's (89,119,156: 0.43) and not be paled by its halo; the pixels just inside the light stripe are lighter
+    /// than the wash farther in, on both sides; and
     /// the two halos stay apart for colour-blind players, with the bound the stripes meet (GradeTests).</summary>
     [UnityTest]
     public IEnumerator TheStripesGlowAtGameplay03()
@@ -552,7 +555,7 @@ public class BorderCivTests
                 apart.Add(RenderSample.DeltaE(RenderSample.SimulateCvd(haloP, kind), RenderSample.SimulateCvd(haloS, kind)));
         }
         TestContext.WriteLine($"blue stripe saturation {Median(sat):0.00}, orange stripe value {Median(val):0.00}; halo lift blue {Median(liftP):0.000}, orange {Median(liftS):0.000}; halos apart (colour-blind, least) {apart.Min():0.0}");
-        Assert.GreaterOrEqual(Median(sat), 0.50f, "the blue stripe is saturated");
+        Assert.GreaterOrEqual(Median(sat), 0.40f, "the blue stripe keeps the ruled blue's saturation (89,119,156: 0.43), not paled by its halo");
         Assert.GreaterOrEqual(Median(val), 0.82f, "the orange stripe is bright");
         Assert.GreaterOrEqual(Median(liftP), 0.05f, "the blue side glows along its light stripe");
         Assert.GreaterOrEqual(Median(liftS), 0.05f, "the orange side glows along its light stripe");

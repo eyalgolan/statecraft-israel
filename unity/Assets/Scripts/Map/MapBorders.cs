@@ -111,12 +111,14 @@ namespace Statecraft.Game.Map
         public const float StrongMinColourPx = 6f, StrongWashStrength = 0.45f, StrongTintNear = 0.12f;
         public static bool Strong(BorderVariant v) => v >= BorderVariant.A2;
         /// <summary>The stronger tier's glow (#2431): promo 03's lines read as lit edges, and bloom would be a full-screen pass, so the
-        /// shader draws it. Brighter edge stripes (on screen, about the promo's stripes: 72-92,114-132,176-189 and 176-230,83-114,50-67),
-        /// and a soft halo of a lighter colour along the inside of the light stripe, GlowOpacity at the stripe and gone
-        /// GlowM metres in, never under GlowMinPx. The tint and the wash keep <see cref="Style.Colour"/>: a brighter fill reddened
+        /// shader draws it. A brighter orange edge stripe (on screen, about the promo's 176-230,83-114,50-67), and a soft halo of a
+        /// lighter colour along the inside of each light stripe, GlowOpacity at the stripe and gone GlowM metres in, never under
+        /// GlowMinPx. The blue stripe stays the owner's ruled blue (Primary's colour; #519: "bring the stripe back to
+        /// about 3 deltaE76 of the ruled blue or less", ControlTests.ThePrimaryStripeIsTheDeeperBlueOfTheRuling), so on the Israeli
+        /// side the halo carries the glow. The tint and the wash keep <see cref="Style.Colour"/>: a brighter fill reddened
         /// the hills (rose index +4 to +7, palette distance 0.308 to 0.345 at gameplay03). Neutral has no glow: grey stays flat
         /// and dashed, a third cue beside the colour. Not a variant of its own: A2, B2 and C2 draw it (C2 keeps its own blue stripe).</summary>
-        public static readonly Color GlowStripePrimary = new Color(0.26f, 0.40f, 0.61f), GlowStripeSecondary = new Color(0.92f, 0.37f, 0.14f),
+        public static readonly Color GlowStripeSecondary = new Color(0.92f, 0.37f, 0.14f),
             GlowHaloPrimary = new Color(0.66f, 0.78f, 0.97f), GlowHaloSecondary = new Color(1.02f, 0.57f, 0.22f);
         public const float GlowOpacity = 0.72f, GlowM = 320f, GlowMinPx = 6f;
         /// <summary>The halo's on-screen width (px) at <paramref name="metresPerPx"/> beside a full band: the shader's, which also takes
@@ -332,7 +334,7 @@ namespace Statecraft.Game.Map
             SetStyle(Colour1, Light1, Shape1, Side(StrongBlue(v) ? PrimaryStrongBlue : Primary));
             SetStyle(Colour2, Light2, Shape2, Side(Secondary));
             SetStyle(Colour3, Light3, Shape3, Neutral);
-            SetStripe(Stripe1, strong && !StrongBlue(v) ? GlowStripePrimary : Colour1Of(v));
+            SetStripe(Stripe1, Colour1Of(v));   // the ruled blue on every tier (#519); the halo carries the glow
             SetStripe(Stripe2, strong ? GlowStripeSecondary : Secondary.Colour);
             SetStripe(Stripe3, Neutral.Colour);
             if (strong) { SetGlow(Glow1, GlowHaloPrimary); SetGlow(Glow2, GlowHaloSecondary); }
