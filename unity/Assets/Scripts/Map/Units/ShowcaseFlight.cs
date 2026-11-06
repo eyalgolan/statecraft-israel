@@ -18,6 +18,17 @@ namespace Statecraft.Game.Map.Units
 
         public float? StillPhase => still;
 
+        /// <summary>The propeller the flight turns (null: none).</summary>
+        internal Transform? Propeller => propeller;
+
+        /// <summary>Turns <paramref name="replacement"/> from now on in place of the configured propeller (StreamedAircraft: the
+        /// streamed model's own, once it stands), at the angle the old one had, so a still frame keeps it.</summary>
+        internal void TurnPropeller(Transform? replacement)
+        {
+            if (replacement != null && propeller != null) replacement.localRotation = propeller.localRotation;
+            propeller = replacement;
+        }
+
         void Update()
         {
             if (still.HasValue) return;

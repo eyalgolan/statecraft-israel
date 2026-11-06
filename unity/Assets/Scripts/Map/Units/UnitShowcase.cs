@@ -69,13 +69,10 @@ namespace Statecraft.Game.Map.Units
         public static bool StillRequested(string? url, string[] args, bool webgl) =>
             webgl ? UrlFlags.Has(url, "shot") : args.Contains("-shot");
 
-        /// <summary>The art hook (owner ruling, 2026-10-11): promo-quality close-zoom models come from a separate AI-3D track,
-        /// and the code-built models stay as the far-zoom and fallback version. A prefab at
-        /// Resources/<see cref="AuthoredFolder"/>&lt;unit type&gt; replaces the code-built model of that type. It follows the
-        /// same convention: real metres, facing +Z, origin on the ground (an aircraft: its centre of gravity), with its own
-        /// materials; an authored aircraft brings its own propeller. Without one, the code-built mesh is used. Unit types:
-        /// the <c>*Type</c> constants below.</summary>
-        public const string AuthoredFolder = "Units/Authored/";
+        /// <summary>The unit types. The code-built models (owner ruling, 2026-10-11: they stay as the far-zoom and fallback
+        /// version) are drawn for every type at once; no unit model is loaded from Resources (#2734: the WebGL player's first
+        /// download). Better models stream in over them from the Collection: the riflemen's figures (UnitFigures) and the
+        /// Blender-built Spitfire (<see cref="StreamedAircraft"/>, whose catalog id is <see cref="SpitfireType"/>).</summary>
         public const string RiflemanSlouchHatType = "rifleman-1948-slouch-hat", RiflemanHelmetType = "rifleman-1948-steel-helmet",
             RiflemanWoolCapType = "rifleman-1948-wool-cap", SpitfireType = "spitfire-mk9e-101sqn-1948", CorvetteType = "corvette-k20-1948",
             S199Type = "avia-s199-101sqn-1948";
@@ -99,9 +96,6 @@ namespace Statecraft.Game.Map.Units
             3 => new[] { new Vector2(-1.0f, -0.1f), new Vector2(0f, 0.2f), new Vector2(1.0f, -0.1f) },
             _ => throw new ArgumentOutOfRangeException(nameof(figures), "a token has 1, 2 or 3 figures"),
         };
-
-        /// <summary>Finds an authored model for a unit type, or null (a seam: tests replace it).</summary>
-        internal static Func<string, GameObject?> AuthoredModel = type => Resources.Load<GameObject>(AuthoredFolder + type);
 
         /// <summary>Builds the showcase under the map's terrain (so a map rebuild destroys it). Its meshes, palette and
         /// material are owned by the showcase root's own MapRuntimeAssets, so destroying the root (a re-spawn or a map
@@ -149,32 +143,28 @@ namespace Statecraft.Game.Map.Units
                 var (type, hat, pose, faded, heading) = looks[i];
                 var p = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * DrawSpread * hex;
                 p.y = UnitPlinth.FigureY(map, plinth, p.x, p.z);
-                var figure = Piece(root.transform, $"Rifleman{i}", type, () => Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
+                var figure = Piece(root.transform, $"Rifleman{i}", Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
                     paint, p, Quaternion.Euler(0, heading, 0), FigureScale);
                 var headgear = UnitData.Headgears.First(h => UnitRoster.RiflemanType(h) == type);
                 UnitFigures.Dress(figure.transform, UnitFigures.ByHeadgear[headgear], map.Residency.Units);   // the Collection's soldier, once streamed (#665)
             }
             Ring(map, assets, ringTemplate, root.transform, centre, RingRadius * hex);
 
-            // The aircraft and, when code-built, its propeller.
+            // The aircraft: the code-built airframe and propeller, drawn until the Blender-built model streams in over them.
             var plane = new GameObject("Spitfire1948");
             plane.transform.SetParent(root.transform, false);
-            Piece(plane.transform, "Airframe", SpitfireType, () => Built(UnitModels.Spitfire("Spitfire1948")), paint,
-                Vector3.zero, Quaternion.identity, 1f, out bool authoredAircraft);
-            Transform? prop = null;
-            if (!authoredAircraft)
-            {
-                prop = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), paint, Vector3.zero, Quaternion.identity, 1f).transform;
-                prop.localPosition = UnitModels.SpitfirePropellerHub;
-            }
+            var airframe = Piece(plane.transform, "Airframe", Built(UnitModels.Spitfire("Spitfire1948")), paint, Vector3.zero, Quaternion.identity, 1f);
+            var prop = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), paint, Vector3.zero, Quaternion.identity, 1f).transform;
+            prop.localPosition = UnitModels.SpitfirePropellerHub;
             plane.transform.localScale = Vector3.one * AircraftScale;
             var loopCentre = map.Frame.ToWorld(LoopCentre.lon, LoopCentre.lat, 0);
             var flight = plane.AddComponent<ShowcaseFlight>();
             flight.Configure(loopCentre, LoopRadiusM, LoopFloor(map, loopCentre, LoopRadiusM) + AltitudeM, LoopSeconds, BankDegrees, prop, still ? StillPhase : (float?)null);
+            StreamedAircraft.Attach(plane, airframe, prop);
 
             // The corvette, at the sea surface.
             var ship = Ground(map, map.Frame.ToWorld(ShipAt.lon, ShipAt.lat, 0));
-            Piece(root.transform, "Corvette1948", CorvetteType, () => Built(UnitModels.Corvette("CorvetteK20")), paint, ship,
+            Piece(root.transform, "Corvette1948", Built(UnitModels.Corvette("CorvetteK20")), paint, ship,
                 Quaternion.Euler(0, ShipHeadingDegrees, 0), ShipScale);
 
             HideTrees(map, ToggleName, holes);
@@ -199,24 +189,7 @@ namespace Statecraft.Game.Map.Units
             if (veg != null) veg.Hide(owner, holes);
         }
 
-        /// <summary>One unit model: the authored prefab for <paramref name="type"/> when there is one (the art hook),
-        /// otherwise the code-built mesh.</summary>
-        static GameObject Piece(Transform parent, string name, string type, Func<Mesh> codeBuilt, Material paint, Vector3 position,
-            Quaternion rotation, float scale) => Piece(parent, name, type, codeBuilt, paint, position, rotation, scale, out _);
-
-        internal static GameObject Piece(Transform parent, string name, string type, Func<Mesh> codeBuilt, Material paint, Vector3 position,
-            Quaternion rotation, float scale, out bool authored)
-        {
-            var prefab = AuthoredModel(type);
-            authored = prefab != null;
-            if (prefab == null) return Piece(parent, name, codeBuilt(), paint, position, rotation, scale);
-            var go = UnityEngine.Object.Instantiate(prefab, parent, false);
-            go.name = name;
-            go.transform.SetPositionAndRotation(position, rotation);
-            go.transform.localScale = Vector3.one * scale;
-            return go;
-        }
-
+        /// <summary>One code-built unit model: <paramref name="mesh"/> drawn with <paramref name="mat"/>, placed in world space.</summary>
         internal static GameObject Piece(Transform parent, string name, Mesh mesh, Material mat, Vector3 position, Quaternion rotation, float scale)
         {
             var go = new GameObject(name);

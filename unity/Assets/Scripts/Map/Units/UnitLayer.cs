@@ -10,7 +10,7 @@ namespace Statecraft.Game.Map.Units
 {
     /// <summary>The units in normal play (docs/units.md, "Units in play"): one token per unit that the sourced unit data
     /// (units_1948.yaml) and the sim's state give now (<see cref="UnitRoster"/>), each on its anchor's spot
-    /// (<see cref="UnitPlacer"/>, computed once from the data), with the #139 models (and the authored-prefab hook):
+    /// (<see cref="UnitPlacer"/>, computed once from the data), with the #139 models (and the streamed Spitfire, StreamedAircraft):
     /// riflemen for a brigade, the squadron's aircraft flying a loop over its base or parked on it, a corvette at sea, and
     /// over each token the promo's badge (a dark plate with the unit's glyph, <see cref="UnitBadge"/>). Selecting a token
     /// draws the promo's white ring round it (selection only). Presentation only: it reads the state and never writes it
@@ -744,15 +744,15 @@ namespace Statecraft.Game.Map.Units
                             {
                                 var hat = Hat(t.Headgear[i]);
                                 var type = UnitRoster.RiflemanType(t.Headgear[i]);
-                                figure = UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
-                                    paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
+                                figure = UnitShowcase.Piece(go.transform, $"Rifleman{i}", MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
+                                    paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale).transform;
                             }
                             else if (builtIn)
                             {
                                 var type = UnitRoster.RiflemanType(UnitData.SteelHelmet);
-                                figure = UnitShowcase.Piece(go.transform, $"Figure{i}", type, () => MeshFor($"{type}/{pose}",
+                                figure = UnitShowcase.Piece(go.transform, $"Figure{i}", MeshFor($"{type}/{pose}",
                                     () => UnitModels.Rifleman(UnitModels.Headgear.SteelHelmet, pose, faded, type)),
-                                    paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
+                                    paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale).transform;
                             }
                             else figure = EmptyPiece(go.transform, $"Figure{i}", at, heading);   // no code-built figure for another side (#740)
                             var model = UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null);
@@ -781,8 +781,8 @@ namespace Statecraft.Game.Map.Units
                         top = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
                         break;
                     default:
-                        UnitShowcase.Piece(go.transform, "Corvette", t.ArtType, () => MeshFor(t.ArtType, () => UnitModels.Corvette(t.ArtType)),
-                            paint, centre, Quaternion.Euler(0, UnitShowcase.ShipHeadingDegrees, 0), UnitShowcase.ShipScale, out _);
+                        UnitShowcase.Piece(go.transform, "Corvette", MeshFor(t.ArtType, () => UnitModels.Corvette(t.ArtType)),
+                            paint, centre, Quaternion.Euler(0, UnitShowcase.ShipHeadingDegrees, 0), UnitShowcase.ShipScale);
                         top = UnitBadge.MastHeightM * UnitShowcase.ShipScale;
                         break;
                 }
@@ -894,15 +894,11 @@ namespace Statecraft.Game.Map.Units
             bool spitfire = t.ArtType == UnitShowcase.SpitfireType;
             Func<Mesh> airframe = spitfire ? (Func<Mesh>)(() => UnitModels.Spitfire(t.ArtType))
                 : () => UnitModels.AviaS199(t.ArtType);
-            UnitShowcase.Piece(plane.transform, "Airframe", t.ArtType, () => MeshFor(t.ArtType, airframe), paint, Vector3.zero, Quaternion.identity, 1f, out bool authored);
-            Transform? prop = null;
-            if (!authored)
-            {
-                var propKey = spitfire ? "spitfire-propeller" : "avia-s199-propeller";
-                var propMesh = MeshFor(propKey, spitfire ? (Func<Mesh>)(() => UnitModels.SpitfirePropeller(propKey)) : () => UnitModels.S199Propeller(propKey));
-                prop = UnitShowcase.Piece(plane.transform, "Propeller", propMesh, paint, Vector3.zero, Quaternion.identity, 1f).transform;
-                prop.localPosition = spitfire ? UnitModels.SpitfirePropellerHub : UnitModels.S199PropellerHub;
-            }
+            var airframeGo = UnitShowcase.Piece(plane.transform, "Airframe", MeshFor(t.ArtType, airframe), paint, Vector3.zero, Quaternion.identity, 1f);
+            var propKey = spitfire ? "spitfire-propeller" : "avia-s199-propeller";
+            var propMesh = MeshFor(propKey, spitfire ? (Func<Mesh>)(() => UnitModels.SpitfirePropeller(propKey)) : () => UnitModels.S199Propeller(propKey));
+            var prop = UnitShowcase.Piece(plane.transform, "Propeller", propMesh, paint, Vector3.zero, Quaternion.identity, 1f).transform;
+            prop.localPosition = spitfire ? UnitModels.SpitfirePropellerHub : UnitModels.S199PropellerHub;
             plane.transform.localScale = Vector3.one * UnitShowcase.AircraftScale;
             if (t.Flying)
             {
@@ -913,6 +909,9 @@ namespace Statecraft.Game.Map.Units
             else
                 plane.transform.SetPositionAndRotation(baseCentre + Vector3.up * ParkedHeightM * UnitShowcase.AircraftScale,
                     Quaternion.Euler(0, ParkedHeadingDegrees, 0));
+            // The Spitfire's Blender-built model streams in over the code-built one, flying or parked (StreamedAircraft, #2734);
+            // the Avia S-199 stays code-built.
+            if (spitfire) StreamedAircraft.Attach(plane, airframeGo, prop);
         }
     }
 }
