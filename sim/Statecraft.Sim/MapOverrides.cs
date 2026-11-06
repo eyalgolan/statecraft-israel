@@ -509,7 +509,7 @@ namespace Statecraft.Sim
                 var at = $"targets[{t.Id}]";
                 if (!Land(t.Q, t.R)) Broken(at, FormattableString.Invariant($"target hex q={t.Q} r={t.R} is not a land hex of the map"));
                 if (!settlement.TryGetValue(t.Id, out var s)) { Broken(at, $"settlement '{t.Id}' has no hex"); continue; }
-                var bound = ContentLoader.TargetOnANeighbour.Contains(t.Id)
+                var bound = ContentLoader.TargetOnANeighbour.ContainsKey(t.Id)
                     ? Movement.Neighbours.Any(d => s.Q + d.Q == t.Q && s.R + d.R == t.R)
                     : s.Q == t.Q && s.R == t.R;
                 if (!bound)

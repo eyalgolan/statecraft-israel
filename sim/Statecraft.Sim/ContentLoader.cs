@@ -2052,8 +2052,9 @@ namespace Statecraft.Sim
 
         /// <summary>Targets whose capture hex is a neighbour of their settlement's hex, not that hex (owner on #1796, 26 October
         /// 2026, "Contested + move target"): at 4.4 km (#1183) Ramla shares (-4, 24) with Rehovot, so a unit on Rehovot's hex
-        /// would capture Ramla. Its target is the neighbour nearest Ramla's point, cited in settlement_targets.yaml.</summary>
-        internal static readonly HashSet<string> TargetOnANeighbour = new HashSet<string>(StringComparer.Ordinal) { "ramla" };
+        /// would capture Ramla. Its target is the neighbour nearest Ramla's point, cited in settlement_targets.yaml.
+        /// The ruling names the hex, so the loader pins it (#2804): another neighbour is a load error too.</summary>
+        internal static readonly Dictionary<string, (int Q, int R)> TargetOnANeighbour = new Dictionary<string, (int Q, int R)>(StringComparer.Ordinal) { ["ramla"] = (-3, 24) };
 
         /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex that is
         /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), or for a
@@ -2070,8 +2071,10 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(x.Q, x.R);
                 if (hex == null || !hex.Land)
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
-                if (TargetOnANeighbour.Contains(x.Id))
+                if (TargetOnANeighbour.TryGetValue(x.Id, out var ruled))
                 {
+                    if ((x.Q, x.R) != ruled)
+                        throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not q={ruled.Q} r={ruled.R}, the hex R-CTRL-001 names for {x.Id} (the neighbour nearest its point; owner on #1796)"));
                     if (!c.SettlementHexes.Any(h => h.Id == x.Id && Movement.Neighbours.Any(d => h.Q + d.Q == x.Q && h.R + d.R == x.R)))
                         throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not next to {x.Id}'s hex in {SettlementHexesFileName}"));
                 }
