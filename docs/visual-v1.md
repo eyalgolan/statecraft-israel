@@ -3556,8 +3556,8 @@ terrain, with one tiling texture (grain, bushes as a height field, their shadows
 
 **Standing scrub.** `GroundScrub.shader`: one mesh of 1,089 bushes covers a 15 km tile and is drawn once for each tile in view,
 a few tile instances a frame, not one instance a bush. Its vertex shader stands each bush on a half-float height texture and shrinks to a
-point any bush whose rank is over the density. Its bushes stop at 68 m, under the 72 m lip of the smallest unit base, so a moved
-token covers them.
+point any bush whose rank is over the density. Its bushes stop at 55 m, under the 60 m lip of the smallest unit base (a compact
+token's), so a moved token covers them.
 
 **Where it grows (`StatecraftGroundDetail.hlsl`, shared).** By biome (`hexes.json`), the land-use weight (rainfall and slope
 from `land_bake.py`), the bake's curvature (thin in gullies) and a broad clump noise; along the land bake's painted hedges;

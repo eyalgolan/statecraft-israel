@@ -28,9 +28,10 @@ namespace Statecraft.Game.Map
         public const float FadeStartM = 60f, FadeEndM = 130f, FarM = 150000f;
 
         /// <summary>Design values: the scrub tile's side, its bushes (about 5 a km2 where the density is full), a bush's reach and
-        /// height. BushTopM stays under the lip of the smallest unit base (UnitPlinth.LipShare of a compact ring's radius, 72 m),
+        /// height. BushTopM stays under the lip of the smallest unit base (UnitPlinth.LipShare of a compact Army base's radius, as
+        /// UnitLayer builds it: about 60 m),
         /// so a bush never stands through a token that moved on top of it; the camera distance over which the bushes shrink away, past the gameplay zoom.</summary>
-        public const float ScrubTileM = 15000f, ScrubCellM = 450f, BushMinM = 70f, BushMaxM = 170f, BushHeightShare = 0.62f, BushTopM = 68f, ScrubFadeM = 70000f, ScrubGoneM = 85000f;
+        public const float ScrubTileM = 15000f, ScrubCellM = 450f, BushMinM = 70f, BushMaxM = 170f, BushHeightShare = 0.62f, BushTopM = 55f, ScrubFadeM = 70000f, ScrubGoneM = 85000f;
         public const int KeepOutWidth = 1024, KeepOutHeight = 2048, HeightStepX = 4, HeightStepY = 2;
 
         static readonly int TileId = Shader.PropertyToID("_ScDetailTileM"), FadeId = Shader.PropertyToID("_ScDetailFade"),
