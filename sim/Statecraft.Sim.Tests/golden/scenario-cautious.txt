@@ -2,7 +2,7 @@
 ind{
   food_supply=0.468 [3FDDF3B645A1CAC1]
   housing=0.38982590078831036 [3FD8F2E855C1400A]
-  intl_standing=0.6600000000000001 [3FE51EB851EB8520]
+  intl_standing=0.7600000000000002 [3FE851EB851EB854]
   morale=0.6405110795688165 [3FE47F11176F28B8]
   security=0.5123487165069582 [3FE0652922B17052]
 pol{
@@ -22,7 +22,7 @@ eff{
 shift{
   food_supply=0 [0000000000000000]
   housing=0 [0000000000000000]
-  intl_standing=0.16000000000000014 [3FC47AE147AE1480]
+  intl_standing=0.26000000000000023 [3FD0A3D70A3D70A8]
   morale=-0.040000000000000036 [BFA47AE147AE1480]
   security=0.18000000000000016 [3FC70A3D70A3D710]
 bud{
@@ -43,7 +43,7 @@ pop{
   veterans=659531.4296791082 [41242096DBFEE66B]
 sit[
 treasury=0 [0000000000000000]
-debt=40.53793189372497 [404444DAF3C98316]
+debt=36.78793189372497 [404264DAF3C98316]
 fx=90.22947100954694 [40568EAFA72C5897]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
@@ -54,6 +54,7 @@ fired[
   armistice_egypt
   armistice_jordan
   armistice_lebanon
+  austerity_1949
   bernadotte_assassination
   degania_defence
   elections_1949
@@ -70,11 +71,12 @@ fired[
   sinai_withdrawal
   ten_days
 pending[
-  armistice_lebanon
-  armistice_jordan
+  austerity_1949
 chosen{
   altalena=enforce
   armistice_egypt=sign
+  armistice_jordan=sign
+  armistice_lebanon=sign
   bernadotte_assassination=outlaw
   degania_defence=jordan_valley
   elections_1949=hold
