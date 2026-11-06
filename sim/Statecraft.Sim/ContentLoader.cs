@@ -12,9 +12,9 @@ namespace Statecraft.Sim
 {
     public static class ContentLoader
     {
-        sealed class OfficesFile { public List<Office> Offices { get; set; } = new List<Office>(); }
-        sealed class PartiesFile { public List<Party> Parties { get; set; } = new List<Party>(); }
-        sealed class PeopleFile { public List<Person> People { get; set; } = new List<Person>(); }
+        sealed class OfficesFile { public List<Office> Offices { get; set; } = null!; }
+        sealed class PartiesFile { public List<Party> Parties { get; set; } = null!; }
+        sealed class PeopleFile { public List<Person> People { get; set; } = null!; }
         sealed class LegislaturesFile { public List<Legislature> Legislatures { get; set; } = new List<Legislature>(); }
         sealed class ErasFile { public List<Era> Eras { get; set; } = new List<Era>(); }
         sealed class GovernmentsFile { public List<Government> Governments { get; set; } = new List<Government>(); }
@@ -118,7 +118,7 @@ namespace Statecraft.Sim
                     return (sid, sname, r.TryGetValue("type", out var ty) && ty is string ts ? ts : "");
                 }).ToList();
             }
-            catch (YamlException e) { throw new ContentException(SettlementsFileName, $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
+            catch (YamlException e) { throw ParseError(SettlementsFileName, text, e); }
         }
 
         static readonly HashSet<string> SettlementKeys = new HashSet<string>
@@ -181,7 +181,7 @@ namespace Statecraft.Sim
                     CheckNulls(rel, "", alone);
                     over = NodeYaml.Deserialize<Dictionary<object, object>>(text) ?? throw new ContentException(rel, "(file)", "empty file: list the keys this era changes");
                 }
-                catch (YamlException e) { throw new ContentException(rel, $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
+                catch (YamlException e) { throw ParseError(rel, text, e); }
                 foreach (var k in StartOnlyKeys)
                     if (over.ContainsKey(k))
                         throw new ContentException(rel, k, k == "start" ? "an era cannot change the start date"
@@ -240,9 +240,32 @@ namespace Statecraft.Sim
             if (text == null) throw new ContentException(relPath, "(file)", "missing file");
             T result;
             try { result = Yaml.Deserialize<T>(text) ?? throw new ContentException(relPath, "(file)", "empty file"); }
-            catch (YamlException e) { throw new ContentException(relPath, $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
+            catch (YamlException e) { throw ParseError(relPath, text, e); }
             CheckNulls(relPath, result is GameEvent ev ? $"events[{ev.Id}]" : "", result!);
             return result;
+        }
+
+        /// <summary>A strict-YAML refusal names the mapping key on the reported source line when one is available.</summary>
+        static ContentException ParseError(string file, string text, YamlException e)
+        {
+            var key = KeyOnLine(text, (int)e.Start.Line);
+            var field = key == null ? $"line {e.Start.Line}" : $"{key} (line {e.Start.Line})";
+            return new ContentException(file, field, e.InnerException?.Message ?? e.Message);
+        }
+
+        internal static string? KeyOnLine(string text, int line)
+        {
+            if (line < 1) return null;
+            var lines = text.Replace("\r\n", "\n").Split('\n');
+            if (line > lines.Length) return null;
+            var source = lines[line - 1].TrimStart();
+            if (source.StartsWith("- ", StringComparison.Ordinal)) source = source.Substring(2).TrimStart();
+            var colon = source.IndexOf(':');
+            // A mapping key's colon ends the line or is followed by a space; "https://x" is a scalar, not a key "https".
+            if (colon <= 0 || (colon + 1 < source.Length && source[colon + 1] != ' ')) return null;
+            var key = source.Substring(0, colon).Trim();
+            if (key.Length > 1 && (key[0] == '"' || key[0] == '\'') && key[key.Length - 1] == key[0]) key = key.Substring(1, key.Length - 2);   // "ruleset": in gdd03-balance.yaml
+            return key.Length > 0 && key.All(ch => char.IsLetterOrDigit(ch) || ch == '_' || ch == '-' || ch == '.') ? key : null;
         }
 
         /// <summary>A key written with no value (`tags:`) deserialises to null. Null lists and maps become load errors
@@ -466,7 +489,7 @@ namespace Statecraft.Sim
                 c.ProjectKindsOfOtherRulesets = kinds.Except(c.ProjectKinds).ToList();
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
                 if (c.Ruleset == SaveGame.Gdd03Ruleset) ApplyGdd03Start(readFile, c);
-                ValidateGdd(c, settlementIds);
+                ValidateGdd(c, settlementIds, settlements.Where(x => x.type is "city" or "town").Select(x => x.id).ToList());
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
@@ -651,6 +674,24 @@ namespace Statecraft.Sim
         internal static void Named(string file, string field, string name)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ContentException(file, field, "required (the name shown to the player)");
+        }
+
+        /// <summary>Player-facing prose required by a content schema.</summary>
+        internal static void RequiredText(string file, string field, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) throw new ContentException(file, field, "required (text shown to the player)");
+        }
+
+        /// <summary>A schema-required source list: at least one HTTPS URL with its checked date.</summary>
+        internal static void RequiredSources(string file, string field, List<Source> sources)
+        {
+            if (sources.Count == 0) throw new ContentException(file, field, "needs at least one source");
+            for (int i = 0; i < sources.Count; i++)
+            {
+                var source = sources[i];
+                if (source == null || source.Url == null || !source.Url.StartsWith("https://", StringComparison.Ordinal) || source.Checked == default)
+                    throw new ContentException(file, FormattableString.Invariant($"{field}[{i}]"), "needs an https url and a checked date");
+            }
         }
 
         /// <summary>A row's sign-off (#375): reviewed_by and reviewed_on together, a GitHub handle, a day as YYYY-MM-DD (read as
@@ -898,6 +939,9 @@ namespace Statecraft.Sim
             Unique("offices.yaml", "offices", c.Offices.Select(o => o.Id));
             Unique("parties.yaml", "parties", c.Parties.Select(p => p.Id));
             Unique("people.yaml", "people", c.People.Select(p => p.Id));
+            foreach (var o in c.Offices) Named("offices.yaml", $"offices[{o.Id}].title", o.Title);
+            foreach (var p in c.Parties) Named("parties.yaml", $"parties[{p.Id}].name", p.Name);
+            foreach (var p in c.People) Named("people.yaml", $"people[{p.Id}].name", p.Name);
             Unique("legislatures.yaml", "legislatures", c.Legislatures.Select(l => l.Id));
             Unique("governments.yaml", "governments", c.Governments.Select(g => g.Id));
             Unique("eras.yaml", "eras", c.Eras.Select(e => e.Id));
@@ -964,8 +1008,14 @@ namespace Statecraft.Sim
 
             foreach (var p in c.People)
             {
-                if (p.Portrait != null && p.Portrait.File != "" && !(p.Portrait.FocusY >= 0 && p.Portrait.FocusY <= 1))
-                    throw new ContentException("people.yaml", $"people[{p.Id}].portrait.focus_y", "required: the face's height as a share of the picture, from 0 (top) to 1 (bottom)");
+                if (p.Portrait != null)
+                {
+                    if (!p.Portrait.FileGiven) throw new ContentException("people.yaml", $"people[{p.Id}].portrait.file", "required");
+                    if (!p.Portrait.LicenseGiven) throw new ContentException("people.yaml", $"people[{p.Id}].portrait.license", "required");
+                    if (!p.Portrait.SourceGiven) throw new ContentException("people.yaml", $"people[{p.Id}].portrait.source", "required");
+                    if (!(p.Portrait.FocusY >= 0 && p.Portrait.FocusY <= 1))
+                        throw new ContentException("people.yaml", $"people[{p.Id}].portrait.focus_y", "required: the face's height as a share of the picture, from 0 (top) to 1 (bottom)");
+                }
                 if (!p.Living.HasValue) throw new ContentException("people.yaml", $"people[{p.Id}].living", "required (true or false)");
                 if (p.Competence < 0 || p.Competence > 10) throw new ContentException("people.yaml", $"people[{p.Id}].competence", "must be 0-10");
                 if (p.Loyalty < 0 || p.Loyalty > 10) throw new ContentException("people.yaml", $"people[{p.Id}].loyalty", "must be 0-10");
@@ -982,13 +1032,12 @@ namespace Statecraft.Sim
                     if (kv.Key != "name_he" && kv.Key != "title_he_form" && kv.Key != "born" && kv.Key != "died")
                         throw new ContentException("people.yaml", field, "unknown field (must be name_he, title_he_form, born or died)");
                     if (kv.Value == null) throw new ContentException("people.yaml", field, "must be a list");
-                    for (int i = 0; i < kv.Value.Count; i++)
-                        if (kv.Value[i] == null || string.IsNullOrWhiteSpace(kv.Value[i].Url) || kv.Value[i].Checked == default)
-                            throw new ContentException("people.yaml", FormattableString.Invariant($"{field}[{i}]"), "needs a url and a checked date");
+                    RequiredSources("people.yaml", field, kv.Value);
                 }
                 TitleHeForm(c, p);
                 foreach (var t in p.Offices)
                 {
+                    RequiredSources("people.yaml", $"people[{p.Id}].offices.{t.Office}.sources", t.Sources);
                     if (string.IsNullOrEmpty(t.Office)) throw new ContentException("people.yaml", $"people[{p.Id}].offices", "office term without an office");
                     if (!offices.Contains(t.Office)) throw new ContentException("people.yaml", $"people[{p.Id}].offices.{t.Office}", "unknown office");
                     if (t.From == default) throw new ContentException("people.yaml", $"people[{p.Id}].offices.{t.Office}.from", "required");
@@ -1263,7 +1312,7 @@ namespace Statecraft.Sim
         }
 
         /// <summary>The GDD v0.1 city data and rules (Phase 1 PR 3), checked only when systems.loop is gdd.</summary>
-        static void ValidateGdd(Content c, List<string> settlementIds)
+        static void ValidateGdd(Content c, List<string> settlementIds, List<string> cityAndTownIds)
         {
             const string cf = "cities.yaml", uf = "unit_types.yaml";
             Unique(cf, "cities", c.Cities.Select(x => x.Id));
@@ -1361,6 +1410,18 @@ namespace Statecraft.Sim
                 throw new ContentException(uf, "types[veteran_soldier]", "required as an Israeli infantry unit for recruit promotion");
             // R-CITY-003: the arrivals are spread over the cities, so there must be one to take them.
             if (c.Cities.Count == 0) throw new ContentException(cf, "cities", "the GDD loop needs at least one city to take the arrivals");
+            // R-CITY-006 (#2732): the cities are exactly the settlement file's city and town rows, in that file's order.
+            foreach (var x in c.Cities)
+                if (!cityAndTownIds.Contains(x.Id))
+                    throw new ContentException(cf, $"cities[{x.Id}].id", $"is not a city or town row of {SettlementsFileName}");
+            for (int i = 0; i < cityAndTownIds.Count; i++)
+            {
+                if (i >= c.Cities.Count)
+                    throw new ContentException(cf, "cities", $"is missing {cityAndTownIds[i]}, a city or town row of {SettlementsFileName}");
+                if (c.Cities[i].Id != cityAndTownIds[i])
+                    throw new ContentException(cf, FormattableString.Invariant($"cities[{i}].id"),
+                        $"is {c.Cities[i].Id}; {SettlementsFileName}'s city and town rows give {cityAndTownIds[i]} here");
+            }
             foreach (var (file, r) in new[] { ("rules.yaml", c.Rules) }.Concat(c.EraRules.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => ("rules/" + kv.Key + ".yaml", kv.Value))))
             {
                 var m = r.Mvp ?? throw new ContentException(file, "mvp", "required when eras.yaml systems.loop is gdd");

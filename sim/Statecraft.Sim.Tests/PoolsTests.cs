@@ -548,7 +548,7 @@ public class PoolsTests
     /// <summary>The month's frozen opening snapshot of the ledger, taken when the month's context is created.</summary>
     static Gdd03SyntheticMonthContext Month(GameState s) => Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0,
         s.PopulationLedger.Units, new[] { "course", "field", "reception", "teacher" }.Select(f => new Gdd03SyntheticFacilitySnapshot(f, true, 1)),
-        Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+        Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
 
     // R-FOOD-001 (one unit is one population unit's food for a month) and R-FOOD-002 under gdd-0.3: every living own ledger
     // id eats one ration whatever its assignment, the stock stops at 0, and the import refills to cover_months of that need.

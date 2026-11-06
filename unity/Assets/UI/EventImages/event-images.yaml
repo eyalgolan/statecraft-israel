@@ -3,7 +3,8 @@
 # content hash and save compatibility, and this file must never move there.
 # Each row: the event id, the shipped file (in this folder), the Commons file page and original (with its SHA-1), the
 # licence (ALLOWED_LICENCES spelling), the artist, the credit line shown under the picture (for CC BY 4.0, the credit
-# line the licensor asks for on Commons, plus the licence and the adaptation), the alt text, the crop (centre x, centre y
+# line the licensor asks for on Commons, plus the licence and the adaptation), the English alt text and optional Hebrew
+# alt_he beside alt_he_review: agent-checked (the UI falls back to English when the pair is absent), the crop (centre x, centre y
 # and width, as shares of the original; the height follows from the 16:9 media header; re-cropped from 9:4 on 2026-10-13) and the sensitivity flags.
 # sensitive: true rows may not ship in a -shareable build until sensitivity_reviewed: true (an OWNER step; Build.cs).
 # Owner ruling 2026-10-11 (summarised in docs/CONTENT_POLICY.md section 4): CC BY 4.0 event photos allowed with a
@@ -25,6 +26,8 @@ images:
     artist: "Moshe Marlin Levin"
     credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Officers and a rabbi with a banner at the Jerusalem ceremony founding the Israel Defense Forces, June 1948."
+    alt_he: "קצינים ורב עם כרזה בטקס ייסוד צבא ההגנה לישראל בירושלים, יוני 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.52, 0.94]
     sensitive: false
     sensitivity_reviewed: false
@@ -39,6 +42,8 @@ images:
     artist: "Moshe Marlin Levin"
     credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "A quiet, tree-lined street in Jerusalem during a pause in the fighting, 1948."
+    alt_he: "רחוב שקט עטור עצים בירושלים בזמן הפוגה בלחימה, 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.55, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -53,6 +58,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "The Altalena off the Tel Aviv shore, seen from a seafront café shortly before the shelling, June 1948."
+    alt_he: "אלטלנה מול חוף תל אביב, כפי שנראתה מבית קפה על שפת הים זמן קצר לפני ההפגזה, יוני 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.58, 1.0]
     sensitive: true
     sensitivity_reviewed: true
@@ -67,6 +74,8 @@ images:
     artist: "Boris Carmi"
     credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Two soldiers keep watch from an armoured car among eucalyptus trees during the capture of Lydda airport, 10 July 1948."
+    alt_he: "שני חיילים שומרים מתוך משוריין בין עצי אקליפטוס במהלך כיבוש שדה התעופה לוד, 10 ביולי 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.4, 1.0]
     sensitive: true
     sensitivity_reviewed: true
@@ -81,6 +90,8 @@ images:
     artist: "Ben Merk / Anefo"
     credit: "Ben Merk / Anefo, Nationaal Archief (Anefo 934-6899) · CC0 · graded and cropped"
     alt: "Count Folke Bernadotte, the UN mediator, interviewed by a radio reporter at Schiphol airport, 17 July 1948."
+    alt_he: "הרוזן פולקה ברנדוט, מתווך האו״ם, מתראיין לכתב רדיו בנמל התעופה סכיפהול, 17 ביולי 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.35, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -95,6 +106,8 @@ images:
     artist: "Moshe Marlin Levin"
     credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "One of Israel's first policemen directs traffic on Ussishkin Street, Jerusalem, June 1948."
+    alt_he: "אחד מהשוטרים הראשונים של ישראל מכוון את התנועה ברחוב אוסישקין בירושלים, יוני 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.64, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -109,6 +122,8 @@ images:
     artist: "Boris Carmi"
     credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "A Palmach squad walks across the rocky slopes to the Israeli positions facing Latrun, 1948."
+    alt_he: "כיתת פלמ״ח צועדת במדרונות הסלעיים אל העמדות הישראליות מול לטרון, 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.56, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -122,6 +137,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "UN and Israeli officials salute at Lydda airport as Count Bernadotte's coffin leaves for Sweden, September 1948."
+    alt_he: "נציגי האו״ם וישראל מצדיעים בשדה התעופה לוד בעת שארונו של הרוזן ברנדוט יוצא לשוודיה, ספטמבר 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.45, 1.0]
     sensitive: true
     sensitivity_reviewed: true
@@ -136,6 +153,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "IDF officers study a map on a jeep as forces move south before Operation Yoav, 13 October 1948."
+    alt_he: "קציני צה״ל בוחנים מפה על ג׳יפ בעת שהכוחות נעים דרומה לפני מבצע יואב, 13 באוקטובר 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.48, 1.0]
     sensitive: true
     sensitivity_reviewed: true
@@ -150,6 +169,8 @@ images:
     artist: "Boris Carmi"
     credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "A soldier sweeps a Galilee road for mines after Operation Hiram, 1948."
+    alt_he: "חייל סורק דרך בגליל בחיפוש אחר מוקשים לאחר מבצע חירם, 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.44, 1.0]
     sensitive: true
     sensitivity_reviewed: true
@@ -164,6 +185,8 @@ images:
     artist: "Willem van de Poll"
     credit: "Willem van de Poll, Nationaal Archief (Van de Poll 255-0327) · CC0 · graded and cropped"
     alt: "Tank traps and roadblocks on Shmuel HaNavi Street, on the line between Israeli- and Jordanian-held Jerusalem, 1948-49."
+    alt_he: "מחסומי נ״ט ומחסומי דרכים ברחוב שמואל הנביא, בקו שבין חלקי ירושלים שבידי ישראל וירדן, 1948-49."
+    alt_he_review: agent-checked
     crop: [0.5, 0.6, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -178,6 +201,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "A column of IDF vehicles and a motorcyclist on a desert track in the Negev during Operation Horev, December 1948."
+    alt_he: "שיירת כלי רכב של צה״ל ורוכב אופנוע בדרך מדברית בנגב במהלך מבצע חורב, דצמבר 1948."
+    alt_he_review: agent-checked
     crop: [0.38, 0.6, 0.7]
     sensitive: true
     sensitivity_reviewed: true
@@ -192,6 +217,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "A voter drops his envelope into the ballot box at a polling station on election day, 25 January 1949."
+    alt_he: "בוחר משלשל את המעטפה לקלפי בתחנת הצבעה ביום הבחירות, 25 בינואר 1949."
+    alt_he_review: agent-checked
     crop: [0.5, 0.48, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -205,6 +232,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "IDF and UN officers near the Faluja pocket during the siege of the Egyptian brigade, late 1948."
+    alt_he: "קציני צה״ל והאו״ם ליד כיס פלוג׳ה במהלך המצור על החטיבה המצרית, סוף 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.5, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -219,6 +248,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Members of Israel's delegation beside a United Nations aircraft, leaving for armistice talks with Jordan, 1949."
+    alt_he: "חברי המשלחת הישראלית לצד מטוס של האו״ם, בדרכם לשיחות שביתת הנשק עם ירדן, 1949."
+    alt_he_review: agent-checked
     crop: [0.5, 0.45, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -233,6 +264,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "A clerk hands out the new government ration-coupon books, 1949."
+    alt_he: "פקיד מחלק את פנקסי תלושי הקיצוב החדשים של הממשלה, 1949."
+    alt_he_review: agent-checked
     crop: [0.5, 0.45, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -246,6 +279,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / Israel State Archives · CC BY 4.0 · graded and cropped"
     alt: "Snow and slush at the Ras al-Ein (Rosh HaAyin) immigrant camp, winter 1950."
+    alt_he: "שלג ובוץ במחנה העולים ראס אל-עין (ראש העין), חורף 1950."
+    alt_he_review: agent-checked
     crop: [0.5, 0.52, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -259,6 +294,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Immigrant women and children inside a large tent at a ma'abara on the road to Jerusalem, 1950."
+    alt_he: "נשים וילדים עולים בתוך אוהל גדול במעברה בדרך לירושלים, 1950."
+    alt_he_review: agent-checked
     crop: [0.5, 0.55, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -272,6 +309,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "The Knesset building, Beit Froumine on King George Street, Jerusalem, 1950."
+    alt_he: "בניין הכנסת, בית פרומין ברחוב המלך ג׳ורג׳ בירושלים, 1950."
+    alt_he_review: agent-checked
     crop: [0.5, 0.55, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -285,6 +324,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Shops on Nahalat Binyamin Street, Tel Aviv, shut in protest after the government decided to ration clothing, 1950."
+    alt_he: "חנויות ברחוב נחלת בנימין בתל אביב סגורות במחאה לאחר שהממשלה החליטה לקצב ביגוד, 1950."
+    alt_he_review: agent-checked
     crop: [0.5, 0.62, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -298,6 +339,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Customers at the counter of a Tel Aviv grocery with bare shelves under austerity, 1950."
+    alt_he: "לקוחות ליד הדלפק במכולת בתל אביב שמדפיה ריקים בתקופת הצנע, 1950."
+    alt_he_review: agent-checked
     crop: [0.5, 0.5, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -312,6 +355,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Timber shuttering and earthworks for the dams that drained Lake Hula, 1951."
+    alt_he: "טפסות עץ ועבודות עפר לסכרים שניקזו את אגם החולה, 1951."
+    alt_he_review: agent-checked
     crop: [0.5, 0.42, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -325,6 +370,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Children newly arrived from Iraq at a reception table with bread, oranges and mugs, 1951."
+    alt_he: "ילדים שזה עתה הגיעו מעיראק ליד שולחן קבלה ועליו לחם, תפוזים וספלים, 1951."
+    alt_he_review: agent-checked
     crop: [0.5, 0.55, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -338,6 +385,8 @@ images:
     artist: "Abbie Rowe"
     credit: "Abbie Rowe, National Park Service / U.S. National Archives (NARA 200318) · public domain · graded and cropped"
     alt: "David Ben-Gurion and Abba Eban present a menorah to President Harry Truman in the Oval Office, May 1951."
+    alt_he: "דוד בן-גוריון ואבא אבן מעניקים מנורה לנשיא הארי טרומן בחדר הסגלגל, מאי 1951."
+    alt_he_review: agent-checked
     crop: [0.5, 0.58, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -352,6 +401,8 @@ images:
     artist: "Boris Carmi"
     credit: "Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Two men put up a barbed-wire fence on open ground in the first days of Kibbutz Mefalsim, June 1949."
+    alt_he: "שני גברים מקימים גדר תיל בשטח פתוח בימיו הראשונים של קיבוץ מפלסים, יוני 1949."
+    alt_he_review: agent-checked
     crop: [0.5, 0.53, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -366,6 +417,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "The opening of the Road of Valour, December 1948."
+    alt_he: "פתיחת דרך הגבורה, דצמבר 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.5, 1.0]
     sensitive: true
     sensitivity_reviewed: true
@@ -380,6 +433,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "New immigrants from Romania come down a ship's gangway at Haifa port, June 1951."
+    alt_he: "עולים חדשים מרומניה יורדים בכבש אונייה בנמל חיפה, יוני 1951."
+    alt_he_review: agent-checked
     crop: [0.5, 0.5, 1.0]
     sensitive: false
     sensitivity_reviewed: false
@@ -394,6 +449,8 @@ images:
     artist: "Moshe Marlin Levin"
     credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "A stopped tracked armoured carrier under the eucalyptus trees at Degania Alef; the archive's catalogue dates the slide to 20 May 1948."
+    alt_he: "נגמ״ש זחלי עומד מתחת לעצי האקליפטוס בדגניה א׳; קטלוג הארכיון מתארך את השקופית ל־20 במאי 1948."
+    alt_he_review: agent-checked
     crop: [0.5, 0.5, 1.0]
     sensitive: true
     sensitivity_reviewed: true
@@ -408,6 +465,8 @@ images:
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     alt: "Police set up barbed-wire barriers before a planned demonstration near the Knesset against the reparations talks, Jerusalem, January 1952."
+    alt_he: "שוטרים מקימים מחסומי תיל לפני הפגנה מתוכננת ליד הכנסת נגד המשא ומתן על השילומים, ירושלים, ינואר 1952."
+    alt_he_review: agent-checked
     crop: [0.5, 0.55, 1.0]
     sensitive: true
     sensitivity_reviewed: true

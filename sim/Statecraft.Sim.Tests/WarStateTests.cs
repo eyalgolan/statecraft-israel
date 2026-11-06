@@ -93,6 +93,7 @@ options:
     text: The way it went
     historical: true
     set_rung: 3
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
         // Q-WAR-4 in the slice: an event's set_rung still moves the rung in the GDD loop.

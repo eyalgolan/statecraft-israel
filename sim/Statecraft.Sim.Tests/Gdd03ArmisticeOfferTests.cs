@@ -20,6 +20,7 @@ office: prime_minister
 anchor: hard
 front_quiet: {front}
 from: {from}
+sources: [{{ url: https://example.org/event, checked: 2026-10-18 }}]
 options:
   - id: sign
     text: Sign the armistice
@@ -35,6 +36,7 @@ title: Parent
 text: 'A real decision.'
 from: 1948-12-01
 to: 1948-12-11
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 options:
   - id: record
     text: What happened
@@ -56,6 +58,7 @@ text: 'What the record says was feared.'
 from: 1948-12-11
 to: 1949-02-01
 requires: [{ event: parent, option: road }]
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 options:
   - id: hold
     text: Hold the course
@@ -67,7 +70,7 @@ options:
 ";
 
     // An ordinary soft event whose `from` is earlier than every armistice's, so ordering by `from` alone would put it first.
-    static string Soft(string id) => $"id: {id}\ntitle: {id}\ntext: 'Ordinary.'\nfrom: 1948-12-01\nto: 1949-02-01\noptions:\n  - id: ok\n    text: Ok\n";
+    static string Soft(string id) => $"id: {id}\ntitle: {id}\ntext: 'Ordinary.'\nfrom: 1948-12-01\nto: 1949-02-01\nsources: [{{ url: \"https://example.org/event\", checked: 2026-10-18 }}]\noptions:\n  - id: ok\n    text: Ok\n";
 
     static Content Load(string ruleset = SaveGame.Gdd03Ruleset, string jordanFrom = "1950-01-01", bool others = true)
     {
@@ -149,6 +152,38 @@ options:
         var again = At(c, December15, 3, 3);
         again.ChosenOptions["parent"] = "road";
         Assert.Equal(pending, Fire(c, again));
+    }
+
+    // R-EVT-001 (#2605), R-WAR-008: an early armistice is soft, so when hard anchors take every slot it waits with the other
+    // soft events left out. It comes on the next turn its front is still quiet, ahead of them, and leaves the wait. If the
+    // front was engaged meanwhile it stays out: the wait keeps a card past its window, not past its other gates.
+    [Fact]
+    public void R_EVT_001_AnEarlyArmisticeTheCapLeavesOutWaitsForItsQuietFront()
+    {
+        var c = Load();
+        foreach (var id in new[] { "h1", "h2", "h3" })
+            c.Events.Add(new GameEvent
+            {
+                Id = id, Title = id, Anchor = "hard", From = new DateTime(1948, 12, 1),
+                Options = new List<EventOption> { new EventOption { Id = "ok", Text = "Ok" } },
+            });
+        var s = At(c, December15, 2, 0);
+        Assert.Equal(new[] { "h1", "h2", "h3" }, Fire(c, s));
+        Assert.Equal(new[] { "a1", "a2", "a3", "armistice_egypt" }, s.CappedEvents);
+
+        var engaged = s.Clone();
+        engaged.PendingEvents.Clear();
+        engaged.Date = December15.AddDays(14);
+        engaged.QuietTurns["egypt"] = 0;
+        Assert.Equal(new[] { "a1", "a2", "a3" }, Fire(c, engaged));
+        Assert.Contains("armistice_egypt", engaged.CappedEvents);
+
+        var quiet = s.Clone();
+        quiet.PendingEvents.Clear();
+        quiet.Date = December15.AddDays(14);
+        quiet.QuietTurns["egypt"] = 3;
+        Assert.Equal(new[] { "armistice_egypt", "a1", "a2" }, Fire(c, quiet));
+        Assert.Equal(new[] { "a3" }, quiet.CappedEvents);
     }
 
     // R-EVT-001, R-WAR-008: the sourced hard-anchor date stays the card's ordinary path: on or after it, a front that is not

@@ -44,12 +44,13 @@ public class GameSceneTests
 
     /// <summary>Opens Map.unity, builds the map from the repository inputs and starts the game the way GameBoot.Ready does,
     /// with the saves in a temporary folder (never the player's real autosave).</summary>
-    GameRoot Boot(SaveStore? store = null)
+    GameRoot Boot(SaveStore? store = null, string? language = null)
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
         var root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = store ?? new SaveStore(saveDir);
+        root.Language = language;
         root.Begin(Inputs, 0);
         return root;
     }
@@ -547,6 +548,15 @@ public class GameSceneTests
             root.Labels.Refresh(force: true); yield return null;
             Assert.AreEqual(Visibility.Visible, label.parent.style.visibility.value, "precondition: Tel Aviv is named");
 
+            int hoverPicks = 0; var realPillHex = pointer.PillHex;
+            pointer.PillHex = p => { hoverPicks++; return realPillHex?.Invoke(p); };
+            // LateUpdate reads Pointer.current, which cannot be placed at this projected fixture point without replacing
+            // the test's live Input System device. Drive the exact helper that LateUpdate calls so the coordinate stays deterministic.
+            root.UpdateMapHover(onHex);
+            Assert.AreEqual(1, hoverPicks, "city, route and hex hover share one map pick");
+            Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "the shared pick still lights the city pill");
+            pointer.PillHex = realPillHex;
+
             // The land under a screen point (camera pixels), asked of the terrain alone, as a click without the pills would be.
             (int q, int r)? Land(Vector2 px) =>
                 map.Terrain.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(px), out var hit, 1_000_000f) ? MapPointer.Pick(map, hit.point) : ((int, int)?)null;
@@ -720,6 +730,29 @@ public class GameSceneTests
         StringAssert.StartsWith("Not done: ", lines[0]);
         Assert.AreEqual(Text["save.write_failed"], lines[1]);
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void WebSavePersistenceFailuresUseTheCurrentLanguagesExistingToast(bool hebrew)
+    {
+        var language = hebrew ? UiLanguage.Hebrew : UiLanguage.English;
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text,
+            hebrew ? "strings.he.yaml" : "strings.en.yaml");
+        var root = Boot(language: language);
+
+        root.OnSavePersistenceResult("fail save 1 1948-06-15 turn 1 hash aa");
+        Assert.AreEqual(text["save.write_failed"], Ui.Q<Label>("toast").text);
+        Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
+    }
+
+    [Test]
+    public void SuccessfulWebPersistenceResultsDoNotShowAnError()
+    {
+        var root = Boot();
+        root.OnSavePersistenceResult("ok save 1 1948-06-15 turn 1 hash aa");
+        Assert.AreEqual("", Ui.Q<Label>("toast").text);
+        Assert.AreEqual(DisplayStyle.None, Ui.Q("toast").style.display.value);
     }
 
     /// <summary>#2152: the game reports earned achievements to the store set in PlatformServices.Current (a Steam build's).</summary>
@@ -1253,6 +1286,10 @@ public class GameRootEscapeTests : SharedCameraActionsFixture
         Escape();
         Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "the first Escape closes the screen");
         Assert.IsTrue(newGame.Armed, "the first Escape is the screen's: the request is still armed");
+        // The next key press is a later frame: the screen closed on the first press, and ScreenNav.ClosedThisFrame
+        // would still claim this one in the single EditMode frame (#2609).
+        var nav = typeof(GameRoot).GetField("nav", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        typeof(ScreenNav).GetField("closedFrame", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(nav, -1);
         Escape();
         Assert.IsFalse(newGame.Armed, "the next Escape withdraws the request");
         Assert.AreEqual("", Ui.Q<Label>("toast").text, "the prompt is off the toast");

@@ -565,7 +565,8 @@ public class EnemyAITests
             + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-06-01', to: '1949-01-01' }\n";
         const string Hexes = "anchors:\n  - { id: brig, anchor: 0, q: 0, r: 0 }\n  - { id: brig, anchor: 1, q: 4, r: 0 }\n";
         static string Card(string order) => "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
-            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [" + order + "]\n";
+            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [" + order + "]\n"
+            + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
         static Dictionary<string, string> Files() => Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
@@ -579,6 +580,20 @@ public class EnemyAITests
         var invented = Refused(Files(), "{ unit: brig, q: 3, r: 0 }");
         Assert.Equal("events[probe].options[ok].unit_orders[0]", invented.Field);
         Assert.Contains("not an anchor", invented.Message);
+        var missingQ = Refused(Files(), "{ unit: brig, r: 0 }");
+        Assert.Equal("events[probe].options[ok].unit_orders[0].q", missingQ.Field);
+        var missingR = Refused(Files(), "{ unit: brig, q: 0 }");
+        Assert.Equal("events[probe].options[ok].unit_orders[0].r", missingR.Field);
+        var legacyMissingQ = Assert.Throws<ContentException>(() => ContentLoader.Load(
+            Fixture.Write(null, new() { ["probe.yaml"] = Card("{ unit: brig, r: 0 }") })));
+        Assert.Equal("events[probe].options[ok].unit_orders[0].q", legacyMissingQ.Field);
+        // R-ENEMY-005: every order names a unit row, in every ruleset (the schema requires unit, q and r).
+        var missingUnit = Refused(Files(), "{ q: 4, r: 0 }");
+        Assert.Equal("events[probe].options[ok].unit_orders[0].unit", missingUnit.Field);
+        Assert.EndsWith(": required", missingUnit.Message);
+        var legacyMissingUnit = Assert.Throws<ContentException>(() => ContentLoader.Load(
+            Fixture.Write(null, new() { ["probe.yaml"] = Card("{ q: 4, r: 0 }") })));
+        Assert.Equal("events[probe].options[ok].unit_orders[0].unit", legacyMissingUnit.Field);
         // The legacy loop reads the shared cards too: the order does not stop it loading, and it has no units to order.
         Assert.Empty(ContentLoader.Load(Fixture.Write(null, new() { ["probe.yaml"] = Card("{ unit: brig, q: 4, r: 0 }") })).StartingForces);
 
@@ -672,7 +687,8 @@ public class EnemyAITests
             + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-05-15', to: '" + to + "' }\n";
         var hexes = FormattableString.Invariant($"anchors:\n  - {{ id: brig, anchor: 0, q: 0, r: 0 }}\n  - {{ id: brig, anchor: 1, q: {q}, r: {r} }}\n");
         var card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
-            + FormattableString.Invariant($"  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{{ unit: brig, q: {q}, r: {r} }}]\n");
+            + FormattableString.Invariant($"  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{{ unit: brig, q: {q}, r: {r} }}]\n")
+            + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = board, ["corridors.yaml"] = "corridors: []\n",
@@ -682,7 +698,11 @@ public class EnemyAITests
         {
             files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities: []", "enemy_held_localities: [town_a]");
             files["settlement_targets.yaml"] = "targets:\n" + CaptureTests.Target("town_a", 1, 0);
-            files["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("type: town", "type: arab_town");
+            // town_a is now an Arab town, so the fixture's city moves to town_h, a town on a far corner (R-CITY-006).
+            files["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("type: town", "type: arab_town")
+                + "  - { id: town_h, name: Town H, lon: 34.79, lat: 33.15, type: town, founded: 1900, pre_modern: false }\n";
+            files["map/settlement_hexes.yaml"] = Fixture.Files["map/settlement_hexes.yaml"] + "  - { id: town_h, q: 5, r: 2 }\n";
+            files["cities.yaml"] = "cities:\n" + Fixture.City("town_h", 12, 8, 10, 6, "[military_camp, hakhshara]");
         }
         return ContentLoader.Load(Fixture.Write(files, new() { ["probe.yaml"] = card }));
     }
@@ -721,7 +741,8 @@ public class EnemyAITests
             + "  order_targets:\n  - { place: There, lon: 34.30, lat: 33.35" + target + " }\n";
         const string Hexes = "anchors:\n  - { id: brig, anchor: 0, q: 0, r: 0 }\norder_targets:\n  - { id: brig, target: 0, q: 4, r: 0 }\n";
         const string Card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
-            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{ unit: brig, q: 4, r: 0 }]\n";
+            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [{ unit: brig, q: 4, r: 0 }]\n"
+            + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",

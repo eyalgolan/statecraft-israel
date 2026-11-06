@@ -32,10 +32,11 @@ public class Gdd03FieldFixtureTests
     }
 
     // The month's snapshot (#1716, 27M-2), taken now; every field is available at the freeze unless listed as not held.
-    static Gdd03SyntheticMonthContext Month(Content c, GameState s, params string[] notHeldAtFreeze) =>
-        Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, s.PopulationLedger.Units,
+    static Gdd03SyntheticMonthContext Month(Content c, GameState s, params string[] notHeldAtFreeze) => MonthAt(c, s, 0, notHeldAtFreeze);
+    static Gdd03SyntheticMonthContext MonthAt(Content c, GameState s, int ordinal, params string[] notHeldAtFreeze) =>
+        Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, ordinal, s.PopulationLedger.Units,
             Gdd03FieldFixture.Fields(c).Select(f => new Gdd03SyntheticFacilitySnapshot(f.Id, !notHeldAtFreeze.Contains(f.Id), 1)),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
     static HashSet<string> AllHeld(Content c) => Gdd03FieldFixture.Fields(c).Select(f => f.Id).ToHashSet(StringComparer.Ordinal);
     static void Refused(GameState s, Action a, string? message = null)
     {
@@ -154,7 +155,7 @@ public class Gdd03FieldFixtureTests
     }
 
     // Q37 and #1694 ("Enemy control ... disables the slot"): a field staffed at the freeze but no longer Israeli-held
-    // yields nothing while the others still yield. The assignment is not changed: loss and retake (27M-1) are not here.
+    // yields nothing while the others still yield. The assignment is not changed; retaking is in the settlement test below.
     [Fact] public void AFieldNoLongerIsraeliHeldYieldsNothing()
     {
         var c = Real(); var s = State(c, new[] { Person(InValleys), Person(InValleys) });
@@ -238,7 +239,7 @@ public class Gdd03FieldFixtureTests
         Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, s.PopulationLedger.Units,
             Gdd03FieldFixture.Fields(c).Select(f => new Gdd03SyntheticFacilitySnapshot(f.Id, !notHeldAtFreeze.Contains(f.Id), 1))
                 .Concat(new[] { new Gdd03SyntheticFacilitySnapshot(industry, true, 1), new Gdd03SyntheticFacilitySnapshot(Course, true, 3) }),
-            Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
+            Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
 
     // R-VET-001, R-VET-002 (#2468): one worked, still-held field month gives its farmer exactly one work XP. A field lost
     // after the freeze, one not held at the freeze, a farmer moved to another field after the freeze (the wrong target), an
@@ -317,6 +318,62 @@ public class Gdd03FieldFixtureTests
         Refused(s, () => Gdd03FieldFixture.ResolveWorkXp(c, s, month, AllHeld(c)), "more than one farmer");
     }
 
+    // R-FIELD-002 and R-CITY-010 under gdd-0.3 (#2471): a staffed field still Israeli-held at settlement adds its 2 / 3 / 5
+    // to the national Food stock once, in field-id order, one cause each; an unstaffed field adds nothing. A field lost
+    // (at the freeze or only by settlement) adds nothing and keeps its farmer, tier and assignment (D6: "its people stay");
+    // retaken, it yields again from the next snapshot with no new assignment (D6: "everything resumes and nothing is deleted").
+    [Fact] public void StaffedHeldFieldsSettleIntoTheFoodStockAndALostFieldResumesOnRetaking()
+    {
+        var c = Real();
+        var s = State(c, new[] { Person(InValleys, tier: CivilianTier.Novice), Person(InValleys, tier: CivilianTier.Trained),
+            Person(InValleys, tier: CivilianTier.Veteran) });
+        var f = new Gdd03FieldFixture(c, s, Array.Empty<Gdd03FixtureSlot>());
+        f.Staff(2, V3, israeliHeld: true); f.Staff(0, V1, israeliHeld: true); f.Staff(1, V2, israeliHeld: true);
+        var people = s.PopulationLedger.Units;
+        s.Food = 7;
+
+        var why = new List<Cause>();
+        var settled = f.Settle(Rules(c), MonthAt(c, s, 0), AllHeld(c), why);
+        Assert.Equal(10, settled.Food);
+        Assert.Equal(17, settled.Fields.Values.Count(food => food == 0)); // the unstaffed fields: no Food and no cause
+        Assert.Equal(17, s.Food);
+        Assert.Equal(new[] { (V1, 2.0), (V2, 3.0), (V3, 5.0) }, why.Select(x => (x.Args[0], x.Delta)));
+        Assert.All(why, x => Assert.Equal(("economy", "food", CauseKeys.FieldFood), (x.System, x.Target, x.Key)));
+
+        // Lost after the freeze: control is checked again at settlement.
+        var held = AllHeld(c); held.Remove(V1);
+        why.Clear();
+        f.Settle(Rules(c), MonthAt(c, s, 1), held, why);
+        Assert.Equal(17 + 8, s.Food);
+        Assert.Equal(new[] { V2, V3 }, why.Select(x => x.Args[0]));
+        // Lost at the freeze: the snapshot does not count the farmer as working.
+        f.Settle(Rules(c), MonthAt(c, s, 2, V1), AllHeld(c), new List<Cause>()); // freeze-only loss: settlement-time control is held
+        Assert.Equal(17 + 8 + 8, s.Food);
+        Assert.Equal(people, s.PopulationLedger.Units); // same ids, tiers and assignments
+
+        // Retaken: the next snapshot yields again, with no Staff call.
+        f.Settle(Rules(c), MonthAt(c, s, 3), AllHeld(c), new List<Cause>());
+        Assert.Equal(17 + 8 + 8 + 10, s.Food);
+        Assert.Equal(people, s.PopulationLedger.Units);
+    }
+
+    // R-CITY-010: a month is credited once per fixture; a second Settle for the same month is refused and changes nothing.
+    [Fact] public void ASettledMonthIsRefusedAndTheFoodStockStaysPut()
+    {
+        var c = Real();
+        var s = State(c, new[] { Person(InValleys, tier: CivilianTier.Novice) });
+        var f = new Gdd03FieldFixture(c, s, Array.Empty<Gdd03FixtureSlot>());
+        f.Staff(0, V1, israeliHeld: true);
+        s.Food = 7;
+        f.Settle(Rules(c), MonthAt(c, s, 4), AllHeld(c), new List<Cause>());
+        Assert.Equal(9, s.Food);
+        var why = new List<Cause>();
+        Refused(s, () => f.Settle(Rules(c), MonthAt(c, s, 4), AllHeld(c), why), "already settled");
+        Assert.Empty(why);
+        f.Settle(Rules(c), MonthAt(c, s, 5), AllHeld(c), new List<Cause>()); // the next month still settles
+        Assert.Equal(11, s.Food);
+    }
+
     // R-FIELD-002 under gdd-0.1 is unchanged: fields need no workers there, and this fixture refuses that ruleset.
     [Fact] public void Gdd01FieldsAreUnchanged()
     {
@@ -327,7 +384,7 @@ public class Gdd03FieldFixtureTests
         Assert.Throws<InvalidOperationException>(() => new Gdd03FieldFixture(c, s, Array.Empty<Gdd03FixtureSlot>()));
         Assert.Throws<InvalidOperationException>(() => Gdd03FieldFixture.ResolveWorkXp(c, s,
             Gdd03SyntheticMonthContext.CreateSynthetic(SaveGame.Gdd03Ruleset, 0, Array.Empty<PopulationUnit>(),
-                Array.Empty<Gdd03SyntheticFacilitySnapshot>(), Array.Empty<int>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(),
+                Array.Empty<Gdd03SyntheticFacilitySnapshot>(), Array.Empty<Gdd03SyntheticHousingSnapshot>(),
                 Array.Empty<Gdd03SyntheticPendingEntry>()), new HashSet<string>()));
         Assert.Equal(before, s.Describe());
     }

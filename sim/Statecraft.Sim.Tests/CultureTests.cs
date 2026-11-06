@@ -17,6 +17,7 @@ options:
     effects:
       - target: treasury
         delta: -10.5
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     static readonly Content C = ContentLoader.Load(Fixture.Write(

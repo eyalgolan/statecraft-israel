@@ -32,18 +32,20 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>R-FIELD-002 under exact gdd-0.3, synthetic fixtures only (R-POP-004): no command, loader, turn or
-    /// Food-stock hookup. Owner, 3 November 2026, #1694: "One farmer per field (Recommended)"; the option read: "Each
+    /// <summary>R-FIELD-002 under exact gdd-0.3, synthetic fixtures only (R-POP-004): no command, loader or turn hookup;
+    /// <see cref="Settle"/> adds a month's yield to the Food stock (#2471). Owner, 3 November 2026, #1694: "One farmer per field (Recommended)"; the option read: "Each
     /// field takes one farmer; an unworked field produces nothing." Each authored field (Q36) is one Farm slot of
     /// `field.slots` (1) in the shared <see cref="Gdd03AssignmentFixture"/>, which stays the single writer and whose
-    /// ledger refuses a farmer living outside the field's region (Q27). Loss and retake (27M-1), preparation (#1713),
-    /// and Food demand are not here; farmer work XP is <see cref="ResolveWorkXp"/> (#2468).</summary>
+    /// ledger refuses a farmer living outside the field's region (Q27). A lost field keeps its farmer and yields again
+    /// once retaken (<see cref="Settle"/>); preparation (#1713) and Food demand are not here; farmer work XP is
+    /// <see cref="ResolveWorkXp"/> (#2468).</summary>
     internal sealed class Gdd03FieldFixture
     {
         readonly GameState state;
         readonly Gdd03AssignmentFixture work;
         readonly Gdd03FieldRates rates;
         readonly SortedDictionary<string, Gdd03Field> fields;
+        readonly HashSet<int> settledMonths = new HashSet<int>(); // R-CITY-010: one settlement per month, per fixture
 
         internal static IReadOnlyList<Gdd03Field> Fields(Content content)
         {
@@ -171,6 +173,26 @@ namespace Statecraft.Sim
             }
             candidate.PopulationLedger.Reconcile();
             return candidate;
+        }
+
+        /// <summary>R-FIELD-002 and R-CITY-010 under gdd-0.3 (#2471): adds the month's <see cref="Yield"/> to the national
+        /// Food stock, each field's once, in ordinal field-id order, with one cause per field that yields. Control is the
+        /// caller's <paramref name="israeliHeldNow"/> at settlement, besides the snapshot's freeze: a field lost by either
+        /// adds nothing, and its farmer, tier and assignment stay as they are (D6: "its people stay"), so the next snapshot
+        /// after retaking yields again with no new assignment. A month already settled by this fixture is refused unchanged
+        /// (<see cref="ArgumentException"/>), so the stock cannot be credited twice for one month. The sum is checked before the stock changes.</summary>
+        internal Gdd03FieldYield Settle(MvpRules rules, Gdd03SyntheticMonthContext month, IReadOnlyCollection<string> israeliHeldNow, List<Cause> why)
+        {
+            if (why == null) throw new ArgumentNullException(nameof(why));
+            var y = Yield(rules, month, israeliHeldNow);
+            if (settledMonths.Contains(month.MonthOrdinal)) throw new ArgumentException("This month is already settled.");
+            var food = checked(state.Food + y.Food);
+            foreach (var field in y.Fields.Where(x => x.Value > 0).OrderBy(x => x.Key, StringComparer.Ordinal)) // field-id order, stated here so it does not rest on the yield's dictionary type
+                why.Add(new Cause("economy", "food", field.Value,
+                    FormattableString.Invariant($"{field.Key}: its farmer yielded {field.Value} units of Food"), key: CauseKeys.FieldFood, args: new[] { field.Key }));
+            state.Food = food;
+            settledMonths.Add(month.MonthOrdinal);
+            return y;
         }
     }
 }

@@ -26,7 +26,7 @@ namespace Statecraft.Game
 
         public string AutosavePath => Path.Combine(Directory, AutosaveName);
 
-        public void WriteAutosave(string text)
+        public virtual void WriteAutosave(string text)
         {
             System.IO.Directory.CreateDirectory(Directory);
             var tmp = AutosavePath + ".tmp";
@@ -62,13 +62,6 @@ namespace Statecraft.Game
             var bad = Path.Combine(Directory, "autosave.bad.txt");
             if (File.Exists(bad)) bad = Path.Combine(Directory, "autosave.bad." + System.Guid.NewGuid().ToString("N") + ".txt");
             File.Move(source, bad);
-        }
-
-        /// <summary>Removes the autosave and any lingering .tmp (a leftover would be resurrected by the next start).</summary>
-        public virtual void DeleteAutosave()
-        {
-            if (File.Exists(AutosavePath)) File.Delete(AutosavePath);
-            if (File.Exists(AutosavePath + ".tmp")) File.Delete(AutosavePath + ".tmp");
         }
     }
 }

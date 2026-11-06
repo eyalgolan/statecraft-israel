@@ -15,7 +15,8 @@ public class Gdd03EventRulesTests
     // turned on". These four, excluded by #1772 for their Food supply, housing and policy writes, are active again.
     static readonly string[] TurnedOn = { "austerity_1949", "forex_crisis_1951", "iraqi_exodus", "maabarot_policy" };
     static string Card(string id = "probe", string option = "") =>
-        $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option;
+        $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option
+        + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
     static Dictionary<string, string> Files(bool modern = true)
     {
         var f = Fixture.Gdd();
@@ -435,6 +436,23 @@ public class Gdd03EventRulesTests
         Assert.EndsWith("(Fixture)", line.Message);
         Assert.Equal((CauseKeys.EventAmount, 26.0), (Assert.Single(shown).Key, shown[0].Delta));
     }
+    // R-EFX-009 under legacy (#2733 item 17): the plain fixture has no GDD loop at all, and debt_dollars still adds no
+    // Debt, takes no Treasury, and neither the choice nor its preview has a debt line.
+    [Fact]
+    public void DebtDollarsDoNothingUnderLegacy()
+    {
+        var c = ContentLoader.Load(Fixture.Write(null, new() { ["probe.yaml"] = Card(option: "    debt_dollars: 52\n") }));
+        Assert.False(c.IsGdd);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.PendingEvents.Add("probe");
+        var (debt, treasury) = (s.Debt, s.Treasury);
+        var preview = EventSystem.OptionEffects(c, s, c.Events.Single(e => e.Id == "probe").Options[0]);
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "probe", "ok", why));
+        Assert.Equal((debt, treasury), (s.Debt, s.Treasury));
+        Assert.DoesNotContain(why, x => x.Target == "debt");
+        Assert.DoesNotContain(preview, x => x.Target == "debt");
+    }
     // R-EFX-009, R-EVT-003: a disloyal minister's half share halves the Debt with the foreign currency.
     [Fact]
     public void DelegatedHalfShareHalvesTheDebt()
@@ -465,7 +483,7 @@ public class Gdd03EventRulesTests
     public void DebtDollarsThatIsNotANumberIsRefused(bool modern)
     {
         var ex = Assert.Throws<ContentException>(() => Load(Files(modern), Card(option: "    debt_dollars: nope\n")));
-        Assert.Equal(("events/probe.yaml", "line 9"), (ex.File, ex.Field));
+        Assert.Equal(("events/probe.yaml", "debt_dollars (line 9)"), (ex.File, ex.Field));
         Assert.Contains("nope", ex.Message);
     }
     // R-EFX-009 (#2457): on the real card, launch adds the $52m and IL 18.564m of Debt (52 x 0.357, the rate in force on

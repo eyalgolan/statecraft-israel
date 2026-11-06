@@ -23,7 +23,7 @@ the appropriate authoring inputs, then regenerate and validate affected traces, 
 | Routes, sources, waypoints, status (hand-written) | `content/map/routes_1948.yaml` |
 | Traced lines (generated) | `content/map/route_paths_1948.yaml` |
 | Tracer | `tools/routes_1948.py` (tests: `tools/tests/test_routes_1948.py`) |
-| Map layer | `unity/Assets/Scripts/Map/Routes/` (`RoutePaths`, `RouteLayer`, `RouteTrain`, `TrainModels`) |
+| Map layer | `unity/Assets/Scripts/Map/Routes/` (`RoutePaths`, `RouteLayer`, `RouteTrain`, `TrainModels`, `ServiceTrain`, `RoadVehicles`; `RouteLayer` builds the last two) |
 | Shader and materials | `unity/Assets/Shaders/Route.shader`; `Resources/Routes/Rail.mat`, `Road.mat` (`RouteMaterialAssets.Create`) |
 | Runtime form (generated) | `content/map/route_paths_1948.tsv` (`tools/route_paths_bake.py`; tests: `tools/tests/test_route_paths_bake.py`) |
 | Baked ribbons (generated) | `unity/Assets/Resources/Routes/RouteRibbons.bytes` (`RouteRibbonBake.Bake`; tests: `tools/tests/test_route_ribbon_bake.py`) |
@@ -271,20 +271,30 @@ none crosses the real walled city, but near the city they fall inside the drawn 
   - The soft rim (SRPDefaultUnlit) only tests the bit. A faint edge therefore cannot notch the next ribbon's core.
   - The rail material draws first, so a railway stays on top of a road it crosses.
 
-**The train** (`RouteTrain`, `TrainModels`) is a showcase, not normal play.
+**The train** (`RouteTrain`, `TrainModels`) is a showcase; normal play has its own service train (`ServiceTrain`, issue #668).
 - **Controller ruling** (review I1, 2026-10-11): accuracy wins for facts. In normal play, no moving train runs where no
   service is sourced for that date.
-- **Where the train appears:**
-  - the promo and art-checkpoint screenshots (`?shot` / `-shot`) and editor renders, where it stands still;
-  - `?train` or `?units` (desktop `-train` / `-units`), where it runs.
-- **Normal play has none** (`RouteLayer.ModeFor`), for two reasons:
+- **Where the train appears** (`RouteLayer.ModeFor`):
+  - the promo and art-checkpoint screenshots (`?shot` / `-shot`) and editor renders, where the showcase train stands still;
+  - `?train` or `?units` (desktop `-train` / `-units`), where the showcase train runs;
+  - normal play, where the service train runs (below).
+- **The service train** (maintainer decision on #35, 16 October 2026) runs from the route's sourced service date only:
+  - the date and the stretch come from the `service` block of the Jaffa–Jerusalem railway in
+    `content/map/routes_1948.yaml` (through the runtime file): from 2 March 1950, Lod to Jerusalem. Tel Aviv South to Lod
+    runs only once a person signs that stretch off. The date itself is still `draft`, awaiting a human check;
+  - before that date there is no train and nothing is fetched (the model is asked for when the game date first reaches it);
+  - it is a locomotive and tender streamed from The 1948 Collection (`vehicle-steam-locomotive-1948-v2`, H09), the far
+    mesh at every zoom, with three coaches built in code as the showcase's are (`TrainModels.Coach`): four articulated
+    cars, together 0.4 of the showcase's locomotive and tender (about 816 m). If the model does not stream, there is one warning and no train;
+  - it runs on the real clock, as ambience, not a timetable.
+- **Normal play has no train in 1948**, for two reasons:
   - By the British withdrawal in May 1948, railway operations had effectively ceased. For the rest of 1948, Israel's
     services ran only around Haifa: south to Hadera and north to Kiryat Motzkin and later Nahariya (Palestine Railways).
     No specific 1948 date is sourced for that Haifa-area service.
   - Jaffa to Lydda crossed the front until Lydda was taken in July 1948. Ramla–Jerusalem trains resumed in March 1950.
-- **How it is built:**
+- **How the showcase train is built:**
   - code-built painted miniatures, made with the units' `MiniatureMesh` and palette;
-  - generic period shapes, with authored close-zoom models left to the AI-3D track;
+  - generic period shapes;
   - the wheels ride the ribbon's own centre height (the same max-of-samples rule, review M4).
 - **How it moves** in the showcase:
   - it shuttles between Jaffa and Lydda junction, the stretch the promo draws, at 300 m/s of map;
@@ -417,12 +427,14 @@ The train is about 1,100 triangles; that figure is counted from the builders, no
 - the Burma Road, hidden at 15 May 1948 and shown from 14 June 1948 (and hidden again for an earlier date);
 - the window bounds;
 - a missing or malformed route file, which gives no routes, a warning and a map that still builds;
-- the train modes: still for `?shot` and editor renders, moving for `?train` and `?units`, none in normal play;
+- the train modes: still for `?shot` and editor renders, moving for `?train` and `?units`, the service train in normal play;
 - the still train's place and heading, on the ribbon's own height;
 - the shuttle's motion;
 - the train models;
 - GLES3 for the shader's two passes, and the materials' order;
 - the look at gameplay03.
+
+`ServiceTrainTests` pins the service train: normal play asks for the model only from its date (2 March 1950).
 
 `tools/tests/test_routes_1948.py` checks the data against its sources, the windows (the Burma Road from 1948-06-14), the trace
 quality guards (`on_symbol`, `max_gap_m`), the validator (dates, a boolean `opened`), the tracer's pure parts, and a
@@ -456,15 +468,17 @@ thinner road beside this branch's ribbon. The proposal, for promo-land's next ro
 - **Close zoom.** The promo video's 0:21 rail bed is raised and stony and its sleepers are timber blocks. Here they are
   flat and painted, with lighting from the terrain's normals only. Shadows are received, but the bed casts no edge
   shadow. A low embankment mesh, or a normal tilt at the shoulders, is the next step if the close zoom matters.
-- **The train.** It is generic code-built miniatures, as the units are: no smoke, no wheels, no Palestine Railways
-  livery source. Authored close-zoom models belong to the AI-3D track; `TrainModels` is the far-zoom fallback.
+- **The train.** The showcase train is generic code-built miniatures, as the units are: no smoke, no wheels, no Palestine
+  Railways livery source. The service train's locomotive is the authored model (above); its coaches are still the
+  code-built ones.
 - **Roads in the hills.** At gameplay03 they read clearly, but in the Judean hills the hill shading partly hides them.
   The promo has no 1948 hill roads to compare against.
 - **The country-wide view.** The far grey-brown roads fit promo 02's road lines, but promo 02 draws modern highways;
   1948 had no such network.
 - **The Burma Road** is drawn along the 1946 tracks (to-verify), from 14 June 1948.
 - **Not drawn:** Israel's Tulkarm bypass (its date is to-verify), and lines and roads with no 1948 source here.
-- **No train in normal play.** The promo's moving train appears only as a showcase (`?train`, `?units`, the
-  screenshots). A sourced, dated 1948 Haifa-area service could add one in normal play later.
+- **No 1948 train in normal play.** The promo's moving train appears only as a showcase (`?train`, `?units`, the
+  screenshots). Normal play's service train starts on 2 March 1950; a sourced, dated 1948 Haifa-area service could add
+  one before that later.
 - **Broken bridges.** The 1948 cuts (Rosh HaNikra in late February, Geva on 2 March, Gesher on 14 May) are in the
   notes, not drawn. The track still lay on the ground.

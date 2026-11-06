@@ -57,6 +57,25 @@ public class DollarsTests
         Assert.Equal("Converted $3.0m of foreign currency into Money: " + PlayerText.MoneyChange(c, "treasury", 1.5), line.Message);
     }
 
+    // R-MONEY-004, R-ARMS-002 under gdd-0.3 (#2733 item 13): a conversion queued after an Arms purchase still runs before
+    // it, so the purchase spends the converted Money and borrows nothing. The gdd-0.3 fixture's Arms cost IL 0.25 and $1
+    // converts at IL 0.5, so 8 Arms cost exactly the IL 2m that $4m brings. Run in queue order, the purchase would borrow.
+    [Fact]
+    public void UnderGdd03AConversionQueuedAfterAnArmsPurchasePaysForIt()
+    {
+        var c = Gdd03MovementFortTests.Load();
+        Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
+        Assert.Equal((0.25, 0.5), (c.Rules.Mvp!.ArmsPrice, c.Rules.Mvp.IlPerDollarOn(c.Rules.Start)));
+        var s = War(c);
+        s.Treasury = 0;
+        var r = Orders(c, s, new BuyArms(8), new ConvertDollars(4));
+        Assert.Empty(r.Rejected);
+        Assert.Equal((s.Arms + 8, 0.0, 0.0, 46.0, 4), (r.State.Arms, r.State.Treasury, r.State.Debt, r.State.FxReserves, r.State.DollarsConverted));
+        var keys = r.Why.Select(w => w.Key).ToList();
+        Assert.True(keys.IndexOf(CauseKeys.DollarsConverted) >= 0 && keys.IndexOf(CauseKeys.DollarsConverted) < keys.IndexOf(CauseKeys.ArmsBought),
+            "the conversion's cause comes before the purchase's: " + string.Join(", ", keys));
+    }
+
     // #2527: the same conversion also explains the reserves' drop, so the HUD's foreign-currency meter (which lists the
     // causes aimed at fx_reserves, HudModel.cs) shows its reason.
     [Fact]
@@ -186,6 +205,7 @@ options:
     text: The way it went
     historical: true
     set_rung: RUNG
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     // R-MONEY-004: the war is the rung the turn started at. An earlier order of the same turn that moves the rung (an
