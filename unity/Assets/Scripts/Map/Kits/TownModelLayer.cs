@@ -486,7 +486,7 @@ namespace Statecraft.Game.Map.Kits
             if (!SpatialPolicyConfigured || !withinView) choice.hadFocus = false;
             choice.selected = next;
             choice.primary = next.Length == 0 ? null : next[0];
-            if (!choice.towns.SetEquals(next))
+            if (!SameTowns(choice.towns, next))
             {
                 choice.towns.Clear(); foreach (var id in next) choice.towns.Add(id); changed = true;
             }
@@ -511,6 +511,23 @@ namespace Statecraft.Game.Map.Kits
                     : tileIds.TryGetValue(kit, out var villages) && VillagesReady(villages, cam));
                 Remember(kit, ready); Remember(close, !ready);
             }
+        }
+
+        /// <summary>Whether <paramref name="towns"/> holds exactly the ids of <paramref name="next"/>, as HashSet.SetEquals would
+        /// say, without allocating: SetEquals walks an array through IEnumerable, which boxes its enumerator, on every frame a
+        /// camera has a ground focus (below OriginalModelDistance.EnterM, 120 km), the far band included. The sets are a few
+        /// towns, so the two passes cost nothing.</summary>
+        static bool SameTowns(HashSet<string> towns, string[] next)
+        {
+            foreach (string id in next) if (!towns.Contains(id)) return false;
+            foreach (string id in towns) if (System.Array.IndexOf(next, id) < 0) return false;
+            return true;
+        }
+        static bool SameTowns(HashSet<string> towns, List<string> next)
+        {
+            foreach (string id in next) if (!towns.Contains(id)) return false;
+            foreach (string id in towns) if (!next.Contains(id)) return false;
+            return true;
         }
 
         /// <summary>The edge allowance for <paramref name="owner"/>'s focus selection, or null without one. A method of its own,
@@ -556,7 +573,7 @@ namespace Statecraft.Game.Map.Kits
             viewScratch.Sort(ViewDistanceComparer.Instance);
             viewNext.Clear();
             foreach (var (i, _, _) in viewScratch) viewNext.AddRange(viewPlaces[i].ids);
-            bool changed = !choice.viewed.SetEquals(viewNext);
+            bool changed = !SameTowns(choice.viewed, viewNext);   // not SetEquals: no boxed enumerator while the view moves
             choice.inView.Clear(); choice.inView.AddRange(viewNext);   // the order alone loads nothing new
             if (changed) { choice.viewed.Clear(); choice.viewed.UnionWith(viewNext); }
             return changed;
