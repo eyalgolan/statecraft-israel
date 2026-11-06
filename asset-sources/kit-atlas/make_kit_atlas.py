@@ -86,6 +86,24 @@ def grain(a: np.ndarray, seed: int, big: float, fine: float, streak: float = 0.0
     return a * k[..., None]
 
 
+def drips(a: np.ndarray, seed: int, x0: float, x1: float, y: float, length: float, k: float = 0.10) -> None:
+    """Rain stains running down the wall from a sill or a ledge at y: albedo, a dirtier wall, not a shadow."""
+    rng = np.random.default_rng(seed)
+    for x in range(int(x0), int(x1)):
+        run = int(length * rng.uniform(0.3, 1.0))
+        strength = k * rng.uniform(0.3, 1.0)
+        for j in range(run):
+            yy = int(y) - j
+            if 0 <= yy < N:
+                a[yy, x % N] *= 1.0 - strength * (1.0 - j / run)
+
+
+def street_dirt(a: np.ndarray, k: float = 0.12) -> None:
+    """The dust a wall takes up from the street, fading out over the ground storey."""
+    t = np.clip(1.0 - np.arange(N) / STOREY, 0.0, 1.0)[:, None, None]
+    a *= 1.0 - k * t ** 2
+
+
 def normalise(a: np.ndarray, mean: float) -> np.ndarray:
     """Scales a tintable surface so it dims the vertex colour by a known amount, not by whatever the noise summed to."""
     return np.clip(a * (mean / a.mean()), 0.0, 1.0)
@@ -216,6 +234,7 @@ def white_city() -> np.ndarray:
             casement(a, x, y, w, h, panes=3)
             if k == 1: slats(a, x, y + 0.45 * h, w, 0.55 * h, rgb(0.72, 0.70, 0.64))
             if k == 3: slats(a, x, y, w, h, rgb(0.55, 0.60, 0.56))
+            drips(a, 1000 + 10 * s + b, x, x + w, y - 1, 0.42 * STOREY)
         # A thin string course at each floor line: a paler render band, no shadow.
         tint(a, 0, s * STOREY - 3, N, s * STOREY + 3, 0.93)
     # Ground storey: window, door, window, shopfront.
@@ -224,8 +243,9 @@ def white_city() -> np.ndarray:
     rect(a, 1.26 * bay, 0.8 * STOREY, 1.74 * bay, 0.9 * STOREY, GLASS)
     casement(a, 2.15 * bay, 0.424 * STOREY, 0.7 * bay, 0.364 * STOREY, panes=3)
     slats(a, 3.1 * bay, 0.08 * STOREY, 0.8 * bay, 0.72 * STOREY, rgb(0.48, 0.47, 0.44), step=5)
+    street_dirt(a)
     plinth(a, rgb(0.82, 0.81, 0.78), 6)
-    return np.clip(grain(a, 11, 0.018, 0.012, 0.05), 0, 1)
+    return np.clip(grain(a, 11, 0.03, 0.014, 0.10), 0, 1)
 
 
 def stone_facade() -> np.ndarray:
@@ -235,8 +255,8 @@ def stone_facade() -> np.ndarray:
     bay = N / 3
     for st in range(1, 4):
         for b in range(3):
-            w, h = 0.36 * bay, 0.72 * STOREY
-            x, y = (b + 0.32) * bay, st * STOREY + 0.14 * STOREY
+            w, h = 0.3 * bay, 0.66 * STOREY
+            x, y = (b + 0.35) * bay, st * STOREY + 0.18 * STOREY
             arched(a, x, y, w, h, GLASS, surround=1.1)
             k = (b + st * 2) % 4
             if k != 2:
@@ -246,14 +266,17 @@ def stone_facade() -> np.ndarray:
                 arched(a, x, y, w, h, BROWN)
             # sill
             tint(a, x - 7, y - 5, x + w + 7, y, 1.09)
+            drips(a, 2000 + 10 * st + b, x - 4, x + w + 4, y - 6, 0.34 * STOREY, 0.13)
     for b in range(3):
+        x, w, h = (b + 0.3) * bay, 0.4 * bay, 0.76 * STOREY
         if b == 1:
-            arched(a, (b + 0.24) * bay, 0.08 * STOREY, 0.52 * bay, 0.84 * STOREY, BROWN, surround=1.1)
+            arched(a, x, 0.06 * STOREY, w, h, BROWN, surround=1.1)
         else:
-            arched(a, (b + 0.24) * bay, 0.08 * STOREY, 0.52 * bay, 0.84 * STOREY, GLASS * 1.3, surround=1.1)
-            rect(a, (b + 0.24) * bay, 0.08 * STOREY, (b + 0.76) * bay, 0.42 * STOREY, rgb(0.42, 0.34, 0.27))
+            arched(a, x, 0.06 * STOREY, w, h, GLASS * 1.3, surround=1.1)
+            rect(a, x, 0.06 * STOREY, x + w, 0.4 * STOREY, rgb(0.42, 0.34, 0.27))
+    street_dirt(a)
     plinth(a, rgb(0.86, 0.84, 0.80), 8)
-    return np.clip(grain(a, 22, 0.03, 0.022, 0.05), 0, 1)
+    return np.clip(grain(a, 22, 0.05, 0.026, 0.10), 0, 1)
 
 
 def rubble_field(seed: int) -> np.ndarray:
@@ -278,8 +301,9 @@ def village_facade() -> np.ndarray:
                           BROWN if (st * 2 + b) % 3 == 0 else GLASS)
     small_opening(a, 0.26 * bay, 0.05 * STOREY, 0.24 * bay, 0.72 * STOREY, TEAL * 0.9)
     small_opening(a, 1.56 * bay, 0.42 * STOREY, 0.2 * bay, 0.36 * STOREY, GLASS)
+    street_dirt(a)
     plinth(a, rgb(0.85, 0.83, 0.80), 10)
-    return np.clip(grain(a, 32, 0.04, 0.02), 0, 1)
+    return np.clip(grain(a, 32, 0.05, 0.022, 0.08), 0, 1)
 
 
 def mud_facade() -> np.ndarray:
@@ -293,8 +317,9 @@ def mud_facade() -> np.ndarray:
             rect(a, x, y, x + 0.16 * bay, y + 0.36 * STOREY, BROWN * 0.7 if (b + st) % 3 == 1 else GLASS)
     rect(a, 0.3 * bay, 0.04 * STOREY, 0.52 * bay, 0.74 * STOREY, BROWN)
     rect(a, 1.5 * bay, 0.42 * STOREY, 1.66 * bay, 0.76 * STOREY, GLASS)
+    street_dirt(a, 0.16)
     plinth(a, rgb(0.84, 0.81, 0.77), 12)
-    return np.clip(grain(a, 43, 0.02, 0.018, 0.05), 0, 1)
+    return np.clip(grain(a, 43, 0.035, 0.02, 0.10), 0, 1)
 
 
 def moshava_facade() -> np.ndarray:
@@ -305,15 +330,17 @@ def moshava_facade() -> np.ndarray:
         for b in range(3):
             w, h = 0.27 * bay, 0.54 * STOREY
             shuttered(a, (b + 0.365) * bay, st * STOREY + 0.28 * STOREY, w, h, OLIVE, b)
+            drips(a, 5000 + 10 * st + b, (b + 0.365) * bay, (b + 0.365) * bay + w, st * STOREY + 0.28 * STOREY - 1, 0.3 * STOREY)
     shuttered(a, 0.365 * bay, 0.28 * STOREY, 0.27 * bay, 0.54 * STOREY, OLIVE, 0)
     door(a, 1.31 * bay, 0.05 * STOREY, 0.38 * bay, 0.78 * STOREY, TEAL)
     shuttered(a, 2.365 * bay, 0.28 * STOREY, 0.27 * bay, 0.54 * STOREY, OLIVE, 0)
+    street_dirt(a)
     plinth(a, rgb(0.84, 0.82, 0.78), 8)
-    return np.clip(grain(a, 51, 0.02, 0.014, 0.05), 0, 1)
+    return np.clip(grain(a, 51, 0.03, 0.016, 0.10), 0, 1)
 
 
 def plaster() -> np.ndarray:
-    a = grain(fill(rgb(0.96, 0.96, 0.95)), 61, 0.02, 0.014, 0.06)
+    a = grain(fill(rgb(0.96, 0.96, 0.95)), 61, 0.03, 0.016, 0.10)
     return normalise(a, 0.93)
 
 
@@ -381,7 +408,7 @@ def ribbon_glass() -> np.ndarray:
 
 def balcony_rail() -> np.ndarray:
     """A balcony's solid plastered parapet: a pale cap on top, a band of render, rain runs; the slab's drip edge at its foot."""
-    a = grain(fill(rgb(0.96, 0.96, 0.95)), 121, 0.016, 0.012, 0.09)
+    a = grain(fill(rgb(0.96, 0.96, 0.95)), 121, 0.025, 0.014, 0.14)
     a[-44:, :] *= 1.03
     a[:64, :] *= 0.88
     return normalise(a, 0.93)
