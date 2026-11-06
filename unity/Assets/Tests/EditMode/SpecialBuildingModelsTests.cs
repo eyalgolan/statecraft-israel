@@ -1004,7 +1004,18 @@ namespace Statecraft.Game.Tests
             Assert.IsEmpty(SpecialBuildingModels.ArmsWorkshops(Rules(Statecraft.Sim.SaveGame.GddRuleset), projects), "never under gdd-0.1");
         }
 
-        /// <summary>A built arms workshop on each city's own hex (the hardest ground: the town's footprint is there): every one
+        /// <summary>Every place a player can build an arms workshop in under gdd-0.3 (CityBuilt): the cities of cities.yaml
+        /// (Cities.Init fills GameState.Cities from them) and each settlement target whose residents stayed, which annexing makes
+        /// a city (Cities.Annex, R-CTRL-016; a fled one adds no city). Projects.CheckCityReason takes any of the state's cities
+        /// (the arms workshop needs no resource), so these are all of them: the cities in id order, then the annexed towns in id
+        /// order (so the cities' projects, and their keys, are those the test built before the annexed towns joined it).</summary>
+        static List<string> CityBuilt(Statecraft.Sim.Content c) =>
+            c.Cities.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal)
+                .Concat(c.SettlementTargets.Where(t => t.Residents == Statecraft.Sim.ContentLoader.Stayed).Select(t => t.Id).OrderBy(x => x, StringComparer.Ordinal))
+                .Distinct().ToList();
+
+        /// <summary>A built arms workshop on the own hex of each place a player can build one in (<see cref="CityBuilt"/>; the
+        /// hardest ground: the town's footprint is there): every one
         /// but those of the two cities whose footprint covers the whole hex gets its b21, wholly on that hex, clear of the towns' footprints (and so their labels), the routes, the unit tokens,
         /// the civilians, the wildlife, the farm scenes and every other building model, upright, on the ground, hidden until the
         /// close zoom, and on the same spot when placed again. A major city's (TownModels.IsMajorCity) stands at the city's edge
@@ -1014,8 +1025,9 @@ namespace Statecraft.Game.Tests
         {
             var map = OpenMap();
             var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
-            var cities = c.Cities.Select(x => x.Id).OrderBy(x => x, StringComparer.Ordinal).ToList();
-            Assert.Greater(cities.Count, 5);
+            var cities = CityBuilt(c);
+            Assert.Greater(cities.Count, c.Cities.Count, "premise: an annexed town (a target whose residents stayed) is a city too");
+            TestContext.WriteLine($"the places a player can build an arms workshop in: {cities.Count} ({string.Join(", ", cities)})");
             var projects = cities.Select((city, i) => Workshop(c, 100 + i, city, Built)).ToList();
             var savedPeople = CivilianPeople.Request; var savedRural = RuralLife.Request;
             CivilianPeople.Request = (id, detail, done) => { };
