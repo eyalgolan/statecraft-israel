@@ -116,8 +116,8 @@ public class MajorCityShots
     static void Aim(Vector3 at, float viewM)
     {
         // CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3: without this every
-        // still came out 1.33 times too wide (found by #2880; its UnitScaleShots sets the same).
-        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
+        // still came out 1.33 times too wide (found by #2880; #2882's helper sets it for every shot rig).
+        ShotCamera.Configure(Camera.main, CivMovementShots.Width, CivMovementShots.Height);
         var rig = Camera.main.GetComponent<CameraRig>();
         rig.LookAt = at; rig.Yaw = 0f; rig.Distance = viewM; rig.Apply();
         float down = -Camera.main.transform.forward.y;
