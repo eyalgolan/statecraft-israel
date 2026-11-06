@@ -17,7 +17,7 @@ namespace Statecraft.Sim
         /// already has is kept with no cause (R-ENEMY-003), so it is named only on the turn it is given; an attack is named on
         /// every turn it engages, as a standing one still does.</summary>
         public string EnemyOrder { get; }
-        /// <summary>With EnemyOrder Combat.Attack: the enemy units that attacked in the engagement, in id order; else empty.</summary>
+        /// <summary>With EnemyOrder Combat.Attack: the enemy units that attacked in the engagement, or the one unit a new attack order was given to (#2534), in id order; else empty.</summary>
         public IReadOnlyList<int> EnemyAttackers { get; }
         /// <summary>A stable localization key for a unit line (#1399) or report producer (CauseKeys); else empty.</summary>
         public string Key { get; }

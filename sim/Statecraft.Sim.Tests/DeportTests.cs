@@ -186,24 +186,30 @@ public class DeportTests
 
     // R-CTRL-020 (impact plan section 4.1 item 4; Q-DEP-7 (c); Q-SENS-2 (c)): a depopulated place adds nothing. A reflection
     // test over every command kind: each that can name a place or a hex is aimed at the depopulated one and refused, and
-    // every other names none. The fixture puts a road segment on the place's hex, which is also town_a's city's own hex, and
+    // every other names none. The fixture puts a road segment on the place's hex, which is also the hex of the fixture's one city,
+    // town_h (a city with its own id on a target's hex, as Tel Aviv shares Jaffa's), and
     // no site can be on a settlement's hex. No effect target can name a place. The record keeps no timer, so step 10 neither counts it down nor
     // charges upkeep, and a later capture check never takes it again.
     [Fact]
     public void ADepopulatedPlaceAddsNothing()
     {
-        var c = Load(files => files["corridors.yaml"] = Fixture.GddCorridors.Replace("hexes: [[2, 0], [3, 0]]", "hexes: [[1, 0], [2, 0]]"));
+        var c = Load(files =>
+        {
+            files["corridors.yaml"] = Fixture.GddCorridors.Replace("hexes: [[2, 0], [3, 0]]", "hexes: [[1, 0], [2, 0]]");
+            files["map/settlement_hexes.yaml"] = files["map/settlement_hexes.yaml"].Replace("id: town_h, q: 0, r: 2", "id: town_h, q: 1, r: 0");
+        });
         // No designated site can be on a 1948 settlement's hex at all: the loader refuses it (so no pioneer site needs a check).
         var onThePlace = Assert.Throws<ContentException>(() => Load(files => files["sites.yaml"] = files["sites.yaml"].Replace("q: 2\n    r: 0\n    kinds: [yishuv]", "q: 1\n    r: 0\n    kinds: [yishuv]")));
         Assert.Contains("holds the 1948 settlement town_a", onThePlace.Message);
-        var s = Step(c, Awaiting(c, Soldier(1, 1, 0), new Unit(2, "halutz", 1, 0)), Answer(SettlementControl.Deport)).State;
+        var awaiting = Awaiting(c, Soldier(1, 1, 0), new Unit(2, "halutz", 1, 0));
+        var s = Step(c, awaiting, Answer(SettlementControl.Deport)).State;
         var ctrl = s.Settlements["town_a"];
         Assert.Equal(("", "", true, 0, ""), (ctrl.Owner, ctrl.State, ctrl.Depopulated, ctrl.Turns, ctrl.Buildings));
         var segment = c.Corridors[0].Id + ":1";
         var aimed = new Dictionary<Type, Command[]?>
         {
             [typeof(MapAction)] = new Command[] { new MapAction(MapActions.Housing, 1, 0) },
-            [typeof(StartProject)] = c.ProjectKinds.Select(k => (Command)new StartProject(k.Id, "town_a", 1, 0)).ToArray(),
+            [typeof(StartProject)] = c.ProjectKinds.Select(k => (Command)new StartProject(k.Id, "town_h", 1, 0)).ToArray(),
             [typeof(PioneerWork)] = new Command[] { new PioneerWork(2, Corridors.BuildRoad, segment) },
             [typeof(Move)] = new Command[] { new Move(1, 1, 0), new Move(2, 1, 0) },
             [typeof(UnitOrder)] = new Command[] { new UnitOrder(1, Combat.Attack, 1, 0) },

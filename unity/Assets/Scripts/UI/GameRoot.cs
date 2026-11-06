@@ -1213,11 +1213,15 @@ namespace Statecraft.Game.UI
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;
+                // One press closes one layer, the topmost (#2609): each step below runs only while nothing above took it. The
+                // start screen covers an ended save's end screen and everything else under it: open, it takes the press,
+                // withdrawing an armed New Game or doing nothing.
+                if (!done && start?.IsOpen == true) { start.Escape(); done = true; }
                 if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true;
                 if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true;
-                done |= start?.Escape() == true;
-                // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
-                done |= cabinet?.Escape() == true || nav?.Close() == true;
+                // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2). A screen the
+                // focused element's Cancel already closed this frame took the press too (ClosedThisFrame), as for end and report.
+                if (!done) done = cabinet?.Escape() == true || nav?.Close() == true || nav?.ClosedThisFrame == true;
                 // With nothing above it to close, Escape withdraws a New Game request armed from the top bar too, the start
                 // screen closed (#2340 L2, #2521), and is used up there, so it does not also clear the map selection. A
                 // decision card or capture dialog open over it is above it (the top bar stays usable under them): that
@@ -1232,18 +1236,20 @@ namespace Statecraft.Game.UI
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
                     info?.Escape();
             }
-            // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
-            // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
-            // stay with the camera (NavigationGuard, B6), except that Up and Down move between an open screen's rows (audit L4;
-            // the owner's answer on #2340, Q27: "do the recommended for all"). The UI map reads no keyboard key (B6), so they
-            // arrive here.
+            // PageUp, PageDown, Home and End, with no modifier, scroll the topmost open view (the ending, the turn report, a
+            // screen, the card's text, the capture dialog or the info panel), with or without focus (KeyScroll; accessibility
+            // audit H3, K6), but not under an End Turn outcome clip, which covers them. The arrows stay with the camera
+            // (NavigationGuard, B6), except that Up and Down move between an open screen's rows (audit L4; the owner's answer
+            // on #2340, Q27: "do the recommended for all"). The UI map reads no keyboard key (B6), so they arrive here.
             var keys = UnityEngine.InputSystem.Keyboard.current;
-            if (keys != null && outcomes?.Showing == null && report?.IsOpen != true && end?.IsOpen != true && !(keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.shiftKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed))
+            if (keys != null && outcomes?.Showing == null && !(keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.shiftKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed))
             {
                 KeyScroll.Key? page = keys.pageUpKey.wasPressedThisFrame ? KeyScroll.Key.PageUp : keys.pageDownKey.wasPressedThisFrame ? KeyScroll.Key.PageDown
                     : keys.homeKey.wasPressedThisFrame ? KeyScroll.Key.Home : keys.endKey.wasPressedThisFrame ? KeyScroll.Key.End : (KeyScroll.Key?)null;
                 if (page != null) KeyScroll.Press(document.rootVisualElement, nav?.Current, card?.Shown != null && !card.Collapsed, page.Value);
-                if (keys.upArrowKey.wasPressedThisFrame || keys.downArrowKey.wasPressedThisFrame) navGuard?.Step(keys.upArrowKey.wasPressedThisFrame);
+                // Not under the turn report or the ending: they cover the screen, which ScreenNav.DisableCovered leaves enabled (#2651 review).
+                if (report?.IsOpen != true && end?.IsOpen != true && (keys.upArrowKey.wasPressedThisFrame || keys.downArrowKey.wasPressedThisFrame))
+                    navGuard?.Step(keys.upArrowKey.wasPressedThisFrame);
             }
             SyncMinimap();
             if (!logCamera || rig == null || (rig.Distance == loggedDistance && rig.Yaw == loggedYaw)) return;

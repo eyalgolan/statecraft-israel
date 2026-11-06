@@ -107,8 +107,8 @@ public class BuildGateTests
     public void TheShippedReviewManifestCoversTheWholeSettlementControlSurface() // R-GATE-002
     {
         var review = ParseSettlementReview(File.ReadAllText(UiPaths.SettlementControlStringsReview), UiPaths.SettlementControlStringsReview);
-        Assert.AreEqual("pending", SettlementReview.GetProperty("Status")!.GetValue(review),
-            "#2542 adds agent-drafted English and Hebrew control strings; native and sensitivity review are pending");
+        Assert.AreEqual(ReleaseGate.ReviewedStatus, SettlementReview.GetProperty("Status")!.GetValue(review),
+            "#2542 added agent-drafted English and Hebrew control strings; the owner's sensitivity review set the status (#2809, 5 November 2026)");
         var rows = ((System.Collections.IEnumerable)SettlementReview.GetProperty("Strings")!.GetValue(review)!).Cast<object>();
         var rowType = SettlementReview.GetNestedType("Row")!;
         var keys = rows.Select(x => (string)rowType.GetProperty("Key")!.GetValue(x)!).ToArray();

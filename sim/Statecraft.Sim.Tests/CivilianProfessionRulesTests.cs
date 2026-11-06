@@ -136,6 +136,27 @@ public class CivilianProfessionRulesTests
         Assert.Equal(before, s.Describe());
     }
 
+    // R-QUAL-008 (#2806 item 4): the promotion keeps every other record field. A trainee may not have a captor (the ledger
+    // refuses one for a non-captive), so Captor is checked as null; the rest carry non-default values.
+    [Fact]
+    public void MatchingCourseKeepsEveryOtherRecordField()
+    {
+        var c = Catalogue();
+        var at = new PopulationLocation("fixture"); var home = new PopulationLocation("fixture-home");
+        var p = new PopulationUnit(0, PopulationStatus.Trainee, 6, at, new PopulationAssignment(PopulationAssignmentKind.Course, "fixture-target"),
+            CivilianProfession.Pioneer, CivilianTier.Novice, 8, "fixture-qualification", 7,
+            new PopulationEquipment("fixture-tools", true, "fixture-arms", true), home: home);
+        var s = PopulationLedger.CreateFixture(c,
+            new PopulationBindings(new[] { at, home }, new[] { new PopulationTarget("fixture-target", PopulationAssignmentKind.Course, "fixture", 3) },
+                Array.Empty<string>(), new[] { "fixture-qualification" }),
+            new[] { new PopulationInventoryRow("synthetic", 0, p) });
+        var next = CivilianProfessionRules.AfterMatchingCourse(c, s, 0, CivilianProfession.Pioneer);
+        Assert.Equal(CivilianTier.Trained, next.Tier);
+        Assert.Equal((PopulationStatus.Trainee, 6, CivilianProfession.Pioneer, "fixture-qualification", (string?)null),
+            (next.Status, next.ReceptionTicks, next.Profession, next.Qualification, next.Captor));
+        Assert.Same(at, next.Location); Assert.Same(home, next.Home);
+    }
+
     // R-QUAL-008: this is a catalogue quote, not an affordability/credit decision or a payment.
     [Fact] public void ToolsQuotesReadOnlyAgreedCatalogueAndNeverTouchMoney()
     {
