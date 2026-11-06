@@ -468,6 +468,103 @@ public class BorderCivTests
         Assert.Greater(a2.wash, a.wash * 1.3f, "A2's wash reads farther in");
     }
 
+    /// <summary>#2431: the glow lives in the wash's room at every zoom, so a far hex whose wash has given way has none and the
+    /// early-out's reach stays exact.</summary>
+    [Test]
+    public void TheGlowStaysInsideTheWash()
+    {
+        foreach (var s in Styles)
+            foreach (var mpp in MetresPerPx)
+            {
+                var w = MapBorders.BandWidths(s, mpp, Inradius, rim: false, MapBorders.StrongMinColourPx);
+                Assert.LessOrEqual(MapBorders.GlowWidthPx(mpp, w.wash), w.wash + 1e-4f, $"{mpp} m/px");
+            }
+        Assert.AreEqual(0f, MapBorders.GlowWidthPx(2000f, 0f), "no wash, no glow");
+        Assert.AreEqual(MapBorders.GlowM / 30f, MapBorders.GlowWidthPx(30f, 100f), 1e-4f, "the world width up close");
+        Assert.AreEqual(MapBorders.GlowMinPx, MapBorders.GlowWidthPx(300f, 100f), 1e-4f, "and a floor farther off");
+    }
+
+    /// <summary>#2431: the stronger tier glows and nothing else does: Legacy, A, B and C draw as before, grey never glows,
+    /// and the wash and the tint keep the style's colour, so the glow does not recolour the land (a brighter fill reddened
+    /// the hills: rose index +2 to +5 at gameplay03).</summary>
+    [Test]
+    public void OnlyTheStrongerTiersColourStripesGlow()
+    {
+        var (map, _, _) = BorderTests.Open();
+        Vector4 G(string n) => Shader.GetGlobalVector(n);
+        var blue = MapBorders.Primary.Colour.linear; var orange = MapBorders.Secondary.Colour.linear;
+        foreach (var v in new[] { BorderVariant.Legacy, BorderVariant.A, BorderVariant.B, BorderVariant.C, BorderVariant.A2, BorderVariant.B2, BorderVariant.C2 })
+        {
+            MapBorders.Variant = v;
+            string at = v.ToString();
+            bool glows = MapBorders.Strong(v);
+            Assert.AreEqual(glows ? MapBorders.GlowOpacity : 0f, G("_ScBorderGlow1").w, at);
+            Assert.AreEqual(glows ? MapBorders.GlowOpacity : 0f, G("_ScBorderGlow2").w, at);
+            Assert.AreEqual(0f, G("_ScBorderGlow3").w, $"{at}: grey stays flat");
+            if (!MapBorders.StrongBlue(v)) Assert.AreEqual(new Vector4(blue.r, blue.g, blue.b, 1f), G("_ScBorderColour1"), $"{at}: the wash and the tint");
+            Assert.AreEqual(new Vector4(orange.r, orange.g, orange.b, 1f), G("_ScBorderColour2"), $"{at}: the wash and the tint");
+            if (v == BorderVariant.Legacy) continue;
+            var want = (glows ? MapBorders.GlowStripeSecondary : MapBorders.Secondary.Colour).linear;
+            Assert.AreEqual(new Vector4(want.r, want.g, want.b, 1f), G("_ScBorderStripe2"), at);
+        }
+        Assert.IsNotNull(map);
+    }
+
+    /// <summary>#2431: at gameplay03 A2's stripes read as promo 03's lit lines and a soft halo runs along the inside of the band. The
+    /// blue stripe's saturation and the orange stripe's brightness pass the old colours' (0.43 and 0.74) towards the promo's
+    /// (0.59 and 0.69-0.90); the pixels just inside the light stripe are lighter than the wash farther in, on both sides; and
+    /// the two halos stay apart for colour-blind players, with the bound the stripes meet (GradeTests).</summary>
+    [UnityTest]
+    public IEnumerator TheStripesGlowAtGameplay03()
+    {
+        var (map, cam, rig) = BorderTests.Open();
+        yield return null;
+        RenderSample.TiltShift(false);
+        BorderProof.Show(map);
+        var (inner, outer) = BorderTests.ProofEdge(map, 34.80, 31.86, "coastal_plain");
+        BorderTests.LookAtEdge(map, rig, inner);
+        static float Saturation(Color c) { Color.RGBToHSV(c, out _, out var sat, out _); return sat; }
+        static float Value(Color c) => Mathf.Max(c.r, Mathf.Max(c.g, c.b));
+        // the mean colour between fromM and toM from the edge
+        static Color Between(BorderTests.Walk w, float fromM, float toM)
+        {
+            var at = Enumerable.Range(0, w.On.Count).Where(k => Mathf.Abs(w.SignedM[k]) >= fromM && Mathf.Abs(w.SignedM[k]) <= toM).Select(k => w.On[k]).ToList();
+            return at.Count == 0 ? Color.black : new Color(at.Average(c => c.r), at.Average(c => c.g), at.Average(c => c.b));
+        }
+        var walks = BorderTests.WalkEdge(map, cam, inner, outer, 9, 1920, 1080);
+        var sat = new List<float>(); var val = new List<float>(); var liftP = new List<float>(); var liftS = new List<float>(); var apart = new List<float>();
+        foreach (var w in walks)
+        {
+            float mpp = (w.SignedM[w.SignedM.Count - 1] - w.SignedM[0]) / Vector2.Distance(w.Px[w.Px.Count - 1], w.Px[0]);
+            var p = BorderTests.Read(w, -1, BorderTests.Blueness, 0.45f); var s = BorderTests.Read(w, +1, BorderTests.Redness);
+            sat.Add(Saturation(p.Stripe)); val.Add(Value(s.Stripe));
+            // just past each light stripe (its pixels' worth of bleed skipped), against the wash far inside
+            var wp = MapBorders.BandWidths(MapBorders.Primary, mpp, Inradius, false, MapBorders.StrongMinColourPx);
+            var ws = MapBorders.BandWidths(MapBorders.Secondary, mpp, Inradius, false, MapBorders.StrongMinColourPx);
+            float nearP = (wp.colour + wp.light + 1.5f) * mpp, nearS = (ws.colour + ws.light + 1.5f) * mpp;
+            Color haloP = Between(Half(w, -1), nearP, nearP + 2f * mpp), farP = Between(Half(w, -1), 700f, 1000f);
+            Color haloS = Between(Half(w, 1), nearS, nearS + 2f * mpp), farS = Between(Half(w, 1), 700f, 1000f);
+            liftP.Add(RenderSample.Luma(haloP) - RenderSample.Luma(farP)); liftS.Add(RenderSample.Luma(haloS) - RenderSample.Luma(farS));
+            foreach (var kind in new[] { RenderSample.Cvd.Deuteranopia, RenderSample.Cvd.Protanopia })
+                apart.Add(RenderSample.DeltaE(RenderSample.SimulateCvd(haloP, kind), RenderSample.SimulateCvd(haloS, kind)));
+        }
+        TestContext.WriteLine($"blue stripe saturation {Median(sat):0.00}, orange stripe value {Median(val):0.00}; halo lift blue {Median(liftP):0.000}, orange {Median(liftS):0.000}; halos apart (colour-blind, least) {apart.Min():0.0}");
+        Assert.GreaterOrEqual(Median(sat), 0.50f, "the blue stripe is saturated");
+        Assert.GreaterOrEqual(Median(val), 0.82f, "the orange stripe is bright");
+        Assert.GreaterOrEqual(Median(liftP), 0.05f, "the blue side glows along its light stripe");
+        Assert.GreaterOrEqual(Median(liftS), 0.05f, "the orange side glows along its light stripe");
+        Assert.GreaterOrEqual(apart.Min(), 15f, "the halos stay apart for colour-blind players");
+    }
+
+    /// <summary>One side of a walk, as a walk (sign -1 the inner hex).</summary>
+    static BorderTests.Walk Half(BorderTests.Walk w, int sign)
+    {
+        var half = new BorderTests.Walk();
+        for (int k = 0; k < w.On.Count; k++)
+            if (w.SignedM[k] * sign > 0f) { half.On.Add(w.On[k]); half.Off.Add(w.Off[k]); half.SignedM.Add(w.SignedM[k]); half.Px.Add(w.Px[k]); }
+        return half;
+    }
+
     /// <summary>Variant B: a dark rim on the edge. Close up (20 km), the darkest Primary pixel within 60 m of a
     /// primary-secondary proof edge is clearly darker with B than with A (and with B2 than with A2).</summary>
     [UnityTest]

@@ -1025,7 +1025,7 @@ otherwise. Next to main's look, A2's bands keep their weight when the camera pul
 is never under 6 px, the light stripe 1 px and the wash 12 px, measured across the edge so they hold under the tilt.
 Both sides wash alike at 0.45, falling as 1 - x squared, so the wash holds well into the hex and reaches a quarter of
 its inradius (about 953 m on 4.4 km hexes); a light tint of the region's colour covers the territory, 0.12 up close and rising to
-0.25 at the overview. Band plus wash never pass half the inradius, so a far hex is not filled by its outline. The
+0.25 at the overview. Since #2431 the stronger tier's two sides also glow ("Issue #2431", below). Band plus wash never pass half the inradius, so a far hex is not filled by its outline. The
 neutral grey keeps its 0.14 wash and its dashes, never shorter than 8 px. The other variants stay selectable for
 comparison: `?bordervariant=legacy` in the WebGL URL (or `-bordervariant legacy` on desktop and in the editor) draws
 main's earlier look exactly, and `a`, `b`, `c`, `b2` and `c2` draw the prototype's other variants; anything else draws A2
@@ -3543,6 +3543,28 @@ Captures and colour-blind comparison images were retained locally with hashes. L
 are in-engine captures at the source above; right panels are the existing AI-generated promo references,
 not gameplay. Pending: a person's look at judea30 and the transport anomaly noted above. No simulation hash,
 human review flag, licence declaration or release gate changed.
+
+## Issue #2431: brighter, glowing borders at the gameplay zoom
+Branch `visual/2431`, on #2427's lighting. The band's width was not the gap: at gameplay03 A2 draws about 10 px against the promo's 8. The colour was: the blue stripe's saturation was 0.44 against the promo's 0.59 (72,114,176), and nothing marked the band as lit.
+
+- **What changed.** On A2, B2 and C2 (the stronger tier; Legacy, A, B and C are as they were): a brighter edge stripe, `_ScBorderStripe` (blue sRGB 0.26, 0.40, 0.61; orange 0.92, 0.37, 0.14; C2 keeps its own blue), and a halo along the inside of the light stripe (`_ScBorderGlow`: pale blue 0.66, 0.78, 0.97 and warm 1.02, 0.57, 0.22, opacity 0.72 at the stripe, falling as a square over 320 m, at least 6 px). Grey does not glow, so contested ground stays flat and dashed. The tint and wash keep `Style.Colour`.
+- **Why a split colour.** A brighter `Colour` also brightens the fill: in the first fit the hills went redder (rose index +2 to +5) and the palette distance rose from 0.286 to 0.308. With the stripe apart from the fill, the land's numbers do not move.
+- **Why in the shader.** Bloom is a full-screen pass and #2427 kept it off. The halo is drawn in the wash's room: no fetch (`TheBordersReadOneTexelAPixel`), no wider reach (it is never wider than the wash, `GlowWidthPx`, so the early-out stays exact, `TheEarlyOutIsExactInEveryVariant`, and a far hex whose wash has given way has no glow). Not under the stripes or a rim.
+- **The tint is not the golden gap.** Editor frames at gameplay03, composited with the UI, one session, the same state; the crop as in "Issue #38: grade retune", and #2427's hypothesis was that the tint explains much of what is left. It does not:
+
+| Land at gameplay03 | hue | rose | saturation | palette distance |
+|---|---|---|---|---|
+| promo | 26.6 | +5 | 0.364 | |
+| as played (tint 0.12, wash 0.45) | 29.0 | +2 | 0.426 | 0.286 |
+| tint 0.06 | 29.3 | +1 | 0.425 | 0.283 |
+| tint 0 | 29.5 | +1 | 0.424 | 0.281 |
+| tint 0, wash 0.25 | 29.6 | +1 | 0.424 | 0.282 |
+| borders off | 33.9 | -7 | 0.416 | 0.309 |
+
+  (The issue's 0.40 is the Primary style's own strength; A2 draws 0.45, `StrongWashStrength`.) Taking the tint away moves the hue half a degree, away from the promo, and leaves the saturation. With the borders off the land is further from the promo on hue, rose and distance, so the territory colour helps. The tint and wash stay as they were; the rest of the gap is not the borders (hypothesis: the land and town art).
+- **Rendered (`TheStripesGlowAtGameplay03`, proof edge on the coastal plain).** Old colours against this pass: blue stripe saturation 0.44 -> 0.52, orange stripe value 0.79 -> 0.91, the glow's lift over the far wash -0.003 -> 0.130 (blue) and -0.015 -> 0.074 (orange). The two halos stand 38.4 apart under simulated deuteranopia and protanopia at worst (bar 15), and `ColourBlindPlayersTellTheStylesApartInEveryVariant` passes on every variant, Neutral included.
+- **The owner's blue.** `ThePrimaryStripeIsTheDeeperBlueOfTheRuling` (bar 10) goes from 2.6 to 8.8 deltaE76, still nearer the ruling's 89,119,156 than main's lighter blue (10.0). The blue was brought back to pass it: a stronger one (0.24, 0.40, 0.64) measured 12.9. Going nearer the promo's blue means re-deciding that ruling.
+- **Readability.** Looked at in composited frames, before and after: label pills, the map legend, English and Hebrew; a Move pick (#2201's lit hexes) over the Jordan Valley front: its fill and outline draw over the bands, as before. The sea and the Negev are unchanged by eye and in the numbers (`TheSunlitDesertDoesNotClip`: 0.00%).
 
 ## Issue #2427: second lighting and grade pass (warm golden land, sea held)
 Branch `visual/2427`. The issue called the land flat khaki next to promo 03. Measured on main at the gameplay pose, in WebGL, the land's means are already near the promo's. What differs is the spread: the promo's lit ground runs wider (hue 15-40 degrees) and its shade is greyer, ours sits in a narrow terracotta band with a pink cast. Much of that band in the frame is the territory tint of the 15 May 1948 control layer (`_ScBorderTint`), which the editor's `MapCapture.Promo` does not draw: orange-red over the hills, blue over the Israeli plain, which turns its fields lilac-grey. That tint is the borders lane's (#2431), not the grade's. Hypothesis, not tested: most of what is left between this pass and the promo's hills is the tint and the land's own colours.
