@@ -191,8 +191,8 @@ public class MajorCityShots
     static string Frame(Vector3 at)
     {
         var rig = Camera.main.GetComponent<CameraRig>(); var towns = Towns;
-        return FormattableString.Invariant($"look-at {at}, view {TownModelLayer.ViewDistance(Camera.main):F0} m (rig {rig.Distance:F0} m), " +
-            $"layer drew {towns.LastDrawn} instances, close={towns.LastClose}");
+        return FormattableString.Invariant($"look-at {at}, view {TownModelLayer.ViewDistance(Camera.main):F0} m (rig {rig.Distance:F0} m), ")
+            + FormattableString.Invariant($"layer drew {towns.LastDrawn} instances, close={towns.LastClose}");
     }
 
     /// <summary>Sets the game's date (the state the map shows and the turn's start) and lets GameRoot redraw on it.</summary>
@@ -235,8 +235,8 @@ public class MajorCityShots
         Shot(name);
         var f = Scene.KitFootprints.FirstOrDefault(x => x.id == city);
         float fromCentre = f.id == null ? float.NaN : Vector2.Distance(new Vector2(at.x, at.z), f.centre);
-        Debug.Log(FormattableString.Invariant($"SHOT {name}: prop {key} ({placed[0].Model}) on {root.Bridge!.State.Date:yyyy-MM-dd}, " +
-            $"{fromCentre:F0} m from {city}'s kit centre (radius {f.radius:F0} m), {PropDistanceM / 1000f:F0} km; {state}; {Frame(at)}"));
+        Debug.Log(FormattableString.Invariant($"SHOT {name}: prop {key} ({placed[0].Model}) on {root.Bridge!.State.Date:yyyy-MM-dd}, ")
+            + FormattableString.Invariant($"{fromCentre:F0} m from {city}'s kit centre (radius {f.radius:F0} m), {PropDistanceM / 1000f:F0} km; {state}; {Frame(at)}"));
     }
 
     [UnityTest]
