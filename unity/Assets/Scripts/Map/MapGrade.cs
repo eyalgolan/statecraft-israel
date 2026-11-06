@@ -63,13 +63,14 @@ namespace Statecraft.Game.Map
         /// by under 1/255 (GradeTests' TheLandReadsGoldenAndTheSeaHolds).</summary>
         public static readonly Keyframe[] LumVsSat = { Key(0f, -0.07f), Key(0.075f, -0.07f), Key(0.09f, 0f), Key(1f, 0f) };
 
-        static Keyframe Key(float hue, float value) => new Keyframe(hue, 0.5f + value, 0f, 0f);
+        static Keyframe Key(float at, float value) => new Keyframe(at, 0.5f + value, 0f, 0f);
 
         /// <summary>Issue #2427: the land's golden turn, as an offset to the hue of each colour (hue 0-1 in linear HSV, 0 = no
         /// change; docs/visual-v1.md, "Issue #2427"). The land's terracotta (hue about 0.06) moves up and the green fields (0.2)
         /// move down, so they meet at gold. Flat at the reds (roofs, the other side's stripe, up to 0.035), at the sand (0.09-0.13:
         /// shifting it took the dune coast under SeaTests' luma floor) and from 0.38 up (the surf, the sea, the Israeli stripe),
-        /// which is what one global grade could not do (#38: warm grades turned the sea grey). Flat keys, so no curve overshoots
+        /// which is what one global grade
+        /// could not do (#38: warm grades turned the sea grey). Flat keys, so no curve overshoots
         /// between them: smoothed tangents leaked a shift into the sea's hue, 0.011 of luma. LUT inputs: no pass, no variant.</summary>
         public static readonly Keyframe[] HueVsHue =
         {
@@ -78,11 +79,16 @@ namespace Statecraft.Game.Map
         };
 
         /// <summary>Issue #2427: saturation by hue (0 = no change, 0.5 would double it): richer land, the sand unchanged, so the
-        /// Negev stays clear of mustard. Global Saturation stays -7: raising it moves the sea and the stripe (a trial at +2: sea
-        /// warmth -0.216 -> -0.238).</summary>
+        /// Negev stays clear of mustard. The band at 0.57-0.59 is the open sea's own hue (WebGL, gameplay03: 0.576-0.602, 5th to
+        /// 95th percentile): the water multiplies by the sun's colour (ScWaterShade), so the stronger, warmer sun would turn it
+        /// greyer, warmth -0.202 -> -0.187 in WebGL against the promo's -0.248, the #38 failure; 7% more saturation gives that
+        /// back at the same luma. It ends at 0.605 to keep off the ruled stripe's blue (about 0.606: a band to 0.615 took the stripe
+        /// to 3.1 deltaE76, over the owner's bound of about 3). Global Saturation stays
+        /// -7: raising it moves every hue (a trial at +2: sea warmth -0.216 -> -0.238).</summary>
         public static readonly Keyframe[] HueVsSat =
         {
-            Key(0f, 0f), Key(0.025f, 0f), Key(0.055f, 0.02f), Key(0.075f, 0.015f), Key(0.09f, 0f), Key(1f, 0f),
+            Key(0f, 0f), Key(0.025f, 0f), Key(0.055f, 0.02f), Key(0.075f, 0.015f), Key(0.09f, 0f), Key(0.5f, 0f), Key(0.57f, 0.035f), Key(0.59f, 0.035f),
+            Key(0.605f, 0f), Key(1f, 0f),
         };
 
         public static void Apply(VolumeProfile profile)
