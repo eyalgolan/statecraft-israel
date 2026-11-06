@@ -97,12 +97,20 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>Haifa's German Colony: the Templers' stone houses with red roofs.</summary>
         internal static readonly TownModel[] Templer = { TownModel.B05aMoshavaHouse };
 
-        /// <summary>The cities drawn from their building models at every zoom, with no whole-town model (owner ruling, 2 November
-        /// 2026: "we had tal's smaller buildings alreaedy for tel aviv, jerusalem and haifa and jaffa - instead of the huge
-        /// buildings", confirmed as "Yes, small buildings at every zoom"). This replaces the 18 October 2026 "Whole model far,
-        /// buildings near" for these four: Collection.TownLandmarks.ModelFor gives them no whole-town model, and TownModelLayer
-        /// admits their buildings beyond its close switch too.</summary>
-        public static bool AtEveryZoom(string id) => id == "tel_aviv" || id == "jerusalem" || id == "haifa" || id == "jaffa";
+        /// <summary>The 1945 population (<see cref="KitPopulation"/>, content/map/settlement_population_1945.yaml) from which a
+        /// place is a major city: the owner, 6 November 2026, "Just the four (Recommended)". In the data that is Tel Aviv,
+        /// Jerusalem, Haifa and Jaffa; the next place below it is Gaza (34,250).</summary>
+        public const int MajorCityPopulation = 60000;
+
+        /// <summary>Whether a place is a major city (<see cref="MajorCityPopulation"/>): it draws its code-built kit, with its
+        /// landmarks, at every zoom and never Tal Heuberger's building models (owner, 6 November 2026, "Big blocks, every
+        /// zoom": the look of these cities no longer changes from big blocks to small buildings on a zoom). TownModelLayer never
+        /// admits its buildings, so its close mesh never swaps in, and Collection.TownLandmarks.ModelFor gives it no
+        /// whole-town model. This supersedes the owner's ruling of 2 November 2026, "Yes, small buildings at every zoom"
+        /// (superseded), which drew these four from the building models at every zoom, and before it the 18 October 2026
+        /// "Whole model far, buildings near" for them. Reads the table MapScene.Build hands the kits (KitPopulation.Of: 0, so
+        /// no major city, before that).</summary>
+        public static bool IsMajorCity(string id) => KitPopulation.Of(id) >= MajorCityPopulation;
 
         /// <summary>The wine moshavot (the Carmel wineries of Rishon LeZion, 1890, and Zikhron Ya'akov, 1892): their first
         /// house nearest the heart is the winery.</summary>

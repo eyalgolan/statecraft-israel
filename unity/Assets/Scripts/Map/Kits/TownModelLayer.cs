@@ -8,12 +8,13 @@ namespace Statecraft.Game.Map.Kits
     /// <summary>Building meshes for admitted towns and villages, instanced per model/tile: Tal Heuberger's originals below the
     /// close switch (<see cref="CloseEnterM"/>, #1273) and their lighter far-off copies beyond it, out to the far band
     /// (<see cref="FarEnterM"/>; owner, 3 November 2026, #2378: "Ask Tal; allow them far off only", then "I have Tal's OK;
-    /// go ahead"). The far copies serve <see cref="Init"/>'s farTowns: the four cities and every settlement with a whole-town
-    /// model (the moshavot and towns, the kibbutzim, Nahalal and the Arab towns: Acre, Nazareth, Lod, Gaza, Beersheba), whose
+    /// go ahead"). The far copies serve <see cref="Init"/>'s farTowns: every settlement with a whole-town model (the
+    /// moshavot and towns, the kibbutzim, Nahalal and the Arab towns: Acre, Nazareth, Lod, Gaza, Beersheba), whose
     /// whole-town model gives way to them within the far band (owner, 3 November 2026, "Cities/towns only (Recommended)");
-    /// the 271 1948 localities keep their kit blocks. Tel Aviv, Jerusalem, Haifa and Jaffa are admitted at every
-    /// zoom, by view as below (owner ruling, 2 November 2026, "Yes, small buildings at every zoom":
-    /// <see cref="TownModels.AtEveryZoom"/>), and draw their far copies beyond the far band too. Under the production policy
+    /// the 271 1948 localities keep their kit blocks. The major cities (Tel Aviv, Jerusalem, Haifa and Jaffa:
+    /// <see cref="TownModels.IsMajorCity"/>) are never admitted, at any zoom: they draw their kits, with their landmarks, at
+    /// every zoom (owner, 6 November 2026, "Big blocks, every zoom", which supersedes the 2 November 2026 ruling, "Yes,
+    /// small buildings at every zoom" (superseded)). Under the production policy
     /// (owner ruling, 31 Oct 2026, "Load all in view (Recommended)") a close camera admits every town and every merged village
     /// tile in its view (+<see cref="ViewMarginM"/>), nearest first, and they unload above <see cref="CloseExitM"/>. Each camera
     /// swaps only complete towns and complete village tiles; loading and failed places retain code-built fallback. Source
@@ -29,7 +30,7 @@ namespace Statecraft.Game.Map.Kits
         /// close checks (hero06, 6 km: CameraController.MinDistance) well inside.</summary>
         public const float CloseEnterM = 40000f, CloseExitM = 45000f;
         /// <summary>The far band (m), this layer's alone (the seven other layers on the close switch keep 40/45 km): from
-        /// the close switch out to FarEnterM the four cities and every settlement with a whole-town model draw the far-off
+        /// the close switch out to FarEnterM every settlement with a whole-town model draws the far-off
         /// copies of their building models instead of their kits; the kits come back above FarExitM. 100 km holds the 90 km opening and
         /// the 60 km gameplay view and stays under the strategic cap (Collection.OriginalModelDistance, 120 km); a 204 m house is 3.5 px
         /// there, where the kit's 100x houses read better as a mass, and the view's footprint (10,670 km2, about 170 places)
@@ -281,7 +282,7 @@ namespace Statecraft.Game.Map.Kits
         }
         public int Count { get; private set; }
         /// <summary>For the last camera: whether it was below the close switch and drew the models (else the kits), and the
-        /// instances, triangles and draws it submitted, the cities drawn at every zoom included (test and profiling aids).</summary>
+        /// instances, triangles and draws it submitted (test and profiling aids).</summary>
         public bool LastClose { get; private set; }
         public int LastDrawn { get; private set; }
         public long LastTriangles { get; private set; }
@@ -293,9 +294,8 @@ namespace Statecraft.Game.Map.Kits
         /// (<paramref name="rendererTileIds"/>: each tile renderer's villages). A complete editor model set is optional in a
         /// player: acquired originals become ready independently per town, while incomplete/missing replies keep fallback. A
         /// tile swaps only when every village in it is ready; no tile or unrelated town swaps on a partial global set.
-        /// <paramref name="farTowns"/> names the places that draw the far-off copies beyond the close switch (the four cities
-        /// and every settlement with a whole-town model: KitLayer passes them); null, the default of the small test fixtures, admits
-        /// none there.</summary>
+        /// <paramref name="farTowns"/> names the places that draw the far-off copies beyond the close switch (every settlement
+        /// with a whole-town model: KitLayer passes them); null, the default of the small test fixtures, admits none there.</summary>
         public void Init(IReadOnlyList<SettlementKits.ModelInstance> instances, TownModelSet? models, IReadOnlyList<(Renderer kit, Renderer? close)> swaps, IReadOnlyCollection<string>? townIds = null, IReadOnlyDictionary<Renderer, string>? rendererTownIds = null,
             IReadOnlyDictionary<Renderer, string[]>? rendererTileIds = null, IReadOnlyCollection<string>? farTowns = null)
         {
@@ -514,8 +514,8 @@ namespace Statecraft.Game.Map.Kits
         }
 
         /// <summary>The edge allowance for <paramref name="owner"/>'s focus selection, or null without one. A method of its own,
-        /// so PrepareCameraCore holds no closure: a closure there was allocated on every call, far off too, where the four
-        /// cities now draw.</summary>
+        /// so PrepareCameraCore holds no closure: a closure there was allocated on every call, far off too, where the far-off
+        /// copies draw.</summary>
         System.Func<IReadOnlyList<string>, string, bool>? AllowanceFor(Choice owner) => EdgeAllowance == null ? null : (local, edge) =>
         {
             var admitted = new List<string>();
@@ -529,7 +529,7 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Owner ruling, 31 Oct 2026, "Load all in view (Recommended)": under the production policy a close camera
         /// admits every town and village tile in its view (<see cref="ViewMarginM"/>, kept to <see cref="ViewKeepM"/>), nearest
-        /// its ground focus first; a far camera only the cities drawn at every zoom (<see cref="AtZoom"/>). Returns whether the
+        /// its ground focus first; a far camera only what its zoom admits (<see cref="AtZoom"/>). Returns whether the
         /// admitted set changed.</summary>
         bool AdmitInView(Choice choice, Camera cam)
         {
@@ -548,7 +548,7 @@ namespace Statecraft.Game.Map.Kits
             for (int i = 0; i < viewPlaces.Count; i++)
             {
                 var (ids, bounds) = viewPlaces[i];
-                if (!AtZoom(choice, ids[0])) continue;   // a village tile's first village: never one of the four cities
+                if (!AtZoom(choice, ids[0])) continue;   // a village tile's first village: never a major city
                 float margin = choice.viewed.Contains(ids[0]) ? ViewKeepM : ViewMarginM;
                 var wide = bounds; wide.Expand(new Vector3(2f * margin, 0f, 2f * margin));
                 if (GeometryUtility.TestPlanesAABB(frustum, wide)) viewScratch.Add((i, GroundDistance(bounds, from), ids[0]));
@@ -587,9 +587,11 @@ namespace Statecraft.Game.Map.Kits
         }
 
         /// <summary>Whether a camera's zoom admits a place's building models: every place below the close switch (the
-        /// originals); within the far band the places that take the far-off copies (<see cref="farTowns"/>); beyond it only
-        /// the cities drawn at every zoom (owner ruling, 2 November 2026, "Yes, small buildings at every zoom").</summary>
-        bool AtZoom(Choice c, string id) => c.close || TownModels.AtEveryZoom(id) || (c.far && farTowns != null && farTowns.Contains(id));
+        /// originals); within the far band the places that take the far-off copies (<see cref="farTowns"/>); beyond it none.
+        /// A major city (<see cref="TownModels.IsMajorCity"/>) at no zoom: it keeps its kit (owner, 6 November 2026, "Big
+        /// blocks, every zoom"; this supersedes the 2 November 2026 ruling, "Yes, small buildings at every zoom"
+        /// (superseded), under which these four were admitted at every zoom).</summary>
+        bool AtZoom(Choice c, string id) => !TownModels.IsMajorCity(id) && (c.close || (c.far && farTowns != null && farTowns.Contains(id)));
         /// <summary>Whether the camera-focus selection holds this town at its zoom (the focused town and its edges).</summary>
         internal bool WantsTown(string id, Camera cam) => choices.TryGetValue(cam.GetInstanceID(), out var c) && AtZoom(c, id) && c.towns.Contains(id);
         /// <summary>Whether this camera admits the place's building models: the focus selection, or (production) its view.</summary>
@@ -790,8 +792,7 @@ namespace Statecraft.Game.Map.Kits
                     if (filter == null || renderer == null || filter.sharedMesh == null || renderer.sharedMaterial == null)
                     {
                         // Once per streamed id for this layer (an original and its far-off copy fail apart): its places keep their
-                        // code-built kits (Tel Aviv, Jerusalem, Haifa and Jaffa at every zoom: they have no whole-town model to
-                        // fall back to).
+                        // code-built kits.
                         if (warnedIds.Add(streamId)) Debug.LogWarning($"TOWN MODELS: {streamId} did not stream; the places built from it keep their kits.");
                         return;
                     }
@@ -863,10 +864,10 @@ namespace Statecraft.Game.Map.Kits
             LastClose = close;
             int drawn = 0, draws = 0, casters = 0; long tris = 0;
             // Owner ruling on #2267, 2 November 2026, "Shadows off far, then measure (Recommended)": beyond the close switch the
-            // cities drawn at every zoom cast no shadows; below it every building casts.
+            // building models (the far-off copies) cast no shadows; below it every building casts.
             var shadows = close ? ShadowCastingMode.On : ShadowCastingMode.Off;
-            // Beyond the close switch the far-off copies draw (#2378): for the places the far band admits and, at every zoom,
-            // the four cities (AtZoom); ReadyForTown admits nothing else there.
+            // Beyond the close switch the far-off copies draw (#2378): for the places the far band admits (AtZoom);
+            // ReadyForTown admits nothing else there.
             var streamed = close ? models : farModels;
             if (Draw)
             {

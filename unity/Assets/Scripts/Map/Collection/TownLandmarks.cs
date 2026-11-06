@@ -15,8 +15,9 @@ namespace Statecraft.Game.Map.Collection
     /// (BuildingPreview at 3ef0a7a5): White City at Tel Aviv, the stone city at Jerusalem, the port city at Haifa, the
     /// moshava town at the six moshavot, Nahalal at the moshav, the compound at every kibbutz, the stone village at every
     /// Arab town, the ma'abara at a transit camp and the shikun at a housing project.
-    /// Owner ruling of 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa have no
-    /// whole-town model; their building models draw at every zoom instead (<see cref="Kits.TownModels.AtEveryZoom"/>). Tel
+    /// Tel Aviv, Jerusalem, Haifa and Jaffa, the major cities (<see cref="Kits.TownModels.IsMajorCity"/>), have no whole-town
+    /// model: since the owner's ruling of 6 November 2026, "Big blocks, every zoom", their kits draw at every zoom (before it,
+    /// the 2 November 2026 ruling, "Yes, small buildings at every zoom" (superseded), drew their building models instead). Tel
     /// Aviv's, Jerusalem's and Haifa's whole-town models stay in the repository and the streamed catalogue, unused on the map;
     /// the stone village still stands at the other Arab towns but Ramla (its own town, see <see cref="ById"/>).
     /// Owner ruling of 18 October 2026 (recorded on #917, #663, #659 and #700): the towns are Tal Heuberger's models, "Whole model
@@ -60,7 +61,8 @@ namespace Statecraft.Game.Map.Collection
             Ramla = CollectionCatalog.RamlaTown;
 
         /// <summary>By settlement id first (#507's mapping). Tel Aviv, Jerusalem and Haifa have no row: the owner, 2 November
-        /// 2026, "Yes, small buildings at every zoom" (<see cref="Kits.TownModels.AtEveryZoom"/>). That replaces #507's
+        /// 2026, "Yes, small buildings at every zoom" (superseded on 6 November 2026 by "Big blocks, every zoom", which keeps
+        /// them without a whole-town model: <see cref="Kits.TownModels.IsMajorCity"/>). That replaces #507's
         /// White City at Tel Aviv and port city at Haifa, and the owner's ruling of 21 October 2026 on #708
         /// (issuecomment-6323524970) that #336's second stone city (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) "is
         /// Jerusalem's only far-zoom model for the whole game". <see cref="TelAviv"/>, <see cref="Haifa"/>,
@@ -101,9 +103,10 @@ namespace Statecraft.Game.Map.Collection
         internal static Action<string, CollectionDetail, Action<GameObject?>> Request = DefaultRequest;
         internal static Func<string, CollectionDetail, Action<GameObject?>, IDisposable> Acquire = CollectionStream.Acquire;
 
-        /// <summary>The model for settlement <paramref name="s"/>, or null for none: none for the cities drawn from their
-        /// building models at every zoom (Jaffa, an Arab town, would otherwise take <see cref="ByType"/>'s stone village).</summary>
-        public static string? ModelFor(Settlement s) => Kits.TownModels.AtEveryZoom(s.Id) ? null
+        /// <summary>The model for settlement <paramref name="s"/>, or null for none: none for the major cities, which draw their
+        /// kits at every zoom (<see cref="Kits.TownModels.IsMajorCity"/>; Jaffa, an Arab town, would otherwise take
+        /// <see cref="ByType"/>'s stone village).</summary>
+        public static string? ModelFor(Settlement s) => Kits.TownModels.IsMajorCity(s.Id) ? null
             : ById.TryGetValue(s.Id, out var m) ? m : ByType.TryGetValue(s.Type, out var t) ? t : null;
 
         /// <summary>The model for a placement of <paramref name="action"/> as at <paramref name="date"/>, or null: none for that
