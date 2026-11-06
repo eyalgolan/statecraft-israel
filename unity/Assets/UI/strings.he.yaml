@@ -261,7 +261,7 @@ share.instagram: "לאינסטגרם אין קישור לשיתוף: התמונ�
 share.copy: "העתקה"
 share.copied_picture: "התמונה הועתקה"
 share.copied_text: "הטקסט הועתק"
-share.copy_failed: "לא ניתן להעתיק כאן. אפשר לשתף או להוריד את התמונה בכפתור שלמעלה."
+share.copy_failed: "לא ניתן להעתיק כאן. אפשר לשתף או להוריד את התמונה."
 event.draft: "טיוטה"
 start.source: "מתוך ההכרזה על הקמת מדינת ישראל (עיתון רשמי מס׳ 1, 14 במאי 1948) ותרגומה הרשמי לאנגלית. הציור נוצר בבינה מלאכותית."
 # The recordist's name as the Israel State Archives spells it in its own description of item
@@ -637,6 +637,8 @@ report.workshop_paused_debt: "סדנת נשק ({0}) בהמתנה: תקרת הח�
 # owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 report.workshop_arms_n: "סדנאות נשק ({0}) ({1}): תוספת נשק: {1}"
 report.workshop_paused_debt_n: "סדנאות נשק ({0}) ({1}) בהמתנה: תקרת החוב"
+# The held cities' row (R-CITY-010, #1711). Agent-drafted Hebrew; native review pending (#564).
+report.held: "ערים בשליטת האויב"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
 # The nine end.* keys below: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are"), except
 # end.population_history, reworded for #2608 (#2620: the CBS figure is the Jewish population), which waits for the
@@ -1032,6 +1034,14 @@ workshop.refused_built: "{0}: סדנאות נשק בנויות: {1}"
 # issuecomment-6610635087).
 workshop.refused_people: "{0}: אין די אזרחים ובעלי מלאכה (יש\u00A0{1})"
 workshop.refused_people_no_job: "{0}: אין די אזרחים ובעלי מלאכה ללא משרה (יש\u00A0{1})"
+# R-CITY-011 (#1700, #2477), gdd-0.3 only: a city project being built and its city's builder stepper, as in
+# strings.en.yaml. Counts as "Label: N" (HE-04), as city.workshops_*. Agent-drafted Hebrew, for the native reviewer (#564).
+city.project_builder: "המיזם הזה: יש בונה"
+city.project_no_builder: "המיזם הזה: אין בונה, בהמתנה"
+city.builders: "מיזמים בבנייה עם בונה: {0} מתוך {1}"
+city.builders_ordered: "מיזמים בבנייה עם בונה בסיום התור: {0} מתוך {1}"
+builder.refused_being_built_one: "{0}: יש רק מיזם עירוני אחד בבנייה"
+builder.refused_being_built: "{0}: מיזמים עירוניים בבנייה: {1}"
 # Agent-drafted Hebrew; native review pending (#564).
 site.available: "אתר ייעודי ליישוב חדש"
 site.group: "קבוצת חלוצים {0}"
@@ -1436,6 +1446,8 @@ why.cause.pending_became_raid: "{0}: לא התקבלה החלטה עד סוף ה
 why.cause.occupation_lost_unit: "{0}: אין עוד יחידה ישראלית המחזיקה במקום, ולכן תקופת ההחזקה הסתיימה כפשיטה. המקום שוב בשליטת האויב. {1}"
 why.cause.occupation_countdown: "{0}: מוחזק, תורות שנותרו: {1}"
 why.cause.depopulation_support: "{0}: שינוי {1} (המקומות שהתרוקנו מתושביהם בעקבות גירוש)"
+# R-CITY-010 (#1711), gdd-0.3 only: {0} the city; no verb agrees with {0} (HE-15). Agent-drafted Hebrew; native review pending (#564).
+why.cause.city_held: "{0}: בשליטת האויב: אין הכנסה מעבודה ואין עבודה על מיזמים בתור הזה"
 why.cause.work.plow: "חריש"
 why.cause.work.drain: "ייבוש הביצה"
 why.cause.work.camp: "מחנה אימונים"

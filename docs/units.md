@@ -52,7 +52,7 @@ it, and there are no level-of-detail switches yet.
 | Piece | Model | Where (PromoPose.Gameplay03) |
 |---|---|---|
 | Rifle trio | three 1948 IDF riflemen: bush hat with rifle held ready, Mk II steel helmet with rifle grounded, Palmach stocking cap with rifle slung | on the centre of the hex nearest 34.88 E, 32.01 N (east of Tel Aviv, clear of the settlement labels), inside a white selection ring that fits within the hex |
-| Aircraft | Supermarine Spitfire LF Mk IXe of 101 Squadron, from October 1948: clipped wing, red spinner and diagonal red-and-white rudder stripes, filled Star of David roundels with no outer ring (Efrati pp. 12 and 14) | a 16 km loop over Tel Aviv and the coast, 4.2 km above the highest ground under it, banked 28 degrees, its shadow cast on the ground by the sun |
+| Aircraft | Supermarine Spitfire LF Mk IXe of 101 Squadron, from October 1948: clipped wing, red spinner and diagonal red-and-white rudder stripes, filled Star of David roundels with no outer ring (Efrati pp. 12 and 14) | a 16 km-radius loop over Tel Aviv and the coast, 4.2 km above the highest ground under it, banked 28 degrees, its shadow cast on the ground by the sun |
 | Navy | modified Flower-class corvette INS Haganah (K-20), 1948, 63.4 m | off Jaffa (34.63 E, 32.02 N) |
 
 Not in the slice:
@@ -117,7 +117,7 @@ After the staff review the controller ruled:
   asks for them (`&units`, `-units`). The editor's promo renders draw them only with `-units`.
 - **The promo's badge, a wider trio, sourced headgear; the ring stays selection-only (I6).** See "Look".
 
-### The Arab forces: two drawn, the rest data only
+### The Arab forces: drawn with their own figures
 
 The file also holds the Arab forces of 15 May and 11 June 1948 (#740, Phase 5 PR 1), one row per force, with `side`,
 `echelon` and one `strength` (owner's decision on #570). The source is `research_notes/GDD phase 5/arab-forces-1948.md`,
@@ -230,8 +230,10 @@ defaults"). The unit stands on the hex holding the anchor's coordinates, by the 
   Hulda from the 15 June 1948 turn.
 - **Release gate:** every row the sim starts a unit from must be `fact-checked` before a shareable build carries it
   (Q-START-3). `Statecraft.Cli --release-gate`, `Build -shareable` and `tools/package_release.py` refuse until then, and
-  name the rows; today that is Etzioni and the 7th (#1241), since the owner checked the other twelve on 21 October 2026
-  (#1240).
+  name the rows. A `fact-checked` row records the day of its person check in `checked_on`; a field whose sources were
+  checked after that day (the strength, an anchor or an order target) counts as unchecked, and the gate names the row
+  and the field (#2722). Today that is the order targets of Carmeli, Kiryati, Givati, the 7th, Harel and Negev (#2135),
+  sourced on 1 November 2026, after the owner's checks of 21 October (#1240) and 22 October 2026 (#1241).
 - Tests: `StartingForcesTests` (dotnet) and `UnitsInPlayTests.TheStartMatchesTheMap` (EditMode).
 
 ### Tokens from the state (Phase 5 PR 14, #753)
@@ -281,6 +283,9 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | C09 irregular | the Arab Liberation Army's first two figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
 | ALA infantry (Tal Heuberger, generated) | the Arab Liberation Army's third figure, beside two C09; the token waits only for C09, and the third joins when its own bundle arrives | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "Third figure (Recommended)") | the row's windows |
 | Egyptian infantry (Tal Heuberger, generated) | the Egyptian Expeditionary Force's three figures, one token (in the legacy loop the first anchor whose window holds the date) | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "One token") | the row's windows |
+| Syrian infantry (Tal Heuberger, generated) | the Syrian Army's three figures | the row; owner, 27 October 2026 (#756: "Sign off all 19") | the row's windows |
+| Iraqi infantry (Tal Heuberger, generated) | the Iraqi Expeditionary Force's three figures | the row; owner, 27 October 2026 (#756: "Sign off all 19") | the row's windows |
+| Lebanese regular (Tal Heuberger, generated) | the Lebanese Army's three figures, on its map-only token at al-Malikiyya | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "Map-only token (Recommended)"; 28 October 2026: "6 Jun to 8 Jul (Recommended)", the window) | the row's window, 6 June to 8 July 1948 |
 | H02 65 mm gun ("Napoleonchik") | on the front of the base, before the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
 | H01 sandwich armoured car | on the front of the base, before the trio: Givati | Wikimedia Commons, "Givati force" (GPO, Zoltan Kluger, 12 June 1948): a jeep leading an armoured unit of the Givati Brigade; the type is read from the picture (#1536) | 12 June 1948 |
 | H03 Willys jeep | on the front of the base, before the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
@@ -300,7 +305,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
   missing or damaged; a vehicle is not drawn until its model arrives. An Arab force's token waits for its figure too, and
   is drawn with the built-in figure if that fails (`UnitLayer.cs:379-381`).
-- Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
+- Tests: `UnitFiguresTests` (every one of the sixteen is placed on some day of the war; the table; the swap; arms down;
   fail open; the close-zoom swap and its idle clip, the missing near model and C05).
 
 ### Weapons and the C06 point-fire aim (#2083, #2084)
@@ -412,7 +417,8 @@ The candidates are tried in four rounds:
    round-4 spot holds its hex like any other; measured on the game map, no other anchor and no camp moved).
 
 A spot is clear when:
-- the ring's disc stays off every settlement footprint (the kits' discs, times 1.1);
+- the ring's disc stays off every settlement footprint (the kits' discs, times 1.1); for an air anchor the disc is the
+  larger of that ring and the parked aircraft's span (4.7 km across, which does not compact), with no in-town exception;
 - an army token's three figure spots (always three, so the spot does not change with the call-up), or a parked
   aircraft's centre, are on land and at least 700 m beyond every railway and road corridor drawn while a token
   stands (a route opened after the last anchor's window, the 1949 rail link or the 1950 Tel Aviv–Netanya road, takes no
@@ -447,6 +453,9 @@ and a unit the sim moves is placed without the control layer.
   its two 1948 photographs. Every other brigade has the uniform default (bush hat, steel helmet, bush hat), from the 1948
   photographs listed under "Sources".
 - **Air:** the squadron flies the slice's loop over its base at security level 4 or 5 and stands parked below that.
+  A parked aircraft leaves a circular tree hole covering its drawn world-XZ footprint. Its camera-facing badge stays clear of the
+  aircraft's tail (the rear 40%) as the camera sees it, moving down, left or right on screen by the least that clears
+  it, never up, so it stays by the aircraft; a flying aircraft gets neither adjustment.
 - **Navy:** a ship is the K-20 corvette model; Wedgwood was the same modified Flower class.
 - **Badge:** each token has the promo's badge (`UnitBadge`): a dark rounded plate with an ivory glyph (two figures, an
   aircraft or a ship). It is turned to face each camera as it renders. On an army token it sits above the flag's top, a little

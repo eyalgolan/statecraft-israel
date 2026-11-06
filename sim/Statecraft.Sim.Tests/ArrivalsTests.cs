@@ -64,6 +64,22 @@ public class ArrivalsTests
         Assert.Equal(new[] { 6, 6, 11 }, added);   // the fixture's 230 people are 23 units: quotas 5.75, 5.75, 11.5
     }
 
+    // R-CITY-003, #2530: a count of 1 names the singular.
+    [Fact]
+    public void ASingleArrivingGroupNamesTheSingular()
+    {
+        var c = Three();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = c.RulesAt(s.Date).Mvp!;
+        var next = s.Date;
+        while (Cities.ArrivedUnits(c, s.Date, next, r.PeoplePerUnit) < 1) next = next.AddDays(1);
+        var why = new List<Cause>();
+        Cities.Arrive(c, s, r, next, why);
+        var line = Assert.Single(why, w => w.Key == CauseKeys.ImmigrantsWaiting);
+        Assert.Equal(1.0, line.Delta);
+        Assert.Equal("Town C: 1 group of immigrants arrived and wait for homes", line.Message);
+    }
+
     // R-CITY-003: the split is a function of the cities' cumulative units alone, so a city never gives a unit back, as a fresh
     // largest-remainder split of each total would (the Alabama paradox: at 7 units Petah Tikva would lose one).
     [Fact]

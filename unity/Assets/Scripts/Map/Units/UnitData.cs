@@ -178,6 +178,9 @@ namespace Statecraft.Game.Map.Units
         public string? ReviewedOn { get => reviewedOn; set { reviewedOn = value; ReviewedOnGiven = true; } }
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
         string? reviewedOn;
+        /// <summary>A fact-checked row's day of its person check (#2722). The sim's StartingForces reads it for the release
+        /// gate; the map does not.</summary>
+        public string? CheckedOn { get; set; }
         /// <summary>Why the map does not draw the unit (the sources name it but do not place it), or null.</summary>
         public string? Hidden { get; set; }
         public List<string>? ToVerify { get; set; }

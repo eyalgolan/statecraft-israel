@@ -29,9 +29,9 @@ macOS IL2CPP parity check is not an MVP release gate.
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
    # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 e4a90c5b1d0049332cc5036e7951bd008910e2fae46e65c1b1512a7397ec1688"
-   # and "GOLDEN OK hash1952 1712d9f55f9973c77fdca59ea16ef8d978836c4b1c6218163982d75502b3eb69"
+   # and "GOLDEN OK hash1952 7b8594b51e161a1947a5c38faf7a5e6d41191e34b4a9a0d1bddb4e968eb4bfe1"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 f3a160004a531c7019f51a56789fb00173db74ea6003de1a69f7b781a4575731"
+     --expect "SMOKE OK 5 turns 1948-10-15 3803636fdc5dae42a0ac1f298b957652514a3ffc210ce68a06c8ddbb279f0150"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
@@ -66,7 +66,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 f3a160004a531c7019f51a56789fb00173db74ea6003de1a69f7b781a4575731"
+     --expect "SMOKE OK 5 turns 1948-10-15 3803636fdc5dae42a0ac1f298b957652514a3ffc210ce68a06c8ddbb279f0150"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90

@@ -64,8 +64,8 @@ final `GameState.Hash()` is pinned:
 | Run | Ends | Hash |
 |---|---|---|
 | to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `e4a90c5b1d0049332cc5036e7951bd008910e2fae46e65c1b1512a7397ec1688` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `1712d9f55f9973c77fdca59ea16ef8d978836c4b1c6218163982d75502b3eb69` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `1712d9f55f9973c77fdca59ea16ef8d978836c4b1c6218163982d75502b3eb69` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `7b8594b51e161a1947a5c38faf7a5e6d41191e34b4a9a0d1bddb4e968eb4bfe1` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `7b8594b51e161a1947a5c38faf7a5e6d41191e34b4a9a0d1bddb4e968eb4bfe1` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -74,7 +74,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it and that option's operation
-units are in place at the turn's start (R-ENEMY-007; the smoke gives no unit orders), the rest left to their ministers): `SMOKE OK 5 turns 1948-10-15 f3a160004a531c7019f51a56789fb00173db74ea6003de1a69f7b781a4575731`.
+units are in place at the turn's start (R-ENEMY-007; the smoke gives no unit orders), the rest left to their ministers): `SMOKE OK 5 turns 1948-10-15 3803636fdc5dae42a0ac1f298b957652514a3ffc210ce68a06c8ddbb279f0150`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -85,7 +85,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 f3a160004a531c7019f51a56789fb00173db74ea6003de1a69f7b781a4575731"
+  --expect "SMOKE OK 5 turns 1948-10-15 3803636fdc5dae42a0ac1f298b957652514a3ffc210ce68a06c8ddbb279f0150"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -149,8 +149,9 @@ turn 35), `hash1952` `62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8
 R-LOOP-003) and `scenario-mvp-absorb-first` `59ea3181`. The owner tags the last pre-cutover commit `pre-gdd-v0.1`.
 
 `Scenario` lives in `Statecraft.Sim` next to `GoldenRun`, so Unity, which gets only `Statecraft.Sim.dll` and
-`YamlDotNet.dll` from `tools/build_sim_for_unity.sh`, can play the same runs (#394). The scenario files, the manifest and the
-snapshots stay with the tests and are not shipped to the player.
+`YamlDotNet.dll` from `tools/build_sim_for_unity.sh`, can play the same runs (#394). `ContentSync` copies the manifest and the scenario files into the
+player (`Assets/StreamingAssets/golden`) before every player build, for the player's own golden check (`?golden` on WebGL,
+`-golden` on desktop). Of these, only the snapshots (the `golden/*.txt` files other than the manifest) stay with the tests.
 
 **Invariants.** A hash says something changed; `sim/Statecraft.Sim.Tests/golden/invariants.yaml` says whether it is
 still plausible. Each entry names a golden run (`1950` or `1952`), a value (an indicator id, or `treasury`, `debt`,
@@ -512,13 +513,23 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-occupy-cost | `ad9af425` | the Syrian unit on (15, 5) is the only change (was `612e9feb`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-annex-nazareth | `e8a9dbf1` | the Syrian unit on (15, 5); unit 1, on its card order toward (15, 3), is on (13, 6) at the run's end instead of (15, 5) (was `c8195c09`). No other golden moves: smoke-orders does not reach 15 July 1948 |
 | #2608: the annexed residents join the population (R-CITY-008) | scenario-mvp-annex-nazareth | `d0372ca6` | `end_occupation nazareth annex` adds the row's count to `GameState.Population`'s `annexed` group, so the population gains the annexed residents, and the debt, FX and Food lines move with it; the annexation itself and every unit position are unchanged. No other golden occupies a place, so none moves (was `e8a9dbf1`) |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | hash1950 | `e4a90c5b` | the reference player stages Kiryati, Carmeli, the 7th Brigade and Golani before their operation cards; all four operations still take their historical options and Rhodes and Sinai still fire; Ramla falls a month earlier (15 August), and one Golani-Egypt engagement replaces an old Legion one (same draw count) (was `a08ff850`) |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | hash1952 | `1712d9f5` | carries hash1950's staged-operation state forward: same choices and follow-up cards, earlier Ramla capture, IL 0.1m less debt (was `5561fc51`) |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | smoke5 | `f3a16000` | the five-turn first-option run gives no unit orders and stops at a first option whose operation units are not in place in the no-orders preview (the card shows that state), so Ten Days goes to its minister; with #2620's annexed residents on main |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | mvp-end | `1712d9f5` | the same 44-turn run as hash1952 (was `5561fc51`) |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-reckless | `9935564a` | Hiram, Yoav and Horev still resolve historically; staging leaves Golani in the south and the 7th Brigade alive; one engagement instead of two (one draw fewer) (was `bed7eb74`) |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-cautious | `d1d4c1f5` | as scenario-reckless: one engagement instead of two; Carmeli reaches its Hiram target, the 7th Brigade survives, Ramla falls a turn earlier (was `4f3a0556`) |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-absorb-first | `f60b8c40` | operations still historical; staging sends Golani to the Egyptian front (three engagements instead of two, one draw more) and the 7th Brigade survives (was `f289f897`) |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-defeat | `9a9f6bd6` | as above, Ramla a turn earlier; one draw more, so the delegated iraqi_exodus card now takes pace instead of airlift (was `8c83f6e0`) |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-occupy-cost | `1ddf2774` | Ramla a turn earlier and Acre taken, the 7th Brigade survives, no combat draw; Golani stays Nazareth's last garrison (was `ad9af425`) |
-| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-annex-nazareth | `ea150bed` | Golani is Nazareth's last garrison, so it is not staged and Horev postpones and lapses (the owner's rule): Rhodes Talks and Sinai Withdrawal never fire, and no combat draw (was `d0372ca6`) |
+| #2804 item 4: `GameState.TotalPopulation` sums the population groups in ordinal key order (R-FOOD-001; owner, 6 Nov 2026: "Do it just before the regen") | hash1950 | `7d8e158b` | floating-point rounding only: the same numbers added in a different order land one ulp apart, in `debt` (`...5F79` to `...5F7A`); no rule, value or event changes (was `a08ff850`) |
+| #2804 item 4: as above | hash1952 | `f5ebb830` | rounding only: `fx` moves by 16 ulp (`-12.990431328096559` to `-12.99043132809653`) and nothing else (was `5561fc51`) |
+| #2804 item 4: as above | mvp-end | `f5ebb830` | same run as hash1952 (was `5561fc51`) |
+| #2804 item 4: as above | smoke5 | `b93ad550` | rounding only; no snapshot is kept for this run (was `d12c83ce`) |
+| #2804 item 4: as above | scenario-reckless | `c0eeb7dd` | `debt` 2 ulp apart, nothing else (was `bed7eb74`) |
+| #2804 item 4: as above | scenario-cautious | `31ab04b0` | `debt` 2 ulp apart, nothing else (was `4f3a0556`) |
+| #2804 item 4: as above | scenario-mvp-absorb-first | `16c8a869` | `debt` 1 ulp apart, nothing else (was `f289f897`) |
+| #2804 item 4: as above | scenario-mvp-defeat | `572f71ab` | `debt` and `fx` 2 ulp apart each; the defeat is unchanged (was `8c83f6e0`) |
+| #2804 item 4: as above | scenario-mvp-occupy-cost | `eb3ae67b` | `debt` 1 ulp apart, nothing else (was `ad9af425`) |
+| #2804 item 4: as above | scenario-mvp-annex-nazareth | `3cab078b` | `debt` 2 ulp apart, nothing else (was `d0372ca6`). No other golden moves: smoke-orders keeps `08d9800e` |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | hash1950 | `e4a90c5b` | the reference player stages Kiryati, Carmeli, the 7th Brigade and Golani before their operation cards; all four operations still take their historical options and Rhodes and Sinai still fire; Ramla falls a month earlier (15 August), and one Golani-Egypt engagement replaces an old Legion one (same draw count) (was `7d8e158b`; on main after #2804 item 4 this PR's earlier pin `e4a90c5b` holds unchanged) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | hash1952 | `7b8594b5` | carries hash1950's staged-operation state forward: same choices and follow-up cards, earlier Ramla capture, IL 0.1m less debt (was `f5ebb830`; on main after #2804 item 4, `fx` lands 16 ulp from this PR's earlier pin `1712d9f5`, as on main, and nothing else differs) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | smoke5 | `3803636f` | the five-turn first-option run gives no unit orders and stops at a first option whose operation units are not in place in the no-orders preview (the card shows that state), so Ten Days goes to its minister; with #2620's annexed residents on main (was `b93ad550`; on main after #2804 item 4 it differs from this PR's earlier pin `f3a16000`; no snapshot is kept for this run, so the difference was not inspected) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | mvp-end | `7b8594b5` | the same 44-turn run as hash1952 (was `f5ebb830`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-reckless | `9935564a` | Hiram, Yoav and Horev still resolve historically; staging leaves Golani in the south and the 7th Brigade alive; one engagement instead of two (one draw fewer) (was `c0eeb7dd`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-cautious | `d1d4c1f5` | as scenario-reckless: one engagement instead of two; Carmeli reaches its Hiram target, the 7th Brigade survives, Ramla falls a turn earlier (was `31ab04b0`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-absorb-first | `f60b8c40` | operations still historical; staging sends Golani to the Egyptian front (three engagements instead of two, one draw more) and the 7th Brigade survives (was `16c8a869`) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-defeat | `7c611d3b` | as above, Ramla a turn earlier; one draw more, so the delegated iraqi_exodus card now takes pace instead of airlift (was `572f71ab`; on main after #2804 item 4, `fx` lands 2 ulp from this PR's earlier pin `9a9f6bd6` and nothing else differs) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-occupy-cost | `90494f81` | Ramla a turn earlier and Acre taken, the 7th Brigade survives, no combat draw; Golani stays Nazareth's last garrison (was `eb3ae67b`; on main after #2804 item 4, `debt` lands 2 ulp from this PR's earlier pin `1ddf2774` and nothing else differs) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-annex-nazareth | `85ee5239` | Golani is Nazareth's last garrison, so it is not staged and Horev postpones and lapses (the owner's rule): Rhodes Talks and Sinai Withdrawal never fire, and no combat draw (was `3cab078b`; on main after #2804 item 4, `debt` lands 2 ulp from this PR's earlier pin `ea150bed` and nothing else differs) |

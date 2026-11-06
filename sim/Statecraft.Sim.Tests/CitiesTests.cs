@@ -40,6 +40,17 @@ public class CitiesTests
         Assert.False(r.State.Cities["tel_aviv"].JobsDefault);   // R-CITY-009: the order fixes the number
     }
 
+    // R-CITY-001, #2530: a count of 1 names the singular.
+    [Fact]
+    public void ASingleGroupInWorkNamesTheSingular()
+    {
+        var c = Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = Step(c, s, new AssignWorkers("town_a", "job", 1));
+        Assert.Empty(r.Rejected);
+        Assert.Contains(r.Why, x => x.System == "city" && x.Message == "Town A: 1 group in work");
+    }
+
     // R-CITY-001
     [Theory]
     [InlineData("town_a", "job", -1, "The number of workers cannot be negative")]

@@ -520,6 +520,25 @@ public class Gdd03EventRulesTests
         Assert.Equal(new DateTime(1951, 3, 15), CardDate("iraqi_exodus"));
         Assert.Equal(new DateTime(1951, 11, 15), CardDate("forex_crisis_1951"));
     }
+    // #2558: in the Money row the launch's Debt line reads as its Money effect, Money IL -18.6m, not as a Debt gain; the
+    // title and its Hebrew stay in the Args, so CauseText words it from why.cause.event_amount_from in both languages.
+    // Any other line is passed through as it is.
+    [Fact]
+    public void IsraelBondsDebtLineReadsAsItsMoneyEffectInTheMoneyRow()
+    {
+        var c = Real(true);
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        s.Date = new DateTime(1951, 5, 15); s.PendingEvents.Add("israel_bonds");
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, "israel_bonds", "launch", why));
+        var debt = why.Single(x => x.Target == "debt" && x.Key == CauseKeys.EventAmount);
+        var line = EconomySystem.MoneyLine(c, debt);
+        Assert.Equal(("treasury", CauseKeys.EventAmount, "Money IL -18.6m (Israel Bonds)"), (line.Target, line.Key, line.Message));
+        Assert.Equal(EconomySystem.MoneyDelta(debt), line.Delta, 12);
+        Assert.Equal(debt.Args, line.Args);
+        Assert.True(EconomySystem.MovesMoney(line));
+        foreach (var other in why.Where(x => x != debt)) Assert.Same(other, EconomySystem.MoneyLine(c, other));
+    }
     static readonly string[] SourceBytes =
     {
         "absorb_immigrants:95682d1835e8de59e3e69f56a9beb13ddf91447270a672d23eaff2523898fea1", // re-pinned for #1065 (reviewer comment matches the text), then for the stale reviewer comment (comment-only)

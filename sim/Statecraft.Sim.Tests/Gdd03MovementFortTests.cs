@@ -148,6 +148,21 @@ public class Gdd03MovementFortTests
         Assert.NotNull(Movement.Full(c, s, s.Units[1], 3, 1));
     }
 
+    // R-MOVE-003, R-COMBAT-003: a retreat reads the catalogue's limit too. 6 against 2 sends the defender back; its first
+    // neighbour (4, 1) holds one Egyptian unit, full at a catalogue limit of 1 (the fixture's mvp.stack_limit, 2, would let it
+    // in), so it goes to the next neighbour in the fixed order, (4, 0).
+    [Fact]
+    public void ARetreatReadsTheCatalogueStackLimit()
+    {
+        var c = Load(); c.Gdd03Balance!.Values["military.stack_limit"].Values[0] = 1;
+        var s = With(c, Of("recruit"), new Unit(2, "enemy", 3, 1, side: "egypt", strength: 2), Of("enemy", 3, 4, side: "egypt"));
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 3, 1) });
+        Assert.Empty(now.Rejected);
+        Assert.Contains(now.Why, w => w.Message == "Unit 2 retreated to hex 4,0");
+        Assert.Equal((4, 0), (now.State.Units[2].Q, now.State.Units[2].R));
+        Assert.Equal((4, 1), (now.State.Units[3].Q, now.State.Units[3].R));
+    }
+
     // R-MOVE-001, R-MOVE-008, R-MOVE-010, R-COMBAT-001, R-COMBAT-007: Q12 (owner, 1 November 2026) gives artillery main's 2
     // points on the infantry terrain column. Mountains are made infantry 1 / armour 3 here so the two columns differ.
     [Fact]

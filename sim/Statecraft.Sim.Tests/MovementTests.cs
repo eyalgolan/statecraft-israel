@@ -278,6 +278,30 @@ public class MovementTests
         Assert.Equal(before, result.State.Hash());
     }
 
+    // R-MOVE-008: Movement.GiveGoTo checks before it changes anything, so each refused go-to leaves the state as a step with
+    // no order. town_a's hex (1, 0) is enemy-held; (5, 0) is land, but sea on (4, 0), (4, 1) and (5, 1) leaves no route to it.
+    [Theory]
+    [InlineData(1, null, null, "A route names a hex")]
+    [InlineData(9, 2, 1, "There is no such unit")]
+    [InlineData(2, 3, 1, "That unit is not yours")]
+    [InlineData(3, 1, 1, "That unit cannot move")]
+    [InlineData(1, 0, 1, "That unit is already there")]
+    [InlineData(1, 0, 0, "Units cannot enter water or leave the map")]
+    [InlineData(1, 9, 9, "Units cannot enter water or leave the map")]
+    [InlineData(1, 4, 2, "An enemy unit holds that hex")]
+    [InlineData(1, 1, 0, "Units may not enter an enemy-held locality before its capture is possible")]
+    [InlineData(1, 5, 0, "No route reaches that hex")]
+    public void AGoToThatBreaksARuleIsRefusedWithTheStateUnchanged(int unit, int? q, int? r, string reason)
+    {
+        var c = Load(Board((0, 0, "sea"), (4, 0, "sea"), (4, 1, "sea"), (5, 1, "sea")),
+                     ("enemy_held_localities: []", "enemy_held_localities: [town_a]"));
+        var s = With(c, Soldier(1, 0, 1), Enemy(2, 4, 2), new Unit(3, "halutz", 1, 2));
+        var before = Step(c, s).State.Hash();
+        var result = Step(c, s, new UnitOrder(unit, Movement.GoTo, q, r));
+        Assert.Equal(reason, Assert.Single(result.Rejected).Reason);
+        Assert.Equal(before, result.State.Hash());
+    }
+
     // R-MOVE-001: the allowance is per turn. A second Move of the same unit in one turn has only what the first left, and
     // the next turn has the full allowance again.
     [Fact]

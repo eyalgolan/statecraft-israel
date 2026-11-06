@@ -14,11 +14,13 @@ public class DeportTests
 {
     /// <summary>CaptureTests' fixture with Deport in play and International Support in the model (the fixture's model has
     /// none; the real one has it, model.yaml). <paramref name="edit"/> changes the files further; the rows in
-    /// <paramref name="fled"/> are written as <c>residents: fled</c> (CaptureTests.LoadFled).</summary>
-    internal static Content Load(Action<Dictionary<string, string>>? edit = null, string[]? fled = null) => CaptureTests.Load(files =>
+    /// <paramref name="fled"/> are written as <c>residents: fled</c> (CaptureTests.LoadFled). <paramref name="gdd03"/> switches
+    /// the fixture to gdd-0.3 (NoAttentionTests.Select).</summary>
+    internal static Content Load(Action<Dictionary<string, string>>? edit = null, string[]? fled = null, bool gdd03 = false) => CaptureTests.Load(files =>
     {
         files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities:", "deport_in_play: true\n  enemy_held_localities:");
         files["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:\n", "indicators:\n  - id: intl_standing\n    base: 0.5\n    name: International support\n");
+        if (gdd03) NoAttentionTests.Select(files, true);
         edit?.Invoke(files);
     }, fled ?? Array.Empty<string>(), CaptureTests.AllTargets);
 
@@ -246,6 +248,42 @@ public class DeportTests
         back.Units[1] = Soldier(1, 1, 0);
         SettlementControl.Capture(c, back, back.Date.AddDays(7), new List<Cause>());
         Assert.Equal(ctrl.Canonical(), back.Settlements["town_a"].Canonical());
+    }
+
+    // R-CTRL-002 (#2804 item 11): R-CTRL-018 to R-CTRL-021 are shared by gdd-0.1 and gdd-0.3, so the fixture's Deport runs
+    // the same under both: a fled town is refused with its reason, the costs apply at once, the record is depopulated with
+    // no razing, and the International Support drag runs every turn.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DeportIsTheSameUnderBothRulesets(bool gdd03)
+    {
+        var c = Load(gdd03: gdd03);
+        Assert.Equal(gdd03 ? SaveGame.Gdd03Ruleset : SaveGame.GddRuleset, c.Ruleset);
+
+        var fled = Load(fled: new[] { "town_a" }, gdd03: gdd03);
+        var f = Step(fled, CombatTests.With(fled, Soldier(1, 1, 0))).State;
+        var refused = Step(fled, f, Answer(SettlementControl.Deport));
+        Assert.Equal("Its residents fled when it was captured, so there is no one to deport", Assert.Single(refused.Rejected).Reason);
+        Assert.Equal(0, refused.State.DisplacedByPlayer);
+
+        var s = Awaiting(c, Soldier(1, 1, 0));
+        var raid = Resolved(c, s, SettlementControl.Raid);
+        var deport = Resolved(c, s, SettlementControl.Deport);
+        Assert.Equal(Cohesion(raid) - 0.2, Cohesion(deport), 9);
+        Assert.Equal(Support(raid) - 0.1, Support(deport), 9);
+        Assert.Equal(raid.Treasury - raid.Debt - 121, deport.Treasury - deport.Debt, 9);
+        Assert.Equal((0, 1), (raid.DisplacedByPlayer, deport.DisplacedByPlayer));
+        var ctrl = deport.Settlements["town_a"];
+        Assert.Equal(("", "", true, 0, ""), (ctrl.Owner, ctrl.State, ctrl.Depopulated, ctrl.Turns, ctrl.Buildings));
+        Assert.True(SettlementControl.DepopulatedAt(c, deport, 1, 0));
+
+        var a = Step(c, s, Answer(SettlementControl.Deport)).State;
+        for (int turn = 1; turn <= 3; turn++)
+        {
+            Assert.Equal(0.5 - 0.1 - 0.01 * turn, Support(a), 9);
+            a = Step(c, a).State;
+        }
     }
 
     // R-CTRL-021 (Q-DEP-4 (a), D-F3): deportation and razing are separate rules, with no razing option in the MVP. The
