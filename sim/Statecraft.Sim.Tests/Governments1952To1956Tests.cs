@@ -28,8 +28,9 @@ public class Governments1952To1956Tests
     [Fact]
     public void EveryMinistersTermFromTheFourthGovernmentOnLiesInsideOneGovernment()
     {
-        foreach (var p in C.People)
-            foreach (var t in p.Offices.Where(t => !NotMinisters.Contains(t.Office) && (t.To ?? DateTime.MaxValue) > Fourth))
+        var terms = C.People.SelectMany(p => p.Offices.Where(t => !NotMinisters.Contains(t.Office) && (t.To ?? DateTime.MaxValue) > Fourth).Select(t => (p, t))).ToList();
+        Assert.NotEmpty(terms);
+        foreach (var (p, t) in terms)
             {
                 var g = Offices.Government(C, t.From);
                 Assert.True(g != null, $"{p.Id} {t.Office} from {t.From:yyyy-MM-dd}: no government");
