@@ -102,12 +102,36 @@ def test_a_profile_line_at_another_resolution_is_an_error():
     assert "1920x937" in wc.res_error(good.replace("1920x1080", "1920x937"), "1920x1080")
 
 
+def profile_lines(poses=("gameplay03", "diorama02"), labels=("all", "-labels", "none"), reps=3, res="1920x1080", done=True):
+    """The console lines of a whole ?vprofile run as FrameProfile.Run logs them: per pose and configuration `reps` run
+    lines, then a summary line; then the done line."""
+    lines = []
+    for pose in poses:
+        for label in labels:
+            lines += [f"PROFILE visual={label} pose={pose} res={res} scale=0.80 rep={r} frames=300 avg_ms=1.73 p95_ms=2.00" for r in range(reps)]
+            lines.append(f"PROFILE summary visual={label} pose={pose} runs={reps} median_avg_ms=1.73 spread_ms=0.10 median_p95_ms=2.00")
+    return lines + (["PROFILE visual done"] if done else [])
+
+
 def test_profile_errors_need_run_lines_the_right_size_and_the_done_line():
-    run = "PROFILE visual=all pose=gameplay03 res=1920x1080 scale=0.80 rep=0 frames=300 avg_ms=1.73 p95_ms=2.00"
-    assert wc.profile_errors([run, "PROFILE visual done"], "1920x1080") == []
+    assert wc.profile_errors(profile_lines(), "1920x1080") == []
     assert wc.profile_errors(["GAME OK"], "1920x1080")                      # no PROFILE lines at all
-    assert wc.profile_errors([run], "1920x1080")                            # never finished
-    assert wc.profile_errors([run.replace("1920x1080", "1728x860"), "PROFILE visual done"], "1920x1080")
+    assert wc.profile_errors(profile_lines(done=False), "1920x1080")        # never finished
+    assert wc.profile_errors(profile_lines(res="1728x860"), "1920x1080")
+
+
+def test_a_partial_profile_is_an_error_even_with_the_done_line():
+    """#2697 item 5: one run line and the done line used to pass."""
+    full = profile_lines()
+    one_run = [l for l in full if l.startswith("PROFILE visual=all pose=gameplay03 ")][:1] + ["PROFILE visual done"]
+    assert wc.profile_errors(one_run, "1920x1080")
+    no_summary = [l for l in full if not l.startswith("PROFILE summary visual=-labels pose=diorama02")]
+    assert any("diorama02 visual -labels" in e for e in wc.profile_errors(no_summary, "1920x1080"))
+    short_pose = [l for l in full if not (l.startswith("PROFILE") and "visual=none pose=diorama02" in l)]
+    assert any("diorama02 has no run of none" in e for e in wc.profile_errors(short_pose, "1920x1080"))
+    assert any("'none'" in e for e in wc.profile_errors(profile_lines(labels=("all", "-labels")), "1920x1080"))
+    dropped = full.copy(); dropped.remove(next(l for l in full if l.startswith("PROFILE visual=all pose=gameplay03 ")))
+    assert any("2 run lines, summary says 3" in e for e in wc.profile_errors(dropped, "1920x1080"))
 
 
 def test_measurement_windows_are_kept_awake():

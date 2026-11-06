@@ -91,14 +91,37 @@ def res_error(text: str, expected: str) -> str | None:
     return None if m is None or m.group(1) == expected else f"res={m.group(1)}, expected res={expected}: {text}"
 
 
+PROFILE_RUN = re.compile(r"PROFILE visual=(\S+) pose=(\S+) ")
+PROFILE_SUMMARY = re.compile(r"PROFILE summary visual=(\S+) pose=(\S+) runs=(\d+)")
+
+
 def profile_errors(lines, expected: str) -> list[str]:
-    """What is wrong with a ?vprofile run's console lines: no PROFILE run lines, a run at another size, no done line."""
+    """What is wrong with a ?vprofile run's console lines: no PROFILE run lines, a run at another size, no done line, or a
+    partial profile (#2697): a pose that lacks a configuration another pose has, no "all" or "none" configuration, or a
+    configuration whose summary line is missing or counts other runs than the run lines logged."""
     runs = [l for l in lines if l.startswith("PROFILE visual=")]
     errors = [e for e in (res_error(l, expected) for l in runs) if e]
     if not runs:
         errors.append("no PROFILE visual= lines")
     if "PROFILE visual done" not in lines:
         errors.append("no 'PROFILE visual done' line")
+    counts, summarised = {}, {}
+    for l in lines:
+        if m := PROFILE_RUN.match(l):
+            counts[(m[2], m[1])] = counts.get((m[2], m[1]), 0) + 1
+        elif m := PROFILE_SUMMARY.match(l):
+            summarised[(m[2], m[1])] = int(m[3])
+    labels = {label for _, label in counts}
+    for label in ("all", "none"):
+        if runs and label not in labels:
+            errors.append(f"no PROFILE run of the '{label}' configuration")
+    for (pose, label), n in sorted(counts.items()):
+        if summarised.get((pose, label)) != n:
+            errors.append(f"pose {pose} visual {label}: {n} run lines, summary says {summarised.get((pose, label), 'nothing')}")
+    for pose in sorted({pose for pose, _ in counts}):
+        missing = sorted(labels - {label for p, label in counts if p == pose})
+        if missing:
+            errors.append(f"pose {pose} has no run of {', '.join(missing)}")
     return errors
 
 
