@@ -64,7 +64,8 @@ namespace Statecraft.Game.UI
         /// fx_reserves; Security: security). Public support is an average the sim computes from the indicators
         /// (EffectsSystem.Approval) and no cause names it, so it has none. Money adds one line after them for the causes
         /// left out, summed by the sim (EconomySystem.OtherMoney, #2212), so its lines add up to the change; none when
-        /// nothing is left over or the rest shows as IL 0.0m. <paramref name="c"/> is the game's content (its currency).</summary>
+        /// nothing is left over or the rest shows as IL 0.0m. An event's Debt line is worded there as its Money effect
+        /// (EconomySystem.MoneyLine, #2558). <paramref name="c"/> is the game's content (its currency).</summary>
         public static IReadOnlyList<string> Causes(StepResult? turn, string meter, Content c, Func<Cause, string> line)
         {
             if (turn == null) return Array.Empty<string>();
@@ -81,7 +82,9 @@ namespace Statecraft.Game.UI
             var shown = turn.Why.Select((w, i) => (w, i)).Where(x => match(x.w) && x.w.Delta != 0)
                 .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i).Take(MaxCauses).Select(x => x.w).ToList();
             if (meter == "treasury" && EconomySystem.OtherMoney(c, turn.Why, shown) is Cause other) shown.Add(other);
-            return shown.Select(line).ToList();
+            // #2558: in the Money row an event's Debt line is worded as its Money effect (EconomySystem.MoneyLine), after
+            // OtherMoney, which matches the turn's own lines by reference.
+            return shown.Select(w => line(meter == "treasury" ? EconomySystem.MoneyLine(c, w) : w)).ToList();
         }
 
         public static HudModel From(SimBridge b, UiText t)
