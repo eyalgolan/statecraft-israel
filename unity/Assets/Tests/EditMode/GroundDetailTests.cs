@@ -160,11 +160,15 @@ public class GroundDetailTests
         Assert.AreEqual(255, At(line.line[line.line.Count / 2]));
     }
 
+    /// <summary>The smallest unit base is a compact token's, its radius built as UnitLayer builds every Army base (the full
+    /// trio at DrawSpread times the hex, times UnitGround.CompactScale); no bush's top reaches that base's lip.</summary>
     [Test]
     public void NoBushStandsThroughAUnitBase()
     {
-        float smallestRing = UnitShowcase.RingRadius * 4400f * Statecraft.Game.Map.Units.UnitGround.CompactScale;
-        Assert.Less(GroundDetail.BushTopM, UnitPlinth.LipShare * smallestRing);
+        var map = OpenMap();
+        float hex = map.Hexes.hex_size_km * 1000f;
+        float smallestBase = UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), UnitShowcase.DrawSpread * hex * UnitGround.CompactScale));
+        Assert.Less(GroundDetail.BushTopM, UnitPlinth.LipShare * smallestBase);
     }
 
     [Test]
