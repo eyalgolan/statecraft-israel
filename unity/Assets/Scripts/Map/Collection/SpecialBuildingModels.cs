@@ -619,7 +619,8 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Where the buildings stand: each want in order at its route-facing (Degania), beach (<see cref="Siting.Shore"/>),
         /// roadside (<see cref="Siting.Road"/>) or seeded spot, clear of the towns, the routes, the tokens of <paramref name="date"/>,
-        /// the civilians, the wildlife and each other (a workshop also of its hex's edge and the farm scenes' plan; one of Tal's
+        /// the civilians, the wildlife and each other (a workshop also of its hex's edge and the farm scenes' plan, and on a hex
+        /// a major city's kit blocks reach, in the camera's sight past them, <see cref="InSight"/>; one of Tal's
         /// four props, <see cref="Want.TownEdge"/>, at a town's edge, within <see cref="MaxPropOffset"/> of its point); the list
         /// keeps those whose model <paramref name="available"/> holds. A row with no spot (no clear ground, or past the cap) is left
         /// out whatever <paramref name="available"/> says, so no layer keeps clear of a prop that is not drawn. It reads only the
@@ -719,18 +720,31 @@ namespace Statecraft.Game.Map.Collection
                     // #2876: clear of the major cities' kit blocks too, which reach past their footprints (out to
                     // SettlementKits.PlotReach of the radius), so a spot just outside one keeps off its outer blocks.
                     var hexBlocks = MajorCityBlocksNear(map, anchor);
+                    // #2876: on a hex those blocks reach, also where the camera sees the b21's top past them (InSight: the blocks
+                    // stand up to about 1.6 km at 60x, the b21 about 160 m). Every other hex: no test (sight stays null).
+                    float side = SizeOf(w), tan = SightTan;
+                    var sight = hexBlocks.Count == 0 ? null : MajorCitySightBlocks(map, ground, anchor, tan);
+                    bool Seen(Vector2 p, float yawDeg) => sight == null || InSight(p, yawDeg, side, ground.Y(p.x, p.y) + WorkshopTopShare * side, sight, tan);
                     bool OnHex(Vector2 p, float r) => (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms)
-                        && ClearOfBoxes(p, r, hexBlocks) && ClearOfFigures(map, p, r, built) && FreeOn(p, r, built);
+                        && ClearOfBoxes(p, r, hexBlocks) && ClearOfFigures(map, p, r, built) && FreeOn(p, r, built) && Seen(p, 0f);
                     float inside = Inside(anchor, footprints);
                     at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
                     // A town whose footprint covers the whole hex (Jerusalem, Tel Aviv): a gap between its drawn buildings (owner,
                     // 2 November 2026: "Among the houses"), or, between a major city's kit blocks, a street (#2876): the model then
                     // lies along it (dir), as a roadside model along its road.
-                    if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, SizeOf(w), (p, r) =>
+                    if (at == null && inside > 0f) at = TownGap(map, w.Key, anchor, clearance, side, (p, r) =>
                         (p - anchor).magnitude + r <= HexInnerRadiusM && TownLandmarks.Clear(p, r, farms) && TownLandmarks.Clear(p, r, taken)
                         && ClearOfFigures(map, p, r, built)
                         && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
-                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built), out dir);
+                        && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, built), Seen, out dir);
+                    // #2876 (coordinator, 6 November 2026: no quiet fallback to a hidden spot): where no spot on the hex passes
+                    // every test, the camera's sight included, the b21 is not drawn, and the warning names the cities.
+                    if (at == null && sight != null)
+                    {
+                        if (log && available(w.Model))
+                            Debug.LogWarning($"BUILDINGS: no spot on the hex of {w.Key} passes every test, the camera's sight past the kit blocks of {string.Join(", ", sight.Select(b => b.Id).Distinct())} included; its {w.Model} is not drawn.");
+                        continue;
+                    }
                 }
                 else if (at == null)
                 {
@@ -878,6 +892,94 @@ namespace Statecraft.Game.Map.Collection
             return true;
         }
 
+        /// <summary>#2876: the tangent of the view's shallowest ray. CameraRig turns the camera Euler(Pitch, Yaw, 0) at every zoom
+        /// (CameraRig.Apply; no pitch curve), so on the screen's centre column a point on its centre row is seen at Pitch below
+        /// the horizon and one at its top edge at Pitch - Fov / 2, 32.5 degrees, the lowest (as <see cref="FigureShadowM"/>).
+        /// The top bar's inset (CameraRig.TopInset) only lowers the map area's top edge, so it never looks lower. Toward the
+        /// screen's top corners a ray looks lower still and turns off north; that is not modelled.</summary>
+        public static float SightTan => Mathf.Tan((CameraRig.Pitch - 0.5f * CameraRig.Fov) * Mathf.Deg2Rad);
+
+        /// <summary>#2876: the b21's top over its ground, as a share of its <see cref="SizeOf(Want)"/>. Its FBX's vertex extents are
+        /// 0.959 by 0.999 across and 0.549 high (b21-artisan-workshop-v2.fbx, read 6 November 2026) and Rebuild scales its wider
+        /// side to SizeOf, so its top is 0.55 of it; taken a little low, as a lower top hides behind more.</summary>
+        public const float WorkshopTopShare = 0.5f;
+
+        /// <summary>#2876: how far above its census wall height (Placed.H) a major city's block reaches (m). Tel Aviv's blocks
+        /// (SettlementKits.TelAvivBlock, its only lattice) at most a stair head, 2.8 real m over the wall top, and its water
+        /// tank, 1.6 real m on that, at KitScale.CityBlocks. Another major city's buildings are white, stone and old blocks and
+        /// houses at either scale (the most over a flat roof the same 4.4 real m) and Haifa's Templer houses, whose gable rises
+        /// 0.55 of the house's narrower side (SettlementKits.ModelHeight's Templer).</summary>
+        internal static float RoofRiseOf(string id, float w, float d) => id == "tel_aviv" ? 4.4f * Kits.KitScale.CityBlocks
+            : Mathf.Max(4.4f * Mathf.Max(Kits.KitScale.CityBlocks, Kits.KitScale.Houses), 0.55f * Mathf.Min(w, d));
+
+        /// <summary>#2876: a major city's kit block as <see cref="InSight"/> reads it: its box (as KitMesh.Corners) and its top,
+        /// world y.</summary>
+        internal readonly struct SightBlock
+        {
+            public readonly string Id; public readonly Vector2 C; public readonly float Yaw, W, D, Top;
+            public SightBlock(string id, Vector2 c, float yaw, float w, float d, float top) { Id = id; C = c; Yaw = yaw; W = w; D = d; Top = top; }
+        }
+
+        /// <summary>#2876: the major cities' kit blocks (MapScene.MajorCityBlocks) that may hide a model on the hex about
+        /// <paramref name="anchor"/> from the camera, in placement order. A block's top is the ground it stands on (the highest
+        /// of its corners and centre, as SettlementKits.GroundSpan stands it) plus its wall height and <see cref="RoofRiseOf"/>.
+        /// It can hide ground as far as its top over y = 0 (the terrain's lowest point: CameraController.MinClearanceShare)
+        /// over <paramref name="tanPitch"/> north of it.</summary>
+        internal static List<SightBlock> MajorCitySightBlocks(MapScene map, Kits.KitGround ground, Vector2 anchor, float tanPitch)
+        {
+            var list = new List<SightBlock>();
+            foreach (var b in map.MajorCityBlocks)
+            {
+                float a = b.Yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a), hi = float.MinValue;
+                for (int i = 0; i < 5; i++)
+                {
+                    float u = i == 4 ? 0f : ((i & 1) == 0 ? -0.5f : 0.5f) * b.W, v = i == 4 ? 0f : ((i & 2) == 0 ? -0.5f : 0.5f) * b.D;
+                    hi = Mathf.Max(hi, ground.Y(b.C.x + u * ca - v * sa, b.C.y + u * sa + v * ca));
+                }
+                float top = hi + b.H + RoofRiseOf(b.Id, b.W, b.D);
+                float reach = HexInnerRadiusM + 0.5f * (b.W + b.D) + Mathf.Max(0f, top) / tanPitch;
+                if ((b.C - anchor).sqrMagnitude <= reach * reach) list.Add(new SightBlock(b.Id, b.C, b.Yaw, b.W, b.D, top));
+            }
+            return list;
+        }
+
+        /// <summary>#2876 (coordinator, 6 November 2026: the b21 must be visible among the major cities' tall blocks): whether
+        /// the camera sees the whole top of a model at <paramref name="p"/>, its ground a square <paramref name="size"/> a side
+        /// turned <paramref name="yawDeg"/> (as KitMesh.Corners), its top at world y <paramref name="topY"/>, past every block of
+        /// <paramref name="blocks"/>. The camera looks north (CameraRig yaw 0: fixed north under gdd-0.3, the only ruleset with
+        /// workshops, CameraHeadingPolicy.IsFixedNorth), so it stands south of the model (x east, z north) and a ray from the
+        /// top toward it runs south (-z), rising <paramref name="tanPitch"/> a metre. A block whose top is
+        /// <c>rise</c> above the model's hides it when its box meets the square swept <c>rise / tanPitch</c> south: the hull of
+        /// the square and its copy that far south, tested against the box on their side axes and the sweep's own (x), with
+        /// touching as apart (as <see cref="BoxesClear"/>). A block no higher than the top hides nothing.</summary>
+        internal static bool InSight(Vector2 p, float yawDeg, float size, float topY, List<SightBlock> blocks, float tanPitch)
+        {
+            float a = yawDeg * Mathf.Deg2Rad, half = 0.5f * size;
+            var u = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); var v = new Vector2(-u.y, u.x);
+            float ex = half * (Mathf.Abs(u.x) + Mathf.Abs(v.x)), ez = half * (Mathf.Abs(u.y) + Mathf.Abs(v.y));
+            foreach (var b in blocks)
+            {
+                float rise = b.Top - topY;
+                if (rise <= 0f) continue;
+                float run = rise / tanPitch, reach = 0.5f * (b.W + b.D);
+                // Its box's bounds (within reach of its centre) against the swept square's: apart, it cannot hide the model.
+                if (b.C.x - reach >= p.x + ex || b.C.x + reach <= p.x - ex || b.C.y - reach >= p.y + ez || b.C.y + reach <= p.y - ez - run) continue;
+                float ba = b.Yaw * Mathf.Deg2Rad;
+                var bu = new Vector2(Mathf.Cos(ba), Mathf.Sin(ba)); var bv = new Vector2(-bu.y, bu.x);
+                var t = b.C - p;
+                bool Apart(Vector2 n)
+                {
+                    float r1 = half * (Mathf.Abs(Vector2.Dot(u, n)) + Mathf.Abs(Vector2.Dot(v, n)));
+                    float back = -run * n.y;   // the swept copy's centre, projected (the model's centre projects to 0)
+                    float lo = Mathf.Min(0f, back) - r1, hi = Mathf.Max(0f, back) + r1;
+                    float cb = Vector2.Dot(t, n), rb = 0.5f * b.W * Mathf.Abs(Vector2.Dot(bu, n)) + 0.5f * b.D * Mathf.Abs(Vector2.Dot(bv, n));
+                    return hi <= cb - rb || lo >= cb + rb;
+                }
+                if (!(Apart(u) || Apart(v) || Apart(Vector2.right) || Apart(bu) || Apart(bv))) return false;
+            }
+            return true;
+        }
+
         /// <summary>Whether two boxes, each centred at c, turned yaw degrees anticlockwise in x-z (KitMesh.Corners), w along its
         /// turn and d across, are apart (touching counts as apart): one of their four side axes separates them.</summary>
         public static bool BoxesClear(Vector2 c1, float yaw1, float w1, float d1, Vector2 c2, float yaw2, float w2, float d2)
@@ -902,9 +1004,11 @@ namespace Statecraft.Game.Map.Collection
         /// 0.959 by 0.999 FBX units, read from b21-artisan-workshop-v2.fbx on 6 November 2026, centred, so its square holds it),
         /// turned with the nearest block within reach, clear of every block and kit landmark as boxes, every other test
         /// unchanged (the disc); <paramref name="along"/> is then that street's direction (world x, z, unit length), for the model
-        /// to lie along it. Null when neither is clear.</summary>
+        /// to lie along it. Both searches also take only a spot <paramref name="seen"/> passes, given the spot and the turn (degrees,
+        /// as KitMesh.Corners) the model is drawn at: 0 in a gap, the street's on a street (#2876: <see cref="InSight"/> on a hex
+        /// a major city's blocks reach, true elsewhere). Null when neither is clear.</summary>
         internal static Vector2? TownGap(MapScene map, string key, Vector2 anchor, float clearance, float size, Func<Vector2, float, bool> free,
-            out Vector2? along)
+            Func<Vector2, float, bool> seen, out Vector2? along)
         {
             along = null;
             var houses = TownBuildings(map, anchor, out var names);
@@ -937,7 +1041,7 @@ namespace Statecraft.Game.Map.Collection
             {
                 if (Named(p) || !TownLandmarks.Clear(p, clearance, houses) || !ClearOfBoxes(p, clearance, blocks)) return false;
                 foreach (var (bc, yaw, bw, bd) in landmarks) if (!ClearOfBox(p, clearance, bc, yaw, bw, bd)) return false;
-                return free(p, clearance);
+                return free(p, clearance) && seen(p, 0f);
             });
             if (gap != null || blocks.Count == 0) return gap;
             float streetYaw = 0f;
@@ -965,7 +1069,7 @@ namespace Statecraft.Game.Map.Collection
                     if (!BoxesClear(p, streetYaw, size, size, bc, yaw, bw, bd)) return false;
                 }
                 foreach (var (bc, yaw, bw, bd) in landmarks) if (!BoxesClear(p, streetYaw, size, size, bc, yaw, bw, bd)) return false;
-                return free(p, clearance);
+                return free(p, clearance) && seen(p, streetYaw);
             });
             if (street != null) { float a = streetYaw * Mathf.Deg2Rad; along = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); }
             return street;

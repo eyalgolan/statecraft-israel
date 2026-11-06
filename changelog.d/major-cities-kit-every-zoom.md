@@ -5,3 +5,6 @@
   6 November 2026: "Big blocks, every zoom", "Just the four (Recommended)"). This replaces the 2 November 2026 ruling
   ("Yes, small buildings at every zoom"). A city is one of these when its 1945 population is at least 60,000. The game
   no longer streams these four cities' building models; the files still ship.
+- An arms workshop built in one of these four cities stands where the map's camera can see it past the big blocks: no
+  block between it and the camera rises above it. Where no such spot is left on its hex, the workshop is not drawn and the
+  game logs a warning naming the city, rather than standing it hidden behind the blocks.
