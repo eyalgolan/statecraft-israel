@@ -62,6 +62,22 @@ public class FieldsTests
         Assert.Contains(b.Why, w => w.System == "economy" && w.Target == "food" && w.Delta == 7 && w.Message == "Site A fields: the plowed land yielded 7 units of Food");
     }
 
+    // R-FIELD-002, #2530: a count of 1 names the singular.
+    [Fact]
+    public void ASingleUnitOfFoodNamesTheSingular()
+    {
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["sites.yaml"] = Fixture.GddSites + FieldSite("[field]"),
+            ["rules.yaml"] = Fixture.Files["rules.yaml"].Replace("map_action: 1 }", Fixture.GddCosts)
+                + Fixture.GddRules.Replace("field_food_per_turn: 7", "field_food_per_turn: 1"),
+        })));
+        var s = NoImports(c);
+        s.Sites["site_a_field"] = SiteWork.Built("site_a_field", new DateTime(1948, 5, 15));
+        var r = Step(c, s);
+        Assert.Contains(r.Why, w => w.System == "economy" && w.Target == "food" && w.Delta == 1 && w.Message == "Site A fields: the plowed land yielded 1 unit of Food");
+    }
+
     // R-FIELD-002, D-A6: the field's Food reaches the stock before the nation eats (step 7), so it covers part of the need. Added
     // after eating, the same turn would leave all 100 units unmet and 7 in the stock. Production (step 6's jobs income) moves
     // only the Treasury, so the order against it shows only in the order of the causes.

@@ -659,6 +659,17 @@ def test_editmode_needs_tests_and_no_failures_and_never_quits(night, env):
     assert restore[0] == nightly.RESTORE_ARGV
 
 
+def test_editmode_leaves_out_the_tests_that_need_gitignored_local_assets(night, env):
+    # #2655 item 6: the nightly's clean clone never has them, so they only padded its skip count.
+    r = editmode_runner(night)
+    nightly.run_editmode(night, r)
+    tests = r.envs[1][0]
+    assert tests[tests.index("-testCategory") + 1] == "!" + nightly.LOCAL_ONLY
+    tiles = Path(__file__).resolve().parents[2] / "unity/Assets/Editor/HexTiles/Tests"
+    for name in ("HexModelMeshTests.cs", "HexUnitTests.cs"):
+        assert f'[Test, Category("{nightly.LOCAL_ONLY}")]' in (tiles / name).read_text(encoding="utf-8"), name
+
+
 def test_editmode_with_zero_tests_refuses_and_still_restores_settings(night, env):
     r = editmode_runner(night, xml='<test-run total="0" passed="0" failed="0"/>')
     with pytest.raises(Refused) as e:

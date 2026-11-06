@@ -104,3 +104,19 @@ def test_the_cli_clearly_refuses_a_failed_streaming_git_log(tmp_path, monkeypatc
     captured = capsys.readouterr()
     assert "HISTORY SCAN FAILED" in captured.err and "incomplete" in captured.err
     assert "scanned" not in captured.out and "open secret-shape findings" not in captured.out
+
+
+def test_open_rows_that_are_not_secret_shaped_print_as_one_count_per_kind(tmp_path, capsys):
+    # #2655 item 7: main's 1,311 OPEN personal-email rows (mostly commit identities) buried the gate's summary line.
+    root = new_repo(tmp_path)
+    for i in range(3):
+        write(root, f"{i}.txt", "x\n")
+        git(root, "add", "-A")
+        git(root, "-c", "user.name=t", "-c", f"user.email=person{i}" + "@" + "corp.com", "commit", "-qm", f"c{i}")
+    write(root, "promo/k.py", f'K = "{FAKE}"\n')
+    c4 = commit_all(root, "add tool")
+    scan_history.main(["--repo", str(root)])
+    out = capsys.readouterr().out
+    assert "(identity)  personal-email  OPEN" not in out
+    assert "personal-email  3 OPEN rows (not secret-shaped, not listed)" in out
+    assert f"{c4}  promo/k.py  elevenlabs-key  OPEN" in out and "1 open secret-shape findings" in out

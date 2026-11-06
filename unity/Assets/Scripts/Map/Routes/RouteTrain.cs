@@ -45,6 +45,8 @@ namespace Statecraft.Game.Map.Routes
         float carHalfWidth;
         TerrainData? terrain;
         Vector3 terrainOrigin;
+        // The chimney's top in the locomotive car's own frame (before its scale), where the steam leaves (TrainSteam).
+        Vector3 chimneyLocal;
 
         /// <summary>Distance along the line of the head (front of the locomotive) at time <paramref name="t"/>, and the
         /// direction (+1 towards the turn point, -1 back).</summary>
@@ -60,6 +62,33 @@ namespace Statecraft.Game.Map.Routes
             }
             float back = Mathf.Min((x - leg) * SpeedMps, run);
             return (endS - length - back, -1);
+        }
+
+        /// <summary>Whether the train is running at time <paramref name="t"/>: false while it stands at either end, and
+        /// always false for a still train (and for a stretch shorter than the train, where it cannot run).</summary>
+        public bool MovingAt(float t)
+        {
+            if (still.HasValue) return false;
+            float run = endS - startS - length;
+            if (run <= 0f) return false;
+            float leg = run / SpeedMps + DwellSeconds;
+            float x = Mathf.Repeat(t, 2f * leg);
+            if (x >= leg) x -= leg;
+            return x * SpeedMps < run;
+        }
+
+        /// <summary>The locomotive's chimney top (world) with the head at <paramref name="head"/> running in direction
+        /// <paramref name="dir"/>, and the way back along the locomotive (world, unit, level): where its steam leaves and
+        /// where it drifts. As <see cref="Place"/> puts the locomotive, without the model train's few metres of lift.</summary>
+        public (Vector3 at, Vector3 back) ChimneyAt(float head, int dir)
+        {
+            if (cars.Count == 0) return (Vector3.zero, Vector3.back);
+            float c = head - dir * carOffset[0], half = carHalf[0];
+            var fwd = At(c + dir * half) - At(c - dir * half);
+            var axis = fwd.sqrMagnitude > 1e-6f ? fwd.normalized : Vector3.forward;
+            var at = At(c) + Quaternion.LookRotation(axis, Vector3.up) * Vector3.Scale(cars[0].lossyScale, chimneyLocal);
+            var back = new Vector3(-axis.x, 0f, -axis.z);
+            return (at, back.sqrMagnitude > 1e-6f ? back.normalized : Vector3.back);
         }
 
         public float? StillHead => still;
@@ -173,11 +202,14 @@ namespace Statecraft.Game.Map.Routes
                 offset += 2f * half + TrainModels.GapM * Scale;
             }
             train.length = offset - TrainModels.GapM * Scale;
+            train.chimneyLocal = new Vector3(0f, TrainModels.ChimneyTopM, TrainModels.ChimneyZM);
 
             float stillMiddle = train.Nearest(new Vector2(stillAt.x, stillAt.z));
             float stillHead = Mathf.Clamp(stillMiddle + train.length / 2f, train.startS + train.length, train.endS);
             train.still = stillTrain ? stillHead : (float?)null;
             if (stillTrain) train.Place(stillHead, +1); else { var (h, d) = train.HeadAt(0f); train.Place(h, d); }
+            // A still train never runs, so it never steams: only the moving showcase carries the steam.
+            if (!stillTrain) TrainSteam.Attach(train, TrainSteam.PuffWidthShare * TrainModels.LocoWidthM * Scale * Chunk);
             return go;
         }
 
@@ -236,6 +268,9 @@ namespace Statecraft.Game.Map.Routes
             body.transform.localPosition -= new Vector3(size.center.x, size.min.y, size.center.z);
             loco.transform.localScale = CarScale(size.size, carLength, carWidthM);
             train.AddCar(loco.transform, carLength);
+            // The model's chimney: at its top, as far behind its smokebox end as the showcase's chimney is behind the
+            // showcase locomotive's front, along the locomotive and tender together (TrainModels).
+            train.chimneyLocal = new Vector3(0f, size.size.y, size.extents.z - ChimneyShare * size.size.z);
 
             // The coaches: the showcase's painted miniatures, one mesh per coach as the showcase's own consist.
             if (cars > 1)
@@ -265,8 +300,13 @@ namespace Statecraft.Game.Map.Routes
             train.carHalfWidth = carWidthM / 2f;
             train.terrain = data; train.terrainOrigin = origin; train.clearGround = true;
             var (h, d) = train.HeadAt(0f); train.Place(h, d);
+            TrainSteam.Attach(train, TrainSteam.PuffWidthShare * carWidthM);
             return train;
         }
+
+        /// <summary>How far the chimney stands behind the front of the locomotive and tender, as a share of their length: the
+        /// showcase's (TrainModels), about 0.06.</summary>
+        public const float ChimneyShare = (TrainModels.LocoLengthM / 2f - TrainModels.ChimneyZM) / ModelRealLengthM;
 
         /// <summary>The scale that makes a shape of <paramref name="size"/> (its length along Z) <paramref name="length"/> long
         /// and <paramref name="width"/> wide, its height scaled with its width.</summary>

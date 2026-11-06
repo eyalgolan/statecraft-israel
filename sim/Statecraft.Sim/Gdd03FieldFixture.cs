@@ -164,11 +164,14 @@ namespace Statecraft.Sim
                 var field = p.Assignment.Target;
                 if (!working.Contains(p.Id) || p.Profession != CivilianProfession.Farmer || field == null
                     || !fields.Contains(field) || !israeliHeldNow.Contains(field)) continue;
+                // The same maintainer call as the pioneer producer's, not a rule: a veteran's work XP stops at promotion,
+                // so a veteran is skipped before AfterWork, whose checked increment throws at int.MaxValue (#2804 item 12).
+                // Its Food is Yield's, which never reads work XP.
+                if (turnStart.PopulationLedger.Get(p.Id).Tier == CivilianTier.Veteran) continue;
                 // R-VET-001: staffed farming counts regardless of output, so the receipt carries no amount.
                 var next = CivilianProfessionRules.AfterWork(content, turnStart, p.Id,
                     new[] { new CivilianWorkEvidence(p.Id, field, CivilianWorkKind.StaffedFarming, 0m) });
-                // The same maintainer call as the pioneer producer's, not a rule: a veteran's work XP stops at promotion.
-                if (!ReferenceEquals(next, turnStart.PopulationLedger.Get(p.Id)) && turnStart.PopulationLedger.Get(p.Id).Tier != CivilianTier.Veteran)
+                if (!ReferenceEquals(next, turnStart.PopulationLedger.Get(p.Id)))
                     candidate.PopulationLedger.Replace(next);
             }
             candidate.PopulationLedger.Reconcile();

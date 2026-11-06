@@ -86,6 +86,13 @@ public class RaidTests
         Assert.Equal(before.Describe(), s.Describe());
         Assert.Equal(before.Hash(), s.Hash());
         Assert.Single(Step(c, before, Raid()).Rejected);
+        // #2733 item 1: with a cost the Attention could pay, the refused order's Attention comes back.
+        var costly = CaptureTests.Load(f => f["rules.yaml"] = f["rules.yaml"].Replace("resolve_capture: 0,", "resolve_capture: 2,"), CaptureTests.AllTargets);
+        before.Attention = 5;
+        Assert.InRange(AttentionSystem.Cost(costly, before, SettlementControl.ResolveKind), 0.1, before.Attention);
+        var refused = Simulation.Preview(costly, before, new Command[] { Raid() });
+        Assert.Contains("A unit has no free hex", Assert.Single(refused.Rejected).Reason);
+        Assert.Equal(before.Attention, refused.State.Attention);
     }
 
     [Fact]
@@ -173,6 +180,20 @@ public class RaidTests
         Assert.Equal("", next.Settlements["town_a"].Owner);
         Assert.Equal((2, 0), (next.Units[1].Q, next.Units[1].R));
         Assert.Equal((1, 0), (next.Units[6].Q, next.Units[6].R));
+    }
+
+    // R-CTRL-008 (#2733 item 3): the captures still waiting at the end resolve in ordinal id order, whatever order they were
+    // captured in: town_c (taken first) resolves after town_a.
+    [Fact]
+    public void PendingCapturesResolveAtTheEndInOrdinalOrder()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 1, 0), Soldier(2, 4, 0));
+        s.Settlements["town_c"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date);
+        s.Settlements["town_a"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date);
+        s.Date = c.End.AddDays(-10);   // the next turn ends on the game's end
+        var why = Step(c, s).Why;
+        Assert.Equal(new[] { "town_a", "town_c" }, why.Where(x => x.Key == CauseKeys.PendingBecameRaid).Select(x => x.Target));
     }
 
     // R-CTRL-010: a unit keeps its orders when it withdraws, as after a Move; a fortify names the place's hex, so the

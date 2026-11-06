@@ -14,7 +14,8 @@ namespace Statecraft.Sim
 
         /// <summary>Fires every unfired event whose `requires` (if any) is met, whose window [From, To) overlaps the turn just played,
         /// [<paramref name="turnStart"/>, s.Date), or contains s.Date; <paramref name="turnStart"/> defaults to s.Date
-        /// (game start). Every eligible hard anchor fires; MaxSoftEventsPerTurn caps only the non-hard events per turn,
+        /// (game start). A quiet armistice card (R-WAR-008, gdd-0.3) is the exception: it can fire before its From and after its To.
+        /// Every eligible hard anchor fires; MaxSoftEventsPerTurn caps only the non-hard events per turn,
         /// which fill the slots that remain (max(0, cap - hard count)) in the usual order (an early armistice first, R-WAR-008, then consequence cards, R-ALT-008, then From, objective cards last in objectives.yaml's order, R-OBJ-007, then id). Objective and Deport cards take no soft slot. The fired
         /// events keep the usual order. An eligible soft event left out by the cap waits past its window until it can fire.
         /// Late fire: an event whose window overlapped the turn just played can fire after its window has ended; its
@@ -31,9 +32,10 @@ namespace Statecraft.Sim
             // (Armistice.MayOfferEarly): before its hard-anchor date, and again after a refusal. On that path it is soft.
             var quiet = new HashSet<string>(c.Events.Where(e => e.FrontQuiet != "" && Armistice.MayOfferEarly(c, s, e.FrontQuiet)
                 && (s.FiredEvents.Contains(e.Id) || s.Date < e.From)).Select(e => e.Id));
+            // R-WAR-008 (#2813): a quiet armistice card has no end date, so its `to` (1950-01-01 on the real cards) does not end it.
             var eligible = c.Events
                 .Where(e => (quiet.Contains(e.Id) || !s.FiredEvents.Contains(e.Id) && e.From <= s.Date)
-                            && (s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value))
+                            && (quiet.Contains(e.Id) || s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value))
                 .Where(e => !endingTurn || EndingCard(s, e))
                 .Where(e => Timeline.AllMet(c, s, e))
                 // R-OBJ-003: an objective's card waits for the objective. Only the GDD loop records one, so in the legacy loop it never fires.

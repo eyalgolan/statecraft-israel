@@ -94,6 +94,10 @@ namespace Statecraft.Game.UI
         bool endClosed;
         /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
         bool keptResumed = true;
+        /// <summary>The Budget screen of the last Begin, whose unsubmitted draft a language switch hands to the next (#2708).</summary>
+        BudgetPresenter? budgetScreen;
+        /// <summary>Set by SwitchLanguage for its Begin (#2708): the old Budget screen's draft, for the rebuilt one.</summary>
+        IReadOnlyDictionary<string, double>? keptBudgetDraft;
         /// <summary>The save notices of <see cref="saveNoticeSession"/>, the session Begin last started, as language-independent
         /// keys, so a language switch can say them again in the new language (#2552). A New game replaces the bridge's session
         /// without Begin, so the keys are said only while the kept session is still the one that raised them.</summary>
@@ -366,7 +370,7 @@ namespace Statecraft.Game.UI
             outcomes = video == null ? null : Own(new OutcomePresenter(root, bridge, text, Own(new CardVideo()), mapping.outcomes,
                 () => card?.Render(), () => nav?.Close()));
             Own(new DefencePresenter(root, bridge, text, portraits));
-            var budget = Own(new BudgetPresenter(root, bridge, text));
+            var budget = budgetScreen = Own(new BudgetPresenter(root, bridge, text, keptBudgetDraft));
             var why = Own(new WhyPresenter(root, bridge, text));
             Own(new TimelinePresenter(root, bridge, text));
             Own(new ObjectivesPresenter(root, bridge, text));
@@ -486,7 +490,8 @@ namespace Statecraft.Game.UI
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
-            owned.Add(new UnitAttackPresenter(bridge, unitLayer.PlayAttack));   // after showUnits: the map is redrawn first
+            owned.Add(new UnitAttackPresenter(bridge, unitLayer.PlayAttack, unitLayer.PlayHit, unitLayer.PlayDestroyed,
+                unitLayer.PlayDefenderHit, unitLayer.PlayAttack));   // after showUnits: the map is redrawn first
             DiagLog.BootPhase("units layer built");
             // #1878: the turn report is up, the hexes the turn attacked show the under-attack look; closing it clears them.
             var underAttack = new Statecraft.Game.Map.UnderAttackLayer(map);
@@ -558,6 +563,11 @@ namespace Statecraft.Game.UI
             // Audit L4: while a screen is open, the Up and Down arrows are its rows' (NavigationGuard.Step), not the camera's.
             Func<bool> screenTakesUpDown = () => nav?.Current != null;
             cameraController.ScreenTakesUpDown = screenTakesUpDown;
+            // #2712: in the two-row HUD (the tight three-row one too) an open screen covers the whole map, so the camera keys
+            // are off while it shows, as under the start screen; a desktop screen leaves the map beside it (plan amendment A4).
+            var hudRoot = root.Q("root") ?? root;
+            Func<bool> screenCoversMap = () => nav?.Current != null && hudRoot.ClassListContains(HudPresenter.TwoRowClass);
+            cameraController.ScreenCoversMap = screenCoversMap;
             Action<int, int, bool> onHex = (q, r, cityPill) =>
             {
                 OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen, cityPill);
@@ -625,6 +635,7 @@ namespace Statecraft.Game.UI
                 if (cameraController.HoldsMouseDrag == holdsMouseDrag) cameraController.HoldsMouseDrag = null;
                 if (cameraController.HoldsTouchDrag == holdsTouchDrag) cameraController.HoldsTouchDrag = null;
                 if (cameraController.ScreenTakesUpDown == screenTakesUpDown) cameraController.ScreenTakesUpDown = null;
+                if (cameraController.ScreenCoversMap == screenCoversMap) cameraController.ScreenCoversMap = null;
                 if (pointer.Map == map) { pointer.Map = null; pointer.View = null; }
                 cameraController.Bounds = oldBounds;
                 cameraController.Ground = oldGround; cameraController.GroundTop = oldTop;
@@ -752,6 +763,9 @@ namespace Statecraft.Game.UI
                     },
                 }));
             budget.UnsubmittedChanged += advisor.BudgetUnsubmitted;
+            // A kept draft (#2708) said "unsubmitted" while the screen was built, before this line listened: the advisor
+            // takes that state without a second Notice, so a put-off budget warning is not pruned after a language switch.
+            advisor.HoldsBudgetUnsubmitted = bridge.BudgetUnsubmitted(budget.Draft);
             // The advisors' encyclopedia (spec 10), which replaces How to play: after the advisor, whose Show me and opening
             // chain its buttons call; an advisor's Tell me more opens its pages (OpenPage above).
             encyclopedia = Own(new EncyclopediaPresenter(root, text, AdvisorSession.Catalog, nav!, advisor, bridge.Content.Ruleset));
@@ -764,10 +778,22 @@ namespace Statecraft.Game.UI
                 // is no opening, so that route only plays the opening.
                 Action freshGame = () => { if (opening != null) opening.Show(replay: false); else advisor?.NewGame(); };
                 Action freshOpened = () => opening?.Show(replay: false);
+                // #2712: a New Game keeps the map, so the camera goes back to the opening view here, as MapScene.Build sets it
+                // at boot: Tel Aviv and Jaffa in frame at the start zoom.
+                Action openingView = () =>
+                {
+                    var cam = cameraController.GetComponent<Camera>();
+                    camRig.LookAt = CameraRig.OpeningLookAt(map.Frame, cam.aspect,
+                        map.Settlements.Single(s => s.Id == "tel_aviv"), map.Settlements.Single(s => s.Id == "jaffa"));
+                    camRig.Distance = CameraRig.StartDistance;
+                    cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+                };
+                newGame.Started += openingView;
                 newGame.Started += freshGame;
                 if (start != null) start.FreshGameOpened += freshOpened;
                 owned.Add(new Undo(() =>
                 {
+                    newGame.Started -= openingView;
                     newGame.Started -= freshGame;
                     if (start != null) start.FreshGameOpened -= freshOpened;
                 }));
@@ -816,7 +842,10 @@ namespace Statecraft.Game.UI
             endClosed = end != null && !end.IsOpen;   // read before Begin disposes it
             bool fromStart = start?.IsOpen == true;
             keptResumed = start?.Resumed ?? true;
-            Begin(inputs, 0, startScreen: fromStart, keep: Bridge);
+            keptBudgetDraft = budgetScreen?.Draft;   // read before Begin disposes it; the new screen copies it
+            // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
+            try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
+            finally { keptBudgetDraft = null; }
             if (!fromStart) nav?.Open("settings");
             // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
             // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
@@ -1019,7 +1048,7 @@ namespace Statecraft.Game.UI
             owned.Clear();
             savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1211,11 +1240,15 @@ namespace Statecraft.Game.UI
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;
+                // One press closes one layer, the topmost (#2609): each step below runs only while nothing above took it. The
+                // start screen covers an ended save's end screen and everything else under it: open, it takes the press,
+                // withdrawing an armed New Game or doing nothing.
+                if (!done && start?.IsOpen == true) { start.Escape(); done = true; }
                 if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true;
                 if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true;
-                done |= start?.Escape() == true;
-                // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2).
-                done |= cabinet?.Escape() == true || nav?.Close() == true;
+                // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2). A screen the
+                // focused element's Cancel already closed this frame took the press too (ClosedThisFrame), as for end and report.
+                if (!done) done = cabinet?.Escape() == true || nav?.Close() == true || nav?.ClosedThisFrame == true;
                 // With nothing above it to close, Escape withdraws a New Game request armed from the top bar too, the start
                 // screen closed (#2340 L2, #2521), and is used up there, so it does not also clear the map selection. A
                 // decision card or capture dialog open over it is above it (the top bar stays usable under them): that
@@ -1230,18 +1263,20 @@ namespace Statecraft.Game.UI
                     && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
                     info?.Escape();
             }
-            // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
-            // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
-            // stay with the camera (NavigationGuard, B6), except that Up and Down move between an open screen's rows (audit L4;
-            // the owner's answer on #2340, Q27: "do the recommended for all"). The UI map reads no keyboard key (B6), so they
-            // arrive here.
+            // PageUp, PageDown, Home and End, with no modifier, scroll the topmost open view (the ending, the turn report, a
+            // screen, the card's text, the capture dialog or the info panel), with or without focus (KeyScroll; accessibility
+            // audit H3, K6), but not under an End Turn outcome clip, which covers them. The arrows stay with the camera
+            // (NavigationGuard, B6), except that Up and Down move between an open screen's rows (audit L4; the owner's answer
+            // on #2340, Q27: "do the recommended for all"). The UI map reads no keyboard key (B6), so they arrive here.
             var keys = UnityEngine.InputSystem.Keyboard.current;
-            if (keys != null && outcomes?.Showing == null && report?.IsOpen != true && end?.IsOpen != true && !(keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.shiftKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed))
+            if (keys != null && outcomes?.Showing == null && !(keys.ctrlKey.isPressed || keys.altKey.isPressed || keys.shiftKey.isPressed || keys.leftMetaKey.isPressed || keys.rightMetaKey.isPressed))
             {
                 KeyScroll.Key? page = keys.pageUpKey.wasPressedThisFrame ? KeyScroll.Key.PageUp : keys.pageDownKey.wasPressedThisFrame ? KeyScroll.Key.PageDown
                     : keys.homeKey.wasPressedThisFrame ? KeyScroll.Key.Home : keys.endKey.wasPressedThisFrame ? KeyScroll.Key.End : (KeyScroll.Key?)null;
                 if (page != null) KeyScroll.Press(document.rootVisualElement, nav?.Current, card?.Shown != null && !card.Collapsed, page.Value);
-                if (keys.upArrowKey.wasPressedThisFrame || keys.downArrowKey.wasPressedThisFrame) navGuard?.Step(keys.upArrowKey.wasPressedThisFrame);
+                // Not under the turn report or the ending: they cover the screen, which ScreenNav.DisableCovered leaves enabled (#2651 review).
+                if (report?.IsOpen != true && end?.IsOpen != true && (keys.upArrowKey.wasPressedThisFrame || keys.downArrowKey.wasPressedThisFrame))
+                    navGuard?.Step(keys.upArrowKey.wasPressedThisFrame);
             }
             SyncMinimap();
             if (!logCamera || rig == null || (rig.Distance == loggedDistance && rig.Yaw == loggedYaw)) return;

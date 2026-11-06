@@ -164,6 +164,19 @@ offices:
         Assert.Contains(res.Why, w => w.System == "city" && w.Message == "Town A: 3 groups of immigrants housed");
     }
 
+    // R-MIN-002, #2530: a count of 1 names the singular.
+    [Fact]
+    public void ASingleGroupHousedNamesTheSingular()
+    {
+        var c = Town(budget: "immigration_minister");
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var x = s.Cities["town_a"];
+        s.Cities["town_a"] = x.WithCounts(x.Civilians, x.Employed, 2);   // floor(2 x 0.75) houses 1
+        var r = Step(c, s);
+        Assert.Contains(r.Why, w => w.System == "city" && w.Message == "Town A: 1 group of immigrants housed");
+        Assert.Equal(1, r.State.Cities["town_a"].Refugees);
+    }
+
     // R-MIN-003
     [Fact]
     public void AVacantOrEndedOfficeIsAsStated()

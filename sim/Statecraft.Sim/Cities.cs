@@ -78,6 +78,9 @@ namespace Statecraft.Sim
             if (housing != null) s.Indicators[housing.Id] = EffectsSystem.Level(c, s, housing);   // R-HOUSE-004 from the first day
         }
 
+        // #2530: a count of 1 names the singular, as the UI's helper does.
+        static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
+
         /// <summary>R-CITY-001: sets the number of the city's people in jobs (a standing order), and turns that city's job
         /// default off (R-CITY-009). Refused, state untouched, when the city or role is unknown or the count is negative, above
         /// the job slots or above the civilians and craftsmen. Step has already refused it in the legacy loop.</summary>
@@ -97,7 +100,7 @@ namespace Statecraft.Sim
                     ? FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.JobSlots} jobs")
                     : string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeople, PlayerText.Settlement(c, city), x.Civilians + x.Craftsmen - Workshops.Staffed(s, city) - Projects.Builders(s, city));
             s.Cities[city] = x.WithCounts(x.Civilians, count, x.Refugees).WithJobsDefault(false);
-            why.Add(new Cause("city", city, count - x.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {count} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(count) }));
+            why.Add(new Cause("city", city, count - x.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {Groups(count)} in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(count) }));
             return null;
         }
 
@@ -177,11 +180,11 @@ namespace Statecraft.Sim
                 var absorbed = x.Refugees == 0 ? 0 : Math.Min(x.Refugees, (int)Math.Floor(x.Refugees * m));
                 var housed = absorbed == 0 ? x : x.WithCounts(x.Civilians + absorbed, x.Employed, x.Refugees - absorbed);
                 if (absorbed != 0)
-                    why.Add(new Cause("city", x.Id, absorbed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {absorbed} groups of immigrants housed"), key: CauseKeys.ImmigrantsHoused, args: new[] { CauseKeys.Number(absorbed) }));
+                    why.Add(new Cause("city", x.Id, absorbed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {Groups(absorbed)} of immigrants housed"), key: CauseKeys.ImmigrantsHoused, args: new[] { CauseKeys.Number(absorbed) }));
                 var work = MaxWorkers(s, housed);
                 if (housed.JobsDefault && work != housed.Employed)
                 {
-                    why.Add(new Cause("city", x.Id, work - housed.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {work} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(work) }));
+                    why.Add(new Cause("city", x.Id, work - housed.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {Groups(work)} in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(work) }));
                     housed = housed.WithCounts(housed.Civilians, work, housed.Refugees);
                 }
                 s.Cities[x.Id] = housed;
@@ -262,7 +265,7 @@ namespace Statecraft.Sim
                 if (over == 0) continue;
                 if (gdd03 == null && x.Condition is double now)
                     s.Cities[x.Id] = x.WithCondition(Math.Max(0.0, now - r.OverflowConditionLoss!.Value * over / Housed(s, x)));
-                why.Add(new Cause("city", x.Id, over, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {over} groups more than its homes hold"), key: CauseKeys.HousingShortage, args: new[] { CauseKeys.Number(over) }));
+                why.Add(new Cause("city", x.Id, over, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {Groups(over)} more than its homes hold"), key: CauseKeys.HousingShortage, args: new[] { CauseKeys.Number(over) }));
             }
             if (gdd03 != null) SettleGdd03(c, s, surcharge, cohesion, why);
         }
@@ -343,7 +346,7 @@ namespace Statecraft.Sim
                 if (added == 0) continue;
                 var x = s.Cities[kv.Key];
                 s.Cities[x.Id] = x.WithCounts(x.Civilians, x.Employed, x.Refugees + added);
-                why.Add(new Cause("city", x.Id, added, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {added} groups of immigrants arrived and wait for homes"), key: CauseKeys.ImmigrantsWaiting, args: new[] { CauseKeys.Number(added) }));
+                why.Add(new Cause("city", x.Id, added, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {Groups(added)} of immigrants arrived and wait for homes"), key: CauseKeys.ImmigrantsWaiting, args: new[] { CauseKeys.Number(added) }));
             }
         }
 

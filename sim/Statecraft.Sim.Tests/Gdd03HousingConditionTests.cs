@@ -135,6 +135,21 @@ public class Gdd03HousingConditionTests
         Assert.DoesNotContain(UpdateCondition(Real03, fine), w => w.Key == CauseKeys.HousingCohesion);
     }
 
+    // R-HOUSE-005 (#2804 item 10): P also counts the strength of every player unit, an Israeli formation and a side-less
+    // halutz unit alike, wherever it stands; neither is housed under gdd-0.3. 10 housed at 0.125 with a formation of 4 and a
+    // halutz unit of 6 is P = 20, so 2 x 0.5 x 0.5 = 0.5 points. Leaving out the formation (P = 16) or the halutz unit
+    // (P = 14) gives a different loss. TEST-ONLY SYNTHETIC strengths.
+    [Fact]
+    public void Gdd03CohesionCountsIsraeliFormationsAndHalutzUnitsInP()
+    {
+        var s = OneCity(Real03, civilians: 10, capacity: 10, condition: 0.125);
+        var formation = Real03.UnitTypes.First(u => u.Side == "israel" && u.Id != "halutz").Id;
+        s.Units[1] = new Unit(1, formation, 0, 0, side: "israel", strength: 4);
+        s.Units[2] = new Unit(2, "halutz", 0, 0, strength: 6);
+        Assert.Equal(20, Cities.OwnPopulation(s));
+        Assert.Equal(-0.005, Assert.Single(UpdateCondition(Real03, s), w => w.Key == CauseKeys.HousingCohesion).Delta, 12);
+    }
+
     // R-HOUSE-005, #1703 Done-when "the legacy homes link is off (#1715)": under gdd-0.3 homes_lift_morale adds nothing to
     // Social cohesion, so the cohesion term is the only housing penalty; gdd-0.1 keeps the link.
     [Fact]

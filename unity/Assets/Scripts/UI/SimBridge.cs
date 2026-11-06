@@ -48,9 +48,10 @@ namespace Statecraft.Game.UI
         public event Action<IReadOnlyList<Rejection>>? TurnEnded;
         /// <summary>Raised after a move or unit order is committed, with the Why lines it added (an attack's result).</summary>
         public event Action<IReadOnlyList<Cause>>? Committed;
-        /// <summary>The engagements the player has just seen resolve, raised after <see cref="Changed"/> has redrawn the map
-        /// (UnitAttackPresenter plays them, #1867): an attack order's at once, and at End Turn only the turn's new ones, not
-        /// the open turn's attack orders, which the turn runs again first. Never on a load or a refused turn.</summary>
+        /// <summary>The engagements the player has just seen resolve, with the lines of the units they destroyed, raised after
+        /// <see cref="Changed"/> has redrawn the map (UnitAttackPresenter plays them, #1867): an attack order's at once, and at
+        /// End Turn only the turn's new ones, not the open turn's attack orders, which the turn runs again first. Never on a
+        /// load or a refused turn.</summary>
         public event Action<IReadOnlyList<Cause>>? CombatResolved;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
@@ -319,8 +320,24 @@ namespace Statecraft.Game.UI
             }
             foreach (var (pattern, format) in ReasonFormats)
                 if (pattern.Match(reason) is { Success: true } m)
-                    return text.Format(format, m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe)).ToArray());
+                    return text.Format(format, CountNoun(text, format,
+                        m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe)).ToArray()));
             return reason;
+        }
+
+        /// <summary>#2530: an English count names its noun in the singular for 1 ("1 civilian without work"); the Hebrew
+        /// strings name the number in a label, grammatical for any count. Any other count reads as the sim's own English.</summary>
+        static object[] CountNoun(UiText text, string key, object[] values)
+        {
+            if (text["ui.lang"] == UiLanguage.Hebrew || values.Length != 2 || values[1] is not string n) return values;
+            values[1] = key switch
+            {
+                "unit.reinforce_refused.idle" => n == "1" ? "1 civilian without work" : n + " civilians without work",
+                "workshop.refused_people" => n == "1" ? "1 civilian or craftsman" : n + " civilians and craftsmen",
+                "workshop.refused_people_no_job" => n == "1" ? "1 civilian or craftsman without a job" : n + " civilians and craftsmen without a job",
+                _ => values[1],
+            };
+            return values;
         }
 
         static string ReasonValue(UiText text, string value, Content? c, IReadOnlyDictionary<string, string>? townsHe)
@@ -339,7 +356,7 @@ namespace Statecraft.Game.UI
 
         string? Refuse(string reason) { reason = ReasonText(text, reason, Content, TownNamesHe); Refused?.Invoke(reason); return reason; }
 
-        static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement).ToList();
+        static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement || x.Key == WhyKeys.Destroyed).ToList();
 
         static void Notify(Action? handlers)
         {
