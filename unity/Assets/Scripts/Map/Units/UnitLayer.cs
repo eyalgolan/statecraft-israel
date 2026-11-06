@@ -119,7 +119,8 @@ namespace Statecraft.Game.Map.Units
         /// any view, the camera's yaw and steepness alike), its flag's pole from the middle (zero for none), the flag (null for
         /// none) and the box of the token's pieces that neither turn nor move (null for a flying aircraft alone). In the order
         /// of <see cref="badges"/> and <see cref="keepClear"/>.</summary>
-        readonly List<(Vector3 home, float back, Vector3 pole, MeshFilter? flag, Bounds? standing)> badgeHomes = new List<(Vector3, float, Vector3, MeshFilter?, Bounds?)>();
+        readonly List<(Vector3 home, float back, Vector3 pole, MeshFilter? flag, Bounds? standing, bool parkedAircraft)> badgeHomes =
+            new List<(Vector3, float, Vector3, MeshFilter?, Bounds?, bool)>();
         /// <summary>Each token's figures as laid out for camera yaw 0 (their place round the base's middle and their heading),
         /// the base's middle and radius, the badge's lift over the highest figure and the figures' meshes (none for an aircraft
         /// or a ship), in the order of <see cref="badges"/>. <see cref="FaceCamera"/> turns the figures and the flag's pole
@@ -133,6 +134,10 @@ namespace Statecraft.Game.Map.Units
         /// <see cref="BadgeAsideM"/> to the side away from its flag's pole on screen (a compact token's pole cannot stand
         /// further out than its base's edge).</summary>
         public const float BadgeBackShare = 0.6f, BadgeAsideM = 400f, BadgeOverFlagM = 150f;
+        /// <summary>#2729: a parked aircraft's badge must not cover its tail, the rear <see cref="BadgeTailShare"/> of its
+        /// length, as the camera sees it. When it would, the badge moves on screen by the least of down, left or right that
+        /// clears the tail by <see cref="BadgeTailGapPixels"/>, never up, so it stays by the aircraft and under the HUD.</summary>
+        public const float BadgeTailShare = 0.4f, BadgeTailGapPixels = 4f;
         readonly List<(Vector2 centre, float radius)> treeHoles = new List<(Vector2, float)>();
         List<Bounds[]> keepClear = new List<Bounds[]>();
         /// <summary>A slide moves the boxes in place, but the labels re-place only for a new list: FaceCamera then hands
@@ -269,7 +274,7 @@ namespace Statecraft.Game.Map.Units
         void OnEnable() => RenderPipelineManager.beginCameraRendering += FaceBadges;
         void OnDisable() => RenderPipelineManager.beginCameraRendering -= FaceBadges;
 
-        /// <summary>The kit trees under the drawn figures, left out while the layer shows (issue #249).</summary>
+        /// <summary>The kit trees under drawn figure plinths and parked-aircraft footprints, left out while the layer shows.</summary>
         public IReadOnlyList<(Vector2 centre, float radius)> TreeHoles => treeHoles;
 
         void HideTrees() => UnitShowcase.HideTrees(map, ToggleName, gameObject.activeSelf ? treeHoles : (IReadOnlyList<(Vector2, float)>)Array.Empty<(Vector2, float)>());
@@ -321,7 +326,7 @@ namespace Statecraft.Game.Map.Units
                 // A moving token's root stands off the origin by its slide (UnitTokenMotion); its pieces are placed in the
                 // world here, so they take the same offset, and the boxes follow the token as drawn, not its destination.
                 var slide = b.parent.position;
-                var (home, back, pole, flag, standing) = badgeHomes[i];
+                var (home, back, pole, flag, standing, parkedAircraft) = badgeHomes[i];
                 var (centre, radius, lift, figures, meshes) = trios[i];
                 if (turn && figures.Length > 0)
                 {
@@ -334,7 +339,7 @@ namespace Statecraft.Game.Map.Units
                         figure.SetPositionAndRotation(p + slide, Quaternion.Euler(0f, yaw + heading, 0f));
                     }
                     home.y = highest + lift;   // the badge clears the highest figure, wherever the turn set it
-                    badgeHomes[i] = (home, back, pole, flag, standing);
+                    badgeHomes[i] = (home, back, pole, flag, standing, parkedAircraft);
                     if (flag != null)
                     {
                         var foot = centre + turning * pole;
@@ -350,6 +355,22 @@ namespace Statecraft.Game.Map.Units
                 // stays where the full plate's is, clear of the flag and the figures; that move keeps the plate's depth.
                 float size = UnitBadge.SizeFor(Vector3.Dot(at - eye, forward), m11, orthographic);
                 at -= up * (0.5f * (UnitBadge.SizeM - size));
+                if (parkedAircraft && b.parent.Find("Aircraft") is Transform plane && TailScreenRect(plane, cam) is Rect tail)
+                    for (int k = 0; k < 3; k++)
+                    {
+                        float half = 0.5f * size;
+                        var plate = ScreenRect(cam, at - right * half - up * half, at - right * half + up * half,
+                            at + right * half - up * half, at + right * half + up * half);
+                        if (!plate.Overlaps(tail)) break;
+                        var c = cam.WorldToScreenPoint(at);
+                        float perUp = cam.WorldToScreenPoint(at + up).y - c.y, perRight = cam.WorldToScreenPoint(at + right).x - c.x;
+                        if (perUp <= 1e-5f || perRight <= 1e-5f) break;
+                        float down = plate.yMax - tail.yMin + BadgeTailGapPixels;
+                        float left = plate.xMax - tail.xMin + BadgeTailGapPixels, rightward = tail.xMax - plate.xMin + BadgeTailGapPixels;
+                        if (down <= left && down <= rightward) at -= up * (down / perUp);
+                        else if (left <= rightward) at -= right * (left / perRight);
+                        else at += right * (rightward / perRight);
+                    }
                 b.SetPositionAndRotation(at, rotation);
                 b.localScale = Vector3.one * size;
                 var boxes = keepClear[i];
@@ -813,6 +834,11 @@ namespace Statecraft.Game.Map.Units
                         break;
                     case UnitData.Air:
                         BuildAircraft(go.transform, t, centre);
+                        if (!t.Flying && StillBox(go.transform, null, Array.Empty<MeshFilter>()) is Bounds aircraft)
+                        {
+                            var flat = new Vector2(aircraft.center.x, aircraft.center.z);
+                            treeHoles.Add((flat, new Vector2(aircraft.extents.x, aircraft.extents.z).magnitude));
+                        }
                         top = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
                         break;
                     default:
@@ -838,7 +864,7 @@ namespace Statecraft.Game.Map.Units
                 var pole = flagT != null ? new Vector3(flagT.position.x - centre.x, 0f, flagT.position.z - centre.z) : Vector3.zero;
                 var meshes = figures.SelectMany(f => f.Item1.GetComponentsInChildren<MeshFilter>(true)).ToArray();
                 var standing = StillBox(go.transform, flag, meshes);
-                badges.Add(badge.transform); badgeHomes.Add((home, back, pole, flag, standing));
+                badges.Add(badge.transform); badgeHomes.Add((home, back, pole, flag, standing, t.Unit.Service == UnitData.Air && !t.Flying));
                 trios.Add((centre, plinth, lift, figures, meshes));
                 AddRenderer(badge.transform, "Plate", MeshFor("badge-plate", UnitBadge.PlateMesh), badgePlate, 0f);
                 var hitFlash = AddRenderer(badge.transform, "HitFlash", MeshFor("badge-plate", UnitBadge.PlateMesh),
@@ -983,6 +1009,42 @@ namespace Statecraft.Game.Map.Units
             r.shadowCastingMode = ShadowCastingMode.Off;
             r.receiveShadows = false;
             return r;
+        }
+
+        /// <summary>The screen box of <paramref name="plane"/>'s tail, the rear <see cref="BadgeTailShare"/> of its meshes' box
+        /// along its own z axis (the way it faces), or null before any mesh has arrived.</summary>
+        static Rect? TailScreenRect(Transform plane, Camera cam)
+        {
+            Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
+            foreach (var f in plane.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (f.sharedMesh == null) continue;
+                var bounds = f.sharedMesh.bounds;
+                for (int c = 0; c < 8; c++)
+                {
+                    var p = plane.InverseTransformPoint(f.transform.TransformPoint(new Vector3((c & 1) == 0 ? bounds.min.x : bounds.max.x,
+                        (c & 2) == 0 ? bounds.min.y : bounds.max.y, (c & 4) == 0 ? bounds.min.z : bounds.max.z)));
+                    min = Vector3.Min(min, p); max = Vector3.Max(max, p);
+                }
+            }
+            if (min.x > max.x) return null;
+            max.z = Mathf.Lerp(min.z, max.z, BadgeTailShare);
+            var corners = new Vector3[8];
+            for (int c = 0; c < 8; c++)
+                corners[c] = plane.TransformPoint(new Vector3((c & 1) == 0 ? min.x : max.x, (c & 2) == 0 ? min.y : max.y, (c & 4) == 0 ? min.z : max.z));
+            return ScreenRect(cam, corners);
+        }
+
+        /// <summary>The screen box round <paramref name="points"/> as <paramref name="cam"/> projects them.</summary>
+        static Rect ScreenRect(Camera cam, params Vector3[] points)
+        {
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            foreach (var p in points)
+            {
+                var q = cam.WorldToScreenPoint(p);
+                x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+            }
+            return Rect.MinMaxRect(x0, y0, x1, y1);
         }
 
         void BuildAircraft(Transform parent, UnitToken t, Vector3 baseCentre)

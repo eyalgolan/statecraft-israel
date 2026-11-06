@@ -412,7 +412,8 @@ The candidates are tried in four rounds:
    round-4 spot holds its hex like any other; measured on the game map, no other anchor and no camp moved).
 
 A spot is clear when:
-- the ring's disc stays off every settlement footprint (the kits' discs, times 1.1);
+- the ring's disc stays off every settlement footprint (the kits' discs, times 1.1); for an air anchor the disc is the
+  larger of that ring and the parked aircraft's span (4.7 km across, which does not compact), with no in-town exception;
 - an army token's three figure spots (always three, so the spot does not change with the call-up), or a parked
   aircraft's centre, are on land and at least 700 m beyond every railway and road corridor drawn while a token
   stands (a route opened after the last anchor's window, the 1949 rail link or the 1950 Tel Aviv–Netanya road, takes no
@@ -447,6 +448,9 @@ and a unit the sim moves is placed without the control layer.
   its two 1948 photographs. Every other brigade has the uniform default (bush hat, steel helmet, bush hat), from the 1948
   photographs listed under "Sources".
 - **Air:** the squadron flies the slice's loop over its base at security level 4 or 5 and stands parked below that.
+  A parked aircraft leaves a circular tree hole covering its drawn world-XZ footprint. Its camera-facing badge stays clear of the
+  aircraft's tail (the rear 40%) as the camera sees it, moving down, left or right on screen by the least that clears
+  it, never up, so it stays by the aircraft; a flying aircraft gets neither adjustment.
 - **Navy:** a ship is the K-20 corvette model; Wedgwood was the same modified Flower class.
 - **Badge:** each token has the promo's badge (`UnitBadge`): a dark rounded plate with an ivory glyph (two figures, an
   aircraft or a ship). It is turned to face each camera as it renders. On an army token it sits above the flag's top, a little
