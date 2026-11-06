@@ -470,6 +470,22 @@ public class EnemyAITests
         Assert.Equal(truce ? Orders.Fortifying : Combat.Attack, s.Units[2].Order);
     }
 
+    // R-ENEMY-006: "The guard remains date-driven in every mode" (#2806 item 11). The cases above all build a Historical game
+    // (CombatTests.With); here the same game in Open mode, on both sides of the first truce's start. The day before it the
+    // enemy still attacks, so Open mode alone does not stop the attack; on 11 June the truce does.
+    [Theory]
+    [InlineData(1948, 6, 10, false)]
+    [InlineData(1948, 6, 11, true)]
+    public void TheTruceHoldsInOpenModeToo(int y, int m, int d, bool truce)
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10));
+        s.Mode = Mode.Open;
+        s.Date = new DateTime(y, m, d);
+        EnemyAI.Order(c, s, new List<Cause>());
+        Assert.Equal(truce ? (Orders.Fortifying, "2,0") : (Combat.Attack, "3,0"), (s.Units[2].Order, s.Units[2].OrderTarget));
+    }
+
     // R-ENEMY-004: no reinforcements in Phase 5 (Q-ENEMY-3). No turn adds an enemy unit, and none grows: no enemy unit's
     // strength goes above its start.
     [Fact]
