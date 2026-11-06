@@ -17,7 +17,7 @@ static const float ScScrubOffBeach = 1.5, ScScrubOffDunes = 1.5;
 static const float2 ScHedgeLuma = float2(0.045, 0.09);
 static const float ScHedgeScrub = 0.85;
 
-// 0 on the water and the beach, 1 inland (ScShore draws the sand; the owner: keep the trees "off the sand"). The dune coasts'
+// 0 on the water and the beach, 1 inland (ScShore draws the sand; as the trees do, the owner: "keep them off the sand"). The dune coasts'
 // ground stays sand farther in (DuneCoasts: Jaffa south, Haifa Bay).
 float ScOffTheBeach(float coast, float2 mapM)
 {
@@ -33,12 +33,13 @@ float ScOffTheBeach(float coast, float2 mapM)
 // is at one LOD, so the vertex shader can call it too.
 half ScScrubDensity(float2 uv, float2 mapM, half4 cls, float4 land, float coast)
 {
-    half scrub = saturate(cls.r * land.a + cls.g * (1.0 - land.a));
+    // The dry south's trace of land use grows nothing: its weight is rainfall's, and the bushes' ranks would show every trace.
+    half scrub = saturate(cls.r * smoothstep(0.08, 0.30, land.a) + cls.g * (1.0 - land.a));
     half broad = SAMPLE_TEXTURE2D_LOD(_ScDetailTex, sampler_ScDetailTex, mapM / (3.3 * _ScDetailTileM), 3.0).r;
     scrub *= smoothstep(0.40, 0.58, broad + 0.20 * scrub);
     scrub *= smoothstep(0.36, 0.50, SAMPLE_TEXTURE2D_LOD(_ScDetailBakeTex, sampler_ScDetailBakeTex, uv, 0.0).g);
     // The land bake's hedges and tree lines along the parcels' edges: its darkest colour, so bushes stand on the painted lines.
-    half hedge = (1.0 - smoothstep(ScHedgeLuma.x, ScHedgeLuma.y, dot(land.rgb, half3(0.2126, 0.7152, 0.0722)))) * land.a;
+    half hedge = (1.0 - smoothstep(ScHedgeLuma.x, ScHedgeLuma.y, dot(land.rgb, half3(0.2126, 0.7152, 0.0722)))) * smoothstep(0.4, 0.7, land.a);
     scrub = max(scrub, ScHedgeScrub * hedge * saturate(cls.r + cls.g));
     scrub *= 1.0 - SAMPLE_TEXTURE2D_LOD(_ScDetailKeepOutTex, sampler_ScDetailKeepOutTex, uv, 0.0).r;
     return scrub;

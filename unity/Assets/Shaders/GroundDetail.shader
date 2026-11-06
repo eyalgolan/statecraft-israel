@@ -14,7 +14,7 @@ Shader "Statecraft/GroundDetail"
         _BushLight ("A bush's light parts, times the ground", Color) = (0.80, 0.80, 0.68, 1)
         _BushDark ("A bush's dark parts, times the ground", Color) = (0.56, 0.58, 0.47, 1)
         _ShadowDark ("Bush shadow, times the ground", Range(0, 1)) = 0.84
-        _StoneGain ("Stones, brighter than the ground", Range(0, 1)) = 0.18
+        _StoneGain ("Stones, brighter than the ground", Range(0, 1)) = 0.11
     }
     SubShader
     {
