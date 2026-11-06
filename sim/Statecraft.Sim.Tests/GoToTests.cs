@@ -113,6 +113,37 @@ public class GoToTests
         Assert.Equal((4, 1), (now.State.Units[1].Q, now.State.Units[1].R));
     }
 
+    // R-MOVE-009: the route step moves units on in ascending id, not in the order the go-tos were given. Unit 2's is given
+    // first; at the next turn's start unit 1 moves first and takes 5,1's last place, and unit 2 finds it full.
+    [Fact]
+    public void RoutesContinueInAscendingUnitId()
+    {
+        var c = Board();   // the fixture's stack limit is 2 a side (MovementTests' summary)
+        var s = CombatTests.With(c, Soldier(1, 0, 1), Soldier(2, 0, 1), Soldier(3, 5, 1));
+        var endOfTurn1 = Simulation.Step(c, s, new Command[] { new UnitOrder(2, Movement.GoTo, 5, 1), new UnitOrder(1, Movement.GoTo, 5, 1) }).State;
+        Assert.Equal(((3, 1), (3, 1)), ((endOfTurn1.Units[1].Q, endOfTurn1.Units[1].R), (endOfTurn1.Units[2].Q, endOfTurn1.Units[2].R)));
+        var now = Simulation.Preview(c, endOfTurn1, new Command[0]);   // the route step has run
+        Assert.Equal((5, 1, ""), (now.State.Units[1].Q, now.State.Units[1].R, now.State.Units[1].Order));   // arrived
+        Assert.Equal((3, 1, ""), (now.State.Units[2].Q, now.State.Units[2].R, now.State.Units[2].Order));   // stopped
+        Assert.Contains(now.Why, w => w.Key == WhyKeys.StoppedFull && w.Message.StartsWith("Unit 2 "));
+    }
+
+    // R-MOVE-009: when every hex the route reaches this turn is full, the unit waits where it stands and keeps its go-to;
+    // it is not stopped, as it is when the destination itself is full.
+    [Fact]
+    public void ARouteWhoseStopsThisTurnAreAllFullWaits()
+    {
+        var c = Board();   // the fixture's stack limit is 2 a side (MovementTests' summary)
+        var s = CombatTests.With(c, new Unit(1, "gun", 0, 1, side: "israel", strength: 3, order: Movement.GoTo, orderTarget: "5,1"),
+                                    Soldier(2, 1, 1), Soldier(3, 1, 1), Soldier(4, 2, 1), Soldier(5, 2, 1));
+        // The gun's 2 points reach 1,1 and 2,1 this turn, and both hold two soldiers.
+        Assert.Equal(new[] { (1, 1), (2, 1) }, Movement.Route(c, s, 1, 5, 1, None).Where(h => h.Turn == 1).Select(h => (h.Q, h.R)));
+        var now = Simulation.Preview(c, s, new Command[0]);   // the route step has run
+        Assert.Equal((0, 1), (now.State.Units[1].Q, now.State.Units[1].R));
+        Assert.Equal((Movement.GoTo, "5,1"), (now.State.Units[1].Order, now.State.Units[1].OrderTarget));
+        Assert.Equal(0, Movement.PointsLeft(c, s, 1, None) - Movement.PointsLeft(c, now.State, 1, now.Spent));   // no point spent
+    }
+
     // R-MOVE-002, R-MOVE-003 (#2548): a turn of the route that would end on a hex full of the unit's side ends on the last
     // free hex before it, as the route step does, so the route shows the turn the unit really arrives on.
     [Fact]
