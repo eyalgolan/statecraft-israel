@@ -747,7 +747,7 @@ beyond budget + the larger spread.
 | Baked shading texture | block-compressed | block-compressed | review minor 9: recorded, not changed (mobile browsers are outside the 1920x1080 target) |
 | WebGPU, GPU Resident Drawer, compute | not used | not used | research notes 2.1 (an M5 evaluation) |
 | Weak GPU | SwiftShader run passes golden and shots | — | `captures/visual/t10-swiftshader` (both GOLDEN OK lines and SHOT done; gameplay03 saturation / contrast / warmth 0.5656 / 0.1960 / 0.0773 against the GPU's 0.5655 / 0.1960 / 0.0771) |
-| Runtime quality fallback (issue #44) | on | off | see "Runtime quality fallback" below: when the frame-time p95 stays over the 30 fps floor, render scale 1.0 -> 0.9 -> 0.8, then the tilt-shift off; back up in reverse |
+| Runtime quality fallback (issue #44) | on | off | see "Runtime quality fallback" below: when the frame-time p95 stays over the 30 fps floor, render scale 1.0 -> 0.9 -> 0.8, then the tilt-shift off, then the town building models' far-off copies without shadows at every zoom; back up in reverse |
 
 Colour after the decisions (WebGL `?shot`, t10-tiers against t-merge-r3): diorama02 saturation 0.4694 -> 0.4686, contrast
 0.2034 -> 0.2032, warmth 0.1045 -> 0.1038 (bars: warmth 0.087-0.145, saturation <= 0.48); gameplay03 saturation 0.5646 ->
@@ -799,9 +799,10 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
 - **The player's quality choice (#40).** Automatic in Settings is this behaviour. High (the PC tier at render scale 1.0)
   and Low (the Mobile tier at 0.8) fix the quality: the fallback holds while one is set (`QualityFallbackDriver.Feed`),
   and every switch starts it again from the top (`GraphicsQuality.Changed`).
-- **Presentation only:** it reads no sim state and writes only the render scale, the tilt-shift flag and the towns' low tier, so turns, hashes
-  and saves cannot change. The goldens and the 5-turn smoke match with it in the build: `uv run tools/web_check.py
-  unity/Builds/Web-disabled --query "golden&smoke=5"` with the three `--expect` values from `docs/determinism.md`: PASS.
+- **Presentation only:** it reads no sim state and writes only the render scale, the tilt-shift flag and the towns' low
+  tier, so turns, hashes and saves cannot change. The goldens and the 5-turn smoke match with the original #44 fallback
+  in that build: `uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&smoke=5"` with the three
+  `--expect` values from `docs/determinism.md`: PASS. This is #44's evidence; the v0.3.7 step changes no sim code.
 - **Tests** (`QualityFallbackTests`, EditMode, synthetic frame times): the step order and range, one step per window and
   not before a full window, nothing during start-up, hitches, a pause and 33/34 ms frames do not trigger, recovery in
   reverse only after 3 good windows, the dead band holds and restarts the count, a failed step up doubles the wait (capped);
@@ -809,10 +810,11 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
   the URP asset, `TiltShift.FallbackOff` (not `TiltShift.Enabled`) and `TownModelLayer.LowTier`, and a rebuild or teardown
   removes it and restores the scale and the town originals. `TownModelResidencyTests` checks that the low tier at the
   opening draws Tel Aviv's far copies with no shadow casters, and that clearing it puts the originals back.
-- **In a real browser** (headed Chrome for Testing, ANGLE Metal, 1920x1080 at DPR 1, under `machine_lock.py --exclusive
-  --wait-unity`, a scratch CDP script on `headed.Browser`): 30 s idle at `--cpu 1`, no `QUALITY` line. With CPU throttling
-  at 20x from t = 30 s: `QUALITY level=1 scale=0.90 tiltshift=on p95_ms=97.00`, `level=2 scale=0.80 tiltshift=on
-  p95_ms=97.00`, `level=3 scale=0.80 tiltshift=off p95_ms=107.00` (level 3 at t = 39.6 s). Throttling lifted at t = 49.6 s:
+- **Original #44 evidence in a real browser (predates the `towns=` field and level 4):** headed Chrome for Testing,
+  ANGLE Metal, 1920x1080 at DPR 1, under `machine_lock.py --exclusive --wait-unity`, a scratch CDP script on
+  `headed.Browser`: 30 s idle at `--cpu 1`, no `QUALITY` line. With CPU throttling at 20x from t = 30 s:
+  `QUALITY level=1 scale=0.90 tiltshift=on p95_ms=97.00`, `level=2 scale=0.80 tiltshift=on p95_ms=97.00`,
+  `level=3 scale=0.80 tiltshift=off p95_ms=107.00` (level 3 at t = 39.6 s). Throttling lifted at t = 49.6 s:
   `level=2 ... tiltshift=on p95_ms=17.00`, `level=1 scale=0.90`, `level=0 scale=1.00` (t = 77.4 s, about 9.5 s apart), then
   no line in the next 15 s. At DPR 2 (the fill-rate stress proxy, frame rate uncapped) 60 s idle: no `QUALITY` line, as the
   DPR-2 p95 (20 ms at diorama02) is under the floor.
@@ -2906,9 +2908,9 @@ It describes the windows as small and recessed, not ribbon windows. The strips f
   that ignores `_ScTiltShiftNear` (near 0.19-0.33: the three render tests) and the near strength applied to both bands
   (far 0.34 at 60 km, 1.00 at diorama02: three render tests); the C# curve held at 1, or not reaching 0 at the
   overview, fails the unit test.
-- **Quality fallback.** Unchanged: `TiltShift.Draws` still needs `!FallbackOff`, so the fallback's last step still turns
-  both bands off (`QualityFallbackTests` pass). The pass draws as before whenever the tilt-shift is on, even where the near
-  band is 0, so frame time does not depend on the new strength.
+- **Quality fallback.** Unchanged: `TiltShift.Draws` still needs `!FallbackOff`, so level 3 and every lower-quality step
+  still turn both bands off (`QualityFallbackTests` pass). The pass draws as before whenever the tilt-shift is on, even
+  where the near band is 0, so frame time does not depend on the new strength.
 - **Fill rate.** Headed `?vprofile` at DPR 2 (`headed.py profile --dpr 2`), main, branch, branch, main under one
   `machine_lock.py --exclusive --wait-unity`, 2026-10-14. The machine was loaded by other sessions (load 6-13), so the
   spreads are 1.5-7 ms. diorama02 `all`: main 41.81 / 33.81 ms, branch 41.09 / 39.46; `none`: main 28.02 / 23.97, branch
