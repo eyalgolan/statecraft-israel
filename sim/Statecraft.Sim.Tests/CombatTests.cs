@@ -60,6 +60,28 @@ public class CombatTests
         Assert.Equal(s.Arms - 2, now.State.Arms);
     }
 
+    // R-ORDER-001 (D-A6: unit orders are free): a move and an attack go through the normal charge path at the shipped costs,
+    // content/rules.yaml's attention_cost.move and .unit_order, and leave the Attention where it was.
+    [Fact]
+    public void AMoveAndAnAttackCostNoAttention()
+    {
+        var rules = Fixture.Gdd()["rules.yaml"];
+        Assert.Contains("move: 0, unit_order: 0", rules);
+        var shipped = FormattableString.Invariant($"move: {Real.Rules.AttentionCost["move"]}, unit_order: {Real.Rules.AttentionCost["unit_order"]}");
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["rules.yaml"] = rules.Replace("move: 0, unit_order: 0", shipped),
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n"
+        })));
+        var s = With(c, Soldier(1, 1, 1, 6), Enemy(2, 3, 1, 1));
+        Assert.True(s.Attention > 0);
+        var now = Simulation.Preview(c, s, new Command[] { new Move(1, 2, 1), new UnitOrder(1, Combat.Attack, 3, 1) });
+        Assert.Empty(now.Rejected);
+        Assert.Equal((2, 1), (now.State.Units[1].Q, now.State.Units[1].R));
+        Assert.Contains(now.Why, w => w.Message.StartsWith("The attack on hex 3,1"));
+        Assert.Equal(s.Attention, now.State.Attention);
+    }
+
     // R-COMBAT-001: the attack ends the unit's movement; a unit with no points left cannot attack.
     [Fact]
     public void AnAttackEndsTheUnitsMovement()

@@ -120,7 +120,7 @@ public class HexModelMeshTests
     /// prefab's vertices lie nearest the town model's as drawn (both in the unit frame), unless another turn is within
     /// <see cref="FacingMargin"/> of it (a near-symmetric block, where the close shots decide). Mirrors are reported, not
     /// tested: the renderer cannot draw a negative scale.</summary>
-    [Test]
+    [Test, Category("LocalOnly")]   // needs gitignored local art; the nightly leaves it out (#2655)
     public void TownAliasesFaceAsTheirSandboxPrefabs()
     {
         var wrong = new List<string>(); int compared = 0;

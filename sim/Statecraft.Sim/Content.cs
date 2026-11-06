@@ -26,7 +26,10 @@ namespace Statecraft.Sim
         /// <summary>The Hebrew display name the Hebrew UI's map label shows, with its own sources (as settlements_1948.yaml's name_he).</summary>
         public string NameHe { get; set; } = "";
         /// <summary>"agent-checked" while no person has read the Hebrew name (CONTENT_POLICY section 2, rule 6); empty once reviewed.</summary>
-        public string NameHeReview { get; set; } = "";
+        public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review (#2804 item 9).</summary>
+        [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
+        string? nameHeReview;
         public List<Source> NameHeSources { get; set; } = new List<Source>();
         public string Kind { get; set; } = "";
         public double Lon { get; set; }

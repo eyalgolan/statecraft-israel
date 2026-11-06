@@ -151,10 +151,16 @@ namespace Statecraft.Game.Map
             if (liveComposed.TryGetValue(key, out var cached)) return cached;
             var hexes = historical.Hexes.ToDictionary(h => h, h => historical.RegionOf(h.q, h.r));
             var styles = hexes.Values.Distinct().ToDictionary(id => id, id => historical.StyleOf(id));
-            styles[Control1948.IsraelId] = BorderStyle.Primary;
-            styles[Control1948.ArabId] = BorderStyle.Secondary;
+            // On a control layer ids 1 and 2 are the two sides, so a settlement joins its side's area with no outline. On any
+            // other layer they are sub-districts (Acre, Beisan) and zones sit at ZoneIdBase and up: take fresh ids above the
+            // highest one, else the overlay would restyle every hex of those regions (#2742).
+            var onControl = Control != null && Control.PeriodOn(date) != null;
+            var top = styles.Keys.DefaultIfEmpty(0).Max();
+            int primaryId = onControl ? Control1948.IsraelId : top + 1, secondaryId = onControl ? Control1948.ArabId : top + 2;
+            styles[primaryId] = BorderStyle.Primary;
+            styles[secondaryId] = BorderStyle.Secondary;
             foreach (var x in overrides) if (hexes.ContainsKey((x.q, x.r)))
-                hexes[(x.q, x.r)] = x.player ? Control1948.IsraelId : Control1948.ArabId;
+                hexes[(x.q, x.r)] = x.player ? primaryId : secondaryId;
             return liveComposed[key] = new RegionLayer(key, hexes, styles);
         }
 

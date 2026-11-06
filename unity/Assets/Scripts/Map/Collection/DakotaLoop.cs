@@ -269,39 +269,11 @@ namespace Statecraft.Game.Map.Collection
             return (at.ToArray(), from.ToArray());
         }
 
-        /// <summary>One quad mesh per frame of a <paramref name="grid"/> x <paramref name="grid"/> flipbook, its UVs on that
-        /// frame (frame 0 top left, then along the rows, as Unity's texture sheet animation), facing -z as the built-in quad,
-        /// white (the particle shaders multiply the vertex colour).</summary>
-        internal static Mesh[] Frames(MapRuntimeAssets owned, int grid)
-        {
-            var frames = new Mesh[grid * grid];
-            float k = 1f / grid;
-            var v = new[] { new Vector3(-0.5f, -0.5f, 0f), new Vector3(0.5f, -0.5f, 0f), new Vector3(-0.5f, 0.5f, 0f), new Vector3(0.5f, 0.5f, 0f) };
-            var normals = new[] { Vector3.back, Vector3.back, Vector3.back, Vector3.back };
-            var white = new Color32[] { new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 255) };
-            var tris = new[] { 0, 3, 1, 3, 0, 2 };
-            for (int f = 0; f < frames.Length; f++)
-            {
-                float u0 = (f % grid) * k, v0 = 1f - (f / grid + 1) * k;
-                var uv = new[] { new Vector2(u0, v0), new Vector2(u0 + k, v0), new Vector2(u0, v0 + k), new Vector2(u0 + k, v0 + k) };
-                var m = new Mesh { name = $"dakota-frame-{grid}x{grid}-{f}", vertices = v, normals = normals, colors32 = white, uv = uv, triangles = tris };
-                m.RecalculateBounds();
-                frames[f] = owned.Own(m);
-            }
-            return frames;
-        }
+        /// <summary>One quad mesh per frame of a <paramref name="grid"/> x <paramref name="grid"/> flipbook, owned by the run's
+        /// object (Flipbook.Frames, shared with the combat effects).</summary>
+        internal static Mesh[] Frames(MapRuntimeAssets owned, int grid) => Flipbook.Frames(grid, owned.Own, "dakota-frame");
 
-        static (Transform, Renderer, MeshFilter) Part(Transform parent, string name, Mesh mesh, Material material)
-        {
-            var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
-            go.transform.SetParent(parent, false);
-            var filter = go.GetComponent<MeshFilter>(); filter.sharedMesh = mesh;
-            var r = go.GetComponent<MeshRenderer>();
-            r.sharedMaterial = material; r.enabled = false;
-            r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
-            r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
-            return (go.transform, r, filter);
-        }
+        static (Transform, Renderer, MeshFilter) Part(Transform parent, string name, Mesh mesh, Material material) => Flipbook.Part(parent, name, mesh, material);
 
         static int Mod(int a, int n) { int m = a % n; return m < 0 ? m + n : m; }
 

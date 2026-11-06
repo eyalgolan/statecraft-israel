@@ -63,9 +63,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `7d8e158b26fd2301d27361dc4912debc5085d1cc0915b2182195bd1a6cc5f6ba` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `f5ebb83052aa1fed13a0f3ce0295e5620e70a34906ff0f7fc5c4ce8654ee708e` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `f5ebb83052aa1fed13a0f3ce0295e5620e70a34906ff0f7fc5c4ce8654ee708e` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -74,7 +74,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79`.
+ministers): `SMOKE OK 5 turns 1948-10-15 b93ad5503dad3981b7a0de4c078b6d4323794be991a8d8343e5fe90271dc006c`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -85,7 +85,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79"
+  --expect "SMOKE OK 5 turns 1948-10-15 b93ad5503dad3981b7a0de4c078b6d4323794be991a8d8343e5fe90271dc006c"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -149,8 +149,9 @@ turn 35), `hash1952` `62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8
 R-LOOP-003) and `scenario-mvp-absorb-first` `59ea3181`. The owner tags the last pre-cutover commit `pre-gdd-v0.1`.
 
 `Scenario` lives in `Statecraft.Sim` next to `GoldenRun`, so Unity, which gets only `Statecraft.Sim.dll` and
-`YamlDotNet.dll` from `tools/build_sim_for_unity.sh`, can play the same runs (#394). The scenario files, the manifest and the
-snapshots stay with the tests and are not shipped to the player.
+`YamlDotNet.dll` from `tools/build_sim_for_unity.sh`, can play the same runs (#394). `ContentSync` copies the manifest and the scenario files into the
+player (`Assets/StreamingAssets/golden`) before every player build, for the player's own golden check (`?golden` on WebGL,
+`-golden` on desktop). Of these, only the snapshots (the `golden/*.txt` files other than the manifest) stay with the tests.
 
 **Invariants.** A hash says something changed; `sim/Statecraft.Sim.Tests/golden/invariants.yaml` says whether it is
 still plausible. Each entry names a golden run (`1950` or `1952`), a value (an indicator id, or `treasury`, `debt`,
@@ -512,3 +513,13 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-occupy-cost | `ad9af425` | the Syrian unit on (15, 5) is the only change (was `612e9feb`) |
 | #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-annex-nazareth | `e8a9dbf1` | the Syrian unit on (15, 5); unit 1, on its card order toward (15, 3), is on (13, 6) at the run's end instead of (15, 5) (was `c8195c09`). No other golden moves: smoke-orders does not reach 15 July 1948 |
 | #2608: the annexed residents join the population (R-CITY-008) | scenario-mvp-annex-nazareth | `d0372ca6` | `end_occupation nazareth annex` adds the row's count to `GameState.Population`'s `annexed` group, so the population gains the annexed residents, and the debt, FX and Food lines move with it; the annexation itself and every unit position are unchanged. No other golden occupies a place, so none moves (was `e8a9dbf1`) |
+| #2804 item 4: `GameState.TotalPopulation` sums the population groups in ordinal key order (R-FOOD-001; owner, 6 Nov 2026: "Do it just before the regen") | hash1950 | `7d8e158b` | floating-point rounding only: the same numbers added in a different order land one ulp apart, in `debt` (`...5F79` to `...5F7A`); no rule, value or event changes (was `a08ff850`) |
+| #2804 item 4: as above | hash1952 | `f5ebb830` | rounding only: `fx` moves by 16 ulp (`-12.990431328096559` to `-12.99043132809653`) and nothing else (was `5561fc51`) |
+| #2804 item 4: as above | mvp-end | `f5ebb830` | same run as hash1952 (was `5561fc51`) |
+| #2804 item 4: as above | smoke5 | `b93ad550` | rounding only; no snapshot is kept for this run (was `d12c83ce`) |
+| #2804 item 4: as above | scenario-reckless | `c0eeb7dd` | `debt` 2 ulp apart, nothing else (was `bed7eb74`) |
+| #2804 item 4: as above | scenario-cautious | `31ab04b0` | `debt` 2 ulp apart, nothing else (was `4f3a0556`) |
+| #2804 item 4: as above | scenario-mvp-absorb-first | `16c8a869` | `debt` 1 ulp apart, nothing else (was `f289f897`) |
+| #2804 item 4: as above | scenario-mvp-defeat | `572f71ab` | `debt` and `fx` 2 ulp apart each; the defeat is unchanged (was `8c83f6e0`) |
+| #2804 item 4: as above | scenario-mvp-occupy-cost | `eb3ae67b` | `debt` 1 ulp apart, nothing else (was `ad9af425`) |
+| #2804 item 4: as above | scenario-mvp-annex-nazareth | `3cab078b` | `debt` 2 ulp apart, nothing else (was `d0372ca6`). No other golden moves: smoke-orders keeps `08d9800e` |
