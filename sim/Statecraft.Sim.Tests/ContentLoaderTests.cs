@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Statecraft.Sim;
 
 public class ContentLoaderTests
@@ -53,6 +54,27 @@ targets:
         Assert.Equal(ContentLoader.SettlementTargetsFileName, ex.File);
         Assert.Contains(field, ex.Field);
         Assert.Contains(message, ex.Message);
+    }
+
+    // R-CTRL-001 (#2804): Ramla's target is (-3, 24), the owner's ruling on #1796, so another land neighbour of its hex
+    // (-4, 24) is refused, not only a hex that is no neighbour at all.
+    [Fact]
+    public void RamlasTargetIsTheHexTheRuleNames()
+    {
+        var dir = RealContentTests.ContentRoot();
+        var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
+        const string ruled = "    q: -3\n    r: 24\n";
+        Assert.Contains(ruled, File.ReadAllText(Path.Combine(dir, ContentLoader.SettlementTargetsFileName)));
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(dir, rel);
+            if (!File.Exists(path)) return null;
+            var text = File.ReadAllText(path);
+            return rel == ContentLoader.SettlementTargetsFileName ? text.Replace(ruled, "    q: -4\n    r: 25\n") : text;
+        }, events));
+        Assert.Equal(ContentLoader.SettlementTargetsFileName, ex.File);
+        Assert.Equal("targets[ramla].q", ex.Field);
+        Assert.Contains("is not q=-3 r=24", ex.Message);
     }
 
     // R-CTRL-016 (Q-ANNEX-1; OWNER QUESTION 1 (a) on #799): a stayed row loads with its annexation values.
