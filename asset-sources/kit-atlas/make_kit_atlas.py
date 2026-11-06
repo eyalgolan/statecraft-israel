@@ -432,8 +432,8 @@ def corrugated() -> np.ndarray:
     xx = np.arange(N)[None, :]
     k = 0.93 + 0.07 * np.sin(2 * np.pi * xx * 24 / N)
     a = np.repeat(np.repeat(k, N, axis=0)[..., None], 3, axis=2)
-    rust = np.clip((noise(131, 1.9) - 0.16) * 3.0, 0, 1)[..., None]
-    a = a * (1 - rust) + a * rgb(1.0, 0.74, 0.56) * rust
+    rust = 0.45 * np.clip((noise(131, 1.5, (0.6, 4.0)) + 0.1) * 1.6, 0, 1)[..., None]    # soft, and run down the sheets
+    a = a * (1 - rust) + a * rgb(0.92, 0.72, 0.58) * rust
     return normalise(grain(a, 132, 0.04, 0.02), 0.88)
 
 
