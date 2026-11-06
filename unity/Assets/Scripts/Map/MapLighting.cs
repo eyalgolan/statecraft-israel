@@ -12,16 +12,16 @@ namespace Statecraft.Game.Map
     /// side readable. The sun is fixed in the world, so orbiting the camera moves the light across the screen.
     ///
     /// Issue #2427 (docs/visual-v1.md, "Issue #2427"): more of the land's light comes from the sun (1.8, was 1.6) and a tenth
-    /// less from the fill (was 0.52, 0.60, 0.72 / 0.48, 0.46, 0.42 / 0.26, 0.22, 0.17), a little warmer in the sun (was 1.00,
-    /// 0.84, 0.64). The relief reads deeper, and the sea, which reads the sun but not the ambient (ScWaterShade), holds its luma
-    /// at the owner's exposure. A deeper cut of the fill (a quarter) took TerrainShaderTests' relief ratio from 1.11 to 1.06,
+    /// less from the fill (was 0.52, 0.60, 0.72 / 0.48, 0.46, 0.42 / 0.26, 0.22, 0.17), a touch less green in the sun (was 1.00,
+    /// 0.84, 0.64; a bluer 0.61 greyed the sea). The relief reads deeper, and the sea, which reads the sun but not the ambient
+    /// (ScWaterShade), holds its luma at the owner's exposure; MapGrade.HueVsSat gives back its blue. A deeper cut of the fill (a quarter) took TerrainShaderTests' relief ratio from 1.11 to 1.06,
     /// under its 1.08. The elevation stays 30: a 27-degree trial changed the picture little.</summary>
     public static class MapLighting
     {
         public const float SunElevation = 30f;   // degrees above the horizon
         public const float SunAzimuth = 285f;    // degrees clockwise from north: west-north-west
         public const float SunIntensity = 1.8f;
-        public static readonly Color SunColour = new Color(1.00f, 0.83f, 0.61f);
+        public static readonly Color SunColour = new Color(1.00f, 0.83f, 0.63f);
         public static readonly Color AmbientSky = new Color(0.47f, 0.54f, 0.65f);
         public static readonly Color AmbientEquator = new Color(0.43f, 0.415f, 0.38f);
         public static readonly Color AmbientGround = new Color(0.235f, 0.2f, 0.155f);

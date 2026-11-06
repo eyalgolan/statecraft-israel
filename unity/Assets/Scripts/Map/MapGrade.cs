@@ -57,19 +57,20 @@ namespace Statecraft.Game.Map
         public static readonly Color SplitHighlights = new Color(0.84f, 0.87f, 0.835f);
         public static readonly Color VignetteColour = new Color(0.05f, 0.06f, 0.10f);
 
-        /// <summary>Issue #2427: saturation by linear luminance (0 = no change): dark tones lose 14%, which keeps the hill olives
+        /// <summary>Issue #2427: saturation by linear luminance (0 = no change): dark tones lose 9%, which keeps the hill olives
         /// grey (KitTests' olive crowns: 0.331 on main, promo 0.274-0.370) under the warmer light and comes towards the promo's
         /// shade (saturation about 0.3 against our 0.46). It ends at 0.09, about the sea's mean; the sea's mean colour moves
         /// by under 1/255 (GradeTests' TheLandReadsGoldenAndTheSeaHolds).</summary>
-        public static readonly Keyframe[] LumVsSat = { Key(0f, -0.07f), Key(0.075f, -0.07f), Key(0.09f, 0f), Key(1f, 0f) };
+        public static readonly Keyframe[] LumVsSat = { Key(0f, -0.045f), Key(0.075f, -0.045f), Key(0.09f, 0f), Key(1f, 0f) };
 
-        static Keyframe Key(float hue, float value) => new Keyframe(hue, 0.5f + value, 0f, 0f);
+        static Keyframe Key(float at, float value) => new Keyframe(at, 0.5f + value, 0f, 0f);
 
         /// <summary>Issue #2427: the land's golden turn, as an offset to the hue of each colour (hue 0-1 in linear HSV, 0 = no
         /// change; docs/visual-v1.md, "Issue #2427"). The land's terracotta (hue about 0.06) moves up and the green fields (0.2)
         /// move down, so they meet at gold. Flat at the reds (roofs, the other side's stripe, up to 0.035), at the sand (0.09-0.13:
         /// shifting it took the dune coast under SeaTests' luma floor) and from 0.38 up (the surf, the sea, the Israeli stripe),
-        /// which is what one global grade could not do (#38: warm grades turned the sea grey). Flat keys, so no curve overshoots
+        /// which is what one global grade
+        /// could not do (#38: warm grades turned the sea grey). Flat keys, so no curve overshoots
         /// between them: smoothed tangents leaked a shift into the sea's hue, 0.011 of luma. LUT inputs: no pass, no variant.</summary>
         public static readonly Keyframe[] HueVsHue =
         {
@@ -78,11 +79,16 @@ namespace Statecraft.Game.Map
         };
 
         /// <summary>Issue #2427: saturation by hue (0 = no change, 0.5 would double it): richer land, the sand unchanged, so the
-        /// Negev stays clear of mustard. Global Saturation stays -7: raising it moves the sea and the stripe (a trial at +2: sea
-        /// warmth -0.216 -> -0.238).</summary>
+        /// Negev stays clear of mustard. The band at 0.57-0.592 is the open sea's own hue (WebGL, gameplay03: 0.576-0.602, 5th to
+        /// 95th percentile): the water multiplies by the sun's colour (ScWaterShade), so the stronger sun would turn it greyer, warmth -0.202 ->
+        /// -0.187 in WebGL against the promo's -0.248, the #38 failure; 8% more saturation, at the same luma, brings it to -0.206.
+        /// It ends at 0.606 to keep off the ruled stripe's blue (a band to 0.615 took the stripe to 3.1 deltaE76, over the
+        /// owner's bound of about 3; this one 2.6). Global Saturation stays
+        /// -7: raising it moves every hue (a trial at +2: sea warmth -0.216 -> -0.238).</summary>
         public static readonly Keyframe[] HueVsSat =
         {
-            Key(0f, 0f), Key(0.025f, 0f), Key(0.055f, 0.02f), Key(0.075f, 0.015f), Key(0.09f, 0f), Key(1f, 0f),
+            Key(0f, 0f), Key(0.025f, 0f), Key(0.055f, 0.02f), Key(0.075f, 0.015f), Key(0.09f, 0f), Key(0.5f, 0f), Key(0.57f, 0.04f), Key(0.592f, 0.04f),
+            Key(0.606f, 0f), Key(1f, 0f),
         };
 
         public static void Apply(VolumeProfile profile)
