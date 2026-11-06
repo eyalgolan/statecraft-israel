@@ -308,14 +308,61 @@ namespace Statecraft.Game.UI
             var common = screen.Q<Label>("cabinet-pick-reason");
             common.text = shared == null ? "" : ReasonText(c, shared);
             common.style.display = shared == null ? DisplayStyle.None : DisplayStyle.Flex;
+            // #2743: only a queued appointment changes who can hold an office this turn (Cabinet.cs; Scenario.cs is dated, not
+            // queued), so the exact previews, one per candidate, run only while one is queued.
+            var current = bridge.Queued.Any(x => x is Appoint)
+                ? Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList()) : null;
             foreach (var (person, reason) in list)
             {
                 if (!rows.TryGetValue(person.Id, out var r)) continue;
+                (Rejection rejection, PreviewResult preview)? refused = null;
+                CabinetReason? held = null;
+                if (reason == null && current != null)
+                {
+                    var press = new Appoint(Selected, person.Id);
+                    if (bridge.CanPay(press)) refused = PreviewRefusal(c, press, current);
+                    // Who holds which office once the queue is applied does not depend on Attention, so a person a queued
+                    // appointment puts in another office is disabled even when the press could not be paid for (#2743).
+                    else held = HeldAfterQueue(c, current, person.Id);
+                }
+                var previewReason = refused == null ? null : PreviewReason(c, refused.Value.rejection, refused.Value.preview);
                 r.appoint.text = Describe(person);
-                r.appoint.SetEnabled(reason == null);
-                r.reason.text = shared == null && reason != null ? ReasonText(c, reason) : "";
-                r.reason.style.display = reason == null || shared != null ? DisplayStyle.None : DisplayStyle.Flex;
+                r.appoint.SetEnabled(reason == null && refused == null && held == null);
+                r.reason.text = shared != null ? "" : reason != null ? ReasonText(c, reason) : previewReason ?? (held != null ? ReasonText(c, held) : "");
+                r.reason.style.display = shared == null && (reason != null || refused != null || held != null) ? DisplayStyle.Flex : DisplayStyle.None;
             }
+        }
+
+        /// <summary>The refusal the exact queue left by <paramref name="press"/> would introduce: the press itself, or an
+        /// existing queued order that the current queue accepts. Queue objects are compared by reference so sim-made orders
+        /// never count, and a same-key appointment keeps its existing slot exactly as <see cref="SimBridge.Queue"/> does.</summary>
+        (Rejection rejection, PreviewResult preview)? PreviewRefusal(Content c, Appoint press, PreviewResult current)
+        {
+            var queue = bridge.Queued.ToList();
+            var old = bridge.QueuedLike(press);
+            if (old == null) queue.Add(press);
+            else queue[queue.FindIndex(x => ReferenceEquals(x, old))] = press;
+            var next = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+            var rejection = next.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press))
+                ?? next.Rejected.FirstOrDefault(x => bridge.Queued.Any(q => ReferenceEquals(q, x.Command))
+                    && !current.Rejected.Any(r => ReferenceEquals(r.Command, x.Command)));
+            return rejection == null ? null : (rejection, next);
+        }
+
+        /// <summary>The reasons a queued appointment can create for <paramref name="person"/>: holding another office once the
+        /// queue is applied (Cabinet.CheckReason on the preview's state). Date-bound reasons (a death, an office's dates) are
+        /// left out: the preview's state is a turn later than the appointment.</summary>
+        static readonly string[] HolderKinds = { "is_president", "is_chief_of_staff", "already_holds" };
+
+        CabinetReason? HeldAfterQueue(Content c, PreviewResult current, string person) =>
+            Cabinet.CheckReason(c, current.State, Selected!, person) is CabinetReason r && Array.IndexOf(HolderKinds, r.Kind) >= 0 ? r : null;
+
+        string PreviewReason(Content c, Rejection rejection, PreviewResult preview)
+        {
+            if (rejection.Command is Appoint a && Cabinet.CheckReason(c, preview.State, a.Office, a.Person) is CabinetReason reason
+                && reason.Text == rejection.Reason)
+                return ReasonText(c, reason);
+            return SimBridge.ReasonText(text, rejection.Reason, c, bridge.TownNamesHe);
         }
 
         string ReasonText(Content c, CabinetReason reason)
