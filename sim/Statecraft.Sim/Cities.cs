@@ -106,14 +106,19 @@ namespace Statecraft.Sim
 
         /// <summary>R-CITY-002, R-CRAFT-002: each city's employed units earn income_per_job_per_year for the turn's share of a
         /// year. Craftsmen take the jobs first, and each employed craftsman earns craftsman_income_multiple times that.
-        /// R-CITY-010: a city the enemy holds earns nothing.</summary>
+        /// R-CITY-010: a city the enemy holds earns nothing, and gets one line saying so (#1711), in s.Cities' order.</summary>
         public static void Produce(Content c, GameState s, MvpRules r, double yearFraction, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
             var held = Held(c, s);
             foreach (var x in s.Cities.Values)
             {
-                if (x.Employed == 0 || held.Contains(x.Id)) continue;
+                if (held.Contains(x.Id))
+                {
+                    why.Add(new Cause("city", x.Id, 0, $"{PlayerText.Settlement(c, x.Id)}: held by the enemy; no job income or project work this turn", key: CauseKeys.CityHeld));
+                    continue;
+                }
+                if (x.Employed == 0) continue;
                 var craftsmen = Math.Min(x.Craftsmen, x.Employed);
                 var paid = ((x.Employed - craftsmen) + craftsmen * r.CraftsmanIncomeMultiple) * r.IncomePerJobPerYear * yearFraction;
                 s.Treasury += paid;

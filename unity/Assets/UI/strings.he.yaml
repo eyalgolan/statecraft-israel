@@ -627,6 +627,8 @@ report.workshop_paused_debt: "סדנת נשק ({0}) בהמתנה: תקרת הח�
 # owner, 3 Nov 2026 (HE batch 3: "Approve all as they are").
 report.workshop_arms_n: "סדנאות נשק ({0}) ({1}): תוספת נשק: {1}"
 report.workshop_paused_debt_n: "סדנאות נשק ({0}) ({1}) בהמתנה: תקרת החוב"
+# The held cities' row (R-CITY-010, #1711). Agent-drafted Hebrew; native review pending (#564).
+report.held: "ערים בשליטת האויב"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
 # The nine end.* keys below: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are"), except
 # end.population_history, reworded for #2608 (#2620: the CBS figure is the Jewish population), which waits for the
@@ -1423,6 +1425,8 @@ why.cause.pending_became_raid: "{0}: לא התקבלה החלטה עד סוף ה
 why.cause.occupation_lost_unit: "{0}: אין עוד יחידה ישראלית המחזיקה במקום, ולכן תקופת ההחזקה הסתיימה כפשיטה. המקום שוב בשליטת האויב. {1}"
 why.cause.occupation_countdown: "{0}: מוחזק, תורות שנותרו: {1}"
 why.cause.depopulation_support: "{0}: שינוי {1} (המקומות שהתרוקנו מתושביהם בעקבות גירוש)"
+# R-CITY-010 (#1711), gdd-0.3 only: {0} the city; no verb agrees with {0} (HE-15). Agent-drafted Hebrew; native review pending (#564).
+why.cause.city_held: "{0}: בשליטת האויב: אין הכנסה מעבודה ואין עבודה על מיזמים בתור הזה"
 why.cause.work.plow: "חריש"
 why.cause.work.drain: "ייבוש הביצה"
 why.cause.work.camp: "מחנה אימונים"

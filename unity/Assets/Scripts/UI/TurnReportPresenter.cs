@@ -29,6 +29,8 @@ namespace Statecraft.Game.UI
         public const string EnemyRow = "enemy";
         /// <summary>The row after the stocks that lists the arms workshops' Arms and ceiling pauses this turn (#1701 A1).</summary>
         public const string WorkshopRow = "workshops";
+        /// <summary>The row after the workshops' that lists the cities the enemy holds this turn (R-CITY-010, #1711).</summary>
+        public const string HeldRow = "held";
 
         /// <summary>The units_1948.yaml rows, which name the enemy's units in that row (GameRoot sets them once the map has read
         /// them); without a row a unit is named by its id (report.unit).</summary>
@@ -111,7 +113,8 @@ namespace Statecraft.Game.UI
 
         /// <summary>The report's lines for the session's last turn: each top-bar meter whose shown change is not empty, in
         /// the bar's order (the meters have different units, so no order by size is given without a rule); then national stocks; under
-        /// <see cref="WorkshopRow"/>, the arms workshops' lines (#1701); under <see cref="EnemyRow"/>, the enemy's orders (#1293).</summary>
+        /// <see cref="WorkshopRow"/>, the arms workshops' lines (#1701); under <see cref="HeldRow"/>, the held cities (#1711); under
+        /// <see cref="EnemyRow"/>, the enemy's orders (#1293).</summary>
         public static IReadOnlyList<Line> Lines(SimBridge bridge, UiText text, IReadOnlyList<UnitEntry>? units = null,
             IReadOnlyDictionary<string, string>? townNamesHe = null)
         {
@@ -130,6 +133,11 @@ namespace Statecraft.Game.UI
             lines.AddRange(StockLines(bridge, text, units, townNamesHe));
             var workshops = WorkshopLines(bridge, text, townNamesHe);
             if (workshops.Count > 0) lines.Add(new Line(WorkshopRow, text["report.workshops"], workshops));
+            // R-CITY-010 (#1711): a held city's line changes no number (Delta 0), so HudModel.Causes leaves it out and it has
+            // its own row; the sim writes it under gdd-0.3 only, in s.Cities' order.
+            var held = bridge.Session.Last?.Why.Where(w => w.Key == CauseKeys.CityHeld)
+                .Select(w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text, townNamesHe)).ToList();
+            if (held != null && held.Count > 0) lines.Add(new Line(HeldRow, text["report.held"], held));
             var enemy = EnemyOrders(bridge, text, units);
             if (enemy.Count > 0) lines.Add(new Line(EnemyRow, text["report.enemy"], enemy));
             return lines;
