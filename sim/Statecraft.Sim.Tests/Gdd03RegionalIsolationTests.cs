@@ -161,6 +161,6 @@ public class Gdd03RegionalIsolationTests
         foreach (var id in new[] { "fixture", A, "fixture-a-job", "fixture-workshop" })
             Assert.DoesNotContain(id, production.Describe(), StringComparison.Ordinal);
         Assert.Empty(production.PlayerRegions); Assert.False(production.PopulationLedger.IsInitialized);
-        Assert.Equal(production.Population.Values.Sum(), production.TotalPopulation);
+        Assert.Equal(production.Population.OrderBy(kv => kv.Key, StringComparer.Ordinal).Sum(kv => kv.Value), production.TotalPopulation);
     }
 }
