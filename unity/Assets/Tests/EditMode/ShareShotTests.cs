@@ -282,10 +282,10 @@ public class ShareShotTests
         finally { ShareShot.Keep = ShareShot.DefaultKeep; }
     }
 
-    /// <summary>With the screens' navigation wired as GameRoot wires it, Esc in the share panel closes the panel only:
+    /// <summary>With the unit fixture's injected ScreenNav hook, Esc in the share panel closes the panel only:
     /// ScreenNav's Cancel handler trickles down from the root before the panel's own and asks the panel first.</summary>
     [Test]
-    public void EscapeInTheSharePanelLeavesTheSettingsScreenOpen()
+    public void AnInjectedScreenNavHookLeavesSettingsUnderTheSharePanelOpen()
     {
         ShareShot.Keep = (png, name) => { };
         try
@@ -497,7 +497,7 @@ public class ShareShotTests
             }
             else if (result != ShareShot.CopyResult.Picture)
                 StringAssert.Contains(hebrew ? "התמונה עדיין זמינה לשיתוף או להורדה" :
-                    "Share or download the picture with the button above", note.text,
+                    "Use Share or Download the picture", note.text,
                     "the note must fit both Share and Download, including a refused share sheet");
             Assert.AreEqual(DisplayStyle.Flex, note.style.display.value);
             share.Close();

@@ -1,7 +1,7 @@
 # Accessibility audit, 14 October 2026
 
-Issue #41. An audit only: nothing here is fixed yet. Each finding says what fails, where, how it was found, the WCAG 2.1
-criterion it is measured against, and a proposed fix. The fixes go in later, small PRs.
+Issue #41. An audit: the findings are as of 14 October 2026, and the later sections record the fixes made after it. Each finding says what fails, where, how it was found, the WCAG 2.1
+criterion it is measured against, and a proposed fix. Some fixes went in later, small PRs, and others still go in.
 
 ## How it was tested
 
@@ -355,7 +355,7 @@ Escape closes the open screen; on the open card it is Hide; on the start screen 
   screen is set in a Hebrew face at 15:1; bars and seat colours meet 3:1 (`PromoScreensTests.BarsAndPartyColoursMeetThreeToOne`).
 - Every change in the top bar carries its sign in the text, not only its colour.
 
-## The keyboard-only turn, 22 October 2026
+## The keyboard-only turn, 22 October 2026, updated to the current test
 
 The done-when's turn, played again on main `5d5bee4d` after B1a (#890), B1b (#1134) and the city panel (#381, #1122,
 #1124). Unit orders were left out until #754 closed (owner, 22 October 2026); #754 closed on 22 October and the Civ
@@ -365,16 +365,18 @@ movement slices (#1527) are on main, so the turn gives one now (2 November 2026,
   sent as the UI Toolkit events the Input System's UI provider makes of them (Tab and Shift+Tab: `NavigationMoveEvent`;
   Enter: `KeyDownEvent` then `NavigationSubmitEvent`; Escape: `NavigationCancelEvent`), as `MapFocusTests` does. No
   pointer event is sent after the game starts.
-- **The turn:** Tab once from the card to its first option, Enter (focus to End Turn). Tab to Budget, Enter, about 16 Tabs
-  to the screen's first control (the screens come after the HUD in the order), Tab to a line's +, Enter (focus stays,
-  H2), Tab to Submit, Enter. Tab to Cabinet, Enter, Tab to a minister's seat, Enter, Tab once to the first candidate,
-  Enter. Escape (focus to the Cabinet button, M1). Tab to the map stop, pan to Tel Aviv, Enter (the city panel shows),
+- **The turn:** Tab once from the card to its first option, Enter (focus to the turn's second card, Degania), Tab once to
+  its first option, Enter (focus to End Turn). Tab to Budget, Enter (the focus goes to the screen's first control, K5
+  below, so the 16 Tabs of the first run are gone), Tab to a line's +, Enter (focus stays, H2), Tab to Submit, Enter.
+  Tab to Cabinet, Enter, Tab to a minister's seat, Enter (the focus goes to the first candidate that can be appointed,
+  #2340 M2), Enter. Tab to the Cabinet button (the Tab after the last seat leaves the screen for it), Escape (the
+  screen closes and the focus is on the Cabinet button, M1). Tab to the map stop, pan to Tel Aviv, Enter (the city panel shows),
   Tab to Train halutzim, Enter. Tab to the map stop, pan to Golani, Enter (Golani is selected and its Move pick opens,
-  as in Civ), pan to a lit hex, Enter (Golani moves there; the focus stays on the map stop). Tab to End Turn, Enter:
-  the turn ends and the turn report takes the focus; Enter on its Close hands it to the next card, or to End Turn when
+  as in Civ), pan to a lit hex, Enter (Golani moves there; the focus stays on the map stop). Tab to End Turn (a unit still waiting for
+  an order is given Skip first), Enter: the turn ends and the turn report takes the focus; Enter on its Close hands it to the next card, or to End Turn when
   none opens.
-- **Attention:** the opening turn has 4 Attention; answering the card and Train halutzim cost 2 each, a budget and an
-  appointment 4 each, so the five steps take more than one turn's Attention. That is the game's rule, not the keyboard's:
+- **Attention:** the opening turn has 4 Attention; answering each card and Train halutzim cost 2 each, a budget and an
+  appointment 4 each, so the steps take more than one turn's Attention. That is the game's rule, not the keyboard's:
   the test raises the Attention to check the path. With 4, the budget and the appointment are refused with the toast
   ("Not enough attention (need 4.0, have 2.0)"), as for a mouse player.
 
@@ -470,16 +472,17 @@ The reasoning is K3's, not wider: a bar is always in sight, a list is reached by
 that hold labels only (`why-rows`, `defence-body`, the event card's text) have nothing to Tab to, while `KeyScroll`
 gives PageUp, PageDown, Home and End with or without focus. Focusability only: dragging and the wheel are untouched.
 
-Three views are left out of the sweep, because for them that reasoning does not hold: `turn-report-rows`,
-`end-screen-rows` and `capture-scroll`. `KeyScroll` has no target for any of them, `GameRoot` switches the paging
-keys off entirely while the turn report or the end screen is open, and their rows are plain labels, so Tab reaches
-nothing inside them. Taking their bar out would leave no keyboard route at all, which is worse than a stray stop.
-Giving `KeyScroll` a route to them is the better answer and is its own change.
+The turn report (`turn-report-rows`), the ending (`end-screen-rows`), the capture dialog (`capture-scroll`) and the
+info panel (`info-panel`) were first left out of the sweep, because `KeyScroll` had no target for them and `GameRoot`
+switched the paging keys off under the turn report and the ending, so their bar was the only keyboard route. Since
+#2479 they take PageUp, PageDown, Home and End through `KeyScroll` too (the topmost of the ending and the turn report
+first, then the capture dialog, then the info panel while it is in reach), `GameRoot` pages under the report and the
+ending, and their bars are out of the Tab order like every other view's. Up and Down still move nothing under the turn
+report or the ending (`GameRoot`'s guard on `NavigationGuard.Step`, L4).
 
 Pinned in EditMode: `ScrollBarTabStopTests` (in a 1280x420 window the Budget's and Defence's bars take no stop,
 with the overflow asserted as a precondition so the test cannot pass vacuously; the Cabinet stays at zero; no
-`ScrollView` in the tree keeps a focusable scroller, slider or arrow button apart from the three above; and those
-three do keep theirs, so the exclusion cannot be dropped by accident). No UI string was added, so nothing goes
+`ScrollView` in the tree keeps a focusable scroller, slider or arrow button). No UI string was added, so nothing goes
 to #564.
 
 ## The focus rule looks past the element's own display, 23 October 2026

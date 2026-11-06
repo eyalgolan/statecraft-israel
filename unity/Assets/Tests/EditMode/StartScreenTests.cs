@@ -290,6 +290,21 @@ public class StartScreenTests
         Assert.IsTrue(rig.Start.IsOpen);
     }
 
+    /// <summary>#2710: the recording plays over the still painting only (docs/declaration-recording.md), so the report
+    /// panel opening over the screen stops it, although the start screen stays open under the panel.</summary>
+    [Test]
+    public void TheReportButtonStopsTheRecording()
+    {
+        using var rig = new Rig(TempStore());
+        using var feedback = new FeedbackPresenter(rig.Ui.Root, null, "0.1.0 / content ab12");
+        rig.Ui.Press("start-listen");
+        Assert.IsTrue(rig.Recording.Playing, "precondition: its button plays it");
+        rig.Ui.Press("start-report");
+        Assert.IsTrue(feedback.IsOpen);
+        Assert.IsTrue(rig.Start.IsOpen, "the start screen stays under it");
+        Assert.IsFalse(rig.Recording.Playing, "the panel covers the painting: the recording stops");
+    }
+
     [Test]
     public void ContinueShowsOnlyWithASaveAndLoadsIt()
     {
@@ -333,7 +348,9 @@ public class StartScreenTests
         rig.Ui.Press("start-new-game");
         Assert.IsFalse(rig.Start.IsOpen);
         Assert.AreEqual(0, rig.Bridge.State.Turn, "a new game");
-        Assert.IsFalse(File.Exists(store.AutosavePath), "the abandoned save is gone");
+        Assert.IsTrue(File.Exists(store.AutosavePath), "the replacement game is saved immediately");
+        var resumed = GameStart.Begin(C, store, () => 1UL, new List<string>(), Text);
+        Assert.AreEqual(rig.Bridge.State.Hash(), resumed.State.Hash());
         Assert.IsFalse(rig.Start.Resumed);
     }
 
@@ -451,60 +468,58 @@ public class StartScreenTests
     /// <summary>#400: a turn-1 save keeps the build buttons disabled anyway, so the test above cannot see them. With a save
     /// from after August 1950, a selected hex and an event waiting, the build buttons and the event's options are live, and
     /// still none of them takes the focus under the start screen.
-    /// Built in GameRoot's order: the HUD, ScreenNav, the info panel and the event card, then the screen.</summary>
+    /// Booted through GameRoot.Begin: the HUD, ScreenNav, the info panel and the event card, then the screen.</summary>
     [UnityTest]
-    public IEnumerator ASaveFrom1950KeepsTheLiveHudOutOfReach()
+    public IEnumerator AContinuedGameBootKeepsTheLiveHudOutOfReach()
     {
-        var legacy = SimBridgeGddTests.Legacy;   // the live Build buttons are the legacy loop's (R-PROJ-004)
-        var g = GameSession.New(legacy, 9, Mode.Historical);
-        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(legacy, g.State));
+        var g = GameSession.New(Inputs.Content, 9, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0)
+            g.Step(HistoricalAI.Commands(Inputs.Content, g.State));
         var store = TempStore();
         store.WriteAutosave(g.Save.Write());
-        using var ui = new RenderedUi();
-        var bridge = new SimBridge(GameStart.Begin(legacy, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
-        var owned = new List<IDisposable>();
-        try
+        var root = OpenScene(store);
+        root.Begin(Inputs, 0, startScreen: true);
+        var ui = Ui;
+        var offers = (from hex in Inputs.Content.Hexes
+                      where hex.Land
+                      where !Inputs.Content.SettlementHexes.Any(x => x.Q == hex.Q && x.R == hex.R
+                          && root.Bridge!.State.Cities.ContainsKey(x.Id))
+                      from city in Projects.CitiesFor(Inputs.Content, root.Bridge!.State, hex.Q, hex.R)
+                      from kind in Inputs.Content.ProjectKinds
+                      where Projects.CheckCityReason(Inputs.Content, root.Bridge!.State, kind.Id, city, hex.Q, hex.R) == null
+                      select (hex, kind)).ToList();
+        Assert.IsNotEmpty(offers, "precondition: the continued current-ruleset state has a build action");
+        var offer = offers[0];
+        root.Info!.Show(offer.hex.Q, offer.hex.R);
+        for (int i = 0; i < 4; i++) yield return null;
+        Assert.GreaterOrEqual(root.Bridge!.State.Date, new DateTime(1950, 8, 1), "precondition: the 1950 save is continued");
+        var build = ui.Q<Button>("city-project-" + offer.kind.Id);
+        Assert.IsNotNull(build, "precondition: the eligible current-ruleset city-project build action exists");
+        Assert.IsTrue(build.enabledSelf && build.resolvedStyle.display != DisplayStyle.None,
+            "precondition: the current-ruleset city-project build action is enabled and visible");
+        Assert.IsNotNull(ui.Q("event-options").Q<Button>(), "precondition: an event's options are shown");
+        void NoneReachable(string where)
         {
-            ui.Root.Q("root").RemoveFromClassList("loading");
-            owned.Add(new HudPresenter(ui.Root, bridge, Text));
-            owned.Add(new ScreenNav(ui.Root));
-            var info = new InfoPanelPresenter(ui.Root, bridge, Text, legacy.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
-            var card = new EventCardPresenter(ui.Root, bridge, Text, null); owned.Add(card);
-            var toast = new ToastPresenter(ui.Root, bridge, Text); owned.Add(toast);
-            var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 5UL); owned.Add(newGame);
-            var tlv = legacy.SettlementHexes.Single(x => x.Id == "tel_aviv");
-            info.Show(tlv.Q, tlv.R);
-            var start = new StartScreenPresenter(ui.Root, newGame, resumed); owned.Add(start);
-            start.Show();
-            for (int i = 0; i < 4; i++) yield return null;
-            Assert.IsTrue(resumed, "precondition: the 1950 save is continued");
-            var build = ui.Q<Button>("build-camp");
-            Assert.IsTrue(build.enabledSelf && build.style.display.value == DisplayStyle.Flex, "precondition: build-camp is live: " + ui.Q<Label>("info-reason").text);
-            Assert.IsNotNull(ui.Root.Q("event-options").Q<Button>(), "precondition: an event's options are shown");
-            void NoneReachable(string where)
-            {
-                foreach (var region in new[] { "top-bar", "right-column", "info-panel", "event-layer" })
-                    foreach (var b in ui.Root.Q(region).Query<Button>().ToList())
-                    {
-                        Assert.IsFalse(b.canGrabFocus, $"{where}: {region} {b.name} cannot take the focus under the start screen");
-                        b.Focus();
-                        Assert.AreNotSame(b, ui.Root.focusController?.focusedElement, $"{where}: {region} {b.name} is not focused");
-                    }
-            }
-            NoneReachable("under the start screen");
-            ui.Press("start-continue");
-            yield return null; yield return null;
-            // The waiting event's card opens in the middle (decision cards) and takes the focus (review S1); its options are
-            // in reach, the panels under its backdrop are not; Hide gives them back.
-            yield return null;
-            Assert.AreSame(ui.Root.Q("event-card"), ui.Root.panel.focusController.focusedElement, "the event card has the focus once the screen closes");
-            Assert.IsTrue(ui.Root.Q("event-options").Q<Button>().canGrabFocus, "the event's options are in reach once the screen closes");
-            Assert.IsFalse(build.canGrabFocus, "the info panel waits under the decision card's backdrop");
-            card.Collapse();
-            yield return null;
-            Assert.IsTrue(build.canGrabFocus, "the build button is back once the card is hidden");
+            foreach (var region in new[] { "top-bar", "right-column", "info-panel", "event-layer" })
+                foreach (var b in ui.Q(region).Query<Button>().ToList())
+                {
+                    Assert.IsFalse(b.canGrabFocus, $"{where}: {region} {b.name} cannot take the focus under the start screen");
+                    b.Focus();
+                    Assert.AreNotSame(b, ui.focusController?.focusedElement, $"{where}: {region} {b.name} is not focused");
+                }
         }
-        finally { for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose(); }
+        NoneReachable("under the start screen");
+        UiTestKit.Press(ui.Q<Button>("start-continue"));
+        yield return null; yield return null;
+        // The waiting event's card opens in the middle (decision cards) and takes the focus (review S1); its options are
+        // in reach, the panels under its backdrop are not; Hide gives them back.
+        yield return null;
+        Assert.AreSame(ui.Q("event-card"), ui.panel.focusController.focusedElement, "the event card has the focus once the screen closes");
+        Assert.IsTrue(ui.Q("event-options").Q<Button>().canGrabFocus, "the event's options are in reach once the screen closes");
+        Assert.IsFalse(build!.canGrabFocus, "the info panel waits under the decision card's backdrop");
+        root.Card!.Collapse();
+        yield return null;
+        Assert.IsTrue(build.canGrabFocus, "the build button is back once the card is hidden");
     }
 
     // --- Layout ------------------------------------------------------------------------------------------------------

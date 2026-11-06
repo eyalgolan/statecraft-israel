@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.HexTiles;
+using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 /// <summary>The "under attack" look (HexUnderAttack): presentation only, shown on one hex and hidden again. It sits on
 /// the hex centre and stays inside the hex at every time, shows once however often it is shown, frees every mesh and
-/// material it made when hidden, samples the same pulse and smoke for the same time, and ships its material templates.</summary>
+/// material it made when hidden, samples the same pulse and smoke for the same time, and ships its material templates. Its
+/// smoke and flames are #2490's flipbooks (owner, 4 November 2026: "Fire/smoke on attacked hexes"), one mesh each, sampled
+/// with no allocation.</summary>
 public class HexUnderAttackTests
 {
     const int Q = -3, R = 19;
@@ -71,9 +74,10 @@ public class HexUnderAttackTests
         go.GetComponent<HexUnderAttackLook>().Time(1.5f);
         var (meshes, renderers) = Parts(go);
         var materials = renderers.SelectMany(r => r.sharedMaterials).ToList();
+        // The flipbooks are Resources assets the look shows, not makes: they stay.
         var made = meshes.Select(m => (Object)m.sharedMesh).Concat(materials)
-            .Concat(materials.Select(m => m.GetTexture("_BaseMap")).Where(t => t != null)).ToList();
-        Assert.That(made.Count, Is.GreaterThanOrEqualTo(6), "three meshes and three materials at least");
+            .Concat(materials.Select(m => m.GetTexture("_BaseMap")).Where(t => t != null && !EditorUtility.IsPersistent(t))).ToList();
+        Assert.That(made.Count, Is.GreaterThanOrEqualTo(8), "four meshes and four materials at least");
         Assert.That(made.All(o => o != null));
         Assert.That(HexUnderAttack.Hide(root, Q, R), Is.True);
         Assert.That(made.Where(o => o != null).Select(o => o.name), Is.Empty, "every mesh and material the look made is destroyed");
@@ -133,6 +137,62 @@ public class HexUnderAttackTests
                     Assert.That(new Vector2(p.x, p.z).magnitude, Is.GreaterThan(HexScale.UnitSpotShare * HexScale.HexM), $"hex {q},{r}: smoke base {p}");
                     Assert.That(p.z, Is.GreaterThanOrEqualTo(0f), $"hex {q},{r}: smoke base {p} is in the south half");
                 }
+    }
+
+    static Mesh MeshOf(GameObject go, string part) => go.transform.Find(part).GetComponent<MeshFilter>().sharedMesh;
+    static Texture TextureOf(GameObject go, string part) => go.transform.Find(part).GetComponent<Renderer>().sharedMaterial.GetTexture("_BaseMap");
+
+    /// <summary>The smoke is the smoke flipbook, each puff on one frame of it; the flames are the explosion flipbook's
+    /// burning frames on camera-facing quads, one mesh for the hex; both move with time.</summary>
+    [Test]
+    public void TheSmokeAndTheFlamesAreFlipbookFrames()
+    {
+        var go = HexUnderAttack.Show(Root(), new FlatSurface(), Q, R);
+        var look = go.GetComponent<HexUnderAttackLook>();
+        Assert.That(TextureOf(go, "Smoke"), Is.SameAs(Flipbook.Load(Flipbook.SmokeResource)), "the smoke flipbook (#2490)");
+        Assert.That(TextureOf(go, "Fire"), Is.SameAs(Flipbook.Load(Flipbook.ExplosionResource)), "the explosion flipbook (#2490)");
+        int columns = HexUnderAttack.SmokeBases(Q, R, HexScale.HexM).Length, flames = columns * HexUnderAttack.Fire.PerColumn;
+        Assert.That(MeshOf(go, "Fire").vertexCount, Is.EqualTo(flames * 4), "a quad per flame, all in one mesh");
+        float smokeCell = 1f / Flipbook.SmokeGrid, fireCell = 1f / Flipbook.ExplosionGrid;
+        int burningRows = (Flipbook.ExplosionFireFrames + Flipbook.ExplosionGrid - 1) / Flipbook.ExplosionGrid;
+        foreach (var t in new[] { 0f, 0.31f, 1.7f, 9.2f })
+        {
+            look.Time(t);
+            var smokeUV = MeshOf(go, "Smoke").uv;
+            const int perPuff = 9;   // the octagon's centre and its rim
+            for (int p = 0; p < smokeUV.Length / perPuff; p++)
+            {
+                var puff = smokeUV.Skip(p * perPuff).Take(perPuff).ToArray();
+                float x0 = Mathf.Floor(puff[0].x / smokeCell) * smokeCell, y0 = Mathf.Floor(puff[0].y / smokeCell) * smokeCell;
+                Assert.That(puff.All(uv => uv.x >= x0 - 1e-4f && uv.x <= x0 + smokeCell + 1e-4f && uv.y >= y0 - 1e-4f && uv.y <= y0 + smokeCell + 1e-4f),
+                    $"puff {p} at t={t} stays on one frame");
+            }
+            var fireUV = MeshOf(go, "Fire").uv;
+            for (int f = 0; f < flames; f++)
+            {
+                var quad = fireUV.Skip(f * 4).Take(4).ToArray();
+                Assert.That(quad.Max(uv => uv.x) - quad.Min(uv => uv.x), Is.EqualTo(fireCell).Within(1e-4f), $"flame {f}: one frame wide");
+                Assert.That(quad.Min(uv => uv.y), Is.GreaterThanOrEqualTo(1f - burningRows * fireCell - 1e-4f), $"flame {f} at t={t}: a burning frame, never the smoke");
+                int frame = Mathf.RoundToInt(quad.Min(uv => uv.x) / fireCell) + Flipbook.ExplosionGrid * Mathf.RoundToInt((1f - quad.Max(uv => uv.y)) / fireCell);
+                Assert.That(frame, Is.LessThan(Flipbook.ExplosionFireFrames), $"flame {f} at t={t}: frame {frame} burns");
+            }
+        }
+        look.Time(1f); var fireA = MeshOf(go, "Fire").uv; var smokeA = MeshOf(go, "Smoke").uv;
+        look.Time(1f + HexUnderAttack.Fire.CycleS / 2f);
+        CollectionAssert.AreNotEqual(fireA, MeshOf(go, "Fire").uv, "the flames burn through the frames");
+        look.Time(4f);
+        CollectionAssert.AreNotEqual(smokeA, MeshOf(go, "Smoke").uv, "the smoke boils through the frames");
+    }
+
+    /// <summary>Per-frame garbage stutters on WebGL: sampling the look (smoke, flames, glow, border) allocates nothing.</summary>
+    [Test]
+    public void SamplingTheLookAllocatesNothing()
+    {
+        var look = HexUnderAttack.Show(Root(), new FlatSurface(), Q, R).GetComponent<HexUnderAttackLook>();
+        for (int i = 0; i < 10; i++) look.Time(i * 0.016f);   // warm up
+        long before = System.GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 300; i++) look.Time(1f + i * 0.016f);
+        Assert.That(System.GC.GetAllocatedBytesForCurrentThread() - before, Is.EqualTo(0), "no allocation per frame");
     }
 
     [Test]

@@ -19,8 +19,8 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
   build-cache change gets committed.
 - **Verified locally by:** `uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5"` with the three
   full `--expect` values pinned in `docs/determinism.md` (both goldens and the smoke line). This runs both golden hashes
-  in the WebGL IL2CPP player, then plays five turns through the UI's own buttons (answering two events through the card:
-  the IDF founding order on turn 2, the first truce on turn 4).
+  in the WebGL IL2CPP player, then plays five turns through the UI's own buttons (on each turn it presses the first
+  option of every event card shown, while Attention allows in rulesets that have it, `GameRoot.Smoke`).
   - **Result at the merge candidate (2026-10-11, commit a099655, Brotli build):** `GOLDEN OK 1950 71e9904d…`,
     `GOLDEN OK 1952 73590e32…`, `SMOKE OK 5 turns 1948-06-19 d3fdd459…` (all three matched in full), then PASS.
   - History: 2026-10-10 at d450566 (Brotli, before the 1948 war-period events): `GOLDEN OK 1950 ee5d0826…`,
@@ -68,7 +68,7 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
   - `TURN <n> <date> hash <state hash>` after every End Turn.
   - `CAMERA distance=<m> yaw=<deg>` with `?camlog`.
   - `PROFILE ...` with `?profile`.
-  - `QUALITY level=<n> scale=<s> tiltshift=<on|off> p95_ms=<ms>` whenever the runtime quality fallback steps (WebGL only;
+  - `QUALITY level=<n> scale=<s> tiltshift=<on|off> towns=<close|far> p95_ms=<ms>` whenever the runtime quality fallback steps (WebGL only;
     off with `?nofallback`; docs/visual-v1.md "Runtime quality fallback").
   - `BOOT phase=<name> at=<ms> ms dt=<ms> ms` for each boot phase with `?bootlog` (playtest 2, P2-1).
   - `NAV f=<frame> ...` with `?navlog`: every raw mouse event, UI pointer and submit event, screen toggle and map click,
@@ -267,7 +267,7 @@ machines or the project's itch.io account.
 
 ## OWNER STEP: sensitivity review before any shared build
 Spec section 5.5 requires a recorded sensitivity review for events with sensitive tags (holocaust, terror, massacre,
-war-casualties). The owner's sign-off for all seven events below is recorded in commit
+war-casualties; and displacement, R-GATE-001). The owner's sign-off for all seven events below is recorded in commit
 [25d2ef6](https://github.com/eyalgolan/statecraft-israel/commit/25d2ef6004436668b42e289aff3dce06af128e09)
 (2026-10-10; decision D11 in [docs/oss/DECISIONS.md](oss/DECISIONS.md)): each event's YAML `status:` is now
 `sensitivity-reviewed`. For any new sensitive event, the owner records the sign-off **only** by moving its YAML
@@ -285,11 +285,12 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
   sensitive event photograph (`docs/event-images.md`). Use `-shareable` and the script for every build
   that leaves this machine, including the M4 private Draft once it is shared with anyone. Local dev builds (no flag)
   are not gated, because web_check and the golden checks need them.
-- **Alternate-timeline content (R-ALT-011, Q-ALT-9):** `Statecraft.Cli --release-gate`, and so
-  `tools/package_release.py` and `scripts/oss/release_gate.sh`, also refuse while any consequence card (`kind:
-  consequence`) or any event with `variants` has no `reviewed_by`, naming them on a `RELEASE GATE REFUSED` line
-  (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`; the CLI also prints each as `unsigned alternate card: <id>`). The
-  sign-off is a person's `reviewed_by`, written only by that person. The Unity `-shareable` build flag checks the sensitive events only.
+- **Alternate-timeline content (R-ALT-011, Q-ALT-9):** Unity player builds made with `-shareable` and
+  `Statecraft.Cli --release-gate`, and therefore `tools/package_release.py` and `scripts/oss/release_gate.sh`, refuse
+  while any consequence card (`kind: consequence`) or any event with `variants` has no `reviewed_by`, naming them
+  (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`): Unity on its `BUILD REFUSED` line, the CLI on a `RELEASE GATE REFUSED`
+  line, and the CLI also prints each as `unsigned alternate card: <id>`. The
+  sign-off is a person's `reviewed_by`, written only by that person.
 - **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the twelve ids, and
   `TheOwnerTableListsEverySensitiveEvent` fails if a sensitive event is missing from this table, so a new one cannot
   skip the review.
@@ -426,5 +427,6 @@ changed page-directory paths and changed-content warnings. Those code/tests supp
 - The wheel-zoom step (one notch = 10%) was measured in Chrome on macOS only. Firefox reports wheel deltas in lines and
   Windows at 125% scaling reports 125 px per notch, so re-check the step in the owner's M4 itch.io check.
 - Nightlies upload to itch.io once the cross-upload save test passes (owner, 27 October 2026; until then this build is
-  not uploaded there). The seven sensitive events are `sensitivity-reviewed`, with the owner's sign-off recorded in commit
+  not uploaded there). The 12 sensitive events (pinned in `FinalWaveTests`) are `sensitivity-reviewed`; the owner's sign-off of 10 October 2026
+  for seven of them is recorded in commit
   [25d2ef6](https://github.com/eyalgolan/statecraft-israel/commit/25d2ef6004436668b42e289aff3dce06af128e09) (see above).

@@ -15,7 +15,9 @@ bytes, so the tool and the game write one format.
 ## The files
 
 Each language has a folder named by its code (`he`, `ro`, `pt-BR`: lowercase ISO 639, then optional `-` subtags). Each of
-the three files may be missing, which means the language has none of that kind.
+`events.yaml` and `content.yaml` may be missing, which means the language has none of that kind. `ui.yaml` may not: every
+language is checked with `CheckDeclaredLanguage`, which refuses one whose `ui.yaml` has no `ui.lang`, so a folder with only
+`events.yaml` or `content.yaml` is refused.
 
 | File | Key | Entry |
 |---|---|---|
@@ -35,7 +37,8 @@ altalena:
 ```
 
 `review` is `agent-checked` until a native speaker has read the text, and is left out after that (#564). It is the only
-value it may have.
+value it may have, except that a region-name entry in `map/region_names_he.yaml` (`names.*.name`) may also be
+`native-review-pending`.
 An AI-assisted contributor may also do that read and remove the line, when the pull request discloses the AI help and
 names the strings read (the owner, 4 November 2026: "AI-assisted can clear it"; [comment](https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295)).
 
@@ -73,21 +76,31 @@ owner's decision. `TranslationsTests` names both files, and fails if any other n
 
 ## Sign-offs and the review queue
 
-A signed row's sign-off (`reviewed_by`, `reviewed_on`) covers its Hebrew wherever it lives: inline, or as the row's
-entry in `he/events.yaml` (an event, by its id) or `he/content.yaml` (a record, by its keys). Hebrew moved with the
+A signed row's sign-off (`reviewed_by`, `reviewed_on`) protects the row's Hebrew from unsigned edits wherever it
+lives: inline, or as the row's entry in `he/events.yaml` (an event, by its id) or `he/content.yaml` (a record, by its
+keys). It does not clear a Hebrew `agent-checked` flag: the fact sign-off and the Hebrew read are separate checks, and
+the flag stays until a native Hebrew speaker, or an AI-assisted contributor who discloses the AI help, reads the Hebrew
+(#564; the owner chose the option labelled "No: separate checks (Recommended)" (4 November 2026)).
+`tools/review_queue.py` lists a flag on a signed row like any other (`scan`, lines 209-221; `queue`, lines 351-358). Hebrew moved with the
 same decoded text keeps the sign-off (owner, 25 October 2026, on #1618: "Yes, carry them over"). The inline YAML and
 `translations/he/` quote differently (a folded `>-` scalar becomes a double-quoted one), so "byte-identical moved text"
 is read as the same decoded text: every character the same, direction marks, nikkud and maqaf included. `scripts/oss/reviewed_by_guard.py`
 holds the line. A commit with an AI co-author trailer may take a signed row's Hebrew lines out of `content/` when the
 row's Hebrew, read from both places, is the same before and after. Any other change to that Hebrew, in either place,
-is an edit of the signed row, and a person must sign the row again.
+is an edit of the signed row: a person must sign the row again, or an AI-assisted contributor may sign it again
+when the pull request's "AI assistance" section discloses the AI help, names the check and says which sources were
+opened and what was checked (owner, 4 November 2026: "Yes, it counts"); CI checks only that the section names a check,
+and the reviewer reads the rest (`docs/CONTENT_POLICY.md`). A commit with an AI co-author trailer never removes the
+sign-off.
 
 `tools/review_queue.py` lists an entry's `review: agent-checked` just as it lists the inline `*_he_review` flag, with
 the English record's row and sources (an event's `text_he_sources`, else its own `sources`).
 
 A change to `translations/` is a change players get, so it needs a changelog entry (`scripts/oss/changelog_check.py`;
-`translations/README.md` excepted). `tools/package_release.py` refuses a build whose `StreamingAssets/translations`
-files and `bundle.json`'s packed texts differ, so the release gate checks the same translations every player reads.
+`translations/README.md` excepted). `tools/package_release.py` refuses a build unless the repository's `translations/`,
+the build's `manifest.json` and `bundle.json` lists and its `StreamingAssets/translations` files name the same files and
+each packed text matches its file, so the release gate checks the same translations every player reads, and a build that
+lost all of them is refused too (#2641).
 
 ## Order and format
 
@@ -104,7 +117,8 @@ their capitalised forms). Any other key is double-quoted (`Translations.Key()`, 
 ## What the parser checks, and what it leaves to the content rules
 
 `Translations.Parse` checks the shape: the known fields only, keys of the right form, no key twice, every text a
-non-empty string, `review` only `agent-checked`, and `sources` as a list of `{ url, checked }`. The rules about the
+non-empty string, `review` only `agent-checked` (or `native-review-pending` on a region-name entry), and `sources` as a
+list of `{ url, checked }`. The rules about the
 text itself (an event is all or none, placeholders as in the English, no stray `{` or `}`, Hebrew letters, no direction
 marks, the UI's approved wording) are the content rules. They run on the text where it is used, as they do today.
 
@@ -138,13 +152,19 @@ separate call, made where a language is adopted.
 - **The folder:** a language folder holds only `ui.yaml`, `events.yaml` and `content.yaml`. Any other file or folder there,
   or a folder that is not a language code, is refused rather than skipped. Files at the top (this folder's `README.md`)
   are not languages, and hidden names (`.DS_Store`) are ignored.
-- **The checks:** each language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors or
-  How to play unless it is Hebrew, translates only events that exist (an event a ruleset leaves out counts) and every
-  option of each, and keys only fields that `Fields` offers. A read failure is reported with its file.
-- **A stale translation:** when an event or a record changes so that a translation no longer matches it, the load is
-  refused (owner, 1 November 2026: "Refuse + say how to fix (Recommended)"), so nothing stale ships. The error says how to
-  unblock without a translator: update the entry, or delete it from the language's file, and that text shows in English.
-  Not for `he/`, which must equal the inline Hebrew.
+- **The checks:** each language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors,
+  How to play or the encyclopedia unless it is Hebrew, translates only events that exist (an event a ruleset leaves out
+  counts) and every option of each, and keys only fields that `Fields` offers. A read failure is reported with its file. Where the content
+  is a checkout's (`unity/Assets/UI/strings.en.yaml` beside the content folder: the editor, the CLI, the tests and
+  `ContentSync`'s load of the source before every player build), a `ui.yaml` other than Hebrew may key only strings that
+  `strings.en.yaml` has, each with the English one's placeholders, the rule `tools/translate.py` applies to an editor
+  save (#2598). A player has no English table beside its copy, so the build is where it is caught.
+- **A stale translation:** the load is refused (owner, 1 November 2026: "Refuse + say how to fix (Recommended)"), so
+  nothing stale ships. What counts as stale is what the loader checks: an event id no event has, option ids that are not
+  exactly the event's (one it lost or one it gained), or a content key whose file or field is gone (a file in
+  `HebrewOverlay.UnityReads` need not exist in a player). The English text is not compared, so a translation still loads
+  after only the English wording changes. The error says how to unblock without a translator: update the entry, or delete
+  it from the language's file, and that text shows in English. Not for `he/`, which must equal the inline Hebrew.
 - **Hebrew:** a `translations/he/` that is present must match the inline Hebrew of the events and the content exactly:
   the same events, texts, options and review flags, and the same fields and flags, none missing and none extra.
   `he/ui.yaml` is not compared with `strings.he.yaml` yet; that comes with the UI move (step 4).
@@ -162,7 +182,7 @@ The UI strings still come from `strings.en.yaml` and `strings.he.yaml`; which ca
 - `sim/Statecraft.Sim/TranslationLoader.cs`: finds, lists and checks `translations/` ("Loading", above);
   `TranslationLoaderTests` covers it, and `GameInputsTests` (Unity EditMode) the copy, the bundle and the web boot.
 - `sim/Statecraft.Sim/HebrewOverlay.cs`: puts a Hebrew set on the sim's typed `*He` properties. Unity reads the Hebrew of
-  `map/localities_1948.yaml`, `map/settlements_1948.yaml` and `map/units_1948.yaml` itself
+  `map/localities_1948.yaml`, `map/settlements_1948.yaml`, `map/units_1948.yaml` and `map/region_names_he.yaml` itself
   (`HebrewOverlay.UnityReads`).
 - `sim/Statecraft.Sim.Tests/translations_fixture/`: a small checkout with the edge cases and the bodies an
   implementation must write for it. `TranslationsTests` checks the sim's and `tools/tests/test_translate.py` checks

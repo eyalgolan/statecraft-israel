@@ -307,7 +307,7 @@ namespace Statecraft.Sim
         /// <summary><see cref="CheckCity"/>'s one validator (#1122, owner ruling 2): null when the project may be started, else a
         /// stable kind and invariant values for a UI to word in its language (the map actions' pattern), plus the English text.
         /// The kinds, in check order: unknown_kind, unknown_city, locked (kind), maabarot_policy, no_resource (city, resource, kind), not_land,
-        /// too_far (distance, city), repair_city_hex (city; a housing repair off its city's own hex), occupied (the placement's
+        /// depopulated, too_far (distance, city), repair_city_hex (city; a housing repair off its city's own hex), occupied (the placement's
         /// action), occupied_project (the project's kind), city_cap (city;
         /// gdd-0.3 only), turn_cap (cap).</summary>
         public static MapActionReason? CheckCityReason(Content c, GameState s, string kind, string city, int q, int r)
@@ -413,6 +413,9 @@ namespace Statecraft.Sim
             return null;
         }
 
+        // #2530: a count of 1 names the singular, as the UI's helper does.
+        static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
+
         /// <summary>R-CITY-011 (#1700; owner, 3 November 2026: "Builders in the MVP (Recommended)", "One builder, today's times
         /// (Recommended)"): AssignWorkers(city, "build", count), gdd-0.3 only, sets how many of the city's projects being built
         /// have a builder. A rise puts builders on the projects that have none, in ascending id; a fall takes them off the
@@ -438,7 +441,7 @@ namespace Statecraft.Sim
             if (employed != x.Employed)
             {
                 s.Cities[city] = x.WithCounts(x.Civilians, employed, x.Refugees);
-                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {employed} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
+                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {Groups(employed)} in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
             }
             if (count > builders)
                 foreach (var p in building.Where(p => !p.Builder).Take(count - builders))

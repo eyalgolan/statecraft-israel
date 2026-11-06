@@ -38,7 +38,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `office` | no | The office id of the minister the event goes to when the player does not answer it. |
 | `from` | yes | First day of the window, `YYYY-MM-DD`. |
 | `to` | no | Day the window ends (exclusive). Must be after `from`. Leave it out for an open window. |
-| `order` | no (default `0`) | A whole number. Among the cards that fire on the same turn with the same `from`, a lower `order` comes first, then the id (R-EVT-006). Leave it out unless one card must come after another: `degania_defence` has `order: 1`, so One Army opens the game (owner, 24 October 2026, #1568). |
+| `order` | no (default `0`) | A whole number. Cards that fire on the same turn come in this order: an early armistice card, then the consequence cards, then `from`, then the card's objective by its position in `objectives.yaml` (cards with no objective first), then `order` (a lower one first), then the id (R-EVT-006; `EventSystem.Trigger`). Leave it out unless one card must come after another: `degania_defence` has `order: 1`, so One Army opens the game (owner, 24 October 2026, #1568). |
 | `conditions` | no | Indicator bounds that must hold when it fires. See below. |
 | `kind` | no (default `historical`) | `consequence` for a card that exists only on a road not taken; `reconvergence` for an outside event with course-specific text. See below. |
 | `requires` | no | Fires only after every listed requirement holds. See below. |
@@ -47,6 +47,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `site` | no | A swamp site in `sites.yaml` whose works the event is about. In the GDD loop it fires only while that site is being worked (R-SWAMP-002); the legacy loop ignores it. See `docs/gdd/fields-and-swamps.md`. |
 | `prisoners` | no | Makes the event a front's prisoner-exchange card: `egypt`, `jordan` (which also returns the Iraqi prisoners), `lebanon` or `syria`. It fires only while that front holds prisoners or the player's soldiers (GDD loop only), has exactly one option, and returns them and scores when it resolves (R-POW-004). |
 | `deported` | no | Makes the event Deport's follow-up card for a settlement target whose residents stayed: it fires only once the player's Deport has depopulated that place, carries the `displacement` tag and has exactly one option (R-EVT-007). See "deported". |
+| `front_quiet` | no | On a front's armistice card only (`armistice_<front>`, one of `egypt`, `jordan`, `lebanon`, `syria`). Under `gdd-0.3` the card may also come before its `from`, and again after a refusal, once that front has been quiet long enough; it then takes the first soft slot (R-WAR-008, R-EVT-002). |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
 | `status` | no (default `draft`) | The review status. See below. |
@@ -73,8 +74,8 @@ Write plain description. Do not put words in anyone's mouth: no invented quotes
 
 ### anchor
 
-- `soft`: an event that may or may not fire. At most 3 non-hard events fire per turn (the earliest `from` first, then
-  by `order`, then by id), so a soft event can wait for a later turn inside its window.
+- `soft`: an event that may or may not fire. At most 3 non-hard events fire per turn (filled in the order of the `order`
+  row above: early armistice cards, consequence cards, then `from`, objective, `order`, id), so a soft event can wait for a later turn inside its window.
 - `hard`: an event that must happen. Every eligible hard event fires. It needs one option marked `historical: true`;
   in Historical mode, if the player leaves it unanswered it resolves to that option.
 
@@ -202,7 +203,7 @@ tags: [displacement]
 Deport's follow-up card for a settlement target (`settlement_targets.yaml`, GDD Phase 6 PR 9, #801). It fires only once
 the player's Deport has depopulated that place, at the event step of that turn, and never after Raid or Occupy
 (R-EVT-007). It takes no soft slot, so a full turn does not delay it; a Deport on the turn that ends the game raises no
-card, since no event fires then, so the end screen shows that card instead (owner, 2 November 2026, #2197). The loader refuses a card whose target is unknown or whose residents fled (Deport is
+card, since on that turn only the unfired cards of recorded objectives fire (`endingTurn`), and a Deport card is not one, so the end screen shows that card instead (owner, 2 November 2026, #2197). The loader refuses a card whose target is unknown or whose residents fled (Deport is
 refused there, so the card could never fire), one without the `displacement` tag, one with more than one option, and
 one with `to` or `prisoners`, one that is not `soft` or opens after the game's start, one with `conditions`,
 `requires`, `site`, `objective`, another `kind` or `variants`, and a second card for the same place. Leave out `to`. Left unanswered, it resolves to its one option without a draw. State the in-game consequence and one sourced line of the place's history
@@ -295,11 +296,12 @@ use `set_policy` for those.
 
 ### grant_units and city_effects
 
-These act on the GDD records, so only content whose `eras.yaml` sets `systems.loop: gdd` may use them. They apply after
+These act on the GDD records, so only content whose `eras.yaml` sets `systems.loop: gdd` may use them. Under gdd-0.3 the
+loader refuses `grant_units`, `city_effects` and `unlock_projects` altogether. They apply after
 `effects`: grants, then city effects, then project unlocks, each list in its own order (R-EFX-006).
 
-- `grant_units: [{ type: halutz, n: 2, at: tel_aviv }]` adds `n` units of a `unit_types.yaml` type of kind `unit`. A
-  grant is free: put what the deal cost in `effects`. Leave out `at` and the units stand at the city with the military
+- `grant_units: [{ type: halutz, n: 2, at: tel_aviv }]` adds `n` units of a `unit_types.yaml` type of kind `unit` whose `side` is empty (the loader refuses a type with a
+  `side` and says to use recruit training instead). A grant is free: put what the deal cost in `effects`. Leave out `at` and the units stand at the city with the military
   camp; set it to a `cities.yaml` id to place them there (R-EFX-003). A `sites.yaml` id is refused until sites carry a
   date, because a target must exist on the event's date (R-EFX-006).
 - `city_effects: [{ city: haifa, field: housing_capacity, delta: 5 }]` changes one city's `housing_capacity` or
@@ -317,9 +319,9 @@ An event with a sensitive tag may carry no grant, no positive `city_effects` del
 
 - `unit_orders: [{ unit: golani, q: -7, r: 24 }]` gives the unit of a `map/units_1948.yaml` row a go-to order toward
   hex (`q`, `r`) when the option is chosen or delegated (R-ENEMY-005). The hex must be one of that row's own anchor
-  hexes in `map/unit_anchor_hexes.yaml`, so a card never sends a unit where no source puts it; cite the anchor's line in
+  hexes or order targets (`order_targets` in `map/units_1948.yaml`, hexes in `map/unit_anchor_hexes.yaml`), so a card never sends a unit where no source puts it; cite the anchor's line in
   a comment. The order goes through the player's own go-to: one the player could not give changes nothing, and the
-  player is told so. The order ends on the anchor's `to` date (the loader refuses an anchor with none), and its march
+  player is told so. The order ends on the `to` date of the anchor, or of the order target (the loader refuses a hex with none), and its march
   goes round every enemy-held place but its hex.
 - It applies under gdd-0.1 only. Under gdd-0.3 the loader still checks it and the unit gets no order; the legacy loop
   ignores it.
@@ -342,7 +344,8 @@ One of `draft`, `fact-checked`, `historian-reviewed`, `sensitivity-reviewed`; an
 
 - `draft`: a work in progress. A pull request for `content/` should not stay at this.
 - `fact-checked`: a person checked every claim against its sources. This is what you submit. The content tests
-  require `fact-checked` on every non-sensitive event in `content/`.
+  require `fact-checked` on every non-sensitive event in `content/`, except three that stay `draft` by name:
+  `first_new_yishuv`, `jerusalem_demilitarisation_guard` and `rafah_force_pressure`.
 - `historian-reviewed`: planned for M4, not a gate yet. How a review is done and recorded until then:
   [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md).
 - `sensitivity-reviewed`: set by the maintainer for events with a sensitive tag (see above).
@@ -555,18 +558,22 @@ Missing/null manifests, unknown/duplicate ids, blank reasons, and references fro
 rejoin options or objective cards to excluded ids are content errors. Every source file still parses strictly;
 the remaining catalogue receives the usual cross-reference, effect and sensitivity validation.
 
-The approved first slice excludes exactly `austerity_1949`, `forex_crisis_1951`, `iraqi_exodus` and
-`maabarot_policy`, including all their options. `clothing_rationing_1950`, `reparations_claim` and `reparations_vote`
-came back with #2224, and `israel_bonds` with its equal Debt (#2457, R-EFX-009).
-Two of these, `austerity_1949` and `maabarot_policy`, are hard anchors: they are unavailable in 0.3. Shared records, Hebrew, tags, status and human
-sign-offs remain unchanged and available to review tools, except that `israel_bonds` gained `debt_dollars` (its source
-pin changed; its text, Hebrew, sources and status did not). Removing an exclusion requires a reviewed follow-up
+The approved first slice excluded exactly `austerity_1949`, `clothing_rationing_1950`, `forex_crisis_1951`,
+`iraqi_exodus`, `israel_bonds`, `maabarot_policy`, `reparations_claim` and `reparations_vote`, including all their
+options (`reparations_vote` joined with #1575, for the same reason as `reparations_claim`).
+Six of these were hard anchors. Since then #2224 restored `clothing_rationing_1950`, `reparations_claim` and
+`reparations_vote`, `israel_bonds` came back with its equal Debt (#2457, R-EFX-009), and #2483 (owner, 4 November 2026)
+turned on `austerity_1949`, `forex_crisis_1951`, `iraqi_exodus` and `maabarot_policy`; no card is excluded in 0.3.
+Shared records, Hebrew, tags, status and human sign-offs remain unchanged and available to review tools, except that
+`israel_bonds` gained `debt_dollars` (its source pin changed; its text, Hebrew, sources and status did not). Removing
+an exclusion requires a reviewed follow-up
 with approved accounting and authored values; it does not itself approve a replacement or transfer a sign-off.
 There is no automatic review promotion, and all existing release gates still apply.
 
-R-EFX-001 rejects 0.3 writes to `food_supply` and `housing`; `rationing`/`maabarot` policy assignments;
-and Attention and defeat commands even if authored as compatibility indicators. Reserved target spellings are
-`attention`/`attention_*`, `defeat`, `city_loss_defeat` and `any_city_loss`. Under D1 (owner, 1 November 2026)
+R-EFX-001 rejects 0.3 writes to Attention and defeat commands even if authored as compatibility indicators.
+Reserved target spellings are `attention`/`attention_*`, `defeat`, `city_loss_defeat` and `any_city_loss`. Since
+#2483 (owner, 4 November 2026) 0.3 events write `food_supply` and `housing`, and the `rationing`/`maabarot`
+policy, as in 0.1 (maintainer reading: the policy writes come with the cards, #2483). Under D1 (owner, 1 November 2026)
 the passive budget, the monthly Food refill and foreign currency stay: `fx_reserves` and the `budget*`,
 `passive_budget*`, `food_refill` and `automatic_food_refill` spellings load in 0.3 as in 0.1. Other unknown
 targets remain errors. No new alias or conversion is provided.

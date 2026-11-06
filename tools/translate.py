@@ -435,8 +435,9 @@ def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = 
         return any(new.get(k, "") != old.get(k, "") for k in keys)
 
     def read(key: str) -> bool:
-        """Whether an event unit or content key counts as read by a native speaker after this save: a ticked box, or
-        a text that was read and has not changed (a native read covers only the text that was read)."""
+        """Whether an event unit or content key counts as read after this save (#564: by a native speaker, or by an
+        AI-assisted contributor who discloses it): a ticked box, or a text that was read and has not changed (a read
+        covers only the text that was read)."""
         if key in native:
             return native[key]
         return bool(old.get(key + ":title" if key.startswith("event:") else key)) and key not in flagged \
@@ -647,7 +648,7 @@ textarea.dirty { border-color:var(--accent); } textarea[readonly] { background:v
   <label>From <select id="src"></select></label>
   <label>To <select id="lang"></select></label>
   <input id="q" placeholder="Filter keys and text">
-  <select id="show"><option value="">All strings</option><option value="todo">Not translated</option><option value="flag">Not read by a native speaker</option></select>
+  <select id="show"><option value="">All strings</option><option value="todo">Not translated</option><option value="flag">Not read by a native speaker or disclosed AI-assisted contributor</option></select>
   <span id="progress" class="note"></span>
   <span style="flex:1"></span><span id="status"></span>
   <button class="primary" id="save" disabled>Save</button>
@@ -715,14 +716,14 @@ function render() {
     const rs = g.rows.filter(visible); if (!rs.length) continue;
     if (shown + rs.length > 800 && shown) { html += `<p class="note">More strings below the first 800: pick a group on the left or filter.</p>`; break; }
     shown += rs.length;
-    html += `<section><h2>${esc(g.label)}${g.unit ? `<label><input type="checkbox" data-native="${esc(g.unit)}" ${isRead(g.unit) ? 'checked' : ''}> read by a native speaker</label>` : ''}</h2>`;
+    html += `<section><h2>${esc(g.label)}${g.unit ? `<label><input type="checkbox" data-native="${esc(g.unit)}" ${isRead(g.unit) ? 'checked' : ''}> read by a native speaker, or an AI-assisted contributor who discloses it</label>` : ''}</h2>`;
     if (g.unit) html += msgs(g.unit);
     if (he && g.id.startsWith('content:')) html += `<p class="note">Hebrew content names are kept in content/ with their sources; edit them there by hand.</p>`;
     for (const r of rs) {
       const s = r.src || r.en, fallback = !r.src && src !== 'en', v = value(r), rk = reviewKey(r);
       const lines = Math.max(1, Math.ceil(Math.max(r.en.length, v.length) / 55));
       html += `<div class="row" data-key="${esc(r.key)}"><div class="key">${esc(r.label)}${!r.unit && rk && !r.readonly && v ?
-        `<label><input type="checkbox" data-native="${esc(rk)}" ${isRead(rk) ? 'checked' : ''}> read by a native speaker</label>` : ''}</div>
+        `<label><input type="checkbox" data-native="${esc(rk)}" ${isRead(rk) ? 'checked' : ''}> read by a native speaker, or an AI-assisted contributor who discloses it</label>` : ''}</div>
         <div class="src ${fallback ? 'fallback' : ''}" dir="${dir(fallback ? 'en' : src)}">${hl(s)}</div>
         <div><textarea dir="${dir(lang)}" lang="${esc(lang)}" rows="${lines}" ${r.readonly ? 'readonly' : ''} class="${r.key in edits ? 'dirty' : ''}">${esc(v)}</textarea>
         ${toks(r.en).length && !r.readonly ? `<div class="chips">${[...new Set(toks(r.en))].map(t => `<button type="button" data-tok="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}</div>

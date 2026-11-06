@@ -163,6 +163,40 @@ public partial class DesignValuesTests
         var c=Catalogue(); Assert.Equal("gdd-0.3", c["ruleset"]);
         Assert.Equal(Gdd03Keys.OrderBy(x=>x,StringComparer.Ordinal), Row(c,"values").Keys.Cast<string>().OrderBy(x=>x,StringComparer.Ordinal));
     }
+    // R-LOOP-005 (#2653): the named parts are pinned too, so an invented or dropped part fails until this list changes.
+    static readonly Dictionary<string, string[]> Gdd03Parts = new Dictionary<string, string[]>
+    {
+        ["reception.queue_cohesion_loss"] = new[] { "cadence_turns" },
+        ["combat.draw_count"] = new[] { "at_least_2", "below_0_5", "draw_band", "from_0_5_below_1", "from_1_below_2", "ratio_thresholds" },
+        ["maabara"] = new[] { "condition_pp", "cost", "housing", "upkeep", "work" },
+        ["permanent_housing"] = new[] { "condition_pp", "cost", "housing", "upkeep", "work" },
+        ["industry"] = new[] { "cost", "job_slots", "upkeep", "work" },
+        ["reception_camp"] = new[] { "cost", "standalone_application", "upkeep", "work" },
+        ["training_centre"] = new[] { "cost", "standalone_application", "upkeep", "work" },
+        ["arms_workshop"] = new[] { "cost", "upkeep", "work", "worker_slots" },
+        ["military_camp"] = new[] { "cost", "upkeep", "work" },
+        ["housing_repair"] = new[] { "condition_pp", "cost", "upkeep", "work" },
+        ["designated_yishuv"] = new[] { "cost", "upkeep", "work" },
+        ["hula_drainage"] = new[] { "cost", "upkeep", "work" },
+        ["road_segment"] = new[] { "cost", "upkeep", "work" },
+        ["rail_segment"] = new[] { "cost", "upkeep", "work" },
+        ["coastal_plain"] = new[] { "defence_percent", "movement" },
+        ["lowland"] = new[] { "defence_percent", "movement" },
+        ["valley"] = new[] { "defence_percent", "movement" },
+        ["hills"] = new[] { "defence_percent", "movement" },
+        ["mountains"] = new[] { "defence_percent", "movement" },
+        ["desert"] = new[] { "defence_percent", "movement" },
+    };
+    [Fact] public void Gdd03CatalogueHasEveryPinnedNamedPartExactlyOnce()
+    {
+        var v=Row(Catalogue(),"values");
+        string Line(string key, IEnumerable<string> parts) => key+": "+string.Join(" ", parts.OrderBy(x=>x,StringComparer.Ordinal));
+        var actual=v.Where(kv=>((Dictionary<object,object>)kv.Value).ContainsKey("parts"))
+            .Select(kv=>Line((string)kv.Key, Row((Dictionary<object,object>)kv.Value,"parts").Keys.Cast<string>()));
+        Assert.Equal(Gdd03Parts.Select(kv=>Line(kv.Key,kv.Value)).OrderBy(x=>x,StringComparer.Ordinal), actual.OrderBy(x=>x,StringComparer.Ordinal));
+        // A part has no parts of its own today; one that gains them would need pinning here too.
+        Assert.All(Gdd03Parts, kv=>Assert.All(kv.Value, p=>Assert.False(Row(Row(Row(v,kv.Key),"parts"),p).ContainsKey("parts"), kv.Key+"."+p)));
+    }
     [Fact] public void Gdd03DistinguishesAgreedDefaultsAndDeferredExpressions()
     {
         var v=Row(Catalogue(),"values");

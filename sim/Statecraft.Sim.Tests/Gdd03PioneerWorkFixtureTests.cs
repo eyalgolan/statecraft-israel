@@ -110,6 +110,22 @@ public class Gdd03PioneerWorkFixtureTests
         Assert.Equal(CivilianTier.Veteran, turn.State.PopulationLedger.Get(1).Tier);
     }
 
+    // R-VET-001 (#2804 item 12): the producer checks for a veteran before AfterWork, so a veteran at int.MaxValue work XP
+    // (the ledger allows any nonnegative work XP) works at its 1.5 rate and keeps its XP instead of overflowing. A veteran
+    // still in reception gives no work, as AfterWork's gate says for every tier. TEST-ONLY SYNTHETIC work XP.
+    [Fact]
+    public void Gdd03VeteranAtMaxWorkXpWorksAndKeepsItsXp()
+    {
+        var c = Catalogue();
+        var s = State(c, Pioneer("site-a", int.MaxValue, CivilianTier.Veteran),
+            Pioneer("segment-b", int.MaxValue, CivilianTier.Veteran).WithReception(0));
+        var before = s.Describe();
+        var turn = Resolve(c, s, "site-a", "segment-b");
+        Assert.Equal(new[] { ("site-a", 1.5m) }, turn.WorkByTarget.Select(x => (x.Key, x.Value)));
+        Assert.All(turn.State.PopulationLedger.Units, p => Assert.Equal((int.MaxValue, CivilianTier.Veteran), (p.WorkXp, p.Tier)));
+        Assert.Equal(before, s.Describe());
+    }
+
     // R-QUAL-003, R-QUAL-005: a pioneer taken off the job and put back keeps its id and work XP, and earns none while idle.
     [Fact]
     public void Gdd03ReturnAndReassignKeepPioneerIdentityAndXp()

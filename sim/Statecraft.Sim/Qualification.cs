@@ -20,7 +20,7 @@ namespace Statecraft.Sim
 
         public Qualified(int craftsmen, int veterans, IReadOnlyList<int> halutzim)
         {
-            Craftsmen = craftsmen; Veterans = veterans; Halutzim = halutzim.OrderBy(x => x).ToArray();
+            Craftsmen = craftsmen; Veterans = veterans; Halutzim = Array.AsReadOnly(halutzim.OrderBy(x => x).ToArray());
         }
 
         public int Total => Craftsmen + Veterans + Halutzim.Count;
@@ -85,7 +85,8 @@ namespace Statecraft.Sim
 
         /// <summary>R-QUAL-004: <paramref name="count"/> of the city's qualified craftsmen, without a job, become craftsmen
         /// again. Refused, state untouched, for an unknown city, a count below 1, more than the qualified craftsmen, or more than
-        /// the civilians without work (<see cref="Training.Idle"/>).</summary>
+        /// the civilians without work (<see cref="Training.Idle(GameState, City)"/>: a staffed workshop's worker or a builder is
+        /// not idle, R-ARMS-005, R-CITY-011; #2730).</summary>
         public static string? ReassignCraftsmen(Content c, GameState s, string city, int count, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
@@ -93,7 +94,7 @@ namespace Statecraft.Sim
             if (count < 1) return "Reassign at least one group";
             var name = PlayerText.Settlement(c, city);
             if (count > x.Qualified.Craftsmen) return FormattableString.Invariant($"{name} has {x.Qualified.Craftsmen} qualified craftsmen");
-            var idle = Training.Idle(x);
+            var idle = Training.Idle(s, x);   // R-ARMS-005, R-CITY-011: as Train and ReassignPioneers count it
             if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
             s.Cities[city] = x.WithCounts(x.Civilians - count, x.Employed, x.Refugees).WithCraftsmen(x.Craftsmen + count)
                 .WithQualified(x.Qualified.WithCraftsmen(x.Qualified.Craftsmen - count));

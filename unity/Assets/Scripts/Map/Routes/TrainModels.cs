@@ -14,6 +14,9 @@ namespace Statecraft.Game.Map.Routes
     {
         public const float LocoLengthM = 17f, TenderLengthM = 7.5f, CoachLengthM = 20f, GapM = 1f;
         public const int Coaches = 4;
+        /// <summary>The locomotive's chimney: its top's height above the rail and its place ahead of the locomotive's middle
+        /// (real metres), where the train's steam leaves it (TrainSteam); and the locomotive's width (its running board).</summary>
+        public const float ChimneyTopM = 4.5f, ChimneyZM = 6.9f, LocoWidthM = 2.9f;
 
         /// <summary>The consist from the front: (name, mesh, length in real metres).</summary>
         public static List<(string name, Mesh mesh, float lengthM)> Consist()
@@ -34,10 +37,10 @@ namespace Statecraft.Game.Map.Routes
         {
             var m = new MiniatureMesh();
             m.Box(Box(0, 0.7f, 0, 2.2f, 1.2f, 14f), UnitPalette.Waterline);         // wheels and frames, dark
-            m.Box(Box(0, 1.4f, 0.4f, 2.9f, 0.3f, 16f), UnitPalette.PropBlack);      // running board
+            m.Box(Box(0, 1.4f, 0.4f, LocoWidthM, 0.3f, 16f), UnitPalette.PropBlack);      // running board
             m.Rod(new Vector3(0, 2.7f, -3.5f), new Vector3(0, 2.7f, 6.6f), 0.95f, 0.95f, UnitPalette.PropBlack, 14, rounded: false);
             m.Rod(new Vector3(0, 2.7f, 6.6f), new Vector3(0, 2.7f, 7.8f), 1.0f, 1.0f, UnitPalette.Funnel, 14, rounded: false);   // smokebox
-            m.Rod(new Vector3(0, 3.4f, 6.9f), new Vector3(0, 4.5f, 6.9f), 0.32f, 0.38f, UnitPalette.PropBlack, 10, rounded: false); // chimney
+            m.Rod(new Vector3(0, 3.4f, ChimneyZM), new Vector3(0, ChimneyTopM, ChimneyZM), 0.32f, 0.38f, UnitPalette.PropBlack, 10, rounded: false); // chimney
             m.Ellipsoid(Matrix4x4.TRS(new Vector3(0, 3.6f, 1.8f), Quaternion.identity, new Vector3(0.5f, 0.45f, 0.65f)), UnitPalette.PropBlack, 10, 6);
             m.Box(Box(0, 2.85f, -5.6f, 2.9f, 2.7f, 3.2f), UnitPalette.PropBlack);    // cab
             m.Box(Box(0, 4.3f, -5.6f, 3.1f, 0.25f, 3.6f), UnitPalette.Funnel);       // cab roof

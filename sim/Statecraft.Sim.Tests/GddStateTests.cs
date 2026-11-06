@@ -86,6 +86,14 @@ public class GddStateTests
         Assert.Equal("mefalsim=done,1949-06-15", SiteWork.Built("mefalsim", new DateTime(1949, 6, 15)).Canonical());
     }
 
+    // R-SITE-003, R-MIN-002 (#2733 item 21): a fractional progress is hashed as the double's IEEE bits, 16 uppercase hex
+    // digits, so a change to decimal or culture-dependent formatting moves the hash and fails here.
+    [Fact]
+    public void ASitesFractionalProgressIsHashedAsItsBits()
+    {
+        Assert.Equal("mefalsim=b,4,5,3FD0000000000000", new SiteWork("mefalsim", 4, 5, null).WithProgress(5, 0.25).Canonical());
+    }
+
     // R-LOOP-002, R-VET-001: a unit's service reaches the hash, and a unit with none hashes as it did before Phase 4 PR 6.
     [Fact]
     public void ServiceReachesTheHashOnlyWhenThereIsSome()

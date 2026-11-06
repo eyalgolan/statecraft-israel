@@ -635,11 +635,12 @@ namespace Statecraft.Game.Map
                 ? UnitEntries : Units.UnitData.ReadOrNone(yaml, warn);
 
         /// <summary>Where the kits keep their buildings and trees off the units (centre x, z; radius m): the spot of a unit that
-        /// stands in a town (UnitPlacer's last round, UnitGround.ClearingRadius), so no token stands in a building. Empty before
+        /// stands in a town (UnitPlacer's last round, UnitGround.ClearingRadius), so no token stands in a building. An air
+        /// anchor uses the parked fighter's footprint; every other service keeps the compact ring. Empty before
         /// Build or without the unit file.</summary>
         public IReadOnlyList<(Vector2 centre, float radius)> UnitClearings { get; private set; } = new List<(Vector2, float)>();
 
-        /// <summary>The unit tokens that stand outside the towns (centre x, z; ring radius m), as the kits get them
+        /// <summary>The unit tokens that stand outside the towns (centre x, z; footprint radius m), as the kits get them
         /// (KitGround.Tokens), with the day the token's window ends (its anchor's `to`, exclusive): the transit camps
         /// PlacementLayer builds later keep off those still present on the camp's date (KitGround.DatedTokens). Empty before
         /// Build.</summary>
@@ -807,11 +808,17 @@ namespace Statecraft.Game.Map
                 foreach (var kv in spots.OrderBy(k => k.Value.X).ThenBy(k => k.Value.Z))
                 {
                     var c = new Vector2((float)kv.Value.X, (float)kv.Value.Z);
-                    if (kv.Value.InTown && !clearings.Exists(x => x.centre == c)) clearings.Add((c, unitGround.ClearingRadius));
+                    var service = unitData.First(u => u.Anchors.Contains(kv.Key)).Service;
+                    if (kv.Value.InTown && !clearings.Exists(x => x.centre == c))
+                    {
+                        // Only an air anchor gets the parked fighter's span; army census clearings keep their compact radius.
+                        clearings.Add((c, unitGround.ClearingRadius(service)));
+                    }
                     else if (!kv.Value.InTown)
                     {
-                        unitRings.Add((c, unitGround.RingRadius(kv.Value.Compact)));
-                        datedRings.Add((c, unitGround.RingRadius(kv.Value.Compact), Units.UnitData.Day(kv.Key.To)));
+                        float radius = unitGround.ClearanceRadius(service, kv.Value.Compact);
+                        unitRings.Add((c, radius));
+                        datedRings.Add((c, radius, Units.UnitData.Day(kv.Key.To)));
                     }
                 }
             }

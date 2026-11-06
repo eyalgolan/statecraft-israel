@@ -1,7 +1,7 @@
 # Event-card photographs
 
 The event card's header picture, as in the promo (`promo/final/03-gameplay-1936.png`, `05-event-transit-camps.png`), is a
-real archival photograph of the event, never an AI image. 29 of the 39 events in `content/events/` have one. Seven
+real archival photograph of the event, never an AI image. 29 of the 41 events in `content/events/` have one. Seven
 others show the responsible minister's portrait in the card's head, as before: `rhodes_talks`, `armistice_lebanon`,
 `armistice_syria`, `sinai_withdrawal`, `education_registration_1951`, `reparations_claim` and `forex_crisis_1951`. No
 free photograph that fits them was found (for `sinai_withdrawal`, see the decisions below). The objective card
@@ -11,7 +11,8 @@ the card's own event was found (Q-ABS-3, #1039). The GDD objective card `first_n
 (Boris Carmi, June 1949, CC BY 4.0; #380).
 
 The `railway_complete` card and #939's alternate follow-up cards, `jerusalem_demilitarisation_guard` and
-`rafah_force_pressure`, have no photograph wired yet.
+`rafah_force_pressure`, have no photograph wired yet. The two Deport follow-up cards, `deport_acre` and
+`deport_nazareth`, have none by design (Q-CARD-3 (a), "no image", in each card's header comment).
 
 Owner ruling 2026-10-11 (summarised; recorded in `docs/CONTENT_POLICY.md` section 4):
 - Images of real people stay public domain or CC0, with one narrow exception: archival event photographs (not
@@ -29,7 +30,7 @@ Owner ruling 2026-10-11 (summarised; recorded in `docs/CONTENT_POLICY.md` sectio
 | What | Where |
 |---|---|
 | The pictures, at most 960 x 540 JPEG (16:9, the centred card's media header; `idf_founding` is 640 x 360, as its original is small), each under 450 KB | `unity/Assets/UI/EventImages/<event>.jpg` |
-| The mapping: event, Commons page, original URL and SHA-1, licence, artist, credit, alt text, crop, sensitivity flags | `unity/Assets/UI/EventImages/event-images.yaml` |
+| The mapping: event, Commons page, original URL and SHA-1, licence, artist, credit, English and optional Hebrew alt text, crop, sensitivity flags | `unity/Assets/UI/EventImages/event-images.yaml` |
 | The catalog the game loads (`Resources.Load`, so there is no scene field) | `unity/Assets/Resources/EventImageCatalog.asset` |
 | Provenance rows, one per file (`status: verified` once the owner signs off) | `ASSETS.yaml` |
 | CC BY 4.0 credits | `NOTICE`, and under the picture on the card |
@@ -51,7 +52,9 @@ event has a picture, it fills the card's 16:9 media header (960x540 at the 1080p
 promo. Its credit line runs as a
 small italic caption strip along the picture's bottom edge, so the credit is always visible but costs the card no
 height. The minister's portrait is hidden, and the office line still names the minister. The alt text is the picture's
-`tooltip`, and `EventCardPresenter.PhotoAlt` exposes it.
+`tooltip`, and `EventCardPresenter.PhotoAlt` exposes the value actually shown. In Hebrew, `alt_he` is used when present;
+otherwise that field falls back to English. An agent-drafted `alt_he` carries `alt_he_review: agent-checked` until the
+native read in #564; the reviewer then removes `alt_he_review`, while the cleared `alt_he` remains.
 
 The header is 16:9 whenever the card has the height for it. The photograph needs a band at least as tall as its credit line plus 48 px of picture
 (`EventCardPresenter.MinPhotoHeight`). The credit strip never shrinks (`flex-shrink: 0`), so the credit that CC BY 4.0
@@ -82,6 +85,8 @@ cover this. The decision layer under the top bar bounds the card's height.
    - The credit ends with " · CC BY 4.0 · graded and cropped" (or "CC0" / "public domain").
    - The alt text says what the picture shows. A date in it is the event's own date, or only a month or a year:
      library dates are sometimes wrong (the NLI dates the Altalena shelling 20 June; it was 22 June).
+   - Add `alt_he` with the same factual scope and `alt_he_review: agent-checked`. The review marker requires `alt_he` and
+     is removed once the description has been read; a cleared `alt_he` therefore stands alone.
    - Set `sensitive: true` for an event with a sensitive tag, or for any picture the owner must see before release.
 5. Make the JPG with `uv run --with pillow==12.3.0 --with pyyaml==6.0.3 python -I tools/event_images.py --originals DIR
    --only <event>`. It refuses a file whose SHA-1 does not match the row.
@@ -96,7 +101,8 @@ cover this. The decision layer under the top bar bounds the card's height.
   `reparations_vote`. The sign-offs below cover the original six; the owner approved `burma_road_complete` on 21 October
   2026 (#1226, #791); the owner approved `degania_defence` on 24 October 2026 (#1568, #1565); the owner approved
   `reparations_vote` and its photograph on 25 October 2026 (#1575, #1564).
-  - A `-shareable` build (`Build.Web`/`Build.Mac`, the release flow in `docs/RELEASING.md`) refuses until each one is
+  - A `-shareable` build (`Build.Web`, `Build.Mac`, and the standalone `Build.LinuxMono`/`Build.WindowsMono`, which run
+    the same `RefuseUnlessShareable` gate in `StandaloneMono`; the release flow is in `docs/RELEASING.md`) refuses until each one is
     `sensitivity_reviewed: true` and `EventImageImport.Run` has rebuilt the catalog.
   - The gate fails closed: a catalog that exists but does not load is a refusal, and the gate also reads
     `event-images.yaml` and refuses when it lists an unreviewed sensitive picture or does not match the catalog.
@@ -133,9 +139,9 @@ cover this. The decision layer under the top bar bounds the card's height.
     1949, and no free photograph of the event from that window was found. The Meitar pictures of the RAF wreck are from
     7 January. The Sinai and El-Arish frames on Commons are GPO or PD-Israel. The NLI Bitmuna "Operation Horev" scans
     are tagged only `PD-old`, with no author and no US basis.
-- **Provenance.** The licence review re-read all 25 original rows through the Commons API (SHA-1, licence, credit), and
-  the three new rows were checked the same way. With the owner's sign-off of 2026-10-11, all 24 rows say
-  `status: verified`. A new or replaced picture starts again at `owner-verify`, which `check_repo.py --release` refuses.
+- **Provenance.** The licence review re-read the original rows through the Commons API (SHA-1, licence, credit), and
+  the three new rows were checked the same way. With the owner's sign-off of 2026-10-11, those rows said
+  `status: verified`; all 29 rows in `ASSETS.yaml` now do. A new or replaced picture starts again at `owner-verify`, which `check_repo.py --release` refuses.
 
 ## Merge notes
 

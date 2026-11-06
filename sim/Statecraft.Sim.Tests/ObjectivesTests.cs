@@ -23,6 +23,7 @@ options:
   - id: continue
     text: Continue
     historical: true
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     const string PartsYaml = @"
@@ -61,6 +62,7 @@ options:
   - id: continue
     text: Continue
     historical: true
+sources: [{{ url: https://example.org/event, checked: 2026-10-18 }}]
 ";
 
     static Content LoadParts(string objectives = PartsYaml)
@@ -763,7 +765,7 @@ eras:
 
     static string GddRules(string from, string to) => Fixture.Gdd()["rules.yaml"].Replace(from, to);
 
-    static string TwoOptions => Card + "  - id: refuse\n    text: Refuse\n    alternative: { basis: design }\n";
+    static string TwoOptions => Card.Replace("sources:", "  - id: refuse\n    text: Refuse\n    alternative: { basis: design }\nsources:");
 
     static string Objective(string from, string to) => ObjectivesYaml.Replace(from, to);
 
@@ -782,6 +784,10 @@ eras:
         new object[] { "objectives.yaml", Objective("card: first_card", "card: no_card"), Card, "objectives.yaml", "objectives[first_goal].card", "unknown event 'no_card'" },
         new object[] { "objectives.yaml", ObjectivesYaml, Card.Replace("objective: first_goal\n", ""), "events/first_card.yaml", "events[first_card].objective", "must be 'first_goal'" },
         new object[] { "objectives.yaml", ObjectivesYaml, TwoOptions, "events/first_card.yaml", "events[first_card].options", "exactly one option" },
+        new object[] { "objectives.yaml", ObjectivesYaml, Card.Replace("from: 1948-05-15", "from: 1948-06-15"), "events/first_card.yaml", "events[first_card].from", "opens at the game's start, or its era's (1948-05-15)" },
+        new object[] { "objectives.yaml", ObjectivesYaml, Card.Replace("to: 1957-01-01", "to: 1956-12-15"), "events/first_card.yaml", "events[first_card].to", "stays open to the game's end, or its era's (1957-01-01)" },
+        new object[] { "events/other.yaml", Card.Replace("id: first_card", "id: other").Replace("objective: first_goal\n", ""), Card.Replace("objective: first_goal\n", "objective: first_goal\nrequires: [{ event: other, option: continue }]\n"), "events/first_card.yaml", "events[first_card].requires", "waits for nothing but its objective" },
+        new object[] { "objectives.yaml", ObjectivesYaml, Card.Replace("objective: first_goal\n", "objective: first_goal\nconditions: [{ indicator: morale, max: 0.9 }]\n"), "events/first_card.yaml", "events[first_card].conditions", "waits for nothing but its objective" },
         new object[] { "objectives.yaml", "objectives: []\n", Card, "events/first_card.yaml", "events[first_card].objective", "unknown objective 'first_goal'" },
         new object[] { "objectives.yaml", Objective("site_built: site_a", "site_built: nowhere"), Card, "objectives.yaml", "objectives[first_goal].completes_when.site_built", "unknown site 'nowhere'" },
         new object[] { "objectives.yaml", Objective("reference_date: 1949-06-12", "reference_date: 1949-06-08"), Card, "objectives.yaml", "objectives[first_goal].reference_date", "must be 1949-06-12, the founding date of site 'site_a'" },

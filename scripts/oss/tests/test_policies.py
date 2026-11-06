@@ -316,3 +316,23 @@ def test_new_strings_are_pointed_at_the_binding_ui_guides():
         assert "binding for new strings from 22 October 2026 (#622)" in header, rel
     glossary = read("docs/UX_GLOSSARY.yaml")
     assert "DRAFT" not in glossary.split("conventions:")[0], "UX_GLOSSARY.yaml header"
+
+
+def test_determinism_doc_names_every_math_function_the_sim_calls():
+    """#2659: docs/determinism.md lists the Math functions the sim uses; a new one must be named (and argued) there."""
+    import re
+    used = set()
+    for f in (ROOT / "sim" / "Statecraft.Sim").rglob("*.cs"):
+        used |= set(re.findall(r"\bMath\.([A-Z][A-Za-z]*)\b", f.read_text(encoding="utf-8")))
+    doc = read("docs/determinism.md")
+    missing = sorted(m for m in used if f"`Math.{m}`" not in doc and f"Math.{m}(" not in doc)
+    assert not missing, f"docs/determinism.md does not name: {missing}"
+    assert "`mvp-deport-cost` golden" not in doc, "mvp-deport-cost is a fixture comparison, not a manifest golden"
+
+
+def test_releasing_runs_every_unity_batch_command_under_the_machine_lock():
+    """#2659: AGENTS.md and docs/dev-setup.md require the machine lock around Unity; the manual recipe follows it."""
+    lines = [line for line in read("docs/RELEASING.md").splitlines() if '"$UNITY" -batchmode' in line]
+    assert lines, "RELEASING.md has Unity batch commands to check"
+    for line in lines:
+        assert line.lstrip().startswith('uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode'), line

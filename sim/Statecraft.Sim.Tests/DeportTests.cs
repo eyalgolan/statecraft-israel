@@ -14,11 +14,13 @@ public class DeportTests
 {
     /// <summary>CaptureTests' fixture with Deport in play and International Support in the model (the fixture's model has
     /// none; the real one has it, model.yaml). <paramref name="edit"/> changes the files further; the rows in
-    /// <paramref name="fled"/> are written as <c>residents: fled</c> (CaptureTests.LoadFled).</summary>
-    internal static Content Load(Action<Dictionary<string, string>>? edit = null, string[]? fled = null) => CaptureTests.Load(files =>
+    /// <paramref name="fled"/> are written as <c>residents: fled</c> (CaptureTests.LoadFled). <paramref name="gdd03"/> switches
+    /// the fixture to gdd-0.3 (NoAttentionTests.Select).</summary>
+    internal static Content Load(Action<Dictionary<string, string>>? edit = null, string[]? fled = null, bool gdd03 = false) => CaptureTests.Load(files =>
     {
         files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities:", "deport_in_play: true\n  enemy_held_localities:");
         files["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:\n", "indicators:\n  - id: intl_standing\n    base: 0.5\n    name: International support\n");
+        if (gdd03) NoAttentionTests.Select(files, true);
         edit?.Invoke(files);
     }, fled ?? Array.Empty<string>(), CaptureTests.AllTargets);
 
@@ -186,24 +188,30 @@ public class DeportTests
 
     // R-CTRL-020 (impact plan section 4.1 item 4; Q-DEP-7 (c); Q-SENS-2 (c)): a depopulated place adds nothing. A reflection
     // test over every command kind: each that can name a place or a hex is aimed at the depopulated one and refused, and
-    // every other names none. The fixture puts a road segment on the place's hex, which is also town_a's city's own hex, and
+    // every other names none. The fixture puts a road segment on the place's hex, which is also the hex of the fixture's one city,
+    // town_h (a city with its own id on a target's hex, as Tel Aviv shares Jaffa's), and
     // no site can be on a settlement's hex. No effect target can name a place. The record keeps no timer, so step 10 neither counts it down nor
     // charges upkeep, and a later capture check never takes it again.
     [Fact]
     public void ADepopulatedPlaceAddsNothing()
     {
-        var c = Load(files => files["corridors.yaml"] = Fixture.GddCorridors.Replace("hexes: [[2, 0], [3, 0]]", "hexes: [[1, 0], [2, 0]]"));
+        var c = Load(files =>
+        {
+            files["corridors.yaml"] = Fixture.GddCorridors.Replace("hexes: [[2, 0], [3, 0]]", "hexes: [[1, 0], [2, 0]]");
+            files["map/settlement_hexes.yaml"] = files["map/settlement_hexes.yaml"].Replace("id: town_h, q: 0, r: 2", "id: town_h, q: 1, r: 0");
+        });
         // No designated site can be on a 1948 settlement's hex at all: the loader refuses it (so no pioneer site needs a check).
         var onThePlace = Assert.Throws<ContentException>(() => Load(files => files["sites.yaml"] = files["sites.yaml"].Replace("q: 2\n    r: 0\n    kinds: [yishuv]", "q: 1\n    r: 0\n    kinds: [yishuv]")));
         Assert.Contains("holds the 1948 settlement town_a", onThePlace.Message);
-        var s = Step(c, Awaiting(c, Soldier(1, 1, 0), new Unit(2, "halutz", 1, 0)), Answer(SettlementControl.Deport)).State;
+        var awaiting = Awaiting(c, Soldier(1, 1, 0), new Unit(2, "halutz", 1, 0));
+        var s = Step(c, awaiting, Answer(SettlementControl.Deport)).State;
         var ctrl = s.Settlements["town_a"];
         Assert.Equal(("", "", true, 0, ""), (ctrl.Owner, ctrl.State, ctrl.Depopulated, ctrl.Turns, ctrl.Buildings));
         var segment = c.Corridors[0].Id + ":1";
         var aimed = new Dictionary<Type, Command[]?>
         {
             [typeof(MapAction)] = new Command[] { new MapAction(MapActions.Housing, 1, 0) },
-            [typeof(StartProject)] = c.ProjectKinds.Select(k => (Command)new StartProject(k.Id, "town_a", 1, 0)).ToArray(),
+            [typeof(StartProject)] = c.ProjectKinds.Select(k => (Command)new StartProject(k.Id, "town_h", 1, 0)).ToArray(),
             [typeof(PioneerWork)] = new Command[] { new PioneerWork(2, Corridors.BuildRoad, segment) },
             [typeof(Move)] = new Command[] { new Move(1, 1, 0), new Move(2, 1, 0) },
             [typeof(UnitOrder)] = new Command[] { new UnitOrder(1, Combat.Attack, 1, 0) },
@@ -240,6 +248,42 @@ public class DeportTests
         back.Units[1] = Soldier(1, 1, 0);
         SettlementControl.Capture(c, back, back.Date.AddDays(7), new List<Cause>());
         Assert.Equal(ctrl.Canonical(), back.Settlements["town_a"].Canonical());
+    }
+
+    // R-CTRL-002 (#2804 item 11): R-CTRL-018 to R-CTRL-021 are shared by gdd-0.1 and gdd-0.3, so the fixture's Deport runs
+    // the same under both: a fled town is refused with its reason, the costs apply at once, the record is depopulated with
+    // no razing, and the International Support drag runs every turn.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DeportIsTheSameUnderBothRulesets(bool gdd03)
+    {
+        var c = Load(gdd03: gdd03);
+        Assert.Equal(gdd03 ? SaveGame.Gdd03Ruleset : SaveGame.GddRuleset, c.Ruleset);
+
+        var fled = Load(fled: new[] { "town_a" }, gdd03: gdd03);
+        var f = Step(fled, CombatTests.With(fled, Soldier(1, 1, 0))).State;
+        var refused = Step(fled, f, Answer(SettlementControl.Deport));
+        Assert.Equal("Its residents fled when it was captured, so there is no one to deport", Assert.Single(refused.Rejected).Reason);
+        Assert.Equal(0, refused.State.DisplacedByPlayer);
+
+        var s = Awaiting(c, Soldier(1, 1, 0));
+        var raid = Resolved(c, s, SettlementControl.Raid);
+        var deport = Resolved(c, s, SettlementControl.Deport);
+        Assert.Equal(Cohesion(raid) - 0.2, Cohesion(deport), 9);
+        Assert.Equal(Support(raid) - 0.1, Support(deport), 9);
+        Assert.Equal(raid.Treasury - raid.Debt - 121, deport.Treasury - deport.Debt, 9);
+        Assert.Equal((0, 1), (raid.DisplacedByPlayer, deport.DisplacedByPlayer));
+        var ctrl = deport.Settlements["town_a"];
+        Assert.Equal(("", "", true, 0, ""), (ctrl.Owner, ctrl.State, ctrl.Depopulated, ctrl.Turns, ctrl.Buildings));
+        Assert.True(SettlementControl.DepopulatedAt(c, deport, 1, 0));
+
+        var a = Step(c, s, Answer(SettlementControl.Deport)).State;
+        for (int turn = 1; turn <= 3; turn++)
+        {
+            Assert.Equal(0.5 - 0.1 - 0.01 * turn, Support(a), 9);
+            a = Step(c, a).State;
+        }
     }
 
     // R-CTRL-021 (Q-DEP-4 (a), D-F3): deportation and razing are separate rules, with no razing option in the MVP. The

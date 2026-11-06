@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -18,9 +19,9 @@ public class UnitAttackPresenterTests
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static GameSession NewSession() => GameSession.New(C, GoldenRun.Seed, Mode.Historical);
 
-    static Cause Line(string key, string attackers) => new Cause("map", "9,9", 0, "Report text is never read",
+    static Cause Line(string key, string attackers, string defenderLoss = "0") => new Cause("map", "9,9", 0, "Report text is never read",
         key: key, units: new[] { new UnitRef(new Unit(71, "infantry", 0, 0)), new UnitRef(new Unit(72, "guns", 0, 0)),
-            new UnitRef(new Unit(73, "infantry", 0, 0)) }, args: new[] { "9,9", "150", "0", "0", attackers });
+            new UnitRef(new Unit(73, "infantry", 0, 0)) }, args: new[] { "9,9", "150", "0", defenderLoss, attackers });
 
     /// <summary>The first player unit's attack on an enemy next to it at the start of the game.</summary>
     static UnitOrder AttackNextTo(GameSession session, out int attacker)
@@ -57,6 +58,121 @@ public class UnitAttackPresenterTests
     public void OnlyAnEngagementPlays()
     {
         Assert.IsEmpty(UnitAttackPresenter.Attackers(Line(WhyKeys.AttackOrdered, "2")));
+    }
+
+    /// <summary>The production presenter path gives every attacker one shared defender cue. It reacts with the first fire
+    /// take that really starts, or, if none starts, only when the last attack has finished waiting.</summary>
+    [TestCase(true)]
+    [TestCase(false)]
+    public void SeveralAttackersShareOneTimedDefenderReaction(bool aTakeStarts)
+    {
+        var engagement = Line(WhyKeys.Engagement, "3", defenderLoss: "2");
+        var bridge = new SimBridge(NewSession(), Text,
+            (session, orders) => new StepResult(session.State, session.Now.Why.Append(engagement).ToArray(), Array.Empty<Rejection>()));
+        var immediate = new List<int>();
+        var cues = new Dictionary<int, (Action Started, Action Missed)>();
+        var reactions = new List<Statecraft.Game.Map.Units.CombatHit>();
+        using var presenter = new UnitAttackPresenter(bridge,
+            id => { immediate.Add(id); return true; }, _ => true, (_, _) => true,
+            hit => { reactions.Add(hit); return true; },
+            (id, started, missed) => { cues.Add(id, (started, missed)); return true; });
+
+        bridge.EndTurn();
+        CollectionAssert.AreEquivalent(new[] { 71, 72, 73 }, cues.Keys);
+        Assert.IsEmpty(immediate, "positive loss uses the production timed attack path");
+        Assert.IsEmpty(reactions, "the reaction waits for an actual fire take or for every miss");
+
+        cues[71].Missed();
+        Assert.IsEmpty(reactions, "the first miss is not the fallback while attackers remain");
+        if (aTakeStarts)
+        {
+            cues[72].Started();
+            Assert.AreEqual(1, reactions.Count, "the first actual fire take starts the shared reaction");
+            cues[73].Started();
+            Assert.AreEqual(1, reactions.Count, "another actual fire take does not repeat the shared reaction");
+        }
+        else
+        {
+            cues[72].Missed();
+            Assert.IsEmpty(reactions, "the next-to-last miss is still not the fallback");
+            cues[73].Missed();
+            Assert.AreEqual(1, reactions.Count, "only the last miss starts the fallback reaction");
+        }
+        Assert.AreEqual(2, reactions[0].DefenderLoss);
+    }
+
+    /// <summary>#2614 review: on the production path the hit on the hex waits for the attackers' fire as the defenders'
+    /// reaction does (a shell or dust that lands before the shot reads wrong), with or without a defender loss; if no take
+    /// can start, the last miss plays it. Red at bcff7b8e5: the hit played at once, on resolution.</summary>
+    [TestCase("0", true)]
+    [TestCase("0", false)]
+    [TestCase("2", true)]
+    [TestCase("2", false)]
+    public void TheHitOnTheHexWaitsForTheAttackersFire(string defenderLoss, bool aTakeStarts)
+    {
+        var engagement = Line(WhyKeys.Engagement, "2", defenderLoss);
+        var bridge = new SimBridge(NewSession(), Text,
+            (session, orders) => new StepResult(session.State, session.Now.Why.Append(engagement).ToArray(), Array.Empty<Rejection>()));
+        var immediate = new List<int>();
+        var cues = new Dictionary<int, (Action Started, Action Missed)>();
+        var hits = new List<Statecraft.Game.Map.Units.CombatHit>();
+        var reactions = new List<Statecraft.Game.Map.Units.CombatHit>();
+        using var presenter = new UnitAttackPresenter(bridge,
+            id => { immediate.Add(id); return true; }, h => { hits.Add(h); return true; }, (_, _) => true,
+            h => { reactions.Add(h); return true; },
+            (id, started, missed) => { cues.Add(id, (started, missed)); return true; });
+
+        bridge.EndTurn();
+        CollectionAssert.AreEquivalent(new[] { 71, 72 }, cues.Keys);
+        Assert.IsEmpty(immediate, "the production path times every attack");
+        Assert.IsEmpty(hits, "no hit before an attacker's fire");
+
+        if (aTakeStarts) cues[72].Started();
+        else { cues[71].Missed(); Assert.IsEmpty(hits, "not while an attacker may still fire"); cues[72].Missed(); }
+        Assert.AreEqual(1, hits.Count, aTakeStarts ? "the hit lands with the first fire take" : "the last miss plays the hit");
+        Assert.AreEqual((9, 9), (hits[0].Q, hits[0].R));
+        Assert.AreEqual(defenderLoss == "2" ? 1 : 0, reactions.Count, "the defenders react only to a loss, at the same moment");
+        cues[71].Started();
+        Assert.AreEqual(1, hits.Count, "a later take does not repeat the hit");
+    }
+
+    /// <summary>#2614: the dust of a unit the engagement destroyed (its Destroyed line right after it, as Combat.Engage adds
+    /// it) waits for the attackers' fire too; a take that starts at once plays it at once. Red at 917ebf2e9: the dust played
+    /// on resolution. It rises when the hit lands, CombatBursts.ImpactS of the engagement's hit after the fire, not with the
+    /// shot (e21's capture of 423678c01: the dust came 0.12 s before the first volley puff).</summary>
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ADestroyedUnitsDustWaitsForTheAttackersFire(bool takeStartsAtOnce)
+    {
+        var engagement = Line(WhyKeys.Engagement, "2", defenderLoss: "2");
+        var dead = new Cause("map", "9,9", 0, "Report text is never read", key: WhyKeys.Destroyed,
+            units: new[] { new UnitRef(new Unit(73, "infantry", 0, 0)) });
+        var bridge = new SimBridge(NewSession(), Text,
+            (session, orders) => new StepResult(session.State, session.Now.Why.Append(engagement).Append(dead).ToArray(), Array.Empty<Rejection>()));
+        var cues = new Dictionary<int, (Action Started, Action Missed)>();
+        var order = new List<string>();
+        CombatHit? seen = null; float dustDelay = -1f;
+        using var presenter = new UnitAttackPresenter(bridge,
+            _ => true, h => { order.Add("hit"); seen = h; return true; }, (id, delay) => { order.Add("dust " + id); dustDelay = delay; return true; }, _ => true,
+            (id, started, missed) =>
+            {
+                cues.Add(id, (started, missed));
+                if (takeStartsAtOnce && id == 71) started();
+                return true;
+            });
+
+        bridge.EndTurn();
+        if (!takeStartsAtOnce)
+        {
+            Assert.IsEmpty(order, "no hit and no dust before an attacker's fire");
+            cues[72].Started();
+        }
+        CollectionAssert.AreEqual(new[] { "hit", "dust 73" }, order, "the dust lands with the hit, after the fire");
+        Assert.IsTrue(seen.HasValue);
+        Assert.Greater(dustDelay, 0f, "after the fire, when the hit lands");
+        Assert.AreEqual(CombatBursts.ImpactS(seen!.Value), dustDelay, "when the engagement's hit lands");
+        cues[71].Started(); cues[72].Missed();
+        CollectionAssert.AreEqual(new[] { "hit", "dust 73" }, order, "and only once");
     }
 
     /// <summary>An attack order plays at once, after the map is redrawn for it; End Turn runs it again inside the sim (its
@@ -97,7 +213,7 @@ public class UnitAttackPresenterTests
         var nine = session.Now.State.Units[9];
         Assert.AreNotEqual(Movement.PlayerSide, nine.Side, "fixture: unit 9 is an enemy");
         Assert.IsNull(bridge.Queue(new UnitOrder(5, Combat.Attack, nine.Q, nine.R)), "fixture: unit 5 can attack unit 9");
-        var march = C.StartingForces[9].Script.Value;
+        var march = C.StartingForces[9].Script[0];
         Assert.IsNull(bridge.Queue(new Move(6, march.Q, march.R)), "fixture: unit 6 can take unit 9's march hex");
         CollectionAssert.AreEqual(new[] { 5 }, played, "the attack order played at once");
         int openTurn = session.Now.Why.Count;

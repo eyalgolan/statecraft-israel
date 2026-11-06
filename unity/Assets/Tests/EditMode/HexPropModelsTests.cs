@@ -823,10 +823,10 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(0, moved, "no prop moves when another model is missing or the answers come in another order");
         }
 
-        /// <summary>Review of #2266 at f9802bed6, C2: a camera that asks for the props while rendering does not get its answer
-        /// built inside the render, even when the answer comes at once: the request waits for LateUpdate.</summary>
+        /// <summary>Review of #2266 at f9802bed6, C2: the ChooseCore render-mode branch does not build an immediate answer;
+        /// the request waits for LateUpdate.</summary>
         [Test]
-        public void NothingIsBuiltInsideACameraRender()
+        public void RenderModeDefersHexPropsUntilLateUpdate()
         {
             var map = OpenMap();
             HexPropModels.Request = (id, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)));   // answers at once

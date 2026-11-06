@@ -60,6 +60,28 @@ public class CombatTests
         Assert.Equal(s.Arms - 2, now.State.Arms);
     }
 
+    // R-ORDER-001 (D-A6: unit orders are free): a move and an attack go through the normal charge path at the shipped costs,
+    // content/rules.yaml's attention_cost.move and .unit_order, and leave the Attention where it was.
+    [Fact]
+    public void AMoveAndAnAttackCostNoAttention()
+    {
+        var rules = Fixture.Gdd()["rules.yaml"];
+        Assert.Contains("move: 0, unit_order: 0", rules);
+        var shipped = FormattableString.Invariant($"move: {Real.Rules.AttentionCost["move"]}, unit_order: {Real.Rules.AttentionCost["unit_order"]}");
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["rules.yaml"] = rules.Replace("move: 0, unit_order: 0", shipped),
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n"
+        })));
+        var s = With(c, Soldier(1, 1, 1, 6), Enemy(2, 3, 1, 1));
+        Assert.True(s.Attention > 0);
+        var now = Simulation.Preview(c, s, new Command[] { new Move(1, 2, 1), new UnitOrder(1, Combat.Attack, 3, 1) });
+        Assert.Empty(now.Rejected);
+        Assert.Equal((2, 1), (now.State.Units[1].Q, now.State.Units[1].R));
+        Assert.Contains(now.Why, w => w.Message.StartsWith("The attack on hex 3,1"));
+        Assert.Equal(s.Attention, now.State.Attention);
+    }
+
     // R-COMBAT-001: the attack ends the unit's movement; a unit with no points left cannot attack.
     [Fact]
     public void AnAttackEndsTheUnitsMovement()
@@ -283,6 +305,77 @@ public class CombatTests
         var s = With(c);
         Assert.Equal(new[] { (2, 2, 10, 10, false) }, Combat.Outcomes(c, s, 0));
         Assert.Equal(new[] { (2, 2, 0, 10, true) }, Combat.Outcomes(c, s, 1));
+    }
+
+    /// <summary>#2553: a five-face table whose losses outrun a weak unit's strength, so the caps show: the row's faces lose
+    /// 2, 1, 0, 0 and 0 attackers and 0, 0, 3, 2 and 1 defenders, the last three with a retreat. Both rows alike, so the
+    /// ratio does not matter.</summary>
+    static Content LoadDeepTable()
+    {
+        const string row = "attacker_loss: [2, 1, 0, 0, 0], defender_loss: [0, 0, 3, 2, 1], defender_retreats: [0, 0, 1, 1, 1] }";
+        var files = Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n"
+        });
+        files["rules.yaml"] = files["rules.yaml"]
+            .Replace("{ min_ratio_percent: 0, attacker_loss: [1, 1], defender_loss: [1, 1], defender_retreats: [0, 0] }", "{ min_ratio_percent: 0, " + row)
+            .Replace("{ min_ratio_percent: 200, attacker_loss: [0, 0], defender_loss: [1, 1], defender_retreats: [1, 1] }", "{ min_ratio_percent: 200, " + row);
+        return ContentLoader.Load(Fixture.Write(files));
+    }
+
+    /// <summary>The state for one #2553 engagement: unit 1 (a <paramref name="type"/>) of <paramref name="attacker"/> strength
+    /// in reach of hex (3, 1), which holds enemy units of the <paramref name="defenders"/> strengths (ids 2, 3, ...).</summary>
+    static GameState Engagement(Content c, string type, int attacker, int[] defenders)
+    {
+        var units = new List<Unit> { new Unit(1, type, type == "gun" ? 1 : 2, 1, side: "israel", strength: attacker) };
+        for (int i = 0; i < defenders.Length; i++) units.Add(Enemy(2 + i, 3, 1, defenders[i]));
+        return With(c, units.ToArray());
+    }
+
+    // #2553 (R-COMBAT-003, R-COMBAT-007): the card's bands are what Strike does. For each face of the row, Strike is fought on a
+    // fresh state whose RNG draws that face; its report's losses and whether any defender retreated or surrendered, taken
+    // together the way Outcomes takes them, are the preview's bands. A damaged attacker loses at most its strength, weak
+    // defenders at most theirs (pooled over the hex), a wiped-out hex has no retreat, and faces equal after the cap share a band.
+    [Theory]
+    [InlineData("soldier", 1, new[] { 2 })]      // damaged attacker, weak defender
+    [InlineData("soldier", 1, new[] { 1, 1 })]   // two weak defenders: the losses pool over the hex
+    [InlineData("soldier", 5, new[] { 5 })]      // nobody capped: the row as it is
+    [InlineData("soldier", 3, new[] { 1 })]      // one defender of 1: every face with a defender loss wipes it out
+    [InlineData("gun", 1, new[] { 2 })]          // R-COMBAT-007: the guns lose nothing
+    public void TheOutcomesAreWhatStrikeDoesFaceByFace(string type, int attacker, int[] defenders)
+    {
+        var c = LoadDeepTable();
+        var ppu = c.RulesAt(With(c).Date).Mvp!.PeoplePerUnit;
+        var p = Combat.Preview(c, Engagement(c, type, attacker, defenders), 1, 3, 1)!.Value;
+        var faces = c.RulesAt(With(c).Date).Mvp!.CombatTable[p.Row].AttackerLoss.Count;
+        var real = new List<(int A, int D, bool Retreat)>();
+        for (int face = 0; face < faces; face++)
+        {
+            var s = Engagement(c, type, attacker, defenders);
+            ulong seed = 0;
+            while ((int)(new Rng(seed).NextDouble() * faces) != face) seed++;
+            s.RngState = seed;
+            var why = new List<Cause>();
+            Assert.Null(Combat.Strike(c, s, 1, 3, 1, new Dictionary<int, int>(), new Dictionary<int, AttackRecord>(), why));
+            var fight = why.Single(w => w.Key == WhyKeys.Engagement);
+            real.Add((int.Parse(fight.Args[2]), int.Parse(fight.Args[3]),
+                why.Any(w => w.Key == WhyKeys.Retreated || w.Key == WhyKeys.SurrenderedPrisoners || w.Key == WhyKeys.SurrenderedHeld)));
+        }
+        var expected = real.Distinct().Select(o => (real.Count(x => x == o), faces, o.A, o.D, o.Retreat)).ToList();
+        var bands = Combat.Outcomes(c, Engagement(c, type, attacker, defenders), p.Row, 1, 3, 1);
+        Assert.Equal(expected, bands);
+        Assert.All(bands, b => Assert.True(b.AttackersLose <= (type == "gun" ? 0 : attacker * ppu) && b.DefendersLose <= defenders.Sum() * ppu));
+    }
+
+    // #2553: without the hex (or with one holding no enemy) the bands are the row's, uncapped, as before.
+    [Fact]
+    public void WithoutAHexTheOutcomesAreTheRowsUncapped()
+    {
+        var c = LoadDeepTable();
+        var s = Engagement(c, "soldier", 1, new[] { 2 });
+        var row = new[] { (1, 5, 20, 0, false), (1, 5, 10, 0, false), (1, 5, 0, 30, true), (1, 5, 0, 20, true), (1, 5, 0, 10, true) };
+        Assert.Equal(row, Combat.Outcomes(c, s, 0, 1));
+        Assert.Equal(row, Combat.Outcomes(c, s, 0, 1, 0, 0));   // no enemy on (0, 0)
     }
 
     // R-COMBAT-007 (#2040): the guns fire from behind the line, so a strike by an artillery unit costs it nothing and its

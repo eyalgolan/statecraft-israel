@@ -44,9 +44,11 @@ people:
     offices:
       - office: prime_minister
         from: 1948-05-14
+        sources: &fixture_term_sources [{ url: https://example.org/term, checked: 2026-10-18 }]
       - office: defense_minister
         from: 1948-05-14
         to: 1949-01-01
+        sources: *fixture_term_sources
   - id: def_two
     name: Def Two
     living: false
@@ -55,8 +57,10 @@ people:
     offices:
       - office: defense_minister
         from: 1949-01-01
+        sources: *fixture_term_sources
       - office: finance_minister
         from: 1948-05-14
+        sources: *fixture_term_sources
 ",
         ["legislatures.yaml"] = @"
 legislatures:

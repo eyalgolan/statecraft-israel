@@ -192,6 +192,25 @@ public class NoCityLossDefeatTests
         Assert.True(retaken.State.Objectives.ContainsKey("already_awarded"));
     }
 
+    // R-CITY-010, R-CITY-004, R-CITY-009: a held gdd-0.3 city pays no job income but still absorbs its refugees as civilians
+    // and fills its free default jobs from its people without a job, exactly as an unheld city does (town_b is the control).
+    [Fact]
+    public void Gdd03HeldCityStillAbsorbsRefugeesAndFillsDefaultJobs()
+    {
+        var c = Load(); var s = Simulation.NewGame(c, 1, Mode.Historical); Occupy(s);
+        s.Objectives["already_awarded"] = s.Date;
+        foreach (var id in new[] { "town_a", "town_b" })
+            s.Cities[id] = new City(id, housingCapacity: 20, jobSlots: 8, civilians: 4, employed: 2, refugees: 2, jobsDefault: true);
+        var result = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.False(Paid(result, "town_a"));
+        Assert.True(Paid(result, "town_b"));
+        var held = result.State.Cities["town_a"]; var control = result.State.Cities["town_b"];
+        Assert.Equal(0, held.Refugees);
+        Assert.Equal(6, held.Civilians);   // 4 + 2 refugees housed
+        Assert.Equal(6, held.Employed);    // the 6 civilians fill 6 of the 8 slots (2 were already in work)
+        Assert.Equal((control.Refugees, control.Civilians, control.Employed), (held.Refugees, held.Civilians, held.Employed));
+    }
+
     // R-CITY-010, R-UNIT-001: a halutz holds nothing, and gdd-0.1 keeps paying the turn its R-END-003 defeat fires.
     [Theory]
     [InlineData(SaveGame.Gdd03Ruleset, true)]

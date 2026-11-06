@@ -1040,6 +1040,37 @@ public class TownModelResidencyTests
         }
     }
 
+    /// <summary>The v0.3.7 web perf fix: the web tier's last quality fallback step (QualityFallback.Steps, TownModelsFar)
+    /// sets TownModelLayer.LowTier. Over Tel Aviv at the 30 km opening (CameraRig.StartDistance, below the close switch) the
+    /// buildings then draw their far-off copies with no shadow casters instead of the originals with every building
+    /// casting; clearing it puts the originals and their shadows back, both with the camera unmoved.</summary>
+    [Test]
+    public void TheLowTierDrawsTheFarCopiesWithoutShadowsAtTheOpeningAndClearingItPutsTheOriginalsBack()
+    {
+        using var s = new StreamedMap();
+        var at = s.Footprint("tel_aviv").centre;
+        var camera = s.Camera(at, CameraRig.StartDistance);
+        try
+        {
+            s.Settle(camera); s.Submit(camera);
+            Assert.IsTrue(s.layer.LastClose, "control: the opening is close, the originals draw");
+            Assert.Greater(s.layer.LastDrawn, 0);
+            Assert.AreEqual(s.layer.LastDrawn, s.layer.LastShadowCasters, "control: every building casts");
+
+            TownModelLayer.LowTier = true;
+            s.Settle(camera); s.Submit(camera);
+            Assert.IsFalse(s.layer.LastClose, "the low tier is past the close switch at the opening");
+            Assert.Greater(s.layer.LastDrawn, 0, "Tel Aviv's buildings still draw (the far copies)");
+            Assert.AreEqual(0, s.layer.LastShadowCasters, "and cast no shadows");
+
+            TownModelLayer.LowTier = false;
+            s.Settle(camera); s.Submit(camera);
+            Assert.IsTrue(s.layer.LastClose, "clearing it puts the originals back, the camera unmoved");
+            Assert.AreEqual(s.layer.LastDrawn, s.layer.LastShadowCasters, "with their shadows");
+        }
+        finally { TownModelLayer.LowTier = false; }
+    }
+
     /// <summary>The shadows follow the close switch with its hysteresis (TownModelLayer.CloseAt: in below CloseEnterM, 40 km,
     /// out above CloseExitM, 45 km). Over Tel Aviv, coming in: none at 90 km and at 42 km (inside the band, still far), all
     /// at 39 km; going out: all at 43 km (inside the band, still close), none at 46 km.</summary>

@@ -34,14 +34,15 @@ bud{
 pop{
   africa=13083.414956040986 [40C98DB51D4790A8]
   america_oceania=656.5760557984527 [4084849BC3247834]
+  annexed=17041.900139280137 [40D0A4799BE1C882]
   asia=13608.247349747442 [40CA941FA92811F8]
   europe=92107.08315677792 [40F67CB1549C339A]
   unknown=12647.33242354208 [40C8B3AA8CDAC8D4]
   veterans=657677.6664788157 [4124121B553CB61A]
 sit[
 treasury=0 [0000000000000000]
-debt=30.94210973710249 [403EF12E1A8E192E]
-fx=84.39862659316444 [40551983191D3D42]
+debt=31.081471221917234 [403F14DB4C49B31E]
+fx=83.68904673158221 [4054EC19577663EC]
 rung=5;cf=0;
 mob=0.8 [3FE999999999999A]
 stab=0.626287693608005 [3FE40A8C7D3DE075]
@@ -102,7 +103,7 @@ city{
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
 units[
   0:veteran_soldier@4,14|side=israel|strength=4|order=go_to|target=-8,28
-  1:veteran_soldier@15,5|side=israel|strength=2|order=go_to|target=15,3
+  1:veteran_soldier@13,6|side=israel|strength=2|order=go_to|target=15,3
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-3,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
@@ -110,7 +111,7 @@ units[
   7:veteran_soldier@-10,35|side=israel|strength=1
   8:egyptian_army@-8,27|side=egypt|strength=10|order=fortify|target=-8,27
   9:arab_legion@-3,25|side=jordan|strength=3
-  10:syrian_army@15,6|side=syria|strength=3|order=fortify|target=15,6
+  10:syrian_army@15,5|side=syria|strength=3|order=fortify|target=15,5
   11:iraqi_army@6,14|side=iraq|strength=3|order=fortify|target=6,14
   12:arab_liberation_army@14,4|side=ala|strength=4|order=fortify|target=14,4
 cardorders{
@@ -121,5 +122,5 @@ ctrl{
   beersheba=owner=israel,state=awaiting_choice,since=1949-01-15,fled=1
   nazareth=owner=israel,state=annexed,since=1948-07-15
   ramla=owner=israel,state=awaiting_choice,since=1948-09-15,fled=1
-food=2304,768,0
+food=2355,785,0
 arms=12

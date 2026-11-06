@@ -1694,6 +1694,23 @@ rules:
     licence: Copernicus-DEM
     source: "tools/terrain_bake.py from the Copernicus DEM GLO-30-derived heightmap (unity/Assets/StreamingAssets/map/heightmap.*): AO, curvature, sky-view (Map/terrain_bake.png), coast distance (Map/coast.png) and the AO copy (Map/ao.png); the terrain water's mesh samples (Map/terrain_water.bytes, Editor TerrainWaterBake from the same heightmap); attribution in NOTICE"
     status: verified
+  # --- Unity Labs' CC0 VFX flipbooks: the Dakotas' bomb blasts and smoke columns over Tel Aviv (#2490; owner, 4 Nov 2026, "Yes, use Unity's CC0 set (Recommended)") ---
+  - glob: "unity/Assets/Resources/Effects/Explosion01_5x5.png"
+    licence: CC0-1.0
+    ai_generated: false
+    status: verified
+    artist: "Unity Technologies (Unity Labs)"
+    credit: "Unity Technologies (Unity Labs), CC0"
+    source: "Unity Technologies (Unity Labs), 'Free VFX image sequences and flipbooks' by Thomas Iché, 28 November 2016, https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks, which says: 'Today, we release some of these sequences under CC0 license' (linked to https://creativecommons.org/publicdomain/zero/1.0/) and lists this sequence among its downloads. Read and downloaded 2026-11-04 from the page's own link, https://unity3d.com/files/labs/downloads/vfx/assets01/Explosion01/Explosion01-flipbooks.zip (3,001,400 B, SHA-256 496a212733eb4e93c230f654f1fc1460e8a6389d2f1b13f2b945ec124a375742), its Explosion01_5x5.tga (1024x1024 RGBA, 5 x 5 frames, SHA-256 4af82af6311c0fb4d106de7768dda851c26f65cf2c1679938294878c250482ec), converted to PNG with macOS sips, no other change (814,024 B, SHA-256 a75a55de571a47fd05e3add72761cf6d51fe3ed8fe8f4a16d5b35679da5357f5)"
+    note: "Rendered in Houdini by Unity Labs, not AI-generated. The blast of each Dakota bomb (DakotaBombRun). CC0 asks no attribution; the credit is a courtesy."
+  - glob: "unity/Assets/Resources/Effects/Cloud02_8x8.png"
+    licence: CC0-1.0
+    ai_generated: false
+    status: verified
+    artist: "Unity Technologies (Unity Labs)"
+    credit: "Unity Technologies (Unity Labs), CC0"
+    source: "Unity Technologies (Unity Labs), 'Free VFX image sequences and flipbooks' by Thomas Iché, 28 November 2016, https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks, which says: 'Today, we release some of these sequences under CC0 license' (linked to https://creativecommons.org/publicdomain/zero/1.0/) and lists this sequence among its downloads. Read and downloaded 2026-11-04 from the page's own link, https://unity3d.com/files/labs/downloads/vfx/assets01/Cloud02/Cloud02-flipbooks.zip (3,433,127 B, SHA-256 99ce5ed3ec21646dd4a0644c2149978ed4f2fd9ab2ef269b5cfcc89a7a9cc036), its Cloud02_8x8.tga (1024x1024 RGBA, 8 x 8 frames, SHA-256 29081e19dc2d50ae69c019259f8dba3fb2795292a970b95ba49b03b79f125edd), converted to PNG with macOS sips, no other change (979,532 B, SHA-256 b9cb8baf38cfbdecdeab1f10864326ae11c4a217baa509b21c95bf79a66723ff)"
+    note: "Rendered in Houdini by Unity Labs, not AI-generated. The Dakota bombs' dust and the smoke columns over Tel Aviv (DakotaBombRun). CC0 asks no attribution; the credit is a courtesy."
   # --- Ben-Gurion's 1948 recording on the start screen (docs/declaration-recording.md; docs/oss/DECISIONS.md D-R) ---
   - glob: "unity/Assets/StreamingAssets/audio/declaration-1948-isa-00113hj.wav"
     licence: Israel State Archives terms of use
