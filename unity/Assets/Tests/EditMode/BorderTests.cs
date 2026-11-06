@@ -33,7 +33,7 @@ public class BorderTests
         MapShaderGlobals.PinWaterTime(100f);   // renders compared pixel for pixel: the sea must not move between them
         // The borders themselves, as SeaTests measures the water: the 1948 villages' houses and trees stand on many edges near
         // gameplay03, and a roof or crown on a walk is not the border's colour.
-        foreach (var n in new[] { "kits", "trees" }) if (VisualToggles.Names.Contains(n)) VisualToggles.Set(n, false);
+        foreach (var n in new[] { "kits", "trees", GroundDetail.Toggle, GroundDetail.ScrubToggle }) if (VisualToggles.Names.Contains(n)) VisualToggles.Set(n, false);
         var cam = Camera.main;
         return (map, cam, cam.GetComponent<CameraRig>());
     }

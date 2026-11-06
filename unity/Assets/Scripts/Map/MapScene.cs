@@ -859,6 +859,10 @@ namespace Statecraft.Game.Map
             Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate,
                 Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml), this);
             DiagLog.BootPhase("routes built");
+            // The ground between the towns (#2878): grain, scrub and stones, a pass over the terrain.
+            GroundDetail.Build(transform, Terrain, Frame, Hexes, heights, SettlementFootprints.Concat(UnitClearings).Concat(UnitTokens.Select(t => (t.centre, t.radius))),
+                KitRouteCorridors, terrainMaterial, terrainGo.GetComponent<MapRuntimeAssets>(), bushes: kitsOn);
+            DiagLog.BootPhase("ground detail");
             // The 1949 armistice lines as their true polylines (#237), unless the run turns them off with the
             // "noarmisticelines" flag; a missing or malformed file means no overlay and a warning. Display only.
             if (ArmisticeLines.Wanted() && inputs.ArmisticeLinesGeojson == "") Debug.LogWarning($"ARMISTICE LINES: {ArmisticeLines.FileName} is missing; no overlay");
