@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Statecraft.Sim.Tests;
 
-/// <summary>#1682's 68 source producers, including rare branches. The pre-key constructor expressions are pinned to
+/// <summary>#1682's 68 source producers plus city_held (#1711), 69 in all, including rare branches. The pre-key constructor expressions are pinned to
 /// c7851de so Message, Target and Delta cannot drift while metadata is added. This is not runtime branch coverage.</summary>
 public class RemainingCauseKeysTests
 {
@@ -17,6 +17,7 @@ public class RemainingCauseKeysTests
     {
         yield return new object[] { "Cities.cs", "WorkersAssigned", "new Cause(\"city\", city, count - x.Employed, FormattableString.Invariant($\"{PlayerText.Settlement(c, city)}: {Groups(count)} in work\")" };
         yield return new object[] { "Cities.cs", "WagesPaid", "new Cause(\"city\", x.Id, paid, $\"{PlayerText.Settlement(c, x.Id)}: jobs paid {PlayerText.MoneyChange(c, \"treasury\", paid)}\"" };
+        yield return new object[] { "Cities.cs", "CityHeld", "new Cause(\"city\", x.Id, 0, $\"{PlayerText.Settlement(c, x.Id)}: held by the enemy; no job income or project work this turn\"" };   // R-CITY-010 (#1711)
         yield return new object[] { "Cities.cs", "ImmigrantsHoused", "new Cause(\"city\", x.Id, absorbed, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {Groups(absorbed)} of immigrants housed\")" };
         yield return new object[] { "Cities.cs", "WorkersAssigned", "new Cause(\"city\", x.Id, work - housed.Employed, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {Groups(work)} in work\")" };
         yield return new object[] { "Cities.cs", "HousingShortage", "new Cause(\"city\", x.Id, over, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {Groups(over)} more than its homes hold\")" };
@@ -97,9 +98,9 @@ public class RemainingCauseKeysTests
     }
 
     [Fact]
-    public void InventoryContainsExactly68ProducerSites()
+    public void InventoryContainsExactly69ProducerSites()
     {
-        Assert.Equal(68, Producers().Count());
+        Assert.Equal(69, Producers().Count());
     }
 
     [Fact]
@@ -115,7 +116,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(124, sites);   // 124 with #2534's enemy attack-order line (Combat.Give marks the order's own cause); 123 with #2471's gdd-0.3 field Food line (R-FIELD-002); 122 with #2527's FoodImported and the conversion's fx_reserves line; 120 with #2457's event Debt line (R-EFX-009); 119 with #1700 slice B's ProjectBuilderFreed; 118 with #1700's builders (R-CITY-011: two ProjectBuilder lines, ProjectWaiting, the build order's job-default line); 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
+        Assert.Equal(125, sites);   // 125 with #1711's CityHeld (R-CITY-010); 124 with #2534's enemy attack-order line (Combat.Give marks the order's own cause); 123 with #2471's gdd-0.3 field Food line (R-FIELD-002); 122 with #2527's FoodImported and the conversion's fx_reserves line; 120 with #2457's event Debt line (R-EFX-009); 119 with #1700 slice B's ProjectBuilderFreed; 118 with #1700's builders (R-CITY-011: two ProjectBuilder lines, ProjectWaiting, the build order's job-default line); 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
     }
 
     [Fact]
