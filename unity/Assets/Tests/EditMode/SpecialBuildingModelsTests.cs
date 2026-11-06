@@ -1058,7 +1058,17 @@ namespace Statecraft.Game.Tests
                 var b = rs.Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
                 Assert.AreEqual(p.At.y, b.min.y, 1f, key + " stands on the ground");
                 Assert.Less(b.size.y, Mathf.Max(b.size.x, b.size.z), key + " upright: lower than it is long");
-                Assert.AreEqual(SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), Mathf.Max(b.size.x, b.size.z), 1f, key + " at the buildings' one world scale");
+                // The size is the model's own: a street workshop's world-axis bounds also take in its turn along the street
+                // (#2876), so it is measured with that turn taken off for a moment (the FBX axis conversion alone), then put back.
+                var sized = b;
+                if (streets.ContainsKey(key))
+                {
+                    var along = go.localRotation;
+                    go.localRotation = prefab.transform.localRotation;
+                    sized = rs.Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                    go.localRotation = along;
+                }
+                Assert.AreEqual(SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), Mathf.Max(sized.size.x, sized.size.z), 1f, key + " at the buildings' one world scale");
                 Assert.IsTrue(rs.All(x => x.forceRenderingOff), key + " hidden until the close zoom");
             }
             // Deterministic: a second layer from nothing puts every workshop on the same spot.
