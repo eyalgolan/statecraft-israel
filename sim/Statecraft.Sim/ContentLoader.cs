@@ -2062,7 +2062,7 @@ namespace Statecraft.Sim
                 if (TargetOnANeighbour.TryGetValue(x.Id, out var ruled))
                 {
                     if ((x.Q, x.R) != ruled)
-                        throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not q={ruled.Q} r={ruled.R}, the hex the owner named for {x.Id} (#1796)"));
+                        throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not q={ruled.Q} r={ruled.R}, the hex R-CTRL-001 names for {x.Id} (the neighbour nearest its point; owner on #1796)"));
                     if (!c.SettlementHexes.Any(h => h.Id == x.Id && Movement.Neighbours.Any(d => h.Q + d.Q == x.Q && h.R + d.R == x.R)))
                         throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not next to {x.Id}'s hex in {SettlementHexesFileName}"));
                 }
