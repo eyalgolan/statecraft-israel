@@ -360,7 +360,7 @@ public class UnitsInPlayTests
     /// <summary>#2734: the live 101 Squadron token's Spitfire swaps as the showcase's does (UnitShowcaseTests): it is drawn
     /// code-built at once and asks the Collection stream for the Blender-built model; when that arrives, the model stands
     /// under the token's aircraft, the code-built airframe and propeller stop drawing, the aircraft keeps its place and scale,
-    /// and a flying one's flight turns the model's Propeller. A parked Spitfire swaps the same way. The Avia S-199 (before 15
+    /// and a flying one's flight turns the model's Propeller. A token rebuilt after the model arrived (here parked) draws it at once. The Avia S-199 (before 15
     /// October 1948) stays code-built and asks for nothing. A rebuilt token releases its lease.</summary>
     [Test]
     public void TheSquadronsSpitfireStreamsInOverTheCodeBuiltOneAndTheS199StaysCodeBuilt()
@@ -409,10 +409,11 @@ public class UnitsInPlayTests
             Assert.AreEqual(1, asked[0].lease.Disposed, "the rebuilt token released the flying aircraft's lease, once");
             plane = Aircraft();
             Assert.IsNull(plane.GetComponent<ShowcaseFlight>(), "parked");
-            Assert.AreEqual(2, asked.Count, "the parked Spitfire asks too");
-            Assert.IsTrue(Code(plane).All(r => r.enabled));
+            Assert.AreEqual(2, asked.Count, "the parked Spitfire asks too, for a lease of its own");
+            Assert.IsNotNull(plane.Find(StreamedAircraft.ModelName), "the model has arrived, so the rebuilt token draws it at once");
+            Assert.IsTrue(Code(plane).All(r => !r.enabled), "no frame of the code-built aircraft after a rebuild");
             asked[1].done(model);
-            Assert.IsNotNull(plane.Find(StreamedAircraft.ModelName), "the parked Spitfire swaps the same way");
+            Assert.AreEqual(1, plane.Cast<Transform>().Count(c => c.name == StreamedAircraft.ModelName), "its own answer adds no second model");
             Assert.IsTrue(Code(plane).All(r => !r.enabled));
         }
         finally

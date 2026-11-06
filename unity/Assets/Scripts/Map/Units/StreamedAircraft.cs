@@ -33,8 +33,18 @@ namespace Statecraft.Game.Map.Units
         /// <summary>A stand-in for the stream; null is the game's (<see cref="ProductionAcquire"/>, in a player or in play mode).
         /// In edit mode nothing is asked for unless a caller sets it, as UnitFigures.Source has it (the stream's coroutine never
         /// runs there): the editor's captures answer from the AssetDatabase at once and the tests answer by hand. Callers put
-        /// back null.</summary>
-        public static Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? Source { get; set; }
+        /// back null. Setting it forgets the arrived model (<see cref="arrived"/>).</summary>
+        public static Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? Source
+        {
+            get => source;
+            set { source = value; arrived = null; }
+        }
+        static Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? source;
+
+        /// <summary>The model once it has arrived, so a holder built after that (a rebuilt token) draws it at once rather than
+        /// the code-built aircraft until its own answer, a frame or more later; it still takes its own lease. Null until then,
+        /// and again once the bundle is released (Unity's null for a destroyed prefab), as UnitFigures keeps its arrived models.</summary>
+        static GameObject? arrived;
 
         static Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? Acquirer =>
             Source ?? (Application.isPlaying ? ProductionAcquire : null);
@@ -69,7 +79,9 @@ namespace Statecraft.Game.Map.Units
             if (acquire == null) return;
             Asked = true;
             var held = acquire(Model, CollectionDetail.Far, Arrived);
-            if (released) held.Dispose(); else lease = held;
+            if (released) { held.Dispose(); return; }
+            lease = held;
+            if (arrived != null) Arrived(arrived);   // already here: no frame of the code-built aircraft; the stream's own answer is then ignored
         }
 
         void Arrived(GameObject? prefab)
@@ -82,6 +94,7 @@ namespace Statecraft.Game.Map.Units
                 Debug.LogWarning($"UNITS: the streamed {Model} has no {PropellerName} child to turn; the code-built aircraft stays.");
                 return;
             }
+            arrived = prefab;
             var go = Instantiate(prefab, transform, false);
             go.name = ModelName;
             go.transform.localPosition = Vector3.zero;
