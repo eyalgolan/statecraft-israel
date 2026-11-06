@@ -178,6 +178,40 @@ public class TownCensusTests
         Assert.Greater(aqsa.W, aqsa.D, "Al-Aqsa runs across the south end, not down it");
     }
 
+    /// <summary>#2876: Tel Aviv's port sheds draw as three sheds, not as one long strip. The major cities draw their kits at
+    /// every zoom (TownModels.IsMajorCity), so the sheds stand at the landmarks' symbolic scale (KitScale.Landmarks) up close
+    /// too, where three small b32 models stood before. They stand in a row along the shore (SettlementKits.TelAvivPort),
+    /// which runs north-south there, and the camera looks north (CameraRig, yaw 0) down at CameraRig.Pitch: a shed hides the
+    /// ground behind it for its height times cot(Pitch - Fov/2) at the view's shallowest ray (as
+    /// SpecialBuildingModels.FigureShadowM takes it), about 471 m for a 5 m shed at 60x. The clear gap between neighbours'
+    /// roofs (KitMesh.Gable's eaves reach 3% of the length past each end) must be wider than that, or the next shed's foot is
+    /// hidden and the row reads as one block. 15 m sheds on the 17 m pitch left 66 m.</summary>
+    [Test]
+    public void TelAvivsPortShedsStandApart()
+    {
+        var map = OpenMap();
+        Census(map, out var placed);
+        var sheds = placed.Where(p => p.Id == "tel_aviv" && p.Kind == "warehouse").ToList();
+        Assert.AreEqual(3, sheds.Count, "Tel Aviv's three port sheds");
+        float a = sheds[0].Yaw * Mathf.Deg2Rad;
+        var along = new Vector2(Mathf.Cos(a), Mathf.Sin(a)); var across = new Vector2(-along.y, along.x);
+        var row = sheds.OrderBy(p => Vector2.Dot(p.C, along)).ToList();
+        float cot = 1f / Mathf.Tan((CameraRig.Pitch - 0.5f * CameraRig.Fov) * Mathf.Deg2Rad);
+        var bad = new List<string>();
+        for (int i = 0; i + 1 < row.Count; i++)
+        {
+            var (s0, s1) = (row[i], row[i + 1]);
+            Assert.AreEqual(s0.Yaw, s1.Yaw, 0.01f, "the sheds stand parallel in their row");
+            var d = s1.C - s0.C;
+            if (Mathf.Abs(Vector2.Dot(d, across)) >= 0.5f * (s0.D + s1.D)) continue;   // side by side, not one behind the other
+            float gap = Vector2.Dot(d, along) - 0.53f * (s0.W + s1.W);   // between the roofs' eaves (KitMesh.Gable: 1.06 of the length)
+            float hidden = Mathf.Max(s0.H, s1.H) * cot;
+            TestContext.WriteLine($"sheds at {s0.C} and {s1.C}: {s0.W:0} and {s1.W:0} m long, roof gap {gap:0} m, hidden {hidden:0} m");
+            if (gap <= hidden) bad.Add($"the sheds at {s0.C} and {s1.C} are {gap:0} m apart, under the {hidden:0} m one hides behind it");
+        }
+        CollectionAssert.IsEmpty(bad, "Tel Aviv's port sheds merge into one strip");
+    }
+
     /// <summary>No building or landmark stands on a railway or a road (their corridors, RouteLayer.Corridors, and the units'
     /// clearings), and none stands in the sea: a building's centre and four corners are dry. Only harbour works (the
     /// breakwaters) stand in the water.</summary>
