@@ -352,6 +352,80 @@ public class HistoricalPopulationTests
         }
     }
 
+    // R-CITY-007, R-CITY-006, R-POP-004 (owner, 7 November 2026, opening-ledger rows 1 and 2): each city's employed units are
+    // people x employed_share over rules.yaml's people_per_unit, nearest unit with a half up, written out here rather than
+    // read from Cities.NearestUnit. Five cities have their printed share; the seven others have the national 43.9%, a
+    // labelled stand-in (status design). Rosh Pinna's 153.65 people round to 0: the "at least 1" floor is for civilians only.
+    [Fact]
+    public void EachCitysEmployedIsItsPeopleTimesItsShare()
+    {
+        var expected = new (string City, decimal Share, string Status, int Employed)[]
+        {
+            ("jerusalem", 0.342m, "sourced", 29),
+            ("tel_aviv", 0.426m, "sourced", 106),
+            ("haifa", 0.429m, "sourced", 42),
+            ("tiberias", 0.334m, "sourced", 2),
+            ("safed", 0.345m, "sourced", 1),
+            ("petah_tikva", 0.439m, "design", 10),
+            ("rishon_lezion", 0.439m, "design", 5),
+            ("rehovot", 0.439m, "design", 5),
+            ("hadera", 0.439m, "design", 5),
+            ("netanya", 0.439m, "design", 5),
+            ("zikhron_yaakov", 0.439m, "design", 1),
+            ("rosh_pinna", 0.439m, "design", 0),
+        };
+        var c = Real(true);
+        var perUnit = c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit;
+        var start = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal(expected.Select(e => e.City).OrderBy(s => s, StringComparer.Ordinal),
+            c.Cities.Select(x => x.Id).OrderBy(s => s, StringComparer.Ordinal));
+        foreach (var (id, share, status, employed) in expected)
+        {
+            var city = c.Cities.Single(x => x.Id == id);
+            Assert.Equal((id, share, status), (id, city.EmployedShare!.Value, city.EmployedShare.Status));
+            var formula = (int)Math.Round(city.People!.Value * city.EmployedShare.Value / perUnit, MidpointRounding.AwayFromZero);
+            Assert.Equal((id, employed), (id, formula));
+            Assert.Equal((id, employed), (id, city.Employed));
+            Assert.Equal((id, employed), (id, start.Cities[id].Employed));
+        }
+    }
+
+    // R-POP-004 (owner, 7 November 2026): row 4 approved no farmer identities for now and row 3's job mapping is open, so a
+    // census record stays a plain free civilian: no profession, no tier and no Work assignment.
+    [Fact]
+    public void CensusRecordsHaveNoProfessionTierOrWork()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        var census = units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(census);
+        Assert.All(census, u =>
+        {
+            Assert.Equal(CivilianProfession.None, u.Profession);
+            Assert.Equal(CivilianTier.None, u.Tier);
+            Assert.NotEqual(PopulationAssignmentKind.Work, u.Assignment.Kind);
+        });
+    }
+
+    // R-POP-004 (owner, 7 November 2026): the values of rows 5 and 8, row 6 and row 7 are open and get no default, so a
+    // starting soldier has no qualification and no XP of either kind.
+    [Fact]
+    public void StartingSoldiersHaveNoQualificationOrXp()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        var soldiers = units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(soldiers);
+        Assert.All(soldiers, u =>
+        {
+            Assert.Equal("", u.Qualification);
+            Assert.Equal(0, u.CombatXp);
+            Assert.Equal(0, u.WorkXp);
+        });
+    }
+
     // R-POP-004, 27M-24: the issued items are distinct, one per population unit of each own starting formation, so their
     // count is the formations' total strength.
     [Fact]
