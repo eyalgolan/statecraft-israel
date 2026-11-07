@@ -56,6 +56,7 @@ namespace Statecraft.Game.UI
         /// <summary>Tests: the card is waiting for the start screen to close before it looks up its photograph.</summary>
         internal bool PhotoWaits => photoWaits;
         readonly VisualElement band, head, options, layer, hudRoot; readonly Label credit, delegateLine;
+        readonly VisualElement? toast; float toastDefaultTop = float.NaN;
         /// <summary>The body: the text and the options with their effect lines, which scroll together only when they overflow
         /// the card (#1853); the head above it and the foot with Hide below it stay pinned.</summary>
         readonly ScrollView scroll;
@@ -143,6 +144,9 @@ namespace Statecraft.Game.UI
             illustrationSwitch.clicked += onSwitch;
             foreach (var e in new[] { band, credit, head, scroll, options }) e.RegisterCallback<GeometryChangedEvent>(OnPhotoGeometry);
             layer.RegisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            toast = hudRoot.Q("toast");
+            toast?.RegisterCallback<GeometryChangedEvent>(OnToastGeometry);
+            card.RegisterCallback<GeometryChangedEvent>(OnToastGeometry);
             card.RegisterCallback<GeometryChangedEvent>(OnCardGeometry);
             presses = new PressSource(options);
             bridge.Changed += Render;
@@ -168,6 +172,8 @@ namespace Statecraft.Game.UI
             video?.Stop();
             foreach (var e in new[] { band, credit, head, scroll, options }) e.UnregisterCallback<GeometryChangedEvent>(OnPhotoGeometry);
             layer.UnregisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            toast?.UnregisterCallback<GeometryChangedEvent>(OnToastGeometry);
+            card.UnregisterCallback<GeometryChangedEvent>(OnToastGeometry);
             card.UnregisterCallback<GeometryChangedEvent>(OnCardGeometry);
             presses.Dispose();
             card.Q<VisualElement>("event-options")?.Clear(); card.style.display = DisplayStyle.None;
@@ -303,6 +309,9 @@ namespace Statecraft.Game.UI
             delegateLine.style.display = unpaid ? DisplayStyle.Flex : DisplayStyle.None;
             var options = card.Q<VisualElement>("event-options");
             options.Clear();
+            // R-ENEMY-007 (owner, 7 November 2026: "show each unit once on operation cards"): a unit two options need in the same
+            // regions gets its line once, under the first of them.
+            var shownRequirements = new HashSet<string>(System.StringComparer.Ordinal);
             foreach (var o in e.Options)
             {
                 var option = o;
@@ -325,6 +334,7 @@ namespace Statecraft.Game.UI
                 // "must be in" line; a unit elsewhere gets only the "Move ... before" line, which names the same regions.
                 foreach (var need in requirement.Required)
                 {
+                    if (!shownRequirements.Add(need.Unit + ":" + string.Join("|", need.Regions))) continue;
                     var regions = string.Join(" / ", need.Regions.Select(id => text["operation.region." + id]));
                     bool away = requirement.Missing.Any(x => x.Unit == need.Unit);
                     // Review item 6: a required unit no longer on the board cannot be moved, so the card says that instead; the card
@@ -560,6 +570,35 @@ namespace Statecraft.Game.UI
             var h = band.layout.height; var needs = PhotoNeeds;
             if (float.IsNaN(h) || float.IsNaN(needs)) return;
             if (h < needs - 0.5f) SetPhotoShown(false);
+        }
+
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Smaller lines, then toast moves (Recommended)"): over an open card the toast
+        /// sits at the top middle, over the photograph and clear of its credit (Statecraft.uss, `.event-modal .toast`). When the
+        /// photograph band is too short to hold it above the credit (a tall card on a short window), it moves below the band,
+        /// under the office line, over the top of the body, still clear of the title and the options; when even that has no
+        /// room, it stays put. Only a changed value is written, so its own geometry event settles at once.</summary>
+        void OnToastGeometry(GeometryChangedEvent evt) => PlaceToast();
+
+        void PlaceToast()
+        {
+            if (toast == null || toast.parent == null) return;
+            // An inline top set by this method has keyword Undefined; unset (the stylesheet's place) is Null.
+            var moved = toast.style.top.keyword == StyleKeyword.Undefined;
+            if (!moved) toastDefaultTop = toast.worldBound.yMin;
+            var open = Shown != null && !Collapsed && toast.resolvedStyle.display == DisplayStyle.Flex && PhotoAlt != null;
+            float? want = null;
+            if (open && !float.IsNaN(toastDefaultTop))
+            {
+                var height = toast.worldBound.height;
+                if (toastDefaultTop + height > credit.worldBound.yMin - 2)
+                {
+                    var below = card.Q<Label>("event-office").worldBound.yMax + 6;
+                    if (below + height < options.worldBound.yMin - 2)
+                        want = below - toast.parent.worldBound.yMin - toast.resolvedStyle.marginTop;
+                }
+            }
+            if (want == null) { if (moved) toast.style.top = StyleKeyword.Null; }
+            else if (!moved || System.Math.Abs(toast.style.top.value.value - want.Value) > 0.5f) toast.style.top = want.Value;
         }
 
         void OnPhotoGeometry(GeometryChangedEvent evt)
