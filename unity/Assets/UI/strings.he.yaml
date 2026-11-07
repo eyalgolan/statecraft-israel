@@ -346,6 +346,20 @@ capture.refusal.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, 
 capture.refusal.already_city: "{0} כבר עיר."
 capture.refusal.not_awaiting: "אין החלטה ממתינה עבור {0}."
 capture.refusal.unknown_outcome: "האפשרות הזו אינה מוכרת."
+# #2707, batch 3: a capture or end-of-occupation answer refused at the end of turn, shown in the toast. SENSITIVE,
+# agent-drafted; for the native read in #564. Built from the owner-approved capture.refusal.* lines and option names above
+# (שחרור, סיפוח, נסיגה, גירוש); {0} is the place, joined to its prefix as in capture.refusal.needs_unit. The ״…״ around an
+# option name follows advisor.page.capture.text; the quote pair is still open in WRITING_UI_HE.md, so it is for that read too.
+capture.refused.deport_not_built: "אפשרות הגירוש עדיין לא נבנתה במשחק"
+capture.refused.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, ולכן אין את מי לגרש"
+capture.refused.unknown_outcome: "האפשרות הזו אינה מוכרת"
+capture.refused.not_awaiting_capture: "המקום הזה אינו ממתין להחלטה על כיבושו"
+capture.refused.not_awaiting_end: "המקום הזה אינו ממתין לסיום תקופת ההחזקה"
+capture.refused.occupy_needs_unit: "ל״שחרור״ נדרשת יחידה צבאית ישראלית ב{0}"
+capture.refused.annex_needs_unit: "ל״סיפוח״ נדרשת יחידה צבאית ישראלית ב{0}"
+capture.refused.withdraw_needs_unit: "ל״נסיגה״ נדרשת יחידה צבאית ישראלית ב{0}"
+capture.refused.no_free_hex: "ליחידה ב{0} אין משבצת פנויה סמוכה שאפשר לסגת אליה"
+capture.refused.already_city: "{0} כבר עיר"
 # SENSITIVE agent draft for #803: native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 map.control.awaiting_choice: "החלטה ממתינה"
 map.control.occupied: "מוחזק"

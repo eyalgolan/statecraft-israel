@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -117,18 +118,29 @@ namespace Statecraft.Sim
                 case Raid: return Withdraw(c, s, id, why, false);
                 case Occupy: return StartOccupation(c, s, id, why);
                 case Deport:
-                    if (!c.RulesAt(s.Date).Mvp!.DeportInPlay) return new CaptureRefusal(CaptureRefusal.NotInPlay, "Deport is not built yet");
+                    if (!c.RulesAt(s.Date).Mvp!.DeportInPlay) return new CaptureRefusal(CaptureRefusal.NotInPlay, RefusedDeportNotBuilt);
                     // R-CTRL-018, OWNER QUESTION 4 (a) on #799: a fled town has no one left to deport, so Deport stays listed
                     // third but is refused with this reason, which the options helper shows on its button.
-                    return s.Settlements[id].Fled ? new CaptureRefusal(CaptureRefusal.NoOneToDeport, NoOneToDeport) : Depopulate(c, s, id, why);
+                    return s.Settlements[id].Fled ? new CaptureRefusal(CaptureRefusal.NoOneToDeport, RefusedNoOneToDeport) : Depopulate(c, s, id, why);
                 default: return UnknownOutcome;
             }
         }
 
         /// <summary>Deport's refusal for a fled town (OWNER QUESTION 4 (a) on #799; in the owner's sensitivity packet).</summary>
-        const string NoOneToDeport = "Its residents fled when it was captured, so there is no one to deport";
+        public const string RefusedNoOneToDeport = "Its residents fled when it was captured, so there is no one to deport";
 
-        static CaptureRefusal UnknownOutcome => new CaptureRefusal(CaptureRefusal.UnknownOutcome, "That outcome is not known");
+        /// <summary>The capture and end-of-occupation refusals the end of turn reports, as constants for the UI's strings
+        /// (#2707). {0} is the place's name.</summary>
+        public const string RefusedDeportNotBuilt = "Deport is not built yet",
+            RefusedUnknownOutcome = "That outcome is not known",
+            RefusedNotAwaitingCapture = "That place is not awaiting a decision on its capture",
+            RefusedNotAwaitingEnd = "That place is not awaiting the end of its occupation",
+            RefusedOccupyNeedsUnit = "Occupy needs an Israeli military unit on {0}",
+            RefusedAnnexNeedsUnit = "Annex needs an Israeli military unit on {0}",
+            RefusedWithdrawNeedsUnit = "Withdraw needs an Israeli military unit on {0}",
+            RefusedNoFreeHex = "A unit has no free hex next to {0} to withdraw to";
+
+        static CaptureRefusal UnknownOutcome => new CaptureRefusal(CaptureRefusal.UnknownOutcome, RefusedUnknownOutcome);
 
         /// <summary>The kind of <see cref="EndOccupation"/>, with one attention_cost key (R-CTRL-014).</summary>
         public const string EndKind = "end_occupation";
@@ -172,7 +184,7 @@ namespace Statecraft.Sim
                 case WithdrawOutcome:
                     // R-CTRL-014: withdrawing needs the unit that holds the place too, as annexing does.
                     if (!Garrisoned(s, c.SettlementTargets.First(x => x.Id == id)))
-                        return new CaptureRefusal(CaptureRefusal.NeedsUnit, $"Withdraw needs an Israeli military unit on {c.SettlementNames[id]}");
+                        return new CaptureRefusal(CaptureRefusal.NeedsUnit, string.Format(CultureInfo.InvariantCulture, RefusedWithdrawNeedsUnit, c.SettlementNames[id]));
                     return Withdraw(c, s, id, why, false);
                 default: return UnknownOutcome;
             }
@@ -180,7 +192,7 @@ namespace Statecraft.Sim
 
         static CaptureRefusal? NotEnding(GameState s, string id) =>
             s.Settlements.TryGetValue(id, out var x) && x.State == AwaitingEnd ? null
-                : new CaptureRefusal(CaptureRefusal.NotAwaiting, "That place is not awaiting the end of its occupation");
+                : new CaptureRefusal(CaptureRefusal.NotAwaiting, RefusedNotAwaitingEnd);
 
         /// <summary>R-CTRL-016 (Q-ANNEX-1; OWNER QUESTIONS 1 (a) and 3 (a) on #799): the record becomes owner=israel,
         /// state=annexed, keeping its capture date and fled, with no timer. A fled place adds nothing else ("Territory only, no
@@ -190,7 +202,7 @@ namespace Statecraft.Sim
         {
             var t = c.SettlementTargets.First(x => x.Id == id);   // only a target gets a record (R-CTRL-004)
             var name = c.SettlementNames[id];
-            if (!Garrisoned(s, t)) return new CaptureRefusal(CaptureRefusal.NeedsUnit, $"Annex needs an Israeli military unit on {name}");
+            if (!Garrisoned(s, t)) return new CaptureRefusal(CaptureRefusal.NeedsUnit, string.Format(CultureInfo.InvariantCulture, RefusedAnnexNeedsUnit, name));
             var x = s.Settlements[id];
             // Cities.Annex's one refusal: the id is already a city.
             if (!x.Fled && Cities.Annex(c, s, t) is string refused) return new CaptureRefusal(CaptureRefusal.AlreadyCity, refused);
@@ -203,7 +215,7 @@ namespace Statecraft.Sim
 
         static CaptureRefusal? NotAwaiting(GameState s, string id) =>
             s.Settlements.TryGetValue(id, out var x) && x.State == AwaitingChoice ? null
-                : new CaptureRefusal(CaptureRefusal.NotAwaiting, "That place is not awaiting a decision on its capture");
+                : new CaptureRefusal(CaptureRefusal.NotAwaiting, RefusedNotAwaitingCapture);
 
         /// <summary>R-CTRL-010, Raid and withdraw (Q-RAID-1 (a)): the player's units on the place's hex, soldiers and halutzim
         /// alike, leave in id order, each to the first neighbouring hex in the fixed <see cref="Movement.Neighbours"/> order
@@ -255,7 +267,7 @@ namespace Statecraft.Sim
                 {
                     foreach (var x in moved) s.Units[x.From.Id] = x.From;   // back as it was
                     moved.Clear();
-                    return new CaptureRefusal(CaptureRefusal.NoFreeHex, $"A unit has no free hex next to {name} to withdraw to");
+                    return new CaptureRefusal(CaptureRefusal.NoFreeHex, string.Format(CultureInfo.InvariantCulture, RefusedNoFreeHex, name));
                 }
                 var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
                 s.Units[u.Id] = w;
@@ -311,7 +323,7 @@ namespace Statecraft.Sim
         {
             var t = c.SettlementTargets.First(x => x.Id == id);   // only a target gets a record (R-CTRL-004)
             var name = c.SettlementNames[id];
-            if (!Garrisoned(s, t)) return new CaptureRefusal(CaptureRefusal.NeedsUnit, $"Occupy needs an Israeli military unit on {name}");
+            if (!Garrisoned(s, t)) return new CaptureRefusal(CaptureRefusal.NeedsUnit, string.Format(CultureInfo.InvariantCulture, RefusedOccupyNeedsUnit, name));
             var x = s.Settlements[id];
             var turns = c.RulesAt(s.Date).Mvp!.OccupationTurns!.Value;
             s.Settlements[id] = new SettlementControl(x.Owner, Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, turns, x.Fled);

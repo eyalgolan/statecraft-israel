@@ -156,6 +156,8 @@ public class HebrewUiTests
     // swapped slot, no capture in the wrong order, no lazy capture splitting a town).
     [TestCase(typeof(Statecraft.Sim.Combat))]
     [TestCase(typeof(Statecraft.Sim.Training))]
+    [TestCase(typeof(Statecraft.Sim.SettlementControl))]   // #2707 batch 3: the capture answers, and Cities.Annex's
+    [TestCase(typeof(Statecraft.Sim.Cities))]
     public void EveryAttackAndReinforceRefusalHasAStringInBothLanguages(System.Type check)
     {
         var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
@@ -177,6 +179,11 @@ public class HebrewUiTests
             [Statecraft.Sim.Training.RefusedNoHakhshara] = ("unit.reinforce_refused.no_hakhshara", new object[] { townSlot }),
             [Statecraft.Sim.Training.RefusedIdle] = ("unit.reinforce_refused.idle", new object[] { townSlot, 6 }),
             [Statecraft.Sim.Training.RefusedArms] = ("unit.reinforce_refused.arms", new object[] { townSlot, courseSlot, 12, 3 }),
+            [Statecraft.Sim.SettlementControl.RefusedOccupyNeedsUnit] = ("capture.refused.occupy_needs_unit", new object[] { townSlot }),
+            [Statecraft.Sim.SettlementControl.RefusedAnnexNeedsUnit] = ("capture.refused.annex_needs_unit", new object[] { townSlot }),
+            [Statecraft.Sim.SettlementControl.RefusedWithdrawNeedsUnit] = ("capture.refused.withdraw_needs_unit", new object[] { townSlot }),
+            [Statecraft.Sim.SettlementControl.RefusedNoFreeHex] = ("capture.refused.no_free_hex", new object[] { townSlot }),
+            [Statecraft.Sim.Cities.RefusedAlreadyCity] = ("capture.refused.already_city", new object[] { townSlot }),
         };
         object English(object v) => v == townSlot ? place.Value : v == courseSlot ? Statecraft.Sim.Training.Course(recruit) : v;
         object Hebrew(object v) => v == townSlot ? namesHe[place.Key] : v == courseSlot ? He["why.cause.course." + Statecraft.Sim.Training.CourseId(recruit)] : v;

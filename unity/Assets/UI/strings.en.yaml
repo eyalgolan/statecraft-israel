@@ -307,6 +307,18 @@ capture.refusal.no_one_to_deport: "Its residents fled when it was captured, so t
 capture.refusal.already_city: "{0} is already a city."
 capture.refusal.not_awaiting: "{0} is not waiting for this decision."
 capture.refusal.unknown_outcome: "This choice is not known."
+# #2707, batch 3: a capture or end-of-occupation answer refused at the end of turn (SettlementControl, Cities.Annex), shown
+# in the toast. The sim's own text, word for word; {0} is the place.
+capture.refused.deport_not_built: "Deport is not built yet"
+capture.refused.no_one_to_deport: "Its residents fled when it was captured, so there is no one to deport"
+capture.refused.unknown_outcome: "That outcome is not known"
+capture.refused.not_awaiting_capture: "That place is not awaiting a decision on its capture"
+capture.refused.not_awaiting_end: "That place is not awaiting the end of its occupation"
+capture.refused.occupy_needs_unit: "Occupy needs an Israeli military unit on {0}"
+capture.refused.annex_needs_unit: "Annex needs an Israeli military unit on {0}"
+capture.refused.withdraw_needs_unit: "Withdraw needs an Israeli military unit on {0}"
+capture.refused.no_free_hex: "A unit has no free hex next to {0} to withdraw to"
+capture.refused.already_city: "{0} is already a city"
 # Settlement control on the map, in the selected place's panel, and the lasting International Support count (#803).
 # SENSITIVE: every line waits for the owner's review through R-GATE-002.
 map.control.awaiting_choice: "Decision pending"
