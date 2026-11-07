@@ -462,22 +462,52 @@ public class HistoricalPopulationTests
         });
     }
 
-    // R-POP-004 (owner, 7 November 2026): rows 5 to 8 are decided (Veteran for all 8; 1 tick each, Negev 0) but not wired in,
-    // so a starting soldier has no qualification and no XP of either kind yet.
+    // R-POP-004, #1689 rows 5 to 8. Owner, 7 November 2026 (comment 6704389240): "Veteran for all 8 (Recommended)" and
+    // "1 each, Negev 0 (Recommended)", Negev's 0 a labelled stand-in. Maintainer call, eyalgolan-30's coordinator,
+    // 7 November 2026: the veteran level lives on the formation (each is a veteran_soldier, R-UNIT-006, and each soldier's
+    // ActiveService target is its formation), so a soldier's qualification is its formation type's unit_types.yaml class
+    // (infantry), as Gdd03BasicTrainingFixture's graduates are; combat XP comes from gdd03-start.yaml. No work XP.
     [Fact]
-    public void StartingSoldiersHaveNoQualificationOrXp()
+    public void StartingSoldiersHaveTheirClassAndTheirFormationsCombatXp()
     {
         var c = Real(true);
         var inventory = HistoricalPopulation.Inventory(c);
         var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
-        var soldiers = units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)).ToList();
-        Assert.NotEmpty(soldiers);
-        Assert.All(soldiers, u =>
+        var expected = new Dictionary<string, int> { ["golani"] = 1, ["carmeli"] = 1, ["alexandroni"] = 1, ["kiryati"] = 1,
+            ["givati"] = 1, ["etzioni"] = 1, ["harel"] = 1, ["negev"] = 0 };
+        var rows = inventory.Where(r => r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal))
+            .Select(r => r.Source.Substring(HistoricalPopulation.FormationPrefix.Length)).Distinct().OrderBy(x => x, StringComparer.Ordinal);
+        Assert.Equal(expected.Keys.OrderBy(x => x, StringComparer.Ordinal), rows);
+        for (int i = 0; i < inventory.Count; i++)
         {
-            Assert.Equal("", u.Qualification);
-            Assert.Equal(0, u.CombatXp);
-            Assert.Equal(0, u.WorkXp);
-        });
+            if (!inventory[i].Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)) continue;
+            var row = inventory[i].Source.Substring(HistoricalPopulation.FormationPrefix.Length);
+            var type = c.StartingForces.Single(f => f.Row == row).Type;
+            Assert.Equal("veteran_soldier", type);
+            Assert.Equal(c.UnitTypes.Single(t => t.Id == type).Class, units[i].Qualification);
+            Assert.Equal("infantry", units[i].Qualification);
+            Assert.Equal(expected[row], units[i].CombatXp);
+            Assert.Equal(0, units[i].WorkXp);
+        }
+    }
+
+    // #1689 PR 2 scope (maintainer call, eyalgolan-30's coordinator, 7 November 2026): the opening combat XP is the ledger
+    // fixture's only; the aggregate units a gdd-0.3 NewGame starts with keep 0.
+    [Fact]
+    public void NewGameUnitsKeepNoCombatXp()
+    {
+        var s = Simulation.NewGame(Real(true), 1, Mode.Historical);
+        Assert.NotEmpty(s.Units);
+        Assert.All(s.Units.Values, u => Assert.Equal(0, u.CombatXp));
+    }
+
+    // The shipped gdd03-start.yaml names each own opening formation once, with the owner's values.
+    [Fact]
+    public void ShippedStartGivesEachOpeningFormationItsCombatXp()
+    {
+        var c = Real(true);
+        Assert.Equal(new[] { ("alexandroni", 1), ("carmeli", 1), ("etzioni", 1), ("givati", 1), ("golani", 1), ("harel", 1),
+            ("kiryati", 1), ("negev", 0) }, c.Gdd03FormationCombatXp!.Select(x => (x.Key, x.Value)));
     }
 
     // R-POP-004, 27M-24: the issued items are distinct, one per population unit of each own starting formation, so their

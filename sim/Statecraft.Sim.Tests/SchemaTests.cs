@@ -227,6 +227,7 @@ public class SchemaTests
         yield return new object[] { "gdd03-events.schema.json", "/properties/exclusions/items", typeof(ContentLoader).GetNestedType("EventExclusion", BindingFlags.NonPublic)! };
         yield return new object[] { "gdd03-start.schema.json", "", typeof(ContentLoader).GetNestedType("Gdd03StartFile", BindingFlags.NonPublic)! };
         yield return new object[] { "gdd03-start.schema.json", "/properties/military_camps/items", typeof(ContentLoader).GetNestedType("StartCampBinding", BindingFlags.NonPublic)! };
+        yield return new object[] { "gdd03-start.schema.json", "/properties/formation_combat_xp/items", typeof(ContentLoader).GetNestedType("StartFormationCombatXp", BindingFlags.NonPublic)! };
         yield return new object[] { "event.schema.json", "", typeof(GameEvent) };
         yield return new object[] { "event.schema.json", "/properties/conditions/items", typeof(EventCondition) };
         yield return new object[] { "event.schema.json", "/definitions/requirement", typeof(EventRequirement) };
