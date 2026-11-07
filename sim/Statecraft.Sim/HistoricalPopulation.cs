@@ -31,6 +31,9 @@ namespace Statecraft.Sim
     {
         internal const string CensusPrefix = "census/";
         internal const string FormationPrefix = "units_1948/";
+        /// <summary>The census city of the training centre's one veteran pioneer teacher (owner, 7 November 2026, #1689
+        /// comment 6704565066: "the training centre's one veteran pioneer teacher is a Haifa census unit").</summary>
+        internal const string TeacherCity = "haifa";
 
         /// <summary>The own opening formations, the one predicate for them (review S2-2): the map/units_1948.yaml rows that
         /// give the start inventory soldiers, Israeli, in the start (no dated arrival), with a strength. The inventory, the
@@ -62,7 +65,7 @@ namespace Statecraft.Sim
         /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1
         /// (3 November 2026: "Its anchor hex's region (Recommended)"). A source with no region is refused; no region is invented. Records
         /// are free civilians with no assignment and their reception done (reception.turns), and soldiers serving in their own
-        /// formation, with no profession, tier or qualification (#1717 and #1692 add those). Each soldier carries one issued military item, id
+        /// formation, with no profession, tier or qualification (#1717 and #1692 add those), but for the training centre's veteran pioneer teacher, the last census/haifa record (#1689). Each soldier carries one issued military item, id
         /// <c>units_1948/&lt;row&gt;/&lt;ordinal&gt;</c>, owned and recorded as paid, apart from the spare Arms (#1717, 27M-24).
         /// mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only: the public NewGame does not call it (R-POP-002).</summary>
         internal static GameState LedgerFixture(Content c)
@@ -118,11 +121,27 @@ namespace Statecraft.Sim
             // reception.turns is the reception before free-civilian status (docs/gdd/balance.md:91), so a census free civilian
             // starts with it done: R-VET-001 gives work XP only to a received free civilian. Soldiers keep 0 (not ruled).
             var received = c.RequirePopulationInteger("reception.turns");
+            // #1725 PR 3, the teacher part. Owner, 7 November 2026 (#1689 comment 6704565066), "Yes to all three
+            // (Recommended)": "the training centre's one veteran pioneer teacher is a Haifa census unit"; the count is
+            // start.pioneer_teachers (1, Agreed, "included in population total"), so no record is added and no other count
+            // has a ruling. Maintainer call (the coordinator, eyalgolan-30, 7 November 2026): the last census/haifa ordinal.
+            // R-TRAIN-005: a free civilian, a veteran of the matching profession (pioneer). Owner, 7 November 2026, relayed
+            // by the coordinator: work XP "0 (Recommended)". R-TRAIN-008 refuses a teaching teacher with no pupil, so the
+            // teacher starts unassigned. Owner, 7 November 2026, relayed: "Takeable, but last (Recommended)": no guard; the
+            // ascending-id rules (R-POP-004's Q10 "N units", #1692's job default) reach the last ordinal last.
+            var teachers = c.RequirePopulationInteger("start.pioneer_teachers");
+            if (teachers != 1)
+                throw new InvalidOperationException("start.pioneer_teachers is " + teachers.ToString(CultureInfo.InvariantCulture)
+                    + "; the ruling places one veteran pioneer teacher in Haifa's census and no other (#1689).");
+            var teacherSource = CensusPrefix + TeacherCity;
+            var teacher = inventory.Where(r => r.Source == teacherSource).OrderBy(r => r.Ordinal).LastOrDefault()
+                ?? throw new InvalidOperationException("No " + teacherSource + " record for the veteran pioneer teacher (#1689).");
+            bool IsTeacher(HistoricalPopulationRow r) => ReferenceEquals(r, teacher);
             var rows = inventory.Select(r => new PopulationInventoryRow(r.Source, r.Ordinal, new PopulationUnit(0, r.Status,
                 r.Status == PopulationStatus.FreeCivilian ? received : 0,
                 placed[r.Source], r.Status == PopulationStatus.ActiveSoldier
                     ? new PopulationAssignment(PopulationAssignmentKind.ActiveService, r.Source) : PopulationAssignment.Unassigned,
-                CivilianProfession.None, CivilianTier.None, 0,
+                IsTeacher(r) ? CivilianProfession.Pioneer : CivilianProfession.None, IsTeacher(r) ? CivilianTier.Veteran : CivilianTier.None, 0,
                 r.Status == PopulationStatus.ActiveSoldier ? soldier[r.Source].Qualification : "",
                 r.Status == PopulationStatus.ActiveSoldier ? soldier[r.Source].CombatXp : 0, r.Status == PopulationStatus.ActiveSoldier
                     ? new PopulationEquipment(militaryId: r.Source + "/" + r.Ordinal.ToString(CultureInfo.InvariantCulture), militaryPaid: true)

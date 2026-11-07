@@ -463,15 +463,18 @@ public class HistoricalPopulationTests
 
     // R-POP-004 (owner, 7 November 2026): row 4 approved no farmer identities, the farmers come on top of the census, and
     // row 3's Industry start is not wired in, so a census record stays a plain free civilian: no profession, no tier and no
-    // Work assignment.
+    // Work assignment. The one exception is the training centre's veteran pioneer teacher, the last census/haifa ordinal
+    // (owner, 7 November 2026, #1689 comment 6704565066; HistoricalPioneerTeacherTests), left out here by its row.
     [Fact]
-    public void CensusRecordsHaveNoProfessionTierOrWork()
+    public void CensusRecordsButTheTeacherHaveNoProfessionTierOrWork()
     {
         var c = Real(true);
         var inventory = HistoricalPopulation.Inventory(c);
         var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
-        var census = units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)).ToList();
-        Assert.NotEmpty(census);
+        var lastHaifa = inventory.Where(r => r.Source == "census/haifa").Max(r => r.Ordinal);
+        var census = units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
+            && !(inventory[i].Source == "census/haifa" && inventory[i].Ordinal == lastHaifa)).ToList();
+        Assert.Equal(c.Cities.Sum(city => city.Civilians) - 1, census.Count);
         Assert.All(census, u =>
         {
             Assert.Equal(CivilianProfession.None, u.Profession);
