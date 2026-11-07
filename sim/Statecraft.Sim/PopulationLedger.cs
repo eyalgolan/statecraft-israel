@@ -306,8 +306,9 @@ namespace Statecraft.Sim
             bindings.ValidateCities(c);
             var ordered = rows.OrderBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Ordinal).ToList();
             if (mode != Mode.Historical && ordered.Any(x => x.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
-                || x.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)))
-                throw new ArgumentException("Census and units_1948 rows are the Historical start's; their fixture needs mode Historical (R-POP-004).");
+                || x.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)
+                || x.Source.StartsWith(HistoricalPopulation.FarmerPrefix, StringComparison.Ordinal)))
+                throw new ArgumentException("Census, units_1948 and field rows are the Historical start's; their fixture needs mode Historical (R-POP-004).");
             l.peoplePerUnit = mode == Mode.Historical ? HistoricalPeoplePerUnit(c) : c.PopulationPeoplePerUnit;
             l.receptionLimit = c.RequirePopulationInteger("reception.turns");
             l.NextPopulationId = nextPopulationId;

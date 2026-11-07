@@ -26,6 +26,7 @@ namespace Statecraft.Sim
             PopulationSystem.Init(c, s);
             Cities.Init(c, s);
             if (darkStart) HistoricalPopulation.Initialize(c, s);   // before Pools.Init, which reads the ledger's need
+            if (darkStart) HistoricalPopulation.AddFarmerHousing(c, s);   // #1725 PR 4: one housing place per farmer in a census host
             Pools.Init(c, s);
             StartingForces.Init(c, s);   // R-UNIT-006: before any event can grant a unit, so the forces take ids 0 to n-1
             SecuritySystem.Init(c, s, why);
