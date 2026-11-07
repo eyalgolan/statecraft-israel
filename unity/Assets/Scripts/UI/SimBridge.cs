@@ -390,6 +390,7 @@ namespace Statecraft.Game.UI
                 var before = Session.Now.Why.Count;
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
+                WithdrawUnmetOperations();
                 Notify(Changed);
                 var added = Session.Now.Why.Skip(before).ToList();
                 Notify(Committed, added);
@@ -410,6 +411,20 @@ namespace Statecraft.Game.UI
             if (old != null) deferred[deferred.IndexOf(old)] = c; else deferred.Add(c);
             Notify(Changed);
             return null;
+        }
+
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Re-show the card (Recommended)"): after an instant order, a queued
+        /// operation choice whose required units are no longer in place in the state the card shows (<see cref="State"/>) is
+        /// withdrawn, which refunds its Attention, so its card shows again with the missing unit's "Move ... before" line
+        /// instead of End Turn refusing the choice and handing the card to its minister. The caller notifies.</summary>
+        void WithdrawUnmetOperations()
+        {
+            foreach (var q in deferred.OfType<ChooseEventOption>().ToList())
+            {
+                var option = Content.Events.FirstOrDefault(e => e.Id == q.EventId)?.Options.FirstOrDefault(o => o.Id == q.OptionId);
+                if (option != null && option.RequiresUnitRegions.Count != 0 && !EventSystem.OperationStatus(Content, State, option).Met)
+                    deferred.Remove(q);
+            }
         }
 
         public void Withdraw(Command c)

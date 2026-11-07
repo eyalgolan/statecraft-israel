@@ -61,6 +61,52 @@ public class EventCardTests
         }
     }
 
+    // R-ENEMY-007 (owner, 7 November 2026: "Re-show the card (Recommended)"): an operation chosen while its units stood in
+    // place is withdrawn, its Attention refunded, when a later instant move takes a required unit out of the regions, and the
+    // card shows again with that unit's red "Move ... before" line, rather than End Turn refusing the choice and the minister
+    // deciding it. Red without SimBridge's re-check: the choice stays queued and the card stays hidden.
+    [Test]
+    public void MovingARequiredUnitAwayWithdrawsTheQueuedOperationAndShowsTheCardAgain()
+    {
+        var unitRows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.Single(x => x.Id == "operation_horev");
+        var option = e.Options.Single(x => x.Id == "launch");
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = e.From;
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+        var id = c.StartingForces.FindIndex(x => x.Row == "golani");
+        var u = g.State.Units[id];
+        bool InPlace((int Q, int R) h) => c.PlayerRegions.AtHex(h.Q, h.R) is { } r && option.RequiresUnitRegions.Contains(r.Id);
+        // A member hex of Horev's regions with a hex outside them in one move.
+        (int Q, int R) away = default;   // Golani is left on the member hex the loop stops at
+        foreach (var h in option.RequiresUnitRegions.SelectMany(r => c.PlayerRegions.Regions[r].MemberHexes))
+        {
+            g.State.Units[id] = new Unit(u.Id, u.Type, h.Q, h.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
+            var outside = Movement.Reachable(c, g.State, id).Keys.Where(k => !InPlace(k)).OrderBy(k => k.Q).ThenBy(k => k.R).ToList();
+            if (outside.Count > 0) { away = outside[0]; break; }
+        }
+        Assert.AreNotEqual(default((int, int)), away, "a hex outside Horev's regions is one move away");
+        var bridge = new SimBridge(g, Text);
+        using var ui = new UiTestKit();
+        using var card = new EventCardPresenter(ui.Root, bridge, Text, null) { Units = unitRows };
+        card.Render();
+        var left = bridge.AttentionLeft!.Value;
+        Assert.IsNull(bridge.Queue(new ChooseEventOption(e.Id, option.Id)), "Golani stands in place, so the choice is queued");
+        card.Render();
+        Assert.IsNull(card.Shown, "a queued choice hides its card");
+
+        Assert.IsNull(bridge.Queue(new Move(id, away.Q, away.R)), "the move is the player's own");
+        card.Render();
+        Assert.IsNull(bridge.QueuedLike(new ChooseEventOption(e.Id, "")), "the choice is withdrawn");
+        Assert.AreEqual(left, bridge.AttentionLeft!.Value, 1e-9, "and its Attention refunded");
+        Assert.AreEqual(e.Id, card.Shown?.Id, "the card shows again");
+        var missing = ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList();
+        Assert.AreEqual(1, missing.Count);
+        StringAssert.Contains("Golani Brigade", missing[0].text);
+        Assert.IsFalse(ui.Q<Button>("option-launch").enabledSelf);
+    }
+
     // R-ENEMY-007: every region an operation names has its operation.region.* string in both catalogues, Hebrew in Hebrew, so
     // a region added to an operation but not to the strings fails here, not as a card that throws on a missing key.
     [Test]
