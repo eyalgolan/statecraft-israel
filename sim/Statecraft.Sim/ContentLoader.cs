@@ -453,7 +453,10 @@ namespace Statecraft.Sim
             //   front_quiet                the front (Prisoners.Fronts) of an armistice_<front> card: under gdd-0.3 it may also
             //                              come early, and again after a refusal, once that front is quiet (R-WAR-008)
             //   armistice_front            a front (Prisoners.Fronts) whose signed armistice ends the card: a pending
-            //                              operation lapses once it is signed (R-ENEMY-007); only on an operation card
+            //                              operation lapses once it is signed, and a card with it never first fires after
+            //                              it (R-ENEMY-007); on an operation card or a following card only
+            //   follows                    true: under the GDD loop the card fires on the turn after its `requires` are met
+            //                              even when its window has closed (R-ENEMY-007); needs a `requires`
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -1668,9 +1671,11 @@ namespace Statecraft.Sim
             {
                 if (!Prisoners.Fronts.Contains(e.ArmisticeFront))
                     throw new ContentException(e.File, $"events[{e.Id}].armistice_front", $"unknown front '{e.ArmisticeFront}' (one of {string.Join(", ", Prisoners.Fronts)})");
-                if (!e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
-                    throw new ContentException(e.File, $"events[{e.Id}].armistice_front", "only an operation card (an option with requires_unit_regions) has an armistice front");
+                if (!e.Follows && !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
+                    throw new ContentException(e.File, $"events[{e.Id}].armistice_front", "only an operation card (an option with requires_unit_regions) or a following card has an armistice front");
             }
+            foreach (var e in c.Events.Where(e => e.Follows && e.Requires.Count == 0))
+                throw new ContentException(e.File, $"events[{e.Id}].follows", "a following card follows its requires: it needs one");
         }
 
         /// <summary>A Deport follow-up card (R-EVT-007; GDD Phase 6 PR 9, #801): a settlement target whose residents stayed,
@@ -1701,7 +1706,7 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].from", FormattableString.Invariant($"a Deport card opens at the game's start ({c.Rules.Start:yyyy-MM-dd}), so a Deport on any turn fires it"));
                 foreach (var (key, set) in new[] { ("conditions", e.Conditions.Count > 0), ("requires", e.Requires.Count > 0), ("site", e.Site != ""),
                              ("objective", e.Objective != ""), ("kind", e.Kind != EventKinds.Historical), ("variants", e.Variants.Count > 0),
-                             ("front_quiet", e.FrontQuiet != ""), ("armistice_front", e.ArmisticeFront != "") })
+                             ("front_quiet", e.FrontQuiet != ""), ("armistice_front", e.ArmisticeFront != ""), ("follows", e.Follows) })
                     if (set) throw new ContentException(e.File, $"events[{e.Id}].{key}", "a Deport card waits for nothing but its Deport");
                 if (cardOf.TryGetValue(e.Deported, out var first))
                     throw new ContentException(e.File, $"events[{e.Id}].deported", $"'{e.Deported}' already has a card, '{first}': one Deport raises one card");

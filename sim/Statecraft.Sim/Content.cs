@@ -1234,6 +1234,11 @@ namespace Statecraft.Sim
         /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Signing wins (Recommended)" and the front rulings): the front whose
         /// signed armistice ends this card. A pending operation lapses when it is signed; "" for none.</summary>
         public string ArmisticeFront { get; set; } = "";
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Follow the launch (Recommended)"; Rafah: "Shift by the delay
+        /// (Recommended)" and "Shift with Sinai (Recommended)"): under the GDD loop the card follows the decision its `requires`
+        /// waits for. Once that is met it fires at the next turn's end even when its own window has closed, so a late
+        /// operation still brings it, on the turn after. False for every other card.</summary>
+        public bool Follows { get; set; }
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }

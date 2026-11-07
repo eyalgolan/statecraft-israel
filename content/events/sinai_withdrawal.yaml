@@ -28,6 +28,8 @@ office: prime_minister
 from: 1949-01-02
 to: 1949-01-16
 requires: [{ event: operation_horev, option: launch }]
+follows: true   # R-ENEMY-007 (owner, 7 November 2026, "Follow the launch (Recommended)"; "They drop (Recommended)"): a late launch still brings this card, on the turn after
+armistice_front: egypt   # R-ENEMY-007: once the armistice with Egypt is signed this card no longer comes
 options:
   - id: withdraw
     text: Keep the forces behind the Negev frontier

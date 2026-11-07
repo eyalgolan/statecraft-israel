@@ -1363,6 +1363,94 @@ public class EnemyAITests
         Assert.False(s.CardOrders.ContainsKey(second));
     }
 
+    // R-ENEMY-007, the owner's rulings of 7 November 2026 ("Follow the launch (Recommended)", "Shift with Sinai
+    // (Recommended)", "Wait, with a limit (Recommended)"), through the real content: the historical run to 15 December 1948,
+    // with Golani taken back to its start hex (11, 11), outside Horev's regions. Horev is postponed on the 15 December and
+    // 15 January turns. On 15 February the player refuses the Egyptian armistice and Golani stands in the southern coast, so
+    // Horev launches two turns late; Rhodes and Sinai still come, on the turn after, though their windows closed in January;
+    // holding El Arish then brings the Rafah card the turn after that, past its 17 March end.
+    // Red without `follows` (the cards' own windows): neither Rhodes nor Sinai comes after a late launch.
+    [Fact]
+    public void ALateHorevStillBringsRhodesSinaiAndThenRafah()
+    {
+        var c = Real;
+        var s = GoldenRun.Play(c, new DateTime(1948, 12, 15));
+        Assert.Equal(new DateTime(1948, 12, 15), s.Date);
+        Assert.Contains("operation_horev", s.PendingEvents);
+        var golani = c.StartingForces.FindIndex(f => f.Row == "golani");
+        s.Units[golani] = At(s.Units[golani], 11, 11);
+        var horev = c.Events.Single(e => e.Id == "operation_horev").Options.Single(o => o.Id == "launch");
+        Assert.False(EventSystem.OperationStatus(c, s, horev).Met);
+
+        for (int turn = 0; turn < 2; turn++)
+        {
+            s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+            Assert.Contains("operation_horev", s.PendingEvents);
+            Assert.True(s.PostponedOperations.ContainsKey("operation_horev"));
+            Assert.DoesNotContain("rhodes_talks", s.FiredEvents);
+            Assert.DoesNotContain("sinai_withdrawal", s.FiredEvents);
+        }
+        Assert.Equal(new DateTime(1949, 2, 15), s.Date);
+        Assert.Contains("armistice_egypt", s.PendingEvents);
+
+        var south = c.PlayerRegions.Regions[horev.RequiresUnitRegions[0]].MemberHexes[0];
+        s.Units[golani] = At(s.Units[golani], south.Q, south.R);   // as the player's go-to would have brought it
+        var r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("armistice_egypt", "hold_out") });
+        Assert.Empty(r.Rejected);
+        s = r.State;
+        Assert.Equal("launch", s.ChosenOptions["operation_horev"]);
+        Assert.Equal(new DateTime(1949, 3, 15), s.Date);
+        Assert.Contains("rhodes_talks", s.PendingEvents);
+        Assert.Contains("sinai_withdrawal", s.PendingEvents);
+
+        r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("sinai_withdrawal", "hold_el_arish") });
+        Assert.Empty(r.Rejected);
+        Assert.Equal("hold_el_arish", r.State.ChosenOptions["sinai_withdrawal"]);
+        Assert.Equal(new DateTime(1949, 4, 15), r.State.Date);
+        Assert.Contains("rafah_force_pressure", r.State.PendingEvents);
+    }
+
+    // "Signing wins (Recommended)", "They drop (Recommended)": the same postponed Horev; on 15 February the armistice with
+    // Egypt is signed and Golani is still away, so Horev lapses with its own reason, and Rhodes, Sinai and Rafah never come.
+    [Fact]
+    public void SigningTheEgyptianArmisticeLapsesAPendingHorevAndDropsItsFollowers()
+    {
+        var c = Real;
+        var s = GoldenRun.Play(c, new DateTime(1948, 12, 15));
+        var golani = c.StartingForces.FindIndex(f => f.Row == "golani");
+        s.Units[golani] = At(s.Units[golani], 11, 11);
+        for (int turn = 0; turn < 2; turn++) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.Contains("armistice_egypt", s.PendingEvents);
+        var r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("armistice_egypt", "sign") });
+        Assert.Empty(r.Rejected);
+        Assert.Contains(r.Why, x => x.Key == CauseKeys.OperationLapsedSigned && x.Target == "operation_horev");
+        s = r.State;
+        Assert.DoesNotContain("operation_horev", s.PendingEvents);
+        for (int turn = 0; turn < 3; turn++) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        foreach (var id in new[] { "rhodes_talks", "sinai_withdrawal", "rafah_force_pressure" }) Assert.DoesNotContain(id, s.FiredEvents);
+    }
+
+    // "They drop (Recommended)": a following card not yet shown never comes once Egypt's armistice is signed. Sinai decided
+    // with hold_el_arish on 15 April 1949, after its window: Rafah comes at that turn's end, unless Egypt has signed.
+    // Red without the armistice_front filter in Trigger: Rafah comes after the signature too.
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void AFollowerNotYetShownDropsOnceItsFrontSigns(bool signed, bool comes)
+    {
+        var c = Real;
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        s.Date = new DateTime(1949, 4, 15);
+        s.PendingEvents.Clear();
+        foreach (var e in c.Events.Where(e => e.From <= s.Date)) s.FiredEvents.Add(e.Id);   // everything earlier has had its turn
+        s.FiredEvents.Remove("rafah_force_pressure");
+        s.ChosenOptions["operation_horev"] = "launch";
+        s.ChosenOptions["sinai_withdrawal"] = "hold_el_arish";
+        if (signed) s.ChosenOptions["armistice_egypt"] = "sign";
+        EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1949, 3, 15));
+        Assert.Equal(comes, s.PendingEvents.Contains("rafah_force_pressure"));
+    }
+
     static SettlementTarget Nazareth =>Real.SettlementTargets.Single(t => t.Id == "nazareth");
 
     /// <summary>mvp-occupy-cost played to <paramref name="until"/> (its own steps, the run's end replaced): Golani (unit 0,

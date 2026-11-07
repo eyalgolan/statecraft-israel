@@ -14,6 +14,8 @@ tags: [security]
 from: 1949-01-17
 to: 1949-03-17
 requires: [{ event: sinai_withdrawal, option: hold_el_arish }]
+follows: true   # R-ENEMY-007 (owner, 7 November 2026, "Shift with Sinai (Recommended)"; "They drop (Recommended)"): a late launch still brings this card, on the turn after
+armistice_front: egypt   # R-ENEMY-007: once the armistice with Egypt is signed this card no longer comes
 title: >-
   The force west of Rafah
 title_he: >-

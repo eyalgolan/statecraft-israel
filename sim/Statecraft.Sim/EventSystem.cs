@@ -54,8 +54,11 @@ namespace Statecraft.Sim
             // R-WAR-008 (#2813): a quiet armistice card has no end date, so its `to` (1950-01-01 on the real cards) does not end it.
             var eligible = c.Events
                 .Where(e => (quiet.Contains(e.Id) || !s.FiredEvents.Contains(e.Id) && e.From <= s.Date)
-                            && (quiet.Contains(e.Id) || s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value))
+                            && (quiet.Contains(e.Id) || s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value || c.IsGdd && e.Follows))
                 .Where(e => !endingTurn || EndingCard(s, e))
+                // R-ENEMY-007 (owner, 7 November 2026: "They drop (Recommended)", "Signing wins (Recommended)"): a card whose front's
+                // armistice is signed never first fires after it. Only the GDD loop has such cards.
+                .Where(e => e.ArmisticeFront == "" || !Demobilization.Signed(s, e.ArmisticeFront))
                 // R-ENEMY-007: unlike an ordinary late-fired card, an operation cannot first appear after it is no longer relevant.
                 .Where(e => !c.IsGdd || e.To == null || s.Date < e.To.Value || !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
                 .Where(e => Timeline.AllMet(c, s, e))
