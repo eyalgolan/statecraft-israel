@@ -102,13 +102,14 @@ namespace Statecraft.Game.Map.Kits
         /// Jerusalem, Haifa and Jaffa; the next place below it is Gaza (34,250).</summary>
         public const int MajorCityPopulation = 60000;
 
-        /// <summary>Whether a place is a major city (<see cref="MajorCityPopulation"/>): it draws its code-built kit, with its
-        /// landmarks, at every zoom and never Tal Heuberger's building models (owner, 6 November 2026, "Big blocks, every
-        /// zoom": the look of these cities no longer changes from big blocks to small buildings on a zoom). TownModelLayer never
-        /// admits its buildings, so its close mesh never swaps in, and Collection.TownLandmarks.ModelFor gives it no
-        /// whole-town model. This supersedes the owner's ruling of 2 November 2026, "Yes, small buildings at every zoom"
-        /// (superseded), which drew these four from the building models at every zoom, and before it the 18 October 2026
-        /// "Whole model far, buildings near" for them. Reads the table MapScene.Build hands the kits (KitPopulation.Of: 0, so
+        /// <summary>Whether a place is a major city (<see cref="MajorCityPopulation"/>): below TownModelLayer's close switch
+        /// (CloseEnterM, 40 km; out again above CloseExitM, 45 km) it draws Tal Heuberger's building models, as every place
+        /// (owner, 7 November 2026, "Tal's models close (Recommended)"), and from 40 km out its code-built kit, with its
+        /// landmarks, never the far-off copies (owner, 6 November 2026, "Big blocks, every zoom", which "Tal's models close
+        /// (Recommended)" supersedes below 40 km). Collection.TownLandmarks.ModelFor gives it no whole-town model. "Big blocks,
+        /// every zoom" superseded the owner's ruling of 2 November 2026, "Yes, small buildings at every zoom", which drew these
+        /// four from the building models at every zoom, and before it the 18 October 2026 "Whole model far, buildings near"
+        /// for them. Reads the table MapScene.Build hands the kits (KitPopulation.Of: 0, so
         /// no major city, before that).</summary>
         public static bool IsMajorCity(string id) => KitPopulation.Of(id) >= MajorCityPopulation;
 

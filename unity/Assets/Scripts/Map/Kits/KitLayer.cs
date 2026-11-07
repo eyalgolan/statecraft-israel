@@ -44,10 +44,12 @@ namespace Statecraft.Game.Map.Kits
             /// works, street palms: SettlementKits.Placed, its yaw as KitMesh.Corners), then each landmark's close copy as its
             /// world box (yaw 0), so a model placed among a town's houses (SpecialBuildingModels.TownGap) keeps off them.</summary>
             public IReadOnlyList<SettlementKits.Placed> Landmarks = System.Array.Empty<SettlementKits.Placed>();
-            /// <summary>#2876: the kit blocks of the major cities (TownModels.IsMajorCity), which draw their kits at every zoom: each
-            /// "building" and "wing" the kits placed for one of them (SettlementKits.Placed, Id the city's, its yaw as
-            /// KitMesh.Corners), in placement order, so a model placed among a major city's houses (SpecialBuildingModels.TownGap)
-            /// keeps off the blocks drawn there, not off the building models it never draws.</summary>
+            /// <summary>#2876: the kit blocks of the major cities (TownModels.IsMajorCity), which draw their kits from 40 km out
+            /// (owner, 6 November 2026, "Big blocks, every zoom") and Tal Heuberger's building models below the close switch
+            /// (owner, 7 November 2026, "Tal's models close (Recommended)"): each "building" and "wing" the kits placed for one
+            /// of them (SettlementKits.Placed, Id the city's, its yaw as KitMesh.Corners), in placement order, so a model placed
+            /// among a major city's houses (SpecialBuildingModels.TownGap) keeps off the blocks drawn there as well as off its
+            /// building models.</summary>
             public IReadOnlyList<SettlementKits.Placed> MajorCityBlocks = System.Array.Empty<SettlementKits.Placed>();
             public override string ToString() =>
                 $"KITS buildings={Buildings} vertices={Vertices} triangles={Triangles} trees={Trees} route_segments={CorridorSegments} build_ms={BuildMs:0} plant_ms={PlantMs:0} " +
@@ -158,9 +160,10 @@ namespace Statecraft.Game.Map.Kits
             // Nahalal and the Arab towns: Acre, Nazareth, Lod, Gaza, Beersheba) draws the far-off copies of its building
             // models, in place of the whole-town model within the far band (owner, 3 November 2026, "Cities/towns only
             // (Recommended)"); the 271 1948 localities keep their kit blocks. The major cities (TownModels.IsMajorCity) have
-            // no whole-town model and take no far-off copies: they draw their kits at every zoom (owner, 6 November 2026, "Big
-            // blocks, every zoom", which supersedes the 2 November 2026 ruling, "Yes, small buildings at every zoom"
-            // (superseded)).
+            // no whole-town model and take no far-off copies: they draw their kits from 40 km out (owner, 6 November 2026, "Big
+            // blocks, every zoom", which superseded the 2 November 2026 ruling, "Yes, small buildings at every zoom") and their
+            // building models below the close switch, as every place (owner, 7 November 2026, "Tal's models close
+            // (Recommended)", which supersedes "Big blocks, every zoom" below 40 km).
             var farTowns = new List<string>();
             foreach (var s in settlements)
                 if (Collection.TownLandmarks.ModelFor(s) != null) farTowns.Add(s.Id);

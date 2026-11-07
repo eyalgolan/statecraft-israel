@@ -472,7 +472,7 @@ namespace Statecraft.Game.Map.Kits
             var shed = C(0.82f, 0.79f, 0.72f);
             // #2876: 8 m along the row (was 15 m) and 11.25 m across it (was 6 m), so each shed keeps its 90 square metres of
             // ground (TownCensusTests.TheCitiesCoverTheirGround's floors). The row runs north-south, the way the camera looks,
-            // and the four major cities draw these kit sheds at every zoom (TownModels.IsMajorCity): on the 17 m pitch a 15 m
+            // and the four major cities draw these kit sheds from 40 km out (TownModels.IsMajorCity): on the 17 m pitch a 15 m
             // shed left a 2 m gap, which the shed in front hides, so the three drew as one strip. An 8 m shed leaves 9 m, more
             // than a 5 m shed hides behind it at the camera's shallowest ray (TownCensusTests.TelAvivsPortShedsStandApart).
             // The deeper shed's seaward side stays on the beach strip's inner edge: its lot is wanted half its depth plus

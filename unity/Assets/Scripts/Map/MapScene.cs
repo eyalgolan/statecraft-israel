@@ -57,7 +57,8 @@ namespace Statecraft.Game.Map
         /// towns" (unit tokens: review I5) keeps clear of these, not of the 25 settlements alone.</summary>
         public IReadOnlyList<(Vector2 centre, float radius, string id)> KitFootprints => KitStats?.Footprints ?? (IReadOnlyList<(Vector2, float, string)>)System.Array.Empty<(Vector2, float, string)>();
         /// <summary>#2876: the major cities' kit blocks after the last Build (KitLayer.Stats.MajorCityBlocks; empty without the
-        /// kits): what those cities draw at every zoom, in place of their building models.</summary>
+        /// kits): what those cities draw from 40 km out, in place of their building models, which they draw below the close
+        /// switch (owner, 7 November 2026, "Tal's models close (Recommended)").</summary>
         public IReadOnlyList<Kits.SettlementKits.Placed> MajorCityBlocks => KitStats?.MajorCityBlocks ?? (IReadOnlyList<Kits.SettlementKits.Placed>)System.Array.Empty<Kits.SettlementKits.Placed>();
         /// <summary>The game date the routes were last shown at (RouteLayer.ShowAt), so a rebuild draws them as at that date;
         /// null before the game has set one (the routes then show as at the game's start).</summary>

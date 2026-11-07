@@ -158,6 +158,31 @@ namespace Statecraft.Game.Map.Kits
             return false;
         }
 
+        /// <summary>#2876 (the owner, 7 November 2026, on Hadera: "Move the workshop (Recommended)", the palms stay): whether no
+        /// tree as planted (hidden or not) stands in front of a model of clearance <paramref name="r"/> at <paramref name="p"/>
+        /// (x, z), in its sight lane toward the map's camera, which looks north, so south of it: a crown within
+        /// <paramref name="r"/> either side of it across, from <paramref name="r"/> north of it south to where the ray from its
+        /// south edge's foot (world y <paramref name="baseY"/>), rising <paramref name="tan"/> a metre toward the camera, passes
+        /// over the tree's top (<see cref="TopOf"/>), the lane <see cref="Hide"/>'s sight lanes clear. A tree whose crown
+        /// reaches the model's disc does not count: <see cref="Hide"/> leaves it out under the model, as every building's
+        /// (#249).</summary>
+        public bool ClearInFront(Vector2 p, float r, float baseY, float tan)
+        {
+            foreach (var t in tiles)
+            {
+                float run = Mathf.Max(0f, t.top - baseY) / tan, reach = r + t.crown;
+                if (t.bounds.min.x >= p.x + reach || t.bounds.max.x <= p.x - reach
+                    || t.bounds.min.z >= p.y + reach || t.bounds.max.z <= p.y - reach - run) continue;
+                foreach (var m in t.all)
+                {
+                    float x = m.m03, z = m.m23, crown = CrownRadius(t.kind, m), dx = x - p.x, dz = z - p.y;
+                    if (dx * dx + dz * dz < (r + crown) * (r + crown)) continue;   // under it: left out (Hide)
+                    if (Mathf.Abs(dx) < r + crown && z - crown < p.y + r && (p.y - r - z) - crown < (TopOf(t.kind, m) - baseY) / tan) return false;
+                }
+            }
+            return true;
+        }
+
         /// <summary>Every tree as planted, hidden or not (kind, world matrix): a test aid.</summary>
         public IEnumerable<(TreeKind kind, Matrix4x4 m)> Planted()
         {

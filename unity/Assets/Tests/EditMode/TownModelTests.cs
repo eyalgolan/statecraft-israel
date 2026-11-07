@@ -580,7 +580,7 @@ public class TownModelTests
         int bigInstances = big.Sum(id => layer.CountFor(id));
         // The places that draw the far-off copies beyond the close switch (KitLayer): every settlement with a whole-town
         // model, i.e. the moshavot and towns, the kibbutzim, Nahalal and the Arab towns (Q15 option a). Not the four major
-        // cities (owner, 6 November 2026, "Big blocks, every zoom").
+        // cities, which keep their kits from 40 km out (owner, 6 November 2026, "Big blocks, every zoom").
         var farTier = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null)
             .Select(s => s.Id).ToHashSet();
         CollectionAssert.IsEmpty(farTier.Intersect(big).ToList(), "the four major cities take no far-off copies");

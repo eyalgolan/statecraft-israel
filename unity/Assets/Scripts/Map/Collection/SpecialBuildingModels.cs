@@ -683,7 +683,9 @@ namespace Statecraft.Game.Map.Collection
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, on);
             bool Free(Vector2 p, float r) => FreeOn(p, r, date);
             // The four props stand at a town's edge (owner on #2274: "Bigger, closer"): inside a footprint if need be, clear of the
-            // towns' drawn buildings (a major city's kit blocks, every other town's building models: #2876), of the tokens
+            // towns' drawn buildings (every town's building models, a major city's included, which it draws below the close
+            // switch: the owner, 7 November 2026, "Tal's models close (Recommended)"; and a major city's kit blocks, which it
+            // draws from 40 km out, #2876), of the tokens
             // standing in towns and of every settlement's and locality's name point instead, and of the farm scenes' plan, as the
             // workshops (coordinator, 2 November 2026, on #2274: Q3).
             List<(Vector2, float)>? buildings = null, clearings = null; List<Vector2>? names = null;
@@ -694,7 +696,7 @@ namespace Statecraft.Game.Map.Collection
                 {
                     var towns = map.GetComponentInChildren<Kits.TownModelLayer>(true);
                     buildings = towns == null ? new List<(Vector2, float)>()
-                        : map.KitFootprints.Where(f => !Kits.TownModels.IsMajorCity(f.id)).SelectMany(f => towns.InstancesOf(f.id))
+                        : map.KitFootprints.SelectMany(f => towns.InstancesOf(f.id))
                             .Select(i => (i.C, 0.5f * new Vector2(i.W, i.D).magnitude)).ToList();
                     blocks = map.MajorCityBlocks.Select(b => (b.C, b.Yaw, b.W, b.D)).ToList();
                     clearings = map.UnitClearings.ToList();
@@ -706,6 +708,18 @@ namespace Statecraft.Game.Map.Collection
                     && TownLandmarks.Clear(p, r, clearings!) && TownLandmarks.Clear(p, r, farms)
                     && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                     && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
+            }
+            // #2876 (the owner, 7 November 2026, on Hadera: "Move the workshop (Recommended)": it moves to a clear spot at the
+            // town's edge, and the palms stay): an ordinary town's b21 whose hex spot is on the beach (OffBeach, as EdgeSpot's)
+            // stands at the town's edge instead, where it can with no kit tree in front of it (VegetationLayer.ClearInFront).
+            var veg = map.GetComponentInChildren<Kits.VegetationLayer>(true);
+            float sightTan = SightTan;
+            bool ClearOfTrees(Vector2 p, float r) => veg == null || veg.ClearInFront(p, r, ground.Y(p.x, p.y), sightTan);
+            List<(Vector2 centre, float reach)>? sand = null;
+            bool OffTheBeach(Vector2 p, float r)
+            {
+                sand ??= Kits.BeachBands.Reaches(map.Settlements.Concat(map.Localities.Select(l => l.Settlement)).ToList(), ground);
+                return OffBeach(map, ground, sand, p, r);
             }
             var plan = new List<(Want, Vector2)>();
             var kits = map.transform.Find(Kits.KitLayer.RootName);
@@ -740,7 +754,8 @@ namespace Statecraft.Game.Map.Collection
                     && map.KitFootprints.Any(f => f.id == w.City) && map.MajorCityBlocks.Any(b => b.Id == w.City))
                 {
                     // #2876, the owner, 6 November 2026 (verbatim): "make the workshop at the edge of the city". In a major city
-                    // (its kit blocks drawn at every zoom) the b21 stands at the edge of the city's blocks, on the project's hex
+                    // (its kit blocks drawn from 40 km out, its building models below: the owner, 7 November 2026, "Tal's models
+                    // close (Recommended)") the b21 stands at the edge of the city's blocks, clear of every model instance, on the project's hex
                     // where it can, in the camera's sight (EdgeSpot), on ground the player's side holds (OnHeldGround), clear of
                     // the farm scenes, the other models, the routes and the tokens and figures, each of the day it was built (as
                     // below: the spot is fixed at the build and kept as the front moves). No spot: it is not drawn, and the
@@ -783,6 +798,10 @@ namespace Statecraft.Game.Map.Collection
                         && OnHeldGround(map, ground, p, r, built, home);
                     float inside = Inside(anchor, footprints);
                     at = SeededSpot(w.Key, anchor, clearance, OnHex, inside > 0f ? inside + CivilianPeople.LabelClearanceM : 0f);
+                    // #2876 (the owner, 7 November 2026, on Hadera: "Move the workshop (Recommended)": the b21 moves to a clear spot
+                    // at the town's edge; the palms stay): a spot on the hex that is on the beach (OffBeach, as EdgeSpot's) is no
+                    // spot, so the b21 stands at the town's edge (below).
+                    if (at is Vector2 onHex && !OffTheBeach(onHex, clearance)) at = null;
                     // A town whose footprint covers the whole hex (Jerusalem, Tel Aviv): a gap between its drawn buildings (owner,
                     // 2 November 2026: "Among the houses"), or, between a major city's kit blocks, a street (#2876): the model then
                     // lies along it (dir), as a roadside model along its road.
@@ -795,12 +814,13 @@ namespace Statecraft.Game.Map.Collection
                     // #2876 (coordinator, 6 November 2026): at 2.5x a crowded town's hex can leave no spot (Petah Tikva's, by
                     // Tel Aviv's): only then, the b21 stands at the edge of the town's drawn buildings (TownEdgeSpot), as a
                     // major city's does at its blocks, on ground held the day it was built, in the camera's sight, clear of
-                    // the names, blocks, landmarks, houses, beach, farms, models, routes, tokens and figures. A spot found
-                    // above is never searched again, so it stays where it was. No edge spot either: not drawn, and the
-                    // warning names the town.
+                    // the names, blocks, landmarks, houses, beach, farms, models, routes, tokens and figures. It looks first
+                    // for a spot with no kit tree in front of it (VegetationLayer.ClearInFront: the palms stay, owner, 7 November
+                    // 2026, "Move the workshop (Recommended)"), then without that test. A spot found above is never searched
+                    // again, so it stays where it was. No edge spot either: not drawn, and the warning names the town.
                     if (at == null && TownEdgeFallback && map.KitFootprints.Any(f => f.id == w.City))
                     {
-                        at = TownEdgeSpot(map, ground, w.City, w.Key, anchor, clearance, side, new[]
+                        var checks = new List<SpotCheck>
                         {
                             new SpotCheck("held", (p, r) => OnHeldGround(map, ground, p, r, built, home)),
                             new SpotCheck("farms", (p, r) => TownLandmarks.Clear(p, r, farms)),
@@ -808,7 +828,11 @@ namespace Statecraft.Game.Map.Collection
                             new SpotCheck("routes", (p, r) => !ground.OnRoute(p, r)),
                             new SpotCheck("tokens", (p, r) => !ground.OnToken(p, r, built)),
                             new SpotCheck("figures", (p, r) => ClearOfFigures(map, p, r, built)),
-                        }, out var tally);
+                        };
+                        at = TownEdgeSpot(map, ground, w.City, w.Key, anchor, clearance, side,
+                            checks.Append(new SpotCheck("trees", ClearOfTrees)).ToList(), out _);
+                        string tally = "";
+                        if (at == null) at = TownEdgeSpot(map, ground, w.City, w.Key, anchor, clearance, side, checks, out tally);
                         if (at == null)
                         {
                             if (log && available(w.Model))
@@ -954,9 +978,9 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The drawn buildings on the hex about <paramref name="anchor"/>: each town model instance the kit planned at
         /// map build (TownModelLayer.InstancesOf; never what has streamed) for every footprint that reaches the hex, as a disc of
-        /// its half diagonal, but a major city's (TownModels.IsMajorCity), which draws its kit blocks at every zoom and never its
-        /// models (#2876: <see cref="MajorCityBlocksNear"/>); <paramref name="names"/>: those footprints, a major city's
-        /// included (their names stand above them).</summary>
+        /// its half diagonal, a major city's (TownModels.IsMajorCity) included: it draws them below the close switch (the owner,
+        /// 7 November 2026, "Tal's models close (Recommended)") and its kit blocks from 40 km out (#2876:
+        /// <see cref="MajorCityBlocksNear"/>); <paramref name="names"/>: those footprints (their names stand above them).</summary>
         internal static List<(Vector2 centre, float radius)> TownBuildings(MapScene map, Vector2 anchor, out List<(Vector2 centre, float radius)> names)
         {
             var discs = new List<(Vector2 centre, float radius)>(); names = new List<(Vector2 centre, float radius)>();
@@ -965,14 +989,14 @@ namespace Statecraft.Game.Map.Collection
             {
                 if ((anchor - f.centre).magnitude >= f.radius + HexInnerRadiusM) continue;
                 names.Add((f.centre, f.radius));
-                if (layer == null || Kits.TownModels.IsMajorCity(f.id)) continue;
+                if (layer == null) continue;
                 foreach (var b in layer.InstancesOf(f.id)) discs.Add((b.C, 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D)));
             }
             return discs;
         }
 
         /// <summary>#2876: the major cities' kit blocks (MapScene.MajorCityBlocks: every "building" and "wing" their kits placed,
-        /// drawn at every zoom) that may reach the hex about <paramref name="anchor"/>, as boxes (their yaw as KitMesh.Corners),
+        /// drawn from 40 km out) that may reach the hex about <paramref name="anchor"/>, as boxes (their yaw as KitMesh.Corners),
         /// in placement order. A block's reach is taken as half its width plus half its depth (no less than its half diagonal).
         /// <paramref name="extent"/>: the hex's inner radius, or the ground a search covers about <paramref name="anchor"/> (#2876).</summary>
         internal static List<(Vector2 c, float yaw, float w, float d)> MajorCityBlocksNear(MapScene map, Vector2 anchor, float extent = HexInnerRadiusM)
@@ -1142,7 +1166,21 @@ namespace Statecraft.Game.Map.Collection
         {
             var blocks = new List<(Vector2 c, float yaw, float w, float d)>();
             foreach (var b in map.MajorCityBlocks) if (b.Id == city) blocks.Add((b.C, b.Yaw, b.W, b.D));
-            return EdgeSpotOf(map, ground, city, key, anchor, clearance, size, blocks, 0f, "its kit blocks", Array.Empty<SpotCheck>(), free, out tally);
+            // The owner, 7 November 2026, "Tal's models close (Recommended)": below the close switch the city draws Tal
+            // Heuberger's building models in place of its blocks, so the b21 keeps clear of them too (every place's, each a
+            // disc of its half diagonal, as TownBuildings), on both sides of the switch.
+            var home = map.KitFootprints.First(f => f.id == city);
+            float extent = home.radius * Kits.SettlementKits.PlotReach + EdgeGapM + 3f * clearance;
+            var models = new List<(Vector2 centre, float radius)>();
+            var layer = map.GetComponentInChildren<Kits.TownModelLayer>(true);
+            if (layer != null)
+                foreach (var f in map.KitFootprints)
+                {
+                    if ((f.centre - home.centre).magnitude > extent + f.radius * Kits.SettlementKits.PlotReach) continue;
+                    foreach (var b in layer.InstancesOf(f.id)) models.Add((b.C, 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D)));
+                }
+            return EdgeSpotOf(map, ground, city, key, anchor, clearance, size, blocks, 0f, "its kit blocks",
+                new[] { new SpotCheck("models", (p, r) => TownLandmarks.Clear(p, r, models)) }, free, out tally);
         }
 
         /// <summary>#2876 (coordinator, 6 November 2026: at 2.5x a crowded town's own hex can leave the b21 no spot, Petah
@@ -1174,7 +1212,8 @@ namespace Statecraft.Game.Map.Collection
             if (layer != null)
                 foreach (var f in map.KitFootprints)
                 {
-                    if (Kits.TownModels.IsMajorCity(f.id) || (f.centre - home.centre).magnitude > extent + f.radius * Kits.SettlementKits.PlotReach) continue;
+                    // A major city's too: it draws them below the close switch ("Tal's models close (Recommended)").
+                    if ((f.centre - home.centre).magnitude > extent + f.radius * Kits.SettlementKits.PlotReach) continue;
                     foreach (var b in layer.InstancesOf(f.id))
                     {
                         float half = 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D);
@@ -1281,10 +1320,10 @@ namespace Statecraft.Game.Map.Collection
                 return true;
             }
             List<(Vector2 centre, float reach)>? sand = null;
-            bool OffBeach(Vector2 p, float r)
+            bool OffTheBeach(Vector2 p, float r)
             {
                 sand ??= Kits.BeachBands.Reaches(map.Settlements.Concat(map.Localities.Select(l => l.Settlement)).ToList(), ground);
-                return ground.SeaDistance(p.x, p.y, Kits.BeachBands.FullSandAt(map.Frame, p.x, p.y, sand) + r) == float.MaxValue;
+                return OffBeach(map, ground, sand, p, r);
             }
             var checks = new List<SpotCheck>
             {
@@ -1301,7 +1340,7 @@ namespace Statecraft.Game.Map.Collection
                     foreach (var (bc, yaw, bw, bd) in landmarks) if (!ClearOfBox(p, r, bc, yaw, bw, bd)) return false;
                     return true;
                 }),
-                new SpotCheck("beach", OffBeach),
+                new SpotCheck("beach", OffTheBeach),
             };
             checks.AddRange(extra);
             checks.AddRange(free);
@@ -1325,6 +1364,12 @@ namespace Statecraft.Game.Map.Collection
                 + Tally(0) + "; off it by " + Tally(1);
             return null;
         }
+
+        /// <summary>Whether a disc of <paramref name="r"/> at <paramref name="p"/> keeps off the beach: no open sea
+        /// (KitGround.SeaDistance) within the drawn full sand there (BeachBands.FullSandAt over <paramref name="sand"/>, the
+        /// plot reaches BeachBands.Reaches gives) plus <paramref name="r"/>.</summary>
+        internal static bool OffBeach(MapScene map, Kits.KitGround ground, List<(Vector2 centre, float reach)> sand, Vector2 p, float r) =>
+            ground.SeaDistance(p.x, p.y, Kits.BeachBands.FullSandAt(map.Frame, p.x, p.y, sand) + r) == float.MaxValue;
 
         /// <summary>#1701 slice F, owner 2 November 2026 ("Among the houses"): a workshop on a hex a town's footprint covers stands
         /// in a gap between the drawn buildings on the hex (<see cref="TownBuildings"/>, and a major city's kit blocks,

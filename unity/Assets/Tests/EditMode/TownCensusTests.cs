@@ -178,9 +178,9 @@ public class TownCensusTests
         Assert.Greater(aqsa.W, aqsa.D, "Al-Aqsa runs across the south end, not down it");
     }
 
-    /// <summary>#2876: Tel Aviv's port sheds draw as three sheds, not as one long strip. The major cities draw their kits at
-    /// every zoom (TownModels.IsMajorCity), so the sheds stand at the landmarks' symbolic scale (KitScale.Landmarks) up close
-    /// too, where three small b32 models stood before. They stand in a row along the shore (SettlementKits.TelAvivPort),
+    /// <summary>#2876: Tel Aviv's port sheds draw as three sheds, not as one long strip. The major cities draw their kits from
+    /// 40 km out (TownModels.IsMajorCity; below the close switch Tal's b32 models, owner, 7 November 2026, "Tal's models close
+    /// (Recommended)"), so there the sheds stand at the landmarks' symbolic scale (KitScale.Landmarks). They stand in a row along the shore (SettlementKits.TelAvivPort),
     /// which runs north-south there, and the camera looks north (CameraRig, yaw 0) down at CameraRig.Pitch: a shed hides the
     /// ground behind it for its height times cot(Pitch - Fov/2) at the view's shallowest ray (as
     /// SpecialBuildingModels.FigureShadowM takes it), about 471 m for a 5 m shed at 60x. The clear gap between neighbours'

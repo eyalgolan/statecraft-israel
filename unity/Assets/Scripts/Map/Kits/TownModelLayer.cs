@@ -12,9 +12,11 @@ namespace Statecraft.Game.Map.Kits
     /// moshavot and towns, the kibbutzim, Nahalal and the Arab towns: Acre, Nazareth, Lod, Gaza, Beersheba), whose
     /// whole-town model gives way to them within the far band (owner, 3 November 2026, "Cities/towns only (Recommended)");
     /// the 271 1948 localities keep their kit blocks. The major cities (Tel Aviv, Jerusalem, Haifa and Jaffa:
-    /// <see cref="TownModels.IsMajorCity"/>) are never admitted, at any zoom: they draw their kits, with their landmarks, at
-    /// every zoom (owner, 6 November 2026, "Big blocks, every zoom", which supersedes the 2 November 2026 ruling, "Yes,
-    /// small buildings at every zoom" (superseded)). Under the production policy
+    /// <see cref="TownModels.IsMajorCity"/>) are admitted below the close switch, as every other place, and draw Tal
+    /// Heuberger's building models there (owner, 7 November 2026, "Tal's models close (Recommended)"); from 40 km out they
+    /// take no far-off copies and draw their kits, with their landmarks (owner, 6 November 2026, "Big blocks, every zoom",
+    /// which "Tal's models close (Recommended)" supersedes below the switch; it superseded the 2 November 2026 ruling, "Yes,
+    /// small buildings at every zoom"). Under the production policy
     /// (owner ruling, 31 Oct 2026, "Load all in view (Recommended)") a close camera admits every town and every merged village
     /// tile in its view (+<see cref="ViewMarginM"/>), nearest first, and they unload above <see cref="CloseExitM"/>. Each camera
     /// swaps only complete towns and complete village tiles; loading and failed places retain code-built fallback. Source
@@ -605,10 +607,11 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Whether a camera's zoom admits a place's building models: every place below the close switch (the
         /// originals); within the far band the places that take the far-off copies (<see cref="farTowns"/>); beyond it none.
-        /// A major city (<see cref="TownModels.IsMajorCity"/>) at no zoom: it keeps its kit (owner, 6 November 2026, "Big
-        /// blocks, every zoom"; this supersedes the 2 November 2026 ruling, "Yes, small buildings at every zoom"
-        /// (superseded), under which these four were admitted at every zoom).</summary>
-        bool AtZoom(Choice c, string id) => !TownModels.IsMajorCity(id) && (c.close || (c.far && farTowns != null && farTowns.Contains(id)));
+        /// A major city (<see cref="TownModels.IsMajorCity"/>) only below the close switch, with its hysteresis (in below
+        /// CloseEnterM, out above CloseExitM, as every place): Tal Heuberger's building models there (owner, 7 November 2026,
+        /// "Tal's models close (Recommended)"), and from 40 km out its kit (owner, 6 November 2026, "Big blocks, every zoom",
+        /// superseded below the switch by "Tal's models close (Recommended)"); never in the far band.</summary>
+        bool AtZoom(Choice c, string id) => c.close || (c.far && !TownModels.IsMajorCity(id) && farTowns != null && farTowns.Contains(id));
         /// <summary>Whether the camera-focus selection holds this town at its zoom (the focused town and its edges).</summary>
         internal bool WantsTown(string id, Camera cam) => choices.TryGetValue(cam.GetInstanceID(), out var c) && AtZoom(c, id) && c.towns.Contains(id);
         /// <summary>Whether this camera admits the place's building models: the focus selection, or (production) its view.</summary>
