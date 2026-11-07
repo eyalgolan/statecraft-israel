@@ -91,7 +91,11 @@ public class EventCardTests
         StringAssert.Contains("David Ben-Gurion must decide whether Israel signs.", ui.Q<Label>("event-text").text);
         Assert.AreEqual(catalog.Get("ben_gurion"), ui.Q<VisualElement>("event-image").style.backgroundImage.value.texture);
         Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("event-draft").style.display.value);
-        Assert.AreEqual("Sign the armistice (costs 2.0 Attention)", ui.Q<Button>("option-sign").text);   // its price shows (#1034)
+        // Its price shows (#1034), at the turn's rung: 1 x (1 + 0.25 x (rung - 1)). This run gives no orders, so under
+        // R-ENEMY-007 (#2543) the operations after the second truce (set_rung 4) postpone and lapse, none of their set_rung 5
+        // applies, and the war is at rung 4: 1.75, shown as 1.8. Before R-ENEMY-007 they launched, and it was 2.0 at rung 5.
+        Assert.AreEqual(4, bridge.State.Rung);
+        Assert.AreEqual("Sign the armistice (costs 1.8 Attention)", ui.Q<Button>("option-sign").text);
     }
 
     [Test]

@@ -983,7 +983,10 @@ public class GameSceneTests
     }
 
     /// <summary>Since the GDD cutover, 15 July 1948 brings three cards at full war, where an answer costs 2 of the 4
-    /// Attention: the smoke answers the two it can pay for and leaves the third to its minister, and the run still passes.</summary>
+    /// Attention: the smoke answers the two it can pay for and leaves the third to its minister, and the run still passes.
+    /// R-ENEMY-007 (#2543): the smoke also stops at a first option whose operation units are not in place, and this run
+    /// gives no unit orders, so the test first stands each pending operation's units in its first required region, as a
+    /// player would have moved them; then only the Attention decides.</summary>
     [Test]
     public void TheSmokeRunLeavesACardItCannotPayForToItsMinister()
     {
@@ -992,6 +995,17 @@ public class GameSceneTests
         var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new System.DateTime(1948, 7, 15)) g.Step(new Command[0]);
         Assert.AreEqual(3, g.State.PendingEvents.Count, string.Join(", ", g.State.PendingEvents));
+        foreach (var option in g.State.PendingEvents.Select(id => c.Events.First(e => e.Id == id).Options[0]).Where(o => o.RequiresUnitRegions.Count != 0))
+        {
+            var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+            foreach (var row in option.UnitOrders.Select(x => x.Unit).Distinct(StringComparer.Ordinal))
+            {
+                int id = c.StartingForces.FindIndex(x => x.Row == row);
+                Assert.IsTrue(g.State.Units.TryGetValue(id, out var u), $"{row} is on the board");
+                g.State.Units[id] = new Unit(u.Id, u.Type, at.Q, at.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);   // no standing order to carry it off
+            }
+            Assert.IsTrue(EventSystem.OperationStatus(c, g.State, option).Met, "the operation's units stand in place");
+        }
         var text = Text;
         var bridge = new SimBridge(g, text);
         using var toast = new ToastPresenter(ui.Root, bridge, text);
