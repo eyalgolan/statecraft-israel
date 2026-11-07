@@ -246,6 +246,8 @@ Each option has:
 | `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
 | `unit_orders` | no | GDD loop, both GDD identities. A list of `{ unit, q, r }`: see "unit_orders". |
 | `requires_unit_regions` | with `unit_orders` | A non-empty list of existing `regions.yaml` ids in any one of which every ordered unit must stand: see "unit_orders". |
+| `armistice_front` | no | On an operation card or a `follows` card only: a front (`egypt`, `jordan`, `lebanon`, `syria`) whose signed armistice ends the card. A pending operation lapses once it is signed, and waits while that front's armistice card is pending; the card never first fires after the signature (R-ENEMY-007). |
+| `follows` | no | `true` on a card with `requires`, under the GDD loop: once its `requires` are met it fires on the turn after, even when its own window has closed, so a late operation still brings it (R-ENEMY-007). |
 | `debt_dollars` | no | Applied under gdd-0.3 only. US$ millions, more than 0, that the option also adds to Debt, in IL at the `mvp.il_per_dollar` rate in force on the event's date (R-EFX-009). |
 | `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
 | `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
