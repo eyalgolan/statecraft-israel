@@ -343,7 +343,8 @@ namespace Statecraft.Sim
         /// or the national population (649,400 at start, which cuts the loss by ~20%)?" and answered, 2 November 2026: "The 12
         /// cities' people (Recommended)"; the option read: "As built: only the cities whose housing is tracked."
         /// With an initialized Historical ledger (#1725 PR 7) it is the ledger's: every city's housed and refugee records plus
-        /// the active soldiers, so a record in no tracked city (a farmer at Nir Am or Nirim) is not in it.</summary>
+        /// the active soldiers, so a record in no tracked city (a farmer at Nir Am or Nirim) is not in it. Halutz units are
+        /// not handled yet on a ledger game: no record is one at the dark start (R-HOUSE-003, R-HOUSE-005).</summary>
         public static int OwnPopulation(GameState s)
         {
             var n = 0;

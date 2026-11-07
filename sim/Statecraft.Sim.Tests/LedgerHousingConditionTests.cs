@@ -88,4 +88,54 @@ public class LedgerHousingConditionTests
         dark.PopulationLedger.Reconcile();
         Assert.Equal(ledger, dark.PopulationLedger.Canonical());
     }
+
+    // R-POP-002 (#1725 PR 7 review S2): only a ledger initialized with mode Historical is let through. An initialized Open
+    // ledger, like a synthetic one (no mode), is still refused by the housing step, with the state unchanged.
+    [Theory]
+    [InlineData(true)] [InlineData(false)]
+    public void AnOpenOrSyntheticLedgerIsStillRefused(bool open)
+    {
+        var c = PopulationLedgerTests.Content();
+        var s = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(),
+            new[] { new PopulationInventoryRow("fixture", 0, PopulationLedgerTests.Person()) }, mode: open ? Mode.Open : null);
+        Assert.Equal((true, false), (s.PopulationLedger.IsInitialized, s.PopulationLedger.IsHistorical));
+        s.Treasury = 23;
+        var why = new List<Cause>();
+        var before = s.Describe(); var hash = s.Hash();
+        Assert.Contains("integration is held", Assert.Throws<NotSupportedException>(() => Cities.UpdateCondition(c, s, new MvpRules(), why)).Message);
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
+    }
+
+    // R-HOUSE-003, R-HOUSE-005 on the ledger (#1725 PR 7 review S3): the status filter. In one census city of a Historical
+    // ledger fixture, the free civilians and the trainee are housed; the refugee, the soldier and the civilian in transit
+    // located there are not. P adds the refugee and the soldier, not the one in transit, and not a free civilian with no
+    // city. The city's aggregate fields are set to other numbers to show they are not read.
+    [Fact]
+    public void OnlyFreeCivilianAndTraineeRecordsAreHoused()
+    {
+        var c = Gdd03();
+        var city = c.Cities[0].Id;
+        var region = c.PlayerRegions.AtLocation(city)!.Id;
+        var inCity = new PopulationLocation(region, city: city); var inRegion = new PopulationLocation(region);
+        var bindings = new PopulationBindings(new[] { inRegion, inCity },
+            new[] { new PopulationTarget("course", PopulationAssignmentKind.Course, region, 3),
+                    new PopulationTarget("service", PopulationAssignmentKind.ActiveService, region),
+                    new PopulationTarget("travel", PopulationAssignmentKind.Travel, region) },
+            Array.Empty<string>(), new[] { "basic" });
+        PopulationInventoryRow Row(int ordinal, PopulationStatus status, PopulationLocation at, PopulationAssignment job) =>
+            new PopulationInventoryRow("fixture", ordinal, new PopulationUnit(0, status, 0, at, job, CivilianProfession.None,
+                CivilianTier.None, 0, status == PopulationStatus.ActiveSoldier ? "basic" : "", 0, PopulationEquipment.None));
+        var s = PopulationLedger.CreateFixture(c, bindings, new[] {
+            Row(0, PopulationStatus.FreeCivilian, inCity, PopulationAssignment.Unassigned),
+            Row(1, PopulationStatus.FreeCivilian, inCity, PopulationAssignment.Unassigned),
+            Row(2, PopulationStatus.Trainee, inCity, new PopulationAssignment(PopulationAssignmentKind.Course, "course", 1)),
+            Row(3, PopulationStatus.Refugee, inCity, PopulationAssignment.Unassigned),
+            Row(4, PopulationStatus.ActiveSoldier, inCity, new PopulationAssignment(PopulationAssignmentKind.ActiveService, "service")),
+            Row(5, PopulationStatus.CivilianInTransit, inCity, new PopulationAssignment(PopulationAssignmentKind.Travel, "travel")),
+            Row(6, PopulationStatus.FreeCivilian, inRegion, PopulationAssignment.Unassigned) }, mode: Mode.Historical);
+        Assert.True(s.PopulationLedger.IsHistorical);
+        s.Cities[city] = new City(city, 100, 0, civilians: 50, employed: 0, refugees: 7, recruits: 4);
+        Assert.Equal(3, Cities.Housed(s, s.Cities[city]));            // two free civilians and the trainee
+        Assert.Equal(3 + 1 + 1, Cities.OwnPopulation(s));              // plus the refugee and the soldier
+    }
 }
