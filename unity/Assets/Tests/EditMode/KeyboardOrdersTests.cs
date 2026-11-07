@@ -46,7 +46,7 @@ public class KeyboardOrdersTests
     /// <summary>Map.unity on a 1280x720 panel, a new GDD game begun as GameBoot.Ready does with no start screen, and the
     /// opening turn's two event cards (One Army, then the defence of Degania, R-EVT-006) answered from the keyboard (the
     /// first hands the focus to the second, the second to End Turn).</summary>
-    IEnumerator Boot()
+    IEnumerator Boot(string? language = null)
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var doc = Object.FindFirstObjectByType<UIDocument>();
@@ -57,6 +57,7 @@ public class KeyboardOrdersTests
         Object.FindFirstObjectByType<MapScene>().Build(MapFocusTests.Inputs.Map);
         root = Object.FindFirstObjectByType<GameRoot>();
         root.Store = new SaveStore(saveDir);
+        root.Language = language;
         root.Begin(MapFocusTests.Inputs, 0);
         ui = doc.rootVisualElement;
         for (int i = 0; i < 30 && !(ui.Q("top-bar").worldBound.height > 0); i++) yield return null;
@@ -103,8 +104,9 @@ public class KeyboardOrdersTests
 
     IEnumerator TabTo(string name) => TabTo(v => v.name == name, name);
 
-    /// <summary>Tab to the map stop, pan the hex (q, r) under its ring, Enter.</summary>
-    IEnumerator EnterOnTheMapAt(int q, int r)
+    /// <summary>Tab to the map stop, pan the hex (q, r) under its ring, Enter. <paramref name="stays"/>: where the focus is
+    /// afterwards (the map stop, or the Move confirmation when the pick offers it).</summary>
+    IEnumerator EnterOnTheMapAt(int q, int r, string stays = "map-focus")
     {
         yield return TabTo("map-focus");
         var map = Object.FindFirstObjectByType<MapScene>();
@@ -116,7 +118,7 @@ public class KeyboardOrdersTests
         rig.Apply();
         yield return Frames(3);
         yield return Enter();
-        Assert.AreEqual("map-focus", FocusedName, "the focus stays on the map stop");
+        Assert.AreEqual(stays, FocusedName, stays == "map-focus" ? "the focus stays on the map stop" : "the focus is on " + stays);
     }
 
     /// <summary>Selects Golani from the keyboard (Enter on the map stop over its hex) and hands back its sim id.</summary>
@@ -204,7 +206,7 @@ public class KeyboardOrdersTests
         }
         var expected = layer.UnitToSelectAt(target.q, target.r);
         var near = Movement.Reachable(c, s, id, Bridge.Spent).ContainsKey((target.q, target.r));
-        yield return EnterOnTheMapAt(target.q, target.r);
+        yield return EnterOnTheMapAt(target.q, target.r, stays: "info-confirm-move");   // #2340: the offer takes the focus, no Tab
         Assert.IsEmpty(Bridge.Session.Committed, "the pick itself gives no order");
         Assert.AreEqual(expected, layer.Selected, "ordinary selection stays");
         var send = ui.Q<Button>("info-confirm-move");
@@ -226,5 +228,25 @@ public class KeyboardOrdersTests
         else Assert.AreEqual(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0},{1}", target.q, target.r),
             u.OrderTarget, "beyond reach: Golani's go-to");
         Assert.AreEqual(DisplayStyle.None, send.resolvedStyle.display, "the offer is used up");
+    }
+
+    /// <summary>#2340: a keyboard pick that opens the Move confirmation puts the focus on it, so Enter takes it with no Tab
+    /// (it was several Tabs away). English and Hebrew.</summary>
+    [UnityTest]
+    public IEnumerator AKeyboardPickThatOffersTheMoveFocusesTheOffer([Values(false, true)] bool hebrew)
+    {
+        yield return Boot(hebrew ? UiLanguage.Hebrew : UiLanguage.English);
+        var id = -1;
+        yield return SelectGolani(i => id = i);
+        var layer = Object.FindFirstObjectByType<UnitLayer>();
+        var city = Bridge.Content.SettlementHexes.First(x => x.Id == "tel_aviv" && layer.UnitToSelectAt(x.Q, x.R) == null);
+        yield return EnterOnTheMapAt(city.Q, city.R, stays: "info-confirm-move");
+        var send = ui.Q<Button>("info-confirm-move");
+        Assert.AreEqual(DisplayStyle.Flex, send.resolvedStyle.display, "the offer shows");
+        Assert.AreEqual(hebrew, send.text.Any(ch => ch >= '\u0590' && ch <= '\u05FF'), "the offer is in the game's language");
+        Assert.IsEmpty(Bridge.Session.Committed, "focusing the offer gives no order");
+        yield return Enter();
+        Assert.AreEqual(1, Bridge.Session.Committed.Count, "Enter on the focused offer gives Golani's order");
+        Assert.AreEqual("map-focus", FocusedName, "the focus goes back to the map stop, as before");
     }
 }

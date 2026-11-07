@@ -39,7 +39,7 @@ namespace Statecraft.Game.Map.Kits
             {
                 var p = At(u, v);
                 var (bottom, top) = GroundSpan(p, yaw, w * m, d * m, ground, m);
-                km.Box(p.x, p.y, yaw, w * m, d * m, bottom, top, CampFenceH * m, fence, fence, Facade.Plain, m);
+                km.Box(p.x, p.y, yaw, w * m, d * m, bottom, top, CampFenceH * m, fence, fence, Facade.Planks, m, roofSurface: Facade.Planks);
             }
             Record(s.Id, "camp_yard", c, yaw, 2f * half, 2f * half, CampFenceH * m, fence);
             // The barracks: 10 x 3.6 m, timber walls under tin roofs, in two columns (u = -7, 7) of three rows (v = -10, -4,
@@ -50,7 +50,7 @@ namespace Statecraft.Game.Map.Kits
                 {
                     var p = At(u, v); float w = 10f * m, d = 3.6f * m, bh = 3f * m;
                     var (bottom, top) = GroundSpan(p, yaw, w, d, ground, m);
-                    km.Box(p.x, p.y, yaw, w, d, bottom, top, bh, timber, tin, Facade.Plain, m);
+                    km.Box(p.x, p.y, yaw, w, d, bottom, top, bh, timber, tin, Facade.Planks, m, roofSurface: Facade.Corrugated);
                     Record(s.Id, "barracks", p, yaw, w, d, bh, timber);
                     n++;
                 }

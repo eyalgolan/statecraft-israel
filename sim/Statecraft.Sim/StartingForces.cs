@@ -92,9 +92,8 @@ namespace Statecraft.Sim
                 var anchor = (Dictionary<object, object>)anchors[k];
                 var side = Text(row, "side");
                 var people = Number(strength, "value", $"{at}.strength.value");
-                if (people < 0 || people != decimal.Truncate(people)) throw new ContentException(FileName, $"{at}.strength.value", "must be a whole number >= 0");
-                var units = Cities.StartUnits(people, ppu);   // the nearest unit, a half up, at least 1 for a force with people
-                if (units == 0) continue;                     // a strength of nobody starts nothing
+                if (people < 1 || people != decimal.Truncate(people)) throw new ContentException(FileName, $"{at}.strength.value", "must be a whole number >= 1");
+                var units = Cities.StartUnits(people, ppu);   // the nearest unit, a half up, at least 1 (people is >= 1 here)
                 if (asOf > c.Rules.Start && side != Movement.PlayerSide)
                     throw new ContentException(FileName, $"{at}.strength.as_of", "an enemy-side force may not arrive after the game starts (R-ENEMY-004)");
                 if (!hexes.TryGetValue((id, k), out var qr))

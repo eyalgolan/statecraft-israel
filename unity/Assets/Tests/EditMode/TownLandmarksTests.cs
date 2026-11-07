@@ -48,8 +48,12 @@ public class TownLandmarksTests
         "tiberias-town-v1", "safed-town-v1", "netanya-town-v1", "ramla-town-v1",
     };
 
-    /// <summary>The four cities drawn from their building models at every zoom, with no whole-town model (owner, 2 November
-    /// 2026, "Yes, small buildings at every zoom").</summary>
+    /// <summary>The four major cities (TownModels.IsMajorCity), written out as the tests' own expectation: no whole-town model
+    /// (owner, 2 November 2026), their kits from 40 km out (owner, 6 November 2026, "Big blocks, every zoom", which
+    /// superseded the 2 November 2026 ruling, "Yes, small buildings at every zoom", that drew their building models at every
+    /// zoom) and their building models below the close switch (owner, 7 November 2026, "Tal's models close (Recommended)",
+    /// which supersedes "Big blocks, every zoom" below 40 km). TownModelResidencyTests.TheMajorCitiesAreThePlacesOfSixtyThousandOrMoreIn1945 checks the
+    /// predicate agrees.</summary>
     internal static readonly string[] BigCities = { "tel_aviv", "jerusalem", "haifa", "jaffa" };
 
     static MapScene OpenMap()
@@ -100,8 +104,10 @@ public class TownLandmarksTests
     }
 
     /// <summary>Tel Aviv's, Jerusalem's and Haifa's whole-town models stay in the repository and the streamed catalogue, unused
-    /// on the map (owner, 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa draw
-    /// their building models instead; Jaffa never had a whole town of its own, only the stone village). The other six are
+    /// on the map (owner, 2 November 2026, "Yes, small buildings at every zoom" (superseded): Tel Aviv, Jerusalem, Haifa and
+    /// Jaffa have no whole-town model, and since 6 November 2026, "Big blocks, every zoom", draw their kits from 40 km out,
+    /// their building models below the switch since 7 November 2026, "Tal's models close (Recommended)";
+    /// Jaffa never had a whole town of its own, only the stone village). The other six are
     /// placed as #507 mapped them, with #2085's four generated towns.</summary>
     [Test]
     public void EveryTownModelIsUsedAndEachIsInTheStreamedTownsBundle()
@@ -134,7 +140,9 @@ public class TownLandmarksTests
     /// "Whole model far, buildings near" for these four, and the 21 October ruling on #708 that #336's second Jerusalem is
     /// Jerusalem's far-zoom model. On every date none of the four has a whole-town model, none is placed, and neither
     /// Jerusalem, nor Tel Aviv's or Haifa's whole town, is asked for. Jaffa's stone village still stands at the other Arab
-    /// towns.</summary>
+    /// towns. The owner's ruling of 6 November 2026, "Big blocks, every zoom", superseded the 2 November one for what these
+    /// four draw from 40 km out (their kits; below the close switch their building models since 7 November 2026, "Tal's
+    /// models close (Recommended)") and keeps them without a whole-town model.</summary>
     [Test]
     public void TheFourCitiesHaveNoWholeTownModelOnAnyDate()
     {
@@ -310,7 +318,9 @@ public class TownLandmarksTests
     /// <summary>The swap with #700's building models: the landmarks draw where TownModelLayer draws the kits' far view and
     /// hide where it draws the building models (TownModelLayer.CloseAt: in below CloseEnterM, out above CloseExitM), with
     /// the same hysteresis, at the start view (CameraRig.StartDistance, 31 km), 90 km, the gameplay view (60 km), both sides
-    /// of the band and the closest zoom.</summary>
+    /// of the band and the closest zoom. Over Petah Tikva (where this looked over Tel Aviv before the owner's ruling of
+    /// 6 November 2026, "Big blocks, every zoom"; Tel Aviv draws its building models below the switch again since 7 November
+    /// 2026, "Tal's models close (Recommended)").</summary>
     [Test]
     public void TheLandmarksSwapWithTheBuildingModelsAtTheThreshold()
     {
@@ -320,7 +330,7 @@ public class TownLandmarksTests
         Assert.IsTrue(layer.HasModels);
         var renderers = t.GetComponentsInChildren<Renderer>(true);
         Assert.Greater(renderers.Length, 0);
-        var tel = map.KitFootprints.First(f => f.id == "tel_aviv").centre;
+        var petah = map.KitFootprints.First(f => f.id == "petah_tikva").centre;
         foreach (var (d, close, why) in new[]
         {
             (CameraRig.StartDistance, true, "the start view (owner, 3 November 2026: open at ~30 km)"),
@@ -330,7 +340,7 @@ public class TownLandmarksTests
             (CameraController.MinDistance, true, "the closest zoom"),
         })
         {
-            RenderAt(map, tel, d);
+            RenderAt(map, petah, d);
             Assert.AreEqual(close, layer.LastClose, $"{d / 1000f} km, {why}: the building models");
             foreach (var renderer in renderers)
             {
@@ -350,8 +360,9 @@ public class TownLandmarksTests
     [Test]
     public void OnlyTheCurrentCamerasReadyTownsSuppressProceduralHouses()
     {
-        // Since #2085 every game settlement but the four cities (drawn from their building models at every zoom, owner,
-        // 2 November 2026) has a whole-town model, so the test unmaps one town (Netanya) for its run: it stands in for an
+        // Since #2085 every game settlement but the four major cities (no whole-town model since the owner's ruling of 2 November
+        // 2026; their kits from 40 km out since 6 November 2026) has a whole-town model, so the test unmaps one town (Netanya)
+        // for its run: it stands in for an
         // unrelated plain town, and its kit must keep the fallback.
         var byId = (Dictionary<string, string>)TownLandmarks.ById;
         string unmapped = "netanya", row = byId[unmapped];
@@ -548,12 +559,13 @@ public class TownLandmarksTests
 
         CollectionAssert.IsEmpty(t.Missing, "every wanted landmark found a spot");
         Assert.AreEqual(t.Wanted.Count, t.Placed.Count);
-        CollectionAssert.IsEmpty(t.Placed.Where(p => BigCities.Contains(p.Key)), "the four cities draw their buildings instead");
+        CollectionAssert.IsEmpty(t.Placed.Where(p => BigCities.Contains(p.Key)), "the four cities draw their kits instead");
         Assert.AreEqual(1, t.Placed.Count(p => p.Key == "petah_tikva" && p.Model == TownLandmarks.Moshava));
         Assert.AreEqual(map.Settlements.Count(s => s.Type == "kibbutz"), t.Placed.Count(p => p.Model == TownLandmarks.Kibbutz));
         // Owner on #917 (17 October 2026): "Keep at all seven" arab_town rows; on 2 November 2026 Ramla took Tal's own town
-        // ("Yes, Tal's Ramla (Recommended)") and Jaffa draws its buildings instead ("Yes, small buildings at every zoom"), so the
-        // stone village stands at the other five.
+        // ("Yes, Tal's Ramla (Recommended)") and Jaffa lost its stone village ("Yes, small buildings at every zoom", superseded
+        // on 6 November 2026 by "Big blocks, every zoom": Jaffa draws its kit from 40 km out, its building models below the
+        // switch since 7 November 2026, "Tal's models close (Recommended)"), so the stone village stands at the other five.
         Assert.AreEqual(7, map.Settlements.Count(s => s.Type == "arab_town"));
         Assert.AreEqual(5, t.Placed.Count(p => p.Model == TownLandmarks.StoneVillage), "the stone village at the five Arab towns but Ramla and Jaffa");
         Assert.AreEqual(1, t.Placed.Count(p => p.Key == "ramla" && p.Model == TownLandmarks.Ramla), "Ramla stands as its own town");

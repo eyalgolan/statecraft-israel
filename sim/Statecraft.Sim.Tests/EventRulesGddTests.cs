@@ -252,7 +252,18 @@ public class EventRulesGddTests
     {
         Assert.Equal(new[] { "idf_founding", "degania_defence" }, Run[0].PendingEvents);
         Assert.Equal(1, Event("degania_defence").Order);
-        Assert.Equal(new[] { "degania_defence" }, C.Events.Where(e => e.Order != 0).Select(e => e.Id));
+        Assert.Equal(new[] { "armistice_jordan", "degania_defence" }, C.Events.Where(e => e.Order != 0).Select(e => e.Id).OrderBy(id => id, StringComparer.Ordinal));
+    }
+
+    // R-EVT-006 on the real armistices (#2551): Lebanon's and Jordan's cards both open on 15 March 1949, and Lebanon signed
+    // first (23 March 1949; Jordan on 3 April), so Jordan's card has order 1 and comes second, not first by its id.
+    [Fact]
+    public void LebanonsArmisticeComesBeforeJordansOnTheirTurn()
+    {
+        var turn = Run.First(s => s.PendingEvents.Contains("armistice_jordan"));
+        Assert.Equal(new DateTime(1949, 3, 15), turn.Date);
+        Assert.Equal(new[] { "armistice_lebanon", "armistice_jordan" }, turn.PendingEvents.Where(id => id.StartsWith("armistice_", StringComparison.Ordinal)));
+        Assert.Equal(1, Event("armistice_jordan").Order);
     }
 
     const string Choice = @"

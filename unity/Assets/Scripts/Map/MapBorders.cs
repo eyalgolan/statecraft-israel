@@ -22,7 +22,7 @@ namespace Statecraft.Game.Map
     /// camera pulls out. B: A with a thin dark outer rim. C: A with the Primary blue pushed toward Okabe-Ito's
     /// colour-blind-safe blue (#0072B2). A2, B2, C2: the same on the stronger tier for gameplay03, the view players live in
     /// (coordinator, 2026-10-26: A read almost like main there): a 6 px colour stripe floor, a 0.45 wash that holds most
-    /// of its strength until near its reach, and a 0.12 tint up close (MapBorders.Strong*).</summary>
+    /// of its strength until near its reach, a 0.12 tint up close (MapBorders.Strong*) and the glow (#2431; MapBorders.Glow*).</summary>
     public enum BorderVariant : byte { Legacy = 0, A = 1, B = 2, C = 3, A2 = 4, B2 = 5, C2 = 6 }
 
     /// <summary>Which region each hex belongs to, and how each region is outlined: what the border renderer draws. A hex not
@@ -82,7 +82,10 @@ namespace Statecraft.Game.Map
             Rim = Shader.PropertyToID("_ScBorderRim"), Dash = Shader.PropertyToID("_ScBorderDash"),
             Colour1 = Shader.PropertyToID("_ScBorderColour1"), Light1 = Shader.PropertyToID("_ScBorderLight1"), Shape1 = Shader.PropertyToID("_ScBorderShape1"),
             Colour2 = Shader.PropertyToID("_ScBorderColour2"), Light2 = Shader.PropertyToID("_ScBorderLight2"), Shape2 = Shader.PropertyToID("_ScBorderShape2"),
-            Colour3 = Shader.PropertyToID("_ScBorderColour3"), Light3 = Shader.PropertyToID("_ScBorderLight3"), Shape3 = Shader.PropertyToID("_ScBorderShape3");
+            Colour3 = Shader.PropertyToID("_ScBorderColour3"), Light3 = Shader.PropertyToID("_ScBorderLight3"), Shape3 = Shader.PropertyToID("_ScBorderShape3"),
+            Glow1 = Shader.PropertyToID("_ScBorderGlow1"), Glow2 = Shader.PropertyToID("_ScBorderGlow2"), Glow3 = Shader.PropertyToID("_ScBorderGlow3"),
+            GlowWidth = Shader.PropertyToID("_ScBorderGlowWidth"),
+            Stripe1 = Shader.PropertyToID("_ScBorderStripe1"), Stripe2 = Shader.PropertyToID("_ScBorderStripe2"), Stripe3 = Shader.PropertyToID("_ScBorderStripe3");
 
         /// <summary>One style's look. Colours are sRGB (above 1: brighter than white before the grade), measured on
         /// promo/final/03-gameplay-1936.png (2752 px wide) and set so the graded game matches them (docs/visual-v1.md, "Region borders"). BandM is the coloured plus light stripe in metres,
@@ -107,6 +110,21 @@ namespace Statecraft.Game.Map
         /// hex at gameplay03.</summary>
         public const float StrongMinColourPx = 6f, StrongWashStrength = 0.45f, StrongTintNear = 0.12f;
         public static bool Strong(BorderVariant v) => v >= BorderVariant.A2;
+        /// <summary>The stronger tier's glow (#2431): promo 03's lines read as lit edges, and bloom would be a full-screen pass, so the
+        /// shader draws it. A brighter orange edge stripe (on screen, about the promo's 176-230,83-114,50-67), and a soft halo of a
+        /// lighter colour along the inside of each light stripe, GlowOpacity at the stripe and gone GlowM metres in, never under
+        /// GlowMinPx. The blue stripe stays the owner's ruled blue (Primary's colour; #519: "bring the stripe back to
+        /// about 3 deltaE76 of the ruled blue or less", ControlTests.ThePrimaryStripeIsTheDeeperBlueOfTheRuling), so on the Israeli
+        /// side the halo carries the glow. The tint and the wash keep <see cref="Style.Colour"/>: a brighter fill reddened
+        /// the hills (rose index +4 to +7, palette distance 0.308 to 0.345 at gameplay03). Neutral has no glow: grey stays flat
+        /// and dashed, a third cue beside the colour. Not a variant of its own: A2, B2 and C2 draw it (C2 keeps its own blue stripe).</summary>
+        public static readonly Color GlowStripeSecondary = new Color(0.92f, 0.37f, 0.14f),
+            GlowHaloPrimary = new Color(0.66f, 0.78f, 0.97f), GlowHaloSecondary = new Color(1.02f, 0.57f, 0.22f);
+        public const float GlowOpacity = 0.72f, GlowM = 320f, GlowMinPx = 6f;
+        /// <summary>The halo's on-screen width (px) at <paramref name="metresPerPx"/> beside a full band: the shader's, which also takes
+        /// ScSharedBand of it on a shared edge (<paramref name="washPx"/> is already that side's there). It lives in the wash's room
+        /// (<paramref name="washPx"/>, BandWidths), so a far hex whose wash has given way has no glow.</summary>
+        public static float GlowWidthPx(float metresPerPx, float washPx) => Mathf.Min(Mathf.Max(GlowM / metresPerPx, GlowMinPx), washPx);
 
         /// <summary>Legacy: main's styles, exactly (shape: band m, colour share, wash width times the band, wash strength),
         /// with main's 2 px floor for the whole band and its far fade (StatecraftBorders.hlsl, ScBorderLegacy).</summary>
@@ -302,6 +320,7 @@ namespace Statecraft.Game.Map
         static void SetStyles()
         {
             var v = Variant; bool strong = Strong(v);
+            foreach (var g in new[] { Glow1, Glow2, Glow3 }) Shader.SetGlobalVector(g, Vector4.zero);   // Neutral never glows
             if (v == BorderVariant.Legacy)
             {
                 SetStyle(Colour1, Light1, Shape1, Primary); Shader.SetGlobalVector(Shape1, LegacyShape1);
@@ -315,11 +334,21 @@ namespace Statecraft.Game.Map
             SetStyle(Colour1, Light1, Shape1, Side(StrongBlue(v) ? PrimaryStrongBlue : Primary));
             SetStyle(Colour2, Light2, Shape2, Side(Secondary));
             SetStyle(Colour3, Light3, Shape3, Neutral);
+            SetStripe(Stripe1, Colour1Of(v));   // the ruled blue on every tier (#519); the halo carries the glow
+            SetStripe(Stripe2, strong ? GlowStripeSecondary : Secondary.Colour);
+            SetStripe(Stripe3, Neutral.Colour);
+            if (strong) { SetGlow(Glow1, GlowHaloPrimary); SetGlow(Glow2, GlowHaloSecondary); }
+            Shader.SetGlobalVector(GlowWidth, new Vector4(GlowM, GlowMinPx, 0f, 0f));
             Shader.SetGlobalVector(Min, new Vector4(MinLightPx, MinWashPx, strong ? 1f : 0f, 0f));   // w 0: the prototype's drawing
             Shader.SetGlobalVector(Tint, new Vector4(strong ? StrongTintNear : TintNear, TintFar, TintNearInradiusPx, TintFarInradiusPx));
             Shader.SetGlobalVector(Rim, new Vector4(RimM, RimMinPx, HasRim(v) ? RimOpacity : 0f, RimValue));
             Shader.SetGlobalVector(Dash, new Vector4(NeutralDashM, NeutralDashOn, NeutralDashMinPx, 0f));
         }
+
+        static Color Colour1Of(BorderVariant v) => (StrongBlue(v) ? PrimaryStrongBlue : Primary).Colour;
+
+        static void SetStripe(int stripe, Color c) { var l = c.linear; Shader.SetGlobalVector(stripe, new Vector4(l.r, l.g, l.b, 1f)); }
+        static void SetGlow(int glow, Color c) { var l = c.linear; Shader.SetGlobalVector(glow, new Vector4(l.r, l.g, l.b, GlowOpacity)); }
 
         static void SetStyle(int colour, int light, int shape, Style s)
         {

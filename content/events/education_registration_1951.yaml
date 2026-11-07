@@ -8,9 +8,12 @@ title_he: בתי הספר במעברות
 text_he: 'הקואליציה מפולגת בסוגיית חינוך ילדי העולים במעברות: המפלגות הדתיות מתנגדות לזרם דתי המנוהל בידי תנועת העבודה. תוכנית רישום מטעם {education_minister} מובאת לכנסת.'
 anchor: hard
 office: education_minister
-# The event opens on its first cited plenum record, 12 February 1951 (owner ruling, 18 October 2026, #457 item 9);
-# the Knesset rejected the proposals and the government resigned on 14 February 1951.
-from: 1951-02-12
+# The event opened on its first cited plenum record, 12 February 1951 (owner ruling, 18 October 2026, #457 item 9),
+# until #2551 below; the Knesset rejected the proposals and the government resigned on 14 February 1951.
+# R-TURN-002 (#2551; the owner chose "Move them a turn earlier (Recommended)" on 4 November 2026): the window opens on
+# the 15th on or before the decision (the plenum of 12 February 1951; it opened on 1951-02-12), so the card reaches the
+# player on the turn before it.
+from: 1951-01-15
 to: 1951-02-14
 options:
   - id: press_plan

@@ -205,18 +205,24 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary><see cref="Allocate"/>'s refusals (#2707); the UI maps each to its own string (SimBridge.ReasonText). The English is what a
+        /// Rejected list and a save carry, so it does not change.</summary>
+        public const string RefusedBudgetRequired = "Budget shares are required", RefusedBudgetMinistry = "The budget names a ministry that does not exist in this game",
+            RefusedBudgetFinite = "Budget shares must be finite numbers", RefusedBudgetEveryMinistry = "The budget must give a share to every ministry, and only to them",
+            RefusedBudgetSum = "Budget shares must sum to 1", RefusedBudgetNegative = "Budget shares cannot be negative";
+
         /// <summary>Returns null on success, or the reason the allocation was rejected.</summary>
         public static string? Allocate(Content c, GameState s, Dictionary<string, double> shares)
         {
-            if (shares == null) return "Budget shares are required";
+            if (shares == null) return RefusedBudgetRequired;
             var unknown = shares.Keys.OrderBy(k => k, StringComparer.Ordinal).FirstOrDefault(k => c.Offices.All(o => o.Id != k) && !c.Rules.BudgetStart.ContainsKey(k));   // ordinal: play and replay name the same office
-            if (unknown != null) return "The budget names a ministry that does not exist in this game";
-            if (shares.Values.Any(v => double.IsNaN(v) || double.IsInfinity(v))) return "Budget shares must be finite numbers";
+            if (unknown != null) return RefusedBudgetMinistry;
+            if (shares.Values.Any(v => double.IsNaN(v) || double.IsInfinity(v))) return RefusedBudgetFinite;
             if (!new HashSet<string>(shares.Keys).SetEquals(c.Rules.BudgetStart.Keys))
-                return "The budget must give a share to every ministry, and only to them";
+                return RefusedBudgetEveryMinistry;
             // Summed in key order, not dictionary order, so play and replay agree to the bit whatever order the caller built the map in.
-            if (Math.Abs(shares.OrderBy(kv => kv.Key, StringComparer.Ordinal).Sum(kv => kv.Value) - 1.0) > 1e-6) return "Budget shares must sum to 1";
-            if (shares.Values.Any(v => v < 0)) return "Budget shares cannot be negative";
+            if (Math.Abs(shares.OrderBy(kv => kv.Key, StringComparer.Ordinal).Sum(kv => kv.Value) - 1.0) > 1e-6) return RefusedBudgetSum;
+            if (shares.Values.Any(v => v < 0)) return RefusedBudgetNegative;
             s.Budget = new Dictionary<string, double>(shares);
             return null;
         }
