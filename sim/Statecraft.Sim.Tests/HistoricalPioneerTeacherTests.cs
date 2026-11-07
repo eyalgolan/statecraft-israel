@@ -85,7 +85,7 @@ public class HistoricalPioneerTeacherTests
         _ = new Gdd03TrainingCentreFixture(c, state, new[] {
             new Gdd03FixtureTrainingCentre("centre/haifa", c.PlayerRegions.AtLocation("haifa")!.Id, operating: true) });
         Assert.Equal(before, state.Hash());
-        var t = state.PopulationLedger.Units.Single(u => u.Profession != CivilianProfession.None);
+        var t = state.PopulationLedger.Units.Single(u => u.Profession == CivilianProfession.Pioneer);   // the farmers (#1725 PR 4) are the other professions
         Assert.True(Gdd03ReceptionFixture.CanStartCivilianActivity(c, state.PopulationLedger, t));
     }
 
