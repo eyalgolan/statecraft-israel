@@ -69,6 +69,7 @@ public partial class DesignValuesTests
         ("rules.yaml", "mvp.delegation_loyalty_floor"),   // R-EVT-003, #107
         ("rules.yaml", "mvp.operation_wait_turns"),   // R-ENEMY-007, #2543
         ("rules.yaml", "mvp.operation_lapse_security"),   // R-ENEMY-007, #2543 (Q8)
+        ("rules.yaml", "mvp.operation_truce_break_standing"),   // R-ENEMY-007, #2543 (late Ten Days in the truce)
         ("rules.yaml", "mvp.disloyal_effect_share"),
         ("rules.yaml", "mvp.enemy_attack_ratio_percent"),   // R-ENEMY-003, #749 (Q-ENEMY-2)
         // Q-START-1 (owner, 15 October 2026, #375): no city has a sourced housing stock or job count, so every city's

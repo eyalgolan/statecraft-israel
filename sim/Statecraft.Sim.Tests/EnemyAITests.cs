@@ -1544,6 +1544,63 @@ public class EnemyAITests
         Assert.Equal(new DateTime(1949, 4, 27), s.CardOrders[golani]);
     }
 
+    // The owner's follow-up of 7 November 2026 on a late Ten Days during the truce: "Same as Latrun, -0.10 (Recommended)". A
+    // late operation launched while a truce the player accepted is in force costs International Support
+    // mvp.operation_truce_break_standing, as Latrun's offensive does. Real content: Ten Days on 15 July 1948 with Kiryati and
+    // Carmeli out of its regions, the second truce complied with; both brigades back on the 15 August turn, so Ten Days
+    // launches inside the truce. Red without the rule: no International Support line names Ten Days.
+    [Fact]
+    public void ALateOperationLaunchedInsideAnAcceptedTruceCostsInternationalSupport()
+    {
+        var c = Real;
+        var cost = c.Rules.Mvp!.OperationTruceBreakStanding!.Value;
+        Assert.Equal(-0.10, cost);
+        var s = GoldenRun.Play(c, new DateTime(1948, 7, 15));
+        Assert.Contains("ten_days", s.PendingEvents);
+        Assert.Contains("second_truce", s.PendingEvents);
+        var central = c.Events.Single(e => e.Id == "ten_days").Options.Single(o => o.Id == "central_front");
+        var rows = central.UnitOrders.Select(x => x.Unit).Distinct().Select(row => c.StartingForces.FindIndex(f => f.Row == row)).ToList();
+        var away = c.PlayerRegions.Regions["negev"].MemberHexes[0];   // not one of Ten Days' regions
+        var home = rows.ToDictionary(id => id, id => (s.Units[id].Q, s.Units[id].R));
+        foreach (var id in rows) s.Units[id] = At(s.Units[id], away.Q, away.R);
+        var r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("second_truce", "comply") });
+        Assert.Empty(r.Rejected);
+        s = r.State;
+        Assert.True(s.PostponedOperations.ContainsKey("ten_days"));
+        var place = c.PlayerRegions.Regions[central.RequiresUnitRegions[0]].MemberHexes[0];
+        foreach (var id in rows) s.Units[id] = At(s.Units[id], place.Q, place.R);
+        Assert.True(Combat.TruceInForce(s), "the second truce binds the player on 15 August 1948");
+        r = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.Equal("central_front", r.State.ChosenOptions["ten_days"]);
+        var line = Assert.Single(r.Why, x => x.System == "events" && x.Target == "intl_standing" && x.Key == CauseKeys.EventAmount
+            && x.Message.Contains("Ten Days"));
+        Assert.Equal(cost, line.Delta, 9);
+    }
+
+    // The same rule never charges twice: Latrun's offensive already costs International Support for breaking the truce (its
+    // own -0.10 effect), so chosen late inside the second truce it has that one line and no other. Red without the guard: two.
+    [Fact]
+    public void LatrunsOffensiveIsNotChargedTwiceForBreakingTheTruce()
+    {
+        var c = Real;
+        var s = GoldenRun.Play(c, new DateTime(1948, 9, 15));
+        Assert.True(Combat.TruceInForce(s), "the second truce binds the player on 15 September 1948");
+        var e = c.Events.Single(x => x.Id == "latrun_proposal");
+        var press = e.Options.Single(o => o.Id == "press_offensive");
+        Assert.Contains(press.Effects, fx => fx.Target == "intl_standing" && fx.Delta < 0);
+        s.PendingEvents.Remove(e.Id); s.PendingEvents.Add(e.Id); s.FiredEvents.Add(e.Id);
+        s.PostponedOperations[e.Id] = new PostponedOperation(press.Id, s.Turn - 1, new DateTime(1948, 8, 15));   // waited a turn
+        var place = c.PlayerRegions.Regions[press.RequiresUnitRegions[0]].MemberHexes[0];
+        foreach (var row in press.UnitOrders.Select(x => x.Unit).Distinct())
+        {
+            var id = c.StartingForces.FindIndex(f => f.Row == row);
+            s.Units[id] = At(s.Units[id], place.Q, place.R);
+        }
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(c, s, e.Id, press.Id, why));
+        Assert.Single(why, x => x.Target == "intl_standing" && x.Key == CauseKeys.EventAmount);
+    }
+
     static SettlementTarget Nazareth =>Real.SettlementTargets.Single(t => t.Id == "nazareth");
 
     /// <summary>mvp-occupy-cost played to <paramref name="until"/> (its own steps, the run's end replaced): Golani (unit 0,

@@ -1535,6 +1535,8 @@ namespace Statecraft.Sim
                 if (m.OperationWaitTurns < 1) throw new ContentException(file, "mvp.operation_wait_turns", "must be >= 1");
                 if (m.OperationLapseSecurity == null) throw new ContentException(file, "mvp.operation_lapse_security", "required when eras.yaml systems.loop is gdd");
                 if (!(m.OperationLapseSecurity <= 0 && IsFinite(m.OperationLapseSecurity.Value))) throw new ContentException(file, "mvp.operation_lapse_security", "must be a finite number <= 0");
+                if (m.OperationTruceBreakStanding == null) throw new ContentException(file, "mvp.operation_truce_break_standing", "required when eras.yaml systems.loop is gdd");
+                if (!(m.OperationTruceBreakStanding <= 0 && IsFinite(m.OperationTruceBreakStanding.Value))) throw new ContentException(file, "mvp.operation_truce_break_standing", "must be a finite number <= 0");
                 if (m.DisloyalEffectShare == null) throw new ContentException(file, "mvp.disloyal_effect_share", "required when eras.yaml systems.loop is gdd");
                 Unit(file, "mvp.disloyal_effect_share", m.DisloyalEffectShare.Value);
                 // R-MOVE-001 (Q-MOVE-1): a cost for every land biome of the map, so no hex is read as free, and none for a water

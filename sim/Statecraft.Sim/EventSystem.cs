@@ -222,6 +222,16 @@ namespace Statecraft.Sim
                 why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})",
                     key: fx.Target == Pools.FoodTarget || fx.Target == Pools.ArmsTarget ? CauseKeys.EventStock : CauseKeys.EventAmount, args: Context(title, localizedTitle)));
             }
+            // R-ENEMY-007 (owner, 7 November 2026, on a late Ten Days during the truce: "Same as Latrun, -0.10 (Recommended)"): an
+            // operation that waited and launches while a truce the player accepted is in force breaks it, and costs International
+            // Support as Latrun's offensive does; an option whose own effects already cost it (that offensive) is not charged again.
+            if (c.IsGdd && delay > TimeSpan.Zero && o.RequiresUnitRegions.Count != 0 && Combat.TruceInForce(s) && Reaches(s, "intl_standing")
+                && !o.Effects.Any(fx => fx.Target == "intl_standing" && fx.Delta < 0))
+            {
+                var broke = EffectsSystem.Shift(c, s, "intl_standing", c.RulesAt(s.Date).Mvp!.OperationTruceBreakStanding!.Value);
+                why.Add(new Cause("events", "intl_standing", broke, $"{PlayerText.Change(c, "intl_standing", broke)} ({title})",
+                    key: CauseKeys.EventAmount, args: Context(title, localizedTitle)));
+            }
             // R-EFX-009 (#2457): the bond's dollars also go onto Debt, at the event's date's rate, scaled like the numeric effects.
             if (DebtFor(c, Get(c, eventId), o, s.Date) is double debt)
             {

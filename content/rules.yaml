@@ -165,6 +165,7 @@ mvp:
   # the deputies 5 as a neutral rating, so neutral is not disloyal. Agent-proposed; the owner may override them.
   delegation_loyalty_floor: 5            # DESIGN VALUE: owner-set balance, not a historical figure (D-H1, #107: loyalty below which a delegated decision is half-done)
   operation_lapse_security: -0.01        # DESIGN VALUE: owner-set balance, not a historical figure (D-H1, R-ENEMY-007, #2543: the Security a lapsed operation costs, Horev's Hold; the owner chose it on 7 November 2026, quoted in docs/rules/mvp.md)
+  operation_truce_break_standing: -0.10  # DESIGN VALUE: owner-set balance, not a historical figure (D-H1, R-ENEMY-007, #2543: the International Support a late operation launched inside an accepted truce costs, as Latrun's offensive; the owner chose it on 7 November 2026, quoted in docs/rules/mvp.md)
   operation_wait_turns: 6                # DESIGN VALUE: owner-set balance, not a historical figure (D-H1, R-ENEMY-007, #2543: turns a postponed operation waits for its units; the owner chose 6 on 7 November 2026, quoted in docs/rules/mvp.md)
   disloyal_effect_share: 0.5             # DESIGN VALUE: owner-set balance, not a historical figure (D-H1, #107: share of each numeric effect a disloyal minister delivers)
   # Movement (R-MOVE-001, R-MOVE-003; Q-MOVE-1, Q-MOVE-3, owner, 15 October 2026, #375: "Take all recommendations").
