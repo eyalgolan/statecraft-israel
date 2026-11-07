@@ -299,7 +299,8 @@ namespace Statecraft.Game.UI
             banner.style.display = banner.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             var office = holder == null ? null : c.Offices.First(o => o.Id == e.Office);
             card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", ContentNames.Of(text, office!, holder, date), ContentNames.Of(text, holder));
-            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e), variant == null ? e.TextHe : "");
+            // R-ENEMY-007: a card shown after its window closed shows its late text, in Hebrew its late_text_he.
+            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e), variant == null ? (EventSystem.ShowsLate(e, s.Date) ? e.LateTextHe : e.TextHe) : "");
             var objective = card.Q<Label>("event-objective");   // an objective card's line (#380); none on any other card
             objective.text = ObjectiveLine(c, s, e, text);
             objective.style.display = objective.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;

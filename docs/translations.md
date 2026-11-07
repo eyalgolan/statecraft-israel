@@ -22,7 +22,7 @@ language is checked with `CheckDeclaredLanguage`, which refuses one whose `ui.ya
 | File | Key | Entry |
 |---|---|---|
 | `ui.yaml` | the key in `strings.en.yaml` (`hud.turn`) | the text |
-| `events.yaml` | the event id (`altalena`) | `title`, `text`, `options` (option id: text, in the event's order), and `review` |
+| `events.yaml` | the event id (`altalena`) | `title`, `text`, `late_text` (only for a card with one, R-ENEMY-007), `options` (option id: text, in the event's order), and `review` |
 | `content.yaml` | a content key (below) | `text`, `review`, and for a language other than Hebrew `sources` |
 
 ```yaml

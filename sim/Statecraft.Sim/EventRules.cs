@@ -52,6 +52,23 @@ namespace Statecraft.Sim
                 CheckPlaceholders(c, e, F("title"), e.Title, offices);
                 CheckPlaceholders(c, e, F("text"), e.Text, offices);
                 CheckHebrew(c, e, offices);
+                // R-ENEMY-007: late text, only on a card that can be shown after its window closes (a following card or an
+                // operation), with a window to close, and in Hebrew exactly when the card's text is.
+                if (e.LateText != "" || e.LateTextHe != "")
+                {
+                    if (!e.Follows && !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
+                        throw new ContentException(e.File, F("late_text"), "only a following card or an operation card, which can be shown after its window, has late text");
+                    if (!e.To.HasValue) throw new ContentException(e.File, F("late_text"), "a card with late text has a `to`");
+                    if (e.LateText.Trim() == "") throw new ContentException(e.File, F("late_text"), "required: late_text_he is set but late_text is not");
+                    CheckPlaceholders(c, e, F("late_text"), e.LateText, offices);
+                    if (e.TextHe == "" && e.LateTextHe != "") throw new ContentException(e.File, F("late_text_he"), "only a card with Hebrew text has late_text_he");
+                    if (e.TextHe != "")
+                    {
+                        if (e.LateTextHe == "") throw new ContentException(e.File, F("late_text_he"), "required: the card's text is in Hebrew too");
+                        if (!e.LateTextHe.Any(ch => ch >= '\u05D0' && ch <= '\u05EA')) throw new ContentException(e.File, F("late_text_he"), "must be Hebrew, in Hebrew letters");
+                        CheckPlaceholders(c, e, F("late_text_he"), e.LateTextHe, offices);
+                    }
+                }
                 // Chapters design 3.2: an event may only name model records that are active for its whole window.
                 void Active(string field, string id)
                 {

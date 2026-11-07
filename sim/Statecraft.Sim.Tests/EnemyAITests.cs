@@ -1613,6 +1613,44 @@ public class EnemyAITests
         Assert.Single(why, x => x.Target == "intl_standing" && x.Key == CauseKeys.EventAmount);
     }
 
+    // R-ENEMY-007 (owner, 7 November 2026: "Dateless variants (Recommended)", then "All approved (Recommended)"): a following
+    // card that comes late, or an operation shown again while it waits, shows its late text once its own window has closed,
+    // and its own text inside the window. Real content, the five cards with late text. Red without it: the dated text shows.
+    [Theory]
+    [InlineData("rhodes_talks")]
+    [InlineData("sinai_withdrawal")]
+    [InlineData("rafah_force_pressure")]
+    [InlineData("operation_yoav")]
+    [InlineData("operation_hiram")]
+    public void ACardShownAfterItsWindowShowsItsLateText(string id)
+    {
+        var c = Real;
+        var e = c.Events.Single(x => x.Id == id);
+        Assert.NotEqual("", e.LateText); Assert.NotEqual("", e.LateTextHe);
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        s.Date = e.From;
+        Assert.False(EventSystem.ShowsLate(e, s.Date));
+        Assert.Equal(Cabinet.Fill(c, s, e.Text, EventSystem.FillDate(e, s.Date)), EventSystem.Render(c, s, e));
+        s.Date = e.To!.Value;
+        Assert.True(EventSystem.ShowsLate(e, s.Date));
+        Assert.Equal(Cabinet.Fill(c, s, e.LateText, EventSystem.FillDate(e, s.Date)), EventSystem.Render(c, s, e));
+    }
+
+    // Late text belongs only on a card that can be shown after its window: a following card or an operation. On any other
+    // card the loader refuses it, naming the field.
+    [Fact]
+    public void LateTextOnAnOrdinaryCardIsRefused()
+    {
+        var card = "id: plain\ntitle: Plain\ntext: Plain.\nlate_text: Later.\nfrom: 1948-05-15\nto: 1948-06-01\noptions:\n  - id: ok\n    text: Ok\n"
+            + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
+        var e = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
+        }), new() { ["plain.yaml"] = card })));
+        Assert.Equal("events[plain].late_text", e.Field);
+        Assert.Contains("only a following card or an operation card", e.Message);
+    }
+
     static SettlementTarget Nazareth =>Real.SettlementTargets.Single(t => t.Id == "nazareth");
 
     /// <summary>mvp-occupy-cost played to <paramref name="until"/> (its own steps, the run's end replaced): Golani (unit 0,

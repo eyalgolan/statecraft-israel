@@ -644,6 +644,10 @@ namespace Statecraft.Sim
 
         /// <summary>Event text as the player sees it now: a matching variant's, with names following the player's appointments.</summary>
         public static string Render(Content c, GameState s, GameEvent e) =>
-            Cabinet.Fill(c, s, Timeline.Variant(c, s, e)?.Text ?? e.Text, FillDate(e, s.Date));
+            Cabinet.Fill(c, s, Timeline.Variant(c, s, e)?.Text ?? (ShowsLate(e, s.Date) ? e.LateText : e.Text), FillDate(e, s.Date));
+
+        /// <summary>R-ENEMY-007 ("Dateless variants (Recommended)"): whether <paramref name="e"/>, shown on <paramref name="date"/>,
+        /// shows its late text: it has one, and its own window has closed. A road variant (R-ALT-010) still comes first.</summary>
+        public static bool ShowsLate(GameEvent e, DateTime date) => e.LateText != "" && e.To.HasValue && date >= e.To.Value;
     }
 }

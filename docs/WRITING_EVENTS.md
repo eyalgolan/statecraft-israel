@@ -50,6 +50,8 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `front_quiet` | no | On a front's armistice card only (`armistice_<front>`, one of `egypt`, `jordan`, `lebanon`, `syria`). Under `gdd-0.3` the card may also come before its `from`, and again after a refusal, once that front has been quiet long enough; it then takes the first soft slot (R-WAR-008, R-EVT-002). |
 | `armistice_front` | no | On an operation card or a `follows` card only: a front (`egypt`, `jordan`, `lebanon`, `syria`) whose signed armistice ends the card. A pending operation lapses once it is signed, and waits while that front's armistice card is pending; the card never first fires after the signature (R-ENEMY-007). |
 | `follows` | no | `true` on a card with `requires`, under the GDD loop: once its `requires` are met it fires on the turn after, even when its own window has closed, so a late operation still brings it (R-ENEMY-007). |
+| `late_text` | no | On a following card or an operation card only, with a `to`: the card's text when it is shown after its own window has closed (a late follow-up, or an operation shown again while it waits), with no dates that would mislead (R-ENEMY-007). |
+| `late_text_he` | with `late_text`, when the card has Hebrew | `late_text` in Hebrew, required exactly when the card's text is in Hebrew. |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
 | `status` | no (default `draft`) | The review status. See below. |

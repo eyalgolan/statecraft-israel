@@ -156,6 +156,33 @@ public class EventCardTests
         Assert.IsFalse(ui.Q<Button>("option-launch").enabledSelf);
     }
 
+    // R-ENEMY-007 (owner, 7 November 2026: "Dateless variants (Recommended)", then "All approved (Recommended)"): a card shown
+    // after its own window has closed shows its late text, in Hebrew its late_text_he, and inside its window its own text.
+    // Rhodes Talks, which a late Horev brings. Red without it: the dated text shows after the window.
+    [Test]
+    public void ACardShownAfterItsWindowShowsItsLateTextInBothLanguages()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.Single(x => x.Id == "rhodes_talks");
+        foreach (var local in new[] { Text, He })
+        {
+            var hebrew = local["ui.lang"] == UiLanguage.Hebrew;
+            foreach (var late in new[] { false, true })
+            {
+                var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+                g.State.Date = late ? e.To!.Value : e.From;
+                g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+                using var ui = new UiTestKit();
+                using var card = new EventCardPresenter(ui.Root, new SimBridge(g, local), local, null);
+                card.Render();
+                var body = ui.Q<Label>("event-text").text;
+                var want = late ? (hebrew ? "השיחות עומדות להיפתח ברודוס" : "The talks are to open at Rhodes") : (hebrew ? "עד 6 בינואר" : "By 6 January");
+                StringAssert.Contains(want, body, $"{(hebrew ? "he" : "en")} late={late}");
+                if (late) StringAssert.DoesNotContain(hebrew ? "בינואר" : "January", body);
+            }
+        }
+    }
+
     // R-ENEMY-007: every region an operation names has its operation.region.* string in both catalogues, Hebrew in Hebrew, so
     // a region added to an operation but not to the strings fails here, not as a card that throws on a missing key.
     [Test]

@@ -2,13 +2,14 @@
 id: operation_horev
 title: Operation Horev
 # The last sentence of text and text_he (the Nazareth garrison rule, R-ENEMY-005): owner ruling, 2 November 2026, #2087,
-# verbatim: "Add the line (Recommended)". The owner signed off these exact words in English and Hebrew, so the ruling is
-# the native read of the Hebrew sentence.
-text: '{defense_minister} proposes an offensive against the Egyptian army in the south, under Yigal Allon, with five brigades. If Golani alone holds Nazareth, it stays there.'
+# verbatim: "Add the line (Recommended)". Reworded for R-ENEMY-007 (Golani must first be in Horev's regions), owner,
+# 7 November 2026, #2621: "Reword it (Recommended)", then "All approved (Recommended)" for these exact English and
+# Hebrew words, so the ruling is the native read of the Hebrew sentence.
+text: '{defense_minister} proposes an offensive against the Egyptian army in the south, under Yigal Allon, with five brigades. Golani must reach the south first; while it alone holds an occupied Nazareth, it stays there.'
 # For the native reviewer (#564): מבצע חורב and יגאל אלון follow he.wiki "מבצע חורב"
 # (https://he.wikipedia.org/wiki/מבצע_חורב).
 title_he: מבצע חורב
-text_he: 'הצעת {defense_minister} היא לפתוח במתקפה נגד הצבא המצרי בדרום, בפיקוד יגאל אלון ובהשתתפות חמש חטיבות. אם חטיבת גולני לבדה מחזיקה בנצרת, היא נשארת שם.'
+text_he: 'הצעת {defense_minister} היא לפתוח במתקפה נגד הצבא המצרי בדרום, בפיקוד יגאל אלון ובהשתתפות חמש חטיבות. חטיבת גולני צריכה להגיע קודם לדרום; כל עוד היא לבדה מחזיקה בנצרת הכבושה, היא נשארת שם.'
 anchor: hard
 armistice_front: egypt   # R-ENEMY-007 (owner, 7 November 2026, "Signing wins (Recommended)"): a pending card lapses once this armistice is signed
 tags: [security, war-casualties]

@@ -6,6 +6,10 @@ text: 'In breach of the truce, the Arab Liberation Army attacked the Sheikh Abd 
 # follow he.wiki "מבצע חירם" ("משלטי שייח' עבד"): https://he.wikipedia.org/wiki/מבצע_חירם
 title_he: מבצע חירם
 text_he: 'בהפרת ההפוגה תקף צבא ההצלה את משלט שייח׳ עבד שמעל קיבוץ מנרה ב־22 באוקטובר. בין 29 ל־31 באוקטובר הדפו כוחותיו של משה כרמל את צבא ההצלה מן הגליל העליון במבצע חירם, והפסקת אש נכנסה לתוקף ב־31 באוקטובר. ההחלטה אם הכוחות יעצרו עם הפסקת האש או יתקדמו הלאה לתוך לבנון בידי {defense_minister}.'
+# R-ENEMY-007 (owner, 7 November 2026, "Dateless variants (Recommended)", then "All approved (Recommended)" for these exact
+# words): the text when the card is shown after its own window has closed.
+late_text: 'In breach of the truce, the Arab Liberation Army attacked the Sheikh Abd position above Kibbutz Manara. Moshe Carmel''s forces are to drive it out of the Upper Galilee once they are in place. {defense_minister} must decide whether the forces stop at the cease-fire or advance further into Lebanon.'
+late_text_he: 'בהפרת ההפוגה תקף צבא ההצלה את משלט שייח׳ עבד שמעל קיבוץ מנרה. כוחותיו של משה כרמל יהדפו אותו מן הגליל העליון כשיגיעו למקומם. ההחלטה אם הכוחות יעצרו עם הפסקת האש או יתקדמו הלאה לתוך לבנון בידי {defense_minister}.'
 anchor: soft
 armistice_front: lebanon   # R-ENEMY-007 (owner, 7 November 2026, "Signing wins (Recommended)"; Hiram on Lebanon): a pending card lapses once this armistice is signed
 tags: [security, war-casualties]
