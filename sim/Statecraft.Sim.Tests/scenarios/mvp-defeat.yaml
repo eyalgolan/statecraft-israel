@@ -12,13 +12,13 @@ steps:
   - on: 1948-05-15
     commands:
       - { kind: buy_arms, count: 120 }
-  - on: 1949-05-15
+  - on: 1949-04-15
     commands:
       - { kind: choose_event_option, event: austerity_1949, option: decline }
   - on: 1950-07-15
     commands:
       - { kind: choose_event_option, event: clothing_rationing_1950, option: relax }
-  - on: 1951-03-15
+  - on: 1951-02-15
     commands:
       - { kind: choose_event_option, event: reparations_claim, option: refuse }
   - on: 1951-05-15

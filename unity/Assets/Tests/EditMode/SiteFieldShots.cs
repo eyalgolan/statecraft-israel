@@ -106,6 +106,7 @@ public class SiteFieldShots
     {
         int w = CivMovementShots.Width, h = CivMovementShots.Height;
         var cam = Camera.main;
+        ShotCamera.Require(cam, w, h);
         var frame = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
         var before = cam.targetTexture;
         cam.targetTexture = frame; cam.Render(); cam.targetTexture = before;

@@ -10,7 +10,10 @@ text_he: 'הבצורת אילצה להגדיל את יבוא החיטה, העל�
 anchor: soft
 office: finance_minister
 # US Ambassador Davis's report of 19 October 1951 (FRUS 1951 v.V doc 513).
-from: 1951-10-19
+# R-TURN-002 (#2833; the owner chose "Move both (Recommended)" on 5 November 2026): the window opens on the 15th on
+# or before the decision (the report of 19 October 1951; it opened on 1951-10-19), so the card reaches the player on the
+# turn before it.
+from: 1951-10-15
 to: 1952-01-01
 options:
   - id: request_aid

@@ -50,6 +50,10 @@ namespace Statecraft.Sim
             return null;
         }
 
+        /// <summary>The refusal of a corridor segment that does not exist (#2707); the UI maps it to its own string (SimBridge.ReasonText).
+        /// The English is what a Rejected list and a save carry, so it does not change.</summary>
+        public const string RefusedNoSegment = "There is no such corridor segment";
+
         /// <summary>R-COR-001: an idle halutz unit (Projects.Start has checked the unit) starts an unbuilt, unclaimed segment
         /// <paramref name="target"/> ("corridor:N", N from 1) of a corridor whose kind <paramref name="action"/> builds. The
         /// Treasury pays the kind's cost now and borrows what it lacks. Refused, state untouched, for an unknown corridor or
@@ -60,7 +64,7 @@ namespace Statecraft.Sim
             var def = colon < 0 ? null : c.Corridors.FirstOrDefault(x => x.Id == target.Substring(0, colon));
             if (def == null || !int.TryParse(target.Substring(colon + 1), NumberStyles.None, CultureInfo.InvariantCulture, out var n)
                 || n < 1 || n > def.Segments.Count)
-                return "There is no such corridor segment";
+                return RefusedNoSegment;
             var index = n - 1;
             var name = SegmentName(def, index);
             var refusal = CheckStart(c, s, action, def, index);   // R-CTRL-020 (Q-DEP-7 (c))

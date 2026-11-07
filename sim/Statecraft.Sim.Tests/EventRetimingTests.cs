@@ -72,22 +72,22 @@ public class EventRetimingTests
     [InlineData("sinai_withdrawal", "1949-01-15")]                 // fires through edit 5; rewritten in PR 1a (#577)
     [InlineData("rhodes_talks", "1949-01-15")]                     // fires through edit 5; late by design, +2 days
     [InlineData("elections_1949", "1949-01-15")]                   // edit 6 (was 15 February)
-    [InlineData("armistice_egypt", "1949-03-15")]
-    [InlineData("armistice_lebanon", "1949-04-15")]
-    [InlineData("armistice_jordan", "1949-04-15")]
-    [InlineData("austerity_1949", "1949-05-15")]
-    [InlineData("armistice_syria", "1949-08-15")]
+    [InlineData("armistice_egypt", "1949-02-15")]                  // #2551: signed 24 February 1949, a turn earlier (was 1949-03-15)
+    [InlineData("armistice_lebanon", "1949-03-15")]                // #2551: signed 23 March 1949, a turn earlier (was 1949-04-15)
+    [InlineData("armistice_jordan", "1949-03-15")]                 // #2551: signed 3 April 1949, a turn earlier (was 1949-04-15)
+    [InlineData("austerity_1949", "1949-04-15")]                   // #2551: announced 26 April 1949, a turn earlier (was 1949-05-15)
+    [InlineData("armistice_syria", "1949-07-15")]                  // #2551: signed 20 July 1949, a turn earlier (was 1949-08-15)
     [InlineData("frumkin_commission", "1950-01-15")]
     [InlineData("first_new_yishuv", "1951-09-15")]                 // R-OBJ-005: the turn the reference player builds Re'im, the last of all six required sites (#791); 15 July before #1565's turn-1 card (owner: "Accept the shift", #1568)
     [InlineData("maabarot_policy", "1950-04-15")]
-    [InlineData("law_of_return", "1950-07-15")]
+    [InlineData("law_of_return", "1950-06-15")]                    // #2551: passed 5 July 1950, a turn earlier (was 1950-07-15)
     [InlineData("clothing_rationing_1950", "1950-07-15")]
     [InlineData("ministry_supply_crisis", "1950-10-15")]
-    [InlineData("education_registration_1951", "1951-02-15")]
-    [InlineData("reparations_claim", "1951-03-15")]
-    [InlineData("iraqi_exodus", "1951-03-15")]
-    [InlineData("israel_bonds", "1951-05-15")]
-    [InlineData("forex_crisis_1951", "1951-11-15")]
+    [InlineData("education_registration_1951", "1951-01-15")]      // #2551: plenum of 12 February 1951, a turn earlier (was 1951-02-15)
+    [InlineData("reparations_claim", "1951-02-15")]                // #2551: note of 12 March 1951, a turn earlier (was 1951-03-15)
+    [InlineData("iraqi_exodus", "1951-02-15")]                     // #2833: the asset-freeze law of 10 March 1951, a turn earlier (was 1951-03-15)
+    [InlineData("israel_bonds", "1951-05-15")]                     // late by design, opens on 10 May 1951: owner chose "Keep it on 10 May" (4 November 2026, #2551)
+    [InlineData("forex_crisis_1951", "1951-10-15")]                // #2833: the report of 19 October 1951, a turn earlier (was 1951-11-15)
     [InlineData("reparations_vote", "1951-12-15")]                // #1564: the turn before the Knesset vote of 9 January 1952
     public void EachEventFiresOnItsTurn(string id, string date) =>
         Assert.Equal(DateTime.Parse(date, System.Globalization.CultureInfo.InvariantCulture), CardDate(id));
@@ -125,8 +125,8 @@ public class EventRetimingTests
         Assert.False(TooLong(G(2, true)));
         Assert.True(TooLong(G(3, true)));
         var gaps = Gaps(Run);
-        Assert.Equal(5, gaps.Where(g => !g.AtWar).Max(g => g.Months));   // objective 3 now adds its yishuvim card in July 1951 (#791)
-        Assert.Equal(2, gaps.Where(g => g.AtWar).Max(g => g.Months));    // 15 July to 15 September 1948, 15 January to 15 March 1949
+        Assert.Equal(6, gaps.Where(g => !g.AtWar).Max(g => g.Months));   // #2551: armistice_syria now comes on 15 July 1949, 6 months before frumkin_commission (was 5)
+        Assert.Equal(2, gaps.Where(g => g.AtWar).Max(g => g.Months));    // 15 July to 15 September 1948 (#2551: armistice_egypt on 15 February 1949 splits the January to March 1949 stretch)
     }
 
     public static List<(DateTime From, DateTime To, int Months, bool AtWar)> Gaps(List<GameState> run)
