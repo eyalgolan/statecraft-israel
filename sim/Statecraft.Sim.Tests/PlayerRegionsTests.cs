@@ -21,18 +21,18 @@ public class PlayerRegionsTests
     static PopulationTarget[] Targets() => new[] { new PopulationTarget("fixture-a-job", PopulationAssignmentKind.Work, A),
         new PopulationTarget("fixture-b-job", PopulationAssignmentKind.Work, B) };
     static GameState State(Content c, IEnumerable<PlayerRegionPool>? pools = null, bool reverse = false) =>
-        PlayerRegions.CreateFixture(c, pools ?? new[] { Pool(A), Pool(B) }, People(reverse), Targets(), Array.Empty<string>(), Array.Empty<string>());
+        PlayerRegions.CreateFixture(c, PlayerRegionsContentTests.CompletePools(c, (pools ?? new[] { Pool(A), Pool(B) }).ToArray()), People(reverse), Targets(), Array.Empty<string>(), Array.Empty<string>());
 
     [Fact]
     public void OneRegionBaselineAndTwoRegionPoolsDoNotUseTownAggregates()
     {
         var c = PlayerRegionsContentTests.Load();
-        var one = PlayerRegions.CreateFixture(c, new[] { Pool(A) }, People().Take(1), Targets().Take(1), Array.Empty<string>(), Array.Empty<string>());
-        Assert.Single(one.PlayerRegions); Assert.Empty(one.Cities);
+        var one = PlayerRegions.CreateFixture(c, PlayerRegionsContentTests.CompletePools(c, Pool(A)), People().Take(1), Targets().Take(1), Array.Empty<string>(), Array.Empty<string>());
+        Assert.Contains(A, one.PlayerRegions.Keys); Assert.Empty(one.Cities);
         Assert.Equal(1, PlayerRegions.PresentPopulation(one, A));
         Assert.Equal(7, one.PlayerRegions[A].OrdinaryHousing);
         var two = State(Content());
-        Assert.Equal(new[] { B, A }, two.PlayerRegions.Keys);
+        Assert.Equal(new[] { B, A }, two.PlayerRegions.Keys.Where(id => id == A || id == B));
         Assert.Equal(1, PlayerRegions.PresentPopulation(two, A)); Assert.Equal(1, PlayerRegions.PresentPopulation(two, B));
         Assert.Equal(2, two.PopulationLedger.Units.Count); two.PopulationLedger.Reconcile();
         Assert.Throws<ArgumentException>(() => PlayerRegions.PresentPopulation(two, "rehovot"));
@@ -115,7 +115,7 @@ public class PlayerRegionsTests
         var twin = new PlayerRegionFacility("fixture-facility", "rishon_lezion", PlayerRegionFacilityKind.Industry, 1);
         Assert.Equal("Facility must have one owning region and a member location.",
             Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A, facilities: new[] { f }), Pool(B, facilities: new[] { twin }) })).Message);
-        Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A) }));
+        Assert.Throws<ArgumentException>(() => PlayerRegions.CreateFixture(c, new[] { Pool(A) }, People(), Targets(), Array.Empty<string>(), Array.Empty<string>()));
         Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A), Pool(B), Pool(B) }));
         var outside = new PlayerRegionFacility("fixture-facility", "tiberias", PlayerRegionFacilityKind.Industry, 1);
         Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A, facilities: new[] { outside }), Pool(B) }));

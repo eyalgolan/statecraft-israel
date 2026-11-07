@@ -29,7 +29,7 @@ public class SchemaTests
     static readonly HashSet<string> Supported = new HashSet<string>
     {
         "$schema", "$ref", "title", "description", "definitions", "type", "properties", "additionalProperties", "required",
-        "items", "minItems", "minLength", "pattern", "minimum", "exclusiveMinimum", "maximum", "enum",
+        "items", "minItems", "uniqueItems", "minLength", "pattern", "minimum", "exclusiveMinimum", "maximum", "enum",
         "allOf", "oneOf", "not", "const",
     };
 
@@ -90,6 +90,9 @@ public class SchemaTests
         else if (value is JsonArray arr)
         {
             if (schema.TryGetProperty("minItems", out var mi) && arr.Count < mi.GetInt32()) errors.Add($"{path}: needs at least {mi.GetInt32()} entries");
+            if (schema.TryGetProperty("uniqueItems", out var ui) && ui.GetBoolean())
+                for (int i = 0; i < arr.Count; i++)
+                    if (arr.Take(i).Any(x => JsonNode.DeepEquals(x, arr[i]))) { errors.Add($"{path}[{i}]: duplicate entry"); break; }
             if (schema.TryGetProperty("items", out var items))
                 for (int i = 0; i < arr.Count; i++) Check(items, root, arr[i], $"{path}[{i}]", errors);
         }
@@ -359,6 +362,16 @@ people:
         Assert.Contains(Errors("event.schema.json", good.Replace("title:", "titel:")), e => e.Contains("titel"));
         Assert.Contains(Errors("event.schema.json", good.Replace("A }", "A, historcal: true }")), e => e.Contains("historcal"));
         Assert.Contains(Errors("event.schema.json", good.Replace("https://", "http://")), e => e.Contains("does not match"));
+    }
+
+    [Fact]
+    public void OperationRegionsRequireOneOrMoreUniqueNonemptyIds()
+    {
+        const string card = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\noptions:\n  - id: a\n    text: A\n    requires_unit_regions: REGIONS\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        Assert.Empty(Errors("event.schema.json", card.Replace("REGIONS", "[galilee]")));
+        Assert.Contains(Errors("event.schema.json", card.Replace("REGIONS", "[]")), e => e.Contains("at least 1"));
+        Assert.Contains(Errors("event.schema.json", card.Replace("REGIONS", "[galilee, galilee]")), e => e.Contains("duplicate entry"));
+        Assert.Contains(Errors("event.schema.json", card.Replace("REGIONS", "['']")), e => e.Contains("must not be empty"));
     }
 
     // R-EFX-009 (review on #2487): debt_dollars is "more than 0", as the loader checks.

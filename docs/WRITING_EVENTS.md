@@ -48,6 +48,10 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `prisoners` | no | Makes the event a front's prisoner-exchange card: `egypt`, `jordan` (which also returns the Iraqi prisoners), `lebanon` or `syria`. It fires only while that front holds prisoners or the player's soldiers (GDD loop only), has exactly one option, and returns them and scores when it resolves (R-POW-004). |
 | `deported` | no | Makes the event Deport's follow-up card for a settlement target whose residents stayed: it fires only once the player's Deport has depopulated that place, carries the `displacement` tag and has exactly one option (R-EVT-007). See "deported". |
 | `front_quiet` | no | On a front's armistice card only (`armistice_<front>`, one of `egypt`, `jordan`, `lebanon`, `syria`). Under `gdd-0.3` the card may also come before its `from`, and again after a refusal, once that front has been quiet long enough; it then takes the first soft slot (R-WAR-008, R-EVT-002). |
+| `armistice_front` | no | On an operation card or a `follows` card only: a front (`egypt`, `jordan`, `lebanon`, `syria`) whose signed armistice ends the card. A pending operation lapses once it is signed, and waits while that front's armistice card is pending; the card never first fires after the signature (R-ENEMY-007). |
+| `follows` | no | `true` on a card with `requires`, under the GDD loop: once its `requires` are met it fires on the turn after, even when its own window has closed, so a late operation still brings it (R-ENEMY-007). |
+| `late_text` | no | On a following card or an operation card only, with a `to`: the card's text when it is shown after its own window has closed (a late follow-up, or an operation shown again while it waits), with no dates that would mislead (R-ENEMY-007). |
+| `late_text_he` | with `late_text`, when the card has Hebrew | `late_text` in Hebrew, required exactly when the card's text is in Hebrew. |
 | `options` | yes | One or more options. See below. |
 | `sources` | no by the loader, yes by the rules | A list of `{ url, checked }`. See below. |
 | `status` | no (default `draft`) | The review status. See below. |
@@ -244,7 +248,8 @@ Each option has:
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
 | `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
-| `unit_orders` | no | GDD loop only, applied under gdd-0.1 only. A list of `{ unit, q, r }`: see "unit_orders". |
+| `unit_orders` | no | GDD loop, both GDD identities. A list of `{ unit, q, r }`: see "unit_orders". |
+| `requires_unit_regions` | with `unit_orders` | A non-empty list of existing `regions.yaml` ids in any one of which every ordered unit must stand: see "unit_orders". |
 | `debt_dollars` | no | Applied under gdd-0.3 only. US$ millions, more than 0, that the option also adds to Debt, in IL at the `mvp.il_per_dollar` rate in force on the event's date (R-EFX-009). |
 | `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
 | `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
@@ -323,8 +328,12 @@ An event with a sensitive tag may carry no grant, no positive `city_effects` del
   a comment. The order goes through the player's own go-to: one the player could not give changes nothing, and the
   player is told so. The order ends on the `to` date of the anchor, or of the order target (the loader refuses a hex with none), and its march
   goes round every enemy-held place but its hex.
-- It applies under gdd-0.1 only. Under gdd-0.3 the loader still checks it and the unit gets no order; the legacy loop
-  ignores it.
+- Every option with `unit_orders` also has `requires_unit_regions`. The required units are exactly the distinct rows in
+  `unit_orders`; before the option resolves, each row's starting unit must be on the board and on a hex in any listed
+  region (R-ENEMY-007). Cite the operation objective or target supporting every region in the option's comment.
+- A direct choice with a missing unit is refused unchanged. Delegation postpones an unmet drawn operation, explains the
+  required moves, rolls back that draw and redraws on later consideration; a still-pending card lapses when its event
+  window closes. The orders and placement rule apply under gdd-0.1 and gdd-0.3; legacy ignores them.
 
 ### sources
 
