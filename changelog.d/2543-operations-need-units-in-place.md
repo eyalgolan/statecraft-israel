@@ -10,6 +10,8 @@
   Operation cards' unit orders now also apply under gdd-0.3, and an objective, prisoner-exchange or Deport card can no
   longer give unit orders (the content loader refuses it). The escalations (Yoav's push to Hebron, Hiram's advance into
   Lebanon) and Ten Days' southern front give orders too; Givati gains a Bayt Jibrin order target.
+  A card shown after its own window has closed reads its late text (`late_text`, with `late_text_he`); five cards
+  have one, and the translators' page (`tools/translate.py`) lists it.
 - The decision card lists each required unit once, shows an operation waiting for its front's armistice after that
   armistice and a waiting operation after the turn's other cards, takes a queued operation back when its unit is moved
   away, and moves the toast below a short photograph band. The turn report has a row for postponed and lapsed operations.
