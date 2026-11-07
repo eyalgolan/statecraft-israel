@@ -519,7 +519,7 @@ namespace Statecraft.Sim
 
         /// <summary>English display names paired with Unity's operation.region.* catalogue. These five authored regions
         /// are the complete R-ENEMY-007 vocabulary; structured cause args retain the ids for EN/HE presentation lookup.</summary>
-        static string OperationRegionName(string id) => id switch
+        internal static string OperationRegionName(string id) => id switch
         {
             "central_plain" => "Central Plain",
             "jerusalem_hills" => "Jerusalem Hills",

@@ -61,6 +61,21 @@ public class EventCardTests
         }
     }
 
+    // R-ENEMY-007: every region an operation names has its operation.region.* string in both catalogues, Hebrew in Hebrew, so
+    // a region added to an operation but not to the strings fails here, not as a card that throws on a missing key.
+    [Test]
+    public void EveryRequiredOperationRegionHasItsNameInBothLanguages()
+    {
+        var ids = C.Events.SelectMany(e => e.Options).SelectMany(o => o.RequiresUnitRegions).Distinct(System.StringComparer.Ordinal).ToList();
+        Assert.IsNotEmpty(ids);
+        foreach (var id in ids)
+        {
+            Assert.IsTrue(Text.Has("operation.region." + id), "strings.en.yaml: operation.region." + id);
+            Assert.IsTrue(He.Has("operation.region." + id), "strings.he.yaml: operation.region." + id);
+            StringAssert.IsMatch("[א-ת]", He["operation.region." + id], id + " is Hebrew in Hebrew");
+        }
+    }
+
     /// <summary>The historical game on the turn the Egyptian armistice first waits for a decision (February 1949).</summary>
     static SimBridge AtArmistice()
     {

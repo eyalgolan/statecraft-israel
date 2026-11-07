@@ -731,6 +731,19 @@ public class EnemyAITests
         }, orders.OrderBy(x => x.Item1, StringComparer.Ordinal));
     }
 
+    // R-ENEMY-007: every region an operation names has an English name in the sim's cause text (EventSystem's
+    // OperationRegionName), so a region added to an operation but not to the names shows as its raw id and fails here.
+    // Unity's operation.region.* strings are checked in EventCardTests.
+    [Fact]
+    public void EveryRequiredOperationRegionHasAnEnglishName()
+    {
+        var ids = Real.Events.SelectMany(e => e.Options).SelectMany(o => o.RequiresUnitRegions).Distinct(StringComparer.Ordinal)
+            .OrderBy(x => x, StringComparer.Ordinal).ToList();
+        Assert.NotEmpty(ids);
+        Assert.All(ids, id => Assert.True(Real.PlayerRegions.Regions.ContainsKey(id), id + " is a regions.yaml region"));
+        Assert.All(ids, id => Assert.NotEqual(id, EventSystem.OperationRegionName(id)));
+    }
+
     [Fact]
     public void EveryMilitaryOperationOptionHasTheRecordedRegionRequirement()
     {

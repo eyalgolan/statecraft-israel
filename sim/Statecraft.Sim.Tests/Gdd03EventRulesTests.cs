@@ -629,6 +629,35 @@ public class Gdd03EventRulesTests
         Assert.False(s.CardOrders.ContainsKey(0));
         Assert.Equal(SettlementControl.Occupied, s.Settlements["nazareth"].State);
     }
+    // R-ENEMY-005, R-CTRL-013, R-CTRL-016: the last-garrison rule guards only an occupied place. Once Nazareth is annexed it
+    // is held for good with no garrison (R-CTRL-016), so Horev's order takes Golani away from it under both GDD identities.
+    // mvp-annex-nazareth covered this before R-ENEMY-007; there Golani is now outside Horev's regions, so the placement
+    // precondition is isolated as in the test above. Red without the Occupied/AwaitingEnd condition in
+    // SettlementControl.LastGarrison: the order is refused with RefusedLastGarrison and Golani stays.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HorevsOrderTakesGolaniFromAnAnnexedNazarethUnderBothRulesets(bool modern)
+    {
+        var c = Real(modern);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("golani", c.StartingForces[0].Row);
+        var nazareth = c.SettlementTargets.Single(t => t.Id == "nazareth");
+        var g = s.Units[0];
+        s.Units[0] = new Unit(g.Id, g.Type, nazareth.Q, nazareth.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full, g.CombatXp);
+        Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (nazareth.Q, nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
+        s.Settlements["nazareth"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Annexed, s.Date, turns: 3);
+        var option = c.Events.First(e => e.Id == "operation_horev").Options.First(o => o.Id == "launch");
+        var nazarethRegion = c.PlayerRegions.AtHex(nazareth.Q, nazareth.R)!.Id;
+        if (!option.RequiresUnitRegions.Contains(nazarethRegion)) option.RequiresUnitRegions.Add(nazarethRegion);   // isolate R-CTRL-013
+        s.PendingEvents.Add("operation_horev");
+        var rejected = new List<Rejection>();
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>(), rejected: rejected));
+        Assert.DoesNotContain(rejected, j => j.Command is UnitOrder { Unit: 0 });
+        Assert.Equal((Movement.GoTo, "-8,28"), (s.Units[0].Order, s.Units[0].OrderTarget));
+        Assert.True(s.CardOrders.ContainsKey(0));
+        Assert.Equal(SettlementControl.Annexed, s.Settlements["nazareth"].State);
+    }
     // Review of #2087, optional 2: under gdd-0.3 the loader still checks the cards' orders (owner, 31 October 2026, #749), so
     // a Horev order to a hex that is not one of golani's anchors is refused there too.
     [Fact]
