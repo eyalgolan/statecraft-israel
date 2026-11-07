@@ -42,12 +42,13 @@ public class ReferencePlayerTests
         s.Cities["tel_aviv"] = s.Cities["tel_aviv"].WithCounts(248, 96, 0);   // the start fills every job (Q-START-1): free 10
         var orders = ReferencePlayer.Commands(Mvp, s);
         var history = HistoricalAI.Commands(Mvp, s);
-        Assert.Equal(history.Select(x => x.Kind), orders.Take(history.Count).Select(x => x.Kind));
-        Assert.Equal(history.Count + 2, orders.Count);
+        var carriedHistory = history.Where(x => x is not UnitOrder { Unit: 0, Order: Movement.GoTo }).ToList();
+        Assert.Equal(carriedHistory.Select(x => x.Kind), orders.Take(carriedHistory.Count).Select(x => x.Kind));
+        Assert.Equal(carriedHistory.Count + 2, orders.Count);
         Assert.DoesNotContain(orders, x => x is AssignWorkers);
         // The attack policy (#747): unit 0 (strength 5 here, on 11,11) meets the Iraqi unit next to it (3, on 11,12) at
         // 166 percent, past the policy's 150. At 4.4 km the Syrian start anchor is two hexes away (#1183).
-        var attack = Assert.IsType<UnitOrder>(orders[history.Count]);
+        var attack = Assert.IsType<UnitOrder>(orders[carriedHistory.Count]);
         Assert.Equal((0, Combat.Attack, (int?)11, (int?)12), (attack.Unit, attack.Order, attack.Q, attack.R));
         var train = Assert.IsType<Train>(orders.Last());
         Assert.Equal(("tel_aviv", "halutz", 1), (train.City, train.Track, train.Count));   // 152 civilians without work
@@ -57,19 +58,20 @@ public class ReferencePlayerTests
         Assert.Equal((247, 106, true), (city.Civilians, city.Employed, city.JobsDefault));   // min(106 jobs, 247 civilians)
     }
 
-    /// <summary>The real start: the 15 May cards (degania_defence and idf_founding) are answered first, at full war's price.
+    /// <summary>The real start: free operation-staging orders precede the 15 May cards (degania_defence and idf_founding),
+    /// which are both answered at full war's price.
     /// The cities start with every job filled (Q-START-1: job slots equal the start employed), so no AssignWorkers takes
     /// Attention. Answering both cards uses that turn's 4 Attention (Q-CUT-5), so the halutz group is not trained on the
     /// first turn; the player first trains on 15 August 1948. Before #1565 added degania_defence it trained on 15 May 1948;
     /// the owner accepted the shift on 24 October 2026 ("Accept the shift", #1568). Every order it sends is taken.</summary>
     [Fact]
-    public void OnTheRealStartItAnswersTheCardFirstAndTrainsWhenAttentionAllows()
+    public void OnTheRealStartItStagesOperationsThenAnswersCardsAndTrainsWhenAttentionAllows()
     {
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
         Assert.Contains("idf_founding", s.PendingEvents);
         Assert.Contains("degania_defence", s.PendingEvents);
         var first = ReferencePlayer.Commands(Mvp, s);
-        Assert.IsType<ChooseEventOption>(first[0]);
+        Assert.Contains(first.TakeWhile(x => x is not ChooseEventOption), x => x is UnitOrder { Order: Movement.GoTo });
         Assert.Equal(new[] { "degania_defence", "idf_founding" }, first.OfType<ChooseEventOption>().Select(x => x.EventId).OrderBy(id => id, StringComparer.Ordinal));
         Assert.DoesNotContain(first, x => x is AssignWorkers);
         Assert.DoesNotContain(first, x => x is Train);
@@ -220,9 +222,11 @@ public class ReferencePlayerTests
         var tired = s.Clone();
         tired.Attention = 0;
         Assert.NotEmpty(ReferencePlayer.Commands(Mvp, tired));
-        Assert.All(ReferencePlayer.Commands(Mvp, tired), x => Assert.Equal(Combat.Attack, Assert.IsType<UnitOrder>(x).Order));   // unit orders are free (D-A6)
+        Assert.All(ReferencePlayer.Commands(Mvp, tired), x =>
+            Assert.Contains(Assert.IsType<UnitOrder>(x).Order, new[] { Combat.Attack, Movement.GoTo }));   // both unit orders are free (D-A6)
         tired.Arms = 0;
-        Assert.Empty(ReferencePlayer.Commands(Mvp, tired));   // and the attack needs the Arms
+        Assert.NotEmpty(ReferencePlayer.Commands(Mvp, tired));
+        Assert.All(ReferencePlayer.Commands(Mvp, tired), x => Assert.Equal(Movement.GoTo, Assert.IsType<UnitOrder>(x).Order));   // attacks need Arms; staging does not
     }
 
     /// <summary>With more jobs than civilians, the default (not the player) fills no more jobs than there are civilians.</summary>

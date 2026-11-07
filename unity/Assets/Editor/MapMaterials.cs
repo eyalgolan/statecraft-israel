@@ -16,6 +16,7 @@ namespace Statecraft.Game.EditorTools
         public const string FramePath = Folder + "/MapFrame.mat";
         public const string KitPath = Folder + "/Kit.mat";
         public const string TreePath = Folder + "/Tree.mat";
+        public const string KitAtlasPath = "Assets/Art/Kits/kit_atlas.png";   // a Texture2DArray (#2428, make_kit_atlas.py)
 
         public static void Create()
         {
@@ -44,12 +45,15 @@ namespace Statecraft.Game.EditorTools
             // mesh's vertex colours (MapBuilder.BuildFrame).
             Make(FramePath, "Statecraft/MapFrame", null);
             // Settlement kits and trees (art spike): Assets/Shaders/Kit.shader. Buildings are merged static meshes (no tint
-            // jitter: each building's colour is in its vertices); trees are GPU-instanced and get a per-instance tint.
+            // jitter: each building's colour is in its vertices); trees are GPU-instanced and get a per-instance tint. Both carry
+            // the one shared town atlas (#2428); a material made here from scratch would otherwise have none.
+            var atlas = AssetDatabase.LoadAssetAtPath<Texture2DArray>(KitAtlasPath)
+                ?? throw new System.IO.FileNotFoundException("kit atlas missing (asset-sources/kit-atlas/make_kit_atlas.py)", KitAtlasPath);
             var kit = Make(KitPath, "Statecraft/Kit", Color.white);
-            kit.SetFloat("_Jitter", 0f);
+            kit.SetFloat("_Jitter", 0f); kit.SetTexture("_KitAtlas", atlas);
             EditorUtility.SetDirty(kit);
             var tree = Make(TreePath, "Statecraft/Kit", Color.white);
-            tree.SetFloat("_Jitter", 0.16f); tree.SetFloat("_WindowDark", 0f);
+            tree.SetFloat("_Jitter", 0.16f); tree.SetTexture("_KitAtlas", atlas);
             EditorUtility.SetDirty(tree);
             AssetDatabase.SaveAssets();
         }

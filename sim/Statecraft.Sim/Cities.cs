@@ -42,6 +42,9 @@ namespace Statecraft.Sim
         public static int NearestUnit(decimal people, int peoplePerUnit) =>
             (int)Math.Round(people / peoplePerUnit, MidpointRounding.AwayFromZero);
 
+        /// <summary><see cref="Annex"/>'s refusal, {0} the place's name: a constant for the UI's string (#2707).</summary>
+        public const string RefusedAlreadyCity = "{0} is already a city";
+
         /// <summary>R-CTRL-016 (OWNER QUESTION 1 (a) on #799, the starting-city rule): a stayed target joins the player's
         /// population as one new city: its approved people in units (R-CITY-007), homes equal to them, jobs equal to the
         /// employed (people times employed_share to the nearest unit), the usual start condition, and no refugees, recruits or
@@ -49,7 +52,7 @@ namespace Statecraft.Sim
         /// reason with the state unchanged (the id is already a city).</summary>
         internal static string? Annex(Content c, GameState s, SettlementTarget t)
         {
-            if (s.Cities.ContainsKey(t.Id)) return $"{c.SettlementNames[t.Id]} is already a city";
+            if (s.Cities.ContainsKey(t.Id)) return string.Format(System.Globalization.CultureInfo.InvariantCulture, RefusedAlreadyCity, c.SettlementNames[t.Id]);
             var r = c.RulesAt(s.Date).Mvp!;
             var people = t.Annexation!.People!.Value;   // the loader requires both values on a stayed row
             var units = StartUnits(people, r.PeoplePerUnit);
