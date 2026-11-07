@@ -164,6 +164,78 @@ public class AdvisorQueueTests
         Assert.AreEqual(1, q.History.Count, "Counsel lists it once");
     }
 
+    /// <summary>#2933: lapse_after is the game's turn, the first being 1, so State.Turn 2 is turn 3, the row's last. Past it the
+    /// row goes to the history as missed, not seen; its signal still holds, and it does not come back a second time.</summary>
+    [Test]
+    public void ATeachingRowLapsesUnseenAfterItsGameTurnAndOnlyOnce()
+    {
+        var settings = new AdvisorSettings(null);
+        var q = new AdvisorQueue(Catalog(Row("t", "new", extra: ", lapse_after: 3")), settings);
+        q.Offer(Fired, Always, 2); q.Prune(Fired, Always, 2, Day);
+        Assert.AreEqual("t", q.Head(2, false)?.Id, "turn 3 is still in time");
+        for (int turn = 3; turn <= 5; turn++) { q.Offer(Fired, Always, turn); q.Prune(Fired, Always, turn, Day); }
+        Assert.IsNull(q.Head(5, false));
+        Assert.AreEqual(1, q.History.Count(e => e.Id == "t" && e.Outcome == AdvisorQueue.Outcome.Missed), "missed once, not once per Changed");
+        Assert.IsFalse(settings.Seen("t"));
+    }
+
+    [Test]
+    public void ARowFirstHoldingAfterItsLapseNeverQueues()
+    {
+        var q = new AdvisorQueue(Catalog(Row("t", "new", extra: ", lapse_after: 3")), new AdvisorSettings(null));
+        q.Offer(Fired, Always, 3); q.Prune(Fired, Always, 3, Day);
+        Assert.IsNull(q.Head(3, false));
+        Assert.IsEmpty(q.History, "it never waited");
+    }
+
+    /// <summary>As with warnings (owner, 1 Nov): the one on screen stays until the player closes it.</summary>
+    [Test]
+    public void TheLapsingRowOnScreenStaysUntilItIsClosed()
+    {
+        var q = new AdvisorQueue(Catalog(Row("t", "new", extra: ", lapse_after: 3")), new AdvisorSettings(null));
+        q.Offer(Fired, Always, 2);
+        var shown = q.Head(2, false)!;
+        q.Offer(Fired, Always, 3); q.Prune(Fired, Always, 3, Day, shown);
+        Assert.AreEqual("t", q.Head(3, false)?.Id);
+        Assert.IsEmpty(q.History);
+    }
+
+    [Test]
+    public void ATeachingRowWithNoLapseAfterKeepsWaiting()
+    {
+        var q = new AdvisorQueue(Catalog(Row("t", "new")), new AdvisorSettings(null));
+        q.Offer(Fired, Always, 0);
+        q.Prune(Array.Empty<string>(), Always, 99, Day);
+        Assert.AreEqual("t", q.Head(99, false)?.Id);
+    }
+
+    /// <summary>#2933: a chain row's requires only orders the chain, so on its fallback signal it does not wait for the earlier
+    /// steps. Any other row still does.</summary>
+    [Test]
+    public void AFallbackRowQueuesOnItsFallbackSignalWhateverItRequires()
+    {
+        var settings = new AdvisorSettings(null);
+        var q = new AdvisorQueue(Catalog("{ id: first, advisor: dayan, signal: other, level: new }",
+            "{ id: fb, advisor: dayan, signal: other, fallback: s, requires: [first], level: new }",
+            "{ id: plain, advisor: dayan, signal: s, requires: [first], level: new }"), settings);
+        q.Offer(Fired, Always, 1);
+        Assert.AreEqual("fb", q.Head(1, false)?.Id);
+        q.Done(q.Head(1, false)!, 1, Day);
+        q.Offer(Fired, Always, 2);
+        Assert.IsNull(q.Head(2, false), "plain still waits on first, and fb is seen");
+    }
+
+    /// <summary>The warning check reads the row's signal or its fallback, as Offer does.</summary>
+    [Test]
+    public void AWarningHeldByItsFallbackIsPrunedOnlyWhenThatStops()
+    {
+        var q = new AdvisorQueue(Catalog("{ id: w, advisor: dayan, signal: other, fallback: s, level: warnings }"), new AdvisorSettings(null));
+        q.Offer(Fired, Always, 1); q.Prune(Fired, Always, 1, Day);
+        Assert.AreEqual("w", q.Head(1, false)?.Id);
+        q.Prune(Array.Empty<string>(), Always, 2, Day);
+        Assert.IsNull(q.Head(2, false));
+    }
+
     [Test]
     public void ResetForgetsTheGameButNotTheSeenMarks()
     {
