@@ -3671,3 +3671,29 @@ later fields' worst frame was 74-127 ms against about 50 ms on the control turn,
 
 With #2884 (the border glow) merged locally, the 60 km stills of Beit Kama and Mefalsim show the blue and white stripes whole: the patch
 stops inside them. It does cover the wash inside the hex where a parcel lies.
+
+## Issue #2878: ground detail and low 3D scrub between the towns
+
+**Survey (main `93cd2f174`).** Between the towns the only ground is `landuse.png`, 79 x 105 m a texel, so it reads as smooth
+colour at the 31 km opening and blurs at 12 km. The trees are 1,267 to 2,562 instances in view at 31 km and 779 to 1,464 at 12 km:
+large and far apart. Promo 03's land between its towns is covered with small bushes and worn ground.
+
+**Why not in the terrain shader.** That function sits at the cliff recorded under issue #391, and `land_bake.py` is outside this
+lane. So the paint is a pass of its own, `GroundDetail.shader`: a `Blend DstColor SrcColor` mesh in the queue right after the
+terrain, with one tiling texture (grain, bushes as a height field, their shadows, stones) built at boot.
+
+**Standing scrub.** `GroundScrub.shader`: one mesh of 1,089 bushes covers a 15 km tile and is drawn once for each tile in view,
+a few tile instances a frame, not one instance a bush. Its vertex shader stands each bush on a half-float height texture and shrinks to a
+point any bush whose rank is over the density. Its bushes stop at 55 m, under the 60 m lip of the smallest unit base (a compact
+token's), so a moved token covers them.
+
+**Where it grows (`StatecraftGroundDetail.hlsl`, shared).** By biome (`hexes.json`), the land-use weight (rainfall and slope
+from `land_bake.py`), the bake's curvature (thin in gullies) and a broad clump noise; along the land bake's painted hedges;
+off the towns, the routes and the units' start clearings (a keep-out texture); off the beaches and dune coasts; off drawn
+region borders. Biome scrub shares are design values. It adds no paths: the land round 2 ruling keeps tracks to the
+1946 Survey's roads. The shader-side bush shadow assumes `MapLighting.SunAzimuth` 285 degrees: if #2427 turns the sun, the
+offset in `GroundDetail.FillTexels` turns with it. A warmer or darker grade changes the multiply's result in proportion and
+is not expected to change its balance (hypothesis).
+
+**Tests that now switch the layers off.** `BorderTests.Open` and `TerrainShaderTests.TheBakesCarveTheRelief` measure bare
+stripes and bakes, so they switch both new toggles off, as they do the kits and trees. Their thresholds are unchanged.
