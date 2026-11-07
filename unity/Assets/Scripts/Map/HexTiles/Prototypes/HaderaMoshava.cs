@@ -16,16 +16,18 @@ namespace Statecraft.HexTiles.Prototypes
     /// - Dense eucalyptus groves on both flanks: Rothschild's agency planted eucalyptus here from 1895 to 1896 to drain the
     ///   swamps (https://kkl-jnf.org/hiking_and_walking_tracks/hadera-forest-hiking/ and
     ///   https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/haderah, checked 2026-10-19).
-    ///   There is no eucalyptus model, so each is a tall, grey-green Tree stand-in (tiles:hadera_moshava/eucalyptus).
+    ///   Each is Tal Heuberger's shipped railway-halt eucalyptus (tiles:railway_halt/eucalyptus): one eucalyptus everywhere,
+    ///   the owner's "all your picks", 7 November 2026 (#1940). Until the hex-props bundle arrives it is a grey-green Tree stand-in.
     /// - Citrus groves in rows on tilled soil inland, across the street from the Khan (generic; not sourced for Hadera as a fact).
     ///
     /// Triangle estimate, at the maximum counts (FlatSurface refuses nothing):
     /// - At most 10 houses and 1 barn (kit_moshava*, up to 1,400 each) = 15,400.
     /// - At most 9 citrus (citrus_lite, 1,602 each) = 14,418.
-    /// - At most 52 eucalyptus stand-ins (about 56 each) = 2,912. If a real model is dropped in under
-    ///   Resources/HexTiles/hadera_moshava/eucalyptus, it must stay under about 150 triangles, or lower MaxEucalyptus.
+    /// - At most 12 eucalyptus (6,423 each, measured) = 77,076. The tree is about 115 times a stand-in's 56 triangles, so
+    ///   the groves keep 12 of the 33 trees the grid placed (#1940); the rest of the tile is about 21,000 at most with the
+    ///   local citrus and figures (496 measured on the test hex without them): about 98,500 of 100,000, and a 13th tree breaks it.
     /// - The Khan: 3 Box stand-ins, about 36. One donkey = 2,500; one townsperson (up to 4,000).
-    /// - Total about 39,300 of 50,000.</summary>
+    /// - Total about 98,500 of 100,000 at worst; the houses and barn are exempt originals (#1273).</summary>
     [HexPrototype("hadera_moshava", Kind = "town", Region = "centre")]
     public sealed class HaderaMoshava : IHexPrototype
     {
@@ -38,13 +40,13 @@ namespace Statecraft.HexTiles.Prototypes
 
         // Explicit ids: the wildcard kit_moshava* would also pick the barn.
         const string Farmhouse = "sandbox:kit_moshava", TwoStorey = "sandbox:kit_moshava_2", Barn = "sandbox:kit_moshava_3",
-            Citrus = "sandbox:citrus_lite", Eucalyptus = "tiles:hadera_moshava/eucalyptus", Khan = "tiles:hadera_moshava/khan",
+            Citrus = "sandbox:citrus_lite", Eucalyptus = "tiles:railway_halt/eucalyptus", Khan = "tiles:hadera_moshava/khan",
             Donkey = "proto:figure-donkey-lite-1948", Settler = "proto:figure-sabra-pioneer-c04-1948-v2";
 
         static readonly Color RedRoof = new Color(0.72f, 0.36f, 0.26f), Timber = new Color(0.52f, 0.38f, 0.26f),
             Sandstone = new Color(0.82f, 0.72f, 0.56f), CitrusLeaf = new Color(0.16f, 0.34f, 0.14f), GumLeaf = new Color(0.47f, 0.56f, 0.47f);
 
-        const int MaxHouses = 10, MaxCitrus = 9, MaxEucalyptus = 52;
+        const int MaxHouses = 10, MaxCitrus = 9, MaxEucalyptus = 12;
 
         static float Edge(float bearing) => (0.8660254f - HexScale.InsetShare) / Mathf.Cos(Mathf.Deg2Rad * (Mathf.Repeat(bearing, 60f) - 30f));
 
