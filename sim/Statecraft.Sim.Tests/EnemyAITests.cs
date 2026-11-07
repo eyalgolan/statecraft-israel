@@ -840,14 +840,25 @@ public class EnemyAITests
         var before = s.Hash(); var rng = s.RngState; var why = new List<Cause>();
         EventSystem.Delegate(c, s, why);
         Assert.Contains(e.Id, s.PendingEvents); Assert.False(s.ChosenOptions.ContainsKey(e.Id)); Assert.Equal(rng, s.RngState);
-        Assert.Equal(before, s.Hash());
+        // R-ENEMY-007 (owner, 7 November 2026: "Keep the option (Recommended)"): the postponement records only the kept option
+        // and the turn its wait counts from; nothing else in the state changes.
+        var kept = Assert.Single(s.PostponedOperations);
+        Assert.Equal((e.Id, "launch", s.Turn), (kept.Key, kept.Value.Option, kept.Value.Turn));
+        var unrecorded = s.Clone(); unrecorded.PostponedOperations.Clear();
+        Assert.Equal(before, unrecorded.Hash());
         var postponed = Assert.Single(why, x => x.Key == CauseKeys.OperationPostponed);
         Assert.Equal(new[] { "golani", "negev|southern_coast" }, postponed.Args.Skip(2));
         Assert.Contains("Golani Brigade", postponed.Message); Assert.Contains("Negev", postponed.Message);
         Assert.DoesNotContain("golani", postponed.Message); Assert.DoesNotContain("southern_coast", postponed.Message);
 
-        s.Date = e.To!.Value; why.Clear(); EventSystem.LapseExpiredOperations(c, s, why);
-        Assert.DoesNotContain(e.Id, s.PendingEvents); Assert.False(s.ChosenOptions.ContainsKey(e.Id));
+        // "Wait, with a limit (Recommended)", "6 turns (Recommended)": the window's end no longer ends a postponed card; it is
+        // shown again on mvp.operation_wait_turns turns after the first postponement, and lapses at the end of the last.
+        var wait = c.Rules.Mvp!.OperationWaitTurns!.Value;
+        Assert.Equal(6, wait);
+        s.Date = e.To!.Value; s.Turn = kept.Value.Turn + wait; why.Clear(); EventSystem.LapseExpiredOperations(c, s, why);
+        Assert.Contains(e.Id, s.PendingEvents); Assert.Empty(why);
+        s.Turn++; EventSystem.LapseExpiredOperations(c, s, why);
+        Assert.DoesNotContain(e.Id, s.PendingEvents); Assert.False(s.ChosenOptions.ContainsKey(e.Id)); Assert.Empty(s.PostponedOperations);
         var lapsed = Assert.Single(why);
         Assert.Equal(CauseKeys.OperationLapsed, lapsed.Key);
         Assert.Contains("Golani Brigade", lapsed.Message); Assert.Contains("Southern Coast", lapsed.Message);
@@ -874,6 +885,125 @@ public class EnemyAITests
         EventSystem.Trigger(c, s, new List<Cause>(), new DateTime(1948, 5, 15));
         Assert.Contains("ordinary", s.PendingEvents);
         Assert.Equal(fires, s.PendingEvents.Contains("probe"));
+    }
+
+    // R-ENEMY-007, the owner's rulings of 7 November 2026 ("Wait, with a limit (Recommended)", "6 turns (Recommended)",
+    // "Keep the option (Recommended)", "Lapse at once (Recommended)", "Signing wins (Recommended)"). The probe card's window is
+    // the game's first day only, so it closes inside the first turn, as a real operation's does, and the brigade starts out of
+    // its region on (2, 0). Fixture values, not history.
+    static (Content C, GameState S) Waiting(string cardLines = "")
+    {
+        var c = CardGame(4, 0, "1949-01-01", MovementTests.Board(), cardLines: cardLines);
+        var probe = c.Events.Single(x => x.Id == "probe");
+        probe.From = c.Rules.Start; probe.To = c.Rules.Start.AddDays(1);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Contains("probe", s.PendingEvents);
+        s.Units[0] = At(s.Units[0], 2, 0);   // outside fixture_region
+        return (c, s);
+    }
+
+    // Postponed on its first turn, the card no longer lapses at its window's end: it waits, and launches on the turn its
+    // brigade is back in the region. Red with the old lapse (at the window's end): the card is gone after the first turn.
+    [Fact]
+    public void APostponedOperationWaitsPastItsWindowAndLaunchesWhenItsUnitArrives()
+    {
+        var (c, s) = Waiting();
+        var r = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.Contains(r.Why, x => x.Key == CauseKeys.OperationPostponed);
+        Assert.DoesNotContain(r.Why, x => x.Key == CauseKeys.OperationLapsed);
+        Assert.Contains("probe", r.State.PendingEvents);
+        Assert.True(r.State.Date >= c.Events.Single(x => x.Id == "probe").To, "the window has closed");
+        var back = r.State.Clone();
+        back.Units[0] = At(back.Units[0], 0, 0);   // in fixture_region, as a player's move would have put it
+        var next = Simulation.Step(c, back, Array.Empty<Command>());
+        Assert.Equal("ok", next.State.ChosenOptions["probe"]);
+        Assert.Empty(next.State.PostponedOperations);
+    }
+
+    // The wait's limit: the card is shown again on mvp.operation_wait_turns (6) turns after its first postponement, and lapses
+    // at the end of the last. Red with the old lapse: it is gone after the first turn.
+    [Fact]
+    public void APostponedOperationLapsesAfterItsWaitTurns()
+    {
+        var (c, s) = Waiting();
+        var wait = c.Rules.Mvp!.OperationWaitTurns!.Value;
+        for (int turn = 1; turn <= wait + 1; turn++)
+        {
+            var r = Simulation.Step(c, s, Array.Empty<Command>());
+            s = r.State;
+            if (turn <= wait) Assert.Contains("probe", s.PendingEvents);
+            else Assert.Contains(r.Why, x => x.Key == CauseKeys.OperationLapsed && x.Target == "probe");
+        }
+        Assert.DoesNotContain("probe", s.PendingEvents);
+        Assert.False(s.ChosenOptions.ContainsKey("probe"));
+        Assert.Empty(s.PostponedOperations);
+    }
+
+    // "Lapse at once (Recommended)": a postponed card whose required unit is no longer on the board lapses on its next
+    // consideration with its own reason, instead of waiting out its turns.
+    [Fact]
+    public void APostponedOperationLapsesAtOnceWhenItsUnitIsGone()
+    {
+        var (c, s) = Waiting();
+        s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.Contains("probe", s.PendingEvents);
+        s.Units.Remove(0);   // the brigade is destroyed
+        var r = Simulation.Step(c, s, Array.Empty<Command>());
+        var lapsed = Assert.Single(r.Why, x => x.Target == "probe" && x.Key.StartsWith("operation_lapsed", StringComparison.Ordinal));
+        Assert.Equal(CauseKeys.OperationLapsedUnitLost, lapsed.Key);
+        Assert.DoesNotContain("probe", r.State.PendingEvents);
+    }
+
+    // "Signing wins (Recommended)": a pending operation whose armistice_front has signed lapses with its own reason.
+    [Fact]
+    public void AnOperationLapsesOnceItsFrontsArmisticeIsSigned()
+    {
+        var (c, s) = Waiting("armistice_front: egypt\n");
+        s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.Contains("probe", s.PendingEvents);
+        s.ChosenOptions["armistice_egypt"] = "sign";
+        var r = Simulation.Step(c, s, Array.Empty<Command>());
+        var lapsed = Assert.Single(r.Why, x => x.Target == "probe" && x.Key.StartsWith("operation_lapsed", StringComparison.Ordinal));
+        Assert.Equal(CauseKeys.OperationLapsedSigned, lapsed.Key);
+        Assert.Contains("Egypt", lapsed.Message);
+        Assert.DoesNotContain("probe", r.State.PendingEvents);
+    }
+
+    // "Keep the option (Recommended)": a postponed card keeps the option it was postponed with. Open mode, with a free option the
+    // minister would usually draw (recommended): over many seeds the card stays postponed with "ok" and is never resolved
+    // with "free". Red without the kept option (a fresh draw on each consideration): some seeds resolve it with "free".
+    [Fact]
+    public void APostponedOperationKeepsItsOptionInsteadOfDrawingAgain()
+    {
+        var c = CardGame(4, 0, "1949-01-01", MovementTests.Board());
+        c.Events.Single(x => x.Id == "probe").Options.Add(new EventOption { Id = "free", Text = "Free", Recommended = true });
+        for (ulong seed = 1; seed <= 40; seed++)
+        {
+            var s = Simulation.NewGame(c, seed, Mode.Historical); s.Mode = Mode.Open;
+            s.Units[0] = At(s.Units[0], 2, 0);
+            s.PostponedOperations["probe"] = new PostponedOperation("ok", s.Turn);
+            var why = new List<Cause>();
+            EventSystem.Delegate(c, s, why);
+            Assert.False(s.ChosenOptions.ContainsKey("probe"), $"seed {seed}: resolved with {(s.ChosenOptions.TryGetValue("probe", out var o) ? o : "")}");
+            Assert.Equal("ok", s.PostponedOperations["probe"].Option);
+        }
+    }
+
+    // Latrun's ruling ("Takes the vote, wait ends (Recommended)"): a postponed card whose historical option needs no units is
+    // decided by its minister with that option. Red without that rule: the kept operation keeps it waiting.
+    [Fact]
+    public void APostponedCardWhoseHistoricalOptionNeedsNoUnitsTakesIt()
+    {
+        var c = CardGame(4, 0, "1949-01-01", MovementTests.Board());
+        var probe = c.Events.Single(x => x.Id == "probe");
+        probe.Options[0].Historical = false;
+        probe.Options.Add(new EventOption { Id = "vote", Text = "Vote", Historical = true });
+        var s = Simulation.NewGame(c, 1, Mode.Historical); s.Mode = Mode.Open;
+        s.Units[0] = At(s.Units[0], 2, 0);
+        s.PostponedOperations["probe"] = new PostponedOperation("ok", s.Turn);
+        EventSystem.Delegate(c, s, new List<Cause>());
+        Assert.Equal("vote", s.ChosenOptions["probe"]);
+        Assert.Empty(s.PostponedOperations);
     }
 
     [Fact]
@@ -933,14 +1063,14 @@ public class EnemyAITests
     // operation card. One brigade row starting on (0, 0); the card orders it to its second anchor's hex (q, r), whose
     // window ends on `to`. With `held`, town_a (1, 0) is an enemy-held locality and an open target (R-MOVE-005, #1304).
     // Fixture values, not history.
-    static Content CardGame(int q, int r, string to, string board, bool held = false)
+    static Content CardGame(int q, int r, string to, string board, bool held = false, string cardLines = "")
     {
         var rows = "units:\n- id: brig\n  service: army\n  side: israel\n  status: draft\n"
             + "  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
             + "  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n"
             + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-05-15', to: '" + to + "' }\n";
         var hexes = FormattableString.Invariant($"anchors:\n  - {{ id: brig, anchor: 0, q: 0, r: 0 }}\n  - {{ id: brig, anchor: 1, q: {q}, r: {r} }}\n");
-        var card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
+        var card = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\n" + cardLines + "options:\n"
             + FormattableString.Invariant($"  - id: ok\n    text: Accept\n    historical: true\n    requires_unit_regions: [fixture_region]\n    unit_orders: [{{ unit: brig, q: {q}, r: {r} }}]\n")
             + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
         var files = Fixture.Gdd(new Dictionary<string, string>

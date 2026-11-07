@@ -10,6 +10,7 @@ text: '{defense_minister} proposes an offensive against the Egyptian army in the
 title_he: מבצע חורב
 text_he: 'הצעת {defense_minister} היא לפתוח במתקפה נגד הצבא המצרי בדרום, בפיקוד יגאל אלון ובהשתתפות חמש חטיבות. אם חטיבת גולני לבדה מחזיקה בנצרת, היא נשארת שם.'
 anchor: hard
+armistice_front: egypt   # R-ENEMY-007 (owner, 7 November 2026, "Signing wins (Recommended)"): a pending card lapses once this armistice is signed
 tags: [security, war-casualties]
 office: defense_minister
 # Start [C]: 22 December 1948 (the IDF Archives; Security Council resolution 66 dates the hostilities from 22 December;

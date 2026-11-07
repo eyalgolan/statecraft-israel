@@ -77,7 +77,8 @@ namespace Statecraft.Sim
         {
             if (!c.IsGdd) return Array.Empty<Command>();
             var nextByUnit = c.Events
-                .Where(e => e.To == null || s.Date < e.To.Value)
+                // A card past its window still counts while it waits, postponed, for its units (R-ENEMY-007).
+                .Where(e => e.To == null || s.Date < e.To.Value || s.PostponedOperations.ContainsKey(e.Id))
                 .Where(e => !s.FiredEvents.Contains(e.Id) || s.PendingEvents.Contains(e.Id))
                 // A card one of whose requirements is already decided the other way can never fire, so nothing is staged
                 // for it (an undecided requirement still allows staging, as the card may yet come).

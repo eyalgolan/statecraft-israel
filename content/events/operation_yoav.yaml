@@ -8,6 +8,7 @@ text: 'An Israeli supply convoy was fired on as it passed the Egyptian positions
 title_he: מבצע יואב
 text_he: 'שיירת אספקה ישראלית נורתה כשעברה ליד העמדות המצריות ב־15 באוקטובר, והמתקפה שהממשלה אישרה ב־6 באוקטובר מתנהלת בפיקוד יגאל אלון. ההחלטה עד היכן תתקדם בידי {defense_minister}.'
 anchor: hard
+armistice_front: egypt   # R-ENEMY-007 (owner, 7 November 2026, "Signing wins (Recommended)"): a pending card lapses once this armistice is signed
 tags: [security, war-casualties]
 office: defense_minister
 # Approved at the cabinet session of 6 October 1948; launched after a supply convoy was fired on as it passed Egyptian

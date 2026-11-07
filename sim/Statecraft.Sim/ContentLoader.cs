@@ -452,6 +452,8 @@ namespace Statecraft.Sim
             //                              has exactly one option (R-EVT-007)
             //   front_quiet                the front (Prisoners.Fronts) of an armistice_<front> card: under gdd-0.3 it may also
             //                              come early, and again after a refusal, once that front is quiet (R-WAR-008)
+            //   armistice_front            a front (Prisoners.Fronts) whose signed armistice ends the card: a pending
+            //                              operation lapses once it is signed (R-ENEMY-007); only on an operation card
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -1525,6 +1527,9 @@ namespace Statecraft.Sim
                 // R-EVT-003 (#107): required, so a missing key is never read as 0 (no floor, or a disloyal minister who does nothing).
                 if (m.DelegationLoyaltyFloor == null) throw new ContentException(file, "mvp.delegation_loyalty_floor", "required when eras.yaml systems.loop is gdd");
                 if (m.DelegationLoyaltyFloor < 0 || m.DelegationLoyaltyFloor > 10) throw new ContentException(file, "mvp.delegation_loyalty_floor", "must be 0-10");
+                // R-ENEMY-007 (owner, 7 November 2026: "6 turns (Recommended)"): required, so no wait is read as 0.
+                if (m.OperationWaitTurns == null) throw new ContentException(file, "mvp.operation_wait_turns", "required when eras.yaml systems.loop is gdd");
+                if (m.OperationWaitTurns < 1) throw new ContentException(file, "mvp.operation_wait_turns", "must be >= 1");
                 if (m.DisloyalEffectShare == null) throw new ContentException(file, "mvp.disloyal_effect_share", "required when eras.yaml systems.loop is gdd");
                 Unit(file, "mvp.disloyal_effect_share", m.DisloyalEffectShare.Value);
                 // R-MOVE-001 (Q-MOVE-1): a cost for every land biome of the map, so no hex is read as free, and none for a water
@@ -1624,6 +1629,7 @@ namespace Statecraft.Sim
             ValidateEventSites(c);
             ValidateEventPrisoners(c);
             ValidateEventFrontQuiet(c);
+            ValidateEventArmisticeFront(c);
             ValidateEventDeported(c);
             ValidateProjects(c);
             ValidateCorridors(c);
@@ -1651,6 +1657,19 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].front_quiet", $"unknown front '{e.FrontQuiet}' (one of {string.Join(", ", Prisoners.Fronts)})");
                 if (e.Id != "armistice_" + e.FrontQuiet)
                     throw new ContentException(e.File, $"events[{e.Id}].front_quiet", $"'{e.FrontQuiet}' goes only on its own card, armistice_{e.FrontQuiet}");
+            }
+        }
+
+        /// <summary>R-ENEMY-007: an operation card's armistice front is a known front, on a card with an operation option
+        /// (one with requires_unit_regions), so that front's signed armistice can end it.</summary>
+        static void ValidateEventArmisticeFront(Content c)
+        {
+            foreach (var e in c.Events.Where(e => e.ArmisticeFront != ""))
+            {
+                if (!Prisoners.Fronts.Contains(e.ArmisticeFront))
+                    throw new ContentException(e.File, $"events[{e.Id}].armistice_front", $"unknown front '{e.ArmisticeFront}' (one of {string.Join(", ", Prisoners.Fronts)})");
+                if (!e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
+                    throw new ContentException(e.File, $"events[{e.Id}].armistice_front", "only an operation card (an option with requires_unit_regions) has an armistice front");
             }
         }
 
@@ -1682,7 +1701,7 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].from", FormattableString.Invariant($"a Deport card opens at the game's start ({c.Rules.Start:yyyy-MM-dd}), so a Deport on any turn fires it"));
                 foreach (var (key, set) in new[] { ("conditions", e.Conditions.Count > 0), ("requires", e.Requires.Count > 0), ("site", e.Site != ""),
                              ("objective", e.Objective != ""), ("kind", e.Kind != EventKinds.Historical), ("variants", e.Variants.Count > 0),
-                             ("front_quiet", e.FrontQuiet != "") })
+                             ("front_quiet", e.FrontQuiet != ""), ("armistice_front", e.ArmisticeFront != "") })
                     if (set) throw new ContentException(e.File, $"events[{e.Id}].{key}", "a Deport card waits for nothing but its Deport");
                 if (cardOf.TryGetValue(e.Deported, out var first))
                     throw new ContentException(e.File, $"events[{e.Id}].deported", $"'{e.Deported}' already has a card, '{first}': one Deport raises one card");

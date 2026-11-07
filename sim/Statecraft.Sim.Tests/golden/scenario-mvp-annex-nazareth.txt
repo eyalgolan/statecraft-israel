@@ -64,7 +64,10 @@ fired[
   second_truce
   ten_days
 pending[
+  operation_horev
   armistice_egypt
+postponed{
+  operation_horev=launch@7
 chosen{
   altalena=enforce
   bernadotte_assassination=outlaw
@@ -99,7 +102,7 @@ city{
   tiberias=6,2,6,2,1,c0.35 [3FD6666666666666]
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
 units[
-  0:veteran_soldier@8,11|side=israel|strength=4
+  0:veteran_soldier@6,12|side=israel|strength=4|order=go_to|target=-7,26
   1:veteran_soldier@12,4|side=israel|strength=2|order=go_to|target=15,3
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-3,24|side=israel|strength=3

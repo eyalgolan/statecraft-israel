@@ -7,6 +7,7 @@ text: 'In breach of the truce, the Arab Liberation Army attacked the Sheikh Abd 
 title_he: מבצע חירם
 text_he: 'בהפרת ההפוגה תקף צבא ההצלה את משלט שייח׳ עבד שמעל קיבוץ מנרה ב־22 באוקטובר. בין 29 ל־31 באוקטובר הדפו כוחותיו של משה כרמל את צבא ההצלה מן הגליל העליון במבצע חירם, והפסקת אש נכנסה לתוקף ב־31 באוקטובר. ההחלטה אם הכוחות יעצרו עם הפסקת האש או יתקדמו הלאה לתוך לבנון בידי {defense_minister}.'
 anchor: soft
+armistice_front: lebanon   # R-ENEMY-007 (owner, 7 November 2026, "Signing wins (Recommended)"; Hiram on Lebanon): a pending card lapses once this armistice is signed
 tags: [security, war-casualties]
 office: defense_minister
 # Trigger: the attack on 22 October 1948 and sniping at Manara on 24-25 October (en.wiki "Operation Hiram"; the Acting

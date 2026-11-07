@@ -7,6 +7,7 @@ text: '{prime_minister} proposes to the cabinet that the IDF break the truce to 
 title_he: לטרון
 text_he: 'הצעת {prime_minister} לממשלה היא שצה״ל יפר את ההפוגה כדי לתקוף ולכבוש את לטרון. רוב השרים, ובהם {finance_minister}, {justice_minister} ו־{immigration_minister}, מתנגדים.'
 anchor: hard
+armistice_front: jordan   # R-ENEMY-007 (owner, 7 November 2026, "Jordan signing (Recommended)"): a pending card lapses once this armistice is signed
 tags: [security]
 office: prime_minister
 # Ben-Gurion's diary, 26 September 1948 (Ben-Gurion Archive, primary): the cabinet rejected the proposal. Vote [C]: 7-5 in

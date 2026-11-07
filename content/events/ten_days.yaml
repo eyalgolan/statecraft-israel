@@ -8,6 +8,7 @@ text: 'The first truce has ended and the fighting has resumed, with Egypt attack
 title_he: קרבות עשרת הימים
 text_he: 'ההפוגה הראשונה הסתיימה והלחימה התחדשה, כשמצרים תוקפת בדרום. במרכז, מבצע דני בפיקוד יגאל אלון כבש את שדה התעופה בלוד וממשיך לפעול לאבטחת הדרך לירושלים. ההחלטה לאן יופנה המאמץ העיקרי בהמשך הלחימה בידי {defense_minister}.'
 anchor: hard
+armistice_front: jordan   # R-ENEMY-007 (owner, 7 November 2026, "Jordan signing (Recommended)"): a pending card lapses once this armistice is signed
 tags: [security, war-casualties]
 office: defense_minister
 # The truce was due to expire on 9 July (the Mediator's report S/888); Egypt renewed fighting on 8 July, one day early

@@ -661,6 +661,10 @@ namespace Statecraft.Sim
         /// <summary>A minister whose loyalty is below this carries a delegated decision out half-heartedly (R-EVT-003; #107,
         /// owner, 18 October 2026). Required in the GDD loop, 0 to 10 (0: nobody is below it).</summary>
         public int? DelegationLoyaltyFloor { get; set; }
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Wait, with a limit (Recommended)", "6 turns (Recommended)"): how many
+        /// turns after its first postponement a postponed operation card is shown again while it waits for its units; at the
+        /// end of the last it lapses. Required in the GDD loop, at least 1.</summary>
+        public int? OperationWaitTurns { get; set; }
         /// <summary>The movement points it costs to enter a hex of each land biome of map/hexes.json (R-MOVE-001; Q-MOVE-1).
         /// Lake and sea have none: they are impassable. The loader requires one for every land biome in the GDD loop.</summary>
         public Dictionary<string, int> MoveCost { get; set; } = new Dictionary<string, int>();
@@ -1227,6 +1231,9 @@ namespace Statecraft.Sim
         /// that front, before its hard-anchor date and again after a refusal, and then takes the first soft slot (R-EVT-002).
         /// Empty for every other event.</summary>
         public string FrontQuiet { get; set; } = "";
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Signing wins (Recommended)" and the front rulings): the front whose
+        /// signed armistice ends this card. A pending operation lapses when it is signed; "" for none.</summary>
+        public string ArmisticeFront { get; set; } = "";
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }
