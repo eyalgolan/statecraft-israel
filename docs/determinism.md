@@ -63,9 +63,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `b2dd73874b2ee5ddeda19c82dcd8f7971af94e3739c1658e1e45d43fc48ceb1e` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `488d99fe5198f85770cc45ad9178e2f1fd76346746c378f27964ddad42018a5f` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `488d99fe5198f85770cc45ad9178e2f1fd76346746c378f27964ddad42018a5f` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `832e8ccc38e3fb36228826816b452477fbbd6ab667ee30cdaef40e5b1b2fe869` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `841f05536a49b68cd10d3f1ca548e559098415119284d483620f14bb6a4bb44e` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `841f05536a49b68cd10d3f1ca548e559098415119284d483620f14bb6a4bb44e` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -542,3 +542,12 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-defeat | `7fc8c624` | as above, Ramla a turn earlier; one draw more, so the delegated iraqi_exodus card now takes pace instead of airlift (was `8096c41e`, main after #2551 and #2833; the same lines change as before them) |
 | #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-occupy-cost | `90494f81` | Ramla a turn earlier and Acre taken, the 7th Brigade survives, no combat draw; Golani stays Nazareth's last garrison (was `eb3ae67b`, main after #2551 and #2833; #2551 and #2833 do not move it, so the value is the same as before them) |
 | #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-annex-nazareth | `adafb60f` | Golani is Nazareth's last garrison, so it is not staged and Horev postpones and lapses (the owner's rule): Rhodes Talks and Sinai Withdrawal never fire, and no combat draw (was `dec2cad5`, main after #2551 and #2833; the same lines change as before them) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack) | hash1950 | `832e8ccc` | Carmeli (unit 1) was staged for Ten Days onto Acre (8, 7), a Galilee member place, and captured it on 15 June 1948. It is now staged to another Galilee hex, so Acre is not taken and Carmeli ends a hex west, on (14, 3); nothing else differs (was `b2dd7387`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | hash1952 | `841f0553` | the same: no Acre capture, Carmeli on (14, 3) (was `488d99fe`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | mvp-end | `841f0553` | the same run as hash1952 (was `488d99fe`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-reckless | `8bf27728` | Acre is no longer captured and awaiting a choice at the end; nothing else differs (was `2217be01`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-cautious | `024fa528` | no Acre capture; Carmeli is on (14, 3) at the end, still on its card's go-to toward (15, 3), so the run keeps `cardorders{ 1=1949-03-23 }` (was `d421ba64`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-mvp-absorb-first | `96f62541` | no Acre capture; Carmeli on (14, 3) (was `5cded37c`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-mvp-defeat | `2c98e244` | no Acre capture; Carmeli on (14, 3); the defeat is unchanged (was `7fc8c624`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-mvp-occupy-cost | `f9df2061` | no Acre capture; Carmeli a hex west on its march, (10, 6) (was `90494f81`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-mvp-annex-nazareth | `cf8d2bdf` | no Acre capture; Carmeli a hex west on its march, (12, 4) (was `adafb60f`). smoke5 and smoke-orders do not move: the smoke runs stage nothing |

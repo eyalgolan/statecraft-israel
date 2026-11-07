@@ -126,7 +126,6 @@ cardorders{
   1=1949-03-23
 next=14
 ctrl{
-  acre=owner=israel,state=awaiting_choice,since=1948-06-15
   beersheba=owner=israel,state=awaiting_choice,since=1949-01-15,fled=1
 food=2427,809,0
 arms=12

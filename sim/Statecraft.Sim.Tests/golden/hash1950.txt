@@ -117,7 +117,7 @@ city{
   zikhron_yaakov=2,1,2,1,1,c0.35 [3FD6666666666666]
 units[
   0:veteran_soldier@-7,28|side=israel|strength=2|full=4
-  1:veteran_soldier@15,3|side=israel|strength=2
+  1:veteran_soldier@14,3|side=israel|strength=2
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-2,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
@@ -138,7 +138,6 @@ cproj[
   17:housing@tel_aviv,-3,21/4,3FDB851EB851EB88
 next=18
 ctrl{
-  acre=since=1948-06-15
   beersheba=since=1949-01-15,fled=1
   ramla=since=1948-08-15,fled=1
 food=3003,1001,0

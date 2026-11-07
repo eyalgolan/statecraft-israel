@@ -94,6 +94,9 @@ namespace Statecraft.Sim
             // Step advances standing routes before it applies these returned commands. Plan against that same state and
             // movement budget, otherwise replacing a route could be valid in the probe but refused after Step advances it.
             Movement.ContinueRoutes(c, probe, spent, new List<Cause>());
+            // Staging is a move, not an attack: an enemy-held place in an allowed region (Acre in Galilee) is never its target,
+            // so putting a unit in place captures nothing (R-ENEMY-007).
+            var closed = Movement.NoEntry(c, probe);
             foreach (var need in nextByUnit)
             {
                 int id = c.StartingForces.FindIndex(f => f.Row == need.Row);
@@ -119,7 +122,8 @@ namespace Statecraft.Sim
                 }
                 var targetHex = need.Option.RequiresUnitRegions
                     .SelectMany(region => c.PlayerRegions.Regions[region].MemberHexes)
-                    .Distinct().Select(h => (Hex: h, Route: Movement.Route(c, probe, id, h.Q, h.R, spent)))
+                    .Distinct().Where(h => !closed.Contains((h.Q, h.R)))
+                    .Select(h => (Hex: h, Route: Movement.Route(c, probe, id, h.Q, h.R, spent)))
                     .Where(x => x.Route.Count != 0 && Movement.Full(c, probe, unit, x.Hex.Q, x.Hex.R) == null)
                     .OrderBy(x => x.Route[x.Route.Count - 1].Turn).ThenBy(x => x.Route.Count)
                     .ThenBy(x => x.Hex.Q).ThenBy(x => x.Hex.R).FirstOrDefault();

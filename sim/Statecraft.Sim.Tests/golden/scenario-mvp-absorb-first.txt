@@ -118,7 +118,7 @@ city{
   zikhron_yaakov=2,1,2,1,1,c0.35 [3FD6666666666666]
 units[
   0:veteran_soldier@-7,28|side=israel|strength=1|full=4
-  1:veteran_soldier@15,3|side=israel|strength=2
+  1:veteran_soldier@14,3|side=israel|strength=2
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-3,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
@@ -392,7 +392,6 @@ next=273
 obj{
   absorb_immigrants=1950-01-15
 ctrl{
-  acre=owner=israel,state=awaiting_choice,since=1948-06-15
   beersheba=owner=israel,state=awaiting_choice,since=1949-01-15,fled=1
   ramla=owner=israel,state=awaiting_choice,since=1948-08-15,fled=1
 score=100

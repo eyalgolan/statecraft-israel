@@ -112,7 +112,7 @@ city{
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
 units[
   0:veteran_soldier@-7,28|side=israel|strength=2|full=4
-  1:veteran_soldier@15,3|side=israel|strength=2
+  1:veteran_soldier@14,3|side=israel|strength=2|order=go_to|target=15,3
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-3,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
@@ -124,9 +124,10 @@ units[
   11:iraqi_army@7,14|side=iraq|strength=3|order=fortify|target=7,14
   12:arab_liberation_army@14,4|side=ala|strength=4|order=fortify|target=14,4
   13:veteran_soldier@8,8|side=israel|strength=2
+cardorders{
+  1=1949-03-23
 next=14
 ctrl{
-  acre=owner=israel,state=awaiting_choice,since=1948-06-15
   beersheba=owner=israel,state=awaiting_choice,since=1949-01-15,fled=1
   ramla=owner=israel,state=awaiting_choice,since=1948-08-15,fled=1
 food=2427,809,0

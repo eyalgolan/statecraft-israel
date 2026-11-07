@@ -731,6 +731,30 @@ public class EnemyAITests
         }, orders.OrderBy(x => x.Item1, StringComparer.Ordinal));
     }
 
+    // R-ENEMY-007: the automated players stage an operation's units as a player's ordinary go-to, onto a hex of an allowed
+    // region, but never onto an enemy-held place (Movement.NoEntry): staging is not an attack, and Acre (8, 7), a Galilee
+    // member place, must not be captured as a side effect of putting Carmeli in Galilee. Played over the historical run to
+    // the end of 1948. Red without the filter in HistoricalAI.OperationMoves: a go-to targets an enemy-held place.
+    [Fact]
+    public void StagingNeverTargetsAnEnemyHeldPlace()
+    {
+        var c = Real;
+        var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
+        var staged = 0;
+        while (s.Date < new DateTime(1949, 1, 1) && s.GameOver == null)
+        {
+            var closed = Movement.NoEntry(c, s);
+            foreach (var o in HistoricalAI.OperationMoves(c, s, e => e.Options.FirstOrDefault(x => x.Historical) ?? e.Options[0]).OfType<UnitOrder>())
+            {
+                staged++;
+                Assert.True(o.Q.HasValue && o.R.HasValue, "a staging order is a go-to to a hex");
+                Assert.False(closed.Contains((o.Q!.Value, o.R!.Value)), FormattableString.Invariant($"{s.Date:yyyy-MM-dd}: unit {o.Unit} staged onto the enemy-held hex ({o.Q}, {o.R})"));
+            }
+            s = Simulation.Step(c, s, HistoricalAI.Commands(c, s)).State;
+        }
+        Assert.True(staged > 0, "the run stages at least one unit");
+    }
+
     // R-ENEMY-007: every region an operation names has an English name in the sim's cause text (EventSystem's
     // OperationRegionName), so a region added to an operation but not to the names shows as its raw id and fails here.
     // Unity's operation.region.* strings are checked in EventCardTests.
