@@ -59,7 +59,7 @@ namespace Statecraft.Game.UI
         public enum Phase { Idle, Loading, Playing }
 
         readonly Button button; readonly VisualElement caption, row; readonly UiText text;
-        readonly Action onPress; readonly Action<string> say; readonly Fetch fetch; readonly IOutput output;
+        readonly Action onPress; readonly Action<string> say; readonly Action? retry; readonly Fetch fetch; readonly IOutput output;
         AudioClip? clip; IRequest? request; IVisualElementScheduledItem? timer;
         bool heard, started; int waitedMs, stalledMs, generation; ulong bytesSeen;
 
@@ -70,11 +70,12 @@ namespace Statecraft.Game.UI
         public bool Playing => State != Phase.Idle;
 
         /// <param name="say">Shows a message (the toast) when the recording cannot be played.</param>
+        /// <param name="retry">Called when a press starts a new load, so the toast can drop the last failure's line.</param>
         /// <param name="fetch">Test seam; null fetches with UnityWebRequestMultimedia.</param>
         /// <param name="output">Test seam; null plays through an AudioSource.</param>
-        public DeclarationRecording(VisualElement root, UiText text, Action<string> say, Fetch? fetch = null, IOutput? output = null)
+        public DeclarationRecording(VisualElement root, UiText text, Action<string> say, Fetch? fetch = null, IOutput? output = null, Action? retry = null)
         {
-            this.text = text; this.say = say;
+            this.text = text; this.say = say; this.retry = retry;
             this.fetch = fetch ?? WebFetch;
             this.output = output ?? new SourceOutput();
             row = root.Q<VisualElement>("start-recording");
@@ -99,6 +100,7 @@ namespace Statecraft.Game.UI
         public void Toggle()
         {
             if (Playing) { Stop(); return; }
+            retry?.Invoke();
             State = Phase.Loading;
             button.text = text["start.loading"];
             waitedMs = 0; stalledMs = 0; bytesSeen = 0; heard = false; started = false;
