@@ -96,4 +96,19 @@ public class LedgerCivilianUpkeepTests
         dark.PopulationLedger.Reconcile();
         Assert.Equal(ledger, dark.PopulationLedger.Canonical());
     }
+
+    // R-POP-002 (#1725 PR 7 review S2): only a ledger initialized with mode Historical is let through. An initialized Open
+    // ledger, like a synthetic one (no mode), is still refused before anything is read, with the state unchanged.
+    [Theory]
+    [InlineData(true)] [InlineData(false)]
+    public void AnOpenOrSyntheticLedgerIsStillRefused(bool open)
+    {
+        var c = PopulationLedgerTests.Content();
+        var s = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(),
+            new[] { new PopulationInventoryRow("fixture", 0, PopulationLedgerTests.Person()) }, mode: open ? Mode.Open : null);
+        Assert.Equal((true, false), (s.PopulationLedger.IsInitialized, s.PopulationLedger.IsHistorical));
+        var before = s.Describe(); var hash = s.Hash();
+        Assert.Contains("integration is held", Assert.Throws<NotSupportedException>(() => Cities.AnnualUpkeep(c, s, new MvpRules())).Message);
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash());
+    }
 }
