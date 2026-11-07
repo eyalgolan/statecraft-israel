@@ -428,9 +428,10 @@ units:
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%92%D7%93%D7%A8%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%92%D7%9F_%D7%99%D7%91%D7%A0%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%91%D7%90%D7%A8_%D7%98%D7%95%D7%91%D7%99%D7%94', checked: '2026-10-22'}]
   wikipedia_only: false
+  # The owner person-checked this row on 7 November 2026 (#2621, the Bayt Jibrin stint): https://github.com/eyalgolan/statecraft-israel/pull/2621#issuecomment-6711002336
   # The owner person-checked this row on 6 November 2026 (#2757, the fields sourced since the earlier check on 21 October 2026 (#1240: https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250)): "all approved". https://github.com/eyalgolan/statecraft-israel/issues/2757
   status: fact-checked
-  checked_on: '2026-11-06'
+  checked_on: '2026-11-07'
   strength:
     value: 3229
     as_of: '1948-05-15'
