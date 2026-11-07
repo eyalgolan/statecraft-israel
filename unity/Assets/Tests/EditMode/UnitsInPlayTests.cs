@@ -361,6 +361,82 @@ public class UnitsInPlayTests
         Assert.IsNull(Squadron(new DateTime(1949, 6, 1), 2), "it left Hatzor in June 1949");
     }
 
+    /// <summary>#2734: the live 101 Squadron token's Spitfire swaps as the showcase's does (UnitShowcaseTests): it is drawn
+    /// code-built at once and asks the Collection stream for the Blender-built model; when that arrives, the model stands
+    /// under the token's aircraft, the code-built airframe and propeller stop drawing, the aircraft keeps its place and scale,
+    /// and a flying one's flight turns the model's Propeller, which takes over its light blur (#2728), while its ground shadow
+    /// stays and nothing casts a shadow of its own. A token rebuilt after the model arrived (here parked) draws it at once. The Avia S-199 (before 15
+    /// October 1948) stays code-built and asks for nothing. A rebuilt token releases its lease.</summary>
+    [Test]
+    public void TheSquadronsSpitfireStreamsInOverTheCodeBuiltOneAndTheS199StaysCodeBuilt()
+    {
+        var map = BuildMap();   // first: a new scene would destroy the stand-in model
+        var model = new GameObject("stand-in streamed spitfire");
+        foreach (var (name, shape) in new[] { ("Body", PrimitiveType.Cube), (StreamedAircraft.PropellerName, PrimitiveType.Sphere) })
+        {
+            var part = GameObject.CreatePrimitive(shape); part.name = name;
+            UnityEngine.Object.DestroyImmediate(part.GetComponent<Collider>());
+            part.transform.SetParent(model.transform, false);
+        }
+        var asked = new List<(string id, System.Action<GameObject> done, Lease lease)>();
+        StreamedAircraft.Source = (id, detail, done) => { var lease = new Lease(); asked.Add((id, done, lease)); return lease; };
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            Transform Aircraft() => map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").Find("squadron_101").Find("Aircraft");
+            Renderer[] Code(Transform plane) => new[] { "Airframe", "Propeller" }.SelectMany(n => plane.Find(n).GetComponentsInChildren<Renderer>(true)).ToArray();
+
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 7, 1), 5, 0.8));   // the S-199, flying
+            Assert.IsNotNull(Aircraft(), "the squadron flies on 1 July 1948");
+            Assert.IsEmpty(asked, "the S-199 asks the stream for nothing");
+            Assert.IsNull(Aircraft().GetComponent<StreamedAircraft>(), "the S-199 stays code-built");
+
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 16), 5, 0.8));   // the Spitfire, flying
+            var plane = Aircraft();
+            Assert.AreEqual(1, asked.Count, "the Spitfire asks once");
+            Assert.AreEqual(Statecraft.Game.Map.Collection.CollectionCatalog.IsraeliSpitfire, asked[0].id);
+            Assert.IsTrue(Code(plane).All(r => r.enabled), "drawn code-built until the model arrives");
+            var flight = plane.GetComponent<ShowcaseFlight>();
+            Assert.IsNotNull(flight, "it flies at security level 5");
+            Assert.AreSame(plane.Find("Propeller"), flight.Propeller);
+            var (position, scale) = (plane.position, plane.localScale);
+            asked[0].done(model);
+            var streamed = plane.Find(StreamedAircraft.ModelName);
+            Assert.IsNotNull(streamed, "the streamed model stands under the token's aircraft");
+            Assert.AreEqual(Vector3.zero, streamed.localPosition); Assert.AreEqual(Vector3.one, streamed.localScale);
+            Assert.IsTrue(streamed.GetComponentsInChildren<Renderer>(true).All(r => r.enabled), "the streamed model draws");
+            Assert.IsTrue(Code(plane).All(r => !r.enabled), "the code-built airframe and propeller no longer draw");
+            Assert.AreSame(streamed.Find(StreamedAircraft.PropellerName), flight.Propeller, "the flight turns the streamed Propeller");
+            var blur = streamed.Find(StreamedAircraft.PropellerName + "/" + UnitShowcase.PropellerBlurName);
+            Assert.IsTrue(blur != null && blur.GetComponent<MeshRenderer>().enabled, "the streamed Propeller carries the blur, turning with it");
+            Assert.IsFalse(plane.Find("Propeller").GetComponentsInChildren<Renderer>(true).Any(r => r.enabled), "nothing drawn is left on the code-built propeller");
+            Assert.IsTrue(plane.Find(UnitShowcase.ShadowName) is Transform laid && laid.GetComponent<MeshRenderer>().enabled, "the ground shadow stays");
+            Assert.IsTrue(plane.GetComponentsInChildren<Renderer>(true).All(r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off), "and nothing casts a shadow of its own");
+            Assert.AreEqual(position, plane.position); Assert.AreEqual(scale, plane.localScale);
+            Assert.AreEqual(Vector3.one * UnitShowcase.AircraftScale, plane.localScale, "the symbolic scale");
+
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 16), 3, 0.8));   // parked, below security level 4
+            Assert.AreEqual(1, asked[0].lease.Disposed, "the rebuilt token released the flying aircraft's lease, once");
+            plane = Aircraft();
+            Assert.IsNull(plane.GetComponent<ShowcaseFlight>(), "parked");
+            Assert.AreEqual(2, asked.Count, "the parked Spitfire asks too, for a lease of its own");
+            Assert.IsNotNull(plane.Find(StreamedAircraft.ModelName), "the model has arrived, so the rebuilt token draws it at once");
+            Assert.IsTrue(Code(plane).All(r => !r.enabled), "no frame of the code-built aircraft after a rebuild");
+            Assert.IsFalse(plane.GetComponentsInChildren<Transform>(true).Any(c => c.name == UnitShowcase.PropellerBlurName), "a parked Spitfire has no blur");
+            asked[1].done(model);
+            Assert.AreEqual(1, plane.Cast<Transform>().Count(c => c.name == StreamedAircraft.ModelName), "its own answer adds no second model");
+            Assert.IsTrue(Code(plane).All(r => !r.enabled));
+        }
+        finally
+        {
+            StreamedAircraft.Source = null;
+            UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(model);
+        }
+        Assert.AreEqual(1, asked[1].lease.Disposed, "the map's teardown released the parked aircraft's lease");
+    }
+
+    sealed class Lease : IDisposable { public int Disposed; public void Dispose() => Disposed++; }
+
     [Test]
     public void AfterTheArmisticesOnlyWhatASourceSaysContinuedShows()
     {

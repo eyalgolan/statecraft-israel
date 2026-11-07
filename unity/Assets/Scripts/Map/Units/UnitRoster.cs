@@ -13,7 +13,7 @@ namespace Statecraft.Game.Map.Units
         public UnitAnchor Anchor { get; }
         /// <summary>Riflemen on an army token (1, 2 or 3); 0 for aircraft and ships.</summary>
         public int Figures { get; }
-        /// <summary>The model's art type (a <c>UnitShowcase.*Type</c> constant; the authored-prefab hook's key).</summary>
+        /// <summary>The model's art type (a <c>UnitShowcase.*Type</c> constant).</summary>
         public string ArtType { get; }
         /// <summary>An air unit flies over its base (security level 4 or 5) or stands parked on it.</summary>
         public bool Flying { get; }
@@ -214,7 +214,7 @@ namespace Statecraft.Game.Map.Units
             return 1;
         }
 
-        /// <summary>The art type of a rifleman with <paramref name="headgear"/> (the authored-prefab hook's key).</summary>
+        /// <summary>The art type of a rifleman with <paramref name="headgear"/>.</summary>
         public static string RiflemanType(string headgear) => headgear switch
         {
             UnitData.SlouchHat => UnitShowcase.RiflemanSlouchHatType,

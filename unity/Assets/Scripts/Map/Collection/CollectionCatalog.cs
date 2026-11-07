@@ -80,7 +80,9 @@ namespace Statecraft.Game.Map.Collection
             // Tal Heuberger's prepared weapons (#2083) held by the Israeli soldier figures (UnitWeapons), and their C06 point-fire
             // pose source (#2084) for the attacking C06 figures (UnitFigurePointFire); each in a bundle of its own, "collection-" + id,
             // opened after the people's (group names only).
-            GeneratedWeapons = "collection-generated-weapons", FigurePoses = "collection-figure-poses";
+            GeneratedWeapons = "collection-generated-weapons", FigurePoses = "collection-figure-poses",
+            // The project's own authored unit models (#2734), each in a bundle of its own, "collection-" + id (a group name only).
+            AuthoredUnits = "collection-authored-units";
 
         /// <summary>Tal Heuberger's whole-town models of Tiberias, Safed, Netanya (#1288 asks for one each) and Ramla (#2085), Far
         /// landmarks on their towns (TownLandmarks). Their sources are asset-sources/prepared-towns-20261031/ (#2085); the Unity FBX
@@ -147,6 +149,14 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Tal Heuberger's local Arab irregular, the local forces' token figure once a local-forces row is sourced (owner, 2
         /// November 2026: "Use it instead of C09"; Units.UnitFigures.BySide).</summary>
         public const string LocalIrregular = "figure-local-arab-irregular-1948-v1";
+
+        /// <summary>The 101 Squadron Spitfire LF Mk IXe as flown from October 1948, built from primitives in Blender by
+        /// tools/spitfire_101_model.py (no AI, no third-party model; CC BY 4.0, ASSETS.yaml), drawn over the code-built
+        /// Spitfire of the showcase and of the 101 Squadron token once it has streamed in (Units.StreamedAircraft). Its own
+        /// bundle and folder, never under Resources (#2734: the WebGL player's first download). It is the project's model, not
+        /// Tal Heuberger's, and none of the originals' importers touches its committed import settings; its colour map is the
+        /// tool's PNG (<see cref="ColourMapPath"/>). The id is UnitShowcase.SpitfireType.</summary>
+        public const string IsraeliSpitfire = "spitfire-mk9e-101sqn-1948";
 
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
@@ -227,6 +237,7 @@ namespace Statecraft.Game.Map.Collection
             }),
             (GeneratedWeapons, new[] { K98k, Sten }),
             (FigurePoses, new[] { C06PointFire }),
+            (AuthoredUnits, new[] { IsraeliSpitfire }),
         };
 
         /// <summary>A bundle that is opened only after another has settled (opened or failed) when both are asked for: the Arab
@@ -287,15 +298,25 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Tal Heuberger's C06 point-fire pose source (#2084): a prefab with no mesh, only the clip it samples.</summary>
         public static bool IsFigurePose(string id) => id == C06PointFire;
 
+        /// <summary>The project's own authored unit models (#2734): static, with one prefab beside the FBX (made by
+        /// CollectionImport.MakeAuthoredUnitPrefabs), like the generated props.</summary>
+        public static bool IsAuthoredUnit(string id) => id == IsraeliSpitfire;
+
+        /// <summary>A model's colour map: <c>&lt;id&gt;_basecolor.jpg</c> beside its model (the delivered JPG), except an authored
+        /// unit model's <c>&lt;id&gt;_basecolor.png</c> (the tool's own PNG, byte for byte).</summary>
+        public static string ColourMapPath(string id) =>
+            $"{(IsBuilding(id) ? BuildingsFolder : Folder)}/{id}/{id}_basecolor.{(IsAuthoredUnit(id) ? "png" : "jpg")}";
+
         /// <summary>The model file a catalogued id is imported from: <c>&lt;id&gt;.fbx</c> beside its prefab, except the vehicle
         /// delivery's documented <c>&lt;id&gt;-compatibility.fbx</c> (docs/vehicle-review-2026-10-22.md).</summary>
         public static string SourceModelPath(string id) =>
             id == C06PointFire ? $"{Folder}/{id}/{C06PointFireFile}" :
             $"{(IsBuilding(id) ? BuildingsFolder : Folder)}/{id}/{id}{(id == SyrianR35 || id == EgyptianDakota ? "-compatibility" : "")}.fbx";
 
-        /// <summary>Every generated model (figure, prop or whole town): imported by its own lossless importer, not the original Collection's.</summary>
+        /// <summary>Every generated model (figure, prop or whole town), and the project's authored unit models: imported by its own
+        /// importer or its committed import settings, never the original Collection's (CollectionImport.Run).</summary>
         public static bool IsGenerated(string id) => IsFullQualityGeneratedInfantry(id) || IsGeneratedProp(id) || IsGeneratedTown(id)
-            || IsGeneratedWeapon(id) || IsFigurePose(id);
+            || IsGeneratedWeapon(id) || IsFigurePose(id) || IsAuthoredUnit(id);
 
         // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);

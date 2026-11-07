@@ -49,9 +49,9 @@ namespace Statecraft.Game.Map.Units
         /// opacity in two layers it read as a near-opaque white plate under its dark rods (e21's AFTER captures of #2728).</summary>
         public const float PropellerBlurOpacity = 0.65f;
 
-        /// <summary>The names of the 101 Squadron Spitfire's propeller blur (a child of its propeller) and ground shadow (a child
-        /// of the aircraft), and of an authored model's propeller (a child of its prefab's root, turned by ShowcaseFlight).</summary>
-        public const string PropellerBlurName = "PropellerBlur", ShadowName = "Shadow", AuthoredPropellerName = "Propeller";
+        /// <summary>The names of the 101 Squadron Spitfire's propeller blur (a child of its propeller: the code-built one, then the
+        /// streamed model's, <see cref="CarryBlur"/>) and ground shadow (a child of the aircraft).</summary>
+        public const string PropellerBlurName = "PropellerBlur", ShadowName = "Shadow";
 
         /// <summary>A copy of <paramref name="source"/> (same shader, maps and colours) with <see cref="AircraftSmoothness"/>.
         /// The caller owns it.</summary>
@@ -101,32 +101,44 @@ namespace Statecraft.Game.Map.Units
             return go.transform;
         }
 
-        /// <summary>A flying Spitfire's look, whichever model draws it (the code-built one, or an authored model in
-        /// <see cref="AuthoredFolder"/>, coordinator, 5 November 2026): its propeller (<paramref name="codeProp"/>, or the authored
-        /// prefab's child named <see cref="AuthoredPropellerName"/>) carries the light blur, sized to the propeller's own mesh;
-        /// a soft shadow, sized to the airframe as drawn, lies on the ground (ShowcaseFlight lays it); and the aircraft casts
-        /// no shadow of its own (<see cref="CastNoShadow"/>). Returns the propeller for ShowcaseFlight to turn (null when
-        /// there is none) and the shadow and its half size across and along the heading (m). Call before the aircraft is
-        /// placed or turned: the size is measured in its own frame.</summary>
-        internal static Transform? FlyingSpitfire(Transform plane, GameObject airframe, Transform? codeProp, Mesh blurMesh, Material blur,
+        /// <summary>A flying 101 Squadron Spitfire's look (coordinator, 5 November 2026), on its code-built model: its propeller
+        /// <paramref name="codeProp"/> carries the light blur; a soft shadow, sized to the airframe as drawn, lies on the ground
+        /// (ShowcaseFlight lays it); and the aircraft casts no shadow of its own (<see cref="CastNoShadow"/>). When the
+        /// Blender-built model streams in over it (<see cref="StreamedAircraft"/>), the blur moves to that model's propeller
+        /// (<see cref="CarryBlur"/>), the shadow stays, and the model casts none either. Returns the shadow and its half size
+        /// across and along the heading (m). Call before the aircraft is placed or turned: the size is measured in its own frame.</summary>
+        internal static void FlyingSpitfire(Transform plane, Transform codeProp, Mesh blurMesh, Material blur,
             Mesh shadowMesh, out Transform shadow, out Vector2 shadowHalf)
         {
             var size = SizeInFrame(plane);   // before the blur and the shadow are added
             shadowHalf = 0.5f * Collection.SeaAirCollection.ShadowShare * AircraftScale * new Vector2(size.x, size.z);
-            var prop = codeProp != null ? codeProp : airframe.transform.Find(AuthoredPropellerName);
-            if (prop != null)
-            {
-                // The code-built blades reach 1.6 (UnitModels.SpitfirePropeller); the blur reaches a little beyond any blades.
-                float reach = codeProp != null ? 1.6f : PropellerReach(prop);
-                PropellerBlur(prop, blurMesh, blur, reach > 0f ? reach * PropellerBlurRadius / 1.6f : PropellerBlurRadius);
-            }
+            PropellerBlur(codeProp, blurMesh, blur, BlurRadius(CodeBuiltPropellerReach));
             shadow = GroundShadow(plane, shadowMesh, blur);
             CastNoShadow(plane);
-            return prop;
+        }
+
+        /// <summary>How far the code-built Spitfire's blades reach from the hub (UnitModels.SpitfirePropeller).</summary>
+        const float CodeBuiltPropellerReach = 1.6f;
+
+        /// <summary>The blur's radius for blades reaching <paramref name="reach"/> from the hub: a little beyond them, as
+        /// <see cref="PropellerBlurRadius"/> is for the code-built blades (<see cref="PropellerBlurRadius"/> when there are none).</summary>
+        static float BlurRadius(float reach) => reach > 0f ? reach * PropellerBlurRadius / CodeBuiltPropellerReach : PropellerBlurRadius;
+
+        /// <summary>Moves a flying Spitfire's <paramref name="blur"/> (<see cref="PropellerBlur"/>, on the code-built propeller)
+        /// onto <paramref name="prop"/>, the streamed model's own propeller (StreamedAircraft, on the swap), so it turns with it
+        /// and keeps drawing: through its hub, facing along its +z, sized to its blades (<see cref="PropellerReach"/>, in its
+        /// own units). The blur's mesh and material stay the aircraft's own (MapRuntimeAssets frees them).</summary>
+        internal static void CarryBlur(Transform blur, Transform prop)
+        {
+            float reach = PropellerReach(prop);   // before the blur joins it
+            blur.SetParent(prop, false);
+            blur.localPosition = Vector3.zero;
+            blur.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            blur.localScale = Vector3.one * BlurRadius(reach);
         }
 
         /// <summary>The meshes under <paramref name="plane"/> measured in its own frame, in the model's units (metres for a
-        /// model to scale: the frame's own scale is taken out), so a code-built and an authored airframe size their shadow alike.</summary>
+        /// model to scale: the frame's own scale is taken out).</summary>
         static Vector3 SizeInFrame(Transform plane)
         {
             Bounds? box = null;
@@ -135,7 +147,7 @@ namespace Statecraft.Game.Map.Units
             return box?.size ?? Vector3.zero;
         }
 
-        /// <summary>How far an authored propeller's blades reach from its hub in its turning plane (its local X and Y), in its
+        /// <summary>How far a streamed propeller's blades reach from its hub in its turning plane (its local X and Y), in its
         /// own units: the largest of its meshes' extents along either axis (a bounding box's corner would overstate a
         /// blade by up to the square root of 2). 0 when it has no mesh.</summary>
         static float PropellerReach(Transform prop)
@@ -205,13 +217,10 @@ namespace Statecraft.Game.Map.Units
         public static bool StillRequested(string? url, string[] args, bool webgl) =>
             webgl ? UrlFlags.Has(url, "shot") : args.Contains("-shot");
 
-        /// <summary>The art hook (owner ruling, 2026-10-11): promo-quality close-zoom models come from a separate AI-3D track,
-        /// and the code-built models stay as the far-zoom and fallback version. A prefab at
-        /// Resources/<see cref="AuthoredFolder"/>&lt;unit type&gt; replaces the code-built model of that type. It follows the
-        /// same convention: real metres, facing +Z, origin on the ground (an aircraft: its centre of gravity), with its own
-        /// materials; an authored aircraft brings its own propeller. Without one, the code-built mesh is used. Unit types:
-        /// the <c>*Type</c> constants below.</summary>
-        public const string AuthoredFolder = "Units/Authored/";
+        /// <summary>The unit types. The code-built models (owner ruling, 2026-10-11: they stay as the far-zoom and fallback
+        /// version) are drawn for every type at once; no unit model is loaded from Resources (#2734: the WebGL player's first
+        /// download). Better models stream in over them from the Collection: the riflemen's figures (UnitFigures) and the
+        /// Blender-built Spitfire (<see cref="StreamedAircraft"/>, whose catalog id is <see cref="SpitfireType"/>).</summary>
         public const string RiflemanSlouchHatType = "rifleman-1948-slouch-hat", RiflemanHelmetType = "rifleman-1948-steel-helmet",
             RiflemanWoolCapType = "rifleman-1948-wool-cap", SpitfireType = "spitfire-mk9e-101sqn-1948", CorvetteType = "corvette-k20-1948",
             S199Type = "avia-s199-101sqn-1948";
@@ -235,9 +244,6 @@ namespace Statecraft.Game.Map.Units
             3 => new[] { new Vector2(-1.0f, -0.1f), new Vector2(0f, 0.2f), new Vector2(1.0f, -0.1f) },
             _ => throw new ArgumentOutOfRangeException(nameof(figures), "a token has 1, 2 or 3 figures"),
         };
-
-        /// <summary>Finds an authored model for a unit type, or null (a seam: tests replace it).</summary>
-        internal static Func<string, GameObject?> AuthoredModel = type => Resources.Load<GameObject>(AuthoredFolder + type);
 
         /// <summary>Builds the showcase under the map's terrain (so a map rebuild destroys it). Its meshes, palette and
         /// material are owned by the showcase root's own MapRuntimeAssets, so destroying the root (a re-spawn or a map
@@ -286,36 +292,32 @@ namespace Statecraft.Game.Map.Units
                 var (type, hat, pose, faded, heading) = looks[i];
                 var p = centre + new Vector3(offsets[i].x, 0, offsets[i].y) * DrawSpread * hex;
                 p.y = UnitPlinth.FigureY(map, plinth, p.x, p.z);
-                var figure = Piece(root.transform, $"Rifleman{i}", type, () => Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
+                var figure = Piece(root.transform, $"Rifleman{i}", Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
                     paint, p, Quaternion.Euler(0, heading, 0), FigureScale);
                 var headgear = UnitData.Headgears.First(h => UnitRoster.RiflemanType(h) == type);
                 UnitFigures.Dress(figure.transform, UnitFigures.ByHeadgear[headgear], map.Residency.Units);   // the Collection's soldier, once streamed (#665)
             }
             Ring(map, assets, ringTemplate, root.transform, centre, RingRadius * hex);
 
-            // The aircraft and, when code-built, its propeller.
+            // The aircraft: the code-built airframe and propeller, drawn until the Blender-built model streams in over them.
             var plane = new GameObject("Spitfire1948");
             plane.transform.SetParent(root.transform, false);
-            var airframe = Piece(plane.transform, "Airframe", SpitfireType, () => Built(UnitModels.Spitfire("Spitfire1948")), aircraftPaint,
-                Vector3.zero, Quaternion.identity, 1f, out bool authoredAircraft);
-            Transform? codeProp = null;
-            if (!authoredAircraft)
-            {
-                codeProp = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), aircraftPaint, Vector3.zero, Quaternion.identity, 1f).transform;
-                codeProp.localPosition = UnitModels.SpitfirePropellerHub;
-            }
-            // Its blur, shadow and no cast shadow, whichever model draws it (an authored one brings its own propeller).
-            var prop = FlyingSpitfire(plane.transform, airframe, codeProp, assets.Own(PropellerBlurMesh()), assets.Own(BlurMaterial()),
+            var airframe = Piece(plane.transform, "Airframe", Built(UnitModels.Spitfire("Spitfire1948")), aircraftPaint, Vector3.zero, Quaternion.identity, 1f);
+            var prop = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), aircraftPaint, Vector3.zero, Quaternion.identity, 1f).transform;
+            prop.localPosition = UnitModels.SpitfirePropellerHub;
+            // Its blur, shadow and no cast shadow (the streamed model takes the blur over when it arrives, StreamedAircraft).
+            FlyingSpitfire(plane.transform, prop, assets.Own(PropellerBlurMesh()), assets.Own(BlurMaterial()),
                 assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), out var shadow, out var shadowHalf);
             plane.transform.localScale = Vector3.one * AircraftScale;
             var loopCentre = map.Frame.ToWorld(LoopCentre.lon, LoopCentre.lat, 0);
             var flight = plane.AddComponent<ShowcaseFlight>();
             flight.Configure(loopCentre, LoopRadiusM, LoopFloor(map, loopCentre, LoopRadiusM) + AltitudeM, LoopSeconds, BankDegrees, prop, still ? StillPhase : (float?)null,
                 shadow, map.Terrain, SeaLevelY(map), shadowHalf);
+            StreamedAircraft.Attach(plane, airframe, prop);
 
             // The corvette, at the sea surface.
             var ship = Ground(map, map.Frame.ToWorld(ShipAt.lon, ShipAt.lat, 0));
-            Piece(root.transform, "Corvette1948", CorvetteType, () => Built(UnitModels.Corvette("CorvetteK20")), paint, ship,
+            Piece(root.transform, "Corvette1948", Built(UnitModels.Corvette("CorvetteK20")), paint, ship,
                 Quaternion.Euler(0, ShipHeadingDegrees, 0), ShipScale);
 
             HideTrees(map, ToggleName, holes);
@@ -340,24 +342,7 @@ namespace Statecraft.Game.Map.Units
             if (veg != null) veg.Hide(owner, holes);
         }
 
-        /// <summary>One unit model: the authored prefab for <paramref name="type"/> when there is one (the art hook),
-        /// otherwise the code-built mesh.</summary>
-        static GameObject Piece(Transform parent, string name, string type, Func<Mesh> codeBuilt, Material paint, Vector3 position,
-            Quaternion rotation, float scale) => Piece(parent, name, type, codeBuilt, paint, position, rotation, scale, out _);
-
-        internal static GameObject Piece(Transform parent, string name, string type, Func<Mesh> codeBuilt, Material paint, Vector3 position,
-            Quaternion rotation, float scale, out bool authored)
-        {
-            var prefab = AuthoredModel(type);
-            authored = prefab != null;
-            if (prefab == null) return Piece(parent, name, codeBuilt(), paint, position, rotation, scale);
-            var go = UnityEngine.Object.Instantiate(prefab, parent, false);
-            go.name = name;
-            go.transform.SetPositionAndRotation(position, rotation);
-            go.transform.localScale = Vector3.one * scale;
-            return go;
-        }
-
+        /// <summary>One code-built unit model: <paramref name="mesh"/> drawn with <paramref name="mat"/>, placed in world space.</summary>
         internal static GameObject Piece(Transform parent, string name, Mesh mesh, Material mat, Vector3 position, Quaternion rotation, float scale)
         {
             var go = new GameObject(name);
