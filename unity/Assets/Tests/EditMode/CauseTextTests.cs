@@ -102,12 +102,17 @@ public class CauseTextTests
         StringAssert.DoesNotContain("golani", en); StringAssert.DoesNotContain("southern_coast", en);
         var he = CauseText.Line(postponed, C, rows, He);
         StringAssert.Contains("חטיבת גולני", he); StringAssert.Contains("הנגב", he); StringAssert.Contains("מישור החוף הדרומי", he);
+        // The owner's choice, 7 November 2026: "Neutral form (Recommended)": the decision is the subject, so the verb agrees
+        // with any card title, a plural one such as "קרבות עשרת הימים" included.
+        StringAssert.Contains("ההחלטה על", he); StringAssert.Contains("נדחתה", he);
         Assert.IsFalse(Regex.IsMatch(he, "golani|southern_coast|negev"), he);
 
         s.Date = e.To!.Value; why.Clear(); EventSystem.LapseExpiredOperations(C, s, why);
         var lapsed = why.Single(x => x.Key == CauseKeys.OperationLapsed);
         StringAssert.Contains("Golani Brigade", CauseText.Line(lapsed, C, rows, En));
-        StringAssert.Contains("חטיבת גולני", CauseText.Line(lapsed, C, rows, He));
+        var heLapsed = CauseText.Line(lapsed, C, rows, He);
+        StringAssert.Contains("חטיבת גולני", heLapsed);
+        StringAssert.Contains("ההחלטה על", heLapsed); StringAssert.Contains("ירדה מן הפרק", heLapsed);
     }
 
     /// <summary>The keyed lines the seeded game does not reach: a call-up order, a situation that ends, civilian upkeep and

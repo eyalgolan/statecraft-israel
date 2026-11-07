@@ -1242,8 +1242,8 @@ why.cause.event_delegated: "ההכרעה הועברה אל {0}: {1}"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.event_delegated_partial: "ההכרעה הועברה אל {0}, עם ביצוע חלקי: {1}"
 # Agent-drafted Hebrew; native review pending (#564).
-why.cause.operation_postponed: "{0} נדחה. {1}."
-why.cause.operation_lapsed: "{0} ירד מן הפרק משום שהיחידות הנדרשות לא הגיעו לאזורי המבצע. {1}."
+why.cause.operation_postponed: "ההחלטה על {0} נדחתה. {1}."
+why.cause.operation_lapsed: "ההחלטה על {0} ירדה מן הפרק משום שהיחידות הנדרשות לא הגיעו לאזורי המבצע. {1}."
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.cabinet: "הממשלה"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
