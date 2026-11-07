@@ -235,7 +235,11 @@ The gates, in order. The first one that fails ends the night as REFUSED, and not
    saved publication, use the newest non-draft release carrying a `*-web.zip`. The total may grow at most 2%, plus
    the size budget below.
 8. Headless boot time (`boot`): the median of three boots. The first 5 published nights set the baseline; after
-   that a boot slower than the slowest baseline night plus the spread of the baseline is refused.
+   that a boot slower than the slowest baseline night plus the spread of the baseline is refused. Before the first
+   boot the machine settles: the job waits until the 1-minute load average is under 2.0, at most 5 minutes, and
+   measures anyway if it never gets there. Each `boot-N.log` starts with the machine's load averages,
+   `vm.swapusage`, `memory_pressure`'s free percentage and `pmset -g therm`, and `boot-1.log` also says how long
+   the wait took.
 
 A nightly never moves a golden: golden moves arrive through reviewed pull requests, and the nightly only needs the
 golden tests of the full run to pass.
