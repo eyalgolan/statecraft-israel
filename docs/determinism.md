@@ -74,7 +74,8 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it and that option's operation
-units are in place at the turn's start (R-ENEMY-007; the smoke gives no unit orders), the rest left to their ministers): `SMOKE OK 5 turns 1948-10-15 3803636fdc5dae42a0ac1f298b957652514a3ffc210ce68a06c8ddbb279f0150`.
+units are in place in the state the card shows: the turn's start after its standing go-to routes have moved, the
+no-orders preview (R-ENEMY-007, `GoldenRun.SmokeOrders`; the smoke gives no unit orders), the rest left to their ministers): `SMOKE OK 5 turns 1948-10-15 3803636fdc5dae42a0ac1f298b957652514a3ffc210ce68a06c8ddbb279f0150`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 

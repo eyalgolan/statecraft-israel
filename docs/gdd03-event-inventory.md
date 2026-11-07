@@ -23,9 +23,11 @@ and review the diff. Do not edit the table by hand.
   `gdd-0.3`.
 - **Not in the table**: `requires_unit_regions` (R-ENEMY-007, #2543) is an option gate, not an effect
   field, so it is out of this inventory.
-- **Review reset**: "no" on every row. Only `israel_bonds` changes its source bytes: its `launch` option gains
-  `debt_dollars: 52` and a comment (#2457), with its text, Hebrew, sources and review status unchanged. Every card's
-  bytes are pinned (`AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged`), and the test checks that a kept card keeps its status and human sign-off under `gdd-0.3`. An excluded card keeps
+- **Review reset**: "no" on every row. Of this inventory's own changes, only `israel_bonds`' source bytes move: its
+  `launch` option gains `debt_dollars: 52` and a comment (#2457), with its text, Hebrew, sources and review status
+  unchanged. Every card's bytes are pinned (`AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged`), and a
+  later edit re-pins a card with its reason. The five operation cards' `requires_unit_regions` lines and their
+  `# R-ENEMY-007` comments (#2543) are left out of the pin, so those cards keep theirs. The test also checks that a kept card keeps its status and human sign-off under `gdd-0.3`. An excluded card keeps
   its record and review for the legacy rulesets.
 
 **What decides it.** Decision D1 and answers Q1 to Q4 (owner, 1 November 2026, "Approve all six (Recommended)" for D1
