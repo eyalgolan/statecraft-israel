@@ -1,5 +1,7 @@
-- GDD 0.3 starting population (Refs #1689, Refs #1725): the inactive Historical start now counts the 20 opening field
-  farmers per host, one per field, split 1:2:1 per host (owner, 7 November 2026: "Per host, 1/18/1 (Recommended)"),
-  which gives Tiberias 1 novice, 4 trained and 1 veteran and every other host only trained farmers, with one housing
-  place per farmer (owner: "Yes to all three (Recommended)"). Nothing reads the count yet and no farmer record is
-  added, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1689, Refs #1725): the inactive Historical ledger now holds the 20 opening field
+  farmers on top of the census (owner, 7 November 2026: "On top of census (Recommended)"), one on each field from the
+  first turn, living in the field's host. They split 1:2:1 per host (owner: "Per host, 1/18/1 (Recommended)"): Tiberias
+  has a novice on F03, four trained and a veteran on F08 (owner, relayed: "F08 veteran, F03 novice (Recommended)"), and
+  every other host only trained farmers, all with no work experience (owner, relayed: "0 for all (Recommended)"). The
+  dark start adds one housing place per farmer in the census towns that host them; Nir Am and Nirim get none for now
+  (owner, relayed: "None for those two for now (Recommended)"). No new-game wiring, so there is no change in the game.

@@ -20,7 +20,9 @@ public class HistoricalPopulationTests
     static int Count(IReadOnlyList<HistoricalPopulationRow> rows, string source) => rows.Count(r => r.Source == source);
 
     // R-POP-004, R-CITY-007, R-UNIT-006, R-CITY-008: one record per census population unit in each city and per population
-    // unit of each Israeli starting formation, no more and no less, checked against the aggregate start of the same content.
+    // unit of each Israeli starting formation, checked against the aggregate start of the same content, plus the 20 opening
+    // field farmers on top of the census (#1725 PR 4; owner, 7 November 2026, #1689: "On top, change the rule
+    // (Recommended)"), no more and no less.
     [Fact]
     public void RealInventoryHoldsTheCensusCitiesAndTheStartingFormationsNoMoreNoLess()
     {
@@ -40,14 +42,19 @@ public class HistoricalPopulationTests
         foreach (var u in own)
             Assert.Equal(u.Strength, Count(rows, HistoricalPopulation.FormationPrefix + c.StartingForces[u.Id].Row));
 
-        var expected = start.Cities.Values.Sum(x => x.Civilians) + own.Sum(u => u.Strength);
+        var farmers = HistoricalPopulation.FieldFarmerHosts(c).Sum(h => h.Farmers);
+        Assert.Equal(20, farmers);
+        var expected = start.Cities.Values.Sum(x => x.Civilians) + own.Sum(u => u.Strength) + farmers;
         Assert.Equal(expected, rows.Count);
         Assert.All(rows.Where(r => r.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)),
             r => Assert.Equal(PopulationStatus.FreeCivilian, r.Status));
         Assert.All(rows.Where(r => r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)),
             r => Assert.Equal(PopulationStatus.ActiveSoldier, r.Status));
+        Assert.All(rows.Where(r => r.Source.StartsWith(HistoricalPopulation.FarmerPrefix, StringComparison.Ordinal)),
+            r => Assert.Equal(PopulationStatus.FreeCivilian, r.Status));
         Assert.All(rows, r => Assert.True(r.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
-            || r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)));
+            || r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)
+            || r.Source.StartsWith(HistoricalPopulation.FarmerPrefix, StringComparison.Ordinal)));
     }
 
     // R-POP-004, R-CITY-006, R-CITY-007: an anchor independent of the loader. The census sources are exactly the twelve
@@ -186,7 +193,7 @@ public class HistoricalPopulationTests
             var rows = LedgerRows(inventory.Where(r => r.Source.StartsWith(prefix, StringComparison.Ordinal)).Take(1).ToList());
             Assert.Single(rows);
             var e = Assert.Throws<ArgumentException>(() => PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), rows, mode: mode));
-            Assert.Equal("Census and units_1948 rows are the Historical start's; their fixture needs mode Historical (R-POP-004).", e.Message);
+            Assert.Equal("Census, units_1948 and field rows are the Historical start's; their fixture needs mode Historical (R-POP-004).", e.Message);
         }
     }
 
@@ -312,7 +319,7 @@ public class HistoricalPopulationTests
     }
 
     // R-POP-004, #1689 PR 1 city binding: each census record's location names its city, in that city's region; a formation
-    // record's location names no city.
+    // record's location names no city. A farmer's names its host (HistoricalFieldFarmerRecordsTests).
     [Fact]
     public void EveryCensusRecordIsBoundToItsCity()
     {
@@ -328,7 +335,7 @@ public class HistoricalPopulationTests
                 Assert.Equal(city, units[i].Location!.City);
                 Assert.Equal(c.PlayerRegions.AtLocation(city)!.Id, units[i].Location!.Region);
             }
-            else Assert.Null(units[i].Location!.City);
+            else if (source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)) Assert.Null(units[i].Location!.City);
         }
     }
 

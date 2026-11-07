@@ -1,7 +1,7 @@
 using Statecraft.Sim;
 
-/// <summary>#1725 PR 4, the ruled part (Refs #1689): each opening field's farmer, counted per host, before any farmer
-/// record exists. Owner, 7 November 2026 (#1689 comment 6704389240): "On top of census (Recommended)"; (comment
+/// <summary>#1725 PR 4 (Refs #1689): each opening field's farmer, counted per host; HistoricalFieldFarmerRecordsTests
+/// checks the records built from the count. Owner, 7 November 2026 (#1689 comment 6704389240): "On top of census (Recommended)"; (comment
 /// 6704565066) "Yes to all three (Recommended)": every farmer staffed on their field from turn 1 and one added housing
 /// place per farmer in their host; (comment 6704985642) "Per host, 1/18/1 (Recommended)". Owner, 3 November 2026 (#1694):
 /// "One farmer per field (Recommended)". Hosts: regions.yaml field_hexes (#1717, #2924).</summary>
@@ -74,18 +74,6 @@ public class HistoricalFieldFarmerHostsTests
             Assert.Equal(1, hosts.Single(h => h.Host == settlement).HousingPlaces);
             Assert.DoesNotContain(c.Cities, x => x.Id == settlement);
         }
-    }
-
-    // Not built yet: no farmer record. The inventory and the ledger fixture still hold only the census and the soldiers,
-    // so the ledger, the dark start and every hash are as before.
-    [Fact]
-    public void TheInventoryHoldsNoFarmerYet()
-    {
-        var c = Gdd03();
-        var rows = HistoricalPopulation.Inventory(c);
-        Assert.All(rows, r => Assert.True(r.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
-            || r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)));
-        Assert.DoesNotContain(HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units, u => u.Profession == CivilianProfession.Farmer);
     }
 
     // A field total other than the Agreed start.prepared_fields (20) is refused: no farmer count is invented or dropped.
