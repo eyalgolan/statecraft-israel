@@ -71,12 +71,22 @@ namespace Statecraft.Sim
                 throw new ArgumentException("Unknown or incompatible assignment target.");
             return t;
         }
-        /// <summary>R-POP-002: a location's city must be a member location of its region in regions.yaml (AtLocation).</summary>
-        internal void ValidateCities(PlayerRegionCatalogue regions)
+        /// <summary>R-POP-002: a location's city must be a member location of its region in regions.yaml (AtLocation), and a
+        /// place where own people live by R-POP-004's rulings: a census city (cities.yaml, R-CITY-006) or a field host of that
+        /// region (field_hexes host; owner, 7 November 2026, #1689: "These two only (Recommended)"). Any other member, a
+        /// locality, a sites.yaml id or a map location, is refused (review of #2936, S1-1).</summary>
+        internal void ValidateCities(Content c)
         {
             foreach (var l in locations)
-                if (l.City != null && regions.AtLocation(l.City)?.Id != l.Region)
+            {
+                if (l.City == null) continue;
+                var region = c.PlayerRegions.AtLocation(l.City);
+                if (region?.Id != l.Region)
                     throw new ArgumentException("City " + l.City + " is not in region " + l.Region + " in regions.yaml (R-POP-002).");
+                if (!c.Cities.Any(x => x.Id == l.City) && !region.FieldHosts.Any(h => h.Host == l.City))
+                    throw new ArgumentException("City " + l.City + " of region " + l.Region
+                        + " is neither a census city of cities.yaml nor a field host in regions.yaml (R-POP-002).");
+            }
         }
         internal bool HasCaptor(string captor) => captors.Contains(captor);
         internal bool HasQualification(string qualification) => qualification == "" || qualifications.Contains(qualification);
@@ -270,7 +280,7 @@ namespace Statecraft.Sim
             var s = new GameState(c); var l = s.PopulationLedger;
             if (mode is Mode m) s.Mode = m;
             l.bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
-            bindings.ValidateCities(c.PlayerRegions);
+            bindings.ValidateCities(c);
             var ordered = rows.OrderBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Ordinal).ToList();
             if (mode != Mode.Historical && ordered.Any(x => x.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
                 || x.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)))
