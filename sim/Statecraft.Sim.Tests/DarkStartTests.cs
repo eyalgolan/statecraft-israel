@@ -131,4 +131,31 @@ public class DarkStartTests
         Assert.Equal(records, s.FoodNeed);
         Assert.Equal(mvp.CoverMonths!.Value * records, s.Food);
     }
+
+    // R-POP-002, PopulationLedger.Initialize: all or nothing. A candidate that fails validation (here one real census
+    // record with reception progress past reception.turns) leaves the public start's ledger exactly as it was, still
+    // uninitialized, so the real Historical initializer then succeeds once and a second initialization is refused.
+    [Fact]
+    public void InPlaceInitializerLeavesTheLedgerUntouchedOnAnInvalidCandidate()
+    {
+        var c = Gdd03();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var census = HistoricalPopulation.Inventory(c).First(r => r.Status == PopulationStatus.FreeCivilian);
+        var region = c.PlayerRegions.AtLocation(census.Source.Substring(HistoricalPopulation.CensusPrefix.Length))!.Id;
+        var where = new PopulationLocation(region);
+        var bindings = new PopulationBindings(new[] { where }, Array.Empty<PopulationTarget>(), Array.Empty<string>(), Array.Empty<string>());
+        var bad = new PopulationUnit(0, PopulationStatus.FreeCivilian, c.RequirePopulationInteger("reception.turns") + 1, where,
+            PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None);
+        var before = s.Describe(); var hash = s.Hash(); var ledger = s.PopulationLedger.Canonical().ToList();
+        Assert.Throws<ArgumentException>(() => s.PopulationLedger.Initialize(c, bindings,
+            new[] { new PopulationInventoryRow(census.Source, census.Ordinal, bad) }, 0, Mode.Historical));
+        Assert.False(s.PopulationLedger.IsInitialized);
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash());
+        HistoricalPopulation.Initialize(c, s);
+        Assert.Equal(HistoricalPopulation.LedgerFixture(c).PopulationLedger.Canonical(), s.PopulationLedger.Canonical());
+        var initialized = s.Hash();
+        Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.Initialize(c, s));
+        Assert.Equal(initialized, s.Hash());
+    }
 }
