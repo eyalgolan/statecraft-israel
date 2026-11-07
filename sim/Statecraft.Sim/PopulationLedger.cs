@@ -143,6 +143,9 @@ namespace Statecraft.Sim
         }
         // A snapshot wrapper prevents casts back to the writable container; records are immutable.
         public IReadOnlyList<PopulationUnit> Units => new ReadOnlyCollection<PopulationUnit>(units.Values.ToList());
+        /// <summary>Initialized with mode Historical (the R-POP-004 start's scale). Not written to the canonical text: the
+        /// scale it implies already is.</summary>
+        internal bool IsHistorical { get; private set; }
         internal PopulationLedger(bool enabled) { this.enabled = enabled; }
         internal PopulationLedger Clone()
         {
@@ -157,6 +160,12 @@ namespace Statecraft.Sim
         {
             if (state.PopulationLedger.IsInitialized)
                 throw new NotSupportedException("Population-ledger fixtures cannot run aggregate systems; gdd-0.3 integration is held.");
+        }
+        /// <summary>#1725 PR 5 (review S5-3): Pools.Init and StartingForces.Init read an initialized ledger only in the dark
+        /// start's shape, a Historical one (R-POP-004); a synthetic or Open ledger is refused as by <see cref="RefuseAggregate"/>.</summary>
+        internal static void RefuseUnlessHistorical(GameState state)
+        {
+            if (!state.PopulationLedger.IsHistorical) RefuseAggregate(state);
         }
         void RequireInitialized()
         {
@@ -279,8 +288,22 @@ namespace Statecraft.Sim
         {
             if (!c.UsesPopulationLedger) throw new InvalidOperationException("Population fixtures require gdd-0.3 identity.");
             if (nextPopulationId < 0) throw new ArgumentOutOfRangeException(nameof(nextPopulationId));
-            var s = new GameState(c); var l = s.PopulationLedger;
+            var s = new GameState(c);
             if (mode is Mode m) s.Mode = m;
+            s.PopulationLedger.Initialize(c, bindings, rows, nextPopulationId, mode);
+            return s;
+        }
+
+        /// <summary>#1725 PR 5: <see cref="CreateFixture"/>'s initialization, in place on a state's own ledger, so the dark
+        /// start (Simulation.NewGame's internal overload) can initialize the ledger of the game it is building. Same
+        /// checks and scale rule as CreateFixture. All or nothing: it builds and validates a candidate ledger and copies it
+        /// in only when valid. Refuses a ledger that is not gdd-0.3's or is already initialized.</summary>
+        internal void Initialize(Content c, PopulationBindings bindings, IEnumerable<PopulationInventoryRow> rows, int nextPopulationId, Mode? mode)
+        {
+            if (!c.UsesPopulationLedger || !enabled) throw new InvalidOperationException("Population fixtures require gdd-0.3 identity.");
+            if (IsInitialized || units.Count != 0) throw new InvalidOperationException("The population ledger is already initialized.");
+            if (nextPopulationId < 0) throw new ArgumentOutOfRangeException(nameof(nextPopulationId));
+            var l = new PopulationLedger(true);
             l.bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
             bindings.ValidateCities(c);
             var ordered = rows.OrderBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Ordinal).ToList();
@@ -297,8 +320,11 @@ namespace Statecraft.Sim
                 l.sources.Add(PopulationText.Fields(row.Source, row.Ordinal), l.NextPopulationId);
                 l.units.Add(l.NextPopulationId, row.Template.WithId(l.NextPopulationId)); l.NextPopulationId = next;
             }
-            l.Validate(l.units); l.IsInitialized = true;
-            return s;
+            l.Validate(l.units);
+            this.bindings = l.bindings; units = l.units; sources = l.sources; losses = l.losses;
+            peoplePerUnit = l.peoplePerUnit; receptionLimit = l.receptionLimit; NextPopulationId = l.NextPopulationId;
+            IsHistorical = mode == Mode.Historical;
+            IsInitialized = true;
         }
         // R-POP-001's no-fallback rule, as for the catalogue value: a missing or nonpositive value is refused, never replaced.
         internal static int HistoricalPeoplePerUnit(Content c) => c.RulesAt(c.Rules.Start).Mvp?.PeoplePerUnit is int ppu && ppu > 0 ? ppu
