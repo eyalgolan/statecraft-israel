@@ -173,7 +173,7 @@ namespace Statecraft.Game.Map.Kits
                 }
             if (top - bottom > PlinthRiseM * m)
                 km.Plinths.Box(p.x, p.y, yaw, Mathf.Max(w, nu * pu - gap), Mathf.Max(d, nv * pv - gap), bottom, top,   // #1032: models may stand out to the plot edge
-                    0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
+                    0f, TerraceStone, TerraceStone, Facade.Rubble, m, roofed: true);
         }
 
         static void AddModel(string id, TownModel model, Vector2 p, float yaw, float w, float d, float h, float bottom, float top, KitMesh km,
@@ -183,7 +183,7 @@ namespace Statecraft.Game.Map.Kits
             var mi = Fit(id, model, p, yaw, w, d, h, top, exactHeight, flip, m);
             models.Add(mi);
             // The plinth under the model itself, not the whole plot.
-            if (top - bottom > PlinthRiseM * m) km.Plinths.Box(p.x, p.y, yaw, mi.W, mi.D, bottom, top, 0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
+            if (top - bottom > PlinthRiseM * m) km.Plinths.Box(p.x, p.y, yaw, mi.W, mi.D, bottom, top, 0f, TerraceStone, TerraceStone, Facade.Rubble, m, roofed: true);
         }
 
         /// <summary>A town plot's models by its style and its place (issue #659's table).</summary>

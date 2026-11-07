@@ -116,8 +116,8 @@ namespace Statecraft.Game.Map.Kits
                 float y = ground.Y(p.x, p.y);
                 var start = km.CutStart();
                 km.Box(p.x, p.y, 15f, 5f * m, 5f * m, y - 2f * m, y, 24f * m, stone, stone, Facade.Stone, m, roofed: true);
-                km.Box(p.x, p.y, 15f, 4f * m, 4f * m, y + 24f * m, y + 24f * m, 4f * m, C(0.90f, 0.82f, 0.64f), stone, Facade.Plain, m, roofed: true);
-                km.Pyramid(p.x, p.y, 15f, 4.4f * m, 4.4f * m, y + 28f * m, 3.5f * m, C(0.55f, 0.47f, 0.40f));
+                km.Box(p.x, p.y, 15f, 4f * m, 4f * m, y + 24f * m, y + 24f * m, 4f * m, C(0.90f, 0.82f, 0.64f), stone, Facade.Ashlar, m, roofed: true);
+                km.Pyramid(p.x, p.y, 15f, 4.4f * m, 4.4f * m, y + 28f * m, 3.5f * m, C(0.55f, 0.47f, 0.40f), m);
                 AtWorldScale(s.Id, "clock_tower", km, start, start, "clock_tower", 15f, p, y, m);
                 Record(s.Id, "clock_tower", p, 15f, 5f * m, 5f * m, 31.5f * m, stone);
                 n++;
@@ -166,7 +166,7 @@ namespace Statecraft.Game.Map.Kits
                 var cur = c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
                 var mid = (prev + cur) * 0.5f; var dir = cur - prev;
                 float yaw = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-                km.Box(mid.x, mid.y, yaw, dir.magnitude * 1.08f, 5f * m, sea - 2f * m, sea, 2.2f * m, stone, stone, Facade.Plain, m);
+                km.Box(mid.x, mid.y, yaw, dir.magnitude * 1.08f, 5f * m, sea - 2f * m, sea, 2.2f * m, stone, stone, Facade.Ashlar, m);
                 Record("jaffa", "breakwater", mid, yaw, dir.magnitude * 1.08f, 5f * m, 2.2f * m, stone);   // SeaCraft keeps its boats off it
                 prev = cur;
             }
@@ -229,7 +229,7 @@ namespace Statecraft.Game.Map.Kits
             if (lots.Free(pc, 0.5f * Mathf.Sqrt(pw * pw + pl * pl)))   // first in the Old City
             {
                 var (pb, pg) = GroundSpan(pc, 0f, pw, pl, ground, 1f);
-                km.Box(pc.x, pc.y, 0f, pw, pl, pb, pg, 80f, C(0.80f, 0.72f, 0.58f), paving, Facade.Plain, 10f);
+                km.Box(pc.x, pc.y, 0f, pw, pl, pb, pg, 80f, C(0.80f, 0.72f, 0.58f), paving, Facade.Ashlar, 10f);
                 // Its lots: discs over the platform, each clear of the routes.
                 for (float u = -pw * 0.5f + 150f; u < pw * 0.5f; u += 260f)
                     for (float v = -pl * 0.5f + 150f; v < pl * 0.5f; v += 260f)
@@ -252,7 +252,7 @@ namespace Statecraft.Game.Map.Kits
                 km.Shaft(new Vector3(dc.x, deck + 5f * kv, dc.y), new Vector3(dc.x, deck + 11f * kv, dc.y), rOct, rOct, tiles, 8);
                 km.Cone(new Vector3(dc.x, deck + 11f * kv, dc.y), rOct, 2.5f * k, C(0.62f, 0.62f, 0.60f), 8);
                 km.Shaft(new Vector3(dc.x, deck + 11f * kv, dc.y), new Vector3(dc.x, deck + 19f * kv, dc.y), 11f * k, 11f * k, tiles, 16);
-                km.Dome(dc.x, dc.y, deck + 19f * kv, 11f * k, lead, 16, 6);
+                km.Dome(dc.x, dc.y, deck + 19f * kv, 11f * k, lead, 16, 6, surface: Facade.Plain);
                 AtWorldScale(s.Id, "dome_of_the_rock", km, start, dc, deck, kv);
                 Record(s.Id, "dome_of_the_rock", dc, 0f, 2f * rOct, 2f * rOct, 19f * kv + 11f * k, tiles);
                 n++;
@@ -263,7 +263,7 @@ namespace Statecraft.Game.Map.Kits
                 var ac = pc + new Vector2(0f, -0.5f * pl + 0.5f * al + 40f);
                 start = km.CutStart();
                 km.Box(ac.x, ac.y, 0f, aw, al, deck - 60f, deck, 300f, C(0.84f, 0.77f, 0.62f), C(0.70f, 0.70f, 0.68f), Facade.Stone, 16f);
-                km.Dome(ac.x, ac.y + 0.3f * al, deck + 280f, 0.45f * aw, C(0.55f, 0.56f, 0.57f), 12, 5);
+                km.Dome(ac.x, ac.y + 0.3f * al, deck + 280f, 0.45f * aw, C(0.55f, 0.56f, 0.57f), 12, 5, surface: Facade.Plain);
                 AtWorldScale(s.Id, "al_aqsa", km, start, ac, deck, 16f);
                 Record(s.Id, "al_aqsa", ac, 0f, aw, al, 300f, C(0.84f, 0.77f, 0.62f));
                 n++;
@@ -302,8 +302,8 @@ namespace Statecraft.Game.Map.Kits
                     if (gap[i]) continue;
                     var (bottom, gy) = GroundSpan(mid, yaw, len, wallT, ground, 1f);
                     var start = km.CutStart();
-                    km.Box(mid.x, mid.y, yaw, len * 1.01f, wallT, bottom, gy, wallH, stone, top, Facade.Plain, KitScale.Houses);
-                    km.Box(mid.x, mid.y, yaw, len * 1.01f, wallT * 0.35f, gy + wallH, gy + wallH, 90f, top, top, Facade.Plain, KitScale.Houses);   // the parapet
+                    km.Box(mid.x, mid.y, yaw, len * 1.01f, wallT, bottom, gy, wallH, stone, top, Facade.Ashlar, KitScale.Houses);
+                    km.Box(mid.x, mid.y, yaw, len * 1.01f, wallT * 0.35f, gy + wallH, gy + wallH, 90f, top, top, Facade.Ashlar, KitScale.Houses);   // the parapet
                     AtWorldScale(s.Id, "walls", km, start, mid, gy, KitScale.Houses, yaw, keepLength: true);
                     lots.Add(new Lot { c = mid, r = pieceR, id = s.Id });
                     built++;
@@ -319,7 +319,7 @@ namespace Statecraft.Game.Map.Kits
                         if (ground.OnRoute(t, 0.5f * tw + 10f)) continue;   // the tower itself stays off the road
                         var (tb, ty) = GroundSpan(t, yaw, tw, tw, ground, 1f);
                         var tower = km.CutStart();
-                        km.Box(t.x, t.y, yaw, tw, tw, tb, ty, th, stone, top, byRoad ? Facade.Stone : Facade.Plain, KitScale.Houses);
+                        km.Box(t.x, t.y, yaw, tw, tw, tb, ty, th, stone, top, byRoad ? Facade.Stone : Facade.Ashlar, KitScale.Houses);
                         AtWorldScale(s.Id, "wall_tower", km, tower, t, ty, KitScale.Houses);
                     }
                 }
@@ -358,7 +358,7 @@ namespace Statecraft.Game.Map.Kits
                 var start = km.CutStart();
                 km.Box(cp.x, cp.y, 0f, 18f * m, 16f * m, y - 2f * m, y, 12f * m, stone, top, Facade.Stone, m);
                 km.Box(cp.x - 5f * m, cp.y + 4f * m, 0f, 7f * m, 7f * m, y + 12f * m - 1f, y + 12f * m, 6f * m, stone, top, Facade.Stone, m);
-                km.Shaft(new Vector3(cp.x + 6f * m, y, cp.y - 5f * m), new Vector3(cp.x + 6f * m, y + 30f * m, cp.y - 5f * m), 1.7f * m, 1.4f * m, stone, 8);
+                km.Shaft(new Vector3(cp.x + 6f * m, y, cp.y - 5f * m), new Vector3(cp.x + 6f * m, y + 30f * m, cp.y - 5f * m), 1.7f * m, 1.4f * m, stone, 8, Facade.Ashlar, m);
                 km.Cone(new Vector3(cp.x + 6f * m, y + 30f * m, cp.y - 5f * m), 1.6f * m, 3.5f * m, C(0.62f, 0.62f, 0.58f), 8);
                 AtWorldScale(s.Id, "citadel", km, start, cp, y, m);
                 Record(s.Id, "citadel", cp, 0f, 18f * m, 16f * m, 33.5f * m, stone);
@@ -391,7 +391,7 @@ namespace Statecraft.Game.Map.Kits
                     {
                         var mid = from + d * ((i + 0.5f) / k);
                         if (!ground.Water(mid.x, mid.y)) continue;
-                        km.Box(mid.x, mid.y, yaw, d.magnitude / k * 1.04f, 5f * m, sea - 2f * m, sea, 2.4f * m, stone, stone, Facade.Plain, m);
+                        km.Box(mid.x, mid.y, yaw, d.magnitude / k * 1.04f, 5f * m, sea - 2f * m, sea, 2.4f * m, stone, stone, Facade.Ashlar, m);
                         Record(s.Id, "breakwater", mid, yaw, d.magnitude / k * 1.04f, 5f * m, 2.4f * m, stone);   // SeaCraft keeps its boats off it
                         pieces++;
                     }
@@ -412,8 +412,8 @@ namespace Statecraft.Game.Map.Kits
                     var (b, y) = GroundSpan(q, 0f, 15f * m, 6f * m, ground, m);
                     AddModel(s.Id, TownModel.B32CargoShed, q, 0f, 15f * m, 6f * m, 5.1f * m, b, y, km, m, exactHeight: false, flip: false);   // #659
                     var cut = km.CutStart();
-                    km.Box(q.x, q.y, 0f, 15f * m, 6f * m, b, y, 3.5f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plain, m, roofed: true);
-                    km.Gable(q.x, q.y, 0f, 15f * m, 6f * m, y + 3.5f * m, 1.6f * m, C(0.58f, 0.55f, 0.52f), shed);
+                    km.Box(q.x, q.y, 0f, 15f * m, 6f * m, b, y, 3.5f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plaster, m, roofed: true);
+                    km.Gable(q.x, q.y, 0f, 15f * m, 6f * m, y + 3.5f * m, 1.6f * m, C(0.58f, 0.55f, 0.52f), shed, m, Facade.Corrugated);
                     km.CutEnd(cut);
                     Record(s.Id, "warehouse", q, 0f, 15f * m, 6f * m, 5.1f * m, shed);
                     n++;
@@ -463,7 +463,7 @@ namespace Statecraft.Game.Map.Kits
                 {
                     var mid = a + d * ((i + 0.5f) / k);
                     if (!ground.Water(mid.x, mid.y)) continue;
-                    km.Box(mid.x, mid.y, yaw, d.magnitude / k * 1.04f, 4.5f * m, y - 2f * m, y, 2.2f * m, stone, stone, Facade.Plain, m);
+                    km.Box(mid.x, mid.y, yaw, d.magnitude / k * 1.04f, 4.5f * m, y - 2f * m, y, 2.2f * m, stone, stone, Facade.Ashlar, m);
                     Record(s.Id, "breakwater", mid, yaw, d.magnitude / k * 1.04f, 4.5f * m, 2.2f * m, stone);   // SeaCraft keeps its boats off it
                     pieces++;
                 }
@@ -485,8 +485,8 @@ namespace Statecraft.Game.Map.Kits
                 var (bt, gy) = GroundSpan(q, 90f, shedL * m, shedW * m, ground, m);
                 AddModel(s.Id, TownModel.B32CargoShed, q, 90f, shedL * m, shedW * m, 5f * m, bt, gy, km, m, exactHeight: false, flip: false);   // #659
                 var cut = km.CutStart();
-                km.Box(q.x, q.y, 90f, shedL * m, shedW * m, bt, gy, 3.2f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plain, m, roofed: true);
-                km.Gable(q.x, q.y, 90f, shedL * m, shedW * m, gy + 3.2f * m, 1.8f * m, C(0.60f, 0.58f, 0.55f), shed);
+                km.Box(q.x, q.y, 90f, shedL * m, shedW * m, bt, gy, 3.2f * m, shed, C(0.62f, 0.58f, 0.54f), Facade.Plaster, m, roofed: true);
+                km.Gable(q.x, q.y, 90f, shedL * m, shedW * m, gy + 3.2f * m, 1.8f * m, C(0.60f, 0.58f, 0.55f), shed, m, Facade.Corrugated);
                 km.CutEnd(cut);
                 Record(s.Id, "warehouse", q, 90f, shedL * m, shedW * m, 5f * m, shed);
                 n++;
@@ -510,8 +510,8 @@ namespace Statecraft.Game.Map.Kits
                 float w = Mathf.Lerp(7f, 5.6f, i / 4f) * m;
                 km.Box(p.x, p.y, 0f, w, w, i == 0 ? y - 2f * m : y + i * storey - 1f, y + i * storey, storey, stone, stone, Facade.Stone, m);
             }
-            km.Box(p.x, p.y, 0f, 3.2f * m, 3.2f * m, y + 27f * m - 1f, y + 27f * m, 2.6f * m, stone, stone, Facade.Plain, m, roofed: true);
-            km.Dome(p.x, p.y, y + 29.6f * m, 1.6f * m, C(0.80f, 0.78f, 0.72f));
+            km.Box(p.x, p.y, 0f, 3.2f * m, 3.2f * m, y + 27f * m - 1f, y + 27f * m, 2.6f * m, stone, stone, Facade.Ashlar, m, roofed: true);
+            km.Dome(p.x, p.y, y + 29.6f * m, 1.6f * m, C(0.80f, 0.78f, 0.72f), metresPerReal: m);
             AtWorldScale(owner, "white_tower", km, start, p, y, m);
             Record(owner, "white_tower", p, 0f, 7f * m, 7f * m, 31f * m, stone);
             return 1;
@@ -525,12 +525,12 @@ namespace Statecraft.Game.Map.Kits
             var stone = Jitter(C(0.87f, 0.80f, 0.66f), ref rnd, 0.03f);
             var start = km.CutStart();
             km.Box(p.x, p.y, 0f, 14f * m, 14f * m, y - 2f * m, y, 7f * m, stone, stone, Facade.Stone, KitScale.Landmarks);
-            km.Dome(p.x, p.y, y + 7f * m - 0.5f * m, 5.5f * m, C(0.80f, 0.80f, 0.76f));
+            km.Dome(p.x, p.y, y + 7f * m - 0.5f * m, 5.5f * m, C(0.80f, 0.80f, 0.76f), metresPerReal: m);
             float mx = p.x + 8.5f * m, mz = p.y - 6f * m;
             float my = ground.Y(mx, mz);
             var minaret = km.CutStart();
-            km.Shaft(new Vector3(mx, my - 2f * m, mz), new Vector3(mx, my + 26f * m, mz), 1.6f * m, 1.35f * m, stone, 8);
-            km.Shaft(new Vector3(mx, my + 20f * m, mz), new Vector3(mx, my + 21f * m, mz), 2.1f * m, 2.1f * m, stone, 8);   // the balcony
+            km.Shaft(new Vector3(mx, my - 2f * m, mz), new Vector3(mx, my + 26f * m, mz), 1.6f * m, 1.35f * m, stone, 8, Facade.Ashlar, m);
+            km.Shaft(new Vector3(mx, my + 20f * m, mz), new Vector3(mx, my + 21f * m, mz), 2.1f * m, 2.1f * m, stone, 8, Facade.Ashlar, m); // the balcony
             km.Cone(new Vector3(mx, my + 26f * m, mz), 1.5f * m, 4.5f * m, C(0.62f, 0.62f, 0.58f), 8);
             AtWorldScale(owner, "mosque", km, start, minaret, "minaret", 0f, p, y, m);
             Record(owner, "mosque", p, 0f, 14f * m, 14f * m, 30.5f * m, stone);
@@ -556,8 +556,8 @@ namespace Statecraft.Game.Map.Kits
             float a = yaw * Mathf.Deg2Rad, u = 0.5f * w - 1.4f * m, v = -(0.5f * d - 1.4f * m);
             float mx = p.x + u * Mathf.Cos(a) - v * Mathf.Sin(a), mz = p.y + u * Mathf.Sin(a) + v * Mathf.Cos(a);
             var minaret = km.CutStart();
-            km.Box(mx, mz, yaw, 2.8f * m, 2.8f * m, top + 5.5f * m - 0.3f * m, top + 5.5f * m, 7.9f * m, stone, roof, Facade.Plain, m);
-            km.Box(mx, mz, yaw, 3.3f * m, 3.3f * m, top + 13.4f * m - 0.2f * m, top + 13.4f * m, 0.6f * m, stone, roof, Facade.Plain, m);   // the balcony's parapet
+            km.Box(mx, mz, yaw, 2.8f * m, 2.8f * m, top + 5.5f * m - 0.3f * m, top + 5.5f * m, 7.9f * m, stone, roof, Facade.Ashlar, m);
+            km.Box(mx, mz, yaw, 3.3f * m, 3.3f * m, top + 13.4f * m - 0.2f * m, top + 13.4f * m, 0.6f * m, stone, roof, Facade.Ashlar, m);   // the balcony's parapet
             AtWorldScale(owner, "village_mosque", km, start, minaret, "minaret", yaw, p, top, m);
             Record(owner, "village_mosque", p, yaw, w, d, 14f * m, stone);
             return 1;
@@ -573,10 +573,10 @@ namespace Statecraft.Game.Map.Kits
             float yq = ground.Y(q.x, q.y);
             var start = km.CutStart();
             km.Box(q.x, q.y, 0f, 9f * m, 18f * m, yq - 2f * m, yq, 12f * m, stone, stone, Facade.Stone, m, roofed: true);
-            km.Gable(q.x, q.y, 0f, 9f * m, 18f * m, yq + 12f * m, 4f * m, C(0.66f, 0.34f, 0.24f), stone);
+            km.Gable(q.x, q.y, 0f, 9f * m, 18f * m, yq + 12f * m, 4f * m, C(0.66f, 0.34f, 0.24f), stone, m, gableSurface: Facade.Ashlar);
             var belfry = km.CutStart();   // the belfry last, so it can be replaced (#2266)
             km.Box(q.x, q.y + 7f * m, 0f, 4.5f * m, 4.5f * m, yq + 12f * m, yq + 12f * m, 14f * m, stone, stone, Facade.Stone, m, roofed: true);
-            km.Pyramid(q.x, q.y + 7f * m, 0f, 4.8f * m, 4.8f * m, yq + 26f * m, 6f * m, C(0.60f, 0.52f, 0.44f));
+            km.Pyramid(q.x, q.y + 7f * m, 0f, 4.8f * m, 4.8f * m, yq + 26f * m, 6f * m, C(0.60f, 0.52f, 0.44f), m);
             AtWorldScale(owner, "church", km, start, belfry, "belfry", 0f, q, yq, m);
             Record(owner, "church", q, 0f, 9f * m, 18f * m, 32f * m, stone);
             return true;
@@ -599,7 +599,7 @@ namespace Statecraft.Game.Map.Kits
                 var b = new Vector3(p.x + Mathf.Cos(a) * 2.6f * m, y - 2f * m, p.y + Mathf.Sin(a) * 2.6f * m);
                 km.Shaft(b, new Vector3(p.x + Mathf.Cos(a) * 1.8f * m, y + 9f * m, p.y + Mathf.Sin(a) * 1.8f * m), 0.35f * m, 0.3f * m, concrete, 4);
             }
-            km.Shaft(new Vector3(p.x, y + 9f * m, p.y), new Vector3(p.x, y + 13.5f * m, p.y), 3f * m, 3f * m, concrete, 10);
+            km.Shaft(new Vector3(p.x, y + 9f * m, p.y), new Vector3(p.x, y + 13.5f * m, p.y), 3f * m, 3f * m, concrete, 10, Facade.Plaster, m);
             km.Cone(new Vector3(p.x, y + 13.5f * m, p.y), 3.1f * m, 1.2f * m, C(0.66f, 0.64f, 0.60f), 10);
             if (model) km.CutEnd(cut);   // up close the model stands here instead
             return 1;
