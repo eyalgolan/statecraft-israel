@@ -225,6 +225,75 @@ public class HebrewUiTests
         Assert.IsEmpty(missing, "no Hebrew string for:\n" + string.Join("\n", missing));
     }
 
+    // #2707 item 2, batch 4: a cabinet appointment the End turn refuses reads in the toast as the Cabinet screen words it
+    // (cabinet.reason.*), with the person, the party, the office (for its holder, on the turn's date) and the date in Hebrew.
+    // Real content: a sitting minister ordered into the office they hold, through the real toast; then a death, an abolished
+    // office and a party outside the coalition through ReasonText, each with no Latin letter left.
+    [Test]
+    public void TheCabinetRefusalsReadInHebrewWithTheirNamesAndDates()
+    {
+        var game = Boot(UiLanguage.Hebrew);
+        var bridge = game.Bridge!;
+        var c = bridge.Content;
+        var seat = Statecraft.Sim.Cabinet.Lineup(c, bridge.State)
+            .Where(x => x.Holder != null && x.Holder.NameHe != "" && !x.Office.SeveralHolders && x.Office.Id != "prime_minister" && x.Office.Id != "president"
+                        && x.Office.TitleHeOn(x.Holder, bridge.State.Date) != "")
+            .OrderByDescending(x => x.Holder!.TitleHeForm == Statecraft.Sim.TitleHeForms.Feminine).First();
+        Assert.IsNull(bridge.Queue(new Statecraft.Sim.Appoint(seat.Office.Id, seat.Holder!.Id)), "precondition: the appointment is queued");
+        bridge.EndTurn();
+        var holds = He.Format("cabinet.reason.already_holds", ContentNames.Of(He, seat.Holder!), ContentNames.Of(He, seat.Office, seat.Holder, bridge.State.Date));
+        StringAssert.Contains(He.Format("toast.refused", holds), Ui.Q<Label>("toast").text, "the toast names the minister and the office in Hebrew");
+        StringAssert.DoesNotMatch("[A-Za-z]", holds);
+
+        string Date(DateTime d) => Control1948.DateText(d, k => He[k]);
+        string Say(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
+        var date = bridge.State.Date;
+        var dead = c.People.First(p => p.Died.HasValue && p.NameHe != "" && p.Name.Contains(' '));
+        var office = c.Offices.First(o => o.Until.HasValue && o.TitleHeOn(null, date) != "");
+        var party = c.Parties.First(p => p.NameHe != "" && p.Name.Contains(' '));
+        var minister = c.People.First(p => p.NameHe != "" && p != dead);
+        foreach (var (reason, expected) in new[]
+        {
+            (Say(Statecraft.Sim.Cabinet.RefusedDied, dead.Name, Statecraft.Sim.PlayerText.Date(dead.Died!.Value)),
+                He.Format("cabinet.reason.died", dead.NameHe, Date(dead.Died!.Value))),
+            (Say(Statecraft.Sim.Cabinet.RefusedAbolished, office.Title, Statecraft.Sim.PlayerText.Date(office.Until!.Value)),
+                He.Format("cabinet.reason.abolished", ContentNames.Of(He, office, null, date), Date(office.Until!.Value))),
+            (Say(Statecraft.Sim.Cabinet.RefusedPartyNotCoalition, minister.Name, party.Name),
+                He.Format("cabinet.reason.party_not_coalition", minister.NameHe, party.NameHe)),
+        })
+        {
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason, c, null, date), "the English string is the sim's own");
+            Assert.AreEqual(expected, SimBridge.ReasonText(He, reason, c, null, date), reason);
+            StringAssert.DoesNotMatch("[A-Za-z]", expected, reason);
+        }
+    }
+
+    // #2707 batch 4 review: the Cabinet queue preview's fallback (a refusal the screen's own CheckReason does not give back,
+    // CabinetPresenter.PreviewReason) passes the turn's date, so an office in it reads by its Hebrew title. Red-first at
+    // 582c108fc: no date, so the office kept its English title. The refusal is a queued appointment's "already holds", as the
+    // press could break it; private, so it is reached by reflection, like CabinetPreviewShots reaches the screen.
+    [Test]
+    public void TheCabinetPreviewsFallbackRefusalNamesTheOfficeInHebrew()
+    {
+        using var ui = new UiTestKit();
+        var c = Inputs.Content;
+        var bridge = new SimBridge(Statecraft.Sim.GameSession.New(c, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical), He);
+        using var cabinet = new CabinetPresenter(ui.Root, bridge, He, null);
+        var date = bridge.State.Date;
+        var seat = Statecraft.Sim.Cabinet.Lineup(c, bridge.State)
+            .First(x => x.Holder != null && x.Holder.NameHe != "" && !x.Office.SeveralHolders && x.Office.TitleHeOn(x.Holder, date) != "");
+        var holder = seat.Holder!;
+        var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, Statecraft.Sim.Cabinet.RefusedAlreadyHolds, holder.Name, seat.Office.Title);
+        var preview = Statecraft.Sim.Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.ToList());
+        var other = c.People.First(p => Statecraft.Sim.Cabinet.Check(c, preview.State, seat.Office.Id, p.Id) != reason);   // so the fallback runs
+        var rejection = new Statecraft.Sim.Rejection(new Statecraft.Sim.Appoint(seat.Office.Id, other.Id), reason);
+        var method = typeof(CabinetPresenter).GetMethod("PreviewReason", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var text = (string)method!.Invoke(cabinet, new object[] { c, rejection, preview });
+        Assert.AreEqual(He.Format("cabinet.reason.already_holds", ContentNames.Of(He, holder), ContentNames.Of(He, seat.Office, holder, date)), text);
+        StringAssert.Contains(seat.Office.TitleHeOn(holder, date), text, "the office by its Hebrew title");
+        StringAssert.DoesNotMatch("[A-Za-z]", text);
+    }
+
     [Test]
     public void TheGameIsEnglishUnlessHebrewIsAskedFor()
     {
