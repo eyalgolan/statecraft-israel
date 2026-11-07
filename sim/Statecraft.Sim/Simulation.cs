@@ -9,22 +9,28 @@ namespace Statecraft.Sim
     {
         public static GameState NewGame(Content c, ulong seed, Mode mode) => NewGame(c, seed, mode, darkStart: false);
 
-        /// <summary>Red stub (#1689, #1725 PR 5): the dark start is not built yet.</summary>
+        /// <summary>#1689, #1725 PR 5: with <paramref name="darkStart"/>, the dark start of an exact gdd-0.3 Historical game,
+        /// internal and fixture-only (the public NewGame passes false): the Historical ledger (R-POP-004) is initialized in
+        /// place before Pools.Init, so the Food stock starts at cover_months of the ledger's need (R-FOOD-001, #2470), and
+        /// the starting forces are placed against its soldiers. EventSystem.Trigger still refuses a ledger (R-POP-002) until
+        /// its producer is integrated, so a dark start fires no opening event. Legacy and gdd-0.1 content refuse it.</summary>
         internal static GameState NewGame(Content c, ulong seed, Mode mode, bool darkStart)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (mode == Mode.Open) throw new NotSupportedException("Open mode arrives with milestone M4.");
+            if (darkStart && !c.UsesPopulationLedger) throw new InvalidOperationException("A dark start needs exact gdd-0.3 (R-POP-001).");
             var s = new GameState(c) { Date = c.Rules.Start, RngState = seed, Mode = mode };
             var why = new List<Cause>();
             EffectsSystem.Init(c, s);
             EconomySystem.Init(c, s);
             PopulationSystem.Init(c, s);
             Cities.Init(c, s);
+            if (darkStart) HistoricalPopulation.Initialize(c, s);   // before Pools.Init, which reads the ledger's need
             Pools.Init(c, s);
             StartingForces.Init(c, s);   // R-UNIT-006: before any event can grant a unit, so the forces take ids 0 to n-1
             SecuritySystem.Init(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
-            EventSystem.Trigger(c, s, why);
+            if (!darkStart) EventSystem.Trigger(c, s, why);   // R-POP-002: refuses an initialized ledger
             return s;
         }
 

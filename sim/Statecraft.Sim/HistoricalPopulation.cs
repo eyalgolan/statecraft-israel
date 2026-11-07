@@ -54,9 +54,6 @@ namespace Statecraft.Sim
             return rows.AsReadOnly();
         }
 
-        /// <summary>Red stub (#1689, #1725 PR 5): the in-place initializer is not built yet.</summary>
-        internal static void Initialize(Content c, GameState s) => throw new NotImplementedException();
-
         /// <summary>R-POP-004 (#1689 region slice): the Inventory as an initialized Historical ledger fixture, each record in
         /// its real region of regions.yaml. A census record takes the region that lists its city (AtLocation), and its location names that city. A formation
         /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1
@@ -64,10 +61,22 @@ namespace Statecraft.Sim
         /// are free civilians with no assignment and their reception done (reception.turns), and soldiers serving in their own
         /// formation, with no profession, tier or qualification (#1717 and #1692 add those). Each soldier carries one issued military item, id
         /// <c>units_1948/&lt;row&gt;/&lt;ordinal&gt;</c>, owned and recorded as paid, apart from the spare Arms (#1717, 27M-24).
-        /// mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only: NewGame does not call it (R-POP-002).</summary>
+        /// mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only: the public NewGame does not call it (R-POP-002).</summary>
         internal static GameState LedgerFixture(Content c)
         {
+            var s = new GameState(c) { Mode = Mode.Historical };
+            Initialize(c, s);
+            return s;
+        }
+
+        /// <summary>#1725 PR 5: <see cref="LedgerFixture"/>'s ledger, initialized in place on <paramref name="s"/>, a gdd-0.3
+        /// Historical state with no ledger yet; the dark start (Simulation.NewGame's internal overload) calls it before
+        /// Pools.Init. All or nothing (PopulationLedger.Initialize): a refusal leaves the state as it was.</summary>
+        internal static void Initialize(Content c, GameState s)
+        {
+            if (s == null) throw new ArgumentNullException(nameof(s));
             var inventory = Inventory(c);
+            if (s.Mode != Mode.Historical) throw new InvalidOperationException("The Historical ledger needs a Historical game (R-POP-004).");
             var sources = new HashSet<string>(inventory.Select(r => r.Source), StringComparer.Ordinal);   // only sources with records
             var regions = new SortedDictionary<string, string>(StringComparer.Ordinal);
             foreach (var city in c.Cities)
@@ -115,7 +124,7 @@ namespace Statecraft.Sim
                 r.Status == PopulationStatus.ActiveSoldier ? soldier[r.Source].CombatXp : 0, r.Status == PopulationStatus.ActiveSoldier
                     ? new PopulationEquipment(militaryId: r.Source + "/" + r.Ordinal.ToString(CultureInfo.InvariantCulture), militaryPaid: true)
                     : PopulationEquipment.None)));
-            return PopulationLedger.CreateFixture(c, bindings, rows, mode: Mode.Historical);
+            s.PopulationLedger.Initialize(c, bindings, rows, 0, Mode.Historical);
         }
     }
 }

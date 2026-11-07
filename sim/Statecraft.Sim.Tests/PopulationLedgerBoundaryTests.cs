@@ -5,11 +5,11 @@ public class PopulationLedgerBoundaryTests
 {
     [Theory]
     [InlineData("population.init")] [InlineData("population.apply")]
-    [InlineData("pools.init")] [InlineData("pools.consume")] [InlineData("pools.harvest")]
+    [InlineData("pools.consume")] [InlineData("pools.harvest")]
     [InlineData("pools.buy")] [InlineData("pools.term")]
     [InlineData("cities.init")] [InlineData("cities.assign")] [InlineData("cities.produce")]
     [InlineData("cities.house")] [InlineData("cities.condition")] [InlineData("cities.arrive")] [InlineData("cities.upkeep")]
-    [InlineData("starting.init")] [InlineData("starting.arrive")]
+    [InlineData("starting.arrive")]
     [InlineData("training.start")] [InlineData("training.cancel")] [InlineData("training.progress")] [InlineData("training.reinforce")]
     [InlineData("military.serve")] [InlineData("military.upkeep")]
     [InlineData("qualification.return")] [InlineData("qualification.craftsmen")] [InlineData("qualification.pioneers")] [InlineData("qualification.unit")]
@@ -32,7 +32,6 @@ public class PopulationLedgerBoundaryTests
             {
                 case "population.init": PopulationSystem.Init(c,s); break;
                 case "population.apply": PopulationSystem.Apply(c,s,s.Date.AddMonths(1),.1,why); break;
-                case "pools.init": Pools.Init(c,s); break;
                 case "pools.consume": Pools.Consume(c,s,rules,why); break;
                 case "pools.harvest": Pools.Harvest(c,s,rules,why); break;
                 case "pools.buy": Pools.BuyArms(c,s,1,why); break;
@@ -44,7 +43,6 @@ public class PopulationLedgerBoundaryTests
                 case "cities.condition": Cities.UpdateCondition(c,s,rules,why); break;
                 case "cities.arrive": Cities.Arrive(c,s,rules,s.Date.AddMonths(1),why); break;
                 case "cities.upkeep": Cities.AnnualUpkeep(c,s,rules); break;
-                case "starting.init": StartingForces.Init(c,s); break;
                 case "starting.arrive": StartingForces.Arrive(c,s,s.Date.AddMonths(1)); break;
                 case "training.start": Training.Start(c,s,"missing","missing",1,why); break;
                 case "training.cancel": Training.Cancel(c,s,0,why); break;
@@ -74,6 +72,41 @@ public class PopulationLedgerBoundaryTests
         }
         Assert.Contains("integration is held", Assert.Throws<NotSupportedException>(Invoke).Message);
         Assert.Equal(before,s.Describe()); Assert.Equal(hash,s.Hash()); Assert.Same(cause,Assert.Single(why));
+    }
+
+    // R-POP-002 re-pointed for the dark start (#1725 PR 5): Pools.Init and StartingForces.Init accept an initialized
+    // Historical ledger. Pools.Init's need is the ledger's (Pools.Rations, #2470), never the aggregate head count, and the
+    // stock starts at cover_months of it (R-FOOD-001). StartingForces.Init places the forces (R-UNIT-006) once each own
+    // formation's strength is its ledger soldiers (R-POP-004).
+    [Fact]
+    public void PoolsAndStartingForcesInitReadAnInitializedLedger()
+    {
+        var c = HistoricalPopulationTests.Real(true);
+        var s = HistoricalPopulation.LedgerFixture(c);
+        s.Date = c.Rules.Start;
+        s.Population["fixture"] = 9_000_000;   // an aggregate head count the ledger's need must not read
+        Pools.Init(c, s);
+        Assert.Equal(Pools.Rations(s.PopulationLedger.Units), s.FoodNeed);
+        Assert.Equal(c.RulesAt(c.Rules.Start).Mvp!.CoverMonths!.Value * s.FoodNeed, s.Food);
+        StartingForces.Init(c, s);
+        Assert.Equal(c.StartingForces.Count, s.NextId);
+        Assert.Equal(c.StartingForces.Count(f => f.Arrives == null), s.Units.Count);
+    }
+
+    // R-POP-004, R-POP-001: a ledger that no longer serves a starting formation with its strength (here one soldier lost) is
+    // refused by StartingForces.Init with no unit added.
+    [Fact]
+    public void StartingForcesInitRefusesALedgerThatDoesNotMatchTheFormations()
+    {
+        var c = HistoricalPopulationTests.Real(true);
+        var s = HistoricalPopulation.LedgerFixture(c);
+        s.Date = c.Rules.Start;
+        var soldier = s.PopulationLedger.Units.First(p => p.Status == PopulationStatus.ActiveSoldier);
+        s.PopulationLedger.RegisterCombatLoss(soldier.Id, "fixture");
+        var before = s.Describe();
+        Assert.Contains("R-POP-004", Assert.Throws<InvalidOperationException>(() => StartingForces.Init(c, s)).Message);
+        Assert.Equal(before, s.Describe());
+        Assert.Empty(s.Units);
     }
 
     // R-POP-003: reject lossy UTF-16 before accepting any persistent reference, but retain valid supplementary text.
