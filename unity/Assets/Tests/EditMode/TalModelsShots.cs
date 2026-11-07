@@ -279,6 +279,7 @@ public class TalModelsShots
         var inputs = Statecraft.Game.Boot.GameInputs.FromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
         foreach (var era in inputs.Content.Eras) { era.Systems.Ruleset = SaveGame.Gdd03Ruleset; era.Systems.Loop = EraSystems.Gdd; }
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        ShotCamera.Configure(Camera.main, CivMovementShots.Width, CivMovementShots.Height);
         var doc = Object.FindFirstObjectByType<UIDocument>();
         rt = new RenderTexture(CivMovementShots.Width, CivMovementShots.Height, 24, RenderTextureFormat.ARGB32);
         ps = Object.Instantiate(doc.panelSettings);
@@ -558,8 +559,6 @@ public class TalModelsShots
     {
         UnitFigures.Source = (id, detail, done) => done(Prefab(id, detail));
         yield return Boot(hebrew);
-        // Keep the real rig's projection and the saved RenderTexture on the same aspect throughout these frames.
-        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
         root.Bridge!.EndTurn();
         for (int i = 0; i < 3; i++) yield return null;
         var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;

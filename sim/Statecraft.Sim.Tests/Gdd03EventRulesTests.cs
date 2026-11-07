@@ -397,7 +397,7 @@ public class Gdd03EventRulesTests
         Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);
         DateTime? CardDate(string id) => run.FirstOrDefault(x => x.FiredEvents.Contains(id))?.Date;
         Assert.Equal(new DateTime(1950, 7, 15), CardDate("clothing_rationing_1950"));
-        Assert.Equal(new DateTime(1951, 3, 15), CardDate("reparations_claim"));
+        Assert.Equal(new DateTime(1951, 2, 15), CardDate("reparations_claim"));   // #2551: a turn earlier (was 15 March)
         Assert.Equal(new DateTime(1951, 12, 15), CardDate("reparations_vote"));
         // #2457: back under gdd-0.3 on the turn EventRetimingTests pins for it in the gdd-0.1 golden run. As a hard anchor
         // left unanswered in Historical mode it takes launch, so the Debt it adds is the IL equivalent of the card's $52m.
@@ -515,10 +515,10 @@ public class Gdd03EventRulesTests
         while (s.GameOver == null && run.Count < 1000) { s = Simulation.Step(c, s, Array.Empty<Command>()).State; run.Add(s); }
         Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);
         DateTime? CardDate(string id) => run.FirstOrDefault(x => x.FiredEvents.Contains(id))?.Date;
-        Assert.Equal(new DateTime(1949, 5, 15), CardDate("austerity_1949"));
+        Assert.Equal(new DateTime(1949, 4, 15), CardDate("austerity_1949"));   // #2551: a turn earlier (was 15 May)
         Assert.Equal(new DateTime(1950, 4, 15), CardDate("maabarot_policy"));
-        Assert.Equal(new DateTime(1951, 3, 15), CardDate("iraqi_exodus"));
-        Assert.Equal(new DateTime(1951, 11, 15), CardDate("forex_crisis_1951"));
+        Assert.Equal(new DateTime(1951, 2, 15), CardDate("iraqi_exodus"));   // #2833: a turn earlier (was 15 March)
+        Assert.Equal(new DateTime(1951, 10, 15), CardDate("forex_crisis_1951"));   // #2833: a turn earlier (was 15 November)
     }
     // #2558: in the Money row the launch's Debt line reads as its Money effect, Money IL -18.6m, not as a Debt gain; the
     // title and its Hebrew stay in the Args, so CauseText words it from why.cause.event_amount_from in both languages.
@@ -543,32 +543,32 @@ public class Gdd03EventRulesTests
     {
         "absorb_immigrants:95682d1835e8de59e3e69f56a9beb13ddf91447270a672d23eaff2523898fea1", // re-pinned for #1065 (reviewer comment matches the text), then for the stale reviewer comment (comment-only)
         "altalena:83f547759e5a991e78c32240c2ee3551b9b8ad9acdad8c135621b56805895f8d", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
-        "armistice_egypt:2782d099ed22372454d85a83e661ecb6d527826d57b23f4f329116c2017b8b0f", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed)
-        "armistice_jordan:98168d2a194a9cb66af5c6e36f701c1a38a09217a30d2782089ebc2d0e069571", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed)
-        "armistice_lebanon:6d55a7bc6d9e9d339ebb6ebb1a72eb09cbc7c13df88fdd16207963f6ca309b56", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed)
-        "armistice_syria:18bc8bf1fd1e15749d56278232578258267f0b6d6e605431ba098368bf510397", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed)
-        "austerity_1949:7b4534f4982116745eef2ab2f959ad52faf6efa8efb7f0f5bda3844bac590cc4", // re-pinned for #1065 (Beri's native Hebrew read)
+        "armistice_egypt:253a579e5de78fd3648b582b3f2329ca2947100df5568db74ff2a1819442a782", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
+        "armistice_jordan:fe65c03057dc670b096a8385478738b76fd7ebd200b4f5e7c281b94b0c48a8c4", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment), then for `order: 1` and its comment (R-EVT-006: after Lebanon's card)
+        "armistice_lebanon:5ce3ba85f056294691be4ac345896a3222a8898042491bbb989a281b8bc6a882", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
+        "armistice_syria:b552b74029c98058bd6b7f8b4a62f815539cc766023fa99efb4c01adbcb06824", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
+        "austerity_1949:94454d82815b0507236a206d1f834a0af25e2483990bb842f6085e04327ed928", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "bernadotte_assassination:3b7bce0f1707180fffdd254a6848efbb095cdf38dd70c7b31e83475c34623ec2", // re-pinned for #1065 (Beri's native Hebrew read), then for the stale reviewer comment (comment-only)
         "burma_road_complete:6c49179b3844761c6f580c1436596cbace6932cbb6b620a9ea2872b6e0342ba2", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
         "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
         "deport_acre:950dfb6a76dd47d1b2c132cac22ee67c6db956dff16592fe8036f3b43010414f", // added for #801 (Deport's follow-up cards), re-pinned for #2197 review round 2 (comments say "adapted") and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026), then for the stale DRAFT note (comment-only cleanup) and the owner's Hebrew read (flag removed), both #2292
         "deport_nazareth:033bc3da1cd0bc93263a69c9e537ee48556eb962d416812fbba3d577475fe9cd", // added for #801 (Deport's follow-up cards), re-pinned for #2197 ("near the town", source packet N5; review round 2 comments) and the owner's sign-off (status sensitivity-reviewed, 2 Nov 2026), then for the stale DRAFT note (comment-only cleanup) and the owner's Hebrew read (flag removed), both #2292, then for two citation comments that now point inside the repo (comment-only)
-        "education_registration_1951:1d5cb0e4062dc61b787a7e1b375b3c85c9a1663bd4c3c73f3c9c6f9ee5ac4da3", // re-pinned for #1065 (Beri's native Hebrew read)
+        "education_registration_1951:d0d21344c5c198f3477f1736b402ddd3d3444423198f66f8bb97f3d72f2d72df", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
         "first_new_yishuv:0c75e086931ddbd0d356b8691afffb914ba1e657475d9295375baa3ee32c66b9", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "first_truce:51240c2fc8b3b944b4698cf15840652c4b3e15efe37ca14fcd398d4acec0fcb8", // re-pinned for #1065 (Beri's native Hebrew read), then for the stale reviewer comment (comment-only)
-        "forex_crisis_1951:53fee056940af610e16f7793d66d38f6470027a63d0c5968c0cc748eb1dc2af0", // re-pinned for #1065 (Beri's native Hebrew read)
+        "forex_crisis_1951:8a200332ee0788ca8f32b40091eb9b8c6460c7b7f6a02234a4a9c9eba0a5a1fd", // re-pinned for #1065 (Beri's native Hebrew read), then for #2833 (R-TURN-002: `from` a turn earlier and its comment)
         "frumkin_commission:c7bfb21991dc41bfcbaaf4778c47c5226913a8289ba208474c87128768ba622c", // re-pinned for #1065 (Beri's native Hebrew read)
         "hula_drainage:b7ec7159b5cb6ecc009e1ff7e12a7f2426ee1c4b992b8c91c4675c8df3cc1bf5", // re-pinned for #1065 (Beri's native Hebrew read)
         "idf_founding:caad7affcf0309a41c56956c10dd15936ec319ac996ddff6f2cd85efbcebc51e", // re-pinned for #1065 (Beri's native Hebrew read)
-        "iraqi_exodus:461dbb8a0685b7dceb6242d8e819635a27bb10033463e66d1a2e3ac68c9b8521", // re-pinned for #1065 (Beri's native Hebrew read)
+        "iraqi_exodus:7a94f2e5edc36a272323bf1702e74b3ee8a7e6da709d2effda14c55a7ae6de70", // re-pinned for #1065 (Beri's native Hebrew read), then for #2833 (R-TURN-002: `from` a turn earlier and its comment), then for the text before the 10 March 1951 law (the 1 March emigration deadline, JTA 19 January 1951) and its source row
         "israel_bonds:db9b8cf0754fd62166effed2ee3b563aa06bfdba7cf6d43f4965cab44997786a", // re-pinned for #1065 (Beri's native Hebrew read), then for #2457 (R-EFX-009: launch's debt_dollars: 52 and its comment; owner, 2 November 2026, #2224, "Add equal Debt"), then for the donations-only wording and pending Hebrew review marker
         "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
         "jerusalem_demilitarisation_guard:a9693784deafaad901268afd8a0c47a2f5b7d5f75eba33d6180f94b62913fb53", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
         "jerusalem_military_government:526dbc88eabe4691e3ee1f3ed2c5fdeb640f11ae0a7a632c63066175b9c18176", // re-pinned for #1065 (Beri's native Hebrew read)
         "latrun_proposal:c35f17ffa48d949b432ce9205a245048bd50bf660940206245e8f0d6f5b62916", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit order: Harel toward Latrun; owner rulings, 1 and 2 November 2026, order targets; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
-        "law_of_return:d04bb849bbb6fa089afc6e1123f8335aa1b03f49bc025f9d1c6746c48d27b398", // re-pinned for #1065 (Beri's native Hebrew read)
+        "law_of_return:d5d7f352eaa63e8f57a0f3fcdcbba82791e4ea3cd267afd8adee9d6b01a2f052", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "maabarot_policy:12e53e14fe3b045f7c18b75ac7af68acf079c17968baf6c82df2435675eb0884", // re-pinned for #1065 (Beri's native Hebrew read)
         "ministry_supply_crisis:2de253de7bafb65f0168bdc151dc0b47fec94843ad6f13bf3ac092d7015b55f9", // re-pinned for #1065 (Beri's native Hebrew read)
         "operation_hiram:e7c661e53f93576d8a135008e0d1e623430967a36729b58b67a4af195165bccf", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
@@ -576,7 +576,7 @@ public class Gdd03EventRulesTests
         "operation_yoav:c4af1976488006f26f06cddaa6a9e3379d0193f5c5c22c8e789ccff64dabfefc", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
         "rafah_force_pressure:37ca577e1b93f241035d8bf322810f311a084427307c5722f4122238aa9ec6b8", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
         "railway_complete:98d06d62c88d889e3e4a98f954fb04727695c37f58c6ccef94449fc16e88bd04", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
-        "reparations_claim:5412e71f4f5a90a92bd86622eb1a169feee45f0ba2fe82c5ab40bd8f3d43cafd", // re-pinned for #1065 (Beri's native Hebrew read)
+        "reparations_claim:0aa053313d9385bc8746fa1d7318883aab3d1d6706318ad978fc4cd97d98d898", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
         "rhodes_talks:c5c9cdf906f75e2672e5eedaeadab7f224df96f666a3097813903b81ec06f4f6", // re-pinned for #1065 (Beri's native Hebrew read)
         "second_truce:22eeb171849bac248d58cec944c03bac6aee56c96a192aabf0aba2b7e02b19f6", // re-pinned for #1065 (Beri's native Hebrew read)

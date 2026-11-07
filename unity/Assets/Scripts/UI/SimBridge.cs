@@ -276,6 +276,18 @@ namespace Statecraft.Game.UI
             [Pools.RefusedStockCapacity] = "arms.refused_stock_capacity",
             [Orders.RefusedCardOrder] = "unit.order_refused.card_order",   // R-ENEMY-005: an operation card's refused go-to
             [Orders.RefusedLastGarrison] = "unit.order_refused.last_garrison",   // R-CTRL-013: a card's go-to held back
+            // #2707: the move's and the go-to's refusals, Arms bought below one, the call-up's range and Send home's.
+            [Movement.RefusedNoHex] = "unit.move_refused.no_hex",
+            [Movement.RefusedCannotMove] = "unit.move_refused.cannot_move",
+            [Movement.RefusedAlreadyThere] = "unit.move_refused.already_there",
+            [Movement.RefusedOffLand] = "unit.move_refused.off_land",
+            [Movement.RefusedEnemyHex] = "unit.move_refused.enemy_hex",
+            [Movement.RefusedClosed] = "unit.move_refused.closed",
+            [Movement.RefusedNoRoute] = "unit.move_refused.no_route",
+            [Movement.RefusedOutOfReach] = "unit.move_refused.out_of_reach",
+            [Pools.RefusedCount] = "arms.refused_count",
+            [SecuritySystem.RefusedMobilization] = "defence.refused_mobilization",
+            [Demobilization.RefusedNoArmistice] = "unit.send_home_refused.no_armistice",
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -304,7 +316,11 @@ namespace Statecraft.Game.UI
             (Projects.RefusedBeingBuilt, "builder.refused_being_built"),
             // R-PROJ-001 under gdd-0.3 (#1700 slice B): a second city project start in one city in one turn.
             (Projects.RefusedCityCap, "city.project_reason.city_cap"),
-        }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
+            // #2707: a hex at the stack limit, an instant order short of Attention (the queue's own line), a housing repair off its city.
+            (Movement.RefusedFull, "unit.move_refused.full"),
+            (AttentionSystem.RefusedAttention, "order.no_attention"),
+            (Projects.RefusedRepairCityHex, "city.project_reason.repair_city_hex"),
+        }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+(?::[^}]*)?\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
         /// else the sim's English as given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's
