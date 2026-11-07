@@ -51,8 +51,8 @@ public class TownModelResidencyTests
     }
 
     /// <summary>Whether this camera's focus selection holds the town (its primary or an edge), whether or not its zoom
-    /// admits the town's building models: the selection mechanism alone, for the major cities, which no zoom admits
-    /// (TownModels.IsMajorCity; owner, 6 November 2026, "Big blocks, every zoom").</summary>
+    /// admits the town's building models: the selection mechanism alone (the major cities, TownModels.IsMajorCity, are
+    /// admitted only below the close switch: owner, 7 November 2026, "Tal's models close (Recommended)").</summary>
     static bool Selects(TownModelLayer layer, string id, Camera camera)
     {
         var choices = (System.Collections.IDictionary)typeof(TownModelLayer).GetField("choices", Flags)!.GetValue(layer)!;
@@ -79,9 +79,10 @@ public class TownModelResidencyTests
 
     /// <summary>R2: the production camera centres a town on its sourced label point, also the kit-footprint centre. Some
     /// detailed instances do not cover that point; admission must therefore use the authoritative footprint union rather
-    /// than treating the detailed-instance rectangle as the town itself. The focus selects every detailed town there; the
-    /// major cities' building models are never admitted (TownModels.IsMajorCity; owner, 6 November 2026, "Big blocks, every
-    /// zoom"), so for them the selection is checked and their models are neither admitted nor ready.</summary>
+    /// than treating the detailed-instance rectangle as the town itself. The focus selects every detailed town there and,
+    /// at 11.8 km (below the close switch), admits its models, the major cities' included (TownModels.IsMajorCity; owner,
+    /// 7 November 2026, "Tal's models close (Recommended)", which supersedes "Big blocks, every zoom" (6 November 2026)
+    /// from 40 km out only).</summary>
     [Test]
     public void EveryDetailedTownIsAdmittedAtItsLabelAndKitFootprintCentre()
     {
@@ -126,9 +127,8 @@ public class TownModelResidencyTests
 
                     layer.PrepareCamera(camera);
                     if (!Selects(layer, town.Id, camera)) notSelected.Add(town.Id);
-                    bool major = TownModels.IsMajorCity(town.Id);
-                    if (layer.WantsTown(town.Id, camera) == major) notAdmitted.Add(town.Id);
-                    if (layer.ReadyForTown(town.Id, camera) == major) notReady.Add(town.Id);
+                    if (!layer.WantsTown(town.Id, camera)) notAdmitted.Add(town.Id);
+                    if (!layer.ReadyForTown(town.Id, camera)) notReady.Add(town.Id);
                 }
                 finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); }
             }
@@ -140,9 +140,9 @@ public class TownModelResidencyTests
             CollectionAssert.IsEmpty(notSelected,
                 "a camera focused on each authoritative town footprint must select that town");
             CollectionAssert.IsEmpty(notAdmitted,
-                "a camera focused on each authoritative town footprint must admit that town's detailed models, a major city's never");
+                "a camera focused on each authoritative town footprint must admit that town's detailed models, a major city's too below the close switch");
             CollectionAssert.IsEmpty(notReady,
-                "every admitted production town must have every required detailed-model kind; a major city is never ready");
+                "every admitted production town must have every required detailed-model kind, a major city's too");
         }
         finally
         {
@@ -185,18 +185,17 @@ public class TownModelResidencyTests
                     pair.from.id + " to " + pair.to.id + " sequential pan camera");
                 try
                 {
-                    // The selection moves with the pan; a major city's building models are never admitted (owner, 6 November
-                    // 2026, "Big blocks, every zoom"), so its admission is checked apart from its selection.
+                    // The selection moves with the pan, and so does the admission: at 11.8 km, below the close switch, a major
+                    // city's building models are admitted too (owner, 7 November 2026, "Tal's models close (Recommended)").
                     layer.PrepareCamera(camera);
                     Assert.IsTrue(Selects(layer, pair.from.id, camera), pair.from.id + ": selected at its own label before the pan");
-                    Assert.AreEqual(!TownModels.IsMajorCity(pair.from.id), layer.WantsTown(pair.from.id, camera),
-                        pair.from.id + ": admitted at its own label before the pan, unless a major city");
+                    Assert.IsTrue(layer.WantsTown(pair.from.id, camera), pair.from.id + ": admitted at its own label before the pan");
                     camera.transform.position = new Vector3(pair.to.centre.x, ReportedCameraDistanceM, pair.to.centre.y);
                     layer.PrepareCamera(camera);
                     Assert.IsTrue(Selects(layer, pair.to.id, camera),
                         pair.from.id + " -> " + pair.to.id + ": the normalized-distance owner is selected at its label");
-                    Assert.AreEqual(!TownModels.IsMajorCity(pair.to.id), layer.WantsTown(pair.to.id, camera),
-                        pair.from.id + " -> " + pair.to.id + ": the normalized-distance owner is admitted at its label, unless a major city");
+                    Assert.IsTrue(layer.WantsTown(pair.to.id, camera),
+                        pair.from.id + " -> " + pair.to.id + ": the normalized-distance owner is admitted at its label");
                     Assert.IsFalse(Selects(layer, pair.from.id, camera),
                         pair.from.id + " -> " + pair.to.id + ": the previous town cannot retain on its whole disc");
                     Assert.IsFalse(layer.WantsTown(pair.from.id, camera),
@@ -359,14 +358,14 @@ public class TownModelResidencyTests
             }
             try
             {
-                // Both are major cities, whose building models no zoom admits (owner, 6 November 2026, "Big blocks, every
-                // zoom"): the focus selection crosses the seam, and neither is admitted on either side.
+                // Both are major cities, admitted below the close switch (owner, 7 November 2026, "Tal's models close
+                // (Recommended)"): the selection and the admission cross the seam together.
                 void Expect(string selected, string other)
                 {
                     Assert.IsTrue(Selects(layer, selected, camera), selected + " selected");
                     Assert.IsFalse(Selects(layer, other, camera), other + " not selected");
-                    Assert.IsFalse(layer.WantsTown("jaffa", camera), "Jaffa's building models are never admitted");
-                    Assert.IsFalse(layer.WantsTown("tel_aviv", camera), "Tel Aviv's building models are never admitted");
+                    Assert.IsTrue(layer.WantsTown(selected, camera), selected + "'s building models admitted");
+                    Assert.IsFalse(layer.WantsTown(other, camera), other + "'s building models not admitted");
                 }
                 Move(jaffaSide); Expect("jaffa", "tel_aviv");
                 Move(telAvivSide); Expect("tel_aviv", "jaffa");
@@ -980,8 +979,9 @@ public class TownModelResidencyTests
     }
 
     /// <summary>A town's neighbours in view load too, not only the town under the screen centre; the focused town's kinds
-    /// are asked first (nearest first). Over Petah Tikva its kinds come first; over Tel Aviv its neighbour Petah Tikva loads
-    /// while Tel Aviv and Jaffa, major cities, keep their kits (owner, 6 November 2026, "Big blocks, every zoom").</summary>
+    /// are asked first (nearest first). Over Petah Tikva its kinds come first; over Tel Aviv at 30 km, below the close
+    /// switch, Tel Aviv, Jaffa and Petah Tikva all load, the two major cities' models in place of their kits (owner,
+    /// 7 November 2026, "Tal's models close (Recommended)").</summary>
     [Test]
     public void NeighbouringTownsOfTheFocusLoadToo()
     {
@@ -1000,23 +1000,24 @@ public class TownModelResidencyTests
         Assert.IsTrue(s.layer.ReadyForTown("petah_tikva", camera), "petah_tikva at 30 km over Tel Aviv: admitted and ready");
         foreach (var id in new[] { "tel_aviv", "jaffa" })
         {
-            Assert.IsFalse(s.layer.ReadyForTown(id, camera), id + " at 30 km over Tel Aviv: a major city, never admitted");
-            Assert.IsFalse(s.kits.Find(id).GetComponent<MeshRenderer>().forceRenderingOff, id + " at 30 km over Tel Aviv: its kit draws");
+            Assert.IsTrue(s.layer.ReadyForTown(id, camera), id + " at 30 km over Tel Aviv: a major city below the close switch, admitted and ready");
+            Assert.IsTrue(s.kits.Find(id).GetComponent<MeshRenderer>().forceRenderingOff, id + " at 30 km over Tel Aviv: its kit gives way");
         }
         var jaffa = s.Footprint("jaffa");
         s.Pose(camera, jaffa.centre, TwelveKmM); s.Settle(camera);
-        Assert.IsFalse(s.layer.ReadyForTown("jaffa", camera), "Jaffa at 12 km: its kit");
-        Assert.IsFalse(s.layer.ReadyForTown("tel_aviv", camera), "Tel Aviv beside Jaffa at 12 km: its kit");
+        Assert.IsTrue(s.layer.ReadyForTown("jaffa", camera), "Jaffa at 12 km: its building models");
+        Assert.IsTrue(s.layer.ReadyForTown("tel_aviv", camera), "Tel Aviv beside Jaffa at 12 km: its building models");
     }
 
-    /// <summary>Owner ruling, 6 November 2026, "Big blocks, every zoom" (it supersedes the 2 November 2026 ruling, "Yes, small
-    /// buildings at every zoom" (superseded), under which this test drew the four cities from their building models). In the
-    /// player's streaming path and the production policy, each of the four cities in view keeps its kit at the widest zoom
-    /// (250 km), the opening zoom (90 km), the gameplay view (60 km), 30 km and the closest zoom: its building models are
-    /// never admitted and the kit never gives way. A town with a whole-town model in view at 90 km (Petah Tikva) draws its
-    /// far-off copies (owner, 3 November 2026, "Cities/towns only (Recommended)").</summary>
+    /// <summary>Owner ruling, 7 November 2026, "Tal's models close (Recommended)" (it supersedes "Big blocks, every zoom",
+    /// 6 November 2026, below the 40 km close switch; from 40 km out that ruling stands). In the player's streaming path and
+    /// the production policy, each of the four cities in view keeps its kit at the widest zoom (250 km), the opening zoom
+    /// (90 km) and the gameplay view (60 km): its building models are not admitted there and the kit never gives way. At
+    /// 30 km and the closest zoom, below the close switch, Tal Heuberger's building models are admitted, the kit gives way
+    /// and the models draw. A town with a whole-town model in view at 90 km (Petah Tikva) draws its far-off copies (owner,
+    /// 3 November 2026, "Cities/towns only (Recommended)").</summary>
     [Test]
-    public void TheFourCitiesKeepTheirKitsAtEveryZoomWhileATownDrawsItsFarCopies()
+    public void TheFourCitiesKeepTheirKitsFarAndDrawTalsModelsClose()
     {
         using var s = new StreamedMap();
         var majors = s.map.Settlements.Where(x => TownModels.IsMajorCity(x.Id)).Select(x => x.Id).ToList();
@@ -1032,8 +1033,8 @@ public class TownModelResidencyTests
             s.RequestOrder.Distinct().ToList(), "Petah Tikva's far-off copies are asked for");
         Assert.IsFalse(s.layer.ReadyForTown("tel_aviv", far), "Tel Aviv in the same view: its kit, no building models");
         CollectionAssert.IsNotEmpty(s.RequestOrder);
-        // #2378: far off only far-off copies are asked for, never an original. (That no kind only the major cities place is
-        // asked for: TheMajorCitiesDrawTheirKitsAtEveryZoom.)
+        // #2378: far off only far-off copies are asked for, never an original. (That no far-off copy of a kind only the major
+        // cities place is asked for: TheMajorCitiesDrawTheirKitsFarAndTalsModelsBelowTheCloseSwitch.)
         foreach (var id in s.RequestOrder) Assert.IsTrue(CollectionCatalog.IsFarCopy(id), "far off, asked for an original: " + id);
         // A merged village tile never holds one of the four cities (AdmitInView decides a place by its first id).
         var viewPlaces = (System.Collections.IEnumerable)typeof(TownModelLayer).GetField("viewPlaces", Flags)!.GetValue(s.layer)!;
@@ -1046,12 +1047,14 @@ public class TownModelResidencyTests
             var kit = s.kits.Find(id).GetComponent<MeshRenderer>();
             foreach (float d in new[] { CameraController.MaxDistance, 90_000f, GameplayM, ThirtyKmM, CameraController.MinDistance })
             {
+                bool close = d <= TownModelLayer.CloseEnterM;
                 var camera = s.Camera(at, d);
                 string where = FormattableString.Invariant($"{id} at {d / 1000f} km");
                 s.Settle(camera);
-                Assert.IsFalse(s.layer.ReadyForTown(id, camera), where + ": building models never admitted");
-                Assert.IsFalse(kit.forceRenderingOff, where + ": the kit draws");
+                Assert.AreEqual(close, s.layer.ReadyForTown(id, camera), where + (close ? ": building models admitted and ready" : ": building models not admitted"));
+                Assert.AreEqual(close, kit.forceRenderingOff, where + (close ? ": the kit gives way" : ": the kit draws"));
                 s.Submit(camera);
+                if (close) Assert.Greater(s.layer.LastDrawn, 0, where + ": the building models draw");
                 TestContext.WriteLine($"{where}: {s.layer.LastDrawn} instances in {s.layer.LastDraws} draws");
             }
         }
@@ -1061,8 +1064,9 @@ public class TownModelResidencyTests
     /// buildings' shadows beyond 40 km now"). Beyond the close switch the buildings (the far-off copies) draw without casting
     /// shadows (90 km and the 60 km gameplay view); below it every building casts as before (30 km and the closest zoom).
     /// Over Petah Tikva, a town with far-off copies: the four cities, whose building models this tested before, keep their
-    /// kits at every zoom since the owner's ruling of 6 November 2026, "Big blocks, every zoom", and nothing draws far-off
-    /// copies beyond the far band (250 km).</summary>
+    /// kits from 40 km out (owner, 6 November 2026, "Big blocks, every zoom"; below 40 km they draw Tal's models: owner,
+    /// 7 November 2026, "Tal's models close (Recommended)"), so take no far-off copies, and nothing draws far-off copies
+    /// beyond the far band (250 km).</summary>
     [Test]
     public void TheBuildingsCastNoShadowsFarOff()
     {
@@ -1086,8 +1090,8 @@ public class TownModelResidencyTests
     /// sets TownModelLayer.LowTier. Over Petah Tikva at the 30 km opening (CameraRig.StartDistance, below the close switch)
     /// the buildings then draw their far-off copies with no shadow casters instead of the originals with every building
     /// casting; clearing it puts the originals and their shadows back, both with the camera unmoved. (Over Petah Tikva, not
-    /// Tel Aviv: Tel Aviv keeps its kit at every zoom since the owner's ruling of 6 November 2026, "Big blocks, every
-    /// zoom".)</summary>
+    /// Tel Aviv: Tel Aviv takes no far-off copies; it keeps its kit from 40 km out, owner, 6 November 2026, "Big blocks,
+    /// every zoom", and the low tier counts as past the close switch.)</summary>
     [Test]
     public void TheLowTierDrawsTheFarCopiesWithoutShadowsAtTheOpeningAndClearingItPutsTheOriginalsBack()
     {
@@ -1118,7 +1122,8 @@ public class TownModelResidencyTests
     /// <summary>The shadows follow the close switch with its hysteresis (TownModelLayer.CloseAt: in below CloseEnterM, 40 km,
     /// out above CloseExitM, 45 km). Over Petah Tikva, coming in: none at 90 km and at 42 km (inside the band, still far),
     /// all at 39 km; going out: all at 43 km (inside the band, still close), none at 46 km. (Over Petah Tikva, not Tel Aviv:
-    /// Tel Aviv keeps its kit at every zoom since the owner's ruling of 6 November 2026, "Big blocks, every zoom".)</summary>
+    /// Tel Aviv draws no building model from 40 km out, owner, 6 November 2026, "Big blocks, every zoom"; its own switch:
+    /// TheMajorCitiesDrawTheirKitsFarAndTalsModelsBelowTheCloseSwitch.)</summary>
     [Test]
     public void TheBuildingsShadowsFollowTheCloseSwitchBothWays()
     {
@@ -1135,8 +1140,8 @@ public class TownModelResidencyTests
     }
 
     /// <summary>The far view (the far band, where the far-off copies draw) is a common one: once settled, a far camera's draw
-    /// submission allocates nothing (no frustum array per camera per frame). Over Petah Tikva at 90 km: since the owner's
-    /// ruling of 6 November 2026, "Big blocks, every zoom", the four cities keep their kits, and at 250 km no building model
+    /// submission allocates nothing (no frustum array per camera per frame). Over Petah Tikva at 90 km: the four cities keep
+    /// their kits from 40 km out (owner, 6 November 2026, "Big blocks, every zoom"), and at 250 km no building model
     /// draws.</summary>
     [Test]
     public void AFarViewSubmitsWithoutAllocating()
@@ -1157,8 +1162,8 @@ public class TownModelResidencyTests
     /// <summary>A failed building bundle in a town that draws far-off copies (Petah Tikva's first kind: its far-off copy at
     /// 90 km, the original at 2 km): the town keeps its code-built kit there (in this fixture no whole-town model stands in),
     /// the map draws on, the original is asked for once, the far-off copy once per visit of the far band (its lease retires
-    /// at 2 km), and the layer warns once for each failed id. (Petah Tikva, not Tel Aviv's b01: since the owner's ruling of
-    /// 6 November 2026, "Big blocks, every zoom", Tel Aviv's building models are never asked for.)</summary>
+    /// at 2 km), and the layer warns once for each failed id. (Petah Tikva, not Tel Aviv's b01: Tel Aviv takes no far-off
+    /// copies, keeping its kit from 40 km out, owner, 6 November 2026, "Big blocks, every zoom".)</summary>
     [Test]
     public void ACityWhoseBuildingBundleFailsKeepsItsKit()
     {
@@ -1188,8 +1193,9 @@ public class TownModelResidencyTests
     }
 
     /// <summary>The 1.5 GB guard: zooming out to the 60 km gameplay view releases every original's lease and asks for
-    /// far-off copies instead (#2378); until those arrive the kits draw again. The four cities in view are admitted at no
-    /// zoom (owner, 6 November 2026, "Big blocks, every zoom").</summary>
+    /// far-off copies instead (#2378); until those arrive the kits draw again. The four cities in view are not admitted
+    /// from 40 km out (owner, 6 November 2026, "Big blocks, every zoom"; below it they are: owner, 7 November 2026, "Tal's
+    /// models close (Recommended)").</summary>
     [Test]
     public void BuildingModelsUnloadAtSixtyKm()
     {
@@ -1204,8 +1210,9 @@ public class TownModelResidencyTests
         int originals = s.RequestOrder.Count;
         s.Pose(camera, imwas.centre, GameplayM);
         s.layer.PrepareCamera(camera); s.layer.RetireReleasedModels();
-        // From 60 km over Imwas the view holds Jerusalem, Tel Aviv and Jaffa, not Haifa; none of them is admitted (owner,
-        // 6 November 2026, "Big blocks, every zoom", which supersedes the 2 November 2026 ruling that kept them at every zoom).
+        // From 60 km over Imwas the view holds Jerusalem, Tel Aviv and Jaffa, not Haifa; none of them is admitted from 40 km
+        // out (owner, 6 November 2026, "Big blocks, every zoom"; "Tal's models close (Recommended)", 7 November 2026, admits
+        // them only below the close switch).
         var majors = s.map.Settlements.Where(x => TownModels.IsMajorCity(x.Id)).Select(x => x.Id).ToList();
         Assert.AreEqual(4, majors.Count, "the four major cities");
         CollectionAssert.IsEmpty(majors.Where(id => s.layer.AdmitsTown(id, camera)).ToList(), "no major city admitted at 60 km over Imwas");
@@ -1225,7 +1232,7 @@ public class TownModelResidencyTests
     /// asks for the originals and draws them; at 41 km and at 90 km it asks for the far-off copies ("&lt;id&gt;-far",
     /// CollectionCatalog.FarCopy) and never an original, and draws at least the town's instances (the copy stands in the
     /// original's matrix); every kind the town places is asked for at its tier. (Over Petah Tikva, not Tel Aviv: Tel Aviv
-    /// keeps its kit at every zoom since the owner's ruling of 6 November 2026, "Big blocks, every zoom".)</summary>
+    /// takes no far-off copies, keeping its kit from 40 km out, owner, 6 November 2026, "Big blocks, every zoom".)</summary>
     [Test]
     public void BelowTheCloseSwitchTheOriginalsStreamAndBeyondItTheFarCopies()
     {
@@ -1257,48 +1264,65 @@ public class TownModelResidencyTests
 
     /// <summary>The owner's bug of 6 November 2026 ("the look of the buildings in tel aviv changes when you change the zoom in
     /// a way that you first see the big buildings and them the small ones"), ruled "Big blocks, every zoom" and "Just the
-    /// four (Recommended)", which supersedes the 2 November 2026 ruling: the major cities draw their code-built kit, its
-    /// landmarks with it, at every zoom. One camera over each city's footprint centre walks from the widest zoom in through
-    /// the far band and the close switch's band to the closest zoom and out again; at every step, before the stream answers
-    /// and once it has, the kit draws, the city's close mesh never swaps in and its building models are never ready. The low
-    /// tier at the 31 km opening the same. None of the kinds that only these cities place is ever asked for, as an original
-    /// or as a far-off copy.</summary>
+    /// four (Recommended)" on 6 November 2026, then "Tal's models close (Recommended)" on 7 November 2026, which supersedes
+    /// "Big blocks, every zoom" below the close switch: from 40 km out (TownModelLayer.CloseEnterM, out again above
+    /// CloseExitM, 45 km, the hysteresis the other layers use) the major cities draw their code-built kit, its landmarks
+    /// with it; below it Tal Heuberger's building models, as on main. One camera over each city's footprint centre walks
+    /// from the widest zoom in through the far band and the close switch's band (42 km coming in: still far) to the closest
+    /// zoom and out again (43 km going out: still close). Far, before the stream answers and once it has, the kit draws, the
+    /// city's close mesh does not swap in and its building models are not ready; close, once settled, the models are ready,
+    /// the kit gives way and the close mesh swaps in. The low tier at the 31 km opening counts as past the switch: the kit.
+    /// Every kind only these cities place is asked for as an original, below the switch, and never as a far-off copy.</summary>
     [Test]
-    public void TheMajorCitiesDrawTheirKitsAtEveryZoom()
+    public void TheMajorCitiesDrawTheirKitsFarAndTalsModelsBelowTheCloseSwitch()
     {
         using var s = new StreamedMap();
         var majors = s.map.Settlements.Where(x => TownModels.IsMajorCity(x.Id)).Select(x => x.Id).ToArray();
         Assert.AreEqual(4, majors.Length, "the four major cities (TheMajorCitiesAreThePlacesOfSixtyThousandOrMoreIn1945)");
-        float[] walk = { 250_000f, 112_500f, 90_000f, 60_000f, 42_000f, 39_000f, CameraRig.StartDistance, 6_000f, 43_000f, 46_000f, 101_000f, 250_000f };
+        Assert.AreEqual(40_000f, TownModelLayer.CloseEnterM, "the close switch"); Assert.AreEqual(45_000f, TownModelLayer.CloseExitM, "its exit");
+        (float d, bool close)[] walk = { (250_000f, false), (112_500f, false), (90_000f, false), (60_000f, false), (42_000f, false), (39_000f, true),
+            (CameraRig.StartDistance, true), (6_000f, true), (43_000f, true), (46_000f, false), (101_000f, false), (250_000f, false) };
         foreach (var id in majors)
         {
             var at = s.Footprint(id).centre;
             var kit = s.kits.Find(id)?.GetComponent<MeshRenderer>();
             var close = s.kits.Find(id + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
             Assert.IsNotNull(kit, id + ": its kit"); Assert.IsNotNull(close, id + ": its close mesh");
-            var camera = s.Camera(at, walk[0]);
-            void Check(string where)
+            var camera = s.Camera(at, walk[0].d);
+            void Far(string where)
             {
+                Assert.IsFalse(s.layer.AdmitsTown(id, camera), where + ": building models not admitted");
                 Assert.IsFalse(kit!.forceRenderingOff, where + ": the kit draws");
                 Assert.IsTrue(close!.forceRenderingOff, where + ": the close mesh does not swap in");
                 Assert.IsFalse(s.layer.ReadyForTown(id, camera), where + ": no building models");
             }
-            foreach (float d in walk)
+            void Close(string where)
+            {
+                Assert.IsTrue(s.layer.AdmitsTown(id, camera), where + ": building models admitted");
+                Assert.IsTrue(s.layer.ReadyForTown(id, camera), where + ": building models ready");
+                Assert.IsTrue(kit!.forceRenderingOff, where + ": the kit gives way");
+                Assert.IsFalse(close!.forceRenderingOff, where + ": the close mesh swaps in");
+                s.Submit(camera);
+                Assert.IsTrue(s.layer.LastClose, where + ": the close switch");
+                Assert.Greater(s.layer.LastDrawn, 0, where + ": the building models draw");
+            }
+            foreach (var (d, near) in walk)
             {
                 string where = FormattableString.Invariant($"{id} at {d / 1000f} km");
                 s.Pose(camera, at, d); s.layer.PrepareCamera(camera);
-                Check(where + ", before the stream answers");
+                if (near) Assert.IsTrue(s.layer.AdmitsTown(id, camera), where + ", before the stream answers: admitted");
+                else Far(where + ", before the stream answers");
                 s.Settle(camera);
-                Check(where + ", settled");
+                if (near) Close(where + ", settled"); else Far(where + ", settled");
             }
             try
             {
                 TownModelLayer.LowTier = true;
                 string where = FormattableString.Invariant($"{id} at {CameraRig.StartDistance / 1000f} km on the low tier");
                 s.Pose(camera, at, CameraRig.StartDistance); s.layer.PrepareCamera(camera);
-                Check(where + ", before the stream answers");
+                Far(where + ", before the stream answers");
                 s.Settle(camera);
-                Check(where + ", settled");
+                Far(where + ", settled");
             }
             finally { TownModelLayer.LowTier = false; }
         }
@@ -1315,7 +1339,7 @@ public class TownModelResidencyTests
         foreach (var kind in cityOnly)
         {
             string original = TownModels.Ids[(int)kind];
-            CollectionAssert.DoesNotContain(s.RequestOrder, original, original + " is never asked for");
+            CollectionAssert.Contains(s.RequestOrder, original, original + " is asked for below the close switch");
             CollectionAssert.DoesNotContain(s.RequestOrder, CollectionCatalog.FarCopy(original), original + "'s far-off copy is never asked for");
         }
     }

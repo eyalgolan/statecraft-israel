@@ -557,13 +557,14 @@ namespace Statecraft.Game.Tests
             var ground = PlacementLayer.CampGround(map);
             // The owner, 2 November 2026, on #2274: "Bigger, closer (Recommended)" ("let them stand at the town's edge right by the
             // sourced spot"): the four props may stand inside a town's kit footprint, but clear of its drawn buildings (its building
-            // models; a major city's kit blocks, which it draws at every zoom in their place: #2876), of the unit tokens standing in
+            // models, a major city's included, which it draws below the close switch: owner, 7 November 2026, "Tal's models close
+            // (Recommended)"; and a major city's kit blocks, which it draws from 40 km out: #2876), of the unit tokens standing in
             // towns and of every settlement's and locality's name point.
             var towns = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
             Assert.IsNotNull(towns, "the town building models");
-            var buildings = map.KitFootprints.Where(f => !Statecraft.Game.Map.Kits.TownModels.IsMajorCity(f.id)).SelectMany(f => towns.InstancesOf(f.id))
+            var buildings = map.KitFootprints.SelectMany(f => towns.InstancesOf(f.id))
                 .Select(i => (i.C, 0.5f * new Vector2(i.W, i.D).magnitude)).ToList();
-            Assert.IsTrue(TownLandmarks.Clear(flat, r, buildings), key + " clear of the towns' buildings");
+            Assert.IsTrue(TownLandmarks.Clear(flat, r, buildings), key + " clear of the towns' building models, the major cities' included");
             foreach (var block in map.MajorCityBlocks)
                 Assert.IsTrue(SpecialBuildingModels.ClearOfBox(flat, r, block.C, block.Yaw, block.W, block.D), $"{key} clear of {block.Id}'s kit {block.Kind} at {block.C}");
             Assert.IsTrue(TownLandmarks.Clear(flat, r, map.UnitClearings.ToList()), key + " clear of the tokens in the towns");
@@ -1163,6 +1164,85 @@ namespace Statecraft.Game.Tests
             }
         }
 
+        /// <summary>#2876, the owner, 7 November 2026, on Hadera: "Move the workshop (Recommended)": Hadera's arms workshop moves
+        /// to a clear spot at the town's edge, and the palms stay. With a workshop built in every place a player can build one in
+        /// (<see cref="CityBuilt"/>), placed as the layer places them (the civilians and the farm scenes first, as
+        /// <see cref="OnTheMapEachBuiltWorkshopStandsOnItsHexClearAndUpright"/>), each b21 of a town that is not a major city
+        /// stands off the beach (no open sea, KitGround.SeaDistance, within the drawn full sand, BeachBands.FullSandAt, plus its
+        /// clearance) and clear of the kit trees as planted (VegetationLayer.Planted): no tree's crown reaches its clearance disc
+        /// (a tree there would be left out under it) or its sight lane toward the camera (south: across its clearance, as far as
+        /// the ray from its foot at the view's shallowest depression, SpecialBuildingModels.SightTan, passes over the tree's top;
+        /// a tree there would stand in front of it). A major city's b21 is listed too (its lane's trees are left out by design,
+        /// VegetationLayer.Hide). Each b21's spot, its distance to the sea and the nearest tree crown, and the trees under it and
+        /// in front of it, are logged as a WORKSHOPSITE line.</summary>
+        [Test]
+        public void EveryTownsWorkshopStandsOffTheBeachAndClearOfTheTrees()
+        {
+            var map = OpenMap();
+            var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
+            var cities = CityBuilt(c);
+            var projects = cities.Select((city, i) => Workshop(c, 100 + i, city, Built)).ToList();
+            var savedPeople = CivilianPeople.Request; var savedRural = RuralLife.Request;
+            CivilianPeople.Request = (id, detail, done) => { };
+            RuralLife.Request = (id, detail, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, detail)));
+            try
+            {
+                CollectionGeometryFixture.People(map, After, Array.Empty<Statecraft.Sim.Placement>(), c);
+                CollectionGeometryFixture.Rural(map);
+            }
+            finally { CivilianPeople.Request = savedPeople; RuralLife.Request = savedRural; }
+            var layer = CollectionGeometryFixture.Special(map, After, c, projects)!;
+            Streets(map, c, projects, out var edged);
+            AnswerAll();
+            var ground = PlacementLayer.CampGround(map);
+            var veg = map.GetComponentInChildren<Statecraft.Game.Map.Kits.VegetationLayer>(true);
+            Assert.IsNotNull(veg, "the kit trees");
+            var tops = new Dictionary<Statecraft.Game.Map.Kits.TreeKind, float>();
+            foreach (Statecraft.Game.Map.Kits.TreeKind k in Enum.GetValues(typeof(Statecraft.Game.Map.Kits.TreeKind)))
+            {
+                var mesh = Statecraft.Game.Map.Kits.Vegetation.BuildMesh(k); tops[k] = mesh.bounds.max.y; UnityEngine.Object.DestroyImmediate(mesh);
+            }
+            var trees = veg!.Planted().Select(t => (kind: t.kind, at: new Vector2(t.m.m03, t.m.m23),
+                crown: Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(t.kind, t.m), top: t.m.m13 + tops[t.kind] * ((Vector3)t.m.GetColumn(1)).magnitude)).ToList();
+            Assert.Greater(trees.Count, 0, "the kit trees as planted");
+            var sand = Statecraft.Game.Map.Kits.BeachBands.Reaches(map.Settlements.Concat(map.Localities.Select(l => l.Settlement)).ToList(), ground);
+            float tan = SpecialBuildingModels.SightTan;
+            var failures = new List<string>();
+            int ordinary = 0;
+            foreach (var project in projects)
+            {
+                var key = SpecialBuildingModels.WorkshopKey(project.Id);
+                var placed = layer.Placed.Where(x => x.Key == key).ToList();
+                if (placed.Count == 0) { failures.Add($"{project.City}: {key} not placed"); continue; }
+                var flat = new Vector2(placed[0].At.x, placed[0].At.z); float r = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
+                float baseY = ground.Y(flat.x, flat.y);
+                float full = Statecraft.Game.Map.Kits.BeachBands.FullSandAt(map.Frame, flat.x, flat.y, sand);
+                bool onBeach = ground.SeaDistance(flat.x, flat.y, full + r) != float.MaxValue;
+                float sea = ground.SeaDistance(flat.x, flat.y, 8000f);
+                int under = 0, front = 0; float nearest = float.MaxValue;
+                foreach (var t in trees)
+                {
+                    float d = (t.at - flat).magnitude;
+                    if (d - t.crown - r > 3000f) continue;
+                    nearest = Mathf.Min(nearest, d - t.crown - r);
+                    if (d < r + t.crown) { under++; continue; }
+                    if (Mathf.Abs(t.at.x - flat.x) < r + t.crown && t.at.y - t.crown < flat.y + r && (flat.y - r - t.at.y) - t.crown < (t.top - baseY) / tan) front++;
+                }
+                var fp = map.KitFootprints.FirstOrDefault(f => f.id == project.City);
+                float fromTown = fp.id == null ? float.NaN : (flat - fp.centre).magnitude;
+                bool major = Statecraft.Game.Map.Kits.TownModels.IsMajorCity(project.City);
+                TestContext.WriteLine(FormattableString.Invariant(
+                    $"WORKSHOPSITE {project.City} {key}: at ({flat.x:0}, {flat.y:0}), {fromTown:0} m from its kit centre (radius {fp.radius:0} m){(edged.Contains(key) ? ", at its town's edge" : "")}{(major ? ", major city" : "")}; sea {(sea == float.MaxValue ? "over 8000" : sea.ToString("0", System.Globalization.CultureInfo.InvariantCulture))} m, full sand {full:0} m, on the beach {onBeach}; nearest tree crown {(nearest == float.MaxValue ? "over 3000" : nearest.ToString("0", System.Globalization.CultureInfo.InvariantCulture))} m past its disc, {under} under its disc, {front} in its sight lane"));
+                if (major) continue;
+                ordinary++;
+                if (onBeach) failures.Add($"{project.City}: {key} stands on the beach (sea within its full sand {full:0} m plus {r:0} m)");
+                if (under > 0) failures.Add($"{project.City}: {key} stands on {under} kit trees (they would be left out under it)");
+                if (front > 0) failures.Add($"{project.City}: {key} has {front} kit trees in front of it, in its sight lane");
+            }
+            Assert.Greater(ordinary, 10, "the ordinary towns with a b21");
+            Assert.IsEmpty(failures, string.Join("\n", failures));
+        }
+
         /// <summary>#2876 (coordinator, 6 November 2026): the town's-edge fallback (SpecialBuildingModels.TownEdgeSpot) runs only
         /// for a workshop whose hex has no spot, so it moves nothing else: with a workshop built in every place a player can build
         /// one in (<see cref="CityBuilt"/>), the plan with the fallback is the plan without it (every row's spot and street the
@@ -1212,8 +1292,9 @@ namespace Statecraft.Game.Tests
         }
 
         /// <summary>Owner, 2 November 2026 ("Among the houses"): a b21 on a hex a town's footprint covers overlaps none of the
-        /// drawn buildings, whatever they are (read from the map, not listed here): the town layer's models, and a major city's
-        /// kit blocks, which it draws at every zoom in their place (#2876). A b21 on a street between kit blocks
+        /// drawn buildings, whatever they are (read from the map, not listed here): the town layer's models, a major city's
+        /// included (drawn below the close switch: owner, 7 November 2026, "Tal's models close (Recommended)"), and a major
+        /// city's kit blocks, which it draws from 40 km out (#2876). A b21 on a street between kit blocks
         /// (<paramref name="streets"/>) is checked as its square along the street, SizeOf a side, against the blocks and the kit
         /// landmarks; else as its clearance disc. The names' pills are checked on screen by
         /// MapLabelTests.NoNamePillCoversAWorkshopModelInTelAviv and ...InJerusalem.</summary>
@@ -1234,8 +1315,7 @@ namespace Statecraft.Game.Tests
             }
             foreach (var f in map.KitFootprints)
             {
-                if (Statecraft.Game.Map.Kits.TownModels.IsMajorCity(f.id)) continue;   // its models are never drawn (#2876)
-                foreach (var b in layer!.InstancesOf(f.id))
+                foreach (var b in layer!.InstancesOf(f.id))   // a major city's too: drawn below the close switch ("Tal's models close (Recommended)")
                 {
                     n++;
                     // The building's footprint, a W x D rectangle turned by its yaw: its nearest point to the model's centre.
@@ -1321,15 +1401,18 @@ namespace Statecraft.Game.Tests
             Assert.Less(ms, 50.0, "one plan with two workshops at their city's edge");
         }
 
-        /// <summary>#2876 ("Big blocks, every zoom", owner, 6 November 2026): the four major cities (TownModels.IsMajorCity) draw
-        /// their kit blocks at every zoom and never their building models, so a b21 among their houses (owner, 2 November 2026:
-        /// "Among the houses") and Tal Heuberger's props at their edge keep off those blocks (MapScene.MajorCityBlocks), not off
-        /// the models no longer drawn there. A workshop on each major city's own hex gets a planned spot (at the city's edge,
+        /// <summary>#2876: the four major cities (TownModels.IsMajorCity) draw their kit blocks from 40 km out (owner, 6 November
+        /// 2026, "Big blocks, every zoom") and Tal Heuberger's building models below the close switch (owner, 7 November 2026,
+        /// "Tal's models close (Recommended)", which supersedes "Big blocks, every zoom" below 40 km), so a b21 among their
+        /// houses (owner, 2 November 2026: "Among the houses") and Tal Heuberger's props at their edge keep off both, on both
+        /// sides of the switch: the blocks (MapScene.MajorCityBlocks) and the model instances (TownModelLayer.InstancesOf,
+        /// each as a disc of its half diagonal). A workshop on each major city's own hex gets a planned spot (at the city's edge,
         /// on or off the hex: owner, 6 November 2026, "make the workshop at the edge of the city"), whose ground (its clearance
-        /// disc, or on a street its square, SizeOf a side, along the street) overlaps no major city's kit block; the Altalena sandbags (15 June 1948) and the Haifa quay crates, where planned, keep off them too.
+        /// disc, or on a street its square, SizeOf a side, along the street) overlaps no major city's kit block and no model
+        /// instance of any place; the Altalena sandbags (15 June 1948) and the Haifa quay crates, where planned, keep off them too.
         /// The plan is the one the layer draws (every model available), placed twice to the same spots.</summary>
         [Test]
-        public void AWorkshopOrPropInAMajorCityKeepsOffItsKitBlocks()
+        public void AWorkshopOrPropInAMajorCityKeepsOffItsKitBlocksAndItsModels()
         {
             var map = OpenMap();
             var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
@@ -1344,6 +1427,11 @@ namespace Statecraft.Game.Tests
             var again = SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false);
             CollectionAssert.AreEqual(plan.Select(x => (x.want.Key, x.at)).ToList(), again.Select(x => (x.want.Key, x.at)).ToList(), "the same spots when planned again");
             float size = SpecialBuildingModels.SizeOf(SpecialBuildingModels.Workshop), r = SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop);
+            // Every place's model instances, the major cities' among them (drawn below the close switch since 7 November 2026).
+            var townLayer = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
+            Assert.IsNotNull(townLayer, "the town layer");
+            var models = map.KitFootprints.SelectMany(f => townLayer!.InstancesOf(f.id).Select(b => (id: f.id, b))).ToList();
+            foreach (var city in majors) Assert.Greater(models.Count(m => m.id == city), 0, city + " has model instances to keep clear of");
             foreach (var project in projects)
             {
                 string key = SpecialBuildingModels.WorkshopKey(project.Id);
@@ -1366,7 +1454,15 @@ namespace Statecraft.Game.Tests
                         Assert.IsTrue(SpecialBuildingModels.ClearOfBox(at, r, b.C, b.Yaw, b.W, b.D),
                             $"{key} ({project.City}): its {r:0} m disc at {at} overlaps {b.Id}'s {b.Kind} at {b.C} ({b.W:0} x {b.D:0} m, {b.Yaw:0} deg)");
                 }
-                TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre{(street ? $", on a street at {yaw:0} deg" : "")}; {near} kit blocks within reach");
+                foreach (var (id, b) in models)
+                {
+                    float half = 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D);
+                    float need = (street ? 0.5f * Mathf.Sqrt(2f) * size : r) + half;
+                    Assert.GreaterOrEqual((b.C - at).magnitude, need,
+                        $"{key} ({project.City}): its ground at {at} meets {id}'s {b.Model} at {b.C} ({b.W:0} x {b.D:0} m)");
+                }
+                float closest = models.Min(m => (m.b.C - at).magnitude - 0.5f * Mathf.Sqrt(m.b.W * m.b.W + m.b.D * m.b.D));
+                TestContext.WriteLine($"{key} ({project.City}): {off:0} m from its hex centre{(street ? $", on a street at {yaw:0} deg" : "")}; {near} kit blocks within reach; the nearest model instance's disc {closest - r:0} m past its clearance disc");
             }
             // Tal Heuberger's props at a major city's edge (Want.TownEdge), on the day both stand.
             var date = new DateTime(1948, 6, 15);
@@ -1378,7 +1474,9 @@ namespace Statecraft.Game.Tests
                 var (want, at) = row[0]; float pr = SpecialBuildingModels.ClearanceOf(want);
                 foreach (var b in blocks)
                     Assert.IsTrue(SpecialBuildingModels.ClearOfBox(at, pr, b.C, b.Yaw, b.W, b.D), $"{key} at {at} overlaps {b.Id}'s {b.Kind} at {b.C}");
-                TestContext.WriteLine($"{key}: at {at}, clear of the major cities' kit blocks");
+                foreach (var (id, b) in models)
+                    Assert.GreaterOrEqual((b.C - at).magnitude, pr + 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D), $"{key} at {at} meets {id}'s {b.Model} at {b.C}");
+                TestContext.WriteLine($"{key}: at {at}, clear of the major cities' kit blocks and of every model instance");
             }
         }
 
@@ -1633,8 +1731,7 @@ namespace Statecraft.Game.Tests
                     failures.Add(FormattableString.Invariant($"{who} overlaps {b.Id}'s {b.Kind} at {b.C}"));
             foreach (var f in map.KitFootprints)
             {
-                if (Statecraft.Game.Map.Kits.TownModels.IsMajorCity(f.id)) continue;   // its models are never drawn (#2876)
-                foreach (var b in layer.InstancesOf(f.id))
+                foreach (var b in layer.InstancesOf(f.id))   // a major city's too: drawn below the close switch ("Tal's models close (Recommended)")
                     if ((b.C - at).magnitude < r + 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D))
                         failures.Add(FormattableString.Invariant($"{who} overlaps {f.id}'s {b.Model} at {b.C}"));
             }

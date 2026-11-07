@@ -193,8 +193,8 @@ public class TownModelTests
     {
         var map = OpenMap();
         var built = Build(map, out var placed);
-        // With the four major cities, which have no whole-town model: their building models are still placed, though since the
-        // owner's ruling of 6 November 2026, "Big blocks, every zoom", they never draw (TownModels.IsMajorCity).
+        // With the four major cities, which have no whole-town model: their building models draw below the close switch
+        // (owner, 7 November 2026, "Tal's models close (Recommended)"), their kits from 40 km out (TownModels.IsMajorCity).
         var mapped = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null
             || TownLandmarksTests.BigCities.Contains(s.Id)).ToList();
         TestContext.WriteLine($"{mapped.Count} towns with a whole-town model or major cities: {string.Join(", ", mapped.Select(s => s.Id))}");
@@ -531,12 +531,12 @@ public class TownModelTests
     }
 
     /// <summary>Owner ruling on #700, "Models up close only", and #2378 (owner, 3 November 2026, "allow them far off only"):
-    /// at the close views the originals draw, every kit individual-town mesh but the major cities' gives way to its close
-    /// mesh (mixed locality tiles keep fallback), and the models stay within the fixture's complete original-geometry work.
-    /// The major cities (TownModels.IsMajorCity) keep their kits at every zoom (owner, 6 November 2026, "Big blocks, every
-    /// zoom", which supersedes the 2 November 2026 ruling, "Yes, small buildings at every zoom" (superseded)), so the close
-    /// views over them (tel_aviv30, jaffa12) draw only the other places' models, and a close view over Petah Tikva
-    /// (petah_tikva30) draws at least all of that town's. Within the far band (gameplay03 at 60 km, the 90 km opening) the
+    /// at the close views (tel_aviv30, jaffa12, petah_tikva30) the originals draw (well over a hundred), every kit
+    /// individual-town mesh gives way to its close mesh, the major cities' included (mixed locality tiles keep fallback), and
+    /// the models stay within the fixture's complete original-geometry work. The major cities (TownModels.IsMajorCity) draw
+    /// Tal Heuberger's models below the close switch (owner, 7 November 2026, "Tal's models close (Recommended)") and keep
+    /// their kits from 40 km out (owner, 6 November 2026, "Big blocks, every zoom", which "Tal's models close
+    /// (Recommended)" supersedes below the switch). Within the far band (gameplay03 at 60 km, the 90 km opening) the
     /// towns with a whole-town model draw their far-off copies instead (owner, 3 November 2026, "Cities/towns only
     /// (Recommended)"), at most TownModels.FarTriangles each, so the 90 km opening stays under four million triangles; the
     /// 1948 localities keep their kits. At diorama02 (250 km) no model draws. Zooming back out restores the kits. The "kits"
@@ -604,18 +604,16 @@ public class TownModelTests
         int farInstances = farTier.Sum(id => layer.CountFor(id));
         void Check(PromoPose pose, bool close, string? floorTown = null)
         {
-            // Up close every detailed town but the major cities; within the far band the far-tier places, beyond it none, and
-            // in this fixture only within its focus admission (OriginalModelDistance.EnterM, 120 km: gameplay03 at 60 km and
-            // the 90 km opening, not diorama02 at 250 km). This fixture has no view admission;
-            // TheFourCitiesKeepTheirKitsAtEveryZoomWhileATownDrawsItsFarCopies checks production's at 250 km.
+            // Up close every detailed town, the major cities included; within the far band the far-tier places (never a major
+            // city), beyond it none, and in this fixture only within its focus admission (OriginalModelDistance.EnterM, 120 km:
+            // gameplay03 at 60 km and the 90 km opening, not diorama02 at 250 km). This fixture has no view admission;
+            // TheFourCitiesKeepTheirKitsFarAndDrawTalsModelsClose checks production's at 250 km.
             bool farFocus = pose.Distance < Statecraft.Game.Map.Collection.OriginalModelDistance.EnterM;
             bool farBand = TownModelLayer.FarAt(pose.Distance, null);
-            bool Ready(string town) => layer.CountFor(town) > 0 && !big.Contains(town) && (close || (farFocus && farBand && farTier.Contains(town)));
+            bool Ready(string town) => layer.CountFor(town) > 0 && (close || (farFocus && farBand && !big.Contains(town) && farTier.Contains(town)));
             foreach (var s in map.Settlements)
                 Assert.AreEqual(Ready(s.Id), layer.ReadyForTown(s.Id, cam), pose.Name + ": " + s.Id + (Ready(s.Id) ? " draws its building models" : " has no building model"));
-            // LastClose: below the close switch with a model drawn. Over a major city's close view only the other places in
-            // view draw, so there it is checked only where a floor town is named.
-            if (!close || floorTown != null) Assert.AreEqual(close, layer.LastClose, pose.Name);
+            Assert.AreEqual(close, layer.LastClose, pose.Name);
             foreach (var renderer in kitRs)
             {
                 bool ready = identity.TryGetValue(renderer, out var town) && Ready(town);
@@ -641,8 +639,8 @@ public class TownModelTests
                 else Assert.AreEqual(0, layer.LastDrawn, pose.Name + ": nothing outside the fixture's focus admission");
                 return;
             }
-            // Up close: over a town that draws its models (floorTown) at least all of its instances; over a major city's
-            // close view no floor (its kit draws; the other places in view may or may not).
+            // Up close: well over a hundred models, and over floorTown at least all of its instances.
+            Assert.Greater(layer.LastDrawn, 100, pose.Name + ": models drawn");
             if (floorTown != null)
             {
                 Assert.Greater(layer.CountFor(floorTown), 0, floorTown + " has building models");
@@ -662,7 +660,7 @@ public class TownModelTests
         start90.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(start90, false);
         Assert.GreaterOrEqual(layer.LastDrawn, layer.CountFor("lod"), "start90: the far copies of Lod, under the opening's centre, and more");
         Assert.LessOrEqual(layer.LastTriangles, 4_000_000L, "start90: the far tier's budget at the 90 km opening");
-        TestContext.WriteLine($"{layer.Count} models ({bigInstances} placed in the four major cities, never drawn: " +
+        TestContext.WriteLine($"{layer.Count} models ({bigInstances} in the four major cities, drawn below the close switch: " +
             string.Join(", ", big.Select(id => $"{id} {layer.CountFor(id)}")) + $"; {farInstances} in the {farTier.Count} far-tier game settlements); " + string.Join("; ", results));
         PromoPose.CloseUps[0].Apply(rig, map.Frame);
         VisualToggles.Set("kits", false); RenderSample.Render(cam, 320, 180);
