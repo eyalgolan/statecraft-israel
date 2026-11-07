@@ -63,4 +63,21 @@ public class LedgerBuyArmsTests
         Assert.Equal(before, s.Describe());
         s.PopulationLedger.Reconcile();
     }
+
+    // R-POP-002 (#1725 PR 7 review S2): only a ledger initialized with mode Historical is let through. An initialized Open
+    // ledger, like a synthetic one (no mode), is still refused before any purchase, with the state unchanged.
+    [Theory]
+    [InlineData(true)] [InlineData(false)]
+    public void AnOpenOrSyntheticLedgerIsStillRefused(bool open)
+    {
+        var c = PopulationLedgerTests.Content();
+        var s = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(),
+            new[] { new PopulationInventoryRow("fixture", 0, PopulationLedgerTests.Person()) }, mode: open ? Mode.Open : null);
+        Assert.Equal((true, false), (s.PopulationLedger.IsInitialized, s.PopulationLedger.IsHistorical));
+        s.Treasury = 23; s.Arms = 5;
+        var why = new List<Cause>();
+        var before = s.Describe(); var hash = s.Hash();
+        Assert.Contains("integration is held", Assert.Throws<NotSupportedException>(() => Pools.BuyArms(c, s, 1, why)).Message);
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
+    }
 }
