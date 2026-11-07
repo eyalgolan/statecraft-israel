@@ -81,7 +81,37 @@ namespace Statecraft.Sim
             return rows.AsReadOnly();
         }
 
-        internal static IReadOnlyList<HistoricalFieldFarmerHost> FieldFarmerHosts(Content c) => Array.Empty<HistoricalFieldFarmerHost>();   // red stub
+        /// <summary>#1725 PR 4, the ruled part: the opening field farmers counted per host, ordered by host id (ordinal).
+        /// Owner, 7 November 2026, #1689: "On top of census (Recommended)", so these are added to the census, not taken
+        /// from it. Each field_hexes row's host (regions.yaml, #1717) hosts its field's one farmer; the loader has already
+        /// checked that the host is a member location of the field's region (Q27). A field with no host, or a total other
+        /// than the Agreed start.prepared_fields, is refused: no host or farmer count is invented. Nothing reads it yet:
+        /// the farmer records, their ids, tiers by field, work XP, reception and the housing places themselves wait on
+        /// open questions (#1725 PR 4), so the inventory, the ledger and every hash are unchanged.</summary>
+        internal static IReadOnlyList<HistoricalFieldFarmerHost> FieldFarmerHosts(Content c)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesPopulationLedger) throw new InvalidOperationException("The Historical field farmers require gdd-0.3.");
+            var hostOf = new Dictionary<(int Q, int R), string>();
+            foreach (var region in c.PlayerRegions.Regions.Values)
+                foreach (var h in region.FieldHosts) hostOf.Add((h.Q, h.R), h.Host);
+            var fields = Gdd03FieldFixture.Fields(c);
+            var unhosted = fields.Where(f => !hostOf.ContainsKey((f.Q, f.R))).Select(f => f.Id).ToList();
+            if (unhosted.Count > 0)
+                throw new InvalidOperationException("No field_hexes host in regions.yaml for " + string.Join(", ", unhosted) + " (R-POP-004, #1717).");
+            var prepared = c.RequirePopulationInteger("start.prepared_fields");
+            if (fields.Count != prepared)
+                throw new InvalidOperationException("The opening fields are " + fields.Count.ToString(CultureInfo.InvariantCulture)
+                    + " but start.prepared_fields is " + prepared.ToString(CultureInfo.InvariantCulture) + "; one farmer per field (#1694, #1689).");
+            return fields.GroupBy(f => hostOf[(f.Q, f.R)], StringComparer.Ordinal).OrderBy(g => g.Key, StringComparer.Ordinal)
+                .Select(g =>
+                {
+                    var hosted = g.Select(f => f.Id).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+                    var region = g.Select(f => f.Region).Distinct(StringComparer.Ordinal).Single();
+                    return new HistoricalFieldFarmerHost(g.Key, region, Array.AsReadOnly(hosted), Gdd03FarmerTierSplit.Split(hosted.Length));
+                }).ToList().AsReadOnly();
+        }
+
         /// <summary>R-POP-004 (#1689 region slice): the Inventory as an initialized Historical ledger fixture, each record in
         /// its real region of regions.yaml. A census record takes the region that lists its city (AtLocation), and its location names that city. A formation
         /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1
