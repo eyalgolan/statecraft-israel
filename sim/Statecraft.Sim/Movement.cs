@@ -299,7 +299,8 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-MOVE-005: the hexes of mvp.enemy_held_localities. For the enemy (R-ENEMY-001, the rule's mirror) every
-        /// other locality's hex, so no enemy move ends on a player's locality while enemy capture (Q-TGT-2 (c)) is unbuilt.</summary>
+        /// other locality's hex, so no enemy move or retreat (R-COMBAT-003) ends on a player's locality while enemy capture
+        /// (Q-TGT-2 (c)) is unbuilt.</summary>
         internal static HashSet<(int Q, int R)> NoEntry(Content c, GameState s, bool enemy = false)
         {
             // An annexed target is Israeli for good (R-CTRL-016, OWNER QUESTION 3 (a) on #799): not enemy-held.

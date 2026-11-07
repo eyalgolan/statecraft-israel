@@ -501,7 +501,7 @@ public class CombatTests
     }
 
     // R-COMBAT-003: a defender the row sends back retreats to the first free neighbour in the fixed order: (3, 0) holds the
-    // attacker, so (1, 0)... is town_a's hex, free to an enemy unit (R-MOVE-005 binds the player's units only).
+    // attacker, (3, -1) and (2, -1) are off the board and (1, 0) is town_a's hex, closed to an enemy unit (#2932), so (1, 1).
     [Fact]
     public void ALosingDefenderRetreatsOneHex()
     {
@@ -509,8 +509,8 @@ public class CombatTests
         var s = With(c, Attacking(Soldier(1, 3, 0, 6), 2, 0), Enemy(2, 2, 0, 3));
         var why = Resolve(c, s);
         var e = s.Units[2];
-        Assert.Equal((2, 1, 0), (e.Strength, e.Q, e.R));
-        Assert.Contains(why, x => x.Message == "Unit 2 retreated to hex 1,0");
+        Assert.Equal((2, 1, 1), (e.Strength, e.Q, e.R));
+        Assert.Contains(why, x => x.Message == "Unit 2 retreated to hex 1,1");
         Assert.Equal((3, 0), (s.Units[1].Q, s.Units[1].R));   // the attacker does not advance
         // The attack ends: no enemy unit is on the hex now.
         Assert.Equal(("", ""), (s.Units[1].Order, s.Units[1].OrderTarget));

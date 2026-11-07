@@ -12,7 +12,7 @@ public class Gdd03HousingConditionTests
     static readonly Content Real03 = Load(true);
     static readonly Content Real01 = Load(false);
 
-    static Content Load(bool gdd03)
+    internal static Content Load(bool gdd03)
     {
         var root = RealContentTests.ContentRoot();
         return ContentLoader.Load(rel =>
