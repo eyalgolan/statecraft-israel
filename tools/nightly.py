@@ -567,16 +567,70 @@ def check_sizes(night: Night, gh: GitHub, build: Path, previous_zip: Path, prev_
     return new
 
 
-def measure_boot(night: Night, runner: Runner, build: Path) -> float:
-    """The median of three headless boots, each alone on the machine (no other Unity, no other check)."""
+# The boots follow two WebGL builds, 14 browser runs and a ~466 MB download. On 7 November 2026 they ran 2 s slower
+# than an A/B run of the same build seven minutes later (#2914), so the first boot waits for the machine to settle.
+# The bound is untouched: an unsettled machine is logged and measured anyway.
+SETTLE_LOAD = 2.0     # the 1-minute load average boot 1 waits to see under; tune it from the logged state lines
+SETTLE_MAX_S = 300    # the longest the wait may take
+SETTLE_POLL_S = 15
+
+
+def _read_state(runner: Runner, cmd: list[str], cwd: Path) -> str:
+    """One read-only macOS state command's output on one line. A failed read is written down, never a refusal."""
+    try:
+        text = runner.capture(cmd, cwd=cwd, timeout=30)
+    except (Refused, *STAGE_ERRORS) as error:
+        text = f"unavailable ({getattr(error, 'detail', error)})"
+    return "; ".join(line.strip() for line in text.splitlines() if line.strip())
+
+
+def _load_1min(loadavg: str) -> float | None:
+    """`sysctl -n vm.loadavg` prints `{ 1.52 1.40 1.31 }`; None when the read failed."""
+    m = re.match(r"\{\s*([\d.]+)", loadavg)
+    return float(m.group(1)) if m else None
+
+
+def machine_state(runner: Runner, cwd: Path) -> list[str]:
+    """The lines at the top of each boot-N.log, so a slow boot can be explained from its own log (#2914)."""
+    load = _read_state(runner, ["sysctl", "-n", "vm.loadavg"], cwd)
+    memory = _read_state(runner, ["memory_pressure"], cwd)
+    free = re.search(r"System-wide memory free percentage: \S+", memory)   # the rest is page counts
+    return [f"state: load averages {load.strip('{} ')}",
+            f"state: vm.swapusage {_read_state(runner, ['sysctl', '-n', 'vm.swapusage'], cwd)}",
+            f"state: memory_pressure {free.group(0) if free else memory}",
+            f"state: pmset -g therm {_read_state(runner, ['pmset', '-g', 'therm'], cwd)}"]
+
+
+def settle(runner: Runner, cwd: Path, sleep: Callable[[float], None]) -> str:
+    """Wait until the 1-minute load average is under SETTLE_LOAD, at most SETTLE_MAX_S; the line saying how it went."""
+    waited = 0
+    while True:
+        load = _load_1min(_read_state(runner, ["sysctl", "-n", "vm.loadavg"], cwd))
+        if load is None:   # nothing to wait on, and an unreadable load must not cost every night the full wait
+            return "settle: 1-minute load unreadable, not waiting"
+        if load < SETTLE_LOAD:
+            return f"settle: 1-minute load {load:.2f} under {SETTLE_LOAD} after {waited} s"
+        if waited >= SETTLE_MAX_S:
+            return (f"settle: not settled after {waited} s (1-minute load {load:.2f}, limit {SETTLE_LOAD}); "
+                    "measuring anyway")
+        sleep(SETTLE_POLL_S)
+        waited += SETTLE_POLL_S
+
+
+def measure_boot(night: Night, runner: Runner, build: Path, *, sleep: Callable[[float], None] = time.sleep) -> float:
+    """The median of three headless boots, each alone on the machine (no other Unity, no other check), the first
+    after the machine settles. Each boot-N.log starts with the machine's state, read just before that boot."""
     clone = night.cfg.clone
     runs: list[int] = []
+    settled = settle(runner, night.cfg.main_repo, sleep)
     for i in (1, 2, 3):
         argv = ["uv", "run", str(clone / "tools/machine_lock.py"), "--exclusive", "--wait-unity", "--timeout", "2700",
                 "--", "uv", "run", str(clone / "tools/web_check.py"), str(build), "--query", "bootlog",
                 "--expect", "GAME OK", "--timeout", "300", "--stall", "90"]
         log = night.run_dir / f"boot-{i}.log"
         try:
+            header = machine_state(runner, night.cfg.main_repo) + ([settled] if i == 1 else [])
+            log.write_text("\n".join(header) + "\n", encoding="utf-8")   # the runner appends the boot after it
             code = runner.run(argv, cwd=night.cfg.main_repo, log=log, deadline=_limit(night, 60))
         except (OSError, subprocess.SubprocessError) as error:
             raise Refused("boot", f"{type(error).__name__}: {error}", log=log) from error

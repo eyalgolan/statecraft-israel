@@ -157,7 +157,7 @@ namespace Statecraft.Sim
                 if (!working.TryGetValue(city, out var taken)) taken = Projects.Builders(s, city);
                 if (taken >= x.Civilians + x.Craftsmen - x.Employed)
                 {
-                    why.Add(new Cause("city", city, 0, $"{name}: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { NoWorker }));
+                    why.Add(new Cause("city", city, 0, $"{name}: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { NoWorker, w.Project.ToString(System.Globalization.CultureInfo.InvariantCulture) }));
                     continue;
                 }
                 working[city] = taken + 1;
@@ -168,7 +168,7 @@ namespace Statecraft.Sim
                     var left = s.Treasury - (double)price;   // R-MONEY-003's debt after: the debt plus what the Treasury lacks
                     if (left < 0 && s.Debt - left > ceiling)
                     {
-                        why.Add(new Cause("city", city, 0, $"{name}: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { DebtCeiling }));
+                        why.Add(new Cause("city", city, 0, $"{name}: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { DebtCeiling, w.Project.ToString(System.Globalization.CultureInfo.InvariantCulture) }));
                         continue;
                     }
                     EconomySystem.PayOrBorrow(c, s, (double)price, "for an arms workshop cycle", why, CauseKeys.Purpose.Workshop);

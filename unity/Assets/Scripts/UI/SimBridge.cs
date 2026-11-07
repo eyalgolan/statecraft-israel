@@ -310,12 +310,6 @@ namespace Statecraft.Game.UI
             [EconomySystem.RefusedBudgetSum] = "budget.refused.sum",
             [EconomySystem.RefusedBudgetNegative] = "budget.refused.negative",
             [Orders.RefusedNamesNoHex] = "unit.order_refused.names_no_hex",
-            // #2707, batch 3: a capture or end-of-occupation answer the end of turn refuses (SettlementControl).
-            [SettlementControl.RefusedDeportNotBuilt] = "capture.refused.deport_not_built",
-            [SettlementControl.RefusedNoOneToDeport] = "capture.refused.no_one_to_deport",
-            [SettlementControl.RefusedUnknownOutcome] = "capture.refused.unknown_outcome",
-            [SettlementControl.RefusedNotAwaitingCapture] = "capture.refused.not_awaiting_capture",
-            [SettlementControl.RefusedNotAwaitingEnd] = "capture.refused.not_awaiting_end",
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -348,13 +342,6 @@ namespace Statecraft.Game.UI
             (Movement.RefusedFull, "unit.move_refused.full"),
             (AttentionSystem.RefusedAttention, "order.no_attention"),
             (Projects.RefusedRepairCityHex, "city.project_reason.repair_city_hex"),
-            // #2707, batch 3: the capture and end-of-occupation answers that need a unit or a free hex, and an annexed place
-            // that is already a city; {0} is the place.
-            (SettlementControl.RefusedOccupyNeedsUnit, "capture.refused.occupy_needs_unit"),
-            (SettlementControl.RefusedAnnexNeedsUnit, "capture.refused.annex_needs_unit"),
-            (SettlementControl.RefusedWithdrawNeedsUnit, "capture.refused.withdraw_needs_unit"),
-            (SettlementControl.RefusedNoFreeHex, "capture.refused.no_free_hex"),
-            (Cities.RefusedAlreadyCity, "capture.refused.already_city"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+(?::[^}]*)?\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),

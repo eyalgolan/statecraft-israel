@@ -118,7 +118,7 @@ namespace Statecraft.Sim
                 case Raid: return Withdraw(c, s, id, why, false);
                 case Occupy: return StartOccupation(c, s, id, why);
                 case Deport:
-                    if (!c.RulesAt(s.Date).Mvp!.DeportInPlay) return new CaptureRefusal(CaptureRefusal.NotInPlay, RefusedDeportNotBuilt);
+                    if (!c.RulesAt(s.Date).Mvp!.DeportInPlay) return new CaptureRefusal(CaptureRefusal.NotInPlay, "Deport is not built yet");
                     // R-CTRL-018, OWNER QUESTION 4 (a) on #799: a fled town has no one left to deport, so Deport stays listed
                     // third but is refused with this reason, which the options helper shows on its button.
                     return s.Settlements[id].Fled ? new CaptureRefusal(CaptureRefusal.NoOneToDeport, RefusedNoOneToDeport) : Depopulate(c, s, id, why);
@@ -129,12 +129,9 @@ namespace Statecraft.Sim
         /// <summary>Deport's refusal for a fled town (OWNER QUESTION 4 (a) on #799; in the owner's sensitivity packet).</summary>
         public const string RefusedNoOneToDeport = "Its residents fled when it was captured, so there is no one to deport";
 
-        /// <summary>The capture and end-of-occupation refusals the end of turn reports, as constants for the UI's strings
-        /// (#2707). {0} is the place's name.</summary>
-        public const string RefusedDeportNotBuilt = "Deport is not built yet",
-            RefusedUnknownOutcome = "That outcome is not known",
-            RefusedNotAwaitingCapture = "That place is not awaiting a decision on its capture",
-            RefusedNotAwaitingEnd = "That place is not awaiting the end of its occupation",
+        /// <summary>The capture and end-of-occupation refusals the end of turn reports that the UI shows as a reviewed
+        /// capture.refusal.* line, as constants (#2707). {0} is the place's name.</summary>
+        public const string RefusedUnknownOutcome = "That outcome is not known",
             RefusedOccupyNeedsUnit = "Occupy needs an Israeli military unit on {0}",
             RefusedAnnexNeedsUnit = "Annex needs an Israeli military unit on {0}",
             RefusedWithdrawNeedsUnit = "Withdraw needs an Israeli military unit on {0}",
@@ -192,7 +189,7 @@ namespace Statecraft.Sim
 
         static CaptureRefusal? NotEnding(GameState s, string id) =>
             s.Settlements.TryGetValue(id, out var x) && x.State == AwaitingEnd ? null
-                : new CaptureRefusal(CaptureRefusal.NotAwaiting, RefusedNotAwaitingEnd);
+                : new CaptureRefusal(CaptureRefusal.NotAwaiting, "That place is not awaiting the end of its occupation");
 
         /// <summary>R-CTRL-016 (Q-ANNEX-1; OWNER QUESTIONS 1 (a) and 3 (a) on #799): the record becomes owner=israel,
         /// state=annexed, keeping its capture date and fled, with no timer. A fled place adds nothing else ("Territory only, no
@@ -215,7 +212,7 @@ namespace Statecraft.Sim
 
         static CaptureRefusal? NotAwaiting(GameState s, string id) =>
             s.Settlements.TryGetValue(id, out var x) && x.State == AwaitingChoice ? null
-                : new CaptureRefusal(CaptureRefusal.NotAwaiting, RefusedNotAwaitingCapture);
+                : new CaptureRefusal(CaptureRefusal.NotAwaiting, "That place is not awaiting a decision on its capture");
 
         /// <summary>R-CTRL-010, Raid and withdraw (Q-RAID-1 (a)): the player's units on the place's hex, soldiers and halutzim
         /// alike, leave in id order, each to the first neighbouring hex in the fixed <see cref="Movement.Neighbours"/> order

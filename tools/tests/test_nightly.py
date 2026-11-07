@@ -1004,7 +1004,8 @@ class CheckRunner(EnvRunner):
             if marker in cmd:
                 code, text = answer(len(self.calls)) if callable(answer) else answer
         Path(log).parent.mkdir(parents=True, exist_ok=True)
-        Path(log).write_text(text)
+        with open(log, "a") as out:   # appends, as ProcRunner does: measure_boot writes the machine state first
+            out.write(text)
         return code
 
 
@@ -1124,17 +1125,46 @@ def boot_text(ms):
     return f"console: BOOT phase=screens ready at={ms} ms dt=40 ms\nconsole: GAME OK 1948 turn 0 hash ab\nPASS: saw GAME OK\n"
 
 
-def test_boot_takes_the_exclusive_lock_from_the_main_checkout_three_times(night, env):
-    times = iter([8100, 8300, 8200])
+class MachineRunner(CheckRunner):
+    """Also answers the macOS state reads (#2914). `loads` are the 1-minute load averages `sysctl -n vm.loadavg`
+    reports, one per read (the last repeats); `broken` makes every state read fail as a missing command would."""
 
-    class BootRunner(CheckRunner):
-        def run(self, cmd, **k):
+    def __init__(self, *a, loads=(0.8,), broken=False, **k):
+        super().__init__(*a, **k)
+        self.loads, self.broken, self.reads = list(loads), broken, []
+
+    def capture(self, cmd, *, cwd, timeout=300):
+        self.reads.append(list(cmd))
+        if self.broken:
+            raise Refused("command", f"{cmd[0]} exited 127")
+        if cmd == ["sysctl", "-n", "vm.loadavg"]:
+            load = self.loads.pop(0) if len(self.loads) > 1 else self.loads[0]
+            return f"{{ {load:.2f} 1.10 1.05 }}\n"
+        if cmd == ["sysctl", "-n", "vm.swapusage"]:
+            return "total = 6144.00M  used = 5324.50M  free = 819.50M  (encrypted)\n"
+        if cmd == ["memory_pressure"]:
+            return "The system has 8589934592 (2097152 pages)\nPages free: 3000\nSystem-wide memory free percentage: 41%\n"
+        if cmd == ["pmset", "-g", "therm"]:
+            return ("Note: No thermal warning level has been recorded\n"
+                    "Note: No performance warning level has been recorded\n")
+        return super().capture(cmd, cwd=cwd, timeout=timeout)
+
+
+def boot_runner(times, **k):
+    times = iter(times)
+
+    class BootRunner(MachineRunner):
+        def run(self, cmd, **kw):
             self.ok = boot_text(next(times))
-            return super().run(cmd, **k)
+            return super().run(cmd, **kw)
 
-    r = BootRunner()
+    return BootRunner(**k)
+
+
+def test_boot_takes_the_exclusive_lock_from_the_main_checkout_three_times(night, env):
+    r = boot_runner([8100, 8300, 8200])
     build = night.cfg.clone / "unity/Builds/Web-gzip"
-    assert nightly.measure_boot(night, r, build) == 8200.0
+    assert nightly.measure_boot(night, r, build, sleep=lambda s: None) == 8200.0
     clone = night.cfg.clone
     assert len(r.calls) == 3 and set(r.cwds) == {night.cfg.main_repo}
     assert r.calls[0] == ["uv", "run", str(clone / "tools/machine_lock.py"), "--exclusive", "--wait-unity",
@@ -1145,11 +1175,66 @@ def test_boot_takes_the_exclusive_lock_from_the_main_checkout_three_times(night,
 @pytest.mark.parametrize("answer,word", [((3, ""), "Unity"), ((124, ""), "timed out"), ((1, boot_text(1)), "exited 1"),
                                          ((0, "PASS: saw GAME OK\n"), "BOOT"), ((0, "TIMEOUT\n"), "pass")])
 def test_a_bad_boot_run_refuses_with_gate_boot(night, env, answer, word):
-    r = CheckRunner(answers={"--exclusive": answer})
+    r = MachineRunner(answers={"--exclusive": answer})
     with pytest.raises(Refused) as e:
-        nightly.measure_boot(night, r, night.cfg.clone / "unity/Builds/Web-gzip")
+        nightly.measure_boot(night, r, night.cfg.clone / "unity/Builds/Web-gzip", sleep=lambda s: None)
     assert e.value.gate == "boot" and word in e.value.detail
     assert len(r.calls) == 1
+
+
+def boot_logs(night):
+    return [(night.run_dir / f"boot-{i}.log").read_text() for i in (1, 2, 3)]
+
+
+def test_each_boot_log_starts_with_the_machine_state(night, env):
+    r = boot_runner([4400, 4500, 4450])
+    assert nightly.measure_boot(night, r, night.cfg.clone / "unity/Builds/Web-gzip", sleep=lambda s: None) == 4450.0
+    for text in boot_logs(night):
+        head = text.splitlines()[:4]
+        assert head == ["state: load averages 0.80 1.10 1.05",
+                        "state: vm.swapusage total = 6144.00M  used = 5324.50M  free = 819.50M  (encrypted)",
+                        "state: memory_pressure System-wide memory free percentage: 41%",
+                        "state: pmset -g therm Note: No thermal warning level has been recorded; "
+                        "Note: No performance warning level has been recorded"]
+        assert "console: BOOT phase=screens ready" in text   # the boot's own output follows, unchanged
+    assert all(c[0] in ("sysctl", "memory_pressure", "pmset") for c in r.reads)   # read-only commands only
+
+
+def test_a_settled_machine_boots_at_once(night, env):
+    sleeps = []
+    r = boot_runner([4400, 4500, 4450], loads=[0.8])
+    nightly.measure_boot(night, r, night.cfg.clone / "unity/Builds/Web-gzip", sleep=sleeps.append)
+    assert sleeps == []
+    first, second, _ = boot_logs(night)
+    assert "settle: 1-minute load 0.80 under 2.0 after 0 s" in first and "settle:" not in second
+
+
+def test_a_slow_to_settle_machine_waits_then_logs_the_wait(night, env):
+    sleeps = []
+    r = boot_runner([4400, 4500, 4450], loads=[3.5, 2.6, 1.2, 4.0])
+    nightly.measure_boot(night, r, night.cfg.clone / "unity/Builds/Web-gzip", sleep=sleeps.append)
+    assert sleeps == [nightly.SETTLE_POLL_S] * 2
+    assert f"settle: 1-minute load 1.20 under 2.0 after {2 * nightly.SETTLE_POLL_S} s" in boot_logs(night)[0]
+    assert len(r.calls) == 3   # the boots run only after the wait
+
+
+def test_a_machine_that_never_settles_is_logged_and_measured_anyway(night, env):
+    sleeps = []
+    r = boot_runner([6300, 6280, 6310], loads=[5.0])
+    assert nightly.measure_boot(night, r, night.cfg.clone / "unity/Builds/Web-gzip", sleep=sleeps.append) == 6300.0
+    assert sum(sleeps) == nightly.SETTLE_MAX_S
+    assert (f"settle: not settled after {nightly.SETTLE_MAX_S} s (1-minute load 5.00, limit 2.0); measuring anyway"
+            in boot_logs(night)[0])
+
+
+def test_unreadable_machine_state_never_changes_the_verdict(night, env):
+    sleeps = []
+    r = boot_runner([4400, 4500, 4450], broken=True)
+    assert nightly.measure_boot(night, r, night.cfg.clone / "unity/Builds/Web-gzip", sleep=sleeps.append) == 4450.0
+    assert sleeps == []   # no reading to wait on, so no wait
+    first = boot_logs(night)[0]
+    assert first.startswith("state: load averages unavailable (")
+    assert "settle: 1-minute load unreadable, not waiting" in first
 
 
 # --- Task 6: publish_night, the stage wiring, the clients ---------------------------------------------------------

@@ -78,8 +78,18 @@ public class StartingForcesTests
         Assert.DoesNotContain("yiftach", rows);   // no 15 May window
         // The real hidden rows have no anchor, so the fixture holds the case that would otherwise start a unit.
         var c = Load(Row("seen", "israel", 20), Row("unseen", "israel", 20, extra: "  hidden: \"no sourced place\"\n"),
-                     Row("unsized", "israel", null), Row("nobody", "israel", 0), Row("later", "israel", 20, from: "1948-06-01"));
+                     Row("unsized", "israel", null), Row("later", "israel", 20, from: "1948-06-01"));
         Assert.Equal(new[] { "seen" }, c.StartingForces.Select(f => f.Row));
+    }
+
+    // R-UNIT-006 (#2815, option 1, the issue's Recommended option, confirmed on the issue on 6 November 2026): a strength of nobody is a load error, since a force is never below 1.
+    [Fact]
+    public void AStrengthOfZeroIsALoadError()
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(Row("nobody", "israel", 0)));
+        Assert.Equal("map/units_1948.yaml", ex.File);
+        Assert.Equal("units[nobody].strength.value", ex.Field);
+        Assert.Contains("must be a whole number >= 1", ex.Message);
     }
 
     // R-UNIT-006, Q-UNIT-5 (owner, 15 October 2026): the squadron and the two ships stay presentation-only tokens.
@@ -264,15 +274,9 @@ public class StartingForcesTests
     public void TheReleaseGateWaitsForEveryStartingRowToBeFactChecked()
     {
         Assert.Equal(14, Real.StartingForces.Count);
-        Assert.Equal(new[]
-        {
-            "brigade_7: order_targets[0] (al-Malikiyya), sources checked 2026-11-01, row checked 2026-10-22",
-            "carmeli: order_targets[0] (Manara), sources checked 2026-11-01, row checked 2026-10-21",
-            "givati: order_targets[0] (Huleiqat), sources checked 2026-11-01, row checked 2026-10-21",
-            "harel: order_targets[0] (Latrun police fort), sources checked 2026-11-01, row checked 2026-10-21",
-            "kiryati: order_targets[0] (Ramle), sources checked 2026-11-01, row checked 2026-10-21",
-            "negev: order_targets[0] (Beersheba), sources checked 2026-11-01, row checked 2026-10-21",
-        }, ReleaseGate.StartingForcesUnchecked(Real));
+        // Every starting row is fact-checked with no field sourced after its checked_on: the owner checked the six order targets
+        // sourced on 1 November (#2757, 6 November 2026, "all approved").
+        Assert.Empty(ReleaseGate.StartingForcesUnchecked(Real));
         var c = Load(Row("b", "israel", 20), Row("a", "israel", 20, q: 2, status: "fact-checked", extra: "  checked_on: '2026-10-21'\n"));
         Assert.Equal(new[] { "b" }, ReleaseGate.StartingForcesUnchecked(c));
     }
