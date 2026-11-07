@@ -73,7 +73,10 @@ public class Gdd03FieldHostTests
         Assert.Equal(10, negev.MemberLocations.Count);
     }
 
-    // Data only, under exact gdd-0.3 only: a new game initializes nothing, and the old identities never read the file.
+    // Data only, under exact gdd-0.3 only: a new game initializes nothing, and the old identities read no host. Since
+    // R-ENEMY-007 (#2543, the owner's "Both rulesets (Recommended)") gdd-0.1 reads regions.yaml for its geography (the
+    // operations' regions), so the file is read, but no region carries a host there (mvp.md: "the legacy and gdd-0.1
+    // identities read none of this").
     [Fact]
     public void HostsAreDataOnlyAndOldIdentitiesNeverReadThem()
     {
@@ -81,11 +84,25 @@ public class Gdd03FieldHostTests
         var state = Simulation.NewGame(c, 1, Mode.Historical);
         Assert.Empty(state.PlayerRegions);
         Assert.False(state.PopulationLedger.IsInitialized);
+        Assert.Contains(c.PlayerRegions.Regions.Values, r => r.FieldHosts.Count > 0);
         var reads = new List<string>();
         var old = PlayerRegionsContentTests.Load(Real, modern: false, onRead: reads.Add);
         Assert.Equal(SaveGame.GddRuleset, old.Ruleset);
-        Assert.DoesNotContain(PlayerRegionCatalogue.FileName, reads);
-        Assert.Empty(old.PlayerRegions.Regions);
+        Assert.Contains(PlayerRegionCatalogue.FileName, reads);
+        Assert.NotEmpty(old.PlayerRegions.Regions);
+        Assert.All(old.PlayerRegions.Regions.Values, r => Assert.Empty(r.FieldHosts));
+    }
+
+    // The host checks are gdd-0.3's too: a host the loader refuses under exact gdd-0.3 is not read, so not refused, under
+    // gdd-0.1. Red without the gate: gdd-0.1 refuses it.
+    [Fact]
+    public void OnlyExactGdd03ChecksTheHosts()
+    {
+        var row = Real.Split('\n').First(l => l.Contains("field: F01,", StringComparison.Ordinal));
+        var bad = Real.Replace(row, row.Replace("host: rosh_pinna", "host: hanita"));
+        Assert.Throws<ContentException>(() => PlayerRegionsContentTests.Load(bad));
+        var old = PlayerRegionsContentTests.Load(bad, modern: false);
+        Assert.All(old.PlayerRegions.Regions.Values, r => Assert.Empty(r.FieldHosts));
     }
 
     [Theory]
@@ -128,6 +145,6 @@ public class Gdd03FieldHostTests
     {
         var c = PlayerRegionsContentTests.Load("player_regions:\n" + PlayerRegionsContentTests.RamlaRehovot
             .Replace("    member_locations:", "    field_hexes: [{ q: -4, r: 24 }]\n    member_locations:"));
-        Assert.Empty(Assert.Single(c.PlayerRegions.Regions).Value.FieldHosts);
+        Assert.Empty(c.PlayerRegions.Regions["ramla_rehovot"].FieldHosts);   // the synthetic row; the fixture adds the operation cards' regions (#2543)
     }
 }

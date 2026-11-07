@@ -40,9 +40,35 @@ namespace Statecraft.Sim
                 if (e.Office != "" && !offices.Contains(e.Office)) throw new ContentException(e.File, F("office"), $"unknown office '{e.Office}'");
                 if (c.Offices.Any(o => o.Id == e.Office && o.HistoricalOnly))
                     throw new ContentException(e.File, F("office"), "historical-only titles cannot be delegated events");
+                // R-ENEMY-007 (#2621): an objective, exchange or Deport card is answered with its single option even when it is
+                // delegated (EventSystem's delegation step resolves it at once), so R-ENEMY-007's placement check never runs for
+                // it. Such a card cannot also give unit orders. GDD loop only, as the order checks (CheckOrders): legacy content
+                // loads as before.
+                var single = !c.IsGdd ? null
+                    : e.Objective != "" ? "objective" : e.Prisoners != "" ? "prisoners" : e.Deported != "" ? "deported" : null;
+                if (single != null)
+                    foreach (var o in e.Options.Where(o => o.UnitOrders.Count != 0))
+                        throw new ContentException(e.File, F($"options[{o.Id}].unit_orders"), $"a card with {single} cannot give unit_orders (R-ENEMY-007)");
                 CheckPlaceholders(c, e, F("title"), e.Title, offices);
                 CheckPlaceholders(c, e, F("text"), e.Text, offices);
                 CheckHebrew(c, e, offices);
+                // R-ENEMY-007: late text, only on a card that can be shown after its window closes (a following card or an
+                // operation), with a window to close, and in Hebrew exactly when the card's text is.
+                if (e.LateText != "" || e.LateTextHe != "")
+                {
+                    if (!e.Follows && !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
+                        throw new ContentException(e.File, F("late_text"), "only a following card or an operation card, which can be shown after its window, has late text");
+                    if (!e.To.HasValue) throw new ContentException(e.File, F("late_text"), "a card with late text has a `to`");
+                    if (e.LateText.Trim() == "") throw new ContentException(e.File, F("late_text"), "required: late_text_he is set but late_text is not");
+                    CheckPlaceholders(c, e, F("late_text"), e.LateText, offices);
+                    if (e.TextHe == "" && e.LateTextHe != "") throw new ContentException(e.File, F("late_text_he"), "only a card with Hebrew text has late_text_he");
+                    if (e.TextHe != "")
+                    {
+                        if (e.LateTextHe == "") throw new ContentException(e.File, F("late_text_he"), "required: the card's text is in Hebrew too");
+                        if (!e.LateTextHe.Any(ch => ch >= '\u05D0' && ch <= '\u05EA')) throw new ContentException(e.File, F("late_text_he"), "must be Hebrew, in Hebrew letters");
+                        CheckPlaceholders(c, e, F("late_text_he"), e.LateTextHe, offices);
+                    }
+                }
                 // Chapters design 3.2: an event may only name model records that are active for its whole window.
                 void Active(string field, string id)
                 {
@@ -136,7 +162,8 @@ namespace Statecraft.Sim
 
         /// <summary>R-ENEMY-005 (Q-ENEMY-5): an option's go-to orders name a map/units_1948.yaml row and one of that row's own
         /// anchor or order target hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026,
-        /// #749: sourced anchors only; 2 November 2026, #2087: order targets, option 1). They are checked under gdd-0.3 too, where EventSystem does not apply them. The legacy loop reads the
+        /// #749: sourced anchors only; 2 November 2026, #2087: order targets, option 1). They are checked and applied under
+        /// both GDD identities. R-ENEMY-007 also requires every operation option to author its allowed player regions. The legacy loop reads the
         /// same real cards but no units file, so it has nothing to check them against and no unit to order.</summary>
         static void CheckOrders(Content c, GameEvent e, EventOption o, Func<string, string> F)
         {
@@ -149,10 +176,29 @@ namespace Statecraft.Sim
                 if (!x.RGiven) throw new ContentException(e.File, at + ".r", "required");
             }
             if (!c.IsGdd) return;
+            var requirementField = F(FormattableString.Invariant($"options[{o.Id}].requires_unit_regions"));
+            if (o.UnitOrders.Count == 0)
+            {
+                if (o.RequiresUnitRegions.Count != 0)
+                    throw new ContentException(e.File, requirementField, "requires unit_orders on the same option");
+                return;
+            }
+            if (o.RequiresUnitRegions.Count == 0)
+                throw new ContentException(e.File, requirementField, "required for an option with unit_orders (R-ENEMY-007)");
+            var regions = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < o.RequiresUnitRegions.Count; i++)
+            {
+                var id = o.RequiresUnitRegions[i];
+                var at = requirementField + FormattableString.Invariant($"[{i}]");
+                if (!regions.Add(id)) throw new ContentException(e.File, at, "duplicate region id");
+                if (!c.PlayerRegions.Regions.ContainsKey(id)) throw new ContentException(e.File, at, $"unknown player region '{id}' ({PlayerRegionCatalogue.FileName})");
+            }
+            var rows = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < o.UnitOrders.Count; i++)
             {
                 var x = o.UnitOrders[i];
                 var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
+                if (!rows.Add(x.Unit)) throw new ContentException(e.File, at + ".unit", "duplicate operation unit row");
                 if (!c.UnitAnchorHexes.Keys.Any(k => k.Row == x.Unit))
                     throw new ContentException(e.File, at + ".unit", $"unknown unit row '{x.Unit}' ({StartingForces.FileName})");
                 if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R))

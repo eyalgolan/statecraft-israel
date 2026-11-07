@@ -298,6 +298,9 @@ mvp:
   fortify_defence_percent: 150
   hold_defence_percent: 120
   delegation_loyalty_floor: 5
+  operation_wait_turns: 6
+  operation_lapse_security: -0.01
+  operation_truce_break_standing: -0.10
   disloyal_effect_share: 0.5
   move_cost: { coastal_plain: 1, hills: 2, desert: 3 }
   stack_limit: 2

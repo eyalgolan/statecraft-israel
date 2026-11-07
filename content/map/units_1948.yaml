@@ -428,9 +428,10 @@ units:
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%92%D7%93%D7%A8%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%92%D7%9F_%D7%99%D7%91%D7%A0%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%91%D7%90%D7%A8_%D7%98%D7%95%D7%91%D7%99%D7%94', checked: '2026-10-22'}]
   wikipedia_only: false
+  # The owner person-checked this row on 7 November 2026 (#2621, the Bayt Jibrin stint): https://github.com/eyalgolan/statecraft-israel/pull/2621#issuecomment-6711002336
   # The owner person-checked this row on 6 November 2026 (#2757, the fields sourced since the earlier check on 21 October 2026 (#1240: https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250)): "all approved". https://github.com/eyalgolan/statecraft-israel/issues/2757
   status: fact-checked
-  checked_on: '2026-11-06'
+  checked_on: '2026-11-07'
   strength:
     value: 3229
     as_of: '1948-05-15'
@@ -490,6 +491,25 @@ units:
     - {url: 'https://jewishvirtuallibrary.org/jsource/History/Yoav.html', checked: '2026-11-01'}
     - {url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47227', checked: '2026-10-15'}
     - {url: 'https://en.wikipedia.org/wiki/Hulayqat', checked: '2026-11-01'}
+  - place: Bayt Jibrin
+    place_he: "בית ג'יברין"
+    place_he_review: agent-checked
+    place_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%91%D7%99%D7%AA_%D7%92%27%D7%99%D7%91%D7%A8%D7%99%D7%9F', checked: '2026-11-07'}]
+    lon: 34.89833
+    lat: 31.60528
+    from: '1948-10-27'
+    since: 27 October 1948
+    to: '1949-02-24'
+    end_basis: front_armistice
+    front: egypt
+    note: "Operation Yoav, push_to_hebron (owner, 7 November 2026: \"Add real orders\"; the date, \"Second read, then later date (Recommended)\"; the end, \"24 Feb 1949 (Recommended)\"). Zochrot and en.wiki Bayt Jibrin have Givati occupy it on 27 October 1948; en.wiki Operation Yoav gives 23 October in its text and 24 October in its table, so the later, village-level date is used; he.wiki בית ג'יברין has Brigade 8 take the police fort on 27 October. The end is the Egyptian armistice, though the Huleiqat target above ends on 1 November 1948, when the lexicon has Givati moved to the centre. An order target: the token stays at Gedera."
+    sources:
+    # Zochrot, Bayt Jibrin: "Occupation date: 27/10/1948", "Occupying unit: Giva'ati"; "Benny Morris writes that an initial attack took place during the night of 24 October 1948, and later occupied on the 27" (agent read 2026-11-07).
+    - {url: 'https://www.zochrot.org/villages/village_details/49055/en', checked: '2026-11-07'}
+    # en.wiki Bayt Jibrin: "Israeli troops from the Giv'ati Brigade then occupied Bayt Jibrin and its police fort on October 27"; coordinates 31.60528, 34.89833 (agent read 2026-11-07).
+    - {url: 'https://en.wikipedia.org/wiki/Bayt_Jibrin', checked: '2026-11-07'}
+    # en.wiki Operation Yoav: "Beit Jibrin was captured by the 52 Battalion of Givati and the 8th Brigade on October 23"; its table gives 24 October (agent read 2026-11-07).
+    - {url: 'https://en.wikipedia.org/wiki/Operation_Yoav', checked: '2026-11-07'}
 - id: etzioni
   name: Etzioni Brigade
   name_he: "חטיבת עציוני"

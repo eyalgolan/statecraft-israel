@@ -204,7 +204,7 @@ namespace Statecraft.Sim
         internal const string ObjectivesFileName = "objectives.yaml";
 
         /// <summary>R-CITY-006: the locality placements, with the settlement_hexes.yaml checks (unique ids, land hexes) and
-        /// q and r required. Only the exact gdd-0.3 regions path calls this.</summary>
+        /// q and r required. Both GDD identities' immutable geography path calls this.</summary>
         static List<SettlementHex>? LocalityHexes(Content c, LocalityHexesFile file)
         {
             const string f = PlayerRegionCatalogue.LocalityHexesFileName;
@@ -452,6 +452,11 @@ namespace Statecraft.Sim
             //                              has exactly one option (R-EVT-007)
             //   front_quiet                the front (Prisoners.Fronts) of an armistice_<front> card: under gdd-0.3 it may also
             //                              come early, and again after a refusal, once that front is quiet (R-WAR-008)
+            //   armistice_front            a front (Prisoners.Fronts) whose signed armistice ends the card: a pending
+            //                              operation lapses once it is signed, and a card with it never first fires after
+            //                              it (R-ENEMY-007); on an operation card or a following card only
+            //   follows                    true: under the GDD loop the card fires on the turn after its `requires` are met
+            //                              even when its window has closed (R-ENEMY-007); needs a `requires`
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -494,9 +499,10 @@ namespace Statecraft.Sim
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
             }
-            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive. After the
-            // sites (a site id may be a member) and the effective map overrides; the locality hexes are read only with regions, and are required then (#2298).
-            if (c.Ruleset == SaveGame.Gdd03Ruleset)
+            // R-CITY-006 and R-ENEMY-007: authored geography is immutable lookup data in both GDD identities. Only exact
+            // gdd-0.3 initializes regional population/control state. After sites (a site id may be a member) and the effective
+            // map overrides; locality hexes are read only with regions, and are required then (#2298).
+            if (c.IsGdd)
             {
                 var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
                 if (regions != null)
@@ -1526,6 +1532,13 @@ namespace Statecraft.Sim
                 // R-EVT-003 (#107): required, so a missing key is never read as 0 (no floor, or a disloyal minister who does nothing).
                 if (m.DelegationLoyaltyFloor == null) throw new ContentException(file, "mvp.delegation_loyalty_floor", "required when eras.yaml systems.loop is gdd");
                 if (m.DelegationLoyaltyFloor < 0 || m.DelegationLoyaltyFloor > 10) throw new ContentException(file, "mvp.delegation_loyalty_floor", "must be 0-10");
+                // R-ENEMY-007 (owner, 7 November 2026: "6 turns (Recommended)"): required, so no wait is read as 0.
+                if (m.OperationWaitTurns == null) throw new ContentException(file, "mvp.operation_wait_turns", "required when eras.yaml systems.loop is gdd");
+                if (m.OperationWaitTurns < 1) throw new ContentException(file, "mvp.operation_wait_turns", "must be >= 1");
+                if (m.OperationLapseSecurity == null) throw new ContentException(file, "mvp.operation_lapse_security", "required when eras.yaml systems.loop is gdd");
+                if (!(m.OperationLapseSecurity <= 0 && IsFinite(m.OperationLapseSecurity.Value))) throw new ContentException(file, "mvp.operation_lapse_security", "must be a finite number <= 0");
+                if (m.OperationTruceBreakStanding == null) throw new ContentException(file, "mvp.operation_truce_break_standing", "required when eras.yaml systems.loop is gdd");
+                if (!(m.OperationTruceBreakStanding <= 0 && IsFinite(m.OperationTruceBreakStanding.Value))) throw new ContentException(file, "mvp.operation_truce_break_standing", "must be a finite number <= 0");
                 if (m.DisloyalEffectShare == null) throw new ContentException(file, "mvp.disloyal_effect_share", "required when eras.yaml systems.loop is gdd");
                 Unit(file, "mvp.disloyal_effect_share", m.DisloyalEffectShare.Value);
                 // R-MOVE-001 (Q-MOVE-1): a cost for every land biome of the map, so no hex is read as free, and none for a water
@@ -1625,6 +1638,7 @@ namespace Statecraft.Sim
             ValidateEventSites(c);
             ValidateEventPrisoners(c);
             ValidateEventFrontQuiet(c);
+            ValidateEventArmisticeFront(c);
             ValidateEventDeported(c);
             ValidateProjects(c);
             ValidateCorridors(c);
@@ -1655,6 +1669,21 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>R-ENEMY-007: an operation card's armistice front is a known front, on a card with an operation option
+        /// (one with requires_unit_regions), so that front's signed armistice can end it.</summary>
+        static void ValidateEventArmisticeFront(Content c)
+        {
+            foreach (var e in c.Events.Where(e => e.ArmisticeFront != ""))
+            {
+                if (!Prisoners.Fronts.Contains(e.ArmisticeFront))
+                    throw new ContentException(e.File, $"events[{e.Id}].armistice_front", $"unknown front '{e.ArmisticeFront}' (one of {string.Join(", ", Prisoners.Fronts)})");
+                if (!e.Follows && !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
+                    throw new ContentException(e.File, $"events[{e.Id}].armistice_front", "only an operation card (an option with requires_unit_regions) or a following card has an armistice front");
+            }
+            foreach (var e in c.Events.Where(e => e.Follows && e.Requires.Count == 0))
+                throw new ContentException(e.File, $"events[{e.Id}].follows", "a following card follows its requires: it needs one");
+        }
+
         /// <summary>A Deport follow-up card (R-EVT-007; GDD Phase 6 PR 9, #801): a settlement target whose residents stayed,
         /// since Deport is refused where they fled (R-CTRL-018) and the card could never fire; the displacement tag, so the
         /// release gate holds it until the owner's review (R-GATE-001); one option, which Delegate resolves without a draw; no `to`,
@@ -1683,7 +1712,7 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].from", FormattableString.Invariant($"a Deport card opens at the game's start ({c.Rules.Start:yyyy-MM-dd}), so a Deport on any turn fires it"));
                 foreach (var (key, set) in new[] { ("conditions", e.Conditions.Count > 0), ("requires", e.Requires.Count > 0), ("site", e.Site != ""),
                              ("objective", e.Objective != ""), ("kind", e.Kind != EventKinds.Historical), ("variants", e.Variants.Count > 0),
-                             ("front_quiet", e.FrontQuiet != "") })
+                             ("front_quiet", e.FrontQuiet != ""), ("armistice_front", e.ArmisticeFront != ""), ("follows", e.Follows) })
                     if (set) throw new ContentException(e.File, $"events[{e.Id}].{key}", "a Deport card waits for nothing but its Deport");
                 if (cardOf.TryGetValue(e.Deported, out var first))
                     throw new ContentException(e.File, $"events[{e.Id}].deported", $"'{e.Deported}' already has a card, '{first}': one Deport raises one card");

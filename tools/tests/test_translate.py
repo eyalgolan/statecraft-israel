@@ -103,6 +103,26 @@ def test_refuses_a_stray_brace_in_an_event(value):
         translate.set_event(EVENT, changes(title_he=value))
 
 
+LATE = EVENT.replace("anchor: soft\n", "anchor: soft\n# The late text's comment.\nlate_text: '{prime_minister} asks again: vote now?'\n")
+
+
+def test_a_late_text_gets_its_hebrew_after_it_and_is_part_of_the_event():
+    """R-ENEMY-007: late_text_he sits under late_text, and EventRules wants it exactly when the event has Hebrew."""
+    late_he = "{prime_minister} שואל שוב: להצביע עכשיו?"
+    out, _ = translate.set_event(LATE, changes(late_text_he=late_he))
+    lines = out.split("\n")
+    assert lines[lines.index("late_text: '{prime_minister} asks again: vote now?'") + 1] == f"late_text_he: {translate._scalar(late_he)}"
+    assert yaml12.load(out)["late_text_he"] == late_he
+    assert [line for line in LATE.split("\n") if line not in lines] == []
+    with pytest.raises(translate.Refused, match="all or none"):
+        translate.set_event(LATE, changes())
+    with pytest.raises(translate.Refused, match="late text"):
+        translate.set_event(EVENT, changes(late_text_he=late_he))
+    cleared, _ = translate.set_event(out, changes(title_he="", text_he="", late_text_he="",
+                                                  options={"yes_vote": "", "wait": ""}))
+    assert cleared == LATE
+
+
 UI_EN = 'a.one: "One {0}"\na.two: "Two"\nb.three: "Three"\n'
 UI_HE = '# Hebrew.\na.one: "אחד {0}"\nb.three: "שלוש"\n'
 
@@ -201,6 +221,25 @@ def test_hebrew_saves_into_the_event_and_the_ui_file(tmp_path, monkeypatch):
     assert [line for line in before.split("\n") if line not in after] == \
         [line for line in before.split("\n") if line.startswith(("title_he:", "text_he_review:"))]
 
+
+
+def test_a_late_text_has_its_row_in_every_language(langs):
+    r = rows()
+    assert r["event:rhodes_talks:late_text"]["en"].startswith("Egypt and Israel have accepted a cease-fire")
+    assert r["event:rhodes_talks:late_text"]["unit"] == "event:rhodes_talks"
+    texts, _ = translate.load("he")
+    assert texts["event:rhodes_talks:late_text"].startswith("מצרים וישראל קיבלו הפסקת אש")
+    edits = {"event:rhodes_talks:title": "Pourparlers à Rhodes", "event:rhodes_talks:text": "{foreign_minister} décide.",
+             "event:rhodes_talks:option:send_delegation": "Envoyer", "event:rhodes_talks:option:decline": "Refuser"}
+    assert "all or none" in translate.save("fr", edits, {})["errors"]["event:rhodes_talks"]
+    late = {"event:rhodes_talks:late_text": "Plus tard, {foreign_minister} décide."}
+    assert translate.save("fr", {**edits, **late}, {})["errors"] == {}
+    events = yaml12.load((langs / "fr/events.yaml").read_text(encoding="utf-8"))
+    assert events["rhodes_talks"] == {"title": "Pourparlers à Rhodes", "text": "{foreign_minister} décide.",
+                                      "late_text": "Plus tard, {foreign_minister} décide.",
+                                      "options": {"send_delegation": "Envoyer", "decline": "Refuser"},
+                                      "review": "agent-checked"}
+    assert translate.load("fr")[0]["event:rhodes_talks:late_text"] == "Plus tard, {foreign_minister} décide."
 
 FR = {"event:altalena:title": "L'Altalena", "event:altalena:text": "{defense_minister} décide.",
       "event:altalena:option:enforce": "Imposer", "event:altalena:option:compromise": "Céder"}

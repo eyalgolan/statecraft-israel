@@ -78,6 +78,7 @@ namespace Statecraft.Sim
                 why.Add(new Cause("era", s.GameOver, 0, PlayerText.GameOver(s.GameOver), key: CauseKeys.EraEnded));
             }
             ContentWindows.Update(c, s, turnStart);
+            EventSystem.LapseExpiredOperations(c, s, why);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
             // A game that just ended raises no new events, but the unfired cards of recorded objectives (R-LOOP-004, R-OBJ-003;
