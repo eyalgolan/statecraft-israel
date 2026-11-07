@@ -125,9 +125,6 @@ namespace Statecraft.Sim
         int receptionLimit;
         internal int ReceptionLimit { get { RequireInitialized(); return receptionLimit; } }
         int peoplePerUnit;
-        /// <summary>Initialized with mode Historical (the R-POP-004 start's scale). Not written to the canonical text: the
-        /// scale it implies already is.</summary>
-        internal bool IsHistorical { get; private set; }
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }
         public double TotalPeople => (double)units.Count * peoplePerUnit;
@@ -144,6 +141,9 @@ namespace Statecraft.Sim
         }
         // A snapshot wrapper prevents casts back to the writable container; records are immutable.
         public IReadOnlyList<PopulationUnit> Units => new ReadOnlyCollection<PopulationUnit>(units.Values.ToList());
+        /// <summary>Initialized with mode Historical (the R-POP-004 start's scale). Not written to the canonical text: the
+        /// scale it implies already is.</summary>
+        internal bool IsHistorical { get; private set; }
         internal PopulationLedger(bool enabled) { this.enabled = enabled; }
         internal PopulationLedger Clone()
         {
