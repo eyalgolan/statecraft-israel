@@ -54,6 +54,9 @@ namespace Statecraft.Sim
             return rows.AsReadOnly();
         }
 
+        /// <summary>Red stub (#1689, #1725 PR 5): the in-place initializer is not built yet.</summary>
+        internal static void Initialize(Content c, GameState s) => throw new NotImplementedException();
+
         /// <summary>R-POP-004 (#1689 region slice): the Inventory as an initialized Historical ledger fixture, each record in
         /// its real region of regions.yaml. A census record takes the region that lists its city (AtLocation), and its location names that city. A formation
         /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1

@@ -7,7 +7,10 @@ namespace Statecraft.Sim
     /// <summary>The public entry point the Unity layer calls: start a game, then step it one turn at a time.</summary>
     public static class Simulation
     {
-        public static GameState NewGame(Content c, ulong seed, Mode mode)
+        public static GameState NewGame(Content c, ulong seed, Mode mode) => NewGame(c, seed, mode, darkStart: false);
+
+        /// <summary>Red stub (#1689, #1725 PR 5): the dark start is not built yet.</summary>
+        internal static GameState NewGame(Content c, ulong seed, Mode mode, bool darkStart)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (mode == Mode.Open) throw new NotSupportedException("Open mode arrives with milestone M4.");
