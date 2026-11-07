@@ -5,7 +5,8 @@
   "additionalProperties": false,
   "required": [
     "ruleset",
-    "military_camps"
+    "military_camps",
+    "formation_combat_xp"
   ],
   "properties": {
     "ruleset": {
@@ -31,6 +32,27 @@
           "location": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        }
+      }
+    },
+    "formation_combat_xp": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "row",
+          "combat_xp"
+        ],
+        "properties": {
+          "row": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "combat_xp": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }

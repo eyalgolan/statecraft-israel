@@ -128,8 +128,8 @@ public class Gdd03StartFacilitiesTests
 
     public static IEnumerable<object[]> InvalidOverlays()
     {
-        yield return Case("ruleset: gdd-0.1\nmilitary_camps: []\n", "ruleset", "must be gdd-0.3");
-        yield return Case("ruleset: gdd-0.3\n", "military_camps", "must be a list");
+        yield return Case("ruleset: gdd-0.1\nmilitary_camps: []\n" + Formations(AllEight()), "ruleset", "must be gdd-0.3");
+        yield return Case("ruleset: gdd-0.3\n" + Formations(AllEight()), "military_camps", "must be a list");
         yield return Case(One("missing", "military_schneller"), "military_camps[0].city", "must name an existing city");
         yield return Case(Two(("tel_aviv", "military_tel_litvinsky"), ("tel_aviv", "military_schneller")),
             "military_camps[1].city", "duplicate city");
@@ -139,7 +139,10 @@ public class Gdd03StartFacilitiesTests
         yield return Case(One("jerusalem", "negba"), "military_camps[0].location", "must name a military_camp map location");
         yield return Case(One("tel_aviv", "military_tel_litvinsky"), "military_camps",
             "effective military-camp city count 1 must equal start.military_camps 2");
-        // #1689 PR 2: formation_combat_xp names each own opening formation once, with 0 to military.combat_xp_full (5).
+        // #1689 PR 2: formation_combat_xp is required, like every list the loader reads, and names each own opening formation
+        // once, with 0 to military.combat_xp_full (5).
+        yield return Case(Camps(("tel_aviv", "military_tel_litvinsky"), ("jerusalem", "military_schneller")),
+            "formation_combat_xp", "must be a list");
         const string full = "an integer from 0 to military.combat_xp_full 5";
         yield return Case(Xp(("golani", "1"), ("golani", "1")), "formation_combat_xp[1].row", "duplicate formation");
         yield return Case(Xp(("yiftach", "1")), "formation_combat_xp[0].row", "must name an own opening formation of map/units_1948.yaml");
@@ -153,15 +156,13 @@ public class Gdd03StartFacilitiesTests
     static (string Row, string Xp)[] AllEight() => new[] { "golani", "carmeli", "alexandroni", "kiryati", "givati", "etzioni",
         "harel", "negev" }.Select(r => (r, r == "negev" ? "0" : "1")).ToArray();
     static string Xp(params (string Row, string Xp)[] rows) =>
-        Two(("tel_aviv", "military_tel_litvinsky"), ("jerusalem", "military_schneller")) + "formation_combat_xp:\n"
-        + string.Concat(rows.Select(x => $"  - {{ row: {x.Row}, combat_xp: {x.Xp} }}\n"));
+        Camps(("tel_aviv", "military_tel_litvinsky"), ("jerusalem", "military_schneller")) + Formations(rows);
 
-    // Without formation_combat_xp the overlay still loads (synthetic overlays name camps only); the ledger fixture then
-    // refuses, with no fallback value.
+    // Without gdd03-start.yaml there is no formation_combat_xp; the ledger fixture then refuses, with no fallback value.
     [Fact]
-    public void WithoutFormationCombatXpTheLedgerFixtureRefuses()
+    public void WithoutTheStartFileTheLedgerFixtureRefuses()
     {
-        var c = LoadShipped(true, Two(("tel_aviv", "military_tel_litvinsky"), ("jerusalem", "military_schneller")));
+        var c = LoadShipped(true, null);
         Assert.Null(c.Gdd03FormationCombatXp);
         var e = Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.LedgerFixture(c));
         Assert.Contains("formation_combat_xp", e.Message);
@@ -169,8 +170,11 @@ public class Gdd03StartFacilitiesTests
 
     static object[] Case(string yaml, string field, string reason) => new object[] { yaml, field, reason };
     static string One(string city, string location) => Two((city, location));
-    static string Two(params (string City, string Location)[] rows) =>
+    static string Two(params (string City, string Location)[] rows) => Camps(rows) + Formations(AllEight());
+    static string Camps(params (string City, string Location)[] rows) =>
         "ruleset: gdd-0.3\nmilitary_camps:\n" + string.Concat(rows.Select(x => $"  - {{ city: {x.City}, location: {x.Location} }}\n"));
+    static string Formations((string Row, string Xp)[] rows) =>
+        "formation_combat_xp:\n" + string.Concat(rows.Select(x => $"  - {{ row: {x.Row}, combat_xp: {x.Xp} }}\n"));
 
     [Theory]
     [MemberData(nameof(InvalidOverlays))]
