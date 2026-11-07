@@ -19,6 +19,7 @@ namespace Statecraft.Game.UI
         IReadOnlyList<UnitEntry> units = Array.Empty<UnitEntry>();
         string shown = "";              // the lines Show and Append set; Clear and the next order replace them
         string? saveFailure;            // SaveFailed's line, kept until SaveSucceeded
+        string? recordingFailure;       // RecordingFailed's line, kept until the retry or the next order
 
         /// <summary>The units_1948.yaml rows that name starting forces in the committed orders' Why lines (GameRoot sets
         /// them once the map has read them, as for WhyPresenter); without them a starting force is named by its type.</summary>
@@ -49,11 +50,11 @@ namespace Statecraft.Game.UI
 
         public void Dispose() { bridge.TurnEnded -= onTurnEnded; bridge.TurnEnded -= onRouteStep; bridge.Refused -= Refuse; bridge.Changed -= Clear; bridge.Committed -= onCommitted; }
 
-        /// <summary>Shows the lines as they are, a failed save's line under them (none of either = hide).</summary>
+        /// <summary>Shows the lines as they are, a failed recording's line and a failed save's line under them (none of either = hide).</summary>
         public void Show(IEnumerable<string> lines)
         {
             shown = string.Join("\n", lines);
-            var all = new[] { shown, saveFailure ?? "" }.Where(x => x.Length > 0).ToList();
+            var all = new[] { shown, recordingFailure ?? "", saveFailure ?? "" }.Where(x => x.Length > 0).ToList();
             label.text = string.Join("\n", all);
             label.style.display = all.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
         }
@@ -68,6 +69,18 @@ namespace Statecraft.Game.UI
         /// <see cref="SaveSucceeded"/> (autosave and New Game, and on WebGL the IndexedDB result).</summary>
         public void SaveFailed(string line) { saveFailure = line; Show(shown); }
 
+        /// <summary>The start screen's recording could not be played: its line goes under the lines shown (the start-up
+        /// notes), not in place of them, until the next press of its button or the next change, such as an order (#2707).</summary>
+        public void RecordingFailed(string line) { recordingFailure = line; Show(shown); }
+
+        /// <summary>The recording's button was pressed again: its failure line goes; the other lines stay.</summary>
+        public void RecordingRetried()
+        {
+            if (recordingFailure == null) return;
+            recordingFailure = null;
+            Show(shown);
+        }
+
         /// <summary>A save succeeded: a failed save's line goes; the other lines stay.</summary>
         public void SaveSucceeded()
         {
@@ -79,6 +92,6 @@ namespace Statecraft.Game.UI
         /// <summary>Shows why an order was refused ("Not done: ...").</summary>
         public void Refuse(string reason) => Show(text.Format("toast.refused", reason));
 
-        public void Clear() => Show(new string[0]);
+        public void Clear() { recordingFailure = null; Show(new string[0]); }
     }
 }

@@ -680,7 +680,7 @@ namespace Statecraft.Game.UI
             if (showsStart)                                                // newGame is made above whenever smoke == 0
             {
                 var cam = cameraController;
-                var recording = Own(new DeclarationRecording(root, text, toast.Show));   // never built in automated runs (Skipped)
+                var recording = Own(new DeclarationRecording(root, text, toast.RecordingFailed, retry: toast.RecordingRetried));   // never built in automated runs (Skipped)
                 if (music != null) music.Duck = () => recording.Playing;           // the theme drops low under Ben-Gurion's voice
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
