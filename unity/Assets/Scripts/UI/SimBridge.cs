@@ -310,6 +310,11 @@ namespace Statecraft.Game.UI
             [EconomySystem.RefusedBudgetSum] = "budget.refused.sum",
             [EconomySystem.RefusedBudgetNegative] = "budget.refused.negative",
             [Orders.RefusedNamesNoHex] = "unit.order_refused.names_no_hex",
+            // #2707, batch 3 (the owner's option (b)): a capture answer the end of turn refuses reads as the capture dialog's
+            // reviewed capture.refusal.* line. "Deport is not built yet" and the two "not awaiting" answers have no reviewed line
+            // that fits (capture.refusal.not_awaiting names the place, these do not), so they stay the sim's English.
+            [SettlementControl.RefusedNoOneToDeport] = "capture.refusal.no_one_to_deport",
+            [SettlementControl.RefusedUnknownOutcome] = "capture.refusal.unknown_outcome",
             // R-ENEMY-007 (#2543): an operation whose units are not in place, or whose front's armistice comes first or is signed.
             [EventSystem.RefusedOperationUnitsNotInPlace] = "event.operation_refused",
             [EventSystem.RefusedOperationArmisticeFirst] = "event.operation_refused_armistice_first",
@@ -346,6 +351,13 @@ namespace Statecraft.Game.UI
             (Movement.RefusedFull, "unit.move_refused.full"),
             (AttentionSystem.RefusedAttention, "order.no_attention"),
             (Projects.RefusedRepairCityHex, "city.project_reason.repair_city_hex"),
+            // #2707, batch 3 (option (b)): the capture and end-of-occupation answers that need a unit or a free hex, and an
+            // annexed place that is already a city, as the capture dialog's reviewed lines; {0} is the place.
+            (SettlementControl.RefusedOccupyNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedAnnexNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedWithdrawNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedNoFreeHex, "capture.refusal.no_free_hex"),
+            (Cities.RefusedAlreadyCity, "capture.refusal.already_city"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+(?::[^}]*)?\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),

@@ -1120,4 +1120,34 @@ public class TownLandmarksTests
             finally { enabled.SetValue(f.map.Residency.Towns, true); }
         }
     }
+
+    /// <summary>Frame cost finding of 7 November 2026 (the "none" switch set measured slower than "all" at Tel Aviv 39 km):
+    /// with the "kits" switch off the building layer's Draw is false, so no town is ReadyForTown and every town swap in
+    /// TownModelLayer.PrepareCameraCore asks TownLandmarks.WholeReady, which looked the building layer up with a
+    /// GetComponentInChildren walk of the whole map. The layer is found once and kept: frames of the swap update walk the
+    /// hierarchy no more, and a destroyed layer is looked up again.</summary>
+    [Test]
+    public void TheBuildingLayerIsLookedUpOnceNotOnEveryFrame()
+    {
+        var map = OpenMap(); var t = ShowAll(map);
+        Assert.IsNotEmpty(t.Seats, "precondition: seated whole towns, so the swap update asks WholeReady");
+        var layer = map.GetComponentInChildren<TownModelLayer>(true);
+        layer.Draw = false;   // what the "kits" switch off does (KitLayer.ShowKits)
+        var inner = layer.WholeTownReady!; int asks = 0;
+        layer.WholeTownReady = (id, c) => { asks++; return inner(id, c); };
+        var cam = new GameObject("frame camera").AddComponent<Camera>();
+        var at = t.Seats.Keys.Select(k => t.Wanted.First(w => w.Key == k).At).First();
+        cam.transform.position = new Vector3(at.x, 27000, at.y - 27000); cam.transform.LookAt(new Vector3(at.x, 0, at.y));
+        t.Choose(default, cam); layer.PrepareCamera(cam);   // the first frame may resolve the layer
+        int before = t.LayerLookups; asks = 0;
+        const int frames = 30;
+        for (int i = 0; i < frames; i++) { t.Choose(default, cam); layer.PrepareCamera(cam); }   // ChooseCore and Submit
+        Assert.Greater(asks, 0, "the swap update asked WholeReady for the seated towns");
+        Assert.AreEqual(0, t.LayerLookups - before,
+            $"{frames} frames of the swap update ({asks} WholeReady asks) walked the map hierarchy for the building layer");
+        Object.DestroyImmediate(layer.gameObject);
+        t.Choose(default, cam);
+        Assert.Greater(t.LayerLookups, before, "a destroyed building layer is looked up again");
+        Object.DestroyImmediate(cam.gameObject);
+    }
 }

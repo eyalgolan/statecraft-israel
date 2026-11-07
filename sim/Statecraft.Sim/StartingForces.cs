@@ -152,14 +152,31 @@ namespace Statecraft.Sim
 
         /// <summary>Adds the starting forces to a new game, in the content's order, taking the next ids: the unit with id i
         /// of a new game is <c>c.StartingForces[i]</c>. An arriving row's id is taken too, so it is free when it arrives
-        /// (R-UNIT-009).</summary>
+        /// (R-UNIT-009). With an initialized gdd-0.3 ledger (the dark start, #1725 PR 5), each own starting formation's
+        /// strength must be its active-soldier records serving in it (R-POP-004), or nothing is added. Any other initialized
+        /// ledger (synthetic or Open) is refused, with nothing added (R-POP-002).</summary>
         public static void Init(Content c, GameState s)
         {
-            PopulationLedger.RefuseAggregate(s);
+            if (s.PopulationLedger.IsInitialized) { PopulationLedger.RefuseUnlessHistorical(s); RequireLedgerSoldiers(c, s); }
             foreach (var f in c.StartingForces)
             {
                 var id = s.NextId++;
                 if (f.Arrives == null) s.Units.Add(id, new Unit(id, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
+            }
+        }
+
+        /// <summary>R-POP-004: an own formation in the start inventory gives its strength as active soldiers whose service
+        /// target is its source key (HistoricalPopulation.FormationPrefix plus its row), so the formations the game places and
+        /// the ledger's soldiers are the same people.</summary>
+        static void RequireLedgerSoldiers(Content c, GameState s)
+        {
+            var serving = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier && p.Assignment.Target != null)
+                .GroupBy(p => p.Assignment.Target!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+            foreach (var f in HistoricalPopulation.OpeningFormations(c))
+            {
+                var key = HistoricalPopulation.FormationPrefix + f.Row;
+                if ((serving.TryGetValue(key, out var n) ? n : 0) != f.Strength)
+                    throw new InvalidOperationException($"Starting formation '{f.Row}' has strength {f.Strength} but the population ledger serves it with {n} (R-POP-004).");
             }
         }
 

@@ -43,18 +43,19 @@ namespace Statecraft.Game.UI
         {
             foreach (var m in catalog.Messages)
             {
-                if (!holding.Contains(m.Signal) || waiting.Any(w => w.M == m)) continue;
-                if (!Eligible(m, turn) || !when(m.When)) continue;
+                if (!m.Holds(holding) || waiting.Any(w => w.M == m)) continue;
+                if (!Eligible(m, turn) || Lapsed(m, turn) || !when(m.When)) continue;
                 waiting.Add(new Waiting { M = m, Seq = seq++, NotBefore = turn });
             }
         }
 
         /// <summary>Each turn, a waiting or put-off warning whose signal or condition no longer holds goes to the history as
         /// missed, not seen, so its signal can bring it back (owner, #2024). Critical messages are never pruned, and teaching
-        /// ones are not warnings. The one on screen (<paramref name="shown"/>) stays until the player closes it (owner, 1 Nov).</summary>
+        /// ones are not warnings: they go only past their lapse_after. The one on screen (<paramref name="shown"/>) stays until
+        /// the player closes it (owner, 1 Nov).</summary>
         public void Prune(IReadOnlyCollection<string> holding, Func<IReadOnlyDictionary<string, double>, bool> when, int turn, DateTime date, AdvisorCatalog.Message? shown = null)
         {
-            foreach (var w in waiting.Where(w => w.M != shown && !w.M.Critical && !w.M.Teaching && !(holding.Contains(w.M.Signal) && when(w.M.When))).ToList())
+            foreach (var w in waiting.Where(w => w.M != shown && !w.M.Critical && (w.M.Teaching ? Lapsed(w.M, turn) : !(w.M.Holds(holding) && when(w.M.When)))).ToList())
             {
                 waiting.Remove(w);
                 history.Add(new Entry(w.M.Id, turn, date, Outcome.Missed));
@@ -64,7 +65,11 @@ namespace Statecraft.Game.UI
         bool Eligible(AdvisorCatalog.Message m, int turn) =>
             Array.IndexOf(AdvisorCatalog.Levels, m.Level) >= settings.LevelRank
             && (m.Repeat == AdvisorCatalog.Once ? !settings.Seen(m.Id) : !(lastShown.TryGetValue(m.Id, out var t) && turn < t + m.CooldownTurns))
-            && m.Requires.All(settings.Seen);
+            && (m.Fallback != "" || m.Requires.All(settings.Seen));
+
+        /// <summary>Past a teaching message's last game turn; <paramref name="turn"/> is State.Turn, which starts at 0. Offer checks it
+        /// too, or a lapsed message whose signal still holds would queue and go to the history again on every change.</summary>
+        static bool Lapsed(AdvisorCatalog.Message m, int turn) => m.Teaching && m.LapseAfter > 0 && turn >= m.LapseAfter;
 
         void Caps(int turn)
         {

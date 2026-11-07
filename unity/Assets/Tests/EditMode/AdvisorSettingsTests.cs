@@ -35,6 +35,20 @@ public class AdvisorSettingsTests
         Assert.Throws<ArgumentException>(() => new AdvisorSettings(store).SetLevel("chatty"));
     }
 
+    /// <summary>#2933: the new-player course's line, apart from the opening's, so a returning player's chain mark does not open it.</summary>
+    [Test]
+    public void TheCourseLineRoundTrips()
+    {
+        var store = new SettingsStore(dir);
+        store.Write(AdvisorSettings.OpeningKey, "seen");
+        var a = new AdvisorSettings(store);
+        Assert.IsFalse(a.CourseOpen);
+        a.MarkCourseOpen();
+        Assert.IsTrue(a.CourseOpen);
+        Assert.AreEqual("open", store.Read("advisor_course"));
+        Assert.IsTrue(new AdvisorSettings(store).CourseOpen);
+    }
+
     /// <summary>Spec 9.3: a player who saw the first-turn guide does not get the opening chain by itself.</summary>
     [Test]
     public void TheGuidesSeenLineCountsAsTheOpeningSeen()

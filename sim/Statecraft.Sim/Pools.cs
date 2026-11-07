@@ -34,13 +34,16 @@ namespace Statecraft.Sim
         /// (#2804 item 5).</summary>
         public const int MaxFieldFoodPerTurn = 1000;
 
-        /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level.</summary>
+        /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level. With an
+        /// initialized gdd-0.3 ledger (the dark start, #1725 PR 5) the need is the ledger's, one ration for each living own
+        /// population id (<see cref="Rations"/>, #2470), after the ledger reconciles; otherwise the aggregate head count. Any other
+        /// initialized ledger (synthetic or Open) is refused with the state unchanged (R-POP-002).</summary>
         public static void Init(Content c, GameState s)
         {
-            PopulationLedger.RefuseAggregate(s);
-            if (!c.IsGdd) return;
+            if (!c.IsGdd) { PopulationLedger.RefuseAggregate(s); return; }
+            PopulationLedger.RefuseUnlessHistorical(s);   // S5-3: a synthetic or Open ledger stays held
             var r = c.RulesAt(s.Date).Mvp!;
-            s.FoodNeed = Need(s, r);
+            s.FoodNeed = s.PopulationLedger.IsInitialized ? LedgerNeed(s) : Need(s, r);
             s.Food = r.CoverMonths!.Value * s.FoodNeed;
             s.FoodUnmet = 0;
             s.Arms = r.ArmsStart!.Value;   // R-ARMS-001; the loader requires it in the GDD loop
@@ -101,6 +104,14 @@ namespace Statecraft.Sim
         /// <summary>#2206: whether End turn would refuse the replacement Arms purchase for the debt ceiling.</summary>
         public static bool BorrowsPastDebtCeiling(Content c, GameState turnStart, IReadOnlyList<Command> orders, int count)
             => BuyArmsRefusal(c, turnStart, orders, count) == RefusedDebtCeiling;
+
+        /// <summary>R-FOOD-001 under gdd-0.3 (#2470): an initialized ledger's need, its living own population ids, after it
+        /// reconciles, so an invalid ledger sets no Food.</summary>
+        static int LedgerNeed(GameState s)
+        {
+            s.PopulationLedger.Reconcile();
+            return Rations(s.PopulationLedger.Units);
+        }
 
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>
         static int Need(GameState s, MvpRules r) => (int)Math.Round(s.TotalPopulation / r.PeoplePerUnit, MidpointRounding.AwayFromZero);

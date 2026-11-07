@@ -51,6 +51,31 @@ public class AdvisorSignalsTests
         return ids;
     }
 
+    /// <summary>#2933: turn_at_least reads the game's turn, the first being 1; State.Turn starts at 0.</summary>
+    [Test]
+    public void TurnAtLeastReadsTheGamesTurn()
+    {
+        var b = Bridge(); var ctx = new AdvisorContext(b, null);
+        Assert.AreEqual(0, b.State.Turn, "precondition: a new game");
+        Assert.IsTrue(AdvisorSignals.When(ctx, new Dictionary<string, double> { ["turn_at_least"] = 1 }));
+        Assert.IsFalse(AdvisorSignals.When(ctx, new Dictionary<string, double> { ["turn_at_least"] = 2 }));
+        b.State.Turn = 1;
+        Assert.IsTrue(AdvisorSignals.When(ctx, new Dictionary<string, double> { ["turn_at_least"] = 2 }));
+    }
+
+    /// <summary>#2933: course_open comes from the settings line, so it holds on a loaded game as well.</summary>
+    [Test]
+    public void CourseOpenHoldsOnceTheSettingIsSet()
+    {
+        var settings = new AdvisorSettings(null);
+        var session = new AdvisorSession(AdvisorCatalog.Load(), settings, true);
+        var ctx = new AdvisorContext(Bridge(), null);
+        CollectionAssert.Contains(AdvisorSignals.Names, "course_open", "a row may name it");
+        Assert.IsFalse(AdvisorSignals.Holding(ctx, session).Contains("course_open"));
+        settings.MarkCourseOpen();
+        Assert.IsTrue(AdvisorSignals.Holding(ctx, session).Contains("course_open"));
+    }
+
     /// <summary>Review (must-fix 2): a game loaded with Continue already at the debt ceiling has its critical warning as the
     /// start screen closes, not only after the next change.</summary>
     [Test]
