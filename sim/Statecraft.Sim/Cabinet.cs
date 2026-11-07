@@ -47,6 +47,26 @@ namespace Statecraft.Sim
     {
         public const string Kind = "appoint";
 
+        // CheckReason's English (#2707: constants, so the toast at End turn finds the UI's cabinet.reason.* string). The
+        // text is unchanged; {0}/{1} are the office's title, the person's name, the party's name or a PlayerText.Date.
+        public const string RefusedOfficeUnknown = "That office does not exist in this game";
+        public const string RefusedHistoricalOffice = "{0} is a historical title, not an appointable office";
+        public const string RefusedAbolished = "The office of {0} was abolished on {1}";
+        public const string RefusedNotEstablished = "The office of {0} is not established until {1}";
+        public const string RefusedSeveralHolders = "{0} can have several holders at once, and appointing to it is not part of the game yet";
+        public const string RefusedPrimeMinister = "You are the Prime Minister: that office is not yours to fill";
+        public const string RefusedPresident = "The President is elected by the Knesset, not appointed";
+        public const string RefusedPersonUnknown = "That person is not in this game";
+        public const string RefusedDied = "{0} died on {1}";
+        public const string RefusedIsPresident = "{0} is the President";
+        public const string RefusedIsChiefOfStaff = "{0} is the serving Chief of Staff";
+        public const string RefusedAlreadyHolds = "{0} already holds the office of {1}";
+        public const string RefusedNoGovernment = "No government is in office";
+        public const string RefusedNotCareerOfficer = "{0} is not an IDF career officer";
+        public const string RefusedPartyNotCoalition = "{0}'s party ({1}) is not in the coalition";
+
+        static string Say(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
+
         /// <summary>The player's appointee for the office on the date: appointed by then, same government, and alive (an
         /// appointee who dies leaves office on the date of death, and the historical holder applies again).</summary>
         static Appointment? Active(Content c, GameState s, string office, DateTime date)
@@ -101,35 +121,35 @@ namespace Statecraft.Sim
         public static CabinetReason? CheckReason(Content c, GameState s, string officeId, string personId)
         {
             var office = c.Offices.FirstOrDefault(o => o.Id == officeId);
-            if (office == null) return new CabinetReason("office_unknown", "That office does not exist in this game");
-            if (office.HistoricalOnly) return new CabinetReason("historical_office", $"{office.Title} is a historical title, not an appointable office", officeId);
+            if (office == null) return new CabinetReason("office_unknown", RefusedOfficeUnknown);
+            if (office.HistoricalOnly) return new CabinetReason("historical_office", Say(RefusedHistoricalOffice, office.Title), officeId);
             if (office.Until.HasValue && s.Date >= office.Until.Value)
-                return new CabinetReason("abolished", $"The office of {office.Title} was abolished on {PlayerText.Date(office.Until.Value)}", officeId,
+                return new CabinetReason("abolished", Say(RefusedAbolished, office.Title, PlayerText.Date(office.Until.Value)), officeId,
                     office.Until.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
             if (office.From.HasValue && s.Date < office.From.Value)
-                return new CabinetReason("not_established", $"The office of {office.Title} is not established until {PlayerText.Date(office.From.Value)}", officeId,
+                return new CabinetReason("not_established", Say(RefusedNotEstablished, office.Title, PlayerText.Date(office.From.Value)), officeId,
                     office.From.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
-            if (office.SeveralHolders) return new CabinetReason("several_holders", $"{office.Title} can have several holders at once, and appointing to it is not part of the game yet", officeId);
-            if (officeId == "prime_minister") return new CabinetReason("prime_minister", "You are the Prime Minister: that office is not yours to fill");
-            if (officeId == "president") return new CabinetReason("president", "The President is elected by the Knesset, not appointed");
+            if (office.SeveralHolders) return new CabinetReason("several_holders", Say(RefusedSeveralHolders, office.Title), officeId);
+            if (officeId == "prime_minister") return new CabinetReason("prime_minister", RefusedPrimeMinister);
+            if (officeId == "president") return new CabinetReason("president", RefusedPresident);
             var person = c.People.FirstOrDefault(p => p.Id == personId);
-            if (person == null) return new CabinetReason("person_unknown", "That person is not in this game");
+            if (person == null) return new CabinetReason("person_unknown", RefusedPersonUnknown);
             if (person.Died.HasValue && s.Date >= person.Died.Value)
-                return new CabinetReason("died", $"{person.Name} died on {PlayerText.Date(person.Died.Value)}", personId,
+                return new CabinetReason("died", Say(RefusedDied, person.Name, PlayerText.Date(person.Died.Value)), personId,
                     person.Died.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
-            if (Holder(c, s, "president")?.Id == personId) return new CabinetReason("is_president", $"{person.Name} is the President", personId);
+            if (Holder(c, s, "president")?.Id == personId) return new CabinetReason("is_president", Say(RefusedIsPresident, person.Name), personId);
             if (officeId != "chief_of_staff" && Holder(c, s, "chief_of_staff")?.Id == personId)
-                return new CabinetReason("is_chief_of_staff", $"{person.Name} is the serving Chief of Staff", personId);
+                return new CabinetReason("is_chief_of_staff", Say(RefusedIsChiefOfStaff, person.Name), personId);
             if (Holder(c, s, officeId)?.Id == personId)
-                return new CabinetReason("already_holds", $"{person.Name} already holds the office of {office.Title}", personId, officeId);
+                return new CabinetReason("already_holds", Say(RefusedAlreadyHolds, person.Name, office.Title), personId, officeId);
             var gov = Offices.Government(c, s.Date);
-            if (gov == null) return new CabinetReason("no_government", "No government is in office");
+            if (gov == null) return new CabinetReason("no_government", RefusedNoGovernment);
             if (officeId == "chief_of_staff")
                 return person.Offices.Any(t => t.Office == "chief_of_staff") ? null
-                    : new CabinetReason("not_career_officer", $"{person.Name} is not an IDF career officer", personId);
+                    : new CabinetReason("not_career_officer", Say(RefusedNotCareerOfficer, person.Name), personId);
             var party = Offices.PartyOf(c, person, s.Date);
             if (party != "" && !gov.CoalitionOn(s.Date).Contains(party))
-                return new CabinetReason("party_not_coalition", $"{person.Name}'s party ({c.Parties.First(p => p.Id == party).Name}) is not in the coalition", personId, party);
+                return new CabinetReason("party_not_coalition", Say(RefusedPartyNotCoalition, person.Name, c.Parties.First(p => p.Id == party).Name), personId, party);
             return null;
         }
 
