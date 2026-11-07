@@ -90,7 +90,7 @@ public class FireTakeRetargetShots
                 Answer();
                 var camera = Object.FindFirstObjectByType<CameraRig>().GetComponent<Camera>();
                 var rig = camera.GetComponent<CameraRig>();
-                camera.aspect = 16f / 9f;
+                ShotCamera.Configure(camera, 1920, 1080);
                 // Every requested model answered and the layer settled on them over editor frames: a model's arrival makes
                 // FaceCamera draw the tokens again (UnitFigures.AvailabilityVersion), which would replace a token held mid-shot.
                 for (int i = 0; i < 6; i++) { camera.Render(); Answer(); layer.FaceCamera(camera); Answer(); yield return null; }

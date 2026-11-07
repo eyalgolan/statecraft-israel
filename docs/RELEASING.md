@@ -28,10 +28,10 @@ macOS IL2CPP parity check is not an MVP release gate.
    uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 a08ff8504d862925563c8523a707b58ebe3bcaac0b504dc9ce7e028fc19eb0e4"
-   # and "GOLDEN OK hash1952 5561fc51a03a25e7bad499bd2c9d8de156dea241118ac4c80bbf2e0fb50c97ef"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 d53edcd56e05f661e3617d680814913e2c42f05f18c6b4317875ea08213c1fa8"
+   # and "GOLDEN OK hash1952 25fbfb8fd3e5109d0e2e39f7d3af50322083e144ba137cf4304f4331b954dcc7"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79"
+     --expect "SMOKE OK 5 turns 1948-10-15 b93ad5503dad3981b7a0de4c078b6d4323794be991a8d8343e5fe90271dc006c"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
@@ -66,7 +66,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 d12c83ce94e3940f93ed21abe7c2c9957de099b2653961da90e87785e6405e79"
+     --expect "SMOKE OK 5 turns 1948-10-15 b93ad5503dad3981b7a0de4c078b6d4323794be991a8d8343e5fe90271dc006c"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90
@@ -235,7 +235,13 @@ The gates, in order. The first one that fails ends the night as REFUSED, and not
    saved publication, use the newest non-draft release carrying a `*-web.zip`. The total may grow at most 2%, plus
    the size budget below.
 8. Headless boot time (`boot`): the median of three boots. The first 5 published nights set the baseline; after
-   that a boot slower than the slowest baseline night plus the spread of the baseline is refused.
+   that a boot slower than the slowest baseline night plus the spread of the baseline is refused. Before the first
+   boot the machine settles: the job waits until the 1-minute load average is under 2.0, at most 5 minutes, and
+   measures anyway if it never gets there. Each `boot-N.log` starts with the machine's load averages,
+   `vm.swapusage`, `memory_pressure`'s free percentage and `pmset -g therm`, and `boot-1.log` also says how long
+   the wait took. A median over the bound is measured once more: the machine settles again, three more boots run
+   (`boot-4.log` to `boot-6.log`), and the night is refused only if that second median is also over the bound,
+   naming both. The log records both medians when the second one passes (#2921).
 
 A nightly never moves a golden: golden moves arrive through reviewed pull requests, and the nightly only needs the
 golden tests of the full run to pass.

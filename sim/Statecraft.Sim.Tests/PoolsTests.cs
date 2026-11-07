@@ -275,6 +275,25 @@ public class PoolsTests
         Assert.Contains(message, ex.Message);
     }
 
+    // R-FOOD-001: cover_months has a ceiling, so the stock's int multiply cannot wrap (#2804 item 5). The ceiling itself loads.
+    [Theory]
+    [InlineData(121)]
+    [InlineData(int.MaxValue)]
+    public void CoverMonthsAboveTheCeilingFailsLoad(int months)
+    {
+        var ex = Assert.Throws<ContentException>(() => Gdd(FormattableString.Invariant($"  k_food: 0.1\n  cover_months: {months}\n")));
+        Assert.Equal(("rules.yaml", "mvp.cover_months"), (ex.File, ex.Field));
+        Assert.Contains("<= 120", ex.Message);
+    }
+
+    // R-FOOD-001: at the ceiling the stock is exactly that many months of the fixture's need of 100.
+    [Fact]
+    public void CoverMonthsAtTheCeilingLoads()
+    {
+        var s = Simulation.NewGame(Gdd("  k_food: 0.1\n  cover_months: 120\n"), 1, Mode.Historical);
+        Assert.Equal(120 * 100, s.Food);
+    }
+
     // R-FOOD-003: the GDD loop needs the food_supply indicator the pool feeds.
     [Fact]
     public void TheGddLoopNeedsAFoodSupplyIndicator()

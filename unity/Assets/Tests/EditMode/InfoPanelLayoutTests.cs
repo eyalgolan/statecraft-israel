@@ -273,6 +273,43 @@ public class InfoPanelLayoutTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    /// <summary>R-CITY-011 (#2477 review): a housing repair being built shows on its city's own hex, outside the folded
+    /// project list (GddHexPanel.Repairs), with its line, its builder line and the city's stepper. Under gdd-0.3, at every
+    /// window size (the stacked bars and the short windows included) in English and Hebrew, the panel lies in the window, clear
+    /// of the minimap, the left column and the top bar, and every shown label lies inside the panel (or the panel scrolls to
+    /// it) with its text fitting its box, as TheGddCityAndSitePanelsFitEveryWindow asks of the city's own hex.</summary>
+    [UnityTest]
+    public IEnumerator ACityHexWithARepairBeingBuiltFitsEveryWindow_RCity011([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
+    {
+        var c = WorkshopPanelTests.Load03();
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var city = c.SettlementHexes.Single(s => s.Id == "haifa");
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in Windows)
+            {
+                var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+                var id = g.State.NextId++;
+                g.State.CityProjects.Add(id, new CityProject(id, Projects.HousingRepair, city.Id, city.Q, city.R, 2));
+                var at = $"{(hebrew ? "he" : "en")} {w}x{h} at {uiScale}%";
+                yield return Rendered(w, h, g, (root, info) => info.Show(city.Q, city.R), root =>
+                {
+                    var panel = root.Q("info-panel"); var window = root.worldBound;
+                    foreach (var name in new[] { "city-repair-state", "city-repair-builder", "city-builders" })
+                        if (root.Q(name) is not { } e || !Shown(e)) { problems.Add($"{at}: precondition: {name} shows"); return; }
+                    if (!Inside(panel.worldBound, window)) problems.Add($"{at}: the panel {panel.worldBound} leaves the window {window}");
+                    foreach (var other in new[] { "minimap", "left-column", "top-bar" })
+                        if (panel.worldBound.Overlaps(root.Q(other).worldBound)) problems.Add($"{at}: the panel {panel.worldBound} overlaps the {other} {root.Q(other).worldBound}");
+                    foreach (var l in panel.Query<TextElement>().ToList().Where(l => !string.IsNullOrEmpty(l.text) && Shown(l)))
+                    {
+                        if (!InsideOrScrollsTo(l.worldBound, root.Q<ScrollView>("info-panel"))) problems.Add($"{at}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");
+                        if (!TextFits(l)) problems.Add($"{at}: '{l.text}' does not fit its box {l.contentRect} ({l.name})");
+                    }
+                }, hebrew ? he : Text, hebrew, uiScale: uiScale);
+            }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
     /// <summary>GDD Phase 5 PR 15, slices 1 to 3 (#754): Golani's card at the start with its Move, Fortify and Hold buttons,
     /// as it is, picking a Move's hex (the pick line under the card's lines, there from the selection too), with Fortify queued (its line), after the
     /// armistices with Send home offered (#1309: its button) and queued (its line, and no other order: #1527's follow-up), on the turn
