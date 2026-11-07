@@ -228,6 +228,8 @@ namespace Statecraft.Game.UI
                 && !hudRoot.ClassListContains(StartScreenPresenter.OpenClass) && chain.Any(InTour))
             {
                 session.Settings.MarkOpeningSeen();
+                session.Settings.MarkCourseOpen();
+                Evaluate();                                 // course_open holds from here: its rows wait behind the chain
                 OpenChain();
             }
         }
@@ -392,7 +394,7 @@ namespace Statecraft.Game.UI
                 var ctx = Context();
                 var holding = AdvisorSignals.Holding(ctx, session);
                 if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);   // as in Evaluate's Prune
-                if (!(holding.Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
+                if (!(m.Holds(holding) && AdvisorSignals.When(ctx, m.When)))
                     session.Queue.Drop(m, Turn, bridge.State.Date);
             }
             Render();

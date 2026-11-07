@@ -119,6 +119,69 @@ public class AdvisorOpeningTests
         Assert.IsTrue(rig.Session.Settings.OpeningSeen);
     }
 
+    /// <summary>#2933: the course opens with the chain's automatic opening, so only on a first game.</summary>
+    [Test]
+    public void TheAutomaticChainOpensTheCourse()
+    {
+        var store = Store();
+        using var rig = new Rig(En, store); rig.Advisor.NewGame();
+        Assert.IsTrue(rig.Advisor.InChain); Assert.IsTrue(rig.Session.Settings.CourseOpen);
+        Assert.AreEqual("open", store.Read(AdvisorSettings.CourseKey));
+    }
+
+    [Test]
+    public void ReturningPlayersAndAReopenedChainOpenNoCourse()
+    {
+        var store = Store(); store.Write(AdvisorSettings.OpeningKey, "seen");
+        using var rig = new Rig(En, store); rig.Advisor.NewGame();
+        Assert.IsFalse(rig.Advisor.InChain);
+        rig.Advisor.OpenChain();
+        Assert.IsTrue(rig.Advisor.InChain, "reopened by hand");
+        Assert.IsFalse(rig.Session.Settings.CourseOpen); Assert.IsNull(store.Read(AdvisorSettings.CourseKey));
+    }
+
+    [Test]
+    public void NoAutomaticChainNoCourse()
+    {
+        using var automated = new Rig(En, null); automated.Advisor.NewGame();
+        Assert.IsFalse(automated.Session.Settings.CourseOpen, "an automated run");
+        using var pending = new Rig(He, Store()); pending.Advisor.NewGame();
+        Assert.IsFalse(pending.Session.Settings.CourseOpen, "Hebrew with every step pending shows no chain");
+    }
+
+    /// <summary>#2933, the plan's quit and X case, on an in-memory row only: objectives gets a course_open fallback. After X on
+    /// the first step it shows as a queue row, comes back from under a layer (its own signal, opening, never holds), and on
+    /// a Continue it is offered from the settings line alone, with no chain.</summary>
+    [Test]
+    public void AFallbackStepSurvivesXALayerAndAContinue()
+    {
+        var yaml = File.ReadAllText(AdvisorCatalog.Path);
+        const string Row = "id: opening.objectives, advisor: ben_gurion, signal: opening,";
+        StringAssert.Contains(Row, yaml);
+        var catalog = AdvisorCatalog.Parse(yaml.Replace(Row, Row + " fallback: course_open,"));
+        var store = Store();
+        using (var rig = new Rig(En, store, session: new AdvisorSession(catalog, new AdvisorSettings(store), true)))
+        {
+            rig.Advisor.NewGame();
+            Assert.AreEqual("opening.greeting", rig.Advisor.Shown?.Id);
+            rig.Advisor.CloseChain();
+            rig.Card.Collapse(takeFocus: false);
+            Assert.AreEqual("opening.objectives", rig.Advisor.Shown?.Id, "X on the first step");
+            Assert.IsTrue(rig.Advisor.IsOpen);
+            rig.Card.Reopen();
+            Assert.IsFalse(rig.Advisor.IsOpen, "under the card");
+            rig.Card.Collapse(takeFocus: false);
+            Assert.AreEqual("opening.objectives", rig.Advisor.Shown?.Id, "back from under the card");
+            Assert.IsTrue(rig.Advisor.IsOpen);
+            Assert.IsFalse(rig.Session.Queue.History.Any(e => e.Outcome == AdvisorQueue.Outcome.Missed));
+        }
+        using var continued = new Rig(En, store, session: new AdvisorSession(catalog, new AdvisorSettings(store), true));
+        continued.Card.Collapse(takeFocus: false);
+        continued.Advisor.Resume();
+        Assert.IsFalse(continued.Advisor.InChain);
+        Assert.AreEqual("opening.objectives", continued.Advisor.Shown?.Id, "a Continue, not seen yet");
+    }
+
     [Test]
     public void TheOldGuidesSeenMarkPreventsAnAutomaticChain()
     {
