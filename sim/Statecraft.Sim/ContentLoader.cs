@@ -66,6 +66,12 @@ namespace Statecraft.Sim
         {
             public string Ruleset { get; set; } = "";
             public List<StartCampBinding>? MilitaryCamps { get; set; }
+            public List<StartFormationCombatXp>? FormationCombatXp { get; set; }
+        }
+        sealed class StartFormationCombatXp
+        {
+            public string Row { get; set; } = "";
+            public int? CombatXp { get; set; }
         }
         sealed class StartCampBinding
         {
@@ -488,11 +494,12 @@ namespace Statecraft.Sim
                 c.ProjectKinds = kinds.Where(k => k.Rulesets.Count == 0 || k.Rulesets.Contains(c.Ruleset)).ToList();
                 c.ProjectKindsOfOtherRulesets = kinds.Except(c.ProjectKinds).ToList();
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
-                if (c.Ruleset == SaveGame.Gdd03Ruleset) ApplyGdd03Start(readFile, c);
+                var formationXp = c.Ruleset == SaveGame.Gdd03Ruleset ? ApplyGdd03Start(readFile, c) : null;
                 ValidateGdd(c, settlementIds, settlements.Where(x => x.type is "city" or "town").Select(x => x.id).ToList());
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
+                if (formationXp != null) ApplyGdd03FormationCombatXp(formationXp, c);
             }
             // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive. After the
             // sites (a site id may be a member) and the effective map overrides; the locality hexes are read only with regions, and are required then (#2298).
@@ -512,11 +519,11 @@ namespace Statecraft.Sim
 
         // R-CAMP-003: exact-gdd-0.3 start bindings add facilities to the shared city catalogue without changing gdd-0.1.
         // The optional file keeps synthetic gdd-0.3 fixtures independent of the shipped map and city ids.
-        static void ApplyGdd03Start(Func<string, string?> readFile, Content c)
+        static List<StartFormationCombatXp>? ApplyGdd03Start(Func<string, string?> readFile, Content c)
         {
             const string file = "gdd03-start.yaml";
             var start = ReadOptional<Gdd03StartFile>(readFile, file);
-            if (start == null) return;
+            if (start == null) return null;
             if (start.Ruleset != SaveGame.Gdd03Ruleset)
                 throw new ContentException(file, "ruleset", "must be gdd-0.3");
             if (start.MilitaryCamps == null)
@@ -544,6 +551,33 @@ namespace Statecraft.Sim
             if (actual != expected)
                 throw new ContentException(file, "military_camps",
                     FormattableString.Invariant($"effective military-camp city count {actual} must equal start.military_camps {expected}"));
+            return start.FormationCombatXp;
+        }
+
+        /// <summary>#1689 rows 7 and 8 (owner, 7 November 2026, comment 6704389240: "1 each, Negev 0 (Recommended)"): each own
+        /// opening formation's combat XP in the Historical ledger fixture, once each, from 0 to military.combat_xp_full. Read
+        /// after the starting forces. An absent list leaves the value unset; the ledger fixture then refuses (no fallback).
+        /// Ledger fixture only (maintainer call, eyalgolan-30's coordinator, 7 November 2026): NewGame's units keep 0.</summary>
+        static void ApplyGdd03FormationCombatXp(List<StartFormationCombatXp> rows, Content c)
+        {
+            const string file = "gdd03-start.yaml";
+            var full = Gdd03Military.Scalar(c, "military.combat_xp_full");
+            var opening = new HashSet<string>(HistoricalPopulation.OpeningFormationRows(c), StringComparer.Ordinal);
+            var xp = new SortedDictionary<string, int>(StringComparer.Ordinal);
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                var at = FormattableString.Invariant($"formation_combat_xp[{i}]");
+                if (row == null || !opening.Contains(row.Row))
+                    throw new ContentException(file, at + ".row", "must name an own opening formation of map/units_1948.yaml");
+                if (xp.ContainsKey(row.Row)) throw new ContentException(file, at + ".row", "duplicate formation");
+                if (!(row.CombatXp is int value) || value < 0 || value > full)
+                    throw new ContentException(file, at + ".combat_xp", FormattableString.Invariant($"required: an integer from 0 to military.combat_xp_full {full}"));
+                xp.Add(row.Row, value);
+            }
+            var missing = opening.Where(r => !xp.ContainsKey(r)).OrderBy(r => r, StringComparer.Ordinal).ToList();
+            if (missing.Count > 0) throw new ContentException(file, "formation_combat_xp", "missing opening formation " + string.Join(", ", missing));
+            c.Gdd03FormationCombatXp = xp;
         }
 
         // R-EFX-001: this file is deliberately never read by legacy/gdd-0.1, including for hashing.

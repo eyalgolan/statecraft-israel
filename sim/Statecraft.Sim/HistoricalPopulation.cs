@@ -32,6 +32,11 @@ namespace Statecraft.Sim
         internal const string CensusPrefix = "census/";
         internal const string FormationPrefix = "units_1948/";
 
+        /// <summary>The map/units_1948.yaml rows that give the start inventory soldiers: Israeli, in the start (no dated
+        /// arrival), with a strength.</summary>
+        internal static IEnumerable<string> OpeningFormationRows(Content c) => c.StartingForces
+            .Where(f => f.Side == Movement.PlayerSide && f.Arrives == null && f.Strength > 0).Select(f => f.Row);
+
         internal static IReadOnlyList<HistoricalPopulationRow> Inventory(Content c)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
@@ -76,8 +81,25 @@ namespace Statecraft.Sim
             // A formation is its soldiers' ActiveService target, in the formation's region.
             var targets = regions.Where(x => x.Key.StartsWith(FormationPrefix, StringComparison.Ordinal))
                 .Select(x => new PopulationTarget(x.Key, PopulationAssignmentKind.ActiveService, x.Value));
+            // #1689 rows 5 to 8. Owner, 7 November 2026 (comment 6704389240): "Veteran for all 8 (Recommended)" and "1 each,
+            // Negev 0 (Recommended)", Negev's 0 a labelled stand-in. Maintainer call, eyalgolan-30's coordinator, 7 November
+            // 2026: the veteran level lives on the formation (a veteran_soldier, R-UNIT-006, each soldier's ActiveService
+            // target), so a soldier's qualification is its formation type's unit_types.yaml class, the source
+            // Gdd03BasicTrainingFixture's graduates use; its combat XP is gdd03-start.yaml's formation_combat_xp, no fallback.
+            var xp = c.Gdd03FormationCombatXp
+                ?? throw new InvalidOperationException("The Historical ledger fixture needs gdd03-start.yaml's formation_combat_xp; no fallback (#1689).");
+            var soldier = new Dictionary<string, (string Qualification, int CombatXp)>(StringComparer.Ordinal);
+            foreach (var f in c.StartingForces.Where(f => sources.Contains(FormationPrefix + f.Row)))
+            {
+                var cls = c.UnitTypes.FirstOrDefault(t => string.Equals(t.Id, f.Type, StringComparison.Ordinal))?.Class;
+                if (string.IsNullOrWhiteSpace(cls))
+                    throw new InvalidOperationException("No unit_types.yaml class for formation " + f.Row + "'s type " + f.Type + " (#1689).");
+                if (!xp.TryGetValue(f.Row, out var combatXp))
+                    throw new InvalidOperationException("No gdd03-start.yaml formation_combat_xp for formation " + f.Row + "; no fallback (#1689).");
+                soldier[FormationPrefix + f.Row] = (cls!, combatXp);
+            }
             var bindings = new PopulationBindings(locations.Values.Concat(placed.Values.Where(l => l.City != null)), targets,
-                Array.Empty<string>(), Array.Empty<string>());
+                Array.Empty<string>(), soldier.Values.Select(x => x.Qualification).Distinct(StringComparer.Ordinal));
             // reception.turns is the reception before free-civilian status (docs/gdd/balance.md:91), so a census free civilian
             // starts with it done: R-VET-001 gives work XP only to a received free civilian. Soldiers keep 0 (not ruled).
             var received = c.RequirePopulationInteger("reception.turns");
@@ -85,7 +107,9 @@ namespace Statecraft.Sim
                 r.Status == PopulationStatus.FreeCivilian ? received : 0,
                 placed[r.Source], r.Status == PopulationStatus.ActiveSoldier
                     ? new PopulationAssignment(PopulationAssignmentKind.ActiveService, r.Source) : PopulationAssignment.Unassigned,
-                CivilianProfession.None, CivilianTier.None, 0, "", 0, r.Status == PopulationStatus.ActiveSoldier
+                CivilianProfession.None, CivilianTier.None, 0,
+                r.Status == PopulationStatus.ActiveSoldier ? soldier[r.Source].Qualification : "",
+                r.Status == PopulationStatus.ActiveSoldier ? soldier[r.Source].CombatXp : 0, r.Status == PopulationStatus.ActiveSoldier
                     ? new PopulationEquipment(militaryId: r.Source + "/" + r.Ordinal.ToString(CultureInfo.InvariantCulture), militaryPaid: true)
                     : PopulationEquipment.None)));
             return PopulationLedger.CreateFixture(c, bindings, rows, mode: Mode.Historical);
