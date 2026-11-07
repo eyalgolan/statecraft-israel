@@ -170,7 +170,7 @@ namespace Statecraft.Sim
         {
             var serving = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier && p.Assignment.Target != null)
                 .GroupBy(p => p.Assignment.Target!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
-            foreach (var f in c.StartingForces.Where(f => f.Side == Movement.PlayerSide && f.Arrives == null))
+            foreach (var f in HistoricalPopulation.OpeningFormations(c))
             {
                 var key = HistoricalPopulation.FormationPrefix + f.Row;
                 if ((serving.TryGetValue(key, out var n) ? n : 0) != f.Strength)
