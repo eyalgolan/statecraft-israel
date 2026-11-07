@@ -200,6 +200,31 @@ public class HebrewUiTests
         }
     }
 
+    // #2707 catch-all: every Refused* constant anywhere in the sim reaches the toast (ReasonText) in Hebrew under Hebrew, and
+    // as the sim's own English under English. A format is filled with distinct numbers, so its pattern must take any value;
+    // the values themselves are the per-check tests' (above, CityProjectPanelTests). A refusal still a bare literal in the
+    // sim is not seen here: naming it a Refused* constant is how it joins this check.
+    [Test]
+    public void EveryNamedSimRefusalHasAHebrewString()
+    {
+        var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+        var refusals = typeof(Statecraft.Sim.Orders).Assembly.GetTypes()
+            .SelectMany(t => t.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+            .Where(f => f.IsLiteral && f.FieldType == typeof(string) && f.Name.StartsWith("Refused"))
+            .Select(f => (name: f.DeclaringType!.Name + "." + f.Name, format: (string)f.GetRawConstantValue())).ToList();
+        Assert.That(refusals.Count, Is.GreaterThan(40));
+        var missing = new List<string>();
+        foreach (var (name, format) in refusals)
+        {
+            var slots = Regex.Matches(format, @"\{(\d+)").Cast<Match>().Select(m => int.Parse(m.Groups[1].Value) + 1).DefaultIfEmpty(0).Max();
+            var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, format,
+                Enumerable.Range(0, slots).Select(i => (object)(i + 2)).ToArray());
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), name + ": the English string is the sim's own");
+            if (!Regex.IsMatch(SimBridge.ReasonText(He, reason, c), "[א-ת]")) missing.Add(name + " \"" + reason + "\"");
+        }
+        Assert.IsEmpty(missing, "no Hebrew string for:\n" + string.Join("\n", missing));
+    }
+
     [Test]
     public void TheGameIsEnglishUnlessHebrewIsAskedFor()
     {

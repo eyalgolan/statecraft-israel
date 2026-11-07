@@ -221,6 +221,34 @@ public class AdvisorMediaTests
         Assert.AreEqual("budget", rig.Nav.Current, "Escape closes only the overlay, not the screen under it");
         Assert.IsFalse(rig.Advisor.CloseOverlay(), "nothing to close");
     }
+    /// <summary>#2340: Tab left the overlay for the advisor popup behind it (the overlay disabled the screens it covers, not the
+    /// popup). The popup, and so its buttons, is out of reach while the overlay is open and comes back, as it was, when it closes.</summary>
+    [Test]
+    public void TheOverlayTakesTheAdvisorPopupOutOfTabReachAndGivesItBack()
+    {
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var rig = new AdvisorPopupTests.Rig(catalog: AdvisorPopupTests.Fixture.Replace("level: new,", "level: new, he_review: approved,"), text: hebrew ? HebrewText : Text);
+            rig.HudRoot.EnableInClassList(UiLanguage.HebrewClass, hebrew);
+            var pic = new FakePicture { Ready = true }; var output = new FakeOutput();
+            rig.Advisor.Media = new AdvisorMedia(hebrew ? HebrewText : Text, pic, null, Immediate, output);
+            rig.Advisor.ForceInline = false;
+            rig.Advisor.NewGame();
+            var popup = rig.Ui.Q<VisualElement>("advisor-popup"); var gotIt = rig.Ui.Q<Button>("advisor-got-it");
+            string lang = hebrew ? "Hebrew: " : "English: ";
+            Assert.IsTrue(popup.enabledInHierarchy && gotIt.enabledInHierarchy, lang + "precondition: the popup is usable");
+
+            rig.Advisor.Watch(Row, "advisor.x");
+            Assert.IsTrue(rig.HudRoot.ClassListContains("advisor-overlay-open"), lang + "precondition: the overlay is open");
+            Assert.IsFalse(popup.enabledInHierarchy, lang + "the popup is out of reach while the overlay is open");
+            Assert.IsFalse(gotIt.enabledInHierarchy, lang + "so are its buttons");
+            Assert.IsTrue(rig.Ui.Q<Button>("advisor-overlay-close").enabledInHierarchy, lang + "the overlay's own X stays reachable");
+
+            rig.Ui.Press("advisor-overlay-close");
+            Assert.IsTrue(popup.enabledInHierarchy && gotIt.enabledInHierarchy, lang + "closing the overlay gives the popup back");
+        }
+    }
+
     [Test]
     public void ConstructionDoesNotFetchOrPlay()
     {

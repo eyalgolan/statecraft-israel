@@ -740,6 +740,40 @@ public class GameSceneTests
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
     }
 
+    // #2707 item 1: a failed autosave stays in the toast through the next order (a deferred order raises Changed, which
+    // clears routine lines) and goes with the next save that succeeds.
+    [Test]
+    public void ASaveFailureStaysThroughTheNextOrderUntilASaveSucceeds()
+    {
+        File.WriteAllText(saveDir, "a file where the save folder should be");
+        var root = Boot(new SaveStore(saveDir));
+        var toast = Ui.Q<Label>("toast");
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("^Autosave could not be written"));
+        root.Bridge!.EndTurn();
+        Assert.AreEqual(Text["save.write_failed"], toast.text);
+        Assert.IsNull(root.Bridge.Queue(new SecurityOrder(-1)), "a deferred order");
+        Assert.AreEqual(Text["save.write_failed"], toast.text, "the next order leaves the save failure");
+        Assert.AreEqual(DisplayStyle.Flex, toast.style.display.value);
+        File.Delete(saveDir);                                          // the save folder can be written again
+        root.Bridge.EndTurn();
+        Assert.IsTrue(File.Exists(Path.Combine(saveDir, SaveStore.AutosaveName)), "the turn was autosaved");
+        StringAssert.DoesNotContain(Text["save.write_failed"], toast.text, "a successful save takes the failure away");
+    }
+
+    // #2707 item 1 on WebGL: the IndexedDB result decides; a failure stays through the next order, an "ok" takes it away.
+    [Test]
+    public void AWebSaveFailureStaysUntilAWebSaveSucceeds()
+    {
+        var root = Boot();
+        var toast = Ui.Q<Label>("toast");
+        root.OnSavePersistenceResult("fail save 1 1948-06-15 turn 1 hash aa");
+        Assert.IsNull(root.Bridge!.Queue(new SecurityOrder(-1)), "a deferred order");
+        Assert.AreEqual(Text["save.write_failed"], toast.text, "the next order leaves the save failure");
+        root.OnSavePersistenceResult("ok save 2 1948-06-15 turn 1 hash aa");
+        Assert.AreEqual("", toast.text);
+        Assert.AreEqual(DisplayStyle.None, toast.style.display.value);
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public void WebSavePersistenceFailuresUseTheCurrentLanguagesExistingToast(bool hebrew)
