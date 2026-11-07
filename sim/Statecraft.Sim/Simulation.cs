@@ -256,7 +256,7 @@ namespace Statecraft.Sim
                 case UnitOrder o:
                     if (o.Order == Movement.GoTo) return Movement.GiveGoTo(c, s, o.Unit, o.Q, o.R, spent, why);
                     if (o.Order == Combat.Attack) return Combat.Strike(c, s, o.Unit, o.Q, o.R, spent, attacked, why);
-                    if (o.Q != null || o.R != null) return "That order names no hex";
+                    if (o.Q != null || o.R != null) return Orders.RefusedNamesNoHex;
                     if (o.Order == Qualification.ReturnOrder) return Qualification.Return(c, s, o.Unit, why);
                     return o.Order == Demobilization.SendHome
                         ? Demobilization.Give(c, s, o.Unit, attacked, why)

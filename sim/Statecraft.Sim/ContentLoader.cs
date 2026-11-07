@@ -1472,6 +1472,7 @@ namespace Statecraft.Sim
                 if (!(m.DrySwampCost >= 0 && IsFinite(m.DrySwampCost.Value))) throw new ContentException(file, "mvp.dry_swamp_cost", "must be a finite number >= 0");
                 if (m.FieldFoodPerTurn == null) throw new ContentException(file, "mvp.field_food_per_turn", "required when eras.yaml systems.loop is gdd");
                 if (m.FieldFoodPerTurn < 0) throw new ContentException(file, "mvp.field_food_per_turn", "must be >= 0");
+                if (m.FieldFoodPerTurn > Pools.MaxFieldFoodPerTurn) throw new ContentException(file, "mvp.field_food_per_turn", FormattableString.Invariant($"must be <= {Pools.MaxFieldFoodPerTurn}"));
                 if (m.RoadSegmentTurns < 1) throw new ContentException(file, "mvp.road_segment_turns", "must be >= 1");
                 if (!(m.RoadSegmentCost >= 0 && IsFinite(m.RoadSegmentCost))) throw new ContentException(file, "mvp.road_segment_cost", "must be a finite number >= 0");
                 if (m.RailSegmentTurns < 1) throw new ContentException(file, "mvp.rail_segment_turns", "must be >= 1");
@@ -1481,6 +1482,7 @@ namespace Statecraft.Sim
                 if (!(m.KFood >= 0 && m.KFood <= 1)) throw new ContentException(file, "mvp.k_food", "must be between 0 and 1");
                 if (m.CoverMonths == null) throw new ContentException(file, "mvp.cover_months", "required when eras.yaml systems.loop is gdd");
                 if (m.CoverMonths < 1) throw new ContentException(file, "mvp.cover_months", "must be >= 1");
+                if (m.CoverMonths > Pools.MaxCoverMonths) throw new ContentException(file, "mvp.cover_months", FormattableString.Invariant($"must be <= {Pools.MaxCoverMonths}"));
                 // R-ARMS-001 to R-ARMS-003: required, so a missing key is never read as 0 (no stock, free Arms, or training without them).
                 if (m.ArmsStart == null) throw new ContentException(file, "mvp.arms_start", "required when eras.yaml systems.loop is gdd");
                 if (m.ArmsStart < 0) throw new ContentException(file, "mvp.arms_start", "must be >= 0");

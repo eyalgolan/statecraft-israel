@@ -145,6 +145,8 @@ namespace Statecraft.Game.UI
             gdd = panel.Q<VisualElement>(GddHexPanel.HostName);
             projects = panel.Q<VisualElement>(GddHexPanel.ProjectsHostName);
             mapFocus = root.Q<VisualElement>("map-focus");
+            mapFocus?.RegisterCallback<NavigationSubmitEvent>(OnStopSubmit, TrickleDown.TrickleDown);
+            mapFocus?.RegisterCallback<KeyDownEvent>(OnStopKey, TrickleDown.TrickleDown);
             foreach (var row in panel.Query(className: RowClass).ToList()) rows.Add((row, row.Q<Label>()));
             campButton = panel.Q<Button>("build-camp"); housingButton = panel.Q<Button>("build-housing");
             onCamp = () => Build(MapActions.TransitCamp); onHousing = () => Build(MapActions.Housing);
@@ -190,7 +192,7 @@ namespace Statecraft.Game.UI
         void OnHudGeometry(GeometryChangedEvent e) => panel.EnableInClassList(ShortClass, e.newRect.height < ShortBelowPx);
 
         /// <summary>Unsubscribes from the bridge and the buttons (the owner calls this when disabled).</summary>
-        public void Dispose() { pioneerReturn.clicked -= onPioneerReturn; pioneerList.Clear(); panel.UnregisterCallback(onCancel); presses.Dispose(); bridge.Changed -= OnStateChanged; ScreenNav.InfoIntentCovered -= OnInfoCovered; confirmMove.UnregisterCallback<KeyDownEvent>(OnConfirmKey); confirmMove.clicked -= ConfirmMove; confirmMove.RemoveFromHierarchy(); panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
+        public void Dispose() { mapFocus?.UnregisterCallback<NavigationSubmitEvent>(OnStopSubmit, TrickleDown.TrickleDown); mapFocus?.UnregisterCallback<KeyDownEvent>(OnStopKey, TrickleDown.TrickleDown); pioneerReturn.clicked -= onPioneerReturn; pioneerList.Clear(); panel.UnregisterCallback(onCancel); presses.Dispose(); bridge.Changed -= OnStateChanged; ScreenNav.InfoIntentCovered -= OnInfoCovered; confirmMove.UnregisterCallback<KeyDownEvent>(OnConfirmKey); confirmMove.clicked -= ConfirmMove; confirmMove.RemoveFromHierarchy(); panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
 
         /// <summary>Below this window height (logical px; 1366x657 is about 998) the panel gets ShortClass, and the city's own
         /// hex folds its projects behind their toggle as on a stacked bar (GddHexPanel.ToggleName): there the full list ran into
@@ -511,6 +513,12 @@ namespace Statecraft.Game.UI
         /// even while Move picks (owner, 25 Oct 2026: "Clicking another unit or a city still selects it").</summary>
         public bool IsCity(int q, int r) => GameRoot.CityAt(bridge.Content, bridge.State, q, r) != null;
 
+        // True for the one event dispatch of an Enter or Space on the map stop: the pick it makes (MapFocusPresenter) runs inside it.
+        bool stopPress;
+        void OnStopSubmit(NavigationSubmitEvent e) => FlagStopPress();
+        void OnStopKey(KeyDownEvent e) { if (e.keyCode == UnityEngine.KeyCode.Space) FlagStopPress(); }
+        void FlagStopPress() { stopPress = true; mapFocus!.schedule.Execute(() => stopPress = false); }
+
         void DiscardMove()
         {
             pendingMove = null;
@@ -555,6 +563,9 @@ namespace Statecraft.Game.UI
                 pendingMove = (command, p.session, p.turn);
                 confirmMove.text = text.Format("unit.confirm_move", mover, target);
                 confirmMove.style.display = DisplayStyle.Flex;
+                // A pick made at the map stop (its Enter or Space) is a keyboard pick: the offer takes the focus, so Enter
+                // takes it and it is not several Tabs away (#2340). A pointer pick gets none, even while the stop still has it.
+                if (stopPress) FocusReturn.To(confirmMove);
             };
         }
 

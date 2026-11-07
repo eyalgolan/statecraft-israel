@@ -140,8 +140,9 @@ public class Gdd03RegionAuthoringTests
                 Assert.Same(region, c.PlayerRegions.AtLocation(m));
             }
         }
-        // 326 approved members, less rosh_haayin_camp (deferred: no sourced position), each in exactly one region.
-        Assert.Equal(325, c.PlayerRegions.Regions.Values.Sum(r => r.MemberLocations.Count));
+        // 326 approved members, less rosh_haayin_camp (deferred: no sourced position), plus nirim (owner, 7 November 2026:
+        // "Add Nirim to Negev (Recommended)"), each in exactly one region.
+        Assert.Equal(326, c.PlayerRegions.Regions.Values.Sum(r => r.MemberLocations.Count));
         Assert.Null(c.PlayerRegions.AtLocation("rosh_haayin_camp"));
         foreach (var (member, from, to) in Moved)
         {
@@ -366,7 +367,8 @@ public class Gdd03RegionAuthoringTests
             Assert.Equal("APPROVED", region.CapitalApproval);
             Assert.Equal(Text(original, "binding_status"), region.BindingStatus);
             Assert.Null(region.OpeningController);
-            foreach (var member in region.MemberLocations)
+            // nirim joined after these evidence rows (owner, 7 November 2026: "Add Nirim to Negev (Recommended)").
+            foreach (var member in region.MemberLocations.Where(m => m != "nirim"))
             {
                 var source = Rows(original, "members").Single(r => Text(r, "id") == member);
                 var hex = Map(source, "hex");
