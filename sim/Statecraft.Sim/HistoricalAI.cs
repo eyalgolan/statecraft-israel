@@ -25,6 +25,8 @@ namespace Statecraft.Sim
                 // If a long route has not finished, leave the card pending. End-turn delegation sees this turn's movement
                 // and either makes the same historical decision then or postpones without a refused player command.
                 .Where(x => EventSystem.OperationStatus(c, staged, x.Option).Met)
+                // Q3: an operation whose front's armistice is pending or signed is left to delegation, which waits or lapses it.
+                .Where(x => EventSystem.ArmisticeBlock(c, staged, x.Event, x.Option) == null)
                 .Select(x => (Command)new ChooseEventOption(x.Event.Id, x.Option.Id))
                 .ToList());
             // Settlements is ordinal. Each Raid is tried on a copy after the ones before it, as Step will run them, and one the

@@ -26,6 +26,10 @@ namespace Statecraft.Sim
     {
         public const int MaxSoftEventsPerTurn = 3;
         public const string RefusedOperationUnitsNotInPlace = "The operation's required units are not in place";
+        /// <summary>Q3 (owner, 7 November 2026: "Decide armistice first (Recommended)"): an operation whose front's armistice card
+        /// is pending waits for it; once that armistice is signed, the operation cannot be chosen (it lapses at the turn's end).</summary>
+        public const string RefusedOperationArmisticeFirst = "The armistice on this operation's front must be decided first";
+        public const string RefusedOperationArmisticeSigned = "The armistice on this operation's front is signed";
         /// <summary>The facility a grant with no `at` stands at (Q-HFX-2) and the city fields an option may change (R-EFX-004).</summary>
         public const string MilitaryCamp = "military_camp", HousingField = "housing_capacity", JobsField = "job_slots", ConditionField = "condition";
 
@@ -158,6 +162,7 @@ namespace Statecraft.Sim
             if (!s.PendingEvents.Contains(eventId)) return "That event is not waiting for a decision";
             var option = Get(c, eventId).Options.FirstOrDefault(o => o.Id == optionId);
             if (option == null) return "That event has no such option";
+            if (ArmisticeBlock(c, s, Get(c, eventId), option) is string block) return block;
             if (!OperationStatus(c, s, option).Met) return RefusedOperationUnitsNotInPlace;
             Resolve(c, s, eventId, option, "chosen", why, spent: spent, rejected: rejected);
             return null;
@@ -469,6 +474,15 @@ namespace Statecraft.Sim
                 var share = anchored == null && mvp != null && minister != null && minister.Loyalty < mvp.DelegationLoyaltyFloor
                     ? mvp.DisloyalEffectShare!.Value : 1.0;
                 var how = $"delegated to {minister?.Name ?? "the cabinet"}" + (share < 1 ? ", carried out half-heartedly" : "");
+                // Q3 ("Decide armistice first (Recommended)"): an operation waits while its front's armistice card is pending,
+                // whichever comes first in the pending list; a signature then lapses it at the turn's end ("Signing wins").
+                if (ArmisticeBlock(c, s, e, option) == RefusedOperationArmisticeFirst)
+                {
+                    rng.State = beforeDraw;
+                    if (postponed == null) s.PostponedOperations[id] = new PostponedOperation(option.Id, s.Turn);
+                    why.Add(OperationCause(c, s, e, Array.Empty<OperationRequirementRow>(), CauseKeys.OperationWaitsForArmistice));
+                    continue;
+                }
                 var status = OperationStatus(c, s, option);
                 if (!status.Met)
                 {
@@ -512,6 +526,16 @@ namespace Statecraft.Sim
                 return s.Turn - p.Turn > c.RulesAt(s.Date).Mvp!.OperationWaitTurns!.Value ? CauseKeys.OperationLapsed : null;
             }
             return e.To.HasValue && e.To.Value <= s.Date ? CauseKeys.OperationLapsed : null;
+        }
+
+        /// <summary>Q3 (owner, 7 November 2026: "Decide armistice first (Recommended)"): why the operation option <paramref name="o"/>
+        /// of <paramref name="e"/> cannot go now because of its front's armistice (pending, or signed), or null. GDD only.</summary>
+        internal static string? ArmisticeBlock(Content c, GameState s, GameEvent e, EventOption o)
+        {
+            if (!c.IsGdd || o.RequiresUnitRegions.Count == 0 || e.ArmisticeFront == "") return null;
+            if (Demobilization.Signed(s, e.ArmisticeFront)) return RefusedOperationArmisticeSigned;
+            var card = "armistice_" + e.ArmisticeFront;
+            return card != e.Id && s.PendingEvents.Contains(card) ? RefusedOperationArmisticeFirst : null;
         }
 
         /// <summary>R-ENEMY-007: the rows <paramref name="o"/> requires that are no longer on the board: their unit has arrived
@@ -562,11 +586,13 @@ namespace Statecraft.Sim
             var moves = string.Join("; ", rows.OrderBy(x => x.Unit, StringComparer.Ordinal)
                 .Select(x => OperationUnitName(c, x.Unit) + " to " + string.Join(" or ", x.Regions.OrderBy(r => r, StringComparer.Ordinal).Select(OperationRegionName))));
             var lost = string.Join(", ", rows.OrderBy(x => x.Unit, StringComparer.Ordinal).Select(x => OperationUnitName(c, x.Unit)));
-            if (key == CauseKeys.OperationLapsedSigned) args.Add(e.ArmisticeFront);
+            if (key == CauseKeys.OperationLapsedSigned || key == CauseKeys.OperationWaitsForArmistice) args.Add(e.ArmisticeFront);
             var message = key == CauseKeys.OperationLapsed
                 ? $"{title} lapsed because the required units never reached the operation regions" + (moves == "" ? "" : $": {moves}")
                 : key == CauseKeys.OperationLapsedSigned
                 ? $"{title} lapsed because the armistice with {FrontName(e.ArmisticeFront)} was signed"
+                : key == CauseKeys.OperationWaitsForArmistice
+                ? $"{title} postponed until the armistice with {FrontName(e.ArmisticeFront)} is decided"
                 : key == CauseKeys.OperationLapsedUnitLost
                 ? $"{title} lapsed because a required unit is no longer on the board: {lost}"
                 : $"{title} postponed; move {moves}";

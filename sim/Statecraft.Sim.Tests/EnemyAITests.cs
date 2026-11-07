@@ -1483,6 +1483,42 @@ public class EnemyAITests
         Assert.Equal(comes, s.PendingEvents.Contains("rafah_force_pressure"));
     }
 
+    // Q3, "Decide armistice first (Recommended)" (owner, 7 November 2026): while the operation's front has its armistice card
+    // pending, the operation cannot be chosen, and its delegation postpones it with that reason; once the armistice is signed
+    // it cannot be chosen either, and it lapses at the turn's end. Real content: Horev and Egypt's card on 15 February 1949,
+    // Golani in place. Red without the check: Horev launches beside a pending armistice.
+    [Fact]
+    public void AnOperationWaitsForItsFrontsPendingArmistice()
+    {
+        var c = Real;
+        var s = GoldenRun.Play(c, new DateTime(1948, 12, 15));
+        var golani = c.StartingForces.FindIndex(f => f.Row == "golani");
+        s.Units[golani] = At(s.Units[golani], 11, 11);
+        for (int turn = 0; turn < 2; turn++) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.Contains("armistice_egypt", s.PendingEvents);
+        var launch = c.Events.Single(e => e.Id == "operation_horev").Options.Single(o => o.Id == "launch");
+        var south = c.PlayerRegions.Regions[launch.RequiresUnitRegions[0]].MemberHexes[0];
+        s.Units[golani] = At(s.Units[golani], south.Q, south.R);
+        Assert.True(EventSystem.OperationStatus(c, s, launch).Met, "Golani stands in place");
+
+        var chosen = s.Clone();
+        Assert.Equal(EventSystem.RefusedOperationArmisticeFirst, EventSystem.Choose(c, chosen, "operation_horev", "launch", new List<Cause>()));
+        Assert.Contains("operation_horev", chosen.PendingEvents);
+
+        var delegated = s.Clone(); delegated.PendingEvents.Remove("armistice_egypt"); delegated.PendingEvents.Add("armistice_egypt");   // Horev first
+        var why = new List<Cause>();
+        EventSystem.Delegate(c, delegated, why);
+        Assert.Contains(why, x => x.Key == CauseKeys.OperationWaitsForArmistice && x.Target == "operation_horev");
+        Assert.False(delegated.ChosenOptions.ContainsKey("operation_horev"));
+
+        var signed = s.Clone();
+        Assert.Null(EventSystem.Choose(c, signed, "armistice_egypt", "sign", new List<Cause>()));
+        Assert.Equal(EventSystem.RefusedOperationArmisticeSigned, EventSystem.Choose(c, signed, "operation_horev", "launch", new List<Cause>()));
+        var refused = s.Clone();
+        Assert.Null(EventSystem.Choose(c, refused, "armistice_egypt", "hold_out", new List<Cause>()));
+        Assert.Null(EventSystem.Choose(c, refused, "operation_horev", "launch", new List<Cause>()));   // decided first: Horev may go
+    }
+
     static SettlementTarget Nazareth =>Real.SettlementTargets.Single(t => t.Id == "nazareth");
 
     /// <summary>mvp-occupy-cost played to <paramref name="until"/> (its own steps, the run's end replaced): Golani (unit 0,
