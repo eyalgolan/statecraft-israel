@@ -18,8 +18,10 @@ using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
-/// <summary>Writes the before and after stills for PR #2876 (the major cities draw their kits at every zoom: owner, 6 November
-/// 2026, "Big blocks, every zoom" and "Just the four (Recommended)") to `.superpowers/shots-2876/&lt;SHOTS_TAG&gt;/` at the
+/// <summary>Writes the before and after stills for PR #2876 (the major cities draw their kits from 40 km out: owner, 6 November
+/// 2026, "Big blocks, every zoom" and "Just the four (Recommended)"; below the 40 km close switch Tal Heuberger's building
+/// models, as on main: owner, 7 November 2026, "Tal's models close (Recommended)", which supersedes "Big blocks, every
+/// zoom" below 40 km) to `.superpowers/shots-2876/&lt;SHOTS_TAG&gt;/` at the
 /// repository root (local, not committed; SHOTS_TAG from the environment, "untagged" when unset). English only: a map change,
 /// and the labels do not change.
 /// <list type="bullet">
@@ -28,7 +30,7 @@ using Object = UnityEngine.Object;
 /// point: TownModelResidencyTests). The km are the town layer's own view distance (TownModelLayer.ViewDistance, the one its
 /// 40/45 km close switch and 100 km far band read), so the rig's distance is shortened by the look-at's height. Before
 /// (main): Tal Heuberger's far-off copies at 250 and 60 km (main's AtZoom admits these four in view at every zoom), the
-/// originals at 39 and 31 km. After: the kits at every distance.</item>
+/// originals at 39 and 31 km. After: the kits at 250 and 60 km, the originals at 39 and 31 km.</item>
 /// <item>`&lt;prop&gt;-close.png`, the props placed to clear the 24x building models (SpecialBuildingModels.Plan's TownEdge rows,
 /// clear of TownModelLayer.InstancesOf) that may now stand inside the 60x/100x kit blocks, at 8 km: the Altalena sandbags on
 /// the Tel Aviv shore (tel_aviv_altalena_sandbags, the game date set to 15 June 1948, SandbagsFrom: the row covers 15 to 23
