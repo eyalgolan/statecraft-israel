@@ -52,10 +52,13 @@ namespace Statecraft.Sim
             if (c.IsGdd) SendHomeToFloor(c, s, why);
         }
 
+        /// <summary>SetMobilization's refusal for a level outside 0..1 (#2707: a constant, for the UI's string).</summary>
+        public const string RefusedMobilization = "Mobilization must be between 0 and 1";
+
         /// <summary>Returns null on success, or the reason the order was rejected.</summary>
         public static string? SetMobilization(Content c, GameState s, double level, List<Cause> why)
         {
-            if (!(level >= 0 && level <= 1)) return "Mobilization must be between 0 and 1";
+            if (!(level >= 0 && level <= 1)) return RefusedMobilization;
             s.Mobilization = level;
             why.Add(new Cause("security", "mobilization", level, $"reserve call-up set to {PlayerText.Percent(level)}", key: CauseKeys.CallUpSet));
             RaiseToFloor(c, s, why);

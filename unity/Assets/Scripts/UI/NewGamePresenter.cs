@@ -53,7 +53,7 @@ namespace Statecraft.Game.UI
             Armed = false;
             var fresh = GameSession.New(bridge.Content, seed(), Mode.Historical);
             bridge.Replace(fresh);
-            if (GameStart.WriteAutosave(fresh, store, text, toast.Show, persistenceTarget)) toast.Clear();
+            if (GameStart.WriteAutosave(fresh, store, text, toast.SaveFailed, persistenceTarget, toast.SaveSucceeded)) toast.Clear();
             Started?.Invoke();
         }
     }
