@@ -3619,3 +3619,55 @@ plaster, ashlar, rubble, roof tile, flat roof, ribbon glass, balcony rail, corru
 - **Frame time, not measured to this document's standard:** `?vprofile` needs the exclusive lock, which this lane did not take. A
   run under the shared lock at load 11-16, main against the branch, read gameplay03 23.53 -> 22.12 ms (spreads 2.93, 3.93) and
   diorama02 25.78 -> 28.03 ms (spreads 1.56, 2.98): a noisy reading, not a cost.
+
+## Issue #2877: a plowed field or drained swamp on its hex's ground
+
+The owner's answer on #2812 was "Ground change only", so a built field or a drained swamp has no kit and no pill and the
+hex's ground shows it. `SiteGroundLayer` drapes one mesh per site over the terrain (about 2,100 vertices), drawn by
+`Statecraft/SiteGround` after the ground and before the roads, in the order of `HulaPapyrusLayer`: `GameRoot` calls it on
+every `Changed`, it reads `State.Sites`, and it builds a mesh only for a site that changed, so a loaded save draws its own.
+A repaint of `_ScBiomeTex` was rejected: it is one map-wide upload, which would fall on End turn. A zero-area mesh draws from
+the first frame, meant to keep the shader's first draw off the End turn that finishes the first site (measured below).
+The look is a design value (no field layout or crop is sourced): seeded parcels of ploughed earth, young crop and stubble with
+pale tracks; a drained swamp is dark earth with straight canals. The patch keeps off water, off ground that rises over 45 m
+(world) round a vertex and off the inner 70% of every locality's footprint, and it fades out short of the hex's edge, so the
+grid and the region borders stay on top. A hex with both the swamp and its field shows the field.
+
+Cost, on a WebGL build (`Build.Web -compression disabled`), `?vprofile` under the **shared** machine lock on a busy machine
+(load 4-9), so these are not the "How to measure" idle numbers. A throwaway patch, never committed, built seven sites and
+limited the run to `all` against `-siteground` at the poses below, 3 interleaved runs of 300 frames each:
+
+| Pose | `all` ms (spread) | `-siteground` ms (spread) | cost ms |
+|---|---|---|---|
+| Beit Kama, 60 km | 21.94 (3.43) | 21.66 (0.31) | +0.28 |
+| Beit Kama, 15 km | 19.89 (0.47) | 20.14 (0.16) | -0.25 |
+| Beit Kama, 6 km | 16.14 (0.24) | 16.36 (0.16) | -0.22 |
+| Hula, 6 km | 15.27 (0.52) | 15.91 (0.19) | -0.64 |
+| gameplay03 | 25.27 (0.20) | 25.41 (0.29) | -0.14 |
+
+All are inside the 2.5 ms budget and within this busy machine's noise, so they say "no measurable cost here", not a number. The
+first run at the first pose (24.85 ms, p95 48) is the 3.43 spread; the two runs after it were 21.42 and 21.94 ms.
+Not measured: the same run under the exclusive lock.
+
+Time on the main thread, on a WebGL build at `220a7d0a9` with a throwaway timing patch, never committed, under the shared lock
+(load about 6-9), six page loads. Each field was left one turn from done in `State.Sites`, and the sim finished it in a real
+`SimBridge.EndTurn`, with the camera on the fields at 31 km:
+
+| Step | `ShowAt` ms |
+|---|---|
+| The first field (one mesh plus `PlacementLayer.CampGround`) | 2.5-5.3 |
+| Each later field (one mesh) | 0.9-1.5 |
+| `SimBridge.Replace` with seven built fields, four of them new meshes | 3.4-4.3 |
+
+So one mesh is about 1 ms; seven new at once would be about 7 ms by that rate, not measured. The End turn around it took
+668-2,253 ms with or without a field (`EndTurn` alone, on controls and on field turns alike), so that freeze is not this layer's.
+The load was the `Replace` path with a session whose sites were set by hand, not a save file read from disk.
+
+The warm mesh: three runs with it and three without (`sgnowarm` in the throwaway patch) gave the same frames after the first
+field's End turn, the worst of the next 12 being 416-441 ms with it and 417-478 ms without, on this Mac's Chrome (ANGLE over
+Metal). Two controls without a field had a 601-621 ms frame in five of the six runs, so that spike is not traced to the field. The
+later fields' worst frame was 74-127 ms against about 50 ms on the control turn, with or without the warm mesh and outside
+`ShowAt`; the cause is not traced. So the warm mesh shows no gain here; its use on other GPU drivers is not measured.
+
+With #2884 (the border glow) merged locally, the 60 km stills of Beit Kama and Mefalsim show the blue and white stripes whole: the patch
+stops inside them. It does cover the wash inside the hex where a parcel lies.
