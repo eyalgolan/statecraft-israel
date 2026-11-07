@@ -210,6 +210,36 @@ public class StartScreenTests
         return store;
     }
 
+    // #2707 item 3: the start-up notes (here an unreadable autosave) stay in the toast when the recording fails to play,
+    // the failure line sits under them, and pressing the button again takes only that line away.
+    [Test]
+    public void ARecordingFailureIsAddedToTheStartNotesAndGoesWithTheNextPress()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "statecraft-start-" + Guid.NewGuid().ToString("N"));
+        temp.Add(dir);
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, SaveStore.AutosaveName), "not a save");
+        var store = new SaveStore(dir);
+        using var ui = new RenderedUi();
+        var notes = new List<string>();
+        var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, notes, Text, out var resumed), Text);
+        using var toast = new ToastPresenter(ui.Root, bridge, Text);
+        toast.Show(notes);                                              // as GameRoot, once the screens are ready
+        Assert.IsNotEmpty(notes);
+        var label = ui.Q<Label>("toast");
+        var start = label.text;
+        StringAssert.StartsWith("Your saved game could not be loaded", start);
+        var fails = true;
+        using var recording = new DeclarationRecording(ui.Root, Text, toast.RecordingFailed,
+            (url, done) => { if (fails) done(null, "no network"); return new NoAnswer(); }, retry: toast.RecordingRetried);
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("^RECORDING failed"));
+        ui.Press("start-listen");
+        Assert.AreEqual(start + "\n" + Text["start.recording_failed"], label.text, "the notes stay, the failure is added");
+        fails = false;
+        ui.Press("start-listen");                                       // the retry
+        Assert.AreEqual(start, label.text, "the failure line goes with the retry; the notes stay");
+    }
+
     /// <summary>Ben-Gurion's recording (docs/declaration-recording.md) plays only from its own button: never when the screen
     /// opens, never on Continue or New Game; the screen closing stops it.</summary>
     [Test]
