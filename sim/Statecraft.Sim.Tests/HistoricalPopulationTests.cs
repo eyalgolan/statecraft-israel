@@ -293,6 +293,27 @@ public class HistoricalPopulationTests
         Assert.DoesNotContain(inventory, r => r.Source == HistoricalPopulation.CensusPrefix + "jaffa");
     }
 
+    // R-POP-004, #1689 PR 1 city binding: each census record's location names its city, in that city's region; a formation
+    // record's location names no city.
+    [Fact]
+    public void EveryCensusRecordIsBoundToItsCity()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            var source = inventory[i].Source;
+            if (source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal))
+            {
+                var city = source.Substring(HistoricalPopulation.CensusPrefix.Length);
+                Assert.Equal(city, units[i].Location!.City);
+                Assert.Equal(c.PlayerRegions.AtLocation(city)!.Id, units[i].Location!.Region);
+            }
+            else Assert.Null(units[i].Location!.City);
+        }
+    }
+
     // R-POP-001, R-POP-004, Q10: ids run from 0 with no gaps in the inventory's order (source key by ordinal string compare,
     // then ordinal), and two builds are identical.
     [Fact]

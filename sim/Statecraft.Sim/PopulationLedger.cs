@@ -71,6 +71,13 @@ namespace Statecraft.Sim
                 throw new ArgumentException("Unknown or incompatible assignment target.");
             return t;
         }
+        /// <summary>R-POP-002: a location's city must be a member location of its region in regions.yaml (AtLocation).</summary>
+        internal void ValidateCities(PlayerRegionCatalogue regions)
+        {
+            foreach (var l in locations)
+                if (l.City != null && regions.AtLocation(l.City)?.Id != l.Region)
+                    throw new ArgumentException("City " + l.City + " is not in region " + l.Region + " in regions.yaml (R-POP-002).");
+        }
         internal bool HasCaptor(string captor) => captors.Contains(captor);
         internal bool HasQualification(string qualification) => qualification == "" || qualifications.Contains(qualification);
         internal IEnumerable<string> Canonical()
@@ -263,6 +270,7 @@ namespace Statecraft.Sim
             var s = new GameState(c); var l = s.PopulationLedger;
             if (mode is Mode m) s.Mode = m;
             l.bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
+            bindings.ValidateCities(c.PlayerRegions);
             var ordered = rows.OrderBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Ordinal).ToList();
             if (mode != Mode.Historical && ordered.Any(x => x.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
                 || x.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)))
