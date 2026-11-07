@@ -32,10 +32,14 @@ namespace Statecraft.Sim
         internal const string CensusPrefix = "census/";
         internal const string FormationPrefix = "units_1948/";
 
-        /// <summary>The map/units_1948.yaml rows that give the start inventory soldiers: Israeli, in the start (no dated
-        /// arrival), with a strength.</summary>
-        internal static IEnumerable<string> OpeningFormationRows(Content c) => c.StartingForces
-            .Where(f => f.Side == Movement.PlayerSide && f.Arrives == null && f.Strength > 0).Select(f => f.Row);
+        /// <summary>The own opening formations, the one predicate for them (review S2-2): the map/units_1948.yaml rows that
+        /// give the start inventory soldiers, Israeli, in the start (no dated arrival), with a strength. The inventory, the
+        /// loader's formation_combat_xp check and StartingForces.Init's ledger check all read it.</summary>
+        internal static IEnumerable<StartingForce> OpeningFormations(Content c) => c.StartingForces
+            .Where(f => f.Side == Movement.PlayerSide && f.Arrives == null && f.Strength > 0);
+
+        /// <summary>The row ids of <see cref="OpeningFormations"/>.</summary>
+        internal static IEnumerable<string> OpeningFormationRows(Content c) => OpeningFormations(c).Select(f => f.Row);
 
         internal static IReadOnlyList<HistoricalPopulationRow> Inventory(Content c)
         {
@@ -43,9 +47,8 @@ namespace Statecraft.Sim
             if (!c.UsesPopulationLedger) throw new InvalidOperationException("The Historical population inventory requires gdd-0.3.");
             var counts = new List<(string Source, int Units, PopulationStatus Status)>();
             foreach (var city in c.Cities) counts.Add((CensusPrefix + city.Id, city.Civilians, PopulationStatus.FreeCivilian));
-            foreach (var f in c.StartingForces)
-                if (f.Side == Movement.PlayerSide && f.Arrives == null)
-                    counts.Add((FormationPrefix + f.Row, f.Strength, PopulationStatus.ActiveSoldier));
+            foreach (var f in OpeningFormations(c))
+                counts.Add((FormationPrefix + f.Row, f.Strength, PopulationStatus.ActiveSoldier));
             if (counts.Select(x => x.Source).Distinct(StringComparer.Ordinal).Count() != counts.Count)
                 throw new InvalidOperationException("Duplicate Historical population source.");
             var rows = new List<HistoricalPopulationRow>();
@@ -61,10 +64,22 @@ namespace Statecraft.Sim
         /// are free civilians with no assignment and their reception done (reception.turns), and soldiers serving in their own
         /// formation, with no profession, tier or qualification (#1717 and #1692 add those). Each soldier carries one issued military item, id
         /// <c>units_1948/&lt;row&gt;/&lt;ordinal&gt;</c>, owned and recorded as paid, apart from the spare Arms (#1717, 27M-24).
-        /// mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only: NewGame does not call it (R-POP-002).</summary>
+        /// mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only: the public NewGame does not call it (R-POP-002).</summary>
         internal static GameState LedgerFixture(Content c)
         {
+            var s = new GameState(c) { Mode = Mode.Historical };
+            Initialize(c, s);
+            return s;
+        }
+
+        /// <summary>#1725 PR 5: <see cref="LedgerFixture"/>'s ledger, initialized in place on <paramref name="s"/>, a gdd-0.3
+        /// Historical state with no ledger yet; the dark start (Simulation.NewGame's internal overload) calls it before
+        /// Pools.Init. All or nothing (PopulationLedger.Initialize): a refusal leaves the state as it was.</summary>
+        internal static void Initialize(Content c, GameState s)
+        {
+            if (s == null) throw new ArgumentNullException(nameof(s));
             var inventory = Inventory(c);
+            if (s.Mode != Mode.Historical) throw new InvalidOperationException("The Historical ledger needs a Historical game (R-POP-004).");
             var sources = new HashSet<string>(inventory.Select(r => r.Source), StringComparer.Ordinal);   // only sources with records
             var regions = new SortedDictionary<string, string>(StringComparer.Ordinal);
             foreach (var city in c.Cities)
@@ -112,7 +127,7 @@ namespace Statecraft.Sim
                 r.Status == PopulationStatus.ActiveSoldier ? soldier[r.Source].CombatXp : 0, r.Status == PopulationStatus.ActiveSoldier
                     ? new PopulationEquipment(militaryId: r.Source + "/" + r.Ordinal.ToString(CultureInfo.InvariantCulture), militaryPaid: true)
                     : PopulationEquipment.None)));
-            return PopulationLedger.CreateFixture(c, bindings, rows, mode: Mode.Historical);
+            s.PopulationLedger.Initialize(c, bindings, rows, 0, Mode.Historical);
         }
     }
 }
