@@ -228,20 +228,29 @@ public class WarEvents1948Tests
     }
 
     /// <summary>A game played with no commands at all: under R-ENEMY-007 the untouched player never puts the operation
-    /// brigades in place, so delegated operations postpone and lapse before any card order can be refused.</summary>
+    /// brigades in place, so each delegated operation is postponed (keyed, naming the units to move) and, after its wait,
+    /// lapses (keyed), none is launched, and no card order is ever given, so none is refused. Ten Days, postponed on the
+    /// 15 July 1948 turn, waits mvp.operation_wait_turns turns and lapses inside these 12 turns.</summary>
     [Fact]
     public void AnUntouchedGamePostponesOperationsWithoutIssuingTheirOrders()
     {
         var s = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
         var refused = new List<(int Turn, DateTime Start, Rejection X)>();
+        var why = new List<Cause>();
         for (int turn = 1; turn <= 12; turn++)
         {
             var r = Simulation.Step(C, s, new Command[0]);
             refused.AddRange(r.Rejected.Select(x => (turn, s.Date, x)));
+            why.AddRange(r.Why);
             s = r.State;
         }
         Assert.Empty(refused);
-        Assert.DoesNotContain("operation_hiram", s.ChosenOptions.Keys);
+        foreach (var op in new[] { "ten_days", "operation_yoav", "operation_hiram" })
+        {
+            Assert.Contains(why, x => x.Key == CauseKeys.OperationPostponed && x.Target == op);
+            Assert.DoesNotContain(op, s.ChosenOptions.Keys);
+        }
+        Assert.Contains(why, x => x.Key == CauseKeys.OperationLapsed && x.Target == "ten_days");
     }
 
     /// <summary>Operation Hiram's refused card order: the 7th Brigade (unit 13, R-UNIT-009) to al-Malikiyya (14,4).</summary>
