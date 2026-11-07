@@ -78,6 +78,10 @@ namespace Statecraft.Sim
             if (housing != null) s.Indicators[housing.Id] = EffectsSystem.Level(c, s, housing);   // R-HOUSE-004 from the first day
         }
 
+        /// <summary><see cref="Assign"/>'s refusals that name no city (#2707); the UI maps each to its own string (SimBridge.ReasonText).
+        /// The English is the reason a turn's Rejected list and a save carry, so it does not change. Workshops.Staff shares RefusedNoRole.</summary>
+        public const string RefusedNoRole = "There is no such role", RefusedNegativeWorkers = "The number of workers cannot be negative";
+
         // #2530: a count of 1 names the singular, as the UI's helper does.
         static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
 
@@ -93,8 +97,8 @@ namespace Statecraft.Sim
             // R-CITY-011 (#1700): under gdd-0.3 the "build" role puts builders on the city's projects being built.
             if (role == Projects.BuildRole && c.Ruleset == SaveGame.Gdd03Ruleset) return Projects.AssignBuilders(c, s, city, count, why);
             // Craftsmen fill ordinary job slots (Q-CRAFT-2, R-CRAFT-002), so "job" stays the only role.
-            if (role != "job") return "There is no such role";
-            if (count < 0) return "The number of workers cannot be negative";
+            if (role != "job") return RefusedNoRole;
+            if (count < 0) return RefusedNegativeWorkers;
             if (count > MaxWorkers(s, x))
                 return count > x.JobSlots
                     ? FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.JobSlots} jobs")

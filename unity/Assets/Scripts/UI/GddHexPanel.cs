@@ -495,7 +495,7 @@ namespace Statecraft.Game.UI
             else if (Workshops.NextCyclePrice(c, s, project.Id) is decimal next)
                 Line(host, "city-workshop-cycle", text.Format("city.workshop_next", PlayerText.Money(c, "treasury", (double)next)));
             if (Cities.Held(c, s).Contains(city)) Line(host, "city-workshop-held", text.Format("city.workshop_held", townName(city)));
-            var paused = (bridge.Session.Last?.Why ?? Array.Empty<Cause>()).Where(x => x.Key == CauseKeys.WorkshopPaused && x.Target == city)
+            var paused = (bridge.Session.Last?.Why ?? Array.Empty<Cause>()).Where(x => x.Key == CauseKeys.WorkshopPaused && x.Target == city && x.Args.Count > 1 && x.Args[1] == project.Id.ToString(CultureInfo.InvariantCulture))
                 .Select(x => CauseText.Line(x, c, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text, bridge.TownNamesHe)).Distinct().ToList();
             for (int i = 0; i < paused.Count; i++) Line(host, "city-workshop-paused-" + i.ToString(CultureInfo.InvariantCulture), paused[i]);
         }
