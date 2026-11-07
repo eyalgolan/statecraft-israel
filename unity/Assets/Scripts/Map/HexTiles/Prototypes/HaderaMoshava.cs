@@ -13,7 +13,8 @@ namespace Statecraft.HexTiles.Prototypes
     /// - The Khan, low-key, beside the plaza: the mid-1800s sandstone farmstead in a U round a courtyard, bought in 1891,
     ///   where the first settlers lived (https://shimur.org/sites/khan-museum-hadera/?lang=en, checked 2026-10-19). Three
     ///   stone stand-in blocks round a painted courtyard that opens to the street.
-    /// - Dense eucalyptus groves on both flanks: Rothschild's agency planted eucalyptus here from 1895 to 1896 to drain the
+    /// - Eucalyptus groves, capped at 12 trees that fill from the inland edge first: Rothschild's agency planted
+    ///   eucalyptus here from 1895 to 1896 to drain the
     ///   swamps (https://kkl-jnf.org/hiking_and_walking_tracks/hadera-forest-hiking/ and
     ///   https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/haderah, checked 2026-10-19).
     ///   Each is Tal Heuberger's shipped railway-halt eucalyptus (tiles:railway_halt/eucalyptus): one eucalyptus everywhere,

@@ -23,7 +23,8 @@ namespace Statecraft.HexTiles.Prototypes
     /// 0.38 S), not to the hex centre, so two like hexes continue one field grid across their shared edge. The crop of a
     /// block comes from its lattice indices (a planned rotation, not random), so a block cut by an edge gets the same crop
     /// on both sides. North-south lines alternate between farm roads and irrigation channels; the channel lines carry
-    /// windbreaks (cypress and eucalyptus alternating), and every third east-west line carries a eucalyptus windbreak.
+    /// windbreaks (cypress and eucalyptus alternating). The single eucalyptus sits on the first channel slot, so the
+    /// east-west lines get none.
     /// Tall pieces keep out of ctx.InUnitSpot and off the farmstead yard.
     ///
     /// The eucalyptus is Tal Heuberger's shipped railway-halt tree (tiles:railway_halt/eucalyptus): one eucalyptus
