@@ -1171,16 +1171,27 @@ namespace Statecraft.Game.Map.Collection
             // disc of its half diagonal, as TownBuildings), on both sides of the switch.
             var home = map.KitFootprints.First(f => f.id == city);
             float extent = home.radius * Kits.SettlementKits.PlotReach + EdgeGapM + 3f * clearance;
+            // In the camera's sight past them too, as past the kit blocks (InSight; each model its fitted box up to Ground + H,
+            // SettlementKits.ModelInstance).
             var models = new List<(Vector2 centre, float radius)>();
+            var modelSight = new List<SightBlock>();
             var layer = map.GetComponentInChildren<Kits.TownModelLayer>(true);
             if (layer != null)
                 foreach (var f in map.KitFootprints)
                 {
                     if ((f.centre - home.centre).magnitude > extent + f.radius * Kits.SettlementKits.PlotReach) continue;
-                    foreach (var b in layer.InstancesOf(f.id)) models.Add((b.C, 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D)));
+                    foreach (var b in layer.InstancesOf(f.id))
+                    {
+                        models.Add((b.C, 0.5f * Mathf.Sqrt(b.W * b.W + b.D * b.D)));
+                        modelSight.Add(new SightBlock(f.id, b.C, b.Yaw, b.W, b.D, b.Ground + b.H));
+                    }
                 }
-            return EdgeSpotOf(map, ground, city, key, anchor, clearance, size, blocks, 0f, "its kit blocks",
-                new[] { new SpotCheck("models", (p, r) => TownLandmarks.Clear(p, r, models)) }, free, out tally);
+            float tan = SightTan;
+            return EdgeSpotOf(map, ground, city, key, anchor, clearance, size, blocks, 0f, "its kit blocks", new[]
+            {
+                new SpotCheck("models", (p, r) => TownLandmarks.Clear(p, r, models)),
+                new SpotCheck("model sight", (p, r) => InSight(p, 0f, size, ground.Y(p.x, p.y) + WorkshopTopShare * size, modelSight, tan)),
+            }, free, out tally);
         }
 
         /// <summary>#2876 (coordinator, 6 November 2026: at 2.5x a crowded town's own hex can leave the b21 no spot, Petah
