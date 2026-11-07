@@ -23,7 +23,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// 0.38 S), not to the hex centre, so two like hexes continue one field grid across their shared edge. The crop of a
     /// block comes from its lattice indices (a planned rotation, not random), so a block cut by an edge gets the same crop
     /// on both sides. North-south lines alternate between farm roads and irrigation channels; the channel lines carry
-    /// windbreaks (cypress and eucalyptus alternating). The single eucalyptus sits on the first channel slot, so the
+    /// windbreaks (cypress and eucalyptus alternating). The single eucalyptus sits on the first free channel slot, so the
     /// east-west lines get none.
     /// Tall pieces keep out of ctx.InUnitSpot and off the farmstead yard.
     ///
@@ -96,7 +96,7 @@ namespace Statecraft.HexTiles.Prototypes
             }
 
             // 4. Windbreaks on world-anchored spots: along each north-south channel line (cypress and eucalyptus in turn),
-            //    and along every third east-west line (eucalyptus). Out of the unit spot, the yard and the crossings.
+            //    and, only if no channel slot took the one eucalyptus, along an east-west line. Out of the unit spot, the yard and the crossings.
             int cypress = 0, eucalyptus = 0;
             for (int i = i0; i <= i1; i++)
             {
