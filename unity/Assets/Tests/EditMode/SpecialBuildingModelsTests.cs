@@ -1496,9 +1496,11 @@ namespace Statecraft.Game.Tests
         /// census footprint, Placed.C, Yaw, W, D) from the ground up to its wall top (the highest of the ground at its corners
         /// and centre, where the kit stands it, plus Placed.H). Also, again: each workshop gets a spot (on or off its hex: owner,
         /// 6 November 2026, "make the workshop at the edge of the city"), clear of the blocks, drawn where it was planned, and the
-        /// plan is the same when made twice. Every city's failures are listed together, by city.</summary>
+        /// plan is the same when made twice. Every city's failures are listed together, by city. Since the owner's ruling of
+        /// 7 November 2026, "Tal's models close (Recommended)", the city draws Tal Heuberger's building models below the close
+        /// switch, so no building model (each its fitted box, <see cref="HiddenByModels"/>) may hide the top either.</summary>
         [Test]
-        public void AWorkshopInAMajorCityIsInTheCamerasSightPastItsKitBlocks()
+        public void AWorkshopInAMajorCityIsInTheCamerasSightPastItsKitBlocksAndModels()
         {
             var map = OpenMap();
             var c = Rules(Statecraft.Sim.SaveGame.Gdd03Ruleset);
@@ -1545,8 +1547,39 @@ namespace Statecraft.Game.Tests
                 TestContext.WriteLine(FormattableString.Invariant(
                     $"{key} ({city}): at {at}, {off:0} m from its hex centre{(street ? $", on a street at {yaw:0} deg" : "")}, top {mb.max.y:0} m; {hidden} of 25 points on its top hidden at {Shallowest:0.0} deg"));
                 if (hidden > 0) failures.Add($"{city}: {key}: {hidden} of 25 points on its top are hidden from the camera at {Shallowest:0.0} deg; first: {first}");
+                // Below the close switch the city draws Tal Heuberger's building models in place of its blocks (owner, 7 November
+                // 2026, "Tal's models close (Recommended)"): none of them may hide the b21's top either.
+                var (byModels, firstModel) = HiddenByModels(map, at, yaw, size, mb.max.y, toCamera);
+                TestContext.WriteLine(FormattableString.Invariant($"{key} ({city}): {byModels} of 25 points on its top hidden by a building model"));
+                if (byModels > 0) failures.Add($"{city}: {key}: {byModels} of 25 points on its top are hidden by a building model at {Shallowest:0.0} deg; first: {firstModel}");
             }
             Assert.IsEmpty(failures, string.Join("\n", failures));
+        }
+
+        /// <summary>As <see cref="HiddenOnTop"/>, against the town building models as placed at map build (TownModelLayer.InstancesOf
+        /// of every footprint within 20 km, each its fitted box from its ground to Ground + H, SettlementKits.ModelInstance).</summary>
+        static (int hidden, string? first) HiddenByModels(MapScene map, Vector2 at, float yaw, float size, float top, Vector3 toCamera)
+        {
+            var layer = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
+            Assert.IsNotNull(layer, "the town layer");
+            var models = map.KitFootprints.Where(f => (f.centre - at).magnitude < 20000f + f.radius * 2f).SelectMany(f => layer!.InstancesOf(f.id)).ToList();
+            float ya = yaw * Mathf.Deg2Rad, half = 0.49f * size;
+            var su = new Vector2(Mathf.Cos(ya), Mathf.Sin(ya)); var sv = new Vector2(-su.y, su.x);
+            int hidden = 0; string? first = null;
+            for (int i = 0; i < 5; i++)
+                for (int j = 0; j < 5; j++)
+                {
+                    var p2 = at + su * (half * (i / 2f - 1f)) + sv * (half * (j / 2f - 1f));
+                    var q = new Vector3(p2.x, top, p2.y);
+                    foreach (var b in models)
+                    {
+                        if (!RayMeetsBox(q, toCamera, b.C, b.Yaw, b.W, b.D, b.Ground + b.H)) continue;
+                        hidden++;
+                        first ??= FormattableString.Invariant($"{b.Id}'s {b.Model} at {b.C} ({b.W:0} x {b.D:0} m, {b.Yaw:0} deg, top {b.Ground + b.H:0} m) hides its top at {q}");
+                        break;
+                    }
+                }
+            return (hidden, first);
         }
 
         /// <summary>The view's shallowest ray's depression (degrees): the screen's top edge, CameraRig.Pitch - Fov / 2.</summary>
