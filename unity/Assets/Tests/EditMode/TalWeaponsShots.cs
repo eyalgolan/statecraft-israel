@@ -57,7 +57,6 @@ public class TalWeaponsShots
         var weapons = TalModelsShots.Answer(after ? Array.Empty<string>() : New);
         UnitWeapons.Source = (id, done) => weapons(id, CollectionDetail.Far, done);
         yield return CivMovementShots.Boot(hebrew, saveDir, (t, p, u, g) => { rt = t; ps = p; root = g; });
-        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
         var map = Object.FindFirstObjectByType<MapScene>();
         // The subject: Harel's token for the Sten (its third figure is the Palmach scout), else the first token with a sim
         // unit whose figures include C06 (the steel helmet), by id.

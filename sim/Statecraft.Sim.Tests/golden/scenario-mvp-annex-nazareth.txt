@@ -49,6 +49,7 @@ stab=0.626287693608005 [3FE40A8C7D3DE075]
 att=4 [4010000000000000]
 fired[
   altalena
+  armistice_egypt
   bernadotte_assassination
   degania_defence
   elections_1949
@@ -65,6 +66,7 @@ fired[
   sinai_withdrawal
   ten_days
 pending[
+  armistice_egypt
 chosen{
   altalena=enforce
   bernadotte_assassination=outlaw

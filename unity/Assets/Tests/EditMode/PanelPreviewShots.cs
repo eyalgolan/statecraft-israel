@@ -82,6 +82,7 @@ public class PanelPreviewShots
     IEnumerator Boot(bool hebrew, Action<GameSession> shape)
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        ShotCamera.Configure(Camera.main, Width, Height);
         var doc = Object.FindFirstObjectByType<UIDocument>();
         // The UI goes into a transparent texture and Shot puts it over the map camera's frame, as CivMovementShots does.
         rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
@@ -143,6 +144,7 @@ public class PanelPreviewShots
     void Shot(string name)
     {
         var cam = Camera.main;
+        ShotCamera.Require(cam, Width, Height);
         var frame = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         var before = cam.targetTexture;
         cam.targetTexture = frame; cam.Render(); cam.targetTexture = before;

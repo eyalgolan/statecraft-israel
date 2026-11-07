@@ -61,6 +61,17 @@ for pose in $poses; do
   [[ -s "$out/$pose.png" ]] || { echo "art_checkpoint: $out/$pose.png is missing" >&2; exit 1; }
 done
 shared "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget OSXUniversal -executeMethod MapCapture.Promo -captureDir "$root/$out/editor" ${units_arg[@]+"${units_arg[@]}"} ${proof_arg[@]+"${proof_arg[@]}"} -logFile "$root/unity-capture-promo.log"
+# The editor renders are one PNG per quality tier and PromoPose.All pose (MapCapture.Promo, named <tier>-<pose>.png). art_compare
+# only measures the files it finds, so a missing render would pass unseen here (#2697): fail on any that is absent or empty.
+tiers=$(grep -E '^    name: ' unity/ProjectSettings/QualitySettings.asset | sed 's/^    name: //')
+all_poses=$(grep -E 'PromoPose> All ' unity/Assets/Scripts/Map/PromoPose.cs | sed -E 's/.*new\[\] \{ *(.*[^ ]) *\}.*/\1/' | tr -d ',')
+[[ -n "$tiers" && -n "$all_poses" ]] || { echo "art_checkpoint: no quality tier or no PromoPose.All found" >&2; exit 1; }
+for tier in $tiers; do
+  for ident in $all_poses; do
+    pose=$(grep -oE "PromoPose $ident = new PromoPose\(\"[A-Za-z0-9_]*\"" unity/Assets/Scripts/Map/PromoPose.cs | cut -d'"' -f2)
+    [[ -s "$out/editor/$tier-$pose.png" ]] || { echo "art_checkpoint: the editor render $out/editor/$tier-$pose.png is missing" >&2; exit 1; }
+  done
+done
 git checkout -- unity/ProjectSettings/QualitySettings.asset   # SetQualityLevel may have written m_CurrentQuality (no unstaged edits: checked above)
 # art_compare's exit codes (tools/art_compare.py): 0 passed; 1 no screenshot matched a pose, or a crash; 2 a blank
 # capture; 3 a material guard FAIL (#695: the art is off its promo-02 band); 4 a material too rare to measure. 1, 2 and 4

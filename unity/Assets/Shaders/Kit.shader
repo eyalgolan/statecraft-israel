@@ -1,7 +1,8 @@
-// Settlement kits and trees (art spike, issues #31 #32 #34 #37). Vertex colour is the sRGB albedo; its alpha picks a
-// facade's window pattern (KitMesh.Facade), drawn from uv0 = the wall's (along, up) position in real metres, so storeys and
-// windows keep real proportions on symbolic-size buildings, box-filtered so they fade to their mean instead of shimmering
-// when a storey is a pixel or two. Lit like the terrain (the sun with its shadows, the trilight ambient through SH; in shade
+// Settlement kits and trees (art spike, issues #31 #32 #34 #37; atlas, #2428). Vertex colour is the sRGB albedo; its alpha
+// picks the surface (KitMesh.Facade): a layer of the one shared atlas (_KitAtlas, Art/Kits/kit_atlas.png as a 2D array), which
+// multiplies the vertex colour, at uv0 (cells; a facade's v is storeys). So storeys, tile rows and courses keep real
+// proportions on symbolic-size buildings, and the atlas's mipmaps fade them to their mean instead of shimmering when a
+// storey is a pixel or two. The atlas is albedo only: this shader does all the light. Lit like the terrain (the sun with its shadows, the trilight ambient through SH; in shade
 // the ambient also takes a sun-warm bounce, KitBounce, so a face keeps its own colour) and
 // hazed with the terrain's own ScHazeAmount, so kits sit in the same air as the ground. GPU instancing for the trees, with a
 // per-instance tint hashed from the instance's origin (no per-instance buffer: WebGL 2 has instanced arrays only).
@@ -13,8 +14,7 @@ Shader "Statecraft/Kit"
     {
         _BaseColor ("Tint", Color) = (1, 1, 1, 1)
         _Jitter ("Per-instance tint jitter", Range(0, 0.5)) = 0
-        _WindowDark ("Window darkness", Range(0, 1)) = 0.55
-        _CityWindowDark ("White City window darkness", Range(0, 1)) = 0.95
+        [NoScaleOffset] _KitAtlas ("Town kit atlas (one Texture2DArray)", 2DArray) = "white" {}
     }
     SubShader
     {
@@ -23,7 +23,7 @@ Shader "Statecraft/Kit"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         CBUFFER_START(UnityPerMaterial)
             half4 _BaseColor;
-            half _Jitter, _WindowDark, _CityWindowDark;
+            half _Jitter;
         CBUFFER_END
         ENDHLSL
 
@@ -67,30 +67,10 @@ Shader "Statecraft/Kit"
             // How much of the ambient in full shade is the sun's bounce (kit shadow colour, refs #32).
             static const half KitBounce = 0.6;
 
-            // A 1D band [a, b] of a period-1 pattern, box-filtered over the pixel's footprint w (in periods).
-            float Band(float x, float a, float b, float w)
-            {
-                float lo = saturate((frac(x) - a) / max(w, 1e-4) + 0.5), hi = saturate((frac(x) - b) / max(w, 1e-4) + 0.5);
-                return lo - hi;
-            }
+            TEXTURE2D_ARRAY(_KitAtlas); SAMPLER(sampler_KitAtlas);
 
-            // Window mask (1 = glass) and its mean over a whole storey, for each facade style.
-            float Windows(float style, float2 uv, float2 fw, out float mean)
-            {
-                float storey = 3.3, bay = style > 0.75 ? 2.0 : (style > 0.4 ? 4.2 : 3.0);
-                float wv = fw.y / storey, wu = fw.x / bay;
-                float a0, a1, b0, b1;
-                if (style > 0.75) { a0 = 0.36; a1 = 0.86; b0 = 0.12; b1 = 0.84; }        // white city: tall wide windows, plaster piers between
-                else if (style > 0.4) { a0 = 0.40; a1 = 0.72; b0 = 0.38; b1 = 0.62; }   // village / moshava: a few small windows
-                else { a0 = 0.36; a1 = 0.74; b0 = 0.34; b1 = 0.64; }                    // stone: arched-height windows
-                mean = (a1 - a0) * (b1 - b0);
-                float m = Band(uv.y / storey, a0, a1, wv) * Band(uv.x / bay, b0, b1, wu);
-                // Fade to the mean once a storey is under about three pixels: no moire at the gameplay zoom. The White City's
-                // storeys hold until about two pixels (the box filter keeps them clean there), so its 30 km look keeps its
-                // window rows (settlements quick wins, #31).
-                float hold = style > 0.75 ? saturate(2.2 - wv * 4.4) : saturate(1.5 - wv * 3.0);
-                return lerp(mean, m, hold) * step(0.0, uv.y);
-            }
+            // The surfaces up to this one are facades: one ground storey under three that repeat (make_kit_atlas.py).
+            static const float KitFacades = 5.0, KitFacadeRows = 4.0;
 
             half4 Frag(Varyings i) : SV_Target
             {
@@ -100,25 +80,24 @@ Shader "Statecraft/Kit"
                 float t = i.tint - 0.5;
                 albedo *= 1.0 + _Jitter * t * 2.0;
                 albedo.r *= 1.0 + _Jitter * (frac(i.tint * 7.31) - 0.5);
-                float style = i.color.a;
-                float2 fw = fwidth(i.uv);   // outside the branch: derivatives need uniform control flow
-                if (style > 0.1)
+                float surface = round(i.color.a * 15.0);   // KitMesh.Facade: the atlas layer + 1, or 0 for no cell
+                // Outside the branch: derivatives need uniform control flow.
+                float2 dx = ddx(i.uv), dy = ddy(i.uv);
+                if (surface > 0.5)
                 {
-                    float mean;
-                    float glass = Windows(style, i.uv, fw, mean);
-                    // White-city balconies: a lighter slab line and its shadow under it, every storey.
-                    if (style > 0.75)
+                    float2 uv = i.uv;
+                    if (surface < KitFacades + 0.5)
                     {
-                        float fv = fw.y / 3.3;
-                        float slab = Band(i.uv.y / 3.3, 0.28, 0.36, fv), under = Band(i.uv.y / 3.3, 0.36, 0.42, fv);
-                        float fade = saturate(2.2 - fv * 4.4);
-                        albedo *= 1.0 + 0.10 * lerp(0.08, slab, fade) - 0.45 * lerp(0.06, under, fade);
+                        // Storeys up the wall to rows of the cell: the ground storey once, then the upper three over and over; a
+                        // wall's buried part stays on the plinth band at the cell's foot.
+                        float storeys = uv.y;
+                        float row = storeys < 0.0 ? 0.01 : storeys < 1.0 ? storeys : 1.0 + fmod(storeys - 1.0, KitFacadeRows - 1.0);
+                        uv.y = row / KitFacadeRows;
+                        dx.y /= KitFacadeRows; dy.y /= KitFacadeRows;
+                        // Contact darkening in the bottom real 3 m of a wall.
+                        albedo *= lerp(0.72, 1.0, saturate(storeys * 3.3 / 3.0));
                     }
-                    // The White City's ribbon windows sit deep under the balcony slabs and read near black in promo 03
-                    // (settlements quick wins, #31); the stone and village windows keep the shared darkness.
-                    albedo *= 1.0 - (style > 0.75 ? _CityWindowDark : _WindowDark) * glass;
-                    // Contact darkening in the bottom real 3 m of a wall.
-                    albedo *= lerp(0.72, 1.0, saturate(i.uv.y / 3.0));
+                    albedo *= SAMPLE_TEXTURE2D_ARRAY_GRAD(_KitAtlas, sampler_KitAtlas, uv, surface - 1.0, dx, dy).rgb;
                 }
                 Light sun = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 float ndl = saturate(dot(n, sun.direction));

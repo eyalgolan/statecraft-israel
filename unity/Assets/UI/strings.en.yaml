@@ -846,6 +846,9 @@ city.workshops_staffed: "Arms workshops staffed: {0} of {1}"
 city.workshops_ordered: "Arms workshops staffed at End turn: {0} of {1}"
 city.workshop_staffed: "This workshop: staffed"
 city.workshop_unstaffed: "This workshop: not staffed, paused"
+# #2711 item 1: with a staffing order queued, what the order makes this workshop (R-ARMS-005: the first n by id).
+city.workshop_ordered_staffed: "This workshop: staffed at End turn"
+city.workshop_ordered_unstaffed: "This workshop: not staffed at End turn, paused"
 city.workshop_cycle: "Cycle: {0} of {1} staffed months · paid {2}"
 city.workshop_next: "No cycle under way · next cycle: {0}"
 city.workshop_held: "Paused: the enemy holds {0}"
@@ -1073,6 +1076,8 @@ arms.no_attention: "Not enough Attention for this purchase. Withdraw another ord
 # end-of-turn toast.
 arms.refused_debt_ceiling: "Buying that many Arms would take the debt past its ceiling"
 arms.refused_stock_capacity: "That is more Arms than the stock can hold"
+# #2707: Pools.BuyArms's refusal below one Arms, word for word.
+arms.refused_count: "Buy at least 1 Arms"
 
 # #731 stock summaries in the report and Why.
 report.stock_line: "{0}: {1}"
@@ -1090,6 +1095,44 @@ unit.order_refused.card_order: "The unit could not take the operation's order"
 # An operation card's go-to held back from the last Israeli unit on an occupied place (R-ENEMY-005, R-CTRL-013; owner,
 # 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)").
 unit.order_refused.last_garrison: "The unit stays: it is the last Israeli unit holding an occupied place"
+
+# #2707: the move's and the go-to's refusals (Movement), Send home's with no armistice (Demobilization) and the reserve
+# call-up's range (SecuritySystem), shown in the toast. Each English line is the sim's own text; {0} is the number of
+# units the hex already holds.
+unit.move_refused.no_hex: "A route names a hex"
+unit.move_refused.cannot_move: "That unit cannot move"
+unit.move_refused.already_there: "That unit is already there"
+unit.move_refused.off_land: "Units cannot enter water or leave the map"
+unit.move_refused.enemy_hex: "An enemy unit holds that hex"
+unit.move_refused.closed: "Units may not enter an enemy-held locality before its capture is possible"
+unit.move_refused.no_route: "No route reaches that hex"
+unit.move_refused.out_of_reach: "That hex is out of reach this turn"
+unit.move_refused.full: "That hex already holds {0} units of that side, the most one hex can hold"
+unit.send_home_refused.no_armistice: "No armistice is signed"
+defence.refused_mobilization: "Mobilization must be between 0 and 1"
+
+# #2707, batch 2: the sim's own text, word for word.
+city.assign_refused.no_role: "There is no such role"
+city.assign_refused.negative: "The number of workers cannot be negative"
+city.qualification_refused.return_count: "Return at least one group"
+city.qualification_refused.reassign_count: "Reassign at least one group"
+city.qualification_refused.no_qualification: "There is no such qualification"
+unit.order_refused.not_pioneer: "Only a pioneer unit takes that order"
+unit.order_refused.pioneer_busy: "That unit is at work; stop the work first"
+training.cancel_refused.no_group: "There is no such training group"
+site.refused.not_halutz: "Only halutzim do pioneer work"
+site.refused.no_work: "There is no such pioneer work"
+site.refused.no_site: "There is no such site"
+site.refused.not_building: "That group of halutzim is not building anything"
+city.project_reason.no_project: "There is no such city project"
+corridor.refused.no_segment: "There is no such corridor segment"
+budget.refused.required: "Budget shares are required"
+budget.refused.ministry: "The budget names a ministry that does not exist in this game"
+budget.refused.finite: "Budget shares must be finite numbers"
+budget.refused.every_ministry: "The budget must give a share to every ministry, and only to them"
+budget.refused.sum: "Budget shares must sum to 1"
+budget.refused.negative: "Budget shares cannot be negative"
+unit.order_refused.names_no_hex: "That order names no hex"
 
 # #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. Each
 # English line is the sim's own text; {0}, {1}... are the values it fills in.

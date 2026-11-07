@@ -24,6 +24,16 @@ namespace Statecraft.Sim
         /// <summary>The command kind that buys Arms with Money (R-ARMS-002).</summary>
         public const string BuyArmsKind = "buy_arms";
 
+        /// <summary>R-FOOD-001: the loader's ceiling on cover_months, ten years of need, longer than the about 104 months the game can
+        /// run (eras.yaml, 15 May 1948 to 1 January 1957). The stock is an int, so a ceiling keeps cover_months times the need
+        /// from wrapping: it would take a need of 17.9 million population units (#2804 item 5).</summary>
+        public const int MaxCoverMonths = 120;
+
+        /// <summary>R-FIELD-002: the loader's ceiling on field_food_per_turn. Even at the top farmer tier's 5 times it
+        /// (R-VET-002) and SaveGame.MaxTurns turns, that is 10 million Food a field, so an int stock holds 214 such fields
+        /// (#2804 item 5).</summary>
+        public const int MaxFieldFoodPerTurn = 1000;
+
         /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level.</summary>
         public static void Init(Content c, GameState s)
         {
@@ -39,6 +49,9 @@ namespace Statecraft.Sim
         /// <summary>R-ARMS-002's refusal at the debt ceiling (#2198); SimBridge.ReasonKeys gives it the UI's words.</summary>
         public const string RefusedDebtCeiling = "Buying that many Arms would take the debt past its ceiling";
 
+        /// <summary>R-ARMS-002's refusal for fewer than one Arms (#2707: a constant, for the UI's string).</summary>
+        public const string RefusedCount = "Buy at least 1 Arms";
+
         /// <summary>R-ARMS-002's refusal when a purchase would overflow the Arms stock.</summary>
         public const string RefusedStockCapacity = "That is more Arms than the stock can hold";
 
@@ -51,7 +64,7 @@ namespace Statecraft.Sim
         public static string? BuyArms(Content c, GameState s, int count, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
-            if (count < 1) return "Buy at least 1 Arms";
+            if (count < 1) return RefusedCount;
             if ((long)s.Arms + count > int.MaxValue) return RefusedStockCapacity;
             if (BorrowsPastDebtCeiling(c, s, count)) return RefusedDebtCeiling;
             var cost = count * c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value;
