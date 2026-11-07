@@ -268,6 +268,32 @@ public class HebrewUiTests
         }
     }
 
+    // #2707 batch 4 review: the Cabinet queue preview's fallback (a refusal the screen's own CheckReason does not give back,
+    // CabinetPresenter.PreviewReason) passes the turn's date, so an office in it reads by its Hebrew title. Red-first at
+    // 582c108fc: no date, so the office kept its English title. The refusal is a queued appointment's "already holds", as the
+    // press could break it; private, so it is reached by reflection, like CabinetPreviewShots reaches the screen.
+    [Test]
+    public void TheCabinetPreviewsFallbackRefusalNamesTheOfficeInHebrew()
+    {
+        using var ui = new UiTestKit();
+        var c = Inputs.Content;
+        var bridge = new SimBridge(Statecraft.Sim.GameSession.New(c, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical), He);
+        using var cabinet = new CabinetPresenter(ui.Root, bridge, He, null);
+        var date = bridge.State.Date;
+        var seat = Statecraft.Sim.Cabinet.Lineup(c, bridge.State)
+            .First(x => x.Holder != null && x.Holder.NameHe != "" && !x.Office.SeveralHolders && x.Office.TitleHeOn(x.Holder, date) != "");
+        var holder = seat.Holder!;
+        var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, Statecraft.Sim.Cabinet.RefusedAlreadyHolds, holder.Name, seat.Office.Title);
+        var preview = Statecraft.Sim.Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.ToList());
+        var other = c.People.First(p => Statecraft.Sim.Cabinet.Check(c, preview.State, seat.Office.Id, p.Id) != reason);   // so the fallback runs
+        var rejection = new Statecraft.Sim.Rejection(new Statecraft.Sim.Appoint(seat.Office.Id, other.Id), reason);
+        var method = typeof(CabinetPresenter).GetMethod("PreviewReason", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var text = (string)method!.Invoke(cabinet, new object[] { c, rejection, preview });
+        Assert.AreEqual(He.Format("cabinet.reason.already_holds", ContentNames.Of(He, holder), ContentNames.Of(He, seat.Office, holder, date)), text);
+        StringAssert.Contains(seat.Office.TitleHeOn(holder, date), text, "the office by its Hebrew title");
+        StringAssert.DoesNotMatch("[A-Za-z]", text);
+    }
+
     [Test]
     public void TheGameIsEnglishUnlessHebrewIsAskedFor()
     {
