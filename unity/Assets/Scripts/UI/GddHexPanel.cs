@@ -467,7 +467,8 @@ namespace Statecraft.Game.UI
         /// city's first n built workshops in ascending id, so the stepper is the city's count (Workshops.Staffed, or the queued
         /// order's) of Workshops.Built; stepping back to the current count withdraws the order. + is off where Workshops.Check,
         /// asked with this turn's queue, refuses one more, and while a workshop is left unstaffed that refusal shows in the UI's
-        /// language (SimBridge.ReasonText). This workshop: staffed or not (its Workshop record), its cycle under way (staffed
+        /// language (SimBridge.ReasonText). This workshop: staffed or not (its Workshop record, or with an order queued what the
+        /// order makes it, Workshops.Staffs), its cycle under way (staffed
         /// months of Workshops.CycleMonths and the Money paid) or, staffed before or not, the next cycle's price
         /// (Workshops.NextCyclePrice, what the production step would charge), the pause while the enemy holds its city
         /// (Cities.Held, R-CITY-010), and the last turn's pauses for its city as the Why screen words them
@@ -489,7 +490,10 @@ namespace Statecraft.Game.UI
             if (refusal != null && target < built) Line(host, "city-workshops-reason", SimBridge.ReasonText(text, refusal, c, bridge.TownNamesHe));
 
             s.Workshops.TryGetValue(project.Id, out var w);
-            Line(host, "city-workshop-state", text[w?.Staffed == true ? "city.workshop_staffed" : "city.workshop_unstaffed"]);
+            // #2711 item 1: with an order queued, the line follows it as the count above does (Workshops.Staffs), not the record.
+            Line(host, "city-workshop-state", text[queued != null
+                ? (Workshops.Staffs(c, s, project, target) ? "city.workshop_ordered_staffed" : "city.workshop_ordered_unstaffed")
+                : w?.Staffed == true ? "city.workshop_staffed" : "city.workshop_unstaffed"]);
             if (w != null && w.PaidCost is decimal paid)
                 Line(host, "city-workshop-cycle", text.Format("city.workshop_cycle", w.Progress, Workshops.CycleMonths(c)!.Value, PlayerText.Money(c, "treasury", (double)paid)));
             else if (Workshops.NextCyclePrice(c, s, project.Id) is decimal next)
