@@ -123,6 +123,13 @@ namespace Statecraft.Sim
         /// (D-D6).</summary>
         public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit) || Corridors.WorkOf(s, unit) != null;
 
+        /// <summary><see cref="Start"/>'s and <see cref="Stop"/>'s refusals that name nothing (#2707), and CancelCity's; the unit one is
+        /// Orders.RefusedNoUnit. The UI maps each to its own string (SimBridge.ReasonText); the English is what a Rejected list and a
+        /// save carry, so it does not change.</summary>
+        public const string RefusedNotHalutz = "Only halutzim do pioneer work", RefusedNoWork = "There is no such pioneer work",
+            RefusedNoSite = "There is no such site", RefusedNotBuilding = "That group of halutzim is not building anything",
+            RefusedNoCityProject = "There is no such city project";
+
         /// <summary>R-SITE-001: an idle halutz unit starts <paramref name="action"/> (build_yishuv) at a yishuv site that has no
         /// record. The Treasury pays build_yishuv_cost now and borrows what it lacks; the site gets build_yishuv_turns to go; the unit
         /// does not move. Refused, state untouched, for an unknown unit, a unit that is not a halutz or is busy, an unknown
@@ -135,16 +142,16 @@ namespace Statecraft.Sim
         public static string? Start(Content c, GameState s, int unit, string action, string site, List<Cause> why)
         {
             if (!s.Units.TryGetValue(unit, out var u)) return "There is no such unit";
-            if (!IsPioneer(u.Type)) return "Only halutzim do pioneer work";
+            if (!IsPioneer(u.Type)) return RefusedNotHalutz;
             var busy = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
             if (busy != null) return $"That group of halutzim is already building {PlayerText.Site(c, busy.Site)}";
             if (Corridors.WorkOf(s, unit) is var (cw, ci))
                 return $"That group of halutzim is already building {Corridors.SegmentName(c.Corridors.First(x => x.Id == cw.Id), ci)}";
             // Phase 4 PR 2 (#786): build_road and build_rail take a corridor segment, "corridor:N" (R-COR-001).
             if (Corridors.IsAction(action)) return Corridors.Start(c, s, unit, action, site, why);
-            if (action != BuildYishuv && action != BuildCamp && action != PlowFields && action != DrySwamp) return "There is no such pioneer work";
+            if (action != BuildYishuv && action != BuildCamp && action != PlowFields && action != DrySwamp) return RefusedNoWork;
             var place = c.Sites.FirstOrDefault(x => x.Id == site);
-            if (place == null) return "There is no such site";
+            if (place == null) return RefusedNoSite;
             var camp = action == BuildCamp;
             var plow = action == PlowFields;
             var drain = action == DrySwamp;
@@ -202,7 +209,7 @@ namespace Statecraft.Sim
         {
             if (!s.Units.ContainsKey(unit)) return "There is no such unit";
             var work = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
-            if (work == null) return Corridors.Stop(c, s, unit, why) ? null : "That group of halutzim is not building anything";
+            if (work == null) return Corridors.Stop(c, s, unit, why) ? null : RefusedNotBuilding;
             s.Sites.Remove(work.Site);
             why.Add(new Cause("map", work.Site, -1, $"{PlayerText.Site(c, work.Site)}: the halutzim stopped building; the Money spent is not returned", key: CauseKeys.SiteCancelled));
             return null;
@@ -404,7 +411,7 @@ namespace Statecraft.Sim
         /// exist or is built. Step has already refused it in the legacy loop.</summary>
         public static string? CancelCity(Content c, GameState s, int project, List<Cause> why)
         {
-            if (!s.CityProjects.TryGetValue(project, out var p)) return "There is no such city project";
+            if (!s.CityProjects.TryGetValue(project, out var p)) return RefusedNoCityProject;
             var k = c.ProjectKinds.First(x => x.Id == p.Kind);
             if (p.BuiltOn != null) return $"{PlayerText.Capitalised(k.Name)} is already built";
             s.CityProjects.Remove(project);
@@ -425,7 +432,7 @@ namespace Statecraft.Sim
         /// people. Cities.Assign has already refused an unknown city.</summary>
         internal static string? AssignBuilders(Content c, GameState s, string city, int count, List<Cause> why)
         {
-            if (count < 0) return "The number of workers cannot be negative";
+            if (count < 0) return Cities.RefusedNegativeWorkers;
             var x = s.Cities[city];
             var name = PlayerText.Settlement(c, city);
             var building = s.CityProjects.Values.Where(p => p.City == city && p.BuiltOn == null).OrderBy(p => p.Id).ToList();

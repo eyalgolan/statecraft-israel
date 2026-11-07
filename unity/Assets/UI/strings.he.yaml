@@ -1342,6 +1342,29 @@ unit.move_refused.full: "במשבצת כבר יש {0} יחידות של הצד �
 unit.send_home_refused.no_armistice: "עדיין לא נחתם הסכם שביתת נשק"
 defence.refused_mobilization: "שיעור גיוס המילואים חייב להיות בין 0 ל־1"
 
+# #2707, batch 2: workers, craftsmen and pioneers, pioneer work, a city project and a training group. Agent-drafted Hebrew; for the native read in #564.
+city.assign_refused.no_role: "אין תפקיד כזה"
+city.assign_refused.negative: "מספר העובדים לא יכול להיות שלילי"
+city.qualification_refused.return_count: "יש להחזיר לפחות קבוצה אחת"
+city.qualification_refused.reassign_count: "יש לשבץ מחדש לפחות קבוצה אחת"
+city.qualification_refused.no_qualification: "אין הכשרה כזאת"
+unit.order_refused.not_pioneer: "הפקודה הזאת מתאימה רק ליחידת חלוצים"
+unit.order_refused.pioneer_busy: "היחידה עסוקה בעבודה; יש לעצור את העבודה קודם"
+training.cancel_refused.no_group: "אין קבוצת אימון כזאת"
+site.refused.not_halutz: "עבודה חלוצית נעשית רק בידי חלוצים"
+site.refused.no_work: "אין עבודה חלוצית כזאת"
+site.refused.no_site: "אין אתר כזה"
+site.refused.not_building: "קבוצת החלוצים הזאת אינה בונה דבר"
+city.project_reason.no_project: "אין מיזם עירוני כזה"
+corridor.refused.no_segment: "אין קטע כזה של כביש או מסילה"
+budget.refused.required: "יש לספק חלוקת תקציב"
+budget.refused.ministry: "התקציב מציין משרד שאינו קיים במשחק הזה"
+budget.refused.finite: "חלקי התקציב חייבים להיות מספרים סופיים"
+budget.refused.every_ministry: "התקציב חייב לתת חלק לכל משרד, ורק להם"
+budget.refused.sum: "סכום חלקי התקציב חייב להיות 1"
+budget.refused.negative: "חלק בתקציב לא יכול להיות שלילי"
+unit.order_refused.names_no_hex: "הפקודה הזאת אינה מציינת משבצת"
+
 # #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. A
 # settlement in {0}/{1} opens the line as its label or follows a prefix, so no verb agrees with its gender (HE-15).
 # Approved by Beri, a native speaker, on #2072 (31 Oct 2026), all 20 lines as written. For the native reviewer (#564).

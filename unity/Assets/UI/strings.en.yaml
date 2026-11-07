@@ -1108,6 +1108,29 @@ unit.move_refused.full: "That hex already holds {0} units of that side, the most
 unit.send_home_refused.no_armistice: "No armistice is signed"
 defence.refused_mobilization: "Mobilization must be between 0 and 1"
 
+# #2707, batch 2: the sim's own text, word for word.
+city.assign_refused.no_role: "There is no such role"
+city.assign_refused.negative: "The number of workers cannot be negative"
+city.qualification_refused.return_count: "Return at least one group"
+city.qualification_refused.reassign_count: "Reassign at least one group"
+city.qualification_refused.no_qualification: "There is no such qualification"
+unit.order_refused.not_pioneer: "Only a pioneer unit takes that order"
+unit.order_refused.pioneer_busy: "That unit is at work; stop the work first"
+training.cancel_refused.no_group: "There is no such training group"
+site.refused.not_halutz: "Only halutzim do pioneer work"
+site.refused.no_work: "There is no such pioneer work"
+site.refused.no_site: "There is no such site"
+site.refused.not_building: "That group of halutzim is not building anything"
+city.project_reason.no_project: "There is no such city project"
+corridor.refused.no_segment: "There is no such corridor segment"
+budget.refused.required: "Budget shares are required"
+budget.refused.ministry: "The budget names a ministry that does not exist in this game"
+budget.refused.finite: "Budget shares must be finite numbers"
+budget.refused.every_ministry: "The budget must give a share to every ministry, and only to them"
+budget.refused.sum: "Budget shares must sum to 1"
+budget.refused.negative: "Budget shares cannot be negative"
+unit.order_refused.names_no_hex: "That order names no hex"
+
 # #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. Each
 # English line is the sim's own text; {0}, {1}... are the values it fills in.
 unit.attack_refused.no_hex: "An attack names a hex"
