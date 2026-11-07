@@ -79,6 +79,14 @@ namespace Statecraft.Game.UI
                     // player-facing unit and region names below. Hebrew always uses the localized structured arguments.
                     if (text["ui.lang"] == UiLanguage.English && rows.Count == 0) return cause.Message;
                     return text.Format(key, Local(cause.Args[0], cause.Args[1], text), OperationMoves(cause, rows, text));
+                case CauseKeys.OperationLapsedSigned:
+                case CauseKeys.OperationWaitsForArmistice:
+                    // R-ENEMY-007: the front is the third argument, named from the map's front strings.
+                    if (text["ui.lang"] == UiLanguage.English && rows.Count == 0) return cause.Message;
+                    return text.Format(key, Local(cause.Args[0], cause.Args[1], text), text["map.front_" + cause.Args[2]]);
+                case CauseKeys.OperationLapsedUnitLost:
+                    if (text["ui.lang"] == UiLanguage.English && rows.Count == 0) return cause.Message;
+                    return text.Format(key, Local(cause.Args[0], cause.Args[1], text), OperationUnits(cause, rows, text));
                 case CauseKeys.EventAmount:
                 case CauseKeys.EventStock:
                 case CauseKeys.EventGrant:
@@ -91,6 +99,18 @@ namespace Statecraft.Game.UI
                 default:
                     return UnitNames.Line(cause, c, rows, text, namesHe);
             }
+        }
+
+        /// <summary>R-ENEMY-007: the units a lapsed operation lost, in the player's language, from the cause's unit arguments.</summary>
+        static string OperationUnits(Cause cause, IReadOnlyList<UnitEntry> rows, UiText text)
+        {
+            var units = new List<string>();
+            for (int i = 2; i + 1 < cause.Args.Count; i += 2)
+            {
+                var row = rows.FirstOrDefault(x => x.Id == cause.Args[i]);
+                units.Add(row == null ? cause.Args[i] : text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrEmpty(row.NameHe) ? row.NameHe : row.Name);
+            }
+            return string.Join(", ", units);
         }
 
         static string OperationMoves(Cause cause, IReadOnlyList<UnitEntry> rows, UiText text)

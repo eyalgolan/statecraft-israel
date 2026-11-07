@@ -115,6 +115,44 @@ public class CauseTextTests
         StringAssert.Contains("ההחלטה על", heLapsed); StringAssert.Contains("ירדה מן הפרק", heLapsed);
     }
 
+    /// <summary>R-ENEMY-007 (owner, 7 November 2026): the lapse on a signed front, the lapse on a lost unit and the wait for
+    /// the front's armistice, from the sim's own causes, each in both languages, Hebrew in the neutral form ("ההחלטה על").
+    /// Horev postponed with Golani out of place, then each ending made.</summary>
+    [Test]
+    public void TheArmisticeAndLostUnitLinesAreWordedInBothLanguages()
+    {
+        var e = C.Events.Single(x => x.Id == "operation_horev");
+        var rows = UnitData.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        GameState Postponed()
+        {
+            var s = Simulation.NewGame(C, 23, Mode.Historical);
+            s.Date = e.From; s.PendingEvents.Clear(); s.PendingEvents.Add(e.Id);
+            EventSystem.Delegate(C, s, new List<Cause>());
+            Assert.IsTrue(s.PostponedOperations.ContainsKey(e.Id));
+            return s;
+        }
+        var signed = Postponed(); signed.ChosenOptions["armistice_egypt"] = "sign";
+        var why = new List<Cause>(); EventSystem.LapseExpiredOperations(C, signed, why);
+        var lapsedSigned = why.Single(x => x.Key == CauseKeys.OperationLapsedSigned);
+        StringAssert.Contains("Egypt", CauseText.Line(lapsedSigned, C, rows, En));
+        var he = CauseText.Line(lapsedSigned, C, rows, He);
+        StringAssert.Contains("ההחלטה על", he); StringAssert.Contains("מצרים", he);
+
+        var lost = Postponed(); lost.Units.Remove(C.StartingForces.FindIndex(f => f.Row == "golani"));
+        why.Clear(); EventSystem.LapseExpiredOperations(C, lost, why);
+        var lapsedLost = why.Single(x => x.Key == CauseKeys.OperationLapsedUnitLost);
+        StringAssert.Contains("Golani Brigade", CauseText.Line(lapsedLost, C, rows, En));
+        StringAssert.Contains("חטיבת גולני", CauseText.Line(lapsedLost, C, rows, He));
+
+        var waiting = Simulation.NewGame(C, 23, Mode.Historical);
+        waiting.Date = new System.DateTime(1949, 2, 15); waiting.PendingEvents.Clear();
+        waiting.PendingEvents.Add(e.Id); waiting.PendingEvents.Add("armistice_egypt");
+        why.Clear(); EventSystem.Delegate(C, waiting, why);
+        var waits = why.Single(x => x.Key == CauseKeys.OperationWaitsForArmistice);
+        StringAssert.Contains("Egypt", CauseText.Line(waits, C, rows, En));
+        StringAssert.Contains("מצרים", CauseText.Line(waits, C, rows, He));
+    }
+
     /// <summary>The keyed lines the seeded game does not reach: a call-up order, a situation that ends, civilian upkeep and
     /// its borrowing, the currency crisis on both sides, and the legacy loop's food cut and UN ceasefire.</summary>
     [Test]
@@ -602,7 +640,8 @@ public class CauseTextTests
             CauseKeys.CallUpSet, CauseKeys.CallUpRaised, CauseKeys.CallUpLowered, CauseKeys.Ceasefire,
             CauseKeys.EventAmount, CauseKeys.EventChosen, CauseKeys.EventCity, CauseKeys.EventDelegated,
             CauseKeys.EventDelegatedPartial, CauseKeys.EventGrant, CauseKeys.EventNew, CauseKeys.EventPolicy,
-            CauseKeys.OperationPostponed, CauseKeys.OperationLapsed,
+            CauseKeys.OperationPostponed, CauseKeys.OperationLapsed, CauseKeys.OperationLapsedSigned, CauseKeys.OperationLapsedUnitLost,
+            CauseKeys.OperationWaitsForArmistice,
             CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
             CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
             CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned,

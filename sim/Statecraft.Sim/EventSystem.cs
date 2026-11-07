@@ -543,7 +543,7 @@ namespace Statecraft.Sim
 
         /// <summary>Q3 (owner, 7 November 2026: "Decide armistice first (Recommended)"): why the operation option <paramref name="o"/>
         /// of <paramref name="e"/> cannot go now because of its front's armistice (pending, or signed), or null. GDD only.</summary>
-        internal static string? ArmisticeBlock(Content c, GameState s, GameEvent e, EventOption o)
+        public static string? ArmisticeBlock(Content c, GameState s, GameEvent e, EventOption o)
         {
             if (!c.IsGdd || o.RequiresUnitRegions.Count == 0 || e.ArmisticeFront == "") return null;
             if (Demobilization.Signed(s, e.ArmisticeFront)) return RefusedOperationArmisticeSigned;
@@ -553,7 +553,7 @@ namespace Statecraft.Sim
 
         /// <summary>R-ENEMY-007: the rows <paramref name="o"/> requires that are no longer on the board: their unit has arrived
         /// (a dated row is only waited for until its day, R-UNIT-009) and is gone, or its id now holds another unit.</summary>
-        internal static IReadOnlyList<string> Lost(Content c, GameState s, EventOption o) =>
+        public static IReadOnlyList<string> Lost(Content c, GameState s, EventOption o) =>
             o.RequiresUnitRegions.Count == 0 ? Array.Empty<string>() : o.UnitOrders.Select(x => x.Unit).Distinct(StringComparer.Ordinal)
                 .Where(row =>
                 {

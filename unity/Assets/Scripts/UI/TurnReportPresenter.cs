@@ -138,7 +138,8 @@ namespace Statecraft.Game.UI
             if (workshops.Count > 0) lines.Add(new Line(WorkshopRow, text["report.workshops"], workshops));
             // R-ENEMY-007 (#2543): a postponed or lapsed operation changes no number either, and the rule says the turn report
             // names the units and why, so its lines have their own row, in the sim's order.
-            var operations = bridge.Session.Last?.Why.Where(w => w.Key == CauseKeys.OperationPostponed || w.Key == CauseKeys.OperationLapsed)
+            var operations = bridge.Session.Last?.Why.Where(w => w.Key == CauseKeys.OperationPostponed || w.Key == CauseKeys.OperationLapsed
+                    || w.Key == CauseKeys.OperationLapsedSigned || w.Key == CauseKeys.OperationLapsedUnitLost || w.Key == CauseKeys.OperationWaitsForArmistice)
                 .Select(w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text, townNamesHe)).ToList();
             if (operations != null && operations.Count > 0) lines.Add(new Line(OperationsRow, text["report.operations"], operations));
             // R-CITY-010 (#1711): a held city's line changes no number (Delta 0), so HudModel.Causes leaves it out and it has

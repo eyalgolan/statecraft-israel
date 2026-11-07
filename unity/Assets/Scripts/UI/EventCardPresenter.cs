@@ -38,6 +38,8 @@ namespace Statecraft.Game.UI
         public const string EffectClass = "event-effect";
         public const string RequirementClass = "event-requirement";
         public const string MissingRequirementClass = "event-requirement-unmet";
+        /// <summary>The red line under an operation option that waits for, or is ended by, its front's armistice (Q3).</summary>
+        public const string ArmisticeClass = "event-requirement-armistice";
 
         /// <summary>The map's sourced unit rows, supplied by GameRoot after map parsing, for operation requirement names.</summary>
         public IReadOnlyList<UnitEntry> Units { get; set; } = System.Array.Empty<UnitEntry>();
@@ -302,15 +304,28 @@ namespace Statecraft.Game.UI
                 var label = Local(Cabinet.Fill(c, s, o.Text, date), o.TextHe);
                 var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = price is double cost && cost > 0 ? text.Format("event.option_cost", label, cost) : label };
                 b.AddToClassList(OptionClass);
-                b.SetEnabled(!unpaid && requirement.Met);
+                // Q3 (owner, 7 November 2026: "Decide armistice first (Recommended)"): while the front's armistice card is pending,
+                // or once that armistice is signed, the operation option is disabled and a red line says why.
+                var armistice = EventSystem.ArmisticeBlock(c, s, e, o);
+                b.SetEnabled(!unpaid && requirement.Met && armistice == null);
                 options.Add(b);
+                if (armistice != null)
+                {
+                    var front = text["map.front_" + e.ArmisticeFront];
+                    var why = new Label(text.Format(armistice == EventSystem.RefusedOperationArmisticeFirst ? "event.operation_armistice_first" : "event.operation_armistice_signed", front));
+                    why.AddToClassList(MissingRequirementClass); why.AddToClassList(ArmisticeClass); options.Add(why);
+                }
                 // R-ENEMY-007: one line per required unit, in the requirement's ordinal order. A unit in place gets the muted
                 // "must be in" line; a unit elsewhere gets only the "Move ... before" line, which names the same regions.
                 foreach (var need in requirement.Required)
                 {
                     var regions = string.Join(" / ", need.Regions.Select(id => text["operation.region." + id]));
                     bool away = requirement.Missing.Any(x => x.Unit == need.Unit);
-                    var line = new Label(text.Format(away ? "event.operation_missing" : "event.operation_requirement", OperationUnitName(need.Unit), regions));
+                    // Review item 6: a required unit no longer on the board cannot be moved, so the card says that instead; the card
+                    // lapses at its next consideration ("Lapse at once (Recommended)").
+                    bool lost = away && EventSystem.Lost(c, s, o).Contains(need.Unit);
+                    var line = new Label(lost ? text.Format("event.operation_lost", OperationUnitName(need.Unit))
+                        : text.Format(away ? "event.operation_missing" : "event.operation_requirement", OperationUnitName(need.Unit), regions));
                     if (away) line.AddToClassList(MissingRequirementClass);
                     else { line.AddToClassList("muted"); line.AddToClassList(RequirementClass); }
                     options.Add(line);

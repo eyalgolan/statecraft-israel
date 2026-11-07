@@ -61,6 +61,51 @@ public class EventCardTests
         }
     }
 
+    // Review item 6 and Q3 (owner, 7 November 2026): a required unit no longer on the board gets "no longer on the board", not
+    // a "Move" line it could never follow; and while the front's armistice card is pending, the operation option is disabled
+    // with a red line naming that armistice, even with its units in place. Red without them: a Move line, an enabled option.
+    [Test]
+    public void AnOperationCardSaysWhenItsUnitIsGoneOrItsArmisticeComesFirst()
+    {
+        var unitRows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.Single(x => x.Id == "operation_horev");
+        var option = e.Options.Single(x => x.Id == "launch");
+        var id = c.StartingForces.FindIndex(x => x.Row == "golani");
+
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = e.From; g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+        g.State.Units.Remove(id);
+        using (var ui = new UiTestKit())
+        using (var card = new EventCardPresenter(ui.Root, new SimBridge(g, Text), Text, null) { Units = unitRows })
+        {
+            card.Render();
+            var missing = ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList();
+            Assert.AreEqual(1, missing.Count);
+            StringAssert.Contains("no longer on the board", missing[0].text);
+            StringAssert.DoesNotContain("Move", missing[0].text);
+        }
+
+        var h = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        h.State.Date = new System.DateTime(1949, 2, 15); h.State.PendingEvents.Clear();
+        h.State.PendingEvents.Add(e.Id); h.State.PendingEvents.Add("armistice_egypt");
+        var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+        var u = h.State.Units[id];
+        h.State.Units[id] = new Unit(u.Id, u.Type, at.Q, at.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
+        foreach (var local in new[] { Text, He })
+        {
+            using var ui = new UiTestKit();
+            using var card = new EventCardPresenter(ui.Root, new SimBridge(h, local), local, null) { Units = unitRows };
+            card.Render();
+            Assert.AreEqual(e.Id, card.Shown?.Id, "Horev is first in the pending list, so its card shows");
+            Assert.IsFalse(ui.Q<Button>("option-launch").enabledSelf, "the armistice is decided first");
+            var why = ui.Root.Query<Label>(className: EventCardPresenter.ArmisticeClass).ToList();
+            Assert.AreEqual(1, why.Count);
+            StringAssert.Contains(local["map.front_egypt"], why[0].text);
+        }
+        Assert.AreEqual(EventSystem.RefusedOperationArmisticeFirst, EventSystem.ArmisticeBlock(c, h.State, e, option));
+    }
+
     // R-ENEMY-007 (owner, 7 November 2026: "Re-show the card (Recommended)"): an operation chosen while its units stood in
     // place is withdrawn, its Attention refunded, when a later instant move takes a required unit out of the regions, and the
     // card shows again with that unit's red "Move ... before" line, rather than End Turn refusing the choice and the minister

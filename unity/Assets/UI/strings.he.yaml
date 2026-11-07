@@ -296,6 +296,11 @@ event.operation_requirement: "נדרשת הצבת {0} באזור {1}."
 event.operation_missing: "יש להעביר את {0} אל {1} לפני שאפשר לפתוח במבצע."
 event.operation_move: "להעביר את {0} אל {1}"
 event.operation_refused: "היחידות הנדרשות למבצע אינן במקומן"
+event.operation_lost: "{0} כבר לא על הלוח."
+event.operation_armistice_first: "יש להכריע קודם בשביתת הנשק עם {0}."
+event.operation_armistice_signed: "שביתת הנשק עם {0} נחתמה: המבצע לא יתקיים."
+event.operation_refused_armistice_first: "יש להכריע קודם בשביתת הנשק בחזית של המבצע"
+event.operation_refused_armistice_signed: "שביתת הנשק בחזית של המבצע נחתמה"
 operation.region.galilee: "הגליל"
 operation.region.central_plain: "מישור החוף המרכזי"
 operation.region.jerusalem_hills: "הרי ירושלים"
@@ -1245,6 +1250,9 @@ why.cause.event_delegated_partial: "ההכרעה הועברה אל {0}, עם ב�
 # Agent-drafted Hebrew; native review pending (#564).
 why.cause.operation_postponed: "ההחלטה על {0} נדחתה. {1}."
 why.cause.operation_lapsed: "ההחלטה על {0} ירדה מן הפרק משום שהיחידות הנדרשות לא הגיעו לאזורי המבצע. {1}."
+why.cause.operation_lapsed_signed: "ההחלטה על {0} ירדה מן הפרק משום שנחתם הסכם שביתת הנשק עם {1}."
+why.cause.operation_lapsed_unit_lost: "ההחלטה על {0} ירדה מן הפרק משום שיחידה נדרשת כבר לא על הלוח: {1}."
+why.cause.operation_waits_for_armistice: "ההחלטה על {0} נדחתה עד שתוכרע שביתת הנשק עם {1}."
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.cabinet: "הממשלה"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
