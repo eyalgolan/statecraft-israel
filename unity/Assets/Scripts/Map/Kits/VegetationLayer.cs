@@ -19,19 +19,28 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>A tile's trees: <c>all</c> as planted (shuffled), <c>m</c> the ones drawn (all, less those under a unit
         /// figure: <see cref="Hide"/>), in the same order, so drawing a prefix still thins evenly; <c>crown</c> is the largest
-        /// crown radius (m) among them.</summary>
-        sealed class Tile { public TreeKind kind; public Bounds bounds; public float crown; public Matrix4x4[] all = System.Array.Empty<Matrix4x4>(), m = System.Array.Empty<Matrix4x4>(); }
+        /// crown radius (m) among them, <c>top</c> the highest tree top (world y).</summary>
+        sealed class Tile { public TreeKind kind; public Bounds bounds; public float crown, top; public Matrix4x4[] all = System.Array.Empty<Matrix4x4>(), m = System.Array.Empty<Matrix4x4>(); }
 
         readonly List<Tile> tiles = new List<Tile>();
         readonly SortedDictionary<string, List<(Vector2 centre, float radius)>> holes = new SortedDictionary<string, List<(Vector2, float)>>(System.StringComparer.Ordinal);
+        readonly SortedDictionary<string, List<(Vector2 at, float half, float baseY, float tan)>> lanes = new SortedDictionary<string, List<(Vector2, float, float, float)>>(System.StringComparer.Ordinal);
+        readonly Dictionary<TreeKind, float> topM = new Dictionary<TreeKind, float>();
+        static readonly IReadOnlyList<(Vector2 at, float half, float baseY, float tan)> NoLanes = System.Array.Empty<(Vector2, float, float, float)>();
         readonly Dictionary<TreeKind, Mesh> meshes = new Dictionary<TreeKind, Mesh>();
         Material? material;
         public bool Draw { get; set; } = true;
         public int Count { get; private set; }
         /// <summary>Instances submitted for the last camera (a test and profiling aid).</summary>
         public int LastDrawn { get; private set; }
-        /// <summary>Trees left out now because they stand under a unit figure (<see cref="Hide"/>).</summary>
+        /// <summary>Trees left out now because they stand under a unit figure or a model, or in a model's sight lane (<see cref="Hide"/>).</summary>
         public int Hidden { get; private set; }
+        /// <summary>Of <see cref="Hidden"/>, the trees left out because they stand in a sight lane (#2876).</summary>
+        public int SightHidden { get; private set; }
+
+        /// <summary>A tree's top (world y): its kind's mesh top (Vegetation.BuildMesh) at the instance's height scale, over the
+        /// ground it stands on.</summary>
+        float TopOf(TreeKind kind, Matrix4x4 m) => m.m13 + topM[kind] * ((Vector3)m.GetColumn(1)).magnitude;
 
         /// <summary>A tree's crown radius (m) as placed: its kind's real crown times the instance's scale, with the planting
         /// margin (Vegetation.Plant keeps a crown this wide off the lots and routes).</summary>
@@ -40,7 +49,7 @@ namespace Statecraft.Game.Map.Kits
         public void Init(List<(TreeKind kind, Matrix4x4 m)> trees, Material treeMaterial, MapRuntimeAssets assets)
         {
             material = treeMaterial;
-            foreach (TreeKind k in System.Enum.GetValues(typeof(TreeKind))) meshes[k] = assets.Own(Vegetation.BuildMesh(k));
+            foreach (TreeKind k in System.Enum.GetValues(typeof(TreeKind))) { meshes[k] = assets.Own(Vegetation.BuildMesh(k)); topM[k] = meshes[k].bounds.max.y; }
             var byTile = new Dictionary<(TreeKind, int, int), List<Matrix4x4>>();
             foreach (var (kind, m) in trees)
             {
@@ -61,12 +70,13 @@ namespace Statecraft.Game.Map.Kits
                 foreach (var m in list) b.Encapsulate((Vector3)m.GetColumn(3));
                 b.Expand(new Vector3(400f, 800f, 400f) * (KitScale.Trees / KitScale.CountReference));   // the crowns round the trunk points
                 float crown = 0f;
-                foreach (var m in list) crown = Mathf.Max(crown, CrownRadius(key.Item1, m));
+                float top = float.MinValue;
+                foreach (var m in list) { crown = Mathf.Max(crown, CrownRadius(key.Item1, m)); top = Mathf.Max(top, TopOf(key.Item1, m)); }
                 var arr = list.ToArray();
-                tiles.Add(new Tile { kind = key.Item1, bounds = b, crown = crown, all = arr, m = arr });
+                tiles.Add(new Tile { kind = key.Item1, bounds = b, crown = crown, top = top, all = arr, m = arr });
             }
             Count = trees.Count;
-            holes.Clear(); Hidden = 0;
+            holes.Clear(); lanes.Clear(); Hidden = 0; SightHidden = 0;
         }
 
         /// <summary>Issue #249: leaves out, at draw time, every tree whose crown reaches into one of <paramref name="where"/>
@@ -74,24 +84,56 @@ namespace Statecraft.Game.Map.Kits
         /// units in play, the showcase) sets its own holes, and an empty list gives its trees back. The planting itself, and
         /// so the kits' layout, never changes; only the tiles a hole reaches are rebuilt, when a caller's holes change (a
         /// roster change), never per frame.</summary>
-        public void Hide(string owner, IReadOnlyList<(Vector2 centre, float radius)> where)
+        public void Hide(string owner, IReadOnlyList<(Vector2 centre, float radius)> where) => Hide(owner, where, NoLanes);
+
+        /// <summary>As the disc-only Hide, with <paramref name="sight"/>
+        /// (#2876): the lanes from a model toward the map's camera, which looks north, so south of it. A lane at <c>at</c> (x, z)
+        /// is <c>half</c> either side of it across and from <c>half</c> north of it south to where the ray from its south edge's
+        /// foot (world y <c>baseY</c>), rising <c>tan</c> a metre toward the camera, passes over a tree's top
+        /// (<see cref="TopOf"/>); a tree whose crown reaches into it would stand in front of the model, and is left out.</summary>
+        public void Hide(string owner, IReadOnlyList<(Vector2 centre, float radius)> where, IReadOnlyList<(Vector2 at, float half, float baseY, float tan)> sight)
         {
             if (where.Count == 0) holes.Remove(owner); else holes[owner] = new List<(Vector2, float)>(where);
+            if (sight.Count == 0) lanes.Remove(owner); else lanes[owner] = new List<(Vector2, float, float, float)>(sight);
             var all = new List<(Vector2 centre, float radius)>();
             foreach (var h in holes.Values) all.AddRange(h);
-            int hidden = 0;
+            var allLanes = new List<(Vector2 at, float half, float baseY, float tan)>();
+            foreach (var l in lanes.Values) allLanes.AddRange(l);
+            int hidden = 0, inLanes = 0;
             var keep = new List<Matrix4x4>();
             foreach (var t in tiles)
             {
-                if (!Reaches(t, all)) { t.m = t.all; continue; }
+                bool holesReach = Reaches(t, all), lanesReach = Reaches(t, allLanes);
+                if (!holesReach && !lanesReach) { t.m = t.all; continue; }
                 keep.Clear();
                 foreach (var m in t.all)
                 {
-                    if (Covered(t.kind, m, all)) hidden++; else keep.Add(m);
+                    if (holesReach && Covered(t.kind, m, all)) hidden++;
+                    else if (lanesReach && InLane(t.kind, m, allLanes)) { hidden++; inLanes++; }
+                    else keep.Add(m);
                 }
                 t.m = keep.Count == t.all.Length ? t.all : keep.ToArray();
             }
-            Hidden = hidden;
+            Hidden = hidden; SightHidden = inLanes;
+        }
+
+        static bool Reaches(Tile t, List<(Vector2 at, float half, float baseY, float tan)> sight)
+        {
+            foreach (var (at, half, baseY, tan) in sight)
+            {
+                float run = Mathf.Max(0f, t.top - baseY) / tan;
+                if (t.bounds.min.x < at.x + half + t.crown && t.bounds.max.x > at.x - half - t.crown
+                    && t.bounds.min.z < at.y + half + t.crown && t.bounds.max.z > at.y - half - run - t.crown) return true;
+            }
+            return false;
+        }
+
+        bool InLane(TreeKind kind, Matrix4x4 m, List<(Vector2 at, float half, float baseY, float tan)> sight)
+        {
+            var p = m.GetColumn(3); float crown = CrownRadius(kind, m), top = TopOf(kind, m);
+            foreach (var (at, half, baseY, tan) in sight)
+                if (Mathf.Abs(p.x - at.x) < half + crown && p.z - crown < at.y + half && (at.y - half - p.z) - crown < (top - baseY) / tan) return true;
+            return false;
         }
 
         static bool Reaches(Tile t, List<(Vector2 centre, float radius)> where)
@@ -114,6 +156,31 @@ namespace Statecraft.Game.Map.Kits
                 if (dx * dx + dz * dz < reach * reach) return true;
             }
             return false;
+        }
+
+        /// <summary>#2876 (the owner, 7 November 2026, on Hadera: "Move the workshop (Recommended)", the palms stay): whether no
+        /// tree as planted (hidden or not) stands in front of a model of clearance <paramref name="r"/> at <paramref name="p"/>
+        /// (x, z), in its sight lane toward the map's camera, which looks north, so south of it: a crown within
+        /// <paramref name="r"/> either side of it across, from <paramref name="r"/> north of it south to where the ray from its
+        /// south edge's foot (world y <paramref name="baseY"/>), rising <paramref name="tan"/> a metre toward the camera, passes
+        /// over the tree's top (<see cref="TopOf"/>), the lane <see cref="Hide"/>'s sight lanes clear. A tree whose crown
+        /// reaches the model's disc does not count: <see cref="Hide"/> leaves it out under the model, as every building's
+        /// (#249).</summary>
+        public bool ClearInFront(Vector2 p, float r, float baseY, float tan)
+        {
+            foreach (var t in tiles)
+            {
+                float run = Mathf.Max(0f, t.top - baseY) / tan, reach = r + t.crown;
+                if (t.bounds.min.x >= p.x + reach || t.bounds.max.x <= p.x - reach
+                    || t.bounds.min.z >= p.y + reach || t.bounds.max.z <= p.y - reach - run) continue;
+                foreach (var m in t.all)
+                {
+                    float x = m.m03, z = m.m23, crown = CrownRadius(t.kind, m), dx = x - p.x, dz = z - p.y;
+                    if (dx * dx + dz * dz < (r + crown) * (r + crown)) continue;   // under it: left out (Hide)
+                    if (Mathf.Abs(dx) < r + crown && z - crown < p.y + r && (p.y - r - z) - crown < (TopOf(t.kind, m) - baseY) / tan) return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>Every tree as planted, hidden or not (kind, world matrix): a test aid.</summary>
