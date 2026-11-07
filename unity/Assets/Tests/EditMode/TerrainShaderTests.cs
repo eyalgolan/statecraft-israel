@@ -166,6 +166,7 @@ public class TerrainShaderTests
     {
         var map = OpenMap();
         VisualToggles.Set("trees", false);
+        VisualToggles.Set(GroundDetail.Toggle, false); VisualToggles.Set(GroundDetail.ScrubToggle, false);   // the bakes alone
         yield return null;
         var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
         rig.LookAt = map.Frame.ToWorld(35.25, 31.70, 0); rig.Distance = 45000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();

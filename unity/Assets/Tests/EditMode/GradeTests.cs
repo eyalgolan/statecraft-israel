@@ -312,6 +312,68 @@ public class GradeTests
         Assert.That(ratio, Is.InRange(0.98f, 1.12f));
     }
 
+    /// <summary>Issue #2427: the land's golden turn lives in hue curves, so it cannot touch what the owner ruled on: at the
+    /// blues of the sea and the Israeli stripe, the cyan surf and the reds of the roofs and the other side's stripe no hue
+    /// moves, and saturation moves only in a narrow band at the sea's hue. The land's terracotta moves up to gold and the green fields down to it, without folding (a hue never passes
+    /// the next one); the sand keeps its hue and saturation, because the dune coast has to stay bright (SeaTests'
+    /// TheBeachIsWideOnTheDuneCoastAndNarrowUnderTheKurkar, 0.72 of luma: a first fit that shifted it read 0.685). Dark tones
+    /// lose a little saturation, so the hill olives stay grey (KitTests' TheHillOliveCrownsAreDarkWithPaleSunlitTops, and the
+    /// promo's shade is about 0.3 against our 0.46), and the sea's middle tones do not. The "grade" toggle takes the curves
+    /// off with the rest.</summary>
+    [Test]
+    public void TheGoldenCurvesTurnTheLandAndLeaveTheSeaAlone()
+    {
+        var (_, _, profile) = Open();
+        Assert.IsTrue(profile.TryGet<ColorCurves>(out var cc), "the grade has hue curves");
+        float Hue(float h) => cc.hueVsHue.value.Evaluate(h) - 0.5f; float Sat(float h) => cc.hueVsSat.value.Evaluate(h) * 2f;
+        foreach (var h in new[] { 0f, 0.01f, 0.02f, 0.4f, 0.45f, 0.5f, 0.55f, 0.58f, 0.6f, 0.65f, 0.8f, 0.95f, 0.99f })
+            Assert.AreEqual(0f, Hue(h), 1e-3f, $"hue {h}: no hue shift");
+        foreach (var h in new[] { 0f, 0.01f, 0.02f, 0.4f, 0.45f, 0.5f, 0.65f, 0.8f, 0.95f, 0.99f })
+            Assert.AreEqual(1f, Sat(h), 2e-3f, $"hue {h}: no saturation change");
+        Assert.Greater(Sat(0.585f), 1.06f, "the sea's own blue gains what the warmer sun takes from it");
+        Assert.Greater(Hue(0.06f), 0.005f, "terracotta moves towards gold"); Assert.Less(Hue(0.2f), -0.01f, "green fields move towards olive gold");
+        Assert.Greater(Sat(0.06f), 1.03f, "the land is richer");
+        Assert.AreEqual(0f, Hue(0.11f), 1e-3f, "the sand keeps its hue"); Assert.AreEqual(1f, Sat(0.11f), 2e-3f, "and its saturation");
+        float Lum(float l) => cc.lumVsSat.value.Evaluate(l) * 2f;
+        Assert.Less(Lum(0.05f), 0.95f, "dark tones lose saturation"); Assert.AreEqual(1f, Lum(0.12f), 2e-3f, "the sea's mean and everything over it do not");
+        for (float h = 0f; h < 0.4f; h += 0.002f) Assert.Greater(h + 0.002f + Hue(h + 0.002f), h + Hue(h), $"hue {h}: the curve does not fold");
+        MapGrade.SetActive(profile, false); Assert.IsFalse(cc.active, "the toggle takes the curves off");
+        MapGrade.SetActive(profile, true); Assert.IsTrue(cc.active);
+    }
+
+    /// <summary>Rendered at the gameplay pose, issue #2427. The land turns warmer and less rose (main: warmth 0.241, rose
+    /// +0.005), while the open sea holds on both of the owner's counts: no darker than main's (0.368, #519) and no greyer
+    /// (warmth -0.218, the #38 failure). The sun warms the water (ScWaterShade multiplies by its colour), so the curves give
+    /// the sea's own hues back what it takes; the control shows they do that without moving its luma.</summary>
+    [UnityTest]
+    public IEnumerator TheLandReadsGoldenAndTheSeaHolds()
+    {
+        var (map, rig, profile) = Open();
+        yield return null;
+        PromoPose.Gameplay03.Apply(rig, map.Frame); rig.TopInset = 0f; rig.Apply();
+        var cam = Camera.main;
+        VisualToggles.Set("trees", false);   // the ground's colour, not the groves'
+        static Color Crop(RenderSample s, float x0, float x1)
+        {
+            Color sum = Color.black; int n = 0;
+            for (int y = (int)(s.Height * 0.3f); y < s.Height * 0.7f; y++) for (int x = (int)(s.Width * x0); x < s.Width * x1; x++) { sum += s.At(x, y); n++; }
+            return sum / n;
+        }
+        var s = RenderSample.Render(cam, 480, 270);
+        Color land = Crop(s, 0.55f, 0.95f), sea = Crop(s, 0.02f, 0.28f);
+        float warmth = land.r - land.b, seaLuma = RenderSample.Luma(sea), rose = (land.r - land.g) - (land.g - land.b);
+        TestContext.WriteLine($"land {land} warmth {warmth:0.000} rose {rose:0.000} luma {RenderSample.Luma(land):0.000}; sea {sea} luma {seaLuma:0.000}");
+        Assert.GreaterOrEqual(warmth, 0.265f, "the land is warm");
+        Assert.LessOrEqual(rose, -0.01f, "golden, not rose (the owner's \"Less pink\" on #519)");
+        Assert.GreaterOrEqual(seaLuma, 0.368f, "the sea is no darker than main's (#519)");
+        Assert.LessOrEqual(sea.r - sea.b, -0.218f, "the sea is no greyer than main's: the stronger, warmer sun must not warm it (#38)");
+        Assert.IsTrue(profile.TryGet<ColorCurves>(out var cc), "the grade has hue curves");
+        cc.active = false; var off = Crop(RenderSample.Render(cam, 480, 270), 0.02f, 0.28f); cc.active = true;
+        TestContext.WriteLine($"sea with the curves off {off}, warmth {off.r - off.b:0.000}");
+        Assert.AreEqual(RenderSample.Luma(off), seaLuma, 1f / 255f, "the curves leave the sea's luma");
+        Assert.Less(sea.r - sea.b, off.r - off.b, "and they make it bluer, not greyer");
+    }
+
     /// <summary>Rendered: MapGrade's vignette darkens the corners relative to the centre more than the vignette it replaces
     /// (the pipeline's template profile, Settings/SampleSceneProfile, applies a 0.2 black one, which "plain" still shows).</summary>
     [UnityTest]

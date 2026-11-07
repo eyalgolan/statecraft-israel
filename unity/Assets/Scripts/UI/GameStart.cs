@@ -79,9 +79,9 @@ namespace Statecraft.Game.UI
 
         /// <summary>Writes <paramref name="session"/> through the complete autosave path. A failure never stops play: the
         /// reason goes to <paramref name="onError"/> and false is returned. On WebGL <paramref name="persistenceTarget"/>
-        /// receives the asynchronous IndexedDB result.</summary>
+        /// receives the asynchronous IndexedDB result; elsewhere the write is the save, and <paramref name="onSaved"/> is told.</summary>
         internal static bool WriteAutosave(GameSession session, SaveStore store, UiText text, Action<string>? onError = null,
-            string? persistenceTarget = null)
+            string? persistenceTarget = null, Action? onSaved = null)
         {
             try
             {
@@ -95,6 +95,7 @@ namespace Statecraft.Game.UI
                 StatecraftPersistAutosave("save " + receipt, persistenceTarget ?? "");
 #else
                 UnityEngine.Debug.Log("AUTOSAVE OK " + receipt);
+                onSaved?.Invoke();
 #endif
                 return true;
             }
@@ -108,9 +109,9 @@ namespace Statecraft.Game.UI
 
         /// <summary>Writes the save after every committed order and every turn. Dispose the result to stop autosaving.</summary>
         public static IDisposable Autosave(SimBridge bridge, SaveStore store, UiText text, Action<string>? onError = null,
-            string? persistenceTarget = null)
+            string? persistenceTarget = null, Action? onSaved = null)
         {
-            void Save(IReadOnlyList<Rejection> _) => WriteAutosave(bridge.Session, store, text, onError, persistenceTarget);
+            void Save(IReadOnlyList<Rejection> _) => WriteAutosave(bridge.Session, store, text, onError, persistenceTarget, onSaved);
             Action<IReadOnlyList<Cause>> onCommit = _ => Save(Array.Empty<Rejection>());
             bridge.Committed += onCommit;
             bridge.TurnEnded += Save;

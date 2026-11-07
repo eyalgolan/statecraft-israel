@@ -15,4 +15,16 @@ static class ShotCamera
         var rig = cam.GetComponent<CameraRig>();
         if (rig != null) rig.ApplyProjection();
     }
+
+    /// <summary>Throws when the camera would draw a stretched still: its aspect, or the aspect its projection matrix was
+    /// built at, differs from the frame's. A rig that set cam.aspect after the top bar froze the matrix passes the first check
+    /// and fails the second.</summary>
+    internal static void Require(Camera cam, int width, int height)
+    {
+        float frame = (float)width / height;
+        var p = cam.projectionMatrix;
+        float built = p[1, 1] / p[0, 0];
+        if (Mathf.Abs(cam.aspect - frame) > 0.001f || Mathf.Abs(built - frame) > 0.001f)
+            throw new System.InvalidOperationException($"the camera's aspect is {cam.aspect:0.000} and its projection's {built:0.000}, its frame's {frame:0.000} ({width} x {height}): call ShotCamera.Configure after the scene opens");
+    }
 }

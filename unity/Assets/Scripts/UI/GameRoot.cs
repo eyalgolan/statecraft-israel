@@ -332,9 +332,10 @@ namespace Statecraft.Game.UI
             {
                 if (result.StartsWith("fail save ", StringComparison.Ordinal))
                 {
-                    toast.Append(text["save.write_failed"]);
+                    toast.SaveFailed(text["save.write_failed"]);
                     Debug.Log("SAVE FAILURE SHOWN save.write_failed");
                 }
+                else if (result.StartsWith("ok save ", StringComparison.Ordinal)) toast.SaveSucceeded();   // #2707: the failure stays until then
             };
             unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
             var hudPresenter = Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
@@ -519,7 +520,7 @@ namespace Statecraft.Game.UI
             {
                 newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed, gameObject.name));
                 this.newGame = newGame;
-                Own(GameStart.Autosave(bridge, store, text, toast.Append, gameObject.name));   // appends: the turn's refusals stay visible
+                Own(GameStart.Autosave(bridge, store, text, toast.SaveFailed, gameObject.name, toast.SaveSucceeded));   // under the turn's refusals, until a save succeeds (#2707)
             }
             // Once the game is over, the sim's end report (#812); after the autosave, so the last turn is saved first. New Game
             // is its two presses; a smoke run has none.
@@ -677,7 +678,7 @@ namespace Statecraft.Game.UI
             if (showsStart)                                                // newGame is made above whenever smoke == 0
             {
                 var cam = cameraController;
-                var recording = Own(new DeclarationRecording(root, text, toast.Show));   // never built in automated runs (Skipped)
+                var recording = Own(new DeclarationRecording(root, text, toast.RecordingFailed, retry: toast.RecordingRetried));   // never built in automated runs (Skipped)
                 if (music != null) music.Duck = () => recording.Playing;           // the theme drops low under Ben-Gurion's voice
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
@@ -843,9 +844,32 @@ namespace Statecraft.Game.UI
             bool fromStart = start?.IsOpen == true;
             keptResumed = start?.Resumed ?? true;
             keptBudgetDraft = budgetScreen?.Draft;   // read before Begin disposes it; the new screen copies it
+            // #2340: the selection, read before Begin disposes the panel and the unit layer (a pioneer card has no token).
+            var pioneer = info?.Pioneer;
+            var unit = info?.ShowsUnit == true ? units?.Selected : null;
+            var hex = info?.ShowsUnit == true ? null : info?.Selected;
+            // #2340: the card or capture dialog the player hid; the rebuilt presenters would open it again.
+            var hiddenCard = card?.Collapsed == true ? card.Shown!.Id : null;
+            var hiddenCapture = capture?.Collapsed == true ? capture.Shown : null;
             // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
             try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
             finally { keptBudgetDraft = null; }
+            // Hidden again before the selection is put back: an open card or dialog disables the info panel (ScreenNav).
+            if (hiddenCard != null && card?.Shown?.Id == hiddenCard) card.Collapse(takeFocus: false);
+            if (hiddenCapture != null && capture?.Shown == hiddenCapture) capture.Collapse(takeFocus: false);
+            // Put back before Settings opens again: a screen that covers the panel would ignore it. The map's hex outline
+            // outlives Begin, so it is set to match (before, the new panel showed nothing under the old outline).
+            if (info != null && units != null)
+            {
+                if (pioneer is int pioneerId) info.ShowPioneer(pioneerId);   // clears the token and the outline itself
+                else
+                {
+                    units.Select(unit);
+                    if (units.Selected != null) { map.ClearSelection(); info.ShowUnit(); }
+                    else if (hex is (int q, int r)) { map.Select(q, r); info.Show(q, r); }
+                    else map.ClearSelection();
+                }
+            }
             if (!fromStart) nav?.Open("settings");
             // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
             // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
@@ -1104,6 +1128,8 @@ namespace Statecraft.Game.UI
             // once the swamp is drained (#2082; owner, 2 November 2026: "Hula + Arava, map and boards").
             Statecraft.Game.Map.Collection.HulaPapyrusLayer.ShowAt(map, Bridge.Content,
                 Statecraft.Game.Map.Collection.HulaPapyrusLayer.Drained(Bridge.State));
+            // A plowed field's or drained swamp's ground on its hex (#2877): from the sites, so a loaded save shows its own.
+            SiteGroundLayer.ShowAt(map, Bridge.Content, Bridge.State.Sites.Values);
             // Tal Heuberger's civilian figures at towns, villages, transit camps and building sites, ambience only and streamed
             // after the first frame (#666, #708, #886): the residents follow the settlement state, the builders the projects.
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content,
