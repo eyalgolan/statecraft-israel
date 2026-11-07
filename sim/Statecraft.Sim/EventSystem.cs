@@ -541,6 +541,13 @@ namespace Statecraft.Sim
             s.PendingEvents.Remove(e.Id);
             s.PostponedOperations.Remove(e.Id);
             why.Add(OperationCause(c, s, e, rows, key));
+            // Q8 (owner, 7 November 2026: "All five -0.01 (Recommended)"): every lapse costs Horev's Hold in Security, where the
+            // content has a Security indicator (as an event's effect reaches only indicators the state has).
+            if (!Reaches(s, "security")) return;
+            var title = Title(c, s, e);
+            var change = EffectsSystem.Shift(c, s, "security", c.RulesAt(s.Date).Mvp!.OperationLapseSecurity!.Value);
+            why.Add(new Cause("events", "security", change, $"{PlayerText.Change(c, "security", change)} ({title})",
+                key: CauseKeys.EventAmount, args: Context(title, HebrewTitle(c, s, e))));
         }
 
         static Cause OperationCause(Content c, GameState s, GameEvent e, IReadOnlyList<OperationRequirementRow> rows, string key)

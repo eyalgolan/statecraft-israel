@@ -1533,6 +1533,8 @@ namespace Statecraft.Sim
                 // R-ENEMY-007 (owner, 7 November 2026: "6 turns (Recommended)"): required, so no wait is read as 0.
                 if (m.OperationWaitTurns == null) throw new ContentException(file, "mvp.operation_wait_turns", "required when eras.yaml systems.loop is gdd");
                 if (m.OperationWaitTurns < 1) throw new ContentException(file, "mvp.operation_wait_turns", "must be >= 1");
+                if (m.OperationLapseSecurity == null) throw new ContentException(file, "mvp.operation_lapse_security", "required when eras.yaml systems.loop is gdd");
+                if (!(m.OperationLapseSecurity <= 0 && IsFinite(m.OperationLapseSecurity.Value))) throw new ContentException(file, "mvp.operation_lapse_security", "must be a finite number <= 0");
                 if (m.DisloyalEffectShare == null) throw new ContentException(file, "mvp.disloyal_effect_share", "required when eras.yaml systems.loop is gdd");
                 Unit(file, "mvp.disloyal_effect_share", m.DisloyalEffectShare.Value);
                 // R-MOVE-001 (Q-MOVE-1): a cost for every land biome of the map, so no hex is read as free, and none for a water

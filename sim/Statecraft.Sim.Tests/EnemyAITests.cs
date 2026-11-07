@@ -859,9 +859,11 @@ public class EnemyAITests
         Assert.Contains(e.Id, s.PendingEvents); Assert.Empty(why);
         s.Turn++; EventSystem.LapseExpiredOperations(c, s, why);
         Assert.DoesNotContain(e.Id, s.PendingEvents); Assert.False(s.ChosenOptions.ContainsKey(e.Id)); Assert.Empty(s.PostponedOperations);
-        var lapsed = Assert.Single(why);
+        var lapsed = Assert.Single(why, x => x.Key.StartsWith("operation_lapsed", StringComparison.Ordinal));
         Assert.Equal(CauseKeys.OperationLapsed, lapsed.Key);
         Assert.Contains("Golani Brigade", lapsed.Message); Assert.Contains("Southern Coast", lapsed.Message);
+        // Q8: the lapse's Security cost is the turn's only other line (ALapseCostsTheNamedSecurity checks its amount).
+        Assert.Equal(new[] { CauseKeys.OperationLapsed, CauseKeys.EventAmount }, why.Select(x => x.Key).ToArray());
     }
 
     // R-ENEMY-007 (the owner's words as recorded on #2543, 4 November 2026: "Postpone until they are in the right area and
@@ -920,8 +922,10 @@ public class EnemyAITests
         Assert.Empty(next.State.PostponedOperations);
     }
 
-    // The wait's limit: the card is shown again on mvp.operation_wait_turns (6) turns after its first postponement, and lapses
-    // at the end of the last. Red with the old lapse: it is gone after the first turn.
+    // The wait's limit (R-ENEMY-007): the card is shown again on 6 turns (mvp.operation_wait_turns) and lapses at the end of
+    // the 6th. Both edges: postponed at the end of turn 1, it is pending after steps 1 to 6, so it is shown again on turns
+    // 2 to 7, and it lapses at step 7, the end of turn 7, the 6th turn it was shown again.
+    // Red with the old lapse: it is gone after the first turn.
     [Fact]
     public void APostponedOperationLapsesAfterItsWaitTurns()
     {
@@ -937,6 +941,34 @@ public class EnemyAITests
         Assert.DoesNotContain("probe", s.PendingEvents);
         Assert.False(s.ChosenOptions.ContainsKey("probe"));
         Assert.Empty(s.PostponedOperations);
+    }
+
+    // Q8, "All five -0.01 (Recommended)" (owner, 7 November 2026): every lapse costs mvp.operation_lapse_security, Horev's
+    // Hold, as an event amount named after the card, whatever ended the wait. The real content, which has Security: Horev
+    // postponed on the 15 December 1948 turn with Golani back on its start hex, then ended by its wait, by Golani's loss, or
+    // by Egypt's signature. Red without the cost: no Security line names Horev.
+    [Theory]
+    [InlineData("wait")]
+    [InlineData("lost")]
+    [InlineData("signed")]
+    public void ALapseCostsTheNamedSecurity(string why)
+    {
+        var c = Real;
+        var cost = c.Rules.Mvp!.OperationLapseSecurity!.Value;
+        Assert.Equal(-0.01, cost);
+        var s = GoldenRun.Play(c, new DateTime(1948, 12, 15));
+        var golani = c.StartingForces.FindIndex(f => f.Row == "golani");
+        s.Units[golani] = At(s.Units[golani], 11, 11);
+        s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.True(s.PostponedOperations.ContainsKey("operation_horev"));
+        if (why == "lost") s.Units.Remove(golani);
+        if (why == "signed") s.ChosenOptions["armistice_egypt"] = "sign";
+        if (why == "wait") s.Turn += c.Rules.Mvp!.OperationWaitTurns!.Value;
+        var r = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.Contains(r.Why, x => x.Target == "operation_horev" && x.Key.StartsWith("operation_lapsed", StringComparison.Ordinal));
+        var line = Assert.Single(r.Why, x => x.System == "events" && x.Target == "security" && x.Key == CauseKeys.EventAmount
+            && x.Message.Contains("Operation Horev"));
+        Assert.Equal(cost, line.Delta, 9);
     }
 
     // "Lapse at once (Recommended)": a postponed card whose required unit is no longer on the board lapses on its next

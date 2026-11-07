@@ -665,6 +665,9 @@ namespace Statecraft.Sim
         /// turns after its first postponement a postponed operation card is shown again while it waits for its units; at the
         /// end of the last it lapses. Required in the GDD loop, at least 1.</summary>
         public int? OperationWaitTurns { get; set; }
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026, Q8: "All five -0.01 (Recommended)"): the Security change a lapsed
+        /// operation card costs, whatever ended its wait: Horev's Hold. Required in the GDD loop, finite and at most 0.</summary>
+        public double? OperationLapseSecurity { get; set; }
         /// <summary>The movement points it costs to enter a hex of each land biome of map/hexes.json (R-MOVE-001; Q-MOVE-1).
         /// Lake and sea have none: they are impassable. The loader requires one for every land biome in the GDD loop.</summary>
         public Dictionary<string, int> MoveCost { get; set; } = new Dictionary<string, int>();
