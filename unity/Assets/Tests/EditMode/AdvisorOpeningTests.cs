@@ -108,15 +108,41 @@ public class AdvisorOpeningTests
         using var automated = new Rig(En, null); automated.Advisor.NewGame(); Assert.IsFalse(automated.Advisor.InChain);
     }
 
-    /// <summary>The plan's assumption (c): the opening chain is the first game's onboarding, as the guide was, so it ignores
-    /// the help level (review of the S2 head).</summary>
+    /// <summary>Owner ruling on #2942, replacing the plan's assumption (c): "Off silences it". At help off, experienced or
+    /// warnings the chain does not open by itself and counts as seen, so it never appears later, even at the new level; the
+    /// course does not open either. A chain reopened by hand from the encyclopedia still shows.</summary>
     [TestCase("off")] [TestCase("experienced")] [TestCase("warnings")]
-    public void AnyHelpLevelGetsTheOpeningChainOnItsFirstGame(string level)
+    public void AHelpLevelAboveNewSilencesTheOpeningChainForGood(string level)
     {
         var store = Store(); store.Write(AdvisorSettings.LevelKey, level);
+        using (var rig = new Rig(En, store))
+        {
+            rig.Advisor.NewGame();
+            Assert.IsFalse(rig.Advisor.InChain, "no chain by itself at " + level);
+            Assert.IsTrue(rig.Session.Settings.OpeningSeen, "it counts as seen");
+            Assert.AreEqual("seen", store.Read(AdvisorSettings.OpeningKey));
+            Assert.IsFalse(rig.Session.Settings.CourseOpen, "and opens no course");
+            Assert.IsNull(store.Read(AdvisorSettings.CourseKey));
+            rig.Session.Settings.SetLevel("new");
+            rig.Advisor.NewGame();
+            Assert.IsFalse(rig.Advisor.InChain, "nor on a later game at the new level");
+            rig.Advisor.OpenChain();
+            Assert.IsTrue(rig.Advisor.InChain, "reopened by hand it shows");
+            Assert.IsFalse(rig.Session.Settings.CourseOpen);
+        }
+        using var later = new Rig(En, store); later.Advisor.NewGame();
+        Assert.IsFalse(later.Advisor.InChain, "nor after a restart");
+        Assert.IsFalse(later.Session.Settings.CourseOpen); Assert.IsNull(store.Read(AdvisorSettings.CourseKey));
+    }
+
+    /// <summary>At the new level, stored or the default, the first game still gets the chain and the course.</summary>
+    [TestCase("new")] [TestCase("")]
+    public void TheNewHelpLevelGetsTheOpeningChainOnItsFirstGame(string level)
+    {
+        var store = Store(); if (level != "") store.Write(AdvisorSettings.LevelKey, level);   // "": no line, the default
         using var rig = new Rig(En, store); rig.Advisor.NewGame();
-        Assert.IsTrue(rig.Advisor.InChain, "the first new game shows the chain at " + level);
-        Assert.IsTrue(rig.Session.Settings.OpeningSeen);
+        Assert.IsTrue(rig.Advisor.InChain, "the first new game shows the chain at " + (level == "" ? "the default" : level));
+        Assert.IsTrue(rig.Session.Settings.OpeningSeen); Assert.IsTrue(rig.Session.Settings.CourseOpen);
     }
 
     /// <summary>#2933: the course opens with the chain's automatic opening, so only on a first game.</summary>
