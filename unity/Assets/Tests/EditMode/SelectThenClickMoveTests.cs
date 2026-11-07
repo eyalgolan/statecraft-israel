@@ -367,13 +367,14 @@ public class SelectThenClickMoveTests
         // The tapped hex is where B's token is drawn (its anchor), which can differ from B's sim hex.
         var from = rig.At(id); (int q, int r) target = (pair.b.Q, pair.b.R); var otherAt = rig.At(other);
         rig.Select(pair.a);
+        var stop = rig.Ui.Root.Q("map-focus"); stop.Focus();   // Tabbed there, then clicked on the map
         rig.Click(target.q, target.r, touch);
         Assert.IsEmpty(rig.Bridge.Session.Committed, "selection itself gives no order");
         Assert.AreEqual(pair.b.Token.Unit.Id, rig.Layer.Selected, "ordinary selection stays");
         var send = rig.Ui.Root.Q<Button>("info-confirm-move");
         Assert.IsNotNull(send, "a visible confirmation is offered");
         Assert.AreEqual(DisplayStyle.Flex, send.style.display.value);
-        Assert.AreNotSame(send, rig.Ui.Root.panel.focusController.focusedElement, "a pointer pick moves no focus (#2340)");
+        Assert.AreSame(stop, rig.Ui.Root.panel.focusController.focusedElement, "a pointer pick moves no focus, even from the map stop (#2340)");
         StringAssert.Contains(UnitCard.For(pair.a, rig.Bridge.State, Text, C.IsGdd, C).Title, send.text);
         StringAssert.Contains(HexPlaces.Of(string.Format(System.Globalization.CultureInfo.InvariantCulture,
             "{0},{1}", target.q, target.r), C, Text, null), send.text);
