@@ -617,19 +617,21 @@ def settle(runner: Runner, cwd: Path, sleep: Callable[[float], None]) -> str:
         waited += SETTLE_POLL_S
 
 
-def measure_boot(night: Night, runner: Runner, build: Path, *, sleep: Callable[[float], None] = time.sleep) -> float:
+def measure_boot(night: Night, runner: Runner, build: Path, *, sleep: Callable[[float], None] = time.sleep,
+                 boots: tuple[int, int, int] = (1, 2, 3)) -> float:
     """The median of three headless boots, each alone on the machine (no other Unity, no other check), the first
-    after the machine settles. Each boot-N.log starts with the machine's state, read just before that boot."""
+    after the machine settles. Each boot-N.log starts with the machine's state, read just before that boot; `boots`
+    numbers the logs, so a re-measure (#2921) keeps the first three."""
     clone = night.cfg.clone
     runs: list[int] = []
     settled = settle(runner, night.cfg.main_repo, sleep)
-    for i in (1, 2, 3):
+    for i in boots:
         argv = ["uv", "run", str(clone / "tools/machine_lock.py"), "--exclusive", "--wait-unity", "--timeout", "2700",
                 "--", "uv", "run", str(clone / "tools/web_check.py"), str(build), "--query", "bootlog",
                 "--expect", "GAME OK", "--timeout", "300", "--stall", "90"]
         log = night.run_dir / f"boot-{i}.log"
         try:
-            header = machine_state(runner, night.cfg.main_repo) + ([settled] if i == 1 else [])
+            header = machine_state(runner, night.cfg.main_repo) + ([settled] if i == boots[0] else [])
             log.write_text("\n".join(header) + "\n", encoding="utf-8")   # the runner appends the boot after it
             code = runner.run(argv, cwd=night.cfg.main_repo, log=log, deadline=_limit(night, 60))
         except (OSError, subprocess.SubprocessError) as error:
@@ -646,6 +648,23 @@ def measure_boot(night: Night, runner: Runner, build: Path, *, sleep: Callable[[
         except ValueError as e:
             raise Refused("boot", f"boot run {i}: {e}", log=log) from e
     return float(statistics.median(runs))
+
+
+def boot_gate(night: Night, state: State, runner: Runner, build: Path) -> tuple[float, str]:
+    """measure_boot's median against the bound. A median over it gets one re-measure after the machine settles again
+    (the owner's ruling on #2921: v0.3.8 was refused at 6313 ms and then booted in about 4450 ms), and only a second
+    median over the bound refuses. Returns the median the night passed with and the verdict's phase."""
+    boot = measure_boot(night, runner, build)
+    phase, why = nightly_checks.boot_verdict(boot, state.boot_baseline, BASELINE_NIGHTS)
+    if why is None:
+        return boot, phase
+    print(f"boot: {why}; settling and measuring once more (boot-4..6.log)")
+    again = measure_boot(night, runner, build, boots=(4, 5, 6))
+    phase, why_again = nightly_checks.boot_verdict(again, state.boot_baseline, BASELINE_NIGHTS)
+    if why_again:
+        raise Refused("boot", f"{why}; measured again after settling: {why_again}")
+    print(f"boot: first median {boot:.0f} ms was over the bound; re-measure after settling: {again:.0f} ms, under it")
+    return again, phase
 
 
 # --- publishing -------------------------------------------------------------------------------------------------
@@ -970,10 +989,7 @@ def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, 
     prev_tag, prev_sha = previous
     previous_zip = gh.download(prev_tag, "*-web.zip", night.run_dir / "previous")
     sizes = check_sizes(night, gh, gz, previous_zip, prev_sha, runner=runner)
-    boot = measure_boot(night, runner, gz)
-    phase, why = nightly_checks.boot_verdict(boot, state.boot_baseline, BASELINE_NIGHTS)
-    if why:
-        raise Refused("boot", why)
+    boot, phase = boot_gate(night, state, runner, gz)
     print(f"boot: {boot:.0f} ms ({phase}, {len(state.boot_baseline)} baseline nights)")
     if no_publish:
         print(f"NO-PUBLISH: all gates passed for {night.tag}")
