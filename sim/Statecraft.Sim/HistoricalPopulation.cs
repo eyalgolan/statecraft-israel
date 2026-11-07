@@ -20,6 +20,27 @@ namespace Statecraft.Sim
         }
     }
 
+    /// <summary>#1725 PR 4, the ruled part (#1689): one host's opening field farmers, before any farmer record exists.
+    /// <see cref="Fields"/> are the Gdd03FieldFixture ids (field/q,r) of the fields it hosts, in ordinal order; one farmer
+    /// each (owner, 3 November 2026, #1694: "One farmer per field (Recommended)"), split 1:2:1 per host by
+    /// <see cref="Gdd03FarmerTierSplit"/> (owner, 7 November 2026, #1689: "Per host, 1/18/1 (Recommended)"), with one housing
+    /// place per farmer (owner, 7 November 2026, #1689: "Yes to all three (Recommended)").</summary>
+    internal sealed class HistoricalFieldFarmerHost
+    {
+        public string Host { get; }
+        public string Region { get; }
+        public IReadOnlyList<string> Fields { get; }
+        public int Novice { get; }
+        public int Trained { get; }
+        public int Veteran { get; }
+        public int Farmers => Fields.Count;
+        public int HousingPlaces => Farmers;
+        internal HistoricalFieldFarmerHost(string host, string region, IReadOnlyList<string> fields, (int Novice, int Trained, int Veteran) split)
+        {
+            Host = host; Region = region; Fields = fields; (Novice, Trained, Veteran) = split;
+        }
+    }
+
     /// <summary>R-POP-004 (#1689; owner, 1 November 2026, D2 and D4): the own population a gdd-0.3 Historical game starts with,
     /// read from the content the aggregate start reads. Each census city gives its R-CITY-007 start units as free civilians;
     /// each Israeli starting formation of map/units_1948.yaml (R-UNIT-006) gives its strength as active soldiers. Enemy
@@ -60,6 +81,7 @@ namespace Statecraft.Sim
             return rows.AsReadOnly();
         }
 
+        internal static IReadOnlyList<HistoricalFieldFarmerHost> FieldFarmerHosts(Content c) => Array.Empty<HistoricalFieldFarmerHost>();   // red stub
         /// <summary>R-POP-004 (#1689 region slice): the Inventory as an initialized Historical ledger fixture, each record in
         /// its real region of regions.yaml. A census record takes the region that lists its city (AtLocation), and its location names that city. A formation
         /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1
