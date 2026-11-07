@@ -16,6 +16,10 @@ Shader "Statecraft/GroundScrub"
         TEXTURE2D(_ScDetailHeightTex); SAMPLER(sampler_ScDetailHeightTex);   // the terrain's 0..1 height, GroundDetail.BuildHeightTexture
         float4 _ScDetailScrub;   // x the terrain's height range (m), y terrain origin y, z, w the camera distance (m) where it shrinks away
         static const float ScScrubBorderFootprintM = 60.0;   // keeps a bush's reach, not a pixel, off the border's band
+        // A bush's pivot stays this far from a hex edge, so no bush stands over the hex lines the terrain draws (#2878: a bush
+        // on a line thinned it under a pixel at gameplay03, HexGridTests). A bush reaches up to TierRadius 1 x lobe 1.25 x
+        // BushMaxM 170 = 212 m from its pivot (GroundDetail.BuildScrubMesh); the rest covers its top seen from the tilted camera.
+        static const float ScScrubGridClearM = 240.0;
         CBUFFER_START(UnityPerMaterial)
             half _Jitter;
         CBUFFER_END
@@ -39,6 +43,7 @@ Shader "Statecraft/GroundScrub"
                 half4 cls = SAMPLE_TEXTURE2D_LOD(_ScDetailClassTex, sampler_ScDetailClassTex, uv, 0.0);
                 float density = ScScrubDensity(uv, mapM, cls, land, coast);
                 density *= ScOffTheBeach(coast, mapM) * ScClearOfBorder(mapM, ScScrubBorderFootprintM);
+                density *= step(ScScrubGridClearM, ScHexEdgeDistance(float2(mapM.x, _ScMap.y - mapM.y), _ScMapOrigin.w));   // as ScGridLine reads the grid
                 scale = step(v.rank.x * v.rank.x, density) * (0.65 + 0.35 * density);   // the rank squared: a thin scrub still shows
             }
             float height = SAMPLE_TEXTURE2D_LOD(_ScDetailHeightTex, sampler_ScDetailHeightTex, uv, 0.0).r * _ScDetailScrub.x + _ScDetailScrub.y;
