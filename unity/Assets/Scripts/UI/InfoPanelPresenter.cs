@@ -555,6 +555,9 @@ namespace Statecraft.Game.UI
                 pendingMove = (command, p.session, p.turn);
                 confirmMove.text = text.Format("unit.confirm_move", mover, target);
                 confirmMove.style.display = DisplayStyle.Flex;
+                // A pick made at the map stop (its Enter) is a keyboard pick: the offer takes the focus, so Enter takes it
+                // and it is not several Tabs away (#2340). A pointer pick leaves no focus (PointerBlur), so it gets none.
+                if (mapFocus != null && panel.focusController?.focusedElement == mapFocus) FocusReturn.To(confirmMove);
             };
         }
 

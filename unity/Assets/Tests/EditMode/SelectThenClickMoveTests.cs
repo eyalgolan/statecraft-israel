@@ -373,6 +373,7 @@ public class SelectThenClickMoveTests
         var send = rig.Ui.Root.Q<Button>("info-confirm-move");
         Assert.IsNotNull(send, "a visible confirmation is offered");
         Assert.AreEqual(DisplayStyle.Flex, send.style.display.value);
+        Assert.AreNotSame(send, rig.Ui.Root.panel.focusController.focusedElement, "a pointer pick moves no focus (#2340)");
         StringAssert.Contains(UnitCard.For(pair.a, rig.Bridge.State, Text, C.IsGdd, C).Title, send.text);
         StringAssert.Contains(HexPlaces.Of(string.Format(System.Globalization.CultureInfo.InvariantCulture,
             "{0},{1}", target.q, target.r), C, Text, null), send.text);
