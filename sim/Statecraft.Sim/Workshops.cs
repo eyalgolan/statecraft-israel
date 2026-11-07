@@ -94,6 +94,12 @@ namespace Statecraft.Sim
         public static int Staffed(GameState s, string city) =>
             s.Workshops.Values.Count(w => w.Staffed && s.CityProjects[w.Project].City == city);
 
+        /// <summary>R-ARMS-005: whether AssignWorkers(its city, "workshop", <paramref name="count"/>) staffs the built workshop
+        /// <paramref name="project"/>, one of its city's first count built workshops in ascending id (#2711: the UI's word for a
+        /// queued order).</summary>
+        public static bool Staffs(Content c, GameState s, CityProject project, int count) =>
+            BuiltIn(c, s, project.City).FindIndex(p => p.Id == project.Id) is int i && i >= 0 && i < count;
+
         // #2530: a count of 1 names the singular, as the UI's helper does.
         static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
 

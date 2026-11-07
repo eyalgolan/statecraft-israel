@@ -864,6 +864,38 @@ public class WorkshopPanelTests
         }
     }
 
+    // #2711 item 1 (R-ARMS-005): with a staffing order queued, each workshop's line follows the order, as the count above it
+    // does, not the sim's current record. Two built, none staffed, one ordered: the first by id is staffed at End turn and
+    // the second is not, and End turn agrees.
+    [Test]
+    public void WithAStaffingOrderQueuedEachWorkshopShowsWhatTheOrderMakesIt([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var second = 0;
+        var (bridge, first) = Game(C03, t, employed: 8, edit: (s, _) => second = SecondWorkshop(C03, s));
+        using (var ui = new UiTestKit())
+        {
+            using var panel = Panel(ui, bridge, t);
+            var (q, r) = Hex(C03);
+            panel.Show(q, r);
+            Assert.AreEqual(t["city.workshop_unstaffed"], ui.Q<Label>("city-workshop-state").text, "no order: the sim's record");
+            ui.Press("city-workshops-more");
+            Assert.AreEqual(1, Queued(bridge)!.Count);
+        }
+        foreach (var (id, key) in new[] { (first, "city.workshop_ordered_staffed"), (second, "city.workshop_ordered_unstaffed") })
+        {
+            using var ui = new UiTestKit();
+            using var panel = Panel(ui, bridge, t);
+            var hex = bridge.State.CityProjects[id];
+            panel.Show(hex.Q, hex.R);
+            Assert.AreEqual(t.Format("city.workshops_ordered", 1, 2), ui.Q<Label>("city-workshops").text);
+            Assert.AreEqual(t[key], ui.Q<Label>("city-workshop-state").text, id == first ? "the first by id" : "past the order's count");
+        }
+        var turn = bridge.EndTurn();
+        Assert.IsTrue(turn.State.Workshops[first].Staffed);
+        Assert.IsFalse(turn.State.Workshops.TryGetValue(second, out var w) && w.Staffed);
+    }
+
     // R-ARMS-005 (#1722 review, C7): two built, one person free. + orders one; with that order queued, + is off and the
     // sim's refusal for a second shows (one of two ordered, so a workshop is still left unstaffed).
     [Test]
