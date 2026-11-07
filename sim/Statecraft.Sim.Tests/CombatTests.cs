@@ -501,7 +501,8 @@ public class CombatTests
     }
 
     // R-COMBAT-003: a defender the row sends back retreats to the first free neighbour in the fixed order: (3, 0) holds the
-    // attacker, so (1, 0)... is town_a's hex, free to an enemy unit (R-MOVE-005 binds the player's units only).
+    // attacker, (3, -1) and (2, -1) are off the board and (1, 0) is town_a's, closed to an enemy unit (R-ENEMY-001, #2932),
+    // so (1, 1).
     [Fact]
     public void ALosingDefenderRetreatsOneHex()
     {
@@ -509,8 +510,8 @@ public class CombatTests
         var s = With(c, Attacking(Soldier(1, 3, 0, 6), 2, 0), Enemy(2, 2, 0, 3));
         var why = Resolve(c, s);
         var e = s.Units[2];
-        Assert.Equal((2, 1, 0), (e.Strength, e.Q, e.R));
-        Assert.Contains(why, x => x.Message == "Unit 2 retreated to hex 1,0");
+        Assert.Equal((2, 1, 1), (e.Strength, e.Q, e.R));
+        Assert.Contains(why, x => x.Message == "Unit 2 retreated to hex 1,1");
         Assert.Equal((3, 0), (s.Units[1].Q, s.Units[1].R));   // the attacker does not advance
         // The attack ends: no enemy unit is on the hex now.
         Assert.Equal(("", ""), (s.Units[1].Order, s.Units[1].OrderTarget));
@@ -528,6 +529,23 @@ public class CombatTests
         Assert.False(s.Units.ContainsKey(2));
         Assert.Contains(why, x => x.Message == "Unit 2 surrendered with 20 people: it had no hex to retreat to. They are held as prisoners");
         Assert.Equal(next, s.NextId);
+    }
+
+    // R-COMBAT-003 with R-ENEMY-001 (#2932): an enemy unit's retreat may not end on a player's locality, as its move may not.
+    // (0, 0)'s neighbours on the board are town_a's (1, 0) and the attacker's (0, 1), so the enemy surrenders. Before the fix it
+    // retreated onto town_a, a city, and under gdd-0.1 the turn ended in defeat_war (R-END-003); gdd-0.3 holds the same.
+    [Theory]
+    [InlineData(SaveGame.GddRuleset)]
+    [InlineData(SaveGame.Gdd03Ruleset)]
+    public void AnEnemyRetreatNeverEndsOnAPlayersLocality(string ruleset)
+    {
+        var c = Gdd03MovementFortTests.Load(ruleset);
+        var s = With(c, new Unit(1, "recruit", 0, 1, side: "israel", strength: 6), Enemy(2, 0, 0, 2));
+        var r = Step(c, s, new UnitOrder(1, Combat.Attack, 0, 0));
+        Assert.Empty(r.Rejected);
+        Assert.False(r.State.Units.ContainsKey(2));
+        Assert.Contains(r.Why, x => x.Key == WhyKeys.SurrenderedPrisoners);
+        Assert.Null(r.State.GameOver);
     }
 
     // Review focus 4: a unit at 0 is removed, and its id is never reused.

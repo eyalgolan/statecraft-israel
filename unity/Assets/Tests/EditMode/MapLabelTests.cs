@@ -296,12 +296,13 @@ public class MapLabelTests
     /// the map's names do not cover each other. With the real prefab placed and the camera at 30 km over the model (inside its
     /// close zoom), no shown settlement, locality or location pill overlaps the model's projected bounds.</summary>
     [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModel() { yield return NoPillCovers("rehovot"); }
-    /// <summary>The same among a town's houses (owner, 2 November 2026: "Among the houses"): Tel Aviv and Jerusalem.</summary>
+    /// <summary>The same at a major city's edge (owner, 6 November 2026, verbatim: "make the workshop at the edge of the city",
+    /// which replaces "Among the houses" of 2 November 2026 there): Tel Aviv and Jerusalem.</summary>
     [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModelInTelAviv() { yield return NoPillCovers("tel_aviv"); }
     /// <summary>Jerusalem, every pill through the close zoom (15 to 45 km) but one: the "East Jerusalem / Old City"
     /// location's pill is checked up to the close zoom's entry (40 km) only. At its exit (45 km, reached only on the way out)
     /// that pill (263 px wide, about 7.6 km there, set above the Old City's kit) covers the b21: an open item on #2281.
-    /// TownGap models the place names' bands, not a location pill at that zoom.</summary>
+    /// The plan models the place names' bands (SpecialBuildingModels.ClearOfName), not a location pill at that zoom.</summary>
     [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModelInJerusalem() { yield return NoPillCovers("jerusalem"); }
 
     /// <summary>Review of #2281 on main: every city's workshop model, not only these three, clear of every name pill through the
@@ -363,7 +364,7 @@ public class MapLabelTests
                         for (int c = 0; c < 8; c++)
                         {
                             var corner = new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z);
-                            var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front);
+                            var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front, city + "'s workshop model is in front of the camera");
                             x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
                         }
                     }
@@ -391,7 +392,7 @@ public class MapLabelTests
                         if (pill.Overlaps(rect)) failures.Add($"{distance:0} m, {offset:0} m: {slot.name}'s pill {pill} covers the workshop model {rect}");
                     }
                 }
-            Assert.IsEmpty(failures, string.Join("\n", failures));
+            Assert.IsEmpty(failures, city + ": " + string.Join("\n" + city + ": ", failures));
         }
         finally
         {
