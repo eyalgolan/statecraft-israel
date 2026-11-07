@@ -67,7 +67,7 @@ pending[
   operation_horev
   armistice_egypt
 postponed{
-  operation_horev=launch@7
+  operation_horev=launch@7@1948-12-15
 chosen{
   altalena=enforce
   bernadotte_assassination=outlaw

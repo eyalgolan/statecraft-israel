@@ -75,7 +75,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it and that option's operation
 units are in place in the state the card shows: the turn's start after its standing go-to routes have moved, the
-no-orders preview (R-ENEMY-007, `GoldenRun.SmokeOrders`; the smoke gives no unit orders), the rest left to their ministers): `SMOKE OK 5 turns 1948-10-15 14066f39c56d6e760edd1474189efee548e1af4b39651e63294239911d9aa69c`.
+no-orders preview (R-ENEMY-007, `GoldenRun.SmokeOrders`; the smoke gives no unit orders), the rest left to their ministers): `SMOKE OK 5 turns 1948-10-15 12f088f62bd0694ae59b5f6472751579ad96c2198308d0869a8cf795f1aad051`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -86,7 +86,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 14066f39c56d6e760edd1474189efee548e1af4b39651e63294239911d9aa69c"
+  --expect "SMOKE OK 5 turns 1948-10-15 12f088f62bd0694ae59b5f6472751579ad96c2198308d0869a8cf795f1aad051"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -553,3 +553,5 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-mvp-annex-nazareth | `cf8d2bdf` | no Acre capture; Carmeli a hex west on its march, (12, 4) (was `adafb60f`). smoke5 and smoke-orders do not move: the smoke runs stage nothing |
 | #2543, the owner's 7 November 2026 rulings ("Wait, with a limit", "6 turns", "Keep the option"): a postponed operation waits for its units, up to `mvp.operation_wait_turns` turns, keeping its option, and the state records it (`postponed{}`, written only when set) | smoke5 | `14066f39` | the smoke gives no unit orders, so Ten Days, postponed on the 15 July 1948 turn, no longer lapses at its window's end: it is still pending and postponed on 15 October 1948, and the first-option run stops at it each turn, so Bernadotte and Yoav are pending behind it. No snapshot is kept for this run; the end state was read from a probe run (was `3803636f`) |
 | #2543, the owner's 7 November 2026 rulings ("Wait, with a limit", "6 turns", "Keep the option"): a postponed operation waits for its units, up to `mvp.operation_wait_turns` turns, keeping its option, and the state records it (`postponed{}`, written only when set): as above | scenario-mvp-annex-nazareth | `4d4a35d7` | Golani is Nazareth's last garrison on 15 December 1948, so Horev is postponed rather than lapsing; once Nazareth is annexed the automated player stages Golani toward Horev's regions (read from HistoricalAI, which skips a last garrison), and on 15 February 1949, the run's end, Horev is still pending, postponed since turn 7, with Golani on (6, 12) on its go-to toward (-7, 26) (was `cf8d2bdf`). No other golden moves: in the other runs every operation is decided in its own window |
+| #2543, the owner's Q4 of 7 November 2026 ("Shift by the delay"): `postponed{}` also records the date of the first postponement, from which a late launch's orders are shifted | smoke5 | `12f088f6` | format only: Ten Days' entry gains the date of its first postponement, turn 2, 15 July 1948 on monthly turns from 15 May; no snapshot is kept for this run (was `14066f39`) |
+| #2543, the owner's Q4 of 7 November 2026 ("Shift by the delay"): `postponed{}` also records the date of the first postponement, from which a late launch's orders are shifted: as above | scenario-mvp-annex-nazareth | `c2aafd13` | format only: `operation_horev=launch@7` becomes `operation_horev=launch@7@1948-12-15`; nothing else differs (was `4d4a35d7`) |

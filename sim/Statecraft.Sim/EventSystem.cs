@@ -172,7 +172,10 @@ namespace Statecraft.Sim
         static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0, bool delegated = false, Person? minister = null, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
         {
             s.PendingEvents.Remove(eventId);
-            s.PostponedOperations.Remove(eventId);   // R-ENEMY-007: a decided card waits no more
+            // R-ENEMY-007: a decided card waits no more. Q4 (owner, 7 November 2026: "Shift by the delay (Recommended)"): a card
+            // that waited launches its orders to end later by the time it waited, from its first postponement to now.
+            var delay = s.PostponedOperations.TryGetValue(eventId, out var waited) ? s.Date - waited.Date : TimeSpan.Zero;
+            s.PostponedOperations.Remove(eventId);
             s.ChosenOptions[eventId] = o.Id;
             var fillDate = FillDate(Get(c, eventId), s.Date);
             var title = Title(c, s, Get(c, eventId));
@@ -278,7 +281,7 @@ namespace Statecraft.Sim
                 int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);   // the unit with id i is the i-th force (R-UNIT-006)
                 if (id < 0 || !s.Units.TryGetValue(id, out var u) || u.Side != c.StartingForces[id].Side || u.Type != c.StartingForces[id].Type) continue;
                 var refused = SettlementControl.LastGarrison(c, s, u) ? Orders.RefusedLastGarrison
-                    : Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x)) != null ? Orders.RefusedCardOrder
+                    : Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x) + delay) != null ? Orders.RefusedCardOrder
                     : null;
                 if (refused != null) rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), refused));
             }
@@ -479,7 +482,7 @@ namespace Statecraft.Sim
                 if (ArmisticeBlock(c, s, e, option) == RefusedOperationArmisticeFirst)
                 {
                     rng.State = beforeDraw;
-                    if (postponed == null) s.PostponedOperations[id] = new PostponedOperation(option.Id, s.Turn);
+                    if (postponed == null) s.PostponedOperations[id] = new PostponedOperation(option.Id, s.Turn, s.Date);
                     why.Add(OperationCause(c, s, e, Array.Empty<OperationRequirementRow>(), CauseKeys.OperationWaitsForArmistice));
                     continue;
                 }
@@ -490,7 +493,7 @@ namespace Statecraft.Sim
                     // R-ENEMY-007 (owner, 7 November 2026: "Lapse at once (Recommended)"): a required unit that is no longer on the
                     // board can never arrive, so the card lapses now rather than waiting out its turns.
                     if (Lost(c, s, option).Count > 0) { Lapse(c, s, e, why, CauseKeys.OperationLapsedUnitLost, option); continue; }
-                    if (postponed == null) s.PostponedOperations[id] = new PostponedOperation(option.Id, s.Turn);
+                    if (postponed == null) s.PostponedOperations[id] = new PostponedOperation(option.Id, s.Turn, s.Date);
                     why.Add(OperationCause(c, s, e, status.Missing, CauseKeys.OperationPostponed));
                     continue;
                 }

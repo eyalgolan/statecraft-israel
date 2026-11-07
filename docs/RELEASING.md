@@ -31,7 +31,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 832e8ccc38e3fb36228826816b452477fbbd6ab667ee30cdaef40e5b1b2fe869"
    # and "GOLDEN OK hash1952 841f05536a49b68cd10d3f1ca548e559098415119284d483620f14bb6a4bb44e"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 14066f39c56d6e760edd1474189efee548e1af4b39651e63294239911d9aa69c"
+     --expect "SMOKE OK 5 turns 1948-10-15 12f088f62bd0694ae59b5f6472751579ad96c2198308d0869a8cf795f1aad051"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
@@ -66,7 +66,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 14066f39c56d6e760edd1474189efee548e1af4b39651e63294239911d9aa69c"
+     --expect "SMOKE OK 5 turns 1948-10-15 12f088f62bd0694ae59b5f6472751579ad96c2198308d0869a8cf795f1aad051"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90

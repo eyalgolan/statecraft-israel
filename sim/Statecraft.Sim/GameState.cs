@@ -260,7 +260,8 @@ namespace Statecraft.Sim
             if (CappedEvents.Count > 0) Section("capped", '[', ']', CappedEvents);
             // R-ENEMY-007: absent while no operation waits, as `capped`, so a run that postpones none hashes as before.
             if (PostponedOperations.Count > 0)
-                Section("postponed", '{', '}', PostponedOperations.Select(kv => kv.Key + "=" + kv.Value.Option + "@" + kv.Value.Turn.ToString(CultureInfo.InvariantCulture)));
+                Section("postponed", '{', '}', PostponedOperations.Select(kv => kv.Key + "=" + kv.Value.Option + "@" + kv.Value.Turn.ToString(CultureInfo.InvariantCulture)
+                    + "@" + kv.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
             Nl(); sb.Append("chosen{");
             foreach (var kv in ChosenOptions.OrderBy(k => k.Key, StringComparer.Ordinal)) { Entry(); sb.Append(kv.Key).Append('=').Append(kv.Value); Sep(); }
             Close('}');
@@ -340,12 +341,14 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>R-ENEMY-007: a postponed operation card's kept option and the turn (GameState.Turn) of its first postponement.
+    /// <summary>R-ENEMY-007: a postponed operation card's kept option, and the turn (GameState.Turn) and date of its first
+    /// postponement: the wait is counted from the turn, and a late launch's orders end later by the time since the date (Q4).
     /// Immutable, so GameState.Clone can share it.</summary>
     public sealed class PostponedOperation
     {
         public string Option { get; }
         public int Turn { get; }
-        public PostponedOperation(string option, int turn) { Option = option; Turn = turn; }
+        public DateTime Date { get; }
+        public PostponedOperation(string option, int turn, DateTime date) { Option = option; Turn = turn; Date = date; }
     }
 }

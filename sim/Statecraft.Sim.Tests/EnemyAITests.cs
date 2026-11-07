@@ -1013,7 +1013,7 @@ public class EnemyAITests
         {
             var s = Simulation.NewGame(c, seed, Mode.Historical); s.Mode = Mode.Open;
             s.Units[0] = At(s.Units[0], 2, 0);
-            s.PostponedOperations["probe"] = new PostponedOperation("ok", s.Turn);
+            s.PostponedOperations["probe"] = new PostponedOperation("ok", s.Turn, s.Date);
             var why = new List<Cause>();
             EventSystem.Delegate(c, s, why);
             Assert.False(s.ChosenOptions.ContainsKey("probe"), $"seed {seed}: resolved with {(s.ChosenOptions.TryGetValue("probe", out var o) ? o : "")}");
@@ -1032,7 +1032,7 @@ public class EnemyAITests
         probe.Options.Add(new EventOption { Id = "vote", Text = "Vote", Historical = true });
         var s = Simulation.NewGame(c, 1, Mode.Historical); s.Mode = Mode.Open;
         s.Units[0] = At(s.Units[0], 2, 0);
-        s.PostponedOperations["probe"] = new PostponedOperation("ok", s.Turn);
+        s.PostponedOperations["probe"] = new PostponedOperation("ok", s.Turn, s.Date);
         EventSystem.Delegate(c, s, new List<Cause>());
         Assert.Equal("vote", s.ChosenOptions["probe"]);
         Assert.Empty(s.PostponedOperations);
@@ -1517,6 +1517,31 @@ public class EnemyAITests
         var refused = s.Clone();
         Assert.Null(EventSystem.Choose(c, refused, "armistice_egypt", "hold_out", new List<Cause>()));
         Assert.Null(EventSystem.Choose(c, refused, "operation_horev", "launch", new List<Cause>()));   // decided first: Horev may go
+    }
+
+    // Q4, "Shift by the delay (Recommended)" (owner, 7 November 2026): a late launch's card orders end later by the time the
+    // card waited, from its first postponement to the launch, instead of on the #2087 date. Real content: Horev postponed on
+    // 15 December 1948 and launched on 15 February 1949, 62 days late; Golani's Julis anchor ends 24 February 1949, so its
+    // order now ends 62 days later, on 27 April 1949. Red without the shift: the order ends on 24 February 1949.
+    [Fact]
+    public void ALateLaunchsOrdersEndLaterByItsDelay()
+    {
+        var c = Real;
+        var s = GoldenRun.Play(c, new DateTime(1948, 12, 15));
+        var golani = c.StartingForces.FindIndex(f => f.Row == "golani");
+        s.Units[golani] = At(s.Units[golani], 11, 11);
+        for (int turn = 0; turn < 2; turn++) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.Equal(new DateTime(1948, 12, 15), s.PostponedOperations["operation_horev"].Date);
+        Assert.Null(EventSystem.Choose(c, s, "armistice_egypt", "hold_out", new List<Cause>()));
+        var launch = c.Events.Single(e => e.Id == "operation_horev").Options.Single(o => o.Id == "launch");
+        var south = c.PlayerRegions.Regions[launch.RequiresUnitRegions[0]].MemberHexes[0];
+        s.Units[golani] = At(s.Units[golani], south.Q, south.R);
+        Assert.Equal(new DateTime(1949, 2, 15), s.Date);
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>()));
+        var normal = EventSystem.OrderEnds(c, launch.UnitOrders.Single(x => x.Unit == "golani"));
+        Assert.Equal(new DateTime(1949, 2, 24), normal);
+        Assert.Equal(normal!.Value.AddDays(62), s.CardOrders[golani]);
+        Assert.Equal(new DateTime(1949, 4, 27), s.CardOrders[golani]);
     }
 
     static SettlementTarget Nazareth =>Real.SettlementTargets.Single(t => t.Id == "nazareth");
