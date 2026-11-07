@@ -1058,7 +1058,8 @@ public class CityPanelTests
     /// Tel Aviv's hex, Train halutzim (pressed again on a later turn when the Attention left refuses it); when the group has
     /// trained, on the site's hex, Build with it; build every designated yishuv through the panel and End Turn until their objective card is pending, then answer
     /// the cards before it with their first option until the event card shows it, with its objective line. Cards are left to
-    /// their ministers otherwise, as the smoke run does with the cards the Attention cannot pay for.</summary>
+    /// their ministers otherwise, as the smoke run does with the cards the Attention cannot pay for: an open card is hidden
+    /// first each turn, since it disables the panel under it (#2574).</summary>
     [Test]
     public void APlaythroughThroughThePanelReachesTheObjectiveCard()
     {
@@ -1069,6 +1070,11 @@ public class CityPanelTests
         DateTime? trainedOn = null, buildOn = null;
         for (int turn = 0; turn < 60 && bridge.State.GameOver == null && !bridge.State.PendingEvents.Contains("first_new_yishuv"); turn++)
         {
+            // An open card disables the panels under it (EventCardPresenter, ScreenNav.DisableCovered), and a disabled button
+            // ignores the press. Hide it, as the player would, so the panel's buttons are in reach: the card stays pending,
+            // and End turn leaves it to its minister.
+            if (card.Shown != null && !card.Collapsed) card.Collapse();
+            Assert.IsTrue(Host(ui).enabledInHierarchy, $"{bridge.State.Date:yyyy-MM-dd}: no card or screen covers the panel");
             if (trainedOn == null)
             {
                 panel.Show(CityHex.q, CityHex.r);
@@ -1105,6 +1111,7 @@ public class CityPanelTests
             .All(id => bridge.State.Sites.TryGetValue(id, out var completed) && completed.BuiltOn != null), "all designated sites are built");
         Assert.IsTrue(bridge.State.Objectives.ContainsKey("yishuvim"), "the objective is recorded under its new id");
         Assert.IsTrue(bridge.State.PendingEvents.Contains("first_new_yishuv"), "the unchanged event-card id is pending");
+        if (card.Collapsed) card.Reopen();   // a hidden card's options are disabled
         for (int guard = 0; card.Shown != null && card.Shown.Id != "first_new_yishuv" && guard < 20; guard++)
             UiTestKit.Press(ui.Root.Q<VisualElement>("event-options").Q<Button>());
         Assert.AreEqual("first_new_yishuv", card.Shown?.Id, "the event card shows the objective card");

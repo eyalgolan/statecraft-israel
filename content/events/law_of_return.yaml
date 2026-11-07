@@ -9,7 +9,10 @@ text_he: 'הכנסת עומדת להצביע על חוק השבות, המעני�
 anchor: hard
 office: prime_minister
 # Passed unanimously on 5 July 1950.
-from: 1950-07-05
+# R-TURN-002 (#2551; the owner chose "Move them a turn earlier (Recommended)" on 4 November 2026): the window opens on
+# the 15th on or before the decision (passed 5 July 1950; it opened on 1950-07-05), so the card reaches the player on
+# the turn before it.
+from: 1950-06-15
 to: 1950-07-06
 options:
   - id: enact

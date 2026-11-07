@@ -536,18 +536,22 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
     // lost and the turns they are lost on change, and with them mvp.military_upkeep_per_turn (IL 0.05m a formation a turn):
     // the same run now ends at IL 40.54m on 15 April 1949 and IL 178.74m, the conversion at IL 25.89m and IL 164.09m. The
     // crisis dates and the IL 14.652m are the same on both grids.
+    // #2551 (R-TURN-002): armistice_egypt now comes on 15 February 1949, a turn earlier, and signing it sets rung 2, so the
+    // war has 10 turns at rung 4 or 5, not 11. One war turn less costs IL 3.75m less debt (IL 36.79m on 15 April 1949 and
+    // IL 174.99m at the end); the conversion is $40m, IL 13.32m less debt (IL 23.47m and IL 161.67m), and with $4m more
+    // foreign currency kept the converting run's crisis comes on 15 April 1951. The no-lever crisis is unchanged.
     [Fact]
     public void TheWarOnlyRunReproducesThePrototypeAtTheSourcedRate()
     {
         var none = Prototype(0);
-        Assert.Equal((40.54, 178.74), (Math.Round(none.April1949, 2), Math.Round(none.End.Debt, 2)));
+        Assert.Equal((36.79, 174.99), (Math.Round(none.April1949, 2), Math.Round(none.End.Debt, 2)));
         Assert.Equal(new DateTime(1951, 12, 15), none.Crisis);
         var sold = Prototype(4);
-        Assert.Equal(44, sold.Converted);
-        var saved = 44 * 0.333;
+        Assert.Equal(40, sold.Converted);
+        var saved = 40 * 0.333;
         Assert.Equal(none.April1949 - saved, sold.April1949, 9);
         Assert.Equal(none.End.Debt - saved, sold.End.Debt, 9);
-        Assert.Equal((25.89, 164.09), (Math.Round(sold.April1949, 2), Math.Round(sold.End.Debt, 2)));
-        Assert.Equal(new DateTime(1951, 3, 15), sold.Crisis);
+        Assert.Equal((23.47, 161.67), (Math.Round(sold.April1949, 2), Math.Round(sold.End.Debt, 2)));
+        Assert.Equal(new DateTime(1951, 4, 15), sold.Crisis);
     }
 }
