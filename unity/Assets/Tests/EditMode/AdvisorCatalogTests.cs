@@ -111,6 +111,9 @@ public class AdvisorCatalogTests
     [TestCase("{ id: x, advisor: dayan, signal: new_game, level: new, quote: q9 }", "not on the verified list")]
     [TestCase("{ id: x, advisor: dayan, signal: new_game, level: new, he_review: maybe }", "he_review must be")]
     [TestCase("{ id: x, advisor: dayan, signal: new_game, level: warnings, actions: [{ encyclopedia: moon }] }", "encyclopedia actions are for teaching messages")]
+    [TestCase("{ id: x, advisor: dayan, signal: new_game, fallback: moon, level: new }", "unknown fallback signal 'moon'")]
+    [TestCase("{ id: x, advisor: dayan, signal: new_game, level: warnings, lapse_after: 3 }", "lapse_after is a game turn, on teaching messages only")]
+    [TestCase("{ id: x, advisor: dayan, signal: new_game, level: new, lapse_after: -1 }", "lapse_after is a game turn, on teaching messages only")]
     public void EachBrokenRowIsNamed(string row, string expected)
     {
         var problems = ProblemsOf("messages:\n  - " + row + "\n", "advisor.x.text", "advisor.Bad Id.text");
