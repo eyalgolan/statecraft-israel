@@ -5,11 +5,11 @@ public class PopulationLedgerBoundaryTests
 {
     [Theory]
     [InlineData("population.init")] [InlineData("population.apply")]
-    [InlineData("pools.consume")] [InlineData("pools.harvest")]
+    [InlineData("pools.init")] [InlineData("pools.consume")] [InlineData("pools.harvest")]
     [InlineData("pools.buy")] [InlineData("pools.term")]
     [InlineData("cities.init")] [InlineData("cities.assign")] [InlineData("cities.produce")]
     [InlineData("cities.house")] [InlineData("cities.condition")] [InlineData("cities.arrive")] [InlineData("cities.upkeep")]
-    [InlineData("starting.arrive")]
+    [InlineData("starting.init")] [InlineData("starting.arrive")]
     [InlineData("training.start")] [InlineData("training.cancel")] [InlineData("training.progress")] [InlineData("training.reinforce")]
     [InlineData("military.serve")] [InlineData("military.upkeep")]
     [InlineData("qualification.return")] [InlineData("qualification.craftsmen")] [InlineData("qualification.pioneers")] [InlineData("qualification.unit")]
@@ -32,6 +32,7 @@ public class PopulationLedgerBoundaryTests
             {
                 case "population.init": PopulationSystem.Init(c,s); break;
                 case "population.apply": PopulationSystem.Apply(c,s,s.Date.AddMonths(1),.1,why); break;
+                case "pools.init": Pools.Init(c,s); break;   // S5-3: only the dark start's Historical ledger is read
                 case "pools.consume": Pools.Consume(c,s,rules,why); break;
                 case "pools.harvest": Pools.Harvest(c,s,rules,why); break;
                 case "pools.buy": Pools.BuyArms(c,s,1,why); break;
@@ -43,6 +44,7 @@ public class PopulationLedgerBoundaryTests
                 case "cities.condition": Cities.UpdateCondition(c,s,rules,why); break;
                 case "cities.arrive": Cities.Arrive(c,s,rules,s.Date.AddMonths(1),why); break;
                 case "cities.upkeep": Cities.AnnualUpkeep(c,s,rules); break;
+                case "starting.init": StartingForces.Init(c,s); break;   // S5-3: as pools.init
                 case "starting.arrive": StartingForces.Arrive(c,s,s.Date.AddMonths(1)); break;
                 case "training.start": Training.Start(c,s,"missing","missing",1,why); break;
                 case "training.cancel": Training.Cancel(c,s,0,why); break;

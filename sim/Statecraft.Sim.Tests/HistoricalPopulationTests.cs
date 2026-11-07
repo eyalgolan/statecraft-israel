@@ -80,6 +80,24 @@ public class HistoricalPopulationTests
             .Select(f => HistoricalPopulation.FormationPrefix + f.Row).OrderBy(s => s, StringComparer.Ordinal), formations);
     }
 
+    // S2-2 (review of #2937): one predicate says what an own opening formation is (Israeli, no dated arrival, with a
+    // strength): the inventory's formation sources, the loader's formation_combat_xp rows and the formations
+    // StartingForces.Init checks against the ledger all read HistoricalPopulation.OpeningFormations.
+    [Fact]
+    public void OneHelperNamesTheOwnOpeningFormations()
+    {
+        var c = Real(true);
+        var opening = HistoricalPopulation.OpeningFormations(c).Select(f => f.Row).OrderBy(r => r, StringComparer.Ordinal).ToList();
+        Assert.NotEmpty(opening);
+        Assert.All(HistoricalPopulation.OpeningFormations(c), f => Assert.True(f.Side == Movement.PlayerSide && f.Arrives == null && f.Strength > 0));
+        var sources = HistoricalPopulation.Inventory(c).Select(r => r.Source)
+            .Where(x => x.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal))
+            .Select(x => x.Substring(HistoricalPopulation.FormationPrefix.Length)).Distinct(StringComparer.Ordinal).OrderBy(r => r, StringComparer.Ordinal);
+        Assert.Equal(opening, sources);
+        Assert.Equal(opening, c.Gdd03FormationCombatXp!.Keys);
+        Assert.Equal(opening, HistoricalPopulation.OpeningFormationRows(c).OrderBy(r => r, StringComparer.Ordinal));
+    }
+
     // R-POP-004, R-UNIT-006, R-UNIT-009: enemy formations are not own population, and a dated arrival is not in the start
     // inventory (it takes new ids when it arrives, Q11).
     [Fact]

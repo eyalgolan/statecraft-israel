@@ -71,12 +71,22 @@ namespace Statecraft.Sim
                 throw new ArgumentException("Unknown or incompatible assignment target.");
             return t;
         }
-        /// <summary>R-POP-002: a location's city must be a member location of its region in regions.yaml (AtLocation).</summary>
-        internal void ValidateCities(PlayerRegionCatalogue regions)
+        /// <summary>R-POP-002: a location's city must be a member location of its region in regions.yaml (AtLocation), and a
+        /// place where own people live by R-POP-004's rulings: a census city (cities.yaml, R-CITY-006) or a field host of that
+        /// region (field_hexes host; owner, 7 November 2026, #1689: "These two only (Recommended)"). Any other member, a
+        /// locality, a sites.yaml id or a map location, is refused (review of #2936, S1-1).</summary>
+        internal void ValidateCities(Content c)
         {
             foreach (var l in locations)
-                if (l.City != null && regions.AtLocation(l.City)?.Id != l.Region)
+            {
+                if (l.City == null) continue;
+                var region = c.PlayerRegions.AtLocation(l.City);
+                if (region?.Id != l.Region)
                     throw new ArgumentException("City " + l.City + " is not in region " + l.Region + " in regions.yaml (R-POP-002).");
+                if (!c.Cities.Any(x => x.Id == l.City) && !region.FieldHosts.Any(h => h.Host == l.City))
+                    throw new ArgumentException("City " + l.City + " of region " + l.Region
+                        + " is neither a census city of cities.yaml nor a field host in regions.yaml (R-POP-002).");
+            }
         }
         internal bool HasCaptor(string captor) => captors.Contains(captor);
         internal bool HasQualification(string qualification) => qualification == "" || qualifications.Contains(qualification);
@@ -115,6 +125,9 @@ namespace Statecraft.Sim
         int receptionLimit;
         internal int ReceptionLimit { get { RequireInitialized(); return receptionLimit; } }
         int peoplePerUnit;
+        /// <summary>Initialized with mode Historical (the R-POP-004 start's scale). Not written to the canonical text: the
+        /// scale it implies already is.</summary>
+        internal bool IsHistorical { get; private set; }
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }
         public double TotalPeople => (double)units.Count * peoplePerUnit;
@@ -145,6 +158,12 @@ namespace Statecraft.Sim
         {
             if (state.PopulationLedger.IsInitialized)
                 throw new NotSupportedException("Population-ledger fixtures cannot run aggregate systems; gdd-0.3 integration is held.");
+        }
+        /// <summary>#1725 PR 5 (review S5-3): Pools.Init and StartingForces.Init read an initialized ledger only in the dark
+        /// start's shape, a Historical one (R-POP-004); a synthetic or Open ledger is refused as by <see cref="RefuseAggregate"/>.</summary>
+        internal static void RefuseUnlessHistorical(GameState state)
+        {
+            if (!state.PopulationLedger.IsHistorical) RefuseAggregate(state);
         }
         void RequireInitialized()
         {
@@ -284,7 +303,7 @@ namespace Statecraft.Sim
             if (nextPopulationId < 0) throw new ArgumentOutOfRangeException(nameof(nextPopulationId));
             var l = new PopulationLedger(true);
             l.bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
-            bindings.ValidateCities(c.PlayerRegions);
+            bindings.ValidateCities(c);
             var ordered = rows.OrderBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Ordinal).ToList();
             if (mode != Mode.Historical && ordered.Any(x => x.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
                 || x.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)))
@@ -302,6 +321,7 @@ namespace Statecraft.Sim
             l.Validate(l.units);
             this.bindings = l.bindings; units = l.units; sources = l.sources; losses = l.losses;
             peoplePerUnit = l.peoplePerUnit; receptionLimit = l.receptionLimit; NextPopulationId = l.NextPopulationId;
+            IsHistorical = mode == Mode.Historical;
             IsInitialized = true;
         }
         // R-POP-001's no-fallback rule, as for the catalogue value: a missing or nonpositive value is refused, never replaced.

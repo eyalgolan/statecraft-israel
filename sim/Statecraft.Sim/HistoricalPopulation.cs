@@ -35,10 +35,14 @@ namespace Statecraft.Sim
         /// comment 6704565066: "the training centre's one veteran pioneer teacher is a Haifa census unit").</summary>
         internal const string TeacherCity = "haifa";
 
-        /// <summary>The map/units_1948.yaml rows that give the start inventory soldiers: Israeli, in the start (no dated
-        /// arrival), with a strength.</summary>
-        internal static IEnumerable<string> OpeningFormationRows(Content c) => c.StartingForces
-            .Where(f => f.Side == Movement.PlayerSide && f.Arrives == null && f.Strength > 0).Select(f => f.Row);
+        /// <summary>The own opening formations, the one predicate for them (review S2-2): the map/units_1948.yaml rows that
+        /// give the start inventory soldiers, Israeli, in the start (no dated arrival), with a strength. The inventory, the
+        /// loader's formation_combat_xp check and StartingForces.Init's ledger check all read it.</summary>
+        internal static IEnumerable<StartingForce> OpeningFormations(Content c) => c.StartingForces
+            .Where(f => f.Side == Movement.PlayerSide && f.Arrives == null && f.Strength > 0);
+
+        /// <summary>The row ids of <see cref="OpeningFormations"/>.</summary>
+        internal static IEnumerable<string> OpeningFormationRows(Content c) => OpeningFormations(c).Select(f => f.Row);
 
         internal static IReadOnlyList<HistoricalPopulationRow> Inventory(Content c)
         {
@@ -46,9 +50,8 @@ namespace Statecraft.Sim
             if (!c.UsesPopulationLedger) throw new InvalidOperationException("The Historical population inventory requires gdd-0.3.");
             var counts = new List<(string Source, int Units, PopulationStatus Status)>();
             foreach (var city in c.Cities) counts.Add((CensusPrefix + city.Id, city.Civilians, PopulationStatus.FreeCivilian));
-            foreach (var f in c.StartingForces)
-                if (f.Side == Movement.PlayerSide && f.Arrives == null)
-                    counts.Add((FormationPrefix + f.Row, f.Strength, PopulationStatus.ActiveSoldier));
+            foreach (var f in OpeningFormations(c))
+                counts.Add((FormationPrefix + f.Row, f.Strength, PopulationStatus.ActiveSoldier));
             if (counts.Select(x => x.Source).Distinct(StringComparer.Ordinal).Count() != counts.Count)
                 throw new InvalidOperationException("Duplicate Historical population source.");
             var rows = new List<HistoricalPopulationRow>();

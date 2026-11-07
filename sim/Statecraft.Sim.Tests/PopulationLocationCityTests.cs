@@ -42,4 +42,28 @@ public class PopulationLocationCityTests
         Assert.Contains(haifa, unknown.Message);
         Assert.True(Fixture(c, new PopulationLocation(haifa, city: "haifa")).PopulationLedger.IsInitialized);
     }
+
+    // S1-1 (review of #2936): a location's city is a place where own people live by R-POP-004's rulings, a census city
+    // (cities.yaml, R-CITY-006) or a field host of its region (regions.yaml field_hexes host; owner, 7 November 2026, #1689:
+    // "These two only (Recommended)", a settlement hosts F19 and F20 only). Any other member location of the region, a
+    // locality, a sites.yaml id or a map location, is refused, naming it and the region.
+    [Fact]
+    public void AMemberLocationThatIsNeitherACensusCityNorAFieldHostIsRefused()
+    {
+        var c = HistoricalPopulationTests.Real(true);
+        var census = new HashSet<string>(c.Cities.Select(x => x.Id), StringComparer.Ordinal);
+        var region = c.PlayerRegions.AtLocation("haifa")!;
+        var hosts = new HashSet<string>(region.FieldHosts.Select(h => h.Host), StringComparer.Ordinal);
+        var place = region.MemberLocations.First(p => !census.Contains(p) && !hosts.Contains(p));
+        var e = Assert.Throws<ArgumentException>(() => Fixture(c, new PopulationLocation(region.Id, city: place)));
+        Assert.Contains(place, e.Message);
+        Assert.Contains(region.Id, e.Message);
+        // The two settlement hosts stay accepted in their own region, and no other region.
+        foreach (var host in new[] { "nir_am", "nirim" })
+        {
+            var home = c.PlayerRegions.AtLocation(host)!;
+            Assert.Contains(home.FieldHosts, h => h.Host == host);
+            Assert.True(Fixture(c, new PopulationLocation(home.Id, city: host)).PopulationLedger.IsInitialized);
+        }
+    }
 }
