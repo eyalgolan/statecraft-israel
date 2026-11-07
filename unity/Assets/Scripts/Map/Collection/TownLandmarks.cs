@@ -625,8 +625,20 @@ namespace Statecraft.Game.Map.Collection
         /// road vehicle layers read it from here.</summary>
         public static float ViewDistance(Camera cam) => Kits.TownModelLayer.ViewDistance(cam);
 
-        /// <summary>#700's building layer of this map (null without kits).</summary>
-        Kits.TownModelLayer? Layer() => map == null ? null : map.GetComponentInChildren<Kits.TownModelLayer>(true);
+        /// <summary>#700's building layer of this map (null without kits). Found once and kept: WholeReady asks for it for
+        /// every town swap, up to three times per camera per frame, and the walk of the whole map hierarchy grows below the
+        /// close switch (frame cost finding, 7 November 2026). A destroyed layer, or one no longer under this map, is looked
+        /// up again.</summary>
+        Kits.TownModelLayer? Layer()
+        {
+            if (map == null) return null;
+            if (buildingLayer != null && buildingLayer.transform.IsChildOf(map.transform)) return buildingLayer;
+            LayerLookups++;
+            return buildingLayer = map.GetComponentInChildren<Kits.TownModelLayer>(true);
+        }
+        Kits.TownModelLayer? buildingLayer;
+        /// <summary>How many times <see cref="Layer"/> has walked the map's hierarchy for the building layer (a test aid).</summary>
+        internal int LayerLookups { get; private set; }
 
         void OnEnable()
         {
