@@ -850,9 +850,15 @@ namespace Statecraft.Game.UI
             var pioneer = info?.Pioneer;
             var unit = info?.ShowsUnit == true ? units?.Selected : null;
             var hex = info?.ShowsUnit == true ? null : info?.Selected;
+            // #2340: the card or capture dialog the player hid; the rebuilt presenters would open it again.
+            var hiddenCard = card?.Collapsed == true ? card.Shown!.Id : null;
+            var hiddenCapture = capture?.Collapsed == true ? capture.Shown : null;
             // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
             try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
             finally { keptBudgetDraft = null; }
+            // Hidden again before the selection is put back: an open card or dialog disables the info panel (ScreenNav).
+            if (hiddenCard != null && card?.Shown?.Id == hiddenCard) card.Collapse(takeFocus: false);
+            if (hiddenCapture != null && capture?.Shown == hiddenCapture) capture.Collapse(takeFocus: false);
             // Put back before Settings opens again: a screen that covers the panel would ignore it. The map's hex outline
             // outlives Begin, so it is set to match (before, the new panel showed nothing under the old outline).
             if (info != null && units != null)
@@ -1124,6 +1130,8 @@ namespace Statecraft.Game.UI
             // once the swamp is drained (#2082; owner, 2 November 2026: "Hula + Arava, map and boards").
             Statecraft.Game.Map.Collection.HulaPapyrusLayer.ShowAt(map, Bridge.Content,
                 Statecraft.Game.Map.Collection.HulaPapyrusLayer.Drained(Bridge.State));
+            // A plowed field's or drained swamp's ground on its hex (#2877): from the sites, so a loaded save shows its own.
+            SiteGroundLayer.ShowAt(map, Bridge.Content, Bridge.State.Sites.Values);
             // Tal Heuberger's civilian figures at towns, villages, transit camps and building sites, ambience only and streamed
             // after the first frame (#666, #708, #886): the residents follow the settlement state, the builders the projects.
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content,

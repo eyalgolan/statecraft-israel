@@ -45,7 +45,7 @@ namespace Statecraft.Game.Map.Kits
             {
                 var p = At(u, v);
                 var (bottom, top) = GroundSpan(p, yaw, w * m, d * m, ground, m);
-                km.Box(p.x, p.y, yaw, w * m, d * m, bottom, top, OutpostWallH * m, stone, stone, Facade.Plain, m);
+                km.Box(p.x, p.y, yaw, w * m, d * m, bottom, top, OutpostWallH * m, stone, stone, Facade.Rubble, m);
             }
             Record(s.Id, "outpost_yard", c, yaw, side, side, OutpostWallH * m, stone);
             // The lookout tower in the yard's (+u, +v) corner: three storeys under a slightly wider cap.
@@ -53,7 +53,7 @@ namespace Statecraft.Game.Map.Kits
                 var p = At(h - 2f, h - 2f); float w = 4f * m, th = 9.5f * m;
                 var (bottom, top) = GroundSpan(p, yaw, w, w, ground, m);
                 km.Box(p.x, p.y, yaw, w, w, bottom, top, th, stone, roof, Facade.Stone, m);
-                km.Box(p.x, p.y, yaw, w * 1.08f, w * 1.08f, top + th, top + th, 1f * m, stone, roof, Facade.Plain, m);
+                km.Box(p.x, p.y, yaw, w * 1.08f, w * 1.08f, top + th, top + th, 1f * m, stone, roof, Facade.Ashlar, m);
                 Record(s.Id, "lookout_tower", p, yaw, w, w, th + 1f * m, stone);
             }
             AtWorldScale(s.Id, "outpost_yard", km, start, c, ground.Y(c.x, c.y), m);   // #1032: the wall and the tower, as one landmark
@@ -79,7 +79,7 @@ namespace Statecraft.Game.Map.Kits
                 AddModel(s.Id, i == 0 ? TownModel.B07DiningHall : TownModel.B09aCommunal, q, yaw, w * m, d * m, bh, qBottom, qTop, km, m,
                     exactHeight: false, flip: false);
                 var cut = km.CutStart();
-                km.Box(p.x, p.y, yaw, w * m, d * m, bottom, top, bh, concrete, roof, living ? Facade.Village : Facade.Plain, m);
+                km.Box(p.x, p.y, yaw, w * m, d * m, bottom, top, bh, concrete, roof, living ? Facade.Moshava : Facade.Plaster, m);
                 km.CutEnd(cut);
                 // The first, larger living building holds the fortress's "חדר אוכל" (the source above): Revivim's one dining hall.
                 Record(s.Id, i == 0 ? "dining_hall" : "building", p, yaw, w * m, d * m, bh, concrete);

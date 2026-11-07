@@ -431,10 +431,11 @@ namespace Statecraft.Sim
 
         /// <summary>R-COMBAT-003: the first neighbour of the unit's hex, in the fixed order (R-MOVE-002), that is land, holds no
         /// unit of the other team, has room under mvp.stack_limit for the unit's side (R-MOVE-003) and, for the player's unit,
-        /// is not an enemy-held locality (R-MOVE-005); null when there is none.</summary>
+        /// is not an enemy-held locality (R-MOVE-005), and for an enemy unit is not a player's locality (R-ENEMY-001,
+        /// #2932); null when there is none.</summary>
         static (int, int)? Retreat(Content c, GameState s, MvpRules mvp, Unit u)
         {
-            var noEntry = Player(u) ? Movement.NoEntry(c, s) : new HashSet<(int Q, int R)>();
+            var noEntry = Movement.NoEntry(c, s, enemy: !Player(u));
             foreach (var (dq, dr) in Movement.Neighbours)
             {
                 int q = u.Q + dq, r = u.R + dr;

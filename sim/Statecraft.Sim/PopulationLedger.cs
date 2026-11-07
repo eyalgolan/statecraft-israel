@@ -108,6 +108,8 @@ namespace Statecraft.Sim
         int receptionLimit;
         internal int ReceptionLimit { get { RequireInitialized(); return receptionLimit; } }
         int peoplePerUnit;
+        /// <summary>People one record stands for in this ledger (CreateFixture's scale).</summary>
+        internal int PeoplePerUnit { get { RequireInitialized(); return peoplePerUnit; } }
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }
         public double TotalPeople => (double)units.Count * peoplePerUnit;
@@ -281,7 +283,7 @@ namespace Statecraft.Sim
             return s;
         }
         // R-POP-001's no-fallback rule, as for the catalogue value: a missing or nonpositive value is refused, never replaced.
-        static int HistoricalPeoplePerUnit(Content c) => c.RulesAt(c.Rules.Start).Mvp?.PeoplePerUnit is int ppu && ppu > 0 ? ppu
+        internal static int HistoricalPeoplePerUnit(Content c) => c.RulesAt(c.Rules.Start).Mvp?.PeoplePerUnit is int ppu && ppu > 0 ? ppu
             : throw new InvalidOperationException("The Historical scale needs a positive mvp.people_per_unit in rules.yaml for the start day; no fallback.");
         internal IEnumerable<string> Canonical()
         {

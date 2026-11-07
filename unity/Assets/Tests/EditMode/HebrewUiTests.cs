@@ -343,8 +343,7 @@ public class HebrewUiTests
         game.Store = new SaveStore(saveDir);
         game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
         game.Begin(Inputs, 0);
-        // The opening cards answered, not hidden: an open card disables the info panel, and the rebuild opens a hidden card
-        // again (the other half of that #2340 item), so no pioneer card could be shown over it.
+        // The opening cards answered: an open card disables the info panel (a hidden one: TheLanguageSwitchKeepsAHiddenCardHidden).
         for (int i = 0; i < 5 && game.Card!.Shown != null; i++) UiTestKit.Press(Ui.Q("event-options").Query<Button>().First());
         Assert.IsNull(game.Card!.Shown, "precondition: no card over the info panel");
         var bridge = game.Bridge!;
@@ -387,6 +386,68 @@ public class HebrewUiTests
             Assert.AreEqual(pioneer, game.Info!.Pioneer, language + ": the pioneer group's card is still shown");
             Assert.IsNull(game.Units!.Selected, language + ": with no unit token selected");
             Assert.IsFalse(Outlined(), language + ": and no hex outline");
+        }
+    }
+
+    /// <summary>#2340: a decision card or capture dialog the player hid stays hidden behind "Decision waiting" after the
+    /// language switch (before, the rebuild opened it again), and a pioneer group's card shown beside the hidden card comes
+    /// back with it (an open card disables the info panel). Both ways, English to Hebrew and back.</summary>
+    [Test]
+    public void TheLanguageSwitchKeepsAHiddenCardHidden()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        map.Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        game.Begin(Inputs, 0);
+        Assert.IsNotNull(game.Card!.Shown, "precondition: an opening card");
+        var bridge = game.Bridge!;
+        var hex = bridge.Content.Hexes.First(h => h.Land && game.Units!.UnitToSelectAt(h.Q, h.R) == null
+            && !bridge.Content.SettlementHexes.Any(x => x.Q == h.Q && x.R == h.R) && !bridge.Content.Sites.Any(x => x.Q == h.Q && x.R == h.R));
+        var pioneer = PioneerCardTests.Add(bridge.State, hex.Q, hex.R);
+        string language = UiLanguage.English;
+        void Switch()
+        {
+            language = language == UiLanguage.English ? UiLanguage.Hebrew : UiLanguage.English;
+            UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+            UiTestKit.Press(Ui.Q<Button>("settings-language-" + language));
+            Assert.AreEqual(language == UiLanguage.Hebrew, Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "precondition: the UI was rebuilt");
+            if (Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass)) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        }
+
+        UiTestKit.Press(Ui.Q<Button>("event-hide"));
+        for (int round = 0; round < 2; round++)   // to Hebrew, then back to English
+        {
+            Assert.IsTrue(game.Card!.Collapsed, "precondition: the card is hidden");
+            game.Info!.Show(hex.Q, hex.R);
+            UiTestKit.Press(PioneerCardTests.Link(Ui, pioneer));
+            Assert.AreEqual(pioneer, game.Info.Pioneer, "precondition: the pioneer group's card");
+            Switch();
+            Assert.IsTrue(game.Card!.Collapsed, language + ": the card is still hidden");
+            Assert.IsFalse(Ui.Q("root").ClassListContains(EventCardPresenter.OpenClass), language + ": the card is not open");
+            Assert.AreEqual(DisplayStyle.Flex, Ui.Q("event-reopen").style.display.value, language + ": Decision waiting shows");
+            Assert.AreEqual(pioneer, game.Info!.Pioneer, language + ": the pioneer group's card is still shown");
+        }
+
+        // The capture dialog: every card answered, then a place awaiting its capture decision, hidden.
+        UiTestKit.Press(Ui.Q<Button>("event-reopen"));
+        for (int i = 0; i < 5 && game.Card!.Shown != null; i++) UiTestKit.Press(Ui.Q("event-options").Query<Button>().First());
+        Assert.IsNull(game.Card!.Shown, "precondition: every card answered");
+        const string place = "ramla";   // as EndTurnCycleSceneTests: a place whose capture options price (the first hex's do not)
+        bridge.State.Settlements[place] = new Statecraft.Sim.SettlementControl(Statecraft.Sim.Movement.PlayerSide,
+            Statecraft.Sim.SettlementControl.AwaitingChoice, bridge.State.Date);
+        game.Capture!.Render();
+        Assert.AreEqual(place, game.Capture.Shown, "precondition: the capture dialog");
+        UiTestKit.Press(Ui.Q<Button>("capture-hide"));
+        for (int round = 0; round < 2; round++)
+        {
+            Assert.IsTrue(game.Capture!.Collapsed, "precondition: the dialog is hidden");
+            Switch();
+            Assert.IsTrue(game.Capture!.Collapsed, language + ": the capture dialog is still hidden");
+            Assert.IsFalse(Ui.Q("root").ClassListContains(CaptureDialogPresenter.OpenClass), language + ": the dialog is not open");
+            Assert.AreEqual(DisplayStyle.Flex, Ui.Q("capture-reopen").style.display.value, language + ": Decision waiting: place shows");
         }
     }
 

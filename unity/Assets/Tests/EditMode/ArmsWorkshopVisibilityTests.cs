@@ -82,7 +82,9 @@ public class ArmsWorkshopVisibilityTests
         return w <= 0f || h <= 0f ? 0f : w * h / (model.width * model.height);
     }
 
-    IEnumerator Visible(string city)
+    /// <summary>The check for <paramref name="city"/>'s b21, built on the game's first day or, with <paramref name="builtOn"/>,
+    /// with the game moved to that day first (state and turn start, then a redraw, as MajorCityShots.SetDate).</summary>
+    IEnumerator Visible(string city, DateTime? builtOn = null)
     {
         var inputs = Statecraft.Game.Boot.GameInputs.FromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
         foreach (var era in inputs.Content.Eras) { era.Systems.Ruleset = SaveGame.Gdd03Ruleset; era.Systems.Loop = EraSystems.Gdd; }
@@ -104,6 +106,12 @@ public class ArmsWorkshopVisibilityTests
         for (int i = 0; i < 5; i++) yield return null;
         var state = root.Bridge!.State; var content = root.Bridge.Content;
         Assert.AreEqual(SaveGame.Gdd03Ruleset, content.Ruleset);
+        if (builtOn is DateTime day)
+        {
+            foreach (var s in new HashSet<GameState> { root.Bridge.State, root.Bridge.TurnStart }) s.Date = day;
+            root.Bridge.Skip(-2876100);   // an id no unit has: SimBridge.Skip raises Changed, so GameRoot redraws on the new day
+            for (int i = 0; i < 3; i++) yield return null;
+        }
         Assert.IsNotNull(root.Units, "the game's units are drawn");
         var home = content.SettlementHexes.Single(h => h.Id == city);
         int id = state.NextId++;
@@ -134,7 +142,12 @@ public class ArmsWorkshopVisibilityTests
         Assert.Less(worst, 0.5f, $"{city}'s b21 is hidden behind a unit's figures ({worstName} covers {worst:P0} of it)");
     }
 
-    [UnityTest] public IEnumerator TheJerusalemWorkshopIsNotHiddenBehindAUnit() { yield return Visible("jerusalem"); }
+    /// <summary>Jerusalem's b21 stands at the city's edge on ground the Israeli side holds the day it was built (#2876), and in
+    /// the control wash (control_hexes_1948_49.yaml) the hexes round Jerusalem are contested or the other side's until the
+    /// first truce (11 June 1948), so a workshop built on the first day has no spot. None is built that soon in play: an arms
+    /// workshop takes three turns (content/projects.yaml) of a month (content/rules.yaml, turn_lengths). Built on 15 August
+    /// 1948, three months in.</summary>
+    [UnityTest] public IEnumerator TheJerusalemWorkshopIsNotHiddenBehindAUnit() { yield return Visible("jerusalem", new DateTime(1948, 8, 15)); }
     [UnityTest] public IEnumerator TheTelAvivWorkshopIsNotHiddenBehindAUnit() { yield return Visible("tel_aviv"); }
     [UnityTest] public IEnumerator TheRehovotWorkshopIsNotHiddenBehindAUnit() { yield return Visible("rehovot"); }
 }

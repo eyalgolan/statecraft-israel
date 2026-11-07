@@ -56,7 +56,7 @@ public class LightingTests
         // hold a sharp trilight). The evaluated linear values stay pinned so a change to the colours is a visible decision.
         var e = new Color[3]; RenderSettings.ambientProbe.Evaluate(new[] { Vector3.up, Vector3.right, Vector3.down }, e);
         TestContext.WriteLine($"ambient evaluated (linear) up {e[0]} horizon {e[1]} down {e[2]}; horizon sRGB {e[1].gamma}");
-        var expected = new[] { new Color(0.216f, 0.255f, 0.326f), new Color(0.184f, 0.179f, 0.171f), new Color(0.119f, 0.103f, 0.080f) };
+        var expected = new[] { new Color(0.173f, 0.203f, 0.261f), new Color(0.146f, 0.143f, 0.138f), new Color(0.095f, 0.083f, 0.065f) };   // issue #2427
         for (int i = 0; i < 3; i++)
         {
             Assert.AreEqual(expected[i].r, e[i].r, 0.01f, $"direction {i} r"); Assert.AreEqual(expected[i].g, e[i].g, 0.01f, $"direction {i} g");
