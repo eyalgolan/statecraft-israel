@@ -219,10 +219,44 @@ public class HebrewUiTests
             var slots = Regex.Matches(format, @"\{(\d+)").Cast<Match>().Select(m => int.Parse(m.Groups[1].Value) + 1).DefaultIfEmpty(0).Max();
             var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, format,
                 Enumerable.Range(0, slots).Select(i => (object)(i + 2)).ToArray());
-            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), name + ": the English string is the sim's own");
+            // The capture answers read as the capture dialog's reviewed line in English too (TheCaptureAnswersReadAsTheReviewedLines).
+            if (!CaptureAnswers.ContainsKey(format))
+                Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), name + ": the English string is the sim's own");
             if (!Regex.IsMatch(SimBridge.ReasonText(He, reason, c), "[א-ת]")) missing.Add(name + " \"" + reason + "\"");
         }
         Assert.IsEmpty(missing, "no Hebrew string for:\n" + string.Join("\n", missing));
+    }
+
+    // #2707 batch 3, the owner's option (b): a capture or end-of-occupation answer the end of turn refuses reuses the capture
+    // dialog's reviewed capture.refusal.* line in both languages (settlement-control-strings-review.yaml gains nothing), with
+    // the place's Hebrew name in its slot. The answers with no reviewed line that fits stay the sim's English.
+    static readonly Dictionary<string, string> CaptureAnswers = new Dictionary<string, string>
+    {
+        [Statecraft.Sim.SettlementControl.RefusedNoOneToDeport] = "capture.refusal.no_one_to_deport",
+        [Statecraft.Sim.SettlementControl.RefusedUnknownOutcome] = "capture.refusal.unknown_outcome",
+        [Statecraft.Sim.SettlementControl.RefusedOccupyNeedsUnit] = "capture.refusal.needs_unit",
+        [Statecraft.Sim.SettlementControl.RefusedAnnexNeedsUnit] = "capture.refusal.needs_unit",
+        [Statecraft.Sim.SettlementControl.RefusedWithdrawNeedsUnit] = "capture.refusal.needs_unit",
+        [Statecraft.Sim.SettlementControl.RefusedNoFreeHex] = "capture.refusal.no_free_hex",
+        [Statecraft.Sim.Cities.RefusedAlreadyCity] = "capture.refusal.already_city",
+    };
+
+    [Test]
+    public void TheCaptureAnswersReadAsTheReviewedLines()
+    {
+        var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+        var namesHe = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.NameHe);
+        var place = c.SettlementNames.Single(x => x.Value == "Rishon LeZion");
+        foreach (var (format, key) in CaptureAnswers)
+        {
+            var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, format, place.Value);
+            Assert.AreEqual(En.Format(key, place.Value), SimBridge.ReasonText(En, reason, c, namesHe), reason);
+            Assert.AreEqual(He.Format(key, namesHe[place.Key]), SimBridge.ReasonText(He, reason, c, namesHe), reason);
+            StringAssert.DoesNotMatch("[A-Za-z]", SimBridge.ReasonText(He, reason, c, namesHe), reason);
+        }
+        foreach (var reason in new[] { "Deport is not built yet", "That place is not awaiting a decision on its capture",
+                     "That place is not awaiting the end of its occupation" })
+            Assert.AreEqual(reason, SimBridge.ReasonText(He, reason, c, namesHe), "no reviewed line fits, so the sim's English");
     }
 
     [Test]
