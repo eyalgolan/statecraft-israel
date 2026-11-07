@@ -98,7 +98,8 @@ namespace Statecraft.Sim
             PopulationText.ValidateText(recruit.Class);
             if (spareArms < 0 || money < 0) throw new ArgumentException("Spare Arms and Money must be nonnegative.");
             this.state = state; graduateQualification = recruit.Class;
-            capacity = terms.CampCapacity; basicTurns = terms.BasicTurns; moneyPerCourse = terms.TrainingMoney; activeMoney = terms.ActiveMoney;
+            capacity = CampRecords(terms.CampCapacity, PopulationLedger.HistoricalPeoplePerUnit(content), state.PopulationLedger.PeoplePerUnit);
+            basicTurns = terms.BasicTurns; moneyPerCourse = terms.TrainingMoney; activeMoney = terms.ActiveMoney;
             foreach (var camp in camps) this.camps.Add(camp.Id, camp); // a duplicate id throws ArgumentException
             foreach (var formation in formations)
             {
@@ -107,6 +108,21 @@ namespace Statecraft.Sim
             }
             SpareArms = spareArms; Money = money;
             ValidateInventory();
+        }
+
+        /// <summary>#2739, option 1 (owner, 7 November 2026): <c>military.camp_capacity</c> counts population units at D2's
+        /// scale, rules.yaml's start-day <c>people_per_unit</c> (1,000), so 50 is 50,000 people (the catalogue note: "#1668's
+        /// 5 places at 10,000 people a unit is 50 units at D2's 1,000 people a unit"). The fixture holds that many people in
+        /// records at the ledger's own scale: 50 at 1,000 a record, 5 at 10,000. Rounding rule (proposed in #2739's PR, not
+        /// an owner ruling): a scale that doesn't divide the people rounds down, so a camp never holds more people than the
+        /// cap, and a scale where not even one record fits is refused.</summary>
+        static int CampRecords(int capacity, int capacityPeoplePerUnit, int ledgerPeoplePerUnit)
+        {
+            long records = (long)capacity * capacityPeoplePerUnit / ledgerPeoplePerUnit;
+            if (records < 1)
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.military.camp_capacity",
+                    "holds less than one population unit at this ledger's scale");
+            return (int)Math.Min(records, int.MaxValue);
         }
 
         IEnumerable<PopulationUnit> Trainees(string campId) => state.PopulationLedger.Units.Where(p
@@ -135,7 +151,8 @@ namespace Statecraft.Sim
         /// <summary>R-TRAIN-001 and R-ARMS-003 under gdd-0.3: start basic training for the given records at an operating camp,
         /// all or nothing, ids in ascending order. Each must be a free civilian with no assignment and no military
         /// qualification, in the camp's region (27M-7, no travel), and the camp's trainees may not pass
-        /// <c>military.camp_capacity</c>. Then, after the other checks and before paying, each unequipped record needs one
+        /// <c>military.camp_capacity</c>'s people in records at the ledger's scale (<see cref="CampRecords"/>). Then, after
+        /// the other checks and before paying, each unequipped record needs one
         /// spare Arms (ARMS-2): a short stock refuses the whole order with the need and the stock. An equipped record keeps
         /// its item and takes none. Each course pays <c>military.training_money</c>, borrowing the shortfall (R-MONEY-003).</summary>
         internal void Start(IEnumerable<int> ids, string campId, int monthOrdinal)

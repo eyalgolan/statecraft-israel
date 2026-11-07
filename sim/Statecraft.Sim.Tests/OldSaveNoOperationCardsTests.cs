@@ -11,8 +11,10 @@ using Statecraft.Sim;
 public class OldSaveNoOperationCardsTests
 {
     // GameState.Hash() of this save's replay after S1 (the Syrian army's 15 July 1948 step, #1270), reviewed and accepted by
-    // the owner's 4 Nov 2026 ruling "(a) Accept replay differs (Recommended)" on #2180.
-    private const string AcceptedReplayHashAfterS1 = "bec1464e1a0811554f8958e8d5a601807d887d3f18b6c88e90914292bc88a89d";
+    // the owner's 4 Nov 2026 ruling "(a) Accept replay differs (Recommended)" on #2180. Re-pinned for #2804 item 4
+    // (TotalPopulation summed in ordinal key order, a rounding-only move; owner on #2804, 6 Nov 2026: "Do it just before
+    // the regen (Recommended)"; was bec1464e).
+    private const string AcceptedReplayHashAfterS1 = "ca30ddf09dfc46eefef11c5528b864fa664aaa77f129786d79867b17fba4dc9c";
 
     [Fact]
     public void V034Gdd01SaveWithNoOperationCardLoadsAndReportsReplayDiffers()

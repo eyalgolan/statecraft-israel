@@ -14,7 +14,10 @@ office: rationing_minister
 # already discussed it ("yesterday") and referred it to the Knesset. he.wiki (austerity) dates the decision itself to
 # 26 April and is kept for the lack of foreign-currency reserves. The ministry and Dov Yosef date from 10 March 1949
 # (#225).
-from: 1949-04-26
+# R-TURN-002 (#2551; the owner chose "Move them a turn earlier (Recommended)" on 4 November 2026): the window opens on
+# the 15th on or before the decision (the plan of 26 April 1949; it opened on 1949-04-26), so the card reaches the
+# player on the turn before it.
+from: 1949-04-15
 to: 1950-01-01
 options:
   - id: impose
