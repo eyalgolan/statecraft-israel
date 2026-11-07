@@ -190,6 +190,29 @@ public class FieldsTests
         Assert.Contains(message, e.Message);
     }
 
+    // R-FIELD-002: field_food_per_turn has a ceiling, so the harvest cannot wrap the Food stock (#2804 item 5). The ceiling loads.
+    [Theory]
+    [InlineData(1001)]
+    [InlineData(int.MaxValue)]
+    public void FieldFoodAboveTheCeilingFailsLoad(int food)
+    {
+        var e = Assert.Throws<ContentException>(() => LoadWithFieldFood(food));
+        Assert.Equal(("rules.yaml", "mvp.field_food_per_turn"), (e.File, e.Field));
+        Assert.Contains("<= 1000", e.Message);
+    }
+
+    [Fact]
+    public void FieldFoodAtTheCeilingLoads() =>
+        Assert.Equal(1000, LoadWithFieldFood(1000).Rules.Mvp!.FieldFoodPerTurn);
+
+    static Content LoadWithFieldFood(int food)
+    {
+        var files = Fixture.Gdd();
+        Assert.Contains("  field_food_per_turn: 7\n", files["rules.yaml"]);
+        files["rules.yaml"] = files["rules.yaml"].Replace("  field_food_per_turn: 7\n", FormattableString.Invariant($"  field_food_per_turn: {food}\n"));
+        return ContentLoader.Load(Fixture.Write(files));
+    }
+
     // The real content: every field site lies in a yishuv's hex (Q-FIELD-1) or the swamp's (Q-SWAMP-1), and the design
     // values are those of Q-FIELD-3.
     [Fact]
