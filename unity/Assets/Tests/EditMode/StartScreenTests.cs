@@ -948,7 +948,7 @@ public class StartScreenTests
         var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), text, out var resumed), text);
         var toast = new ToastPresenter(root, bridge, text);
         var newGame = new NewGamePresenter(root, bridge, store, toast, text, () => 5UL);
-        var recording = new DeclarationRecording(root, text, toast.Show, (url, done) => new NoAnswer());   // as GameRoot
+        var recording = new DeclarationRecording(root, text, toast.RecordingFailed, (url, done) => new NoAnswer(), retry: toast.RecordingRetried);   // as GameRoot
         var start = new StartScreenPresenter(root, newGame, resumed, null, recording, text);
         var at = hebrew ? "Hebrew 390x844" : "English 390x844";
         Application.logMessageReceived += Capture;
