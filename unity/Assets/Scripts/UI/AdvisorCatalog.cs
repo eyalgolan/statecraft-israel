@@ -44,6 +44,9 @@ namespace Statecraft.Game.UI
             public Dictionary<string, List<double>> Cues { get; set; } = new Dictionary<string, List<double>>();
             public string Label { get; set; } = "";
             public string Credit { get; set; } = "";
+            /// <summary>Where each cue ends, for media with silences in its voice (the opening film, film.yaml); the advisors'
+            /// rows have none, and each of their cues holds until the next.</summary>
+            [YamlIgnore] public List<double>? CueEnds { get; set; }
         }
 
         public sealed class Message

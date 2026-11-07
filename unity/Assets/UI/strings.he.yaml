@@ -1490,6 +1490,23 @@ opening.return: "חזרה למסך הפתיחה"
 opening.count: "שלב {0} מתוך {1}"
 opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת המקורות בידי אדם ממתינה."
 
+# The opening film. film.skip repeats opening.skip's existing Hebrew, as no film line covers it. The cues are film script
+# v7's Hebrew lines, copied word for word; not final: for the owner and the native reviewer (#564). They show only once
+# Assets/Resources/Film/film.yaml says he_review: approved.
+film.skip: "דילוג על הפתיח"
+film.cue.1: "בעוד יומיים נגמר השלטון הבריטי. המדינה ברגע קריטי."
+film.cue.2: "שישה מיליון נרצחו באירופה. עשרות אלפי ניצולים כלואים על ידי הבריטים בקפריסין."
+film.cue.3: "מאז ההצבעה באו״ם, הערבים תוקפים את הדרכים. ירושלים נצורה. מאה אלף יהודים בלי אוכל."
+film.cue.4: "ועכשיו עומדים לפלוש חמישה צבאות ערביים."
+film.cue.5: "מעט מדי רובים. אין תותחי שדה. אין מטוסי קרב."
+film.cue.6: "וושינגטון אומרת חכה. ידין נותן לנו חצי סיכוי, במקרה הטוב. החברים שלי חלוקים."
+film.cue.7: "לא מחכים."
+film.cue.8: "14 במאי 1948, תל אביב. מועצת העם מכריזה על מדינת ישראל."
+film.cue.9: "15 במאי 1948. מטוסים מצריים מפציצים את תל אביב."
+film.cue.10: "צבא אחד? איזו חזית תקבל את התותחים? לקבל את ההפוגה?"
+film.cue.11: "אין מספיק כסף, אין מספיק נשק, אין מספיק לחם."
+film.cue.12: "מאיפה מתחילים?"
+
 # #813 (R-MONEY-004): the Defence screen's dollar conversion. Agent-drafted Hebrew; every line below is
 # native-review-pending (#564).
 dollars.title: "המרת דולרים"

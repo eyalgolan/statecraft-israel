@@ -65,6 +65,97 @@ public class OpeningRoutingTests
             if (texture != null) { texture.Release(); Object.DestroyImmediate(texture); }
         }
         panels.Clear();
+        FilmPresenter.ProbeForTests = null; CardVideo.ForceOffForTests = false; LogAssert.ignoreFailingMessages = false;
+    }
+
+    /// <summary>A film file "exists" (its check says so; the real load then has no file, and nothing here waits for it).</summary>
+    int FilmAsked;
+    void AFilmIsThere()
+    {
+        FilmAsked = 0;
+        LogAssert.ignoreFailingMessages = true;   // the edit-mode VideoPlayer may log while it prepares
+        FilmPresenter.ProbeForTests = (url, found) => { FilmAsked++; found(true); return null; };
+    }
+    static bool Shows(string layer) => Ui.Q(layer).style.display.value == DisplayStyle.Flex;
+
+    [Test]
+    public void NewGamePlaysTheFilmThenTheOpening()
+    {
+        AFilmIsThere();
+        Open(saved: false, out _);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.IsTrue(Shows("film-layer"), "the film first");
+        Assert.IsFalse(Shows("opening-layer"));
+        UiTestKit.Press(Ui.Q<Button>("film-skip"));
+        Assert.IsFalse(Shows("film-layer"));
+        Assert.IsTrue(Shows("opening-layer"), "its end is the opening, kept as it was");
+        Assert.IsTrue(Ui.Q("root").ClassListContains(OpeningPresenter.OpenClass));
+    }
+
+    [Test]
+    public void ConfirmedNewGameOverASavePlaysTheFilmThenTheOpening()
+    {
+        AFilmIsThere();
+        Open(saved: true, out _);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.AreEqual(0, FilmAsked, "one press arms the request");
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.IsTrue(Shows("film-layer"));
+        UiTestKit.Press(Ui.Q<Button>("film-skip"));
+        Assert.IsTrue(Shows("opening-layer"));
+    }
+
+    [Test]
+    public void ContinuePlaysNeitherTheFilmNorTheOpening()
+    {
+        AFilmIsThere();
+        Open(saved: true, out _);
+        UiTestKit.Press(Ui.Q<Button>("start-continue"));
+        Assert.AreEqual(0, FilmAsked);
+        Assert.IsFalse(Shows("film-layer") || Shows("opening-layer"));
+    }
+
+    [Test]
+    public void ReplayPlaysTheFilmThenTheOpeningOverTheStartScreen()
+    {
+        AFilmIsThere();
+        Open(saved: true, out _);
+        UiTestKit.Press(Ui.Q<Button>("start-opening-replay"));
+        Assert.IsTrue(Shows("film-layer"));
+        Assert.IsTrue(StartOpen, "the start screen stays open under it");
+        UiTestKit.Press(Ui.Q<Button>("film-skip"));
+        Assert.IsTrue(Shows("opening-layer"));
+        Assert.IsTrue(StartOpen);
+        UiTestKit.Press(Ui.Q<Button>("opening-skip"));
+        Assert.IsFalse(Shows("opening-layer"));
+        Assert.IsTrue(StartOpen, "a replay ends back on the start screen");
+    }
+
+    [Test]
+    public void WithVideoOffThereIsNoFilmAndTheOpeningStillPlays()
+    {
+        AFilmIsThere();
+        CardVideo.ForceOffForTests = true;
+        Open(saved: false, out _);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.AreEqual(0, FilmAsked, "the automated runs never meet the film");
+        Assert.IsFalse(Shows("film-layer"), "no film is built, and its layer still reads hidden (FirstCardCheck reads it so)");
+        Assert.IsTrue(Shows("opening-layer"));
+    }
+
+    [Test]
+    public void FirstCardInstrumentSkipsTheFilmAndTheOpening()
+    {
+        AFilmIsThere();
+        var root = Open(saved: false, out _);
+        var lines = new List<string>();
+        double clock = 0;
+        var check = GameRoot.FirstCardCheck(Ui, root.Card!, lines.Add, () => clock++);
+        int steps = 0;
+        while (check.MoveNext()) Assert.Less(++steps, 12, "the existing clock-bound instrument is finite");
+        Assert.AreEqual(1, FilmAsked);
+        Assert.IsFalse(Shows("film-layer") || Shows("opening-layer"));
+        Assert.IsTrue(lines.Any(line => line.StartsWith("FIRST CARD OK ", StringComparison.Ordinal)), string.Join("\n", lines));
     }
 
     [UnityTest]

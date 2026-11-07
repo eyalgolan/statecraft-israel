@@ -699,6 +699,16 @@
                 <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
         </ui:VisualElement>
+        <!-- The opening film (FilmPresenter): a silent picture with live captions under it, over the stills it comes before.
+             Skip shows from the first frame. -->
+        <ui:VisualElement name="film-layer" class="film-layer">
+            <ui:VisualElement name="film-picture" class="film-picture" />
+            <ui:Label name="film-caption" class="film-caption" />
+            <ui:VisualElement class="row film-foot">
+                <ui:Label name="film-label" class="muted film-label" />
+                <ui:Button name="film-skip" class="film-skip" />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <!-- "Report a bug or idea" (#1169, FeedbackPresenter): over everything, the start screen too, with what each GitHub
              form opens with under its button; the game sends nothing itself. Before the toast, which stays readable. -->
         <ui:VisualElement name="feedback-layer" class="feedback-layer">

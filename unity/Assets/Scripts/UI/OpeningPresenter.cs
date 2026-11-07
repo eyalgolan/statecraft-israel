@@ -38,7 +38,7 @@ namespace Statecraft.Game.UI
         readonly HashSet<string> failed = new HashSet<string>();
         IVisualElementScheduledItem? hold;
         bool replay, disposed;
-        int closedFrame = -1;
+        int closedFrame = -1, openedFrame = -1;
         public int Index { get; private set; }
         public bool IsOpen { get; private set; }
         public bool ClosedThisFrame => closedFrame == Time.frameCount;
@@ -68,7 +68,9 @@ namespace Statecraft.Game.UI
             credit.languageDirection = LanguageDirection.LTR;
             onNext = Next; onBack = Back; onSkip = () => Close(finish: true);
             next.clicked += onNext; back.clicked += onBack; skip.clicked += onSkip;
-            onCancel = e => { if (Escape()) e.StopPropagation(); };
+            // A Cancel in the frame the stills opened is used up, not a second close: the Escape that closes the opening film
+            // hands over to them in GameRoot's poll, and UI Toolkit may then send that key's Cancel to their focus (#2609).
+            onCancel = e => { if (IsOpen && openedFrame == Time.frameCount || Escape()) e.StopPropagation(); };
             onMove = e =>
             {
                 if (!IsOpen || e.direction != NavigationMoveEvent.Direction.Next && e.direction != NavigationMoveEvent.Direction.Previous) return;
@@ -86,7 +88,7 @@ namespace Statecraft.Game.UI
         public void Show(bool replay)
         {
             if (disposed || IsOpen || !data.PhotosReviewed) return;
-            this.replay = replay; Index = 0; IsOpen = true;
+            this.replay = replay; Index = 0; IsOpen = true; openedFrame = Time.frameCount;
             root.AddToClassList(OpenClass); layer.style.display = DisplayStyle.Flex;
             ScreenNav.DisableCovered(root);
             shownChanged(true); Render();

@@ -31,12 +31,15 @@ namespace Statecraft.Game.UI
         readonly IPicture? clipPicture, stillPicture;
         readonly DeclarationRecording.Fetch fetch;
         readonly DeclarationRecording.IOutput output;
+        readonly Func<string, string> locate;
+        readonly long prepareTimeoutMs;
         IPicture? picture;
         AudioClip? narration;
         DeclarationRecording.IRequest? request;
         IVisualElementScheduledItem? timer;
         Label? caption;
         IReadOnlyList<double> cues = Array.Empty<double>();
+        IReadOnlyList<double>? cueEnds;
         Action? ended;
         Action<string>? failed;
         string file = "", stem = "";
@@ -45,8 +48,14 @@ namespace Statecraft.Game.UI
         int generation, loadingMs, stalledMs, decodingMs, startingMs, pictureMs, pictureStalledMs;
         ulong bytes, pictureBytes;
 
-        public AdvisorMedia(UiText text, IPicture? clip, IPicture? still, DeclarationRecording.Fetch fetch, DeclarationRecording.IOutput output)
-        { this.text = text; clipPicture = clip; stillPicture = still; this.fetch = fetch; this.output = output; }
+        /// <param name="locate">A media file's URL; null is Url, the advisors' folder. The opening film has its own.</param>
+        /// <param name="prepareTimeoutMs">How long the moving picture may take to be ready.</param>
+        public AdvisorMedia(UiText text, IPicture? clip, IPicture? still, DeclarationRecording.Fetch fetch, DeclarationRecording.IOutput output,
+            Func<string, string>? locate = null, long prepareTimeoutMs = CardVideo.PrepareTimeoutMs)
+        {
+            this.text = text; clipPicture = clip; stillPicture = still; this.fetch = fetch; this.output = output;
+            this.locate = locate ?? Url; this.prepareTimeoutMs = prepareTimeoutMs;
+        }
 
         public bool Playing { get; private set; }
 
@@ -72,14 +81,14 @@ namespace Statecraft.Game.UI
             { Fail("no narration or captions for " + lang); return; }
             if (supplied == "") file = audio;                              // the failure log names the voice-only line's file
             else if (picture == null) { Fail("no player for " + supplied); return; }
-            cues = starts;
+            cues = starts; cueEnds = media.CueEnds;
             int mine = generation;
             timer = caption.schedule.Execute(Tick).Every(TickMs).StartingIn(TickMs);
             try
             {
-                picture?.Load(Url(supplied), surface, why => { if (mine == generation && Playing) Fail("picture: " + why); });
+                picture?.Load(locate(supplied), surface, why => { if (mine == generation && Playing) Fail("picture: " + why); });
                 if (mine != generation || !Playing) return;
-                var pending = fetch(Url(audio), (clip, error) =>
+                var pending = fetch(locate(audio), (clip, error) =>
                 {
                     if (mine != generation || !Playing) { Release(clip); return; }
                     request = null;
@@ -108,7 +117,7 @@ namespace Statecraft.Game.UI
                         if (pictureStalledMs >= DeclarationRecording.StallTimeoutMs || pictureMs >= DeclarationRecording.LoadCapMs)
                         { Fail("picture fetch timed out"); return; }
                     }
-                    else if (pictureMs >= CardVideo.PrepareTimeoutMs) { Fail("picture preparation timed out"); return; }
+                    else if (pictureMs >= prepareTimeoutMs) { Fail("picture preparation timed out"); return; }
                 }
                 if (narration == null)
                 {
@@ -135,7 +144,7 @@ namespace Statecraft.Game.UI
             {
                 var done = ended; Stop(); done?.Invoke(); return;
             }
-            int cue = AdvisorCaptions.At(cues, output.Position);
+            int cue = AdvisorCaptions.At(cues, cueEnds, output.Position);
             if (caption != null) caption.text = cue < 0 ? "" : text[stem + ".cue." + (cue + 1)];
             if (moving && picture != null && !unseekable)
             {
@@ -164,7 +173,7 @@ namespace Statecraft.Game.UI
             picture?.Stop(); picture = null;
             output.Stop(); Release(narration); narration = null;
             if (caption != null) caption.text = "";
-            caption = null; ended = null; failed = null;
+            caption = null; ended = null; failed = null; cueEnds = null;
             started = heard = unseekable = false; sought = -1;
             loadingMs = stalledMs = decodingMs = startingMs = pictureMs = pictureStalledMs = 0; bytes = pictureBytes = 0;
         }
@@ -185,17 +194,25 @@ namespace Statecraft.Game.UI
             for (int i = starts.Count - 1; i >= 0; i--) if (position >= starts[i]) return i;
             return -1;
         }
+
+        /// <summary>The cue on screen when each cue also has an end: none (-1) in the gap after one ends. No ends: as At above.</summary>
+        public static int At(IReadOnlyList<double> starts, IReadOnlyList<double>? ends, double position)
+        {
+            int cue = At(starts, position);
+            return cue >= 0 && ends != null && position >= ends[cue] ? -1 : cue;
+        }
     }
 
     /// <summary>Only the URL this adapter loaded is its own to release, seek or stop.</summary>
     public sealed class ClipPicture : AdvisorMedia.IPicture
     {
         readonly CardVideo video;
+        readonly long prepareTimeoutMs;
         string? url;
-        public ClipPicture(CardVideo video) { this.video = video; }
+        public ClipPicture(CardVideo video, long prepareTimeoutMs = CardVideo.PrepareTimeoutMs) { this.video = video; this.prepareTimeoutMs = prepareTimeoutMs; }
         bool Owns => url != null && video.Current == url;
         public void Load(string url, VisualElement target, Action<string> failed)
-        { Stop(); this.url = url; video.Play(url, target, failed, loop: false, held: true); }
+        { Stop(); this.url = url; video.Play(url, target, failed, loop: false, prepareTimeoutMs: prepareTimeoutMs, held: true); }
         public bool Ready => Owns && video.Prepared;
         public double Time => Owns ? video.Time : 0;
         public void Start() { if (Owns) video.Release(); }
