@@ -50,11 +50,11 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-POP-004 (#1689 region slice): the Inventory as an initialized Historical ledger fixture, each record in
-        /// its real region of regions.yaml. A census record takes the region that lists its city (AtLocation). A formation
+        /// its real region of regions.yaml. A census record takes the region that lists its city (AtLocation), and its location names that city. A formation
         /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1
         /// (3 November 2026: "Its anchor hex's region (Recommended)"). A source with no region is refused; no region is invented. Records
-        /// are free civilians with no assignment and soldiers serving in their own formation, with no profession, tier or
-        /// qualification (#1717 and #1692 add those). Each soldier carries one issued military item, id
+        /// are free civilians with no assignment and their reception done (reception.turns), and soldiers serving in their own
+        /// formation, with no profession, tier or qualification (#1717 and #1692 add those). Each soldier carries one issued military item, id
         /// <c>units_1948/&lt;row&gt;/&lt;ordinal&gt;</c>, owned and recorded as paid, apart from the spare Arms (#1717, 27M-24).
         /// mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only: NewGame does not call it (R-POP-002).</summary>
         internal static GameState LedgerFixture(Content c)
@@ -70,12 +70,20 @@ namespace Statecraft.Sim
             if (missing.Count > 0)
                 throw new InvalidOperationException("No region in regions.yaml for " + string.Join(", ", missing) + " (R-POP-004).");
             var locations = regions.Values.Distinct(StringComparer.Ordinal).ToDictionary(r => r, r => new PopulationLocation(r), StringComparer.Ordinal);
+            // A census record is bound to its city in that region; a formation record keeps the region-only location.
+            var placed = regions.ToDictionary(x => x.Key, x => x.Key.StartsWith(CensusPrefix, StringComparison.Ordinal)
+                ? new PopulationLocation(x.Value, city: x.Key.Substring(CensusPrefix.Length)) : locations[x.Value], StringComparer.Ordinal);
             // A formation is its soldiers' ActiveService target, in the formation's region.
             var targets = regions.Where(x => x.Key.StartsWith(FormationPrefix, StringComparison.Ordinal))
                 .Select(x => new PopulationTarget(x.Key, PopulationAssignmentKind.ActiveService, x.Value));
-            var bindings = new PopulationBindings(locations.Values, targets, Array.Empty<string>(), Array.Empty<string>());
-            var rows = inventory.Select(r => new PopulationInventoryRow(r.Source, r.Ordinal, new PopulationUnit(0, r.Status, 0,
-                locations[regions[r.Source]], r.Status == PopulationStatus.ActiveSoldier
+            var bindings = new PopulationBindings(locations.Values.Concat(placed.Values.Where(l => l.City != null)), targets,
+                Array.Empty<string>(), Array.Empty<string>());
+            // reception.turns is the reception before free-civilian status (docs/gdd/balance.md:91), so a census free civilian
+            // starts with it done: R-VET-001 gives work XP only to a received free civilian. Soldiers keep 0 (not ruled).
+            var received = c.RequirePopulationInteger("reception.turns");
+            var rows = inventory.Select(r => new PopulationInventoryRow(r.Source, r.Ordinal, new PopulationUnit(0, r.Status,
+                r.Status == PopulationStatus.FreeCivilian ? received : 0,
+                placed[r.Source], r.Status == PopulationStatus.ActiveSoldier
                     ? new PopulationAssignment(PopulationAssignmentKind.ActiveService, r.Source) : PopulationAssignment.Unassigned,
                 CivilianProfession.None, CivilianTier.None, 0, "", 0, r.Status == PopulationStatus.ActiveSoldier
                     ? new PopulationEquipment(militaryId: r.Source + "/" + r.Ordinal.ToString(CultureInfo.InvariantCulture), militaryPaid: true)

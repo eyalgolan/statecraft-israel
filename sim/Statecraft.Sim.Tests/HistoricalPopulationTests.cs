@@ -293,6 +293,27 @@ public class HistoricalPopulationTests
         Assert.DoesNotContain(inventory, r => r.Source == HistoricalPopulation.CensusPrefix + "jaffa");
     }
 
+    // R-POP-004, #1689 PR 1 city binding: each census record's location names its city, in that city's region; a formation
+    // record's location names no city.
+    [Fact]
+    public void EveryCensusRecordIsBoundToItsCity()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            var source = inventory[i].Source;
+            if (source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal))
+            {
+                var city = source.Substring(HistoricalPopulation.CensusPrefix.Length);
+                Assert.Equal(city, units[i].Location!.City);
+                Assert.Equal(c.PlayerRegions.AtLocation(city)!.Id, units[i].Location!.Region);
+            }
+            else Assert.Null(units[i].Location!.City);
+        }
+    }
+
     // R-POP-001, R-POP-004, Q10: ids run from 0 with no gaps in the inventory's order (source key by ordinal string compare,
     // then ordinal), and two builds are identical.
     [Fact]
@@ -313,6 +334,38 @@ public class HistoricalPopulationTests
         var l = HistoricalPopulation.LedgerFixture(Real(true)).PopulationLedger;
         Assert.True(l.IsInitialized);
         l.Reconcile();
+    }
+
+    // R-POP-004, R-VET-001 (#1689 PR 1): reception.turns is the "actual reception turns before free-civilian status"
+    // (docs/gdd/balance.md:91; content/gdd03-balance.yaml "reception.turns"), and the census gives its units as free
+    // civilians (R-POP-004), so each census record starts with its reception done: the catalogue requirement, the
+    // ledger's own cap (R-POP-002). R-VET-001 gives work XP only to a "received free civilian"; with 0 ticks an opening
+    // civilian could never earn it.
+    [Fact]
+    public void CensusRecordsStartWithTheirReceptionDone()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var ledger = HistoricalPopulation.LedgerFixture(c).PopulationLedger;
+        var turns = c.RequirePopulationInteger("reception.turns");
+        Assert.True(turns > 0);
+        Assert.Equal(turns, ledger.ReceptionLimit);
+        var census = ledger.Units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(census);
+        Assert.All(census, u => Assert.Equal(turns, u.ReceptionTicks));
+    }
+
+    // R-POP-004, mvp.md R-CITY-004 fixture paragraph ("the standalone eligibility predicate requires completed reception,
+    // free-civilian status and no assignment"): every opening census civilian may start a civilian activity at once.
+    [Fact]
+    public void EveryCensusCivilianCanStartCivilianActivity()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var ledger = HistoricalPopulation.LedgerFixture(c).PopulationLedger;
+        var census = ledger.Units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(census);
+        Assert.All(census, u => Assert.True(Gdd03ReceptionFixture.CanStartCivilianActivity(c, ledger, u)));
     }
 
     // R-POP-004: a record whose city or formation has no region in regions.yaml is refused; no region is invented.
