@@ -571,46 +571,42 @@ public class Gdd03EventRulesTests
         "law_of_return:d5d7f352eaa63e8f57a0f3fcdcbba82791e4ea3cd267afd8adee9d6b01a2f052", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "maabarot_policy:12e53e14fe3b045f7c18b75ac7af68acf079c17968baf6c82df2435675eb0884", // re-pinned for #1065 (Beri's native Hebrew read)
         "ministry_supply_crisis:2de253de7bafb65f0168bdc151dc0b47fec94843ad6f13bf3ac092d7015b55f9", // re-pinned for #1065 (Beri's native Hebrew read)
-        "operation_hiram:e7c661e53f93576d8a135008e0d1e623430967a36729b58b67a4af195165bccf", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
-        "operation_horev:373bf144ad21c326eed5895d7bf57b2d73e922c8589bab47da812e2f96f5fb45", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py; review status unchanged), then re-pinned for the Horev garrison line (owner, 2 November 2026, "Add the line (Recommended)", #2087)
-        "operation_yoav:c4af1976488006f26f06cddaa6a9e3379d0193f5c5c22c8e789ccff64dabfefc", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
-        "rafah_force_pressure:37ca577e1b93f241035d8bf322810f311a084427307c5722f4122238aa9ec6b8", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
+        "operation_hiram:1c377312e7a71cd88e8ad943789259f8b0a6b146a2fa75843ac43a5fd4a0ea57", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged), then for #2621 (the owner's "Add real orders", 7 November 2026: advance_into_lebanon's comment "No unit orders" goes, its new R-ENEMY-007 lines are left out of the pin), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he)
+        "operation_horev:c1849834d9b34509fb96e22cc77c5a8c60167d5bf91b630ef96577621866e130", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py; review status unchanged), then re-pinned for the Horev garrison line (owner, 2 November 2026, "Add the line (Recommended)", #2087), then for #2621 (the owner's "Reword it (Recommended)" and "All approved (Recommended)", 7 November 2026: the Nazareth sentence reworded for R-ENEMY-007, EN and HE)
+        "operation_yoav:068b82fc97ed355e96225fd03bb5eec98e198e3a47c9bedf2a02f7f3f3d019e7", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he)
+        "rafah_force_pressure:7375565a957129cb27c12d464806207e3b00196cde2759748f5692f4cc917036", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he), then for the owner's own re-sign after it (9665aac34: reviewed_on 2026-11-07)
         "railway_complete:98d06d62c88d889e3e4a98f954fb04727695c37f58c6ccef94449fc16e88bd04", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "reparations_claim:0aa053313d9385bc8746fa1d7318883aab3d1d6706318ad978fc4cd97d98d898", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
-        "rhodes_talks:c5c9cdf906f75e2672e5eedaeadab7f224df96f666a3097813903b81ec06f4f6", // re-pinned for #1065 (Beri's native Hebrew read)
+        "rhodes_talks:7692663150c6348e1ad889e38af30440948c54e5414a270eb35e25fbe111ee45", // re-pinned for #1065 (Beri's native Hebrew read), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he)
         "second_truce:22eeb171849bac248d58cec944c03bac6aee56c96a192aabf0aba2b7e02b19f6", // re-pinned for #1065 (Beri's native Hebrew read)
-        "sinai_withdrawal:4abcd39e509c3d404523f7a5609bdb8e1e5180c19524367790ba7adf0af9e06b", // re-pinned for #1065 (Beri's native Hebrew read)
+        "sinai_withdrawal:f62d48c5e16f2c4805805e769b956bbe5e4f9037c3fa8fafa74758bbe870fc6a", // re-pinned for #1065 (Beri's native Hebrew read), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he)
         "ten_days:0be9dc54863d46b935428e7a6fd1c9d8fe21194960c976d3ed4283b9e1088962", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Kiryati to Ramle replaces Yiftach to Lydda, sent to Ramla's capture target; owner rulings, 1 and 2 November 2026, order target; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
     };
-    // R-ENEMY-005 (owner, 31 October 2026, #749: "GDD 0.1 only"): the operation cards' unit orders apply under gdd-0.1; under
-    // gdd-0.3 the cards stay effect-free for units until a 0.3 accounting contract exists (R-EFX-001/005).
+    // R-ENEMY-005, R-ENEMY-007: operation orders apply under both GDD identities once the required unit is in place.
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void OperationCardOrdersApplyUnderGdd01Only(bool modern)
+    public void OperationCardOrdersApplyUnderBothRulesetsWhenUnitsAreInPlace(bool modern)
     {
         var c = Real(modern);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         Assert.Equal("golani", c.StartingForces[0].Row);
-        var before = s.Units[0];
+        var before = s.Units[0]; var option = c.Events.First(e => e.Id == "operation_horev").Options.First(o => o.Id == "launch");
+        var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+        s.Units[0] = new Unit(before.Id, before.Type, at.Q, at.R, before.Service, before.Side, before.Strength,
+            before.Order, before.OrderTarget, before.HomeCity, before.Full, before.CombatXp);
         s.PendingEvents.Add("operation_horev");
         Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>()));
         var after = s.Units[0];
-        Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
+        Assert.Equal((Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
     }
-    // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; owner, 31 October
-    // 2026, #749: "GDD 0.1 only"): Golani alone on Nazareth in the `occupied` state, its timer still running (the EnemyAITests
-    // cases are all `awaiting_end`), and Horev launched. Under gdd-0.1 the order is held back with Orders.RefusedLastGarrison
-    // and Golani stays; under gdd-0.3 the card gives no unit order, so nothing is refused, RefusedLastGarrison never appears,
-    // and Golani is untouched.
-    // Red without the rule's `occupied` half (SettlementControl.LastGarrison reading only `awaiting_end`): under gdd-0.1 the
-    // order is given, or refused with another reason, so no RefusedLastGarrison names unit 0. Red for a check made outside
-    // the gdd-0.3 guard (EventSystem.Resolve): under gdd-0.3 a RefusedLastGarrison would appear.
+    // R-ENEMY-005, R-CTRL-013: once the placement precondition is isolated, Golani alone on occupied Nazareth is held back
+    // with RefusedLastGarrison under both GDD identities and the occupation continues.
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void TheLastGarrisonRuleHoldsForAnOccupiedPlaceUnderGdd01Only(bool modern)
+    public void TheLastGarrisonRuleHoldsForAnOccupiedPlaceUnderBothRulesets(bool modern)
     {
         var c = Real(modern);
         Assert.Equal(modern, c.Ruleset == SaveGame.Gdd03Ruleset);
@@ -621,15 +617,46 @@ public class Gdd03EventRulesTests
         s.Units[0] = new Unit(g.Id, g.Type, nazareth.Q, nazareth.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full, g.CombatXp);
         Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (nazareth.Q, nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
         s.Settlements["nazareth"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Occupied, s.Date, turns: 3);
+        var option = c.Events.First(e => e.Id == "operation_horev").Options.First(o => o.Id == "launch");
+        var nazarethRegion = c.PlayerRegions.AtHex(nazareth.Q, nazareth.R)!.Id;
+        if (!option.RequiresUnitRegions.Contains(nazarethRegion)) option.RequiresUnitRegions.Add(nazarethRegion);   // isolate R-CTRL-013
         s.PendingEvents.Add("operation_horev");
         var rejected = new List<Rejection>();
         Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>(), rejected: rejected));
-        Assert.Equal(modern ? Array.Empty<string>() : new[] { Orders.RefusedLastGarrison },
+        Assert.Equal(new[] { Orders.RefusedLastGarrison },
             rejected.Where(j => j.Command is UnitOrder { Unit: 0 }).Select(j => j.Reason));
-        if (modern) Assert.DoesNotContain(rejected, j => j.Reason == Orders.RefusedLastGarrison);
         Assert.Equal((nazareth.Q, nazareth.R, "", ""), (s.Units[0].Q, s.Units[0].R, s.Units[0].Order, s.Units[0].OrderTarget));
         Assert.False(s.CardOrders.ContainsKey(0));
         Assert.Equal(SettlementControl.Occupied, s.Settlements["nazareth"].State);
+    }
+    // R-ENEMY-005, R-CTRL-013, R-CTRL-016: the last-garrison rule guards only an occupied place. Once Nazareth is annexed it
+    // is held for good with no garrison (R-CTRL-016), so Horev's order takes Golani away from it under both GDD identities.
+    // mvp-annex-nazareth covered this before R-ENEMY-007; there Golani is now outside Horev's regions, so the placement
+    // precondition is isolated as in the test above. Red without the Occupied/AwaitingEnd condition in
+    // SettlementControl.LastGarrison: the order is refused with RefusedLastGarrison and Golani stays.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HorevsOrderTakesGolaniFromAnAnnexedNazarethUnderBothRulesets(bool modern)
+    {
+        var c = Real(modern);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("golani", c.StartingForces[0].Row);
+        var nazareth = c.SettlementTargets.Single(t => t.Id == "nazareth");
+        var g = s.Units[0];
+        s.Units[0] = new Unit(g.Id, g.Type, nazareth.Q, nazareth.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full, g.CombatXp);
+        Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (nazareth.Q, nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
+        s.Settlements["nazareth"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Annexed, s.Date, turns: 3);
+        var option = c.Events.First(e => e.Id == "operation_horev").Options.First(o => o.Id == "launch");
+        var nazarethRegion = c.PlayerRegions.AtHex(nazareth.Q, nazareth.R)!.Id;
+        if (!option.RequiresUnitRegions.Contains(nazarethRegion)) option.RequiresUnitRegions.Add(nazarethRegion);   // isolate R-CTRL-013
+        s.PendingEvents.Add("operation_horev");
+        var rejected = new List<Rejection>();
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>(), rejected: rejected));
+        Assert.DoesNotContain(rejected, j => j.Command is UnitOrder { Unit: 0 });
+        Assert.Equal((Movement.GoTo, "-8,28"), (s.Units[0].Order, s.Units[0].OrderTarget));
+        Assert.True(s.CardOrders.ContainsKey(0));
+        Assert.Equal(SettlementControl.Annexed, s.Settlements["nazareth"].State);
     }
     // Review of #2087, optional 2: under gdd-0.3 the loader still checks the cards' orders (owner, 31 October 2026, #749), so
     // a Horev order to a hex that is not one of golani's anchors is refused there too.
@@ -655,7 +682,11 @@ public class Gdd03EventRulesTests
         Assert.Equal(SourceBytes.Select(x => x.Split(':')[0]), files.Select(Path.GetFileNameWithoutExtension));
         for (int i = 0; i < files.Length; i++)
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(File.ReadAllText(files[i]).Replace("\r\n", "\n"));
+            // #2543 adds sourced operation-region metadata without changing the historical prose or its review record.
+            // Preserve this byte pin over the pre-existing record by stripping only those rule-tagged lines.
+            var sourceRecord = string.Join("\n", File.ReadAllText(files[i]).Replace("\r\n", "\n").Split('\n')
+                .Where(line => !line.Contains("# R-ENEMY-007") && !line.TrimStart().StartsWith("requires_unit_regions:", StringComparison.Ordinal)));
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sourceRecord);
             Assert.Equal(SourceBytes[i].Split(':')[1], Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
         }
     }

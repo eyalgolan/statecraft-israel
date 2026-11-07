@@ -355,6 +355,42 @@ public class TurnReportTests
         }
     }
 
+    /// <summary>R-ENEMY-007 (#2543): a postponed or lapsed operation changes no number (Delta 0), but the rule says the turn
+    /// report names the units and why, so its lines get a row of their own, before the held cities, in the sim's order and
+    /// the player's language. The lines are the sim's own, from Operation Horev delegated with Golani out of place, then lapsed.
+    /// Red without the row: the report has no operations row and the lines are only on the Why screen.</summary>
+    [Test]
+    public void PostponedAndLapsedOperationsAreReportedInBothLanguages()
+    {
+        var e = C.Events.Single(x => x.Id == "operation_horev");
+        var s = Simulation.NewGame(C, 23, Mode.Historical);
+        s.Date = e.From; s.PendingEvents.Clear(); s.PendingEvents.Add(e.Id);
+        var why = new List<Cause>(); EventSystem.Delegate(C, s, why);
+        s.Date = e.To!.Value; s.Turn += C.Rules.Mvp!.OperationWaitTurns!.Value + 1; EventSystem.LapseExpiredOperations(C, s, why);   // after its wait (R-ENEMY-007)
+        var added = why.Where(w => w.Key == CauseKeys.OperationPostponed || w.Key == CauseKeys.OperationLapsed).ToList();
+        Assert.AreEqual(new[] { CauseKeys.OperationPostponed, CauseKeys.OperationLapsed }, added.Select(w => w.Key).ToArray());
+        var rows = UnitData.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var k = new Kit(text, (g, cmds) =>
+            {
+                var r = g.EndTurn(cmds);
+                var result = new StepResult(r.State, r.Why.Concat(added).ToList(), r.Rejected);
+                typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(g, result);
+                return result;
+            });
+            k.Report.Units = rows;
+            k.Bridge.EndTurn();
+            Assert.AreEqual(hebrew ? "מבצעים צבאיים" : "Military operations",
+                k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.OperationsRow).text);
+            CollectionAssert.AreEqual(added.Select(w => CauseText.Line(w, C, rows, text)).ToList(), Causes(k.Ui, TurnReportPresenter.OperationsRow));
+            StringAssert.Contains(hebrew ? "חטיבת גולני" : "Golani Brigade", Causes(k.Ui, TurnReportPresenter.OperationsRow)[0]);
+            var order = k.Ui.Q<ScrollView>("turn-report-rows").Children().Select(r => r.name).ToList();
+            Assert.Greater(order.IndexOf("turn-report-" + TurnReportPresenter.OperationsRow), order.IndexOf("turn-report-arms"), "after the stocks");
+        }
+    }
+
     /// <summary>R-CITY-010 (#1711): a turn with no held city has no held row.</summary>
     [Test]
     public void ATurnWithNoHeldCityGivesNoHeldRow()

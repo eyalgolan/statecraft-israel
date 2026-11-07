@@ -7,7 +7,8 @@ exactly these bytes, and `tools/tests/test_translate.py` checks `tools/translate
 tool and the game stay one contract.
 
 The cases: events ordered by date, then id (`alpha` before `vote` on the same day; `quiet` has no Hebrew); a review flag
-and none; text with `'`, `"` and `\`; an office's feminine title (`title_f`) beside its retained sources and date window;
+and none; a late text (`late`, R-ENEMY-007) written between the body and the options;
+text with `'`, `"` and `\`; an office's feminine title (`title_f`) beside its retained sources and date window;
 a person whose `name_he` source sits in `biography_sources` (a list, so not a field); a record keyed by a mapping key
 (`regions.north`); a list item with no id (keyed by its index); an English value that is not text (skipped); a Hebrew
 field with no English (skipped); UI strings in strings.en.yaml's order with one only in Hebrew last, and a separator

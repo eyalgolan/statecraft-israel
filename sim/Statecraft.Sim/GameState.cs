@@ -72,6 +72,10 @@ namespace Statecraft.Sim
         public List<string> PendingEvents = new List<string>();
         /// <summary>Soft events that were eligible but found no slot, by id (R-EVT-001). They remain here until they fire.</summary>
         public SortedSet<string> CappedEvents = new SortedSet<string>(StringComparer.Ordinal);
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Keep the option (Recommended)", "Wait, with a limit (Recommended)"): each
+        /// pending operation card a delegation postponed, by id: the option it was postponed with, which later delegations
+        /// keep instead of drawing again, and the turn of its first postponement, from which its wait is counted.</summary>
+        public SortedDictionary<string, PostponedOperation> PostponedOperations = new SortedDictionary<string, PostponedOperation>(StringComparer.Ordinal);
         /// <summary>The option each resolved event was resolved with (chosen or delegated), for events' `requires`.</summary>
         public Dictionary<string, string> ChosenOptions = new Dictionary<string, string>();
         /// <summary>Player appointments by office id; valid while the government in AppointedUnder is in office (Cabinet).</summary>
@@ -175,6 +179,7 @@ namespace Statecraft.Sim
             c.FiredEvents = new SortedSet<string>(FiredEvents, StringComparer.Ordinal);
             c.PendingEvents = new List<string>(PendingEvents);
             c.CappedEvents = new SortedSet<string>(CappedEvents, StringComparer.Ordinal);
+            c.PostponedOperations = new SortedDictionary<string, PostponedOperation>(PostponedOperations, StringComparer.Ordinal);
             c.ChosenOptions = new Dictionary<string, string>(ChosenOptions);
             c.Appointments = new Dictionary<string, Appointment>(Appointments);
             c.Placements = new List<Placement>(Placements);
@@ -253,6 +258,10 @@ namespace Statecraft.Sim
             List("pending", PendingEvents);
             // R-EVT-001: absent when no event has waited for the cap, so all existing golden hashes stay byte-for-byte stable.
             if (CappedEvents.Count > 0) Section("capped", '[', ']', CappedEvents);
+            // R-ENEMY-007: absent while no operation waits, as `capped`, so a run that postpones none hashes as before.
+            if (PostponedOperations.Count > 0)
+                Section("postponed", '{', '}', PostponedOperations.Select(kv => kv.Key + "=" + kv.Value.Option + "@" + kv.Value.Turn.ToString(CultureInfo.InvariantCulture)
+                    + "@" + kv.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
             Nl(); sb.Append("chosen{");
             foreach (var kv in ChosenOptions.OrderBy(k => k.Key, StringComparer.Ordinal)) { Entry(); sb.Append(kv.Key).Append('=').Append(kv.Value); Sep(); }
             Close('}');
@@ -330,5 +339,16 @@ namespace Statecraft.Sim
             }
             return sb.ToString();
         }
+    }
+
+    /// <summary>R-ENEMY-007: a postponed operation card's kept option, and the turn (GameState.Turn) and date of its first
+    /// postponement: the wait is counted from the turn, and a late launch's orders end later by the time since the date (Q4).
+    /// Immutable, so GameState.Clone can share it.</summary>
+    public sealed class PostponedOperation
+    {
+        public string Option { get; }
+        public int Turn { get; }
+        public DateTime Date { get; }
+        public PostponedOperation(string option, int turn, DateTime date) { Option = option; Turn = turn; Date = date; }
     }
 }

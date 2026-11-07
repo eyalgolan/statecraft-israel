@@ -18,8 +18,8 @@ public class Gdd03EventInventoryTests
     static string Num(double v) => v.ToString("G", CultureInfo.InvariantCulture);
 
     /// <summary>Every effect field of every option, in the card's own order: set_policy (by key), set_rung, effects, then
-    /// the structured grant_units, city_effects and unlock_projects, then unit_orders (R-ENEMY-005, not run under
-    /// gdd-0.3), debt_dollars (R-EFX-009, applied under gdd-0.3 only) and rejoin (R-ALT-009). Same-target effects keep
+    /// the structured grant_units, city_effects and unlock_projects, then unit_orders (R-ENEMY-005; under gdd-0.3 too since
+    /// R-ENEMY-007, #2543), debt_dollars (R-EFX-009, applied under gdd-0.3 only) and rejoin (R-ALT-009). Same-target effects keep
     /// their list index.</summary>
     static IEnumerable<(string Field, string Change)> Fields(EventOption o)
     {
@@ -68,11 +68,12 @@ public class Gdd03EventInventoryTests
                 foreach (var (field, change) in oldFields)
                 {
                     rows++;
-                    // R-ENEMY-005: a card's unit orders run under gdd-0.1 only; gdd-0.3 checks them and gives none (owner, #749).
+                    // R-ENEMY-005, R-ENEMY-007 (#2543): a card's unit orders run under both GDD rulesets, once the option's
+                    // operation units are in place (requires_unit_regions); the order itself is the same.
                     var (target, delta) = m == null
                         ? ("legacy rulesets only (card excluded)", "none (not in play)")
                         : field.StartsWith("unit_orders[", StringComparison.Ordinal)
-                        ? ($"`{field}` (loaded, not run under gdd-0.3)", "none (no order given)")
+                        ? ($"`{field}` (same, once its units are in place: R-ENEMY-007)", change)
                         : ($"`{field}` (same)", change);
                     sb.Append($"| `{e.Id}` | `{o.Id}` | `{field}` | {change} | {target} | {delta} | no |\n");
                 }
