@@ -239,7 +239,9 @@ The gates, in order. The first one that fails ends the night as REFUSED, and not
    boot the machine settles: the job waits until the 1-minute load average is under 2.0, at most 5 minutes, and
    measures anyway if it never gets there. Each `boot-N.log` starts with the machine's load averages,
    `vm.swapusage`, `memory_pressure`'s free percentage and `pmset -g therm`, and `boot-1.log` also says how long
-   the wait took.
+   the wait took. A median over the bound is measured once more: the machine settles again, three more boots run
+   (`boot-4.log` to `boot-6.log`), and the night is refused only if that second median is also over the bound,
+   naming both. The log records both medians when the second one passes (#2921).
 
 A nightly never moves a golden: golden moves arrive through reviewed pull requests, and the nightly only needs the
 golden tests of the full run to pass.

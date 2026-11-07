@@ -1237,6 +1237,38 @@ def test_unreadable_machine_state_never_changes_the_verdict(night, env):
     assert "settle: 1-minute load unreadable, not waiting" in first
 
 
+# #2921: one over-bound median gets one re-measure after the machine settles again; only a second one refuses.
+BOOT_BASELINE = [4400.0, 4450.0, 4500.0, 4400.0, 4450.0]   # bound 4500 + 100 = 4600 ms
+
+
+def test_a_first_median_under_the_bound_takes_no_second_measurement(night, env):
+    r = boot_runner([4400, 4500, 4450])
+    st = ns.State(boot_baseline=list(BOOT_BASELINE))
+    assert nightly.boot_gate(night, st, r, night.cfg.clone / "unity/Builds/Web-gzip") == (4450.0, "checked")
+    assert len(r.calls) == 3 and not (night.run_dir / "boot-4.log").exists()
+
+
+def test_an_over_bound_median_then_one_under_it_passes_and_the_log_records_both(night, env, capsys):
+    r = boot_runner([6300, 6313, 6320, 4440, 4450, 4460])
+    st = ns.State(boot_baseline=list(BOOT_BASELINE))
+    assert nightly.boot_gate(night, st, r, night.cfg.clone / "unity/Builds/Web-gzip") == (4450.0, "checked")
+    assert len(r.calls) == 6
+    out = capsys.readouterr().out
+    assert "6313 ms, over the 4600 ms bound" in out and "re-measure after settling: 4450 ms" in out
+    again = [(night.run_dir / f"boot-{i}.log").read_text() for i in (4, 5, 6)]
+    assert "settle: 1-minute load 0.80 under 2.0" in again[0] and "settle:" not in again[1]
+    assert boot_logs(night)[1].count("BOOT phase") == 1   # the first three logs are kept, not overwritten
+
+
+def test_two_over_bound_medians_refuse_naming_both(night, env):
+    r = boot_runner([6300, 6313, 6320, 6280, 6290, 6270])
+    st = ns.State(boot_baseline=list(BOOT_BASELINE))
+    with pytest.raises(Refused) as e:
+        nightly.boot_gate(night, st, r, night.cfg.clone / "unity/Builds/Web-gzip")
+    assert e.value.gate == "boot" and len(r.calls) == 6
+    assert "6313 ms, over the 4600 ms bound" in e.value.detail and "6280 ms, over the 4600 ms bound" in e.value.detail
+
+
 # --- Task 6: publish_night, the stage wiring, the clients ---------------------------------------------------------
 
 BOOT_MS = 8200.0
