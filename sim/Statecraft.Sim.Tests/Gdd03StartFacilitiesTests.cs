@@ -139,6 +139,32 @@ public class Gdd03StartFacilitiesTests
         yield return Case(One("jerusalem", "negba"), "military_camps[0].location", "must name a military_camp map location");
         yield return Case(One("tel_aviv", "military_tel_litvinsky"), "military_camps",
             "effective military-camp city count 1 must equal start.military_camps 2");
+        // #1689 PR 2: formation_combat_xp names each own opening formation once, with 0 to military.combat_xp_full (5).
+        const string full = "an integer from 0 to military.combat_xp_full 5";
+        yield return Case(Xp(("golani", "1"), ("golani", "1")), "formation_combat_xp[1].row", "duplicate formation");
+        yield return Case(Xp(("yiftach", "1")), "formation_combat_xp[0].row", "must name an own opening formation of map/units_1948.yaml");
+        yield return Case(Xp(("arab_legion", "1")), "formation_combat_xp[0].row", "must name an own opening formation of map/units_1948.yaml");
+        yield return Case(Xp(("golani", "-1")), "formation_combat_xp[0].combat_xp", "required: " + full);
+        yield return Case(Xp(("golani", "6")), "formation_combat_xp[0].combat_xp", "required: " + full);
+        yield return Case(Xp(("golani", "null")), "formation_combat_xp[0].combat_xp", "required: " + full);
+        yield return Case(Xp(AllEight().Where(x => x.Row != "negev").ToArray()), "formation_combat_xp", "missing opening formation negev");
+    }
+
+    static (string Row, string Xp)[] AllEight() => new[] { "golani", "carmeli", "alexandroni", "kiryati", "givati", "etzioni",
+        "harel", "negev" }.Select(r => (r, r == "negev" ? "0" : "1")).ToArray();
+    static string Xp(params (string Row, string Xp)[] rows) =>
+        Two(("tel_aviv", "military_tel_litvinsky"), ("jerusalem", "military_schneller")) + "formation_combat_xp:\n"
+        + string.Concat(rows.Select(x => $"  - {{ row: {x.Row}, combat_xp: {x.Xp} }}\n"));
+
+    // Without formation_combat_xp the overlay still loads (synthetic overlays name camps only); the ledger fixture then
+    // refuses, with no fallback value.
+    [Fact]
+    public void WithoutFormationCombatXpTheLedgerFixtureRefuses()
+    {
+        var c = LoadShipped(true, Two(("tel_aviv", "military_tel_litvinsky"), ("jerusalem", "military_schneller")));
+        Assert.Null(c.Gdd03FormationCombatXp);
+        var e = Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.LedgerFixture(c));
+        Assert.Contains("formation_combat_xp", e.Message);
     }
 
     static object[] Case(string yaml, string field, string reason) => new object[] { yaml, field, reason };
