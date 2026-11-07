@@ -847,9 +847,15 @@ namespace Statecraft.Game.UI
             var pioneer = info?.Pioneer;
             var unit = info?.ShowsUnit == true ? units?.Selected : null;
             var hex = info?.ShowsUnit == true ? null : info?.Selected;
+            // #2340: the card or capture dialog the player hid; the rebuilt presenters would open it again.
+            var hiddenCard = card?.Collapsed == true ? card.Shown!.Id : null;
+            var hiddenCapture = capture?.Collapsed == true ? capture.Shown : null;
             // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
             try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
             finally { keptBudgetDraft = null; }
+            // Hidden again before the selection is put back: an open card or dialog disables the info panel (ScreenNav).
+            if (hiddenCard != null && card?.Shown?.Id == hiddenCard) card.Collapse(takeFocus: false);
+            if (hiddenCapture != null && capture?.Shown == hiddenCapture) capture.Collapse(takeFocus: false);
             // Put back before Settings opens again: a screen that covers the panel would ignore it. The map's hex outline
             // outlives Begin, so it is set to match (before, the new panel showed nothing under the old outline).
             if (info != null && units != null)
