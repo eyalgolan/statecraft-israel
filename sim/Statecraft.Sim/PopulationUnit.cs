@@ -10,21 +10,26 @@ namespace Statecraft.Sim
     public enum CivilianProfession { None, Farmer, Pioneer, Craftsman }
     public enum CivilianTier { None, Novice, Trained, Veteran, Apprentice, Expert }
 
-    /// <summary>An exact authored binding, not a region inferred from a hex or a captive's invented prison.</summary>
+    /// <summary>An exact authored binding, not a region inferred from a hex or a captive's invented prison. The optional
+    /// city is a regions.yaml member location of the region (checked when a fixture is created, R-POP-002); it is written
+    /// only when set (<c>|city=</c>, as R-UNIT-002's <c>|home=</c>), so a location without one keeps its canonical text.</summary>
     public sealed class PopulationLocation
     {
         public string Region { get; }
         public int? Q { get; }
         public int? R { get; }
         public string? FacilityOrPort { get; }
-        public PopulationLocation(string region, int? q = null, int? r = null, string? facilityOrPort = null)
+        public string? City { get; }
+        public PopulationLocation(string region, int? q = null, int? r = null, string? facilityOrPort = null, string? city = null)
         {
-            if (string.IsNullOrWhiteSpace(region) || q.HasValue != r.HasValue || (facilityOrPort != null && string.IsNullOrWhiteSpace(facilityOrPort)))
-                throw new ArgumentException("A region, a complete optional hex and a nonempty optional facility/port are required.");
-            PopulationText.ValidateText(region); PopulationText.ValidateText(facilityOrPort);
-            Region = region; Q = q; R = r; FacilityOrPort = facilityOrPort;
+            if (string.IsNullOrWhiteSpace(region) || q.HasValue != r.HasValue || (facilityOrPort != null && string.IsNullOrWhiteSpace(facilityOrPort))
+                || (city != null && string.IsNullOrWhiteSpace(city)))
+                throw new ArgumentException("A region, a complete optional hex and a nonempty optional facility/port and city are required.");
+            PopulationText.ValidateText(region); PopulationText.ValidateText(facilityOrPort); PopulationText.ValidateText(city);
+            Region = region; Q = q; R = r; FacilityOrPort = facilityOrPort; City = city;
         }
-        internal string Canonical() => PopulationText.Fields(Region, Q, R, FacilityOrPort);
+        internal string Canonical() => PopulationText.Fields(Region, Q, R, FacilityOrPort)
+            + (City == null ? "" : "|city=" + PopulationText.Fields(City));
     }
 
     public sealed class PopulationAssignment
