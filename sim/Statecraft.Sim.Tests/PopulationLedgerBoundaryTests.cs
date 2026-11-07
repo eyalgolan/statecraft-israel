@@ -84,7 +84,7 @@ public class PopulationLedgerBoundaryTests
         var c = HistoricalPopulationTests.Real(true);
         var s = HistoricalPopulation.LedgerFixture(c);
         s.Date = c.Rules.Start;
-        s.Population["fixture"] = 9_000_000;   // an aggregate head count the ledger's need must not read
+        s.Population["fixture"] = 9_000_000;   // read by neither need: TotalPopulation reads an initialized ledger (DarkStartTests pins the ledger-need path)
         Pools.Init(c, s);
         Assert.Equal(Pools.Rations(s.PopulationLedger.Units), s.FoodNeed);
         Assert.Equal(c.RulesAt(c.Rules.Start).Mvp!.CoverMonths!.Value * s.FoodNeed, s.Food);

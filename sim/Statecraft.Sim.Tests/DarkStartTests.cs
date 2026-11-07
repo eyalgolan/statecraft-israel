@@ -111,4 +111,24 @@ public class DarkStartTests
         Assert.Throws<InvalidOperationException>(() => HistoricalPopulation.Initialize(c, s));
         Assert.Equal(before, s.Hash());
     }
+    // R-FOOD-001 under gdd-0.3 (#2470): an initialized ledger's need is one ration for each living own population id
+    // (Pools.Rations), not the head count over rules.yaml's people_per_unit. At the Historical scale the two agree (each
+    // record is people_per_unit people, and GameState.TotalPopulation reads the ledger), so this test sets the rules'
+    // people_per_unit to twice the scale the ledger froze at initialization (R-POP-003 writes it): the aggregate head
+    // count over the rules' unit is then half the records, and Pools.Init must still give one ration a record.
+    [Fact]
+    public void PoolsInitNeedCountsLedgerRecordsNotTheHeadCountOverTheRulesUnit()
+    {
+        var c = Gdd03();
+        var s = HistoricalPopulation.LedgerFixture(c);
+        s.Date = c.Rules.Start;
+        var mvp = c.RulesAt(s.Date).Mvp!;
+        var records = s.PopulationLedger.Units.Count;
+        Assert.Equal(records * (double)mvp.PeoplePerUnit, s.TotalPopulation);
+        mvp.PeoplePerUnit *= 2;
+        Assert.NotEqual(records, (int)Math.Round(s.TotalPopulation / c.RulesAt(s.Date).Mvp!.PeoplePerUnit, MidpointRounding.AwayFromZero));
+        Pools.Init(c, s);
+        Assert.Equal(records, s.FoodNeed);
+        Assert.Equal(mvp.CoverMonths!.Value * records, s.Food);
+    }
 }
