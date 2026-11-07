@@ -693,6 +693,8 @@ namespace Statecraft.Game.UI
             hudRoot.EnableInClassList(OverlayOpenClass, !inline);
             if (!inline)
             {
+                // The popup too: it stays on screen behind the overlay, and Tab would leave the overlay for its buttons (#2340).
+                overlayCoveredScreens.Add((popup, popup.enabledSelf)); popup.SetEnabled(false);
                 foreach (var name in ScreenNav.Screens)
                     if (hudRoot.Q("screen-" + name) is VisualElement screen) { overlayCoveredScreens.Add((screen, screen.enabledSelf)); screen.SetEnabled(false); }
                 ScreenNav.DisableCovered(hudRoot); FocusReturn.To(overlayClose);
