@@ -626,7 +626,14 @@ namespace Statecraft.Game.Map.Collection
         public static float ViewDistance(Camera cam) => Kits.TownModelLayer.ViewDistance(cam);
 
         /// <summary>#700's building layer of this map (null without kits).</summary>
-        Kits.TownModelLayer? Layer() => map == null ? null : map.GetComponentInChildren<Kits.TownModelLayer>(true);
+        Kits.TownModelLayer? Layer()
+        {
+            if (map == null) return null;
+            LayerLookups++;
+            return map.GetComponentInChildren<Kits.TownModelLayer>(true);
+        }
+        /// <summary>How many times <see cref="Layer"/> has walked the map's hierarchy for the building layer (a test aid).</summary>
+        internal int LayerLookups { get; private set; }
 
         void OnEnable()
         {
