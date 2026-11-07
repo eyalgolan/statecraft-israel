@@ -95,9 +95,13 @@ public class EventCardTests
         foreach (var local in new[] { Text, He })
         {
             using var ui = new UiTestKit();
-            using var card = new EventCardPresenter(ui.Root, new SimBridge(h, local), local, null) { Units = unitRows };
+            var bridge = new SimBridge(h, local);
+            using var card = new EventCardPresenter(ui.Root, bridge, local, null) { Units = unitRows };
             card.Render();
-            Assert.AreEqual(e.Id, card.Shown?.Id, "Horev is first in the pending list, so its card shows");
+            Assert.AreEqual("armistice_egypt", card.Shown?.Id, "the armistice Horev waits for is shown first (Q3)");
+            Assert.IsNull(bridge.Queue(new ChooseEventOption("armistice_egypt", "hold_out")), "the player answers it, for End Turn");
+            card.Render();
+            Assert.AreEqual(e.Id, card.Shown?.Id, "then Horev's card shows");
             Assert.IsFalse(ui.Q<Button>("option-launch").enabledSelf, "the armistice is decided first");
             var why = ui.Root.Query<Label>(className: EventCardPresenter.ArmisticeClass).ToList();
             Assert.AreEqual(1, why.Count);
