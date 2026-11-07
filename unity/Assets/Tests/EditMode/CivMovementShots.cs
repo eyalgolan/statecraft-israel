@@ -103,8 +103,7 @@ public class CivMovementShots
     {
         var cam = Camera.main;
         // A camera at another aspect writes a stretched still (#2882): its rig skipped ShotCamera.Configure.
-        if (Mathf.Abs(cam.aspect - (float)Width / Height) > 0.001f)
-            throw new InvalidOperationException($"the camera's aspect is {cam.aspect:0.000}, its frame's {(float)Width / Height:0.000} ({Width} x {Height}): call ShotCamera.Configure after the scene opens");
+        ShotCamera.Require(cam, Width, Height);
         var frame = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         var before = cam.targetTexture;
         cam.targetTexture = frame; cam.Render(); cam.targetTexture = before;

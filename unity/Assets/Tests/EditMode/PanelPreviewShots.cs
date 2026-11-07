@@ -144,6 +144,7 @@ public class PanelPreviewShots
     void Shot(string name)
     {
         var cam = Camera.main;
+        ShotCamera.Require(cam, Width, Height);
         var frame = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
         var before = cam.targetTexture;
         cam.targetTexture = frame; cam.Render(); cam.targetTexture = before;

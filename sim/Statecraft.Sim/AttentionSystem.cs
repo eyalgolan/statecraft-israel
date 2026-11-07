@@ -46,13 +46,17 @@ namespace Statecraft.Sim
         public static double Left(Content c, GameState s, IEnumerable<Command> pending)
         { RequireAttention(c); return s.Attention - pending.Sum(x => Price(c, s, x)); }
 
+        /// <summary>The refusal for an order that costs more Attention than is left: the cost, then what is left (#2707: a
+        /// constant, for the UI's string).</summary>
+        public const string RefusedAttention = "Not enough attention (need {0:0.0}, have {1:0.0})";
+
         /// <summary>Returns null and deducts on success, or the reason it could not be afforded.
         /// <paramref name="rung"/> prices the command at that security level (the turn's starting rung).</summary>
         public static string? TrySpend(Content c, GameState s, string kind, int? rung = null)
         {
             var cost = Cost(c, s, kind, rung);
             if (cost > s.Attention + 1e-9)
-                return string.Format(CultureInfo.InvariantCulture, "Not enough attention (need {0:0.0}, have {1:0.0})", cost, s.Attention);
+                return string.Format(CultureInfo.InvariantCulture, RefusedAttention, cost, s.Attention);
             s.Attention -= cost;
             return null;
         }

@@ -38,6 +38,9 @@ namespace Statecraft.Sim
             return candidates.OrderBy(e => e.Distance).ThenBy(e => e.Unit).First().Front;
         }
 
+        /// <summary>Send home's refusal while no armistice is signed (#2707: a constant, for the UI's string).</summary>
+        public const string RefusedNoArmistice = "No armistice is signed";
+
         /// <summary>R-UNIT-005's refusals: null when <see cref="Give"/> takes the order, else the reason shown to the player.
         /// Changes nothing: the unit card asks it before it offers Send home. Refused for an unknown unit, a unit with no
         /// side (a halutz) or an enemy unit, as the standing orders are; then while the armistice on the unit's front is
@@ -51,7 +54,7 @@ namespace Statecraft.Sim
             var front = Front(s, u, attacked);
             if (front != null)
                 return Signed(s, front) ? null : $"The armistice with {PlayerText.Capitalised(front)} is not signed";
-            return Prisoners.Fronts.Any(f => Signed(s, f)) ? null : "No armistice is signed";
+            return Prisoners.Fronts.Any(f => Signed(s, f)) ? null : RefusedNoArmistice;
         }
 
         /// <summary>R-UNIT-005: sends the unit home at once, like CancelTraining returns a cohort (R-TRAIN-002): the unit

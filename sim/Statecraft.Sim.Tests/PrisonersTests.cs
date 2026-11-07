@@ -232,6 +232,34 @@ sources: [{{ url: https://example.org/event, checked: 2026-10-18 }}]
         Assert.DoesNotContain("pow_jordan", s.FiredEvents);
     }
 
+    // R-POW-004: a stored 0 holds nobody, so the card keeps waiting (#2733 item 6). The entry itself stays as it was: the
+    // filter reads it and saved state does not change. Only a zero-strength surrender or a hand-built state can store a 0.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ACountOfZeroHoldsNobody(bool ownSoldiers)
+    {
+        var c = Load();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        (ownSoldiers ? s.SoldiersHeld : s.PrisonersHeld)["egypt"] = 0;
+        for (int i = 0; i < 16; i++) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.True(s.Date > new DateTime(1948, 7, 1));
+        Assert.DoesNotContain("pow_egypt", s.FiredEvents);
+        Assert.Equal(0, (ownSoldiers ? s.SoldiersHeld : s.PrisonersHeld)["egypt"]);
+    }
+
+    // R-POW-004: the count is per front, so a 0 on one of its sides does not hide a positive count on the other.
+    [Fact]
+    public void AZeroOnOneSideLeavesTheFrontsOtherSideHeld()
+    {
+        var c = Load();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.PrisonersHeld["jordan"] = 0;
+        s.PrisonersHeld["iraq"] = 1;
+        for (int i = 0; i < 16; i++) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.Contains("pow_jordan", s.FiredEvents);
+    }
+
     // R-POW-004: delegating an exchange card draws no RNG, like an objective's card. A soft-anchored card, because a hard-anchored
     // one takes its historical option without a draw anyway and would hide the missing exemption.
     [Fact]

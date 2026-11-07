@@ -610,7 +610,7 @@ public class ArmsWorkshopTests
         if (paid) { Assert.Empty(waits); return; }
         var line = Assert.Single(waits);
         Assert.Equal((Workshops.DebtCeiling, "Town A: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling"),
-            (line.Args.Single(), line.Message));
+            (line.Args[0], line.Message));
         Assert.Null(r.State.Workshops[id].PaidCost);
         Assert.DoesNotContain(r.Why, w => w.Key == CauseKeys.Borrowed && w.Args[0] == CauseKeys.Purpose.Workshop);
     }
@@ -667,7 +667,7 @@ public class ArmsWorkshopTests
         var r = Step(c, s);
         Assert.Equal((5m, 1), (r.State.Workshops[id].PaidCost, r.State.Workshops[id].Progress));
         var line = Assert.Single(r.Why, w => w.Key == CauseKeys.WorkshopPaused);
-        Assert.Equal((Workshops.NoWorker, "Town A: an arms workshop has no worker without a job this month"), (line.Args.Single(), line.Message));
+        Assert.Equal((Workshops.NoWorker, "Town A: an arms workshop has no worker without a job this month"), (line.Args[0], line.Message));
     }
 
     // R-ARMS-006: the cycle runs under gdd-0.3 only. A gdd-0.1 state that somehow holds a staffed workshop one month from its
@@ -768,7 +768,9 @@ public class ArmsWorkshopTests
         Assert.Single(Charges(r));
         Assert.Equal((5m, 1), (r.State.Workshops[first].PaidCost, r.State.Workshops[first].Progress));
         Assert.Equal(((decimal?)null, 0), (r.State.Workshops[second].PaidCost, r.State.Workshops[second].Progress));
-        Assert.Equal(Workshops.NoWorker, Assert.Single(r.Why, w => w.Key == CauseKeys.WorkshopPaused).Args.Single());
+        var waits = Assert.Single(r.Why, w => w.Key == CauseKeys.WorkshopPaused);
+        // #2711: the cause names the workshop that waited, so the hex panel shows it under that workshop only.
+        Assert.Equal((Workshops.NoWorker, second.ToString(System.Globalization.CultureInfo.InvariantCulture)), (waits.Args[0], waits.Args[1]));
     }
 
     // R-TRAIN-001, R-QUAL-005 with R-ARMS-005: a staffed workshop's worker holds no job but is not idle, so neither Train
