@@ -55,7 +55,12 @@ options:
     effects:
       - { target: security, delta: 0.025 }
       - { target: intl_standing, delta: -0.08 }
-    # No unit orders: no source places a unit for this alternative (R-ENEMY-005, #749), until one is found.
+    # R-ENEMY-007 (owner, 7 November 2026: "Add real orders", "Stop at al-Malikiyya (Recommended)"): the same units and sourced border
+    # R-ENEMY-007: targets as stop_at_ceasefire; the crossing into Lebanon is the card's text, with no village named.
+    requires_unit_regions: [galilee]
+    unit_orders:   # R-ENEMY-007
+      - { unit: carmeli, q: 15, r: 3 }   # R-ENEMY-007: Manara, carmeli's order target
+      - { unit: brigade_7, q: 14, r: 4 }   # R-ENEMY-007: al-Malikiyya, brigade_7's order target
 sources:
   - { url: "https://en.wikipedia.org/wiki/Operation_Hiram", checked: 2026-10-10 }
   - { url: "https://www.un.org/unispal/document/auto-insert-211203/", checked: 2026-10-14 }

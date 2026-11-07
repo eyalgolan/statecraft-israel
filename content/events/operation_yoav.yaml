@@ -45,6 +45,12 @@ options:
     text_he: לאפשר לאלון להתקדם לתוך הר חברון ובקעת יריחו
     # No day on record for the Southern Front command's disagreement, so `design`: owner ruling of 18 October 2026 (#949).
     alternative: { basis: design }
+    # R-ENEMY-007 (owner, 7 November 2026: "Add real orders", "Same units (Recommended)"): stop_at_ceasefire's units and regions;
+    # R-ENEMY-007: Givati to Bayt Jibrin (its order target, 27 October 1948) and Negev to Beersheba.
+    requires_unit_regions: [southern_coast, negev]
+    unit_orders:   # R-ENEMY-007
+      - { unit: givati, q: -6, r: 29 }   # R-ENEMY-007: Bayt Jibrin, givati's order target
+      - { unit: negev, q: -10, r: 35 }   # R-ENEMY-007: Beersheba, negev's order target
     set_rung: 5
     effects:
       - { target: security, delta: 0.03 }

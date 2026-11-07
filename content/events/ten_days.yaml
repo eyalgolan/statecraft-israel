@@ -63,6 +63,12 @@ options:
       date: 1948-07-11
       sources:
         - { url: "https://bengurionarchive.bgu.ac.il/en/node/9706", checked: 2026-10-17 }
+    # R-ENEMY-007 (owner, 7 November 2026: "Same units as Central (Recommended)", "Keep the same targets (Recommended)"): central_front's
+    # R-ENEMY-007: units, regions and sourced targets, so these orders go to Ramle and the north, not to a southern target.
+    requires_unit_regions: [central_plain, jerusalem_hills, galilee]
+    unit_orders:   # R-ENEMY-007
+      - { unit: kiryati, q: -3, r: 24 }   # R-ENEMY-007: as central_front
+      - { unit: carmeli, q: 14, r: 6 }   # R-ENEMY-007: as central_front
     set_rung: 5
     effects:
       - { target: security, delta: 0.015 }

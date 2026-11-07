@@ -144,6 +144,8 @@ first-slice availability") describes; this file changes no exclusion.
 | `operation_hiram` | `advance_into_lebanon` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `operation_hiram` | `advance_into_lebanon` | `effects[0].security` | 0.025 | `effects[0].security` (same) | 0.025 | no |
 | `operation_hiram` | `advance_into_lebanon` | `effects[1].intl_standing` | -0.08 | `effects[1].intl_standing` (same) | -0.08 | no |
+| `operation_hiram` | `advance_into_lebanon` | `unit_orders[0].carmeli` | go to (15, 3) | `unit_orders[0].carmeli` (same, once its units are in place: R-ENEMY-007) | go to (15, 3) | no |
+| `operation_hiram` | `advance_into_lebanon` | `unit_orders[1].brigade_7` | go to (14, 4) | `unit_orders[1].brigade_7` (same, once its units are in place: R-ENEMY-007) | go to (14, 4) | no |
 | `operation_horev` | `launch` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `operation_horev` | `launch` | `effects[0].security` | 0.02 | `effects[0].security` (same) | 0.02 | no |
 | `operation_horev` | `launch` | `unit_orders[0].golani` | go to (-8, 28) | `unit_orders[0].golani` (same, once its units are in place: R-ENEMY-007) | go to (-8, 28) | no |
@@ -155,6 +157,8 @@ first-slice availability") describes; this file changes no exclusion.
 | `operation_yoav` | `push_to_hebron` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `operation_yoav` | `push_to_hebron` | `effects[0].security` | 0.03 | `effects[0].security` (same) | 0.03 | no |
 | `operation_yoav` | `push_to_hebron` | `effects[1].intl_standing` | -0.08 | `effects[1].intl_standing` (same) | -0.08 | no |
+| `operation_yoav` | `push_to_hebron` | `unit_orders[0].givati` | go to (-6, 29) | `unit_orders[0].givati` (same, once its units are in place: R-ENEMY-007) | go to (-6, 29) | no |
+| `operation_yoav` | `push_to_hebron` | `unit_orders[1].negev` | go to (-10, 35) | `unit_orders[1].negev` (same, once its units are in place: R-ENEMY-007) | go to (-10, 35) | no |
 | `rafah_force_pressure` | `complete_pullback` | `rejoin` | rejoins `sinai_withdrawal` | `rejoin` (same) | rejoins `sinai_withdrawal` | no |
 | `reparations_claim` | `claim` | `effects[0].intl_standing` | 0 | `effects[0].intl_standing` (same) | 0 | no |
 | `reparations_claim` | `claim` | `effects[1].treasury` | -1 | `effects[1].treasury` (same) | -1 | no |
@@ -179,8 +183,10 @@ first-slice availability") describes; this file changes no exclusion.
 | `ten_days` | `central_front` | `unit_orders[1].carmeli` | go to (14, 6) | `unit_orders[1].carmeli` (same, once its units are in place: R-ENEMY-007) | go to (14, 6) | no |
 | `ten_days` | `southern_front` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `ten_days` | `southern_front` | `effects[0].security` | 0.015 | `effects[0].security` (same) | 0.015 | no |
+| `ten_days` | `southern_front` | `unit_orders[0].kiryati` | go to (-3, 24) | `unit_orders[0].kiryati` (same, once its units are in place: R-ENEMY-007) | go to (-3, 24) | no |
+| `ten_days` | `southern_front` | `unit_orders[1].carmeli` | go to (14, 6) | `unit_orders[1].carmeli` (same, once its units are in place: R-ENEMY-007) | go to (14, 6) | no |
 
-132 rows: 41 cards under gdd-0.1, 41 under gdd-0.3.
+138 rows: 41 cards under gdd-0.1, 41 under gdd-0.3.
 
 | Excluded card | gdd-0.3 loader with only this exclusion removed |
 |---|---|

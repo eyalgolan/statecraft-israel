@@ -265,8 +265,10 @@ public class StartingForcesTests
     {
         Assert.Equal(14, Real.StartingForces.Count);
         // Every starting row is fact-checked with no field sourced after its checked_on: the owner checked the six order targets
-        // sourced on 1 November (#2757, 6 November 2026, "all approved").
-        Assert.Empty(ReleaseGate.StartingForcesUnchecked(Real));
+        // sourced on 1 November (#2757, 6 November 2026, "all approved"). Givati's Bayt Jibrin target (#2621, sourced on
+        // 7 November 2026, after Givati's person check) waits for one, so the gate names it until a person checks it.
+        Assert.Equal(new[] { "givati: order_targets[1] (Bayt Jibrin), sources checked 2026-11-07, row checked 2026-11-06" },
+            ReleaseGate.StartingForcesUnchecked(Real));
         var c = Load(Row("b", "israel", 20), Row("a", "israel", 20, q: 2, status: "fact-checked", extra: "  checked_on: '2026-10-21'\n"));
         Assert.Equal(new[] { "b" }, ReleaseGate.StartingForcesUnchecked(c));
     }

@@ -714,6 +714,9 @@ public class EnemyAITests
     // R-ENEMY-005 (owner, 31 October 2026, #749: "Sourced anchors only"; 1 November 2026, #2087: "military operations must
     // have unit orders", "Kiryati to Ramle", Harel toward Latrun; 2 November 2026, option 1: the new ones are order targets,
     // not anchors): only these sourced places receive orders. Every other alternative option gives none until sources are found.
+    // The owner's 7 November 2026 rulings on #2621 ("Add real orders", "Stop at al-Malikiyya (Recommended)", "Same units as
+    // Central (Recommended)", "Keep the same targets (Recommended)", "Second read, then later date (Recommended)"): the
+    // escalations and Ten Days' southern front give orders too, to their units' sourced targets; Bayt Jibrin is new.
     [Fact]
     public void OnlyTheSourcedAnchorsReceiveCardOrders()
     {
@@ -723,11 +726,17 @@ public class EnemyAITests
             ("latrun_proposal", "press_offensive", false, "harel", -3, 25),        // Latrun police fort, harel order_targets[0]
             ("operation_hiram", "stop_at_ceasefire", true, "carmeli", 15, 3),      // Manara, carmeli order_targets[0]
             ("operation_hiram", "stop_at_ceasefire", true, "brigade_7", 14, 4),    // al-Malikiyya, brigade_7 order_targets[0]
+            ("operation_hiram", "advance_into_lebanon", false, "carmeli", 15, 3),  // the same: Manara
+            ("operation_hiram", "advance_into_lebanon", false, "brigade_7", 14, 4),// the same: al-Malikiyya
             ("operation_horev", "launch", true, "golani", -8, 28),                 // Julis camp, golani anchors[1]
             ("operation_yoav", "stop_at_ceasefire", true, "negev", -10, 35),       // Beersheba, negev order_targets[0]
             ("operation_yoav", "stop_at_ceasefire", true, "givati", -9, 29),       // Huleiqat, givati order_targets[0]
+            ("operation_yoav", "push_to_hebron", false, "givati", -6, 29),         // Bayt Jibrin, givati order_targets[1]
+            ("operation_yoav", "push_to_hebron", false, "negev", -10, 35),         // the same Beersheba
             ("ten_days", "central_front", true, "kiryati", -3, 24),                // Ramle, kiryati order_targets[0]
             ("ten_days", "central_front", true, "carmeli", 14, 6),                 // facing the Syrian bridgehead, carmeli anchors[1]
+            ("ten_days", "southern_front", false, "kiryati", -3, 24),              // the same: Ramle
+            ("ten_days", "southern_front", false, "carmeli", 14, 6),               // the same: the north
         }, orders.OrderBy(x => x.Item1, StringComparer.Ordinal));
     }
 
@@ -777,9 +786,12 @@ public class EnemyAITests
         {
             ("latrun_proposal", "press_offensive", "harel", "central_plain,jerusalem_hills"),
             ("operation_hiram", "stop_at_ceasefire", "carmeli,brigade_7", "galilee"),
+            ("operation_hiram", "advance_into_lebanon", "carmeli,brigade_7", "galilee"),   // "Same units (Recommended)"
             ("operation_horev", "launch", "golani", "southern_coast,negev"),
             ("operation_yoav", "stop_at_ceasefire", "negev,givati", "southern_coast,negev"),
+            ("operation_yoav", "push_to_hebron", "givati,negev", "southern_coast,negev"),     // "Same units (Recommended)"
             ("ten_days", "central_front", "kiryati,carmeli", "central_plain,jerusalem_hills,galilee"),
+            ("ten_days", "southern_front", "kiryati,carmeli", "central_plain,jerusalem_hills,galilee"),   // "Same units as Central"
         }, requirements.OrderBy(x => x.Event, StringComparer.Ordinal));
     }
 
