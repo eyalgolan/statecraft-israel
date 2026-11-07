@@ -390,8 +390,9 @@ public class HistoricalPopulationTests
         }
     }
 
-    // R-POP-004 (owner, 7 November 2026): row 4 approved no farmer identities for now and row 3's job mapping is open, so a
-    // census record stays a plain free civilian: no profession, no tier and no Work assignment.
+    // R-POP-004 (owner, 7 November 2026): row 4 approved no farmer identities, the farmers come on top of the census, and
+    // row 3's Industry start is not wired in, so a census record stays a plain free civilian: no profession, no tier and no
+    // Work assignment.
     [Fact]
     public void CensusRecordsHaveNoProfessionTierOrWork()
     {
@@ -408,8 +409,8 @@ public class HistoricalPopulationTests
         });
     }
 
-    // R-POP-004 (owner, 7 November 2026): the values of rows 5 and 8, row 6 and row 7 are open and get no default, so a
-    // starting soldier has no qualification and no XP of either kind.
+    // R-POP-004 (owner, 7 November 2026): rows 5 to 8 are decided (Veteran for all 8; 1 tick each, Negev 0) but not wired in,
+    // so a starting soldier has no qualification and no XP of either kind yet.
     [Fact]
     public void StartingSoldiersHaveNoQualificationOrXp()
     {
