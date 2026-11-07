@@ -53,6 +53,7 @@ public class Gdd03BasicTrainingFixtureTests
         if (key != null) { if (replacement == null) values.Remove(key); else values[key] = replacement; }
         c.Gdd03Balance = new Gdd03BalanceCatalogue { Ruleset = Real.Value.Ruleset, Values = values };
         c.UnitTypes = RealContent.Value.UnitTypes;
+        c.Rules = RealContent.Value.Rules; // rules.yaml's people_per_unit: the scale military.camp_capacity is counted at (#2739)
         return c;
     }
     // The real unit types with `recruit` replaced by one of the given class, or without `recruit` when the class is null.
@@ -234,10 +235,11 @@ public class Gdd03BasicTrainingFixtureTests
     }
 
     // content/gdd03-balance.yaml:307-310 `military.camp_capacity` [50], "simultaneous trainee population units per camp".
-    // Read from the catalogue, not a literal: with a synthetic 2, a third trainee in the camp refuses its whole order.
+    // Read from the catalogue, not a literal: with a synthetic 20 (2 records at the synthetic 10,000 a record, #2739), a third
+    // trainee in the camp refuses its whole order.
     [Fact] public void CampCapacityComesFromTheCatalogue()
     {
-        var c = Catalogue("military.camp_capacity", Agreed(2)); var s = State(c); var f = Fixture(c, s);
+        var c = Catalogue("military.camp_capacity", Agreed(20)); var s = State(c); var f = Fixture(c, s);
         f.Start(new[] { 0 }, CampNorth, 0);
         Unchanged(s, f, () => f.Start(new[] { 1, 2 }, CampNorth, 0), typeof(ArgumentException));
         f.Start(new[] { 1 }, CampNorth, 0);
@@ -246,7 +248,7 @@ public class Gdd03BasicTrainingFixtureTests
         f.Start(new[] { 5 }, CampSouth, 0);
 
         var real = Catalogue(); var s2 = State(real); var f2 = Fixture(real, s2);
-        f2.Start(new[] { 0, 1, 2, 3 }, CampNorth, 0); // 4 of the real 50
+        f2.Start(new[] { 0, 1, 2, 3 }, CampNorth, 0); // 4 of the real 50, which is 5 records at 10,000 a record
     }
 
     // content/gdd03-balance.yaml:347-350 `military.training_money` [0.5], "Money per basic course. Owner ruling, 30 October
@@ -353,13 +355,13 @@ public class Gdd03BasicTrainingFixtureTests
         try
         {
             CultureInfo.CurrentCulture = new CultureInfo(culture);
-            var c = Catalogue("military.camp_capacity", Agreed(3)); var s = State(c); var f = Fixture(c, s, spare: 3, money: 0.75m);
+            var c = Catalogue("military.camp_capacity", Agreed(30)); var s = State(c); var f = Fixture(c, s, spare: 3, money: 0.75m);
             int total = f.SpareArms + Issued(s), units = s.PopulationLedger.Units.Count;
             var steps = new Action[] {
                 () => f.Start(new[] { 0, 1, 2, 3 }, CampNorth, 0), // over capacity: refused
                 () => f.Start(new[] { 0, 4 }, CampNorth, 0),       // qualified: refused
                 () => f.Start(new[] { 0, 3 }, CampNorth, 0),       // one issue, one carried item
-                () => f.Start(new[] { 1, 2 }, CampNorth, 0),       // capacity 3: refused
+                () => f.Start(new[] { 1, 2 }, CampNorth, 0),       // capacity 30, 3 records: refused
                 () => f.Start(new[] { 5 }, CampSouth, 0),          // one issue
                 () => f.Start(new[] { 1 }, CampNorth, 0),          // one issue, the last spare
                 () => f.Start(new[] { 2 }, CampSouth, 1),          // wrong region: refused
@@ -582,7 +584,7 @@ public class Gdd03BasicTrainingFixtureTests
         try
         {
             CultureInfo.CurrentCulture = new CultureInfo(culture);
-            var c = Catalogue("military.camp_capacity", Agreed(3)); var s = State(c); var f = Fixture(c, s, spare: 3, money: 0.75m);
+            var c = Catalogue("military.camp_capacity", Agreed(30)); var s = State(c); var f = Fixture(c, s, spare: 3, money: 0.75m);
             int total = f.SpareArms + Issued(s), units = s.PopulationLedger.Units.Count;
             var steps = new Action[] {
                 () => f.Start(new[] { 0, 3 }, CampNorth, 0),       // one issue, one carried item
@@ -598,7 +600,7 @@ public class Gdd03BasicTrainingFixtureTests
                 () => f.Advance(0, 1),
                 () => f.Cancel(5),                                 // issued item back to the spare
                 () => f.Start(new[] { 2 }, CampNorth, 2),          // one issue, the last spare
-                () => f.Start(new[] { 3 }, CampNorth, 2),          // capacity 3: refused
+                () => f.Start(new[] { 3 }, CampNorth, 2),          // capacity 30, 3 records: refused
             };
             int accepted = 0;
             foreach (var step in steps)
@@ -617,11 +619,55 @@ public class Gdd03BasicTrainingFixtureTests
         finally { CultureInfo.CurrentCulture = saved; }
     }
 
-    // content/gdd03-balance.yaml `military.camp_capacity`, here a synthetic 2: a cancelled trainee no longer holds a place, so
+    // #2739, option 1 (owner, 7 November 2026, relayed: "all your picks"): the cap is people, not records.
+    // content/gdd03-balance.yaml `military.camp_capacity` [50]: "#1668's 5 places at 10,000 people a unit is 50 units at D2's
+    // 1,000 people a unit", so 50,000 people. A synthetic ledger (10,000 a record) and a Historical one (rules.yaml's 1,000)
+    // take the same number of people into a camp and refuse the next record.
+    [Fact] public void TheCampCapCountsTheSamePeopleAtEveryScale()
+    {
+        var c = Catalogue();
+        foreach (var (mode, perRecord) in new[] { ((Mode?)null, 10_000), (Mode.Historical, 1_000) })
+        {
+            var s = Crowd(c, mode, 60); var f = Fixture(c, s, spare: 60);
+            int records = 50_000 / perRecord;
+            f.Start(Enumerable.Range(Crowded, records), CampNorth, 0);
+            Assert.Equal(50_000.0, s.PopulationLedger.Units.Count(p => p.Status == PopulationStatus.Trainee) * (double)perRecord);
+            Unchanged(s, f, () => f.Start(new[] { Crowded + records }, CampNorth, 0), typeof(ArgumentException));
+        }
+    }
+
+    // #2739's rounding rule (proposed in the PR; the owner set none): when the ledger's scale doesn't divide the cap's people,
+    // the camp takes the whole records that fit, rounded down, so it never holds more people than the cap. At 3,000 a record
+    // 50,000 people is 16 records (48,000), and the 17th is refused. A scale where not even one record fits refuses the
+    // fixture, rather than leaving a camp that can train no one.
+    [Fact] public void AnUnevenScaleRoundsTheCampCapDown()
+    {
+        var c = Catalogue("population.people_per_unit", Agreed(3_000)); var s = Crowd(c, null, 20); var f = Fixture(c, s, spare: 20);
+        f.Start(Enumerable.Range(Crowded, 16), CampNorth, 0);
+        Unchanged(s, f, () => f.Start(new[] { Crowded + 16 }, CampNorth, 0), typeof(ArgumentException));
+
+        var exact = Catalogue("population.people_per_unit", Agreed(50_000)); var one = Fixture(exact, Crowd(exact, null, 2));
+        one.Start(new[] { Crowded }, CampNorth, 0);
+        Assert.Throws<ArgumentException>(() => one.Start(new[] { Crowded + 1 }, CampNorth, 0));
+
+        var huge = Catalogue("population.people_per_unit", Agreed(50_001));
+        var ex = Assert.Throws<ContentException>(() => Fixture(huge, Crowd(huge, null, 1)));
+        Assert.Contains("military.camp_capacity", ex.Message, StringComparison.Ordinal);
+    }
+
+    // The State rows plus `extra` unequipped civilians in the north, from id Crowded on, at the given mode's scale.
+    const int Crowded = 9;
+    static GameState Crowd(Content c, Mode? mode, int extra)
+    {
+        var people = State(c).PopulationLedger.Units.Concat(Enumerable.Range(0, extra).Select(_ => Person()));
+        return PopulationLedger.CreateFixture(c, Bindings(), people.Select((p, i) => new PopulationInventoryRow("synthetic", i, p)), mode: mode);
+    }
+
+    // content/gdd03-balance.yaml `military.camp_capacity`, here a synthetic 20 (2 records at 10,000 a record): a cancelled trainee no longer holds a place, so
     // a camp that was full takes another recruit.
     [Fact] public void CancelFreesCampCapacity()
     {
-        var c = Catalogue("military.camp_capacity", Agreed(2)); var s = State(c); var f = Fixture(c, s);
+        var c = Catalogue("military.camp_capacity", Agreed(20)); var s = State(c); var f = Fixture(c, s);
         f.Start(new[] { 0, 1 }, CampNorth, 0);
         Unchanged(s, f, () => f.Start(new[] { 2 }, CampNorth, 0), typeof(ArgumentException));
         f.Cancel(1);

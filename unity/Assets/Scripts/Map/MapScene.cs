@@ -56,6 +56,10 @@ namespace Statecraft.Game.Map
         /// 1948 localities' and the Bedouin camps' footprints (empty without the kits). Anything placed on the map "off the
         /// towns" (unit tokens: review I5) keeps clear of these, not of the 25 settlements alone.</summary>
         public IReadOnlyList<(Vector2 centre, float radius, string id)> KitFootprints => KitStats?.Footprints ?? (IReadOnlyList<(Vector2, float, string)>)System.Array.Empty<(Vector2, float, string)>();
+        /// <summary>#2876: the major cities' kit blocks after the last Build (KitLayer.Stats.MajorCityBlocks; empty without the
+        /// kits): what those cities draw from 40 km out, in place of their building models, which they draw below the close
+        /// switch (owner, 7 November 2026, "Tal's models close (Recommended)").</summary>
+        public IReadOnlyList<Kits.SettlementKits.Placed> MajorCityBlocks => KitStats?.MajorCityBlocks ?? (IReadOnlyList<Kits.SettlementKits.Placed>)System.Array.Empty<Kits.SettlementKits.Placed>();
         /// <summary>The game date the routes were last shown at (RouteLayer.ShowAt), so a rebuild draws them as at that date;
         /// null before the game has set one (the routes then show as at the game's start).</summary>
         public DateTime? RouteDate { get; set; }
@@ -859,6 +863,10 @@ namespace Statecraft.Game.Map
             Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate,
                 Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml), this);
             DiagLog.BootPhase("routes built");
+            // The ground between the towns (#2878): grain, scrub and stones, a pass over the terrain.
+            GroundDetail.Build(transform, Terrain, Frame, Hexes, heights, SettlementFootprints.Concat(UnitClearings).Concat(UnitTokens.Select(t => (t.centre, t.radius))),
+                KitRouteCorridors, terrainMaterial, terrainGo.GetComponent<MapRuntimeAssets>(), bushes: kitsOn);
+            DiagLog.BootPhase("ground detail");
             // The 1949 armistice lines as their true polylines (#237), unless the run turns them off with the
             // "noarmisticelines" flag; a missing or malformed file means no overlay and a warning. Display only.
             if (ArmisticeLines.Wanted() && inputs.ArmisticeLinesGeojson == "") Debug.LogWarning($"ARMISTICE LINES: {ArmisticeLines.FileName} is missing; no overlay");

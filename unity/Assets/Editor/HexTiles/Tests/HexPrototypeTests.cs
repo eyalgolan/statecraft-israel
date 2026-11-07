@@ -118,6 +118,17 @@ public class HexPrototypeTests
         TestContext.WriteLine($"CAPS exempt placement models={actual.Length}: {string.Join(",", actual)}");
     }
 
+    // One eucalyptus everywhere: the owner's "all your picks", 7 November 2026, relayed on #1940 and #1952.
+    [TestCase("hadera_moshava")]
+    [TestCase("jezreel_valley")]
+    public void TheEucalyptusIsTheRailwayHaltsShippedTree(string id)
+    {
+        var gums = Built(id).Placements.Where(p => p.Model.Contains("eucalyptus")).Select(p => p.Model).ToArray();
+        Assert.That(gums, Is.Not.Empty, id);
+        Assert.That(gums, Is.All.EqualTo("tiles:railway_halt/eucalyptus"), id);
+        Assert.IsNotNull(HexModels.Prefab(HexModels.Resolve(gums[0], Vector3.zero)), "the shipped tree loads in the editor");
+    }
+
     [Test]
     public void GeneratedMixedAndMissingPiecesKeepTheirCapAndAnOverBudgetPieceFails()
     {

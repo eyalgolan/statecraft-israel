@@ -28,27 +28,120 @@ public class PlayerRegionsContentTests
     binding_status: NEEDS-RESEARCH
     opening_control: { status: NEEDS-RESEARCH, value: null }
 ";
+    // The real operation cards are part of these loader fixtures. Keep their referenced region ids present so a test
+    // aimed at one synthetic row reaches that row's own validation instead of failing first on unrelated event content.
+    const string OperationRegions = @"
+  - id: central_plain
+    capital_location: rishon_lezion
+    member_hexes: [{ q: -4, r: 23 }]
+    member_locations: [rishon_lezion]
+    design_note: 'Operation-card loader fixture; not a historical boundary'
+    sources: ['test fixture: required by operation cards']
+    capital_approval: NEEDS-RESEARCH
+    binding_status: NEEDS-RESEARCH
+    opening_control: { status: NEEDS-RESEARCH, value: null }
+  - id: jerusalem_hills
+    capital_location: jerusalem
+    member_hexes: [{ q: 0, r: 26 }]
+    member_locations: [jerusalem]
+    design_note: 'Operation-card loader fixture; not a historical boundary'
+    sources: ['test fixture: required by operation cards']
+    capital_approval: NEEDS-RESEARCH
+    binding_status: NEEDS-RESEARCH
+    opening_control: { status: NEEDS-RESEARCH, value: null }
+  - id: galilee
+    capital_location: safed
+    member_hexes: [{ q: 13, r: 6 }]
+    member_locations: [safed]
+    design_note: 'Operation-card loader fixture; not a historical boundary'
+    sources: ['test fixture: required by operation cards']
+    capital_approval: NEEDS-RESEARCH
+    binding_status: NEEDS-RESEARCH
+    opening_control: { status: NEEDS-RESEARCH, value: null }
+  - id: southern_coast
+    capital_location: gaza
+    member_hexes: [{ q: -12, r: 31 }]
+    member_locations: [gaza]
+    design_note: 'Operation-card loader fixture; not a historical boundary'
+    sources: ['test fixture: required by operation cards']
+    capital_approval: NEEDS-RESEARCH
+    binding_status: NEEDS-RESEARCH
+    opening_control: { status: NEEDS-RESEARCH, value: null }
+  - id: negev
+    capital_location: beersheba
+    member_hexes: [{ q: -10, r: 35 }]
+    member_locations: [beersheba]
+    design_note: 'Operation-card loader fixture; not a historical boundary'
+    sources: ['test fixture: required by operation cards']
+    capital_approval: NEEDS-RESEARCH
+    binding_status: NEEDS-RESEARCH
+    opening_control: { status: NEEDS-RESEARCH, value: null }
+";
+    internal static string? CompleteOperationRegions(string? regions)
+    {
+        if (regions == null || !System.Text.RegularExpressions.Regex.IsMatch(regions, @"(?m)^player_regions:\s*$")) return regions;
+        var indentless = System.Text.RegularExpressions.Regex.IsMatch(regions, @"(?m)^- id:");
+        var extra = string.Join("", OperationRegions.Split(new[] { "\n  - id: " }, StringSplitOptions.None).Skip(1)
+            .Select(row => "\n  - id: " + row).Where(row =>
+            {
+                var id = row.Substring("\n  - id: ".Length).Split('\n')[0];
+                return !System.Text.RegularExpressions.Regex.IsMatch(regions, @"(?m)^\s*- id:\s*" + System.Text.RegularExpressions.Regex.Escape(id) + @"\s*$");
+            }).Select(row => indentless ? System.Text.RegularExpressions.Regex.Replace(row, @"(?m)^  ", "") : row));
+        // YamlStream.Save writes an explicit document end marker. Fixture rows must stay in that document, not be
+        // appended after it as a second, marker-less document.
+        var end = System.Text.RegularExpressions.Regex.Match(regions, @"(?m)^\.\.\.\s*$");
+        if (!end.Success) return regions + extra;
+        var before = regions.Substring(0, end.Index).TrimEnd();
+        return before + "\n" + extra.Trim('\n') + "\n" + regions.Substring(end.Index);
+    }
+
+    internal static IEnumerable<PlayerRegionPool> CompletePools(Content c, params PlayerRegionPool[] pools)
+    {
+        var byId = pools.ToDictionary(x => x.Id, StringComparer.Ordinal);
+        return c.PlayerRegions.Regions.Keys.Select(id => byId.TryGetValue(id, out var pool) ? pool
+            : new PlayerRegionPool(id, 0, 0m, 0, 0, Array.Empty<PlayerRegionFacility>()));
+    }
     internal static Content Load(string? regions = "player_regions:\n" + RamlaRehovot, bool modern = true,
         string? overrideText = null, Action<string>? onRead = null, bool localities = true, string? localityText = null)
     {
         var root = RealContentTests.ContentRoot();
+        // A no-geography fixture cannot load operation cards, whose requirements need geography. Every event that requires
+        // one of them, directly or through another left-out event, leaves too, so the event graph stays valid; every other
+        // real event stays (each event's id is its file name).
+        var texts = Directory.GetFiles(Path.Combine(root, "events"), "*.yaml")
+            .ToDictionary(p => Path.GetFileNameWithoutExtension(p), File.ReadAllText, StringComparer.Ordinal);
+        var left = new HashSet<string>(StringComparer.Ordinal);
+        if (regions == null)
+        {
+            foreach (var kv in texts) if (kv.Value.Contains("requires_unit_regions:", StringComparison.Ordinal)) left.Add(kv.Key);
+            for (bool grew = true; grew;)
+            {
+                grew = false;
+                foreach (var kv in texts)
+                    if (!left.Contains(kv.Key) && left.Any(id => kv.Value.Contains("event: " + id + ",", StringComparison.Ordinal)
+                                                              || kv.Value.Contains("event: " + id + " ", StringComparison.Ordinal)
+                                                              || kv.Value.Contains("event: " + id + "}", StringComparison.Ordinal)))
+                    { left.Add(kv.Key); grew = true; }
+            }
+        }
+        var eventFiles = texts.Keys.Where(id => !left.Contains(id)).OrderBy(id => id, StringComparer.Ordinal).Select(id => "events/" + id + ".yaml");
         return ContentLoader.Load(rel =>
         {
             onRead?.Invoke(rel);
-            if (rel == PlayerRegionCatalogue.FileName) return regions;
+            if (rel == PlayerRegionCatalogue.FileName) return CompleteOperationRegions(regions);
             if (rel == MapOverrides.FileName) return overrideText;
             if (!localities && rel == PlayerRegionCatalogue.LocalityHexesFileName) return null;
             if (localityText != null && rel == PlayerRegionCatalogue.LocalityHexesFileName) return localityText;
             var path = Path.Combine(root, rel);
             var text = File.Exists(path) ? File.ReadAllText(path) : null;
             return modern && rel == "eras.yaml" ? text!.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : text;
-        }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
+        }, eventFiles);
     }
 
     [Fact]
     public void SharedHexRetainsTwoPlaceIdentitiesAndOneCapital()
     {
-        var c = Load(); var r = Assert.Single(c.PlayerRegions.Regions).Value;
+        var c = Load(); var r = c.PlayerRegions.Regions["ramla_rehovot"];
         Assert.Equal("ramla_rehovot", r.Id); Assert.Equal("NEEDS-RESEARCH", r.CapitalApproval);
         Assert.Equal("NEEDS-RESEARCH", r.BindingStatus); Assert.Null(r.OpeningController);
         Assert.Equal(new[] { "ramla", "rehovot" }, r.MemberLocations);
@@ -190,7 +283,7 @@ public class PlayerRegionsContentTests
     public void LocalityAndSiteMembersAreAcceptedOnTheirOwnHexes()
     {
         var c = Load("player_regions:\n" + LocalityAndSite);
-        var r = Assert.Single(c.PlayerRegions.Regions).Value;
+        var r = c.PlayerRegions.Regions["upper_galilee"];
         Assert.Equal(new[] { "kiryat_shmona", "tarshiha" }, r.MemberLocations);
         Assert.Same(r, c.PlayerRegions.AtLocation("tarshiha"));
         Assert.Same(r, c.PlayerRegions.AtLocation("kiryat_shmona"));
@@ -219,9 +312,9 @@ public class PlayerRegionsContentTests
     [Fact]
     public void FieldHexesAreOptionalAndLoadOnTheRegionsOwnHexes()
     {
-        Assert.Empty(Assert.Single(Load().PlayerRegions.Regions).Value.FieldHexes);   // absent: none
+        Assert.Empty(Load().PlayerRegions.Regions["ramla_rehovot"].FieldHexes);   // absent: none
         var c = Load("player_regions:\n" + RamlaRehovot.Replace("    member_locations:", "    field_hexes: [{ q: -4, r: 24 }]\n    member_locations:"));
-        Assert.Equal(new[] { (-4, 24) }, Assert.Single(c.PlayerRegions.Regions).Value.FieldHexes);
+        Assert.Equal(new[] { (-4, 24) }, c.PlayerRegions.Regions["ramla_rehovot"].FieldHexes);
     }
 
     [Theory]
@@ -289,23 +382,22 @@ public class PlayerRegionsContentTests
     {
         var real = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), PlayerRegionCatalogue.LocalityHexesFileName));
         Assert.EndsWith("\n", real);
-        if (field == null) { Assert.Single(Load("player_regions:\n" + region, localityText: real + locality).PlayerRegions.Regions); return; }
+        if (field == null) { Assert.Contains("ramla_rehovot", Load("player_regions:\n" + region, localityText: real + locality).PlayerRegions.Regions.Keys); return; }
         var e = Assert.Throws<ContentException>(() => Load("player_regions:\n" + region, localityText: real + locality));
         Assert.Equal("regions.yaml: player_regions[0]." + field + ": one place id has inconsistent placements across the place files", e.Message);
     }
 
     [Fact]
-    public void OnlyExactNewIdentityConsumesAndHashesGeography()
+    public void BothGddIdentitiesConsumeAndHashGeographyButLegacyDoesNot()
     {
         var reads = new List<string>();
         var old = Load(modern: false, onRead: reads.Add);
-        Assert.DoesNotContain("regions.yaml", reads); Assert.Empty(old.PlayerRegions.Regions);
-        Assert.DoesNotContain(PlayerRegionCatalogue.LocalityHexesFileName, reads);
-        Assert.Equal(old.Hash, Load("malformed: [", modern: false, localities: false).Hash);
+        Assert.Contains("regions.yaml", reads); Assert.NotEmpty(old.PlayerRegions.Regions);
+        Assert.Contains(PlayerRegionCatalogue.LocalityHexesFileName, reads);
+        Assert.NotEqual(old.Hash, Load("player_regions:\n" + RamlaRehovot + "\n# consumed by gdd-0.1 operations\n", modern: false).Hash);
         reads.Clear();
         Load(onRead: reads.Add);
         Assert.Contains(PlayerRegionCatalogue.LocalityHexesFileName, reads);
-        Assert.Equal(old.Hash, Load("malformed: [", modern: false).Hash);
         Assert.NotEqual(Load().Hash, Load("player_regions:\n" + RamlaRehovot + "\n# consumed provenance\n").Hash);
         // Under gdd-0.3 the locality hexes are a hash input: one locality off the fixture's members moved by one hex.
         var localities = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), PlayerRegionCatalogue.LocalityHexesFileName));

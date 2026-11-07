@@ -12,6 +12,8 @@ namespace Statecraft.Sim
     public sealed class StartingForce
     {
         public string Row { get; set; } = "";
+        /// <summary>Player-facing names from the same units_1948.yaml row, used when a sim report names a required brigade.</summary>
+        public string Name { get; set; } = "";
         /// <summary>The anchor's place, as the row names it.</summary>
         public string Anchor { get; set; } = "";
         public string Type { get; set; } = "";
@@ -104,7 +106,7 @@ namespace Statecraft.Sim
                 if (!hex.Land) throw new ContentException(FileName, $"{at}.anchors[{k}]", FormattableString.Invariant($"hex q={q} r={r} is not a land hex in {ContentLoader.HexesFile}"));
                 var force = new StartingForce
                 {
-                    Row = id, Anchor = Text(anchor, "place"), Type = TypeFor(c, side, at), Side = side,
+                    Row = id, Name = Text(row, "name"), Anchor = Text(anchor, "place"), Type = TypeFor(c, side, at), Side = side,
                     Strength = units, Q = q, R = r, Status = Text(row, "status"), Arrives = day == start ? (DateTime?)null : asOf,
                     CheckedOn = Text(row, "checked_on"),
                 };
