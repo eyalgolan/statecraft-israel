@@ -24,6 +24,18 @@ namespace Statecraft.Game.Map.Units
         /// showcase trio at close30 (T54 audit), so 1400x (refs #197). The aircraft and the ship are sized against him, as
         /// Civ draws them, not against each other.</summary>
         public const float FigureScale = 1400f;
+        /// <summary>DESIGN VALUES (#2430, the owner judges them on the captures): a token's figures and flag from a far camera, as a
+        /// share of <see cref="FigureScale"/>. Up to <see cref="ZoomScaleFromM"/>, the far edge of the close switch's hysteresis
+        /// (TownModelLayer.CloseExitM), they keep FigureScale, so T29's ratio to a house holds wherever a close building model
+        /// draws, and SpecialBuildingModels.FigureShadowM's reach holds wherever a workshop does. From there they grow to <see cref="ZoomScaleMax"/> at
+        /// <see cref="ZoomScaleToM"/> and stay there: a figure at 60 km was about 57 px of 1080, and this holds it near promo 03's
+        /// about 71 px. The token's base does not grow: the figures keep their spacing and <see cref="UnitPlinth.BaseToTrio"/> leaves
+        /// them room on it. The constant stays: spacing elsewhere (CivilianPeople) derives from it.</summary>
+        public const float ZoomScaleFromM = Kits.TownModelLayer.CloseExitM, ZoomScaleToM = 60000f, ZoomScaleMax = 1.3f;
+        /// <summary>The share of <see cref="FigureScale"/> a token's figures draw at for a camera at <paramref name="viewM"/>
+        /// (TownModelLayer.ViewDistance).</summary>
+        public static float ZoomScale(float viewM) =>
+            Mathf.Lerp(1f, ZoomScaleMax, Mathf.InverseLerp(ZoomScaleFromM, ZoomScaleToM, viewM));
         /// <summary>The house T29's ratio is measured against at close30, as the T54 audit did: the White City block beside
         /// the showcase trio, the kit's seven-storey heart block (7 x 3.3 m at <see cref="Kits.KitScale.DefaultCityBlocks"/>;
         /// measured on the close30 render at about 1,300 m). A two-storey village house is about half of it.</summary>
@@ -175,6 +187,10 @@ namespace Statecraft.Game.Map.Units
         /// across; ours 1.15 too: 2 x 950 m between the outer figures' centres plus a figure's width, against a 2.5 km man).
         /// Narrower than <see cref="TrioSpread"/>, so the drawn figures stand inside the ground the placer checked.</summary>
         public const float DrawSpread = 0.19f;
+        /// <summary>The share of <see cref="DrawSpread"/> a compact token's figures stand at (#2430): at the compact ring's half
+        /// (UnitGround.CompactScale) three figures merged into one shape. DESIGN VALUE: wider and the base's ring runs into the
+        /// selection ring, which stands at the town clearing's radius (UnitGround.RingRadius, #588).</summary>
+        public const float CompactSpread = 0.6f;
         /// <summary>How far (in hexes) from <see cref="TrioAt"/> the showcase trio may move to stand clear of the kits and
         /// the routes (<see cref="TrioSpot"/>).</summary>
         public const float SpotSearchHexes = 2.2f;
