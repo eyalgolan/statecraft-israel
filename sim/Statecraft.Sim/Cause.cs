@@ -146,7 +146,7 @@ namespace Statecraft.Sim
         public const string WorkshopWorkers = "workshop_workers";
         /// <summary>R-ARMS-006: an arms workshop's cycle made 1 Arms. Args: none.</summary>
         public const string WorkshopArms = "workshop_arms";
-        /// <summary>R-ARMS-006: a staffed arms workshop did not work this month. Args: Workshops.NoWorker or Workshops.DebtCeiling.</summary>
+        /// <summary>R-ARMS-006: a staffed arms workshop did not work this month. Args: Workshops.NoWorker or Workshops.DebtCeiling, then the workshop's project id (invariant text).</summary>
         public const string WorkshopPaused = "workshop_paused";
         /// <summary>Args: CauseKeys.Number(amount), the US$ millions converted.</summary>
         public const string DollarsConverted = "dollars_converted";

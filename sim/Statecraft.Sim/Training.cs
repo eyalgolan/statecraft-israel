@@ -27,6 +27,7 @@ namespace Statecraft.Sim
         /// The UI maps each to its own string (SimBridge.ReasonText). The English is the reason a turn's Rejected list and a save
         /// carry, so it does not change; one with {0} is a format, its values (a unit id, a settlement's or course's name, a
         /// number) filled in invariantly. A missing facility has one refusal per facility.</summary>
+        public const string RefusedNoCohort = "There is no such training group";   // #2707: Cancel's
         public const string RefusedNoCity = "There is no such city";
         public const string RefusedNotInCity = "Unit {0} is not in {1}";
         public const string RefusedNoCourse = "Unit {0} cannot take replacements";
@@ -190,7 +191,7 @@ namespace Statecraft.Sim
         public static string? Cancel(Content c, GameState s, int cohort, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
-            if (!s.Cohorts.TryGetValue(cohort, out var k)) return "There is no such training group";
+            if (!s.Cohorts.TryGetValue(cohort, out var k)) return RefusedNoCohort;
             var x = s.Cities[k.City];
             s.Cities[k.City] = x.WithCounts(x.Civilians + k.Count, x.Employed, x.Refugees);
             s.Cohorts.Remove(cohort);

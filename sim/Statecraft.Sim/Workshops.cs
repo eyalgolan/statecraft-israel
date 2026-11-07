@@ -64,9 +64,9 @@ namespace Statecraft.Sim
         /// accepts is still accepted whichever of them runs first.</summary>
         public static string? Check(Content c, GameState s, string city, int count, IEnumerable<Command> pending)
         {
-            if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
-            if (c.Ruleset != SaveGame.Gdd03Ruleset) return "There is no such role";
-            if (count < 0) return "The number of workers cannot be negative";
+            if (!s.Cities.TryGetValue(city, out var x)) return Training.RefusedNoCity;
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return Cities.RefusedNoRole;
+            if (count < 0) return Cities.RefusedNegativeWorkers;
             var name = PlayerText.Settlement(c, city);
             var built = Built(c, s, city);
             if (count > built) return built == 1 ? Refused(RefusedBuiltOne, name) : Refused(RefusedBuilt, name, built);
@@ -93,6 +93,12 @@ namespace Statecraft.Sim
         /// which has no workshop record.</summary>
         public static int Staffed(GameState s, string city) =>
             s.Workshops.Values.Count(w => w.Staffed && s.CityProjects[w.Project].City == city);
+
+        /// <summary>R-ARMS-005: whether AssignWorkers(its city, "workshop", <paramref name="count"/>) staffs the built workshop
+        /// <paramref name="project"/>, one of its city's first count built workshops in ascending id (#2711: the UI's word for a
+        /// queued order).</summary>
+        public static bool Staffs(Content c, GameState s, CityProject project, int count) =>
+            BuiltIn(c, s, project.City).FindIndex(p => p.Id == project.Id) is int i && i >= 0 && i < count;
 
         // #2530: a count of 1 names the singular, as the UI's helper does.
         static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
@@ -157,7 +163,7 @@ namespace Statecraft.Sim
                 if (!working.TryGetValue(city, out var taken)) taken = Projects.Builders(s, city);
                 if (taken >= x.Civilians + x.Craftsmen - x.Employed)
                 {
-                    why.Add(new Cause("city", city, 0, $"{name}: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { NoWorker }));
+                    why.Add(new Cause("city", city, 0, $"{name}: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { NoWorker, w.Project.ToString(System.Globalization.CultureInfo.InvariantCulture) }));
                     continue;
                 }
                 working[city] = taken + 1;
@@ -168,7 +174,7 @@ namespace Statecraft.Sim
                     var left = s.Treasury - (double)price;   // R-MONEY-003's debt after: the debt plus what the Treasury lacks
                     if (left < 0 && s.Debt - left > ceiling)
                     {
-                        why.Add(new Cause("city", city, 0, $"{name}: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { DebtCeiling }));
+                        why.Add(new Cause("city", city, 0, $"{name}: an arms workshop's next cycle waits: paying for it would take the debt past its ceiling", key: CauseKeys.WorkshopPaused, args: new[] { DebtCeiling, w.Project.ToString(System.Globalization.CultureInfo.InvariantCulture) }));
                         continue;
                     }
                     EconomySystem.PayOrBorrow(c, s, (double)price, "for an arms workshop cycle", why, CauseKeys.Purpose.Workshop);
