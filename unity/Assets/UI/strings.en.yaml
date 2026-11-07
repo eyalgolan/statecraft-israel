@@ -940,6 +940,13 @@ advisor.opening.training.text: "Training uses civilians without work, Money, and
 advisor.opening.move.text: "A unit moves at once, and terrain sets the cost of each hex. A farther destination creates a route that continues on later turns."
 advisor.opening.event.text: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
 advisor.opening.objectives.text: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
+# The war, the armies and the first turn's moves (#2933): the owner's copy from the issue, as written.
+advisor.opening.invasion.text: "On 15 May 1948 Egypt, Syria and Iraq sent armies into the country. Transjordan's Arab Legion, marked Jordan on the map, stood at Ramallah and near Bab al-Wad. Your brigades must hold them."
+advisor.opening.units.text: "Lebanon's army stood at the border, and the Arab League's volunteers were already here. Select any unit on the map to see whose it is."
+advisor.opening.cities.text: "Your cities hold your people, jobs and training, and work there brings in Money. Select a city to see them."
+advisor.opening.move_how.text: "To move, select a brigade, press Move, then click a lit hex. Click a farther hex and the brigade goes there over several turns."
+advisor.opening.orders.text: "A brigade with no order holds up End turn. Fortify and Hold stay until you change them, and a route carries on by itself. Skip this turn lasts one turn."
+advisor.opening.end_turn.text: "When no unit needs orders, press End turn. If the button says a unit needs orders, pressing it takes you to that unit. The month then plays out and a report follows."
 advisor.next: "Next"
 advisor.done: "Done"
 # {0} the step, {1} the steps in the chain now.

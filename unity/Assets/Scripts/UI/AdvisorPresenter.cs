@@ -174,6 +174,9 @@ namespace Statecraft.Game.UI
             {
                 openingGame = bridge.Session;
                 adopted = session.Chain.PutBack; session.Chain.PutBack = null;
+                // A language switch onto a step that is pending in Hebrew goes on to the next approved one; with none left
+                // the step stays and hides.
+                if (!chain[session.Chain.Step].ApprovedIn(hebrew) && NextChainStep(session.Chain.Step) is int next and >= 0) session.Chain.Step = next;
                 if (chain[session.Chain.Step].ApprovedIn(hebrew) && this.hooks.Card?.Shown != null && !this.hooks.Card.Collapsed)
                     this.hooks.Card.Collapse(takeFocus: false);
                 RenderChain();
@@ -451,7 +454,7 @@ namespace Statecraft.Game.UI
         }
 
         // Original catalogue position, retained for existing callers; runtime routing uses message identity.
-        public const int EventStep = 5;
+        public const int EventStep = 8;
         public IReadOnlyList<AdvisorCatalog.Message> Chain => chain;
         public bool InChain => session.Chain.Step >= 0 && IsOpen;
         public int ChainStep => InChain ? session.Chain.Step : -1;
@@ -561,7 +564,14 @@ namespace Statecraft.Game.UI
         void RenderChain()
         {
             if (session.Chain.Step < 0) return;
-            if (Turn != session.Chain.OpenTurn) { CloseChain(hooks.Card?.Shown?.Id == session.Chain.CardEvent); return; }
+            if (Turn != session.Chain.OpenTurn)
+            {
+                // End turn on a step that would come back as a queue row: it was read, on the turn it showed.
+                var step = chain[session.Chain.Step];
+                if (step.Fallback != "" && ReferenceEquals(Shown, step)) session.Queue.Done(step, session.Chain.OpenTurn, bridge.State.Date);
+                CloseChain(hooks.Card?.Shown?.Id == session.Chain.CardEvent);
+                return;
+            }
             if (!IncludedInTour(chain[session.Chain.Step])) { ShowStep(session.Chain.Step); return; }
             if (!chain[session.Chain.Step].ApprovedIn(hebrew)) { Shown = null; Hide(); return; }
             if (Covered(hudRoot)) { Hide(); return; }
