@@ -40,9 +40,10 @@ public class EventCardTests
             Assert.IsTrue(ui.Q<Button>("option-hold").enabledSelf, "the non-operation option remains available");
             var required = ui.Root.Query<Label>(className: EventCardPresenter.RequirementClass).ToList();
             var missing = ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList();
-            Assert.AreEqual(1, required.Count); Assert.AreEqual(1, missing.Count);
-            StringAssert.Contains(local["ui.lang"] == UiLanguage.Hebrew ? "חטיבת גולני" : "Golani Brigade", required[0].text);
-            StringAssert.Contains(local["operation.region.negev"], required[0].text);
+            // One line per unit: Golani is elsewhere, so it has only the "Move ... before" line, naming both regions.
+            Assert.AreEqual(0, required.Count); Assert.AreEqual(1, missing.Count);
+            StringAssert.Contains(local["ui.lang"] == UiLanguage.Hebrew ? "חטיבת גולני" : "Golani Brigade", missing[0].text);
+            StringAssert.Contains(local["operation.region.negev"], missing[0].text);
             StringAssert.Contains(local["operation.region.southern_coast"], missing[0].text);
 
             var id = c.StartingForces.FindIndex(x => x.Row == "golani");
@@ -53,7 +54,10 @@ public class EventCardTests
             card.Render();
             Assert.IsTrue(ui.Q<Button>("option-launch").enabledSelf);
             Assert.AreEqual(0, ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList().Count);
-            Assert.AreEqual(1, ui.Root.Query<Label>(className: EventCardPresenter.RequirementClass).ToList().Count);
+            var inPlace = ui.Root.Query<Label>(className: EventCardPresenter.RequirementClass).ToList();
+            Assert.AreEqual(1, inPlace.Count);
+            StringAssert.Contains(local["ui.lang"] == UiLanguage.Hebrew ? "חטיבת גולני" : "Golani Brigade", inPlace[0].text);
+            StringAssert.Contains(local["operation.region.negev"], inPlace[0].text);
         }
     }
 

@@ -304,17 +304,16 @@ namespace Statecraft.Game.UI
                 b.AddToClassList(OptionClass);
                 b.SetEnabled(!unpaid && requirement.Met);
                 options.Add(b);
+                // R-ENEMY-007: one line per required unit, in the requirement's ordinal order. A unit in place gets the muted
+                // "must be in" line; a unit elsewhere gets only the "Move ... before" line, which names the same regions.
                 foreach (var need in requirement.Required)
                 {
                     var regions = string.Join(" / ", need.Regions.Select(id => text["operation.region." + id]));
-                    var required = new Label(text.Format("event.operation_requirement", OperationUnitName(need.Unit), regions));
-                    required.AddToClassList("muted"); required.AddToClassList(RequirementClass); options.Add(required);
-                }
-                foreach (var need in requirement.Missing)
-                {
-                    var regions = string.Join(" / ", need.Regions.Select(id => text["operation.region." + id]));
-                    var missing = new Label(text.Format("event.operation_missing", OperationUnitName(need.Unit), regions));
-                    missing.AddToClassList(MissingRequirementClass); options.Add(missing);
+                    bool away = requirement.Missing.Any(x => x.Unit == need.Unit);
+                    var line = new Label(text.Format(away ? "event.operation_missing" : "event.operation_requirement", OperationUnitName(need.Unit), regions));
+                    if (away) line.AddToClassList(MissingRequirementClass);
+                    else { line.AddToClassList("muted"); line.AddToClassList(RequirementClass); }
+                    options.Add(line);
                 }
                 // What the option does, one line per effect, from the sim's preview (#1125, R-EVT-005): Unity only words it. Under
                 // the option like the rejoin line, so a Label takes no Tab stop. The rejoin effect has that line already, below.
