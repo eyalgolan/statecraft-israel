@@ -125,6 +125,9 @@ namespace Statecraft.Sim
         int receptionLimit;
         internal int ReceptionLimit { get { RequireInitialized(); return receptionLimit; } }
         int peoplePerUnit;
+        /// <summary>Initialized with mode Historical (the R-POP-004 start's scale). Not written to the canonical text: the
+        /// scale it implies already is.</summary>
+        internal bool IsHistorical { get; private set; }
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }
         public double TotalPeople => (double)units.Count * peoplePerUnit;
@@ -155,6 +158,12 @@ namespace Statecraft.Sim
         {
             if (state.PopulationLedger.IsInitialized)
                 throw new NotSupportedException("Population-ledger fixtures cannot run aggregate systems; gdd-0.3 integration is held.");
+        }
+        /// <summary>#1725 PR 5 (review S5-3): Pools.Init and StartingForces.Init read an initialized ledger only in the dark
+        /// start's shape, a Historical one (R-POP-004); a synthetic or Open ledger is refused as by <see cref="RefuseAggregate"/>.</summary>
+        internal static void RefuseUnlessHistorical(GameState state)
+        {
+            if (!state.PopulationLedger.IsHistorical) RefuseAggregate(state);
         }
         void RequireInitialized()
         {
@@ -312,6 +321,7 @@ namespace Statecraft.Sim
             l.Validate(l.units);
             this.bindings = l.bindings; units = l.units; sources = l.sources; losses = l.losses;
             peoplePerUnit = l.peoplePerUnit; receptionLimit = l.receptionLimit; NextPopulationId = l.NextPopulationId;
+            IsHistorical = mode == Mode.Historical;
             IsInitialized = true;
         }
         // R-POP-001's no-fallback rule, as for the catalogue value: a missing or nonpositive value is refused, never replaced.

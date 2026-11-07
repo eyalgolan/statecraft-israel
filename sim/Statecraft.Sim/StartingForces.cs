@@ -151,10 +151,11 @@ namespace Statecraft.Sim
         /// <summary>Adds the starting forces to a new game, in the content's order, taking the next ids: the unit with id i
         /// of a new game is <c>c.StartingForces[i]</c>. An arriving row's id is taken too, so it is free when it arrives
         /// (R-UNIT-009). With an initialized gdd-0.3 ledger (the dark start, #1725 PR 5), each own starting formation's
-        /// strength must be its active-soldier records serving in it (R-POP-004), or nothing is added.</summary>
+        /// strength must be its active-soldier records serving in it (R-POP-004), or nothing is added. Any other initialized
+        /// ledger (synthetic or Open) is refused, with nothing added (R-POP-002).</summary>
         public static void Init(Content c, GameState s)
         {
-            if (s.PopulationLedger.IsInitialized) RequireLedgerSoldiers(c, s);
+            if (s.PopulationLedger.IsInitialized) { PopulationLedger.RefuseUnlessHistorical(s); RequireLedgerSoldiers(c, s); }
             foreach (var f in c.StartingForces)
             {
                 var id = s.NextId++;

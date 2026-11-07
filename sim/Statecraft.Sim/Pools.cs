@@ -36,10 +36,12 @@ namespace Statecraft.Sim
 
         /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level. With an
         /// initialized gdd-0.3 ledger (the dark start, #1725 PR 5) the need is the ledger's, one ration for each living own
-        /// population id (<see cref="Rations"/>, #2470), after the ledger reconciles; otherwise the aggregate head count.</summary>
+        /// population id (<see cref="Rations"/>, #2470), after the ledger reconciles; otherwise the aggregate head count. Any other
+        /// initialized ledger (synthetic or Open) is refused with the state unchanged (R-POP-002).</summary>
         public static void Init(Content c, GameState s)
         {
             if (!c.IsGdd) { PopulationLedger.RefuseAggregate(s); return; }
+            PopulationLedger.RefuseUnlessHistorical(s);   // S5-3: a synthetic or Open ledger stays held
             var r = c.RulesAt(s.Date).Mvp!;
             s.FoodNeed = s.PopulationLedger.IsInitialized ? LedgerNeed(s) : Need(s, r);
             s.Food = r.CoverMonths!.Value * s.FoodNeed;
