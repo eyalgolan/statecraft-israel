@@ -844,9 +844,26 @@ namespace Statecraft.Game.UI
             bool fromStart = start?.IsOpen == true;
             keptResumed = start?.Resumed ?? true;
             keptBudgetDraft = budgetScreen?.Draft;   // read before Begin disposes it; the new screen copies it
+            // #2340: the selection, read before Begin disposes the panel and the unit layer (a pioneer card has no token).
+            var pioneer = info?.Pioneer;
+            var unit = info?.ShowsUnit == true ? units?.Selected : null;
+            var hex = info?.ShowsUnit == true ? null : info?.Selected;
             // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
             try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
             finally { keptBudgetDraft = null; }
+            // Put back before Settings opens again: a screen that covers the panel would ignore it. The map's hex outline
+            // outlives Begin, so it is set to match (before, the new panel showed nothing under the old outline).
+            if (info != null && units != null)
+            {
+                if (pioneer is int pioneerId) info.ShowPioneer(pioneerId);   // clears the token and the outline itself
+                else
+                {
+                    units.Select(unit);
+                    if (units.Selected != null) { map.ClearSelection(); info.ShowUnit(); }
+                    else if (hex is (int q, int r)) { map.Select(q, r); info.Show(q, r); }
+                    else map.ClearSelection();
+                }
+            }
             if (!fromStart) nav?.Open("settings");
             // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
             // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
