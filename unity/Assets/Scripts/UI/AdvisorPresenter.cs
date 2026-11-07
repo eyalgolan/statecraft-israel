@@ -228,6 +228,9 @@ namespace Statecraft.Game.UI
                 && !hudRoot.ClassListContains(StartScreenPresenter.OpenClass) && chain.Any(InTour))
             {
                 session.Settings.MarkOpeningSeen();
+                // Owner ruling on #2942, "Off silences it": above the new level the chain does not open by itself and
+                // still counts as seen, so it never comes later; no course opens either. The encyclopedia can reopen it.
+                if (session.Settings.LevelRank > 0) return;
                 session.Settings.MarkCourseOpen();
                 Evaluate();                                 // course_open holds from here: its rows wait behind the chain
                 OpenChain();
