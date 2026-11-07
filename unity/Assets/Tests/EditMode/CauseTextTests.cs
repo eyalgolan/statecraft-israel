@@ -107,7 +107,8 @@ public class CauseTextTests
         StringAssert.Contains("ההחלטה על", he); StringAssert.Contains("נדחתה", he);
         Assert.IsFalse(Regex.IsMatch(he, "golani|southern_coast|negev"), he);
 
-        s.Date = e.To!.Value; why.Clear(); EventSystem.LapseExpiredOperations(C, s, why);
+        // R-ENEMY-007 (owner, 7 November 2026: "6 turns (Recommended)"): a postponed card lapses after its wait, not at its window's end.
+        s.Date = e.To!.Value; s.Turn += C.Rules.Mvp!.OperationWaitTurns!.Value + 1; why.Clear(); EventSystem.LapseExpiredOperations(C, s, why);
         var lapsed = why.Single(x => x.Key == CauseKeys.OperationLapsed);
         StringAssert.Contains("Golani Brigade", CauseText.Line(lapsed, C, rows, En));
         var heLapsed = CauseText.Line(lapsed, C, rows, He);
@@ -144,9 +145,8 @@ public class CauseTextTests
         StringAssert.Contains("Golani Brigade", CauseText.Line(lapsedLost, C, rows, En));
         StringAssert.Contains("חטיבת גולני", CauseText.Line(lapsedLost, C, rows, He));
 
-        var waiting = Simulation.NewGame(C, 23, Mode.Historical);
-        waiting.Date = new System.DateTime(1949, 2, 15); waiting.PendingEvents.Clear();
-        waiting.PendingEvents.Add(e.Id); waiting.PendingEvents.Add("armistice_egypt");
+        var waiting = Postponed();   // Horev postponed in December, still waiting when Egypt's card comes on 15 February 1949
+        waiting.Date = new System.DateTime(1949, 2, 15); waiting.PendingEvents.Add("armistice_egypt");
         why.Clear(); EventSystem.Delegate(C, waiting, why);
         var waits = why.Single(x => x.Key == CauseKeys.OperationWaitsForArmistice);
         StringAssert.Contains("Egypt", CauseText.Line(waits, C, rows, En));

@@ -236,7 +236,11 @@ namespace Statecraft.Game.UI
         {
             var c = bridge.Content; var s = bridge.State;
             var pending = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id)).ToList();
-            var open = pending.Where(e => bridge.QueuedLike(new ChooseEventOption(e.Id, "")) == null && !bridge.EndingCardSeen(e.Id)).ToList();
+            var open = pending.Where(e => bridge.QueuedLike(new ChooseEventOption(e.Id, "")) == null && !bridge.EndingCardSeen(e.Id))
+                // Q3 (owner, 7 November 2026: "Decide armistice first (Recommended)"): an operation that waits for its front's
+                // pending armistice is shown after it, so the card the player must decide first comes first (a stable sort).
+                .OrderBy(e => e.Options.Any(o => EventSystem.ArmisticeBlock(c, s, e, o) == EventSystem.RefusedOperationArmisticeFirst) ? 1 : 0)
+                .ToList();
             Shown = open.FirstOrDefault();
             if (Shown == null) { collapsedFor = null; openedFor = null; scrolledFor = null; }
             if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; openedFor = null; scrolledFor = null; }

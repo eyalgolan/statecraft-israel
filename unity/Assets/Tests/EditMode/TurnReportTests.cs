@@ -366,7 +366,7 @@ public class TurnReportTests
         var s = Simulation.NewGame(C, 23, Mode.Historical);
         s.Date = e.From; s.PendingEvents.Clear(); s.PendingEvents.Add(e.Id);
         var why = new List<Cause>(); EventSystem.Delegate(C, s, why);
-        s.Date = e.To!.Value; EventSystem.LapseExpiredOperations(C, s, why);
+        s.Date = e.To!.Value; s.Turn += C.Rules.Mvp!.OperationWaitTurns!.Value + 1; EventSystem.LapseExpiredOperations(C, s, why);   // after its wait (R-ENEMY-007)
         var added = why.Where(w => w.Key == CauseKeys.OperationPostponed || w.Key == CauseKeys.OperationLapsed).ToList();
         Assert.AreEqual(new[] { CauseKeys.OperationPostponed, CauseKeys.OperationLapsed }, added.Select(w => w.Key).ToArray());
         var rows = UnitData.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
