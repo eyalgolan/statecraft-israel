@@ -79,8 +79,8 @@ namespace Statecraft.Game.Map.Kits
             // Issue #659: up close the hall is Tal Heuberger's b07 dining hall, the clerestory's height included; far off, the kit's.
             AddModel(owner, TownModel.B07DiningHall, p, yaw, w, d, h + 1.2f * m, bottom, top, km, m, exactHeight: false, flip: false);
             var cut = km.CutStart();
-            km.Box(p.x, p.y, yaw, w, d, bottom, top, h, wall, roof, Facade.Plain, m);
-            km.Box(p.x, p.y, yaw, w * 0.8f, d * 0.4f, top + h - 0.3f * m, top + h, 1.2f * m, wall, roof, Facade.Plain, m);
+            km.Box(p.x, p.y, yaw, w, d, bottom, top, h, wall, roof, Facade.Plaster, m);
+            km.Box(p.x, p.y, yaw, w * 0.8f, d * 0.4f, top + h - 0.3f * m, top + h, 1.2f * m, wall, roof, Facade.Plaster, m);
             km.CutEnd(cut);
             Record(owner, "dining_hall", p, yaw, w, d, h, wall);
             kibbutzHalls++;
@@ -98,8 +98,8 @@ namespace Statecraft.Game.Map.Kits
                 {
                     var wall = Jitter(C(0.80f, 0.76f, 0.68f), ref rnd, 0.04f);
                     var roof = Jitter(C(0.47f, 0.48f, 0.49f), ref rnd, 0.05f);
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Plain, m, roofed: true);
-                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.3f, roof, wall);
+                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Plaster, m, roofed: true);
+                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.3f, roof, wall, m, Facade.Corrugated);
                     farmSheds++;
                     return wall;
                 }
@@ -107,8 +107,8 @@ namespace Statecraft.Game.Map.Kits
                 {
                     var wall = Jitter(C(0.93f, 0.92f, 0.87f), ref rnd, 0.03f);
                     var roof = Jitter(C(0.74f, 0.31f, 0.20f), ref rnd, 0.08f);
-                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Village, m, roofed: true);
-                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.42f, roof, wall);
+                    km.Box(p.x, p.y, yaw, b.w, b.d, bottom, top, b.h, wall, roof, Facade.Moshava, m, roofed: true);
+                    km.Gable(p.x, p.y, yaw, b.w, b.d, top + b.h, Mathf.Min(b.w, b.d) * 0.42f, roof, wall, m);
                     return wall;
                 }
             }
