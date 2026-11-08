@@ -1,0 +1,232 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using Statecraft.Game.Map.Units;
+using Statecraft.Sim;
+
+namespace Statecraft.Game.UI
+{
+    public enum BeatKind { Move, Attack }
+
+    /// <summary>One unit's move as a cause records it: the hex it stood on (UnitRef.Q, R, #2230) and the hex it reached.</summary>
+    public readonly struct UnitStep
+    {
+        public readonly int Unit, FromQ, FromR, ToQ, ToR;
+        public UnitStep(int unit, int fromQ, int fromR, int toQ, int toR) { Unit = unit; FromQ = fromQ; FromR = fromR; ToQ = toQ; ToR = toR; }
+        public override string ToString() => FormattableString.Invariant($"{Unit}: ({FromQ},{FromR}) to ({ToQ},{ToR})");
+    }
+
+    /// <summary>Which of a step's Why lines open a beat: a move line (UnitMoved, the destination in Args[0]) or an
+    /// engagement line (Engagement, as Combat.Engage writes it). <see cref="Enemy"/> reads the enemy's orders (resolver steps 1
+    /// and 2); another reader of the same lines (#2544 PR 2, an operation's moves and attacks) brings its own two tests and
+    /// gets the same grouping, focus and pacing.</summary>
+    public sealed class BeatSource
+    {
+        readonly Func<Cause, bool> isMove, isAttack;
+
+        public BeatSource(Func<Cause, bool> isMove, Func<Cause, bool> isAttack)
+        {
+            this.isMove = isMove ?? throw new ArgumentNullException(nameof(isMove));
+            this.isAttack = isAttack ?? throw new ArgumentNullException(nameof(isAttack));
+        }
+
+        /// <summary>The enemy's moves (Movement.Move with enemy: true) and attacks (an engagement whose attackers are the
+        /// enemy's). The player's own lines carry no enemy order, so a turn's earlier player lines are never read.</summary>
+        public static readonly BeatSource Enemy = new BeatSource(
+            c => c.Key == WhyKeys.UnitMoved && c.EnemyOrder == Movement.Kind,
+            c => c.Key == WhyKeys.Engagement && c.EnemyOrder == Combat.Attack);
+
+        internal bool IsMove(Cause c) => c.Key == WhyKeys.UnitMoved && isMove(c);
+        internal bool IsAttack(Cause c) => c.Key == WhyKeys.Engagement && isAttack(c);
+    }
+
+    /// <summary>One beat of a replay: up to <see cref="UnitBeats.Timing.MaxUnitsPerBeat"/> nearby moves, or one engagement
+    /// with its retreats and losses, or (<see cref="Folded"/>) every action past the last full beat at once.</summary>
+    public sealed class UnitBeat
+    {
+        internal readonly List<UnitStep> moves = new List<UnitStep>(), retreats = new List<UnitStep>();
+        internal readonly List<int> attackers = new List<int>();
+        internal readonly List<Cause> causes = new List<Cause>();
+
+        public BeatKind Kind { get; internal set; }
+        public IReadOnlyList<UnitStep> Moves => moves;
+        /// <summary>The engagements' attackers (UnitAttackPresenter.Attackers), whose fire take plays on this beat.</summary>
+        public IReadOnlyList<int> Attackers => attackers;
+        /// <summary>The defenders an engagement pushed back (Retreated lines), from the hex they held to the one they reached.</summary>
+        public IReadOnlyList<UnitStep> Retreats => retreats;
+        /// <summary>The units whose tokens wait for this beat (UnitLayer.Hold): the movers, then the retreaters.</summary>
+        public IReadOnlyList<int> Units => moves.Select(m => m.Unit).Concat(retreats.Select(m => m.Unit)).ToList();
+        /// <summary>The hex the camera goes to: the cube-rounded middle of a move beat's destinations, an engagement's hex.</summary>
+        public int FocusQ { get; internal set; }
+        public int FocusR { get; internal set; }
+        /// <summary>Every action past the first <see cref="UnitBeats.Timing.MaxBeats"/> - 1 beats, played together, with no pan.</summary>
+        public bool Folded { get; internal set; }
+        /// <summary>The Why lines the beat plays, in the sim's order: its moves, or its engagements and their results.</summary>
+        public IReadOnlyList<Cause> Causes => causes;
+        /// <summary>How many engagements the beat plays (1 on an attack beat, 0 on a move beat, any number when folded).</summary>
+        public int Engagements { get; internal set; }
+        /// <summary>Seconds the camera takes to reach the focus (0 when folded).</summary>
+        public float Pan { get; internal set; }
+        /// <summary>Seconds the beat holds after its slide (a move) or for its fire take (an attack).</summary>
+        public float Dwell { get; internal set; }
+        /// <summary>Whether the beat's tokens slide (UnitTokenMotion.Duration) before its dwell: any beat with moves.</summary>
+        public bool Slides => moves.Count > 0;
+        public float Length => Pan + (Slides ? UnitTokenMotion.Duration : 0f) + Dwell;
+    }
+
+    /// <summary>#2202 (plan docs/superpowers/plans/2026-11-02-enemy-move-playback.md, Task 2): the beats of a replay, from a
+    /// step's recorded unit actions (StepResult.Why) in the sim's own order. Presentation only: it groups and paces what the
+    /// sim already resolved and decides nothing. One pass over the lines with no allocation per frame (#2905: a caller builds
+    /// them on the replay's first frame, not inside End turn). The owner's answers (2 November 2026, "Q1-Q7 recommended, Q8
+    /// yes"): every move plays, on screen or off (Q2 a); the pacing below (Q3); nearby moves share a beat, beats past the
+    /// eighth fold into one (Q4).</summary>
+    public static class UnitBeats
+    {
+        /// <summary>The pacing (Q3) and grouping (Q4), in seconds and hexes. The slide itself is #2176's
+        /// UnitTokenMotion.Duration (0.65 s), unchanged.</summary>
+        public static class Timing
+        {
+            public const float PanMin = 0.3f, PanMax = 0.8f, PanPerHex = 0.05f;
+            public const float MoveDwell = 0.35f, AttackMin = 0.8f, AttackMax = 1.5f;
+            /// <summary>The whole replay's longest (Q3: "a 12 s cap on the whole playback").</summary>
+            public const float Cap = 12f;
+            /// <summary>How far the cap may shrink a pan and a move's dwell; an attack's hold never drops below AttackMin.</summary>
+            public const float MinPan = 0.25f, MinDwell = 0.1f;
+            public const int BatchRadiusHexes = 3, MaxUnitsPerBeat = 4, MaxBeats = 8;
+        }
+
+        /// <summary>The pan to a point <paramref name="hexes"/> away: PanPerHex a hex, between PanMin and PanMax.</summary>
+        public static float PanSeconds(float hexes) => Math.Clamp(Timing.PanPerHex * hexes, Timing.PanMin, Timing.PanMax);
+
+        /// <summary>The beats of <paramref name="why"/> that <paramref name="source"/> reads, paced and capped. A move joins
+        /// the move beat before it while that beat has room and the move's destination lies within BatchRadiusHexes of the
+        /// beat's first destination. An engagement opens its own beat, which takes the Destroyed, Retreated and Surrendered
+        /// lines after it, up to the next engagement (anyone's: a player's strike's retreats are never an enemy beat's).</summary>
+        public static IReadOnlyList<UnitBeat> From(IReadOnlyList<Cause> why, BeatSource source)
+        {
+            if (why == null) throw new ArgumentNullException(nameof(why));
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            var beats = new List<UnitBeat>();
+            UnitBeat? moving = null, attack = null;   // the beat a next move may join; the engagement whose results follow
+            foreach (var c in why)
+            {
+                if (source.IsMove(c))
+                {
+                    attack = null;
+                    if (c.Units.Count == 0 || c.Args.Count == 0 || !TryHex(c.Args[0], out int q, out int r)) continue;
+                    var step = new UnitStep(c.Units[0].Id, c.Units[0].Q, c.Units[0].R, q, r);
+                    if (moving == null || moving.moves.Count >= Timing.MaxUnitsPerBeat
+                        || MapActions.Distance(moving.moves[0].ToQ, moving.moves[0].ToR, q, r) > Timing.BatchRadiusHexes)
+                    {
+                        moving = new UnitBeat { Kind = BeatKind.Move };
+                        beats.Add(moving);
+                    }
+                    moving.moves.Add(step);
+                    moving.causes.Add(c);
+                }
+                else if (c.Key == WhyKeys.Engagement)
+                {
+                    moving = null; attack = null;
+                    if (!source.IsAttack(c) || c.Args.Count == 0 || !TryHex(c.Args[0], out int q, out int r)) continue;
+                    attack = new UnitBeat { Kind = BeatKind.Attack, FocusQ = q, FocusR = r, Engagements = 1 };
+                    attack.attackers.AddRange(UnitAttackPresenter.Attackers(c));
+                    attack.causes.Add(c);
+                    beats.Add(attack);
+                }
+                else if (attack != null && Result(c.Key))
+                {
+                    attack.causes.Add(c);
+                    if (c.Key == WhyKeys.Retreated && c.Units.Count > 0 && c.Args.Count > 0 && TryHex(c.Args[0], out int q, out int r))
+                        attack.retreats.Add(new UnitStep(c.Units[0].Id, c.Units[0].Q, c.Units[0].R, q, r));
+                }
+            }
+            foreach (var b in beats) if (b.Kind == BeatKind.Move) Focus(b);
+            Fold(beats);
+            Pace(beats);
+            return beats;
+        }
+
+        /// <summary>The replay's length: every beat's pan, slide and dwell.</summary>
+        public static float Total(IReadOnlyList<UnitBeat> beats)
+        {
+            float total = 0f;
+            foreach (var b in beats) total += b.Length;
+            return total;
+        }
+
+        /// <summary>An engagement's own results (Combat.Fight writes them right after its line).</summary>
+        static bool Result(string key) => key == WhyKeys.Destroyed || key == WhyKeys.Retreated
+            || key == WhyKeys.SurrenderedPrisoners || key == WhyKeys.SurrenderedHeld;
+
+        static bool TryHex(string hex, out int q, out int r)
+        {
+            q = r = 0;
+            var parts = hex.Split(',');
+            return parts.Length == 2
+                && int.TryParse(parts[0], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out q)
+                && int.TryParse(parts[1], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out r);
+        }
+
+        /// <summary>A move beat looks at the middle of its destinations, rounded to a hex in cube coordinates.</summary>
+        static void Focus(UnitBeat b)
+        {
+            double q = b.moves.Average(m => m.ToQ), r = b.moves.Average(m => m.ToR), s = -q - r;
+            double rq = Math.Round(q, MidpointRounding.AwayFromZero), rr = Math.Round(r, MidpointRounding.AwayFromZero);
+            double rs = Math.Round(s, MidpointRounding.AwayFromZero);
+            double dq = Math.Abs(rq - q), dr = Math.Abs(rr - r), ds = Math.Abs(rs - s);
+            if (dq > dr && dq > ds) rq = -rr - rs;
+            else if (dr > ds) rr = -rq - rs;
+            b.FocusQ = (int)rq; b.FocusR = (int)rr;
+        }
+
+        /// <summary>Past MaxBeats, the first MaxBeats - 1 stay and every later one is played as one last beat, where the
+        /// camera stays (Q4). Its focus is the beat before it, so a later beat's pan is measured from where the camera is.</summary>
+        static void Fold(List<UnitBeat> beats)
+        {
+            if (beats.Count <= Timing.MaxBeats) return;
+            var folded = new UnitBeat { Folded = true };
+            foreach (var b in beats.Skip(Timing.MaxBeats - 1))
+            {
+                folded.moves.AddRange(b.moves); folded.retreats.AddRange(b.retreats);
+                folded.attackers.AddRange(b.attackers); folded.causes.AddRange(b.causes);
+                folded.Engagements += b.Engagements;
+            }
+            folded.Kind = folded.moves.Count > 0 ? BeatKind.Move : BeatKind.Attack;
+            var before = beats[Timing.MaxBeats - 2];
+            folded.FocusQ = before.FocusQ; folded.FocusR = before.FocusR;
+            beats.RemoveRange(Timing.MaxBeats - 1, beats.Count - (Timing.MaxBeats - 1));
+            beats.Add(folded);
+        }
+
+        /// <summary>The pans and dwells at full pace (Q3), then, if the whole passes Cap, each pan and dwell shrunk by the
+        /// same share of the way to its minimum, so the replay is exactly Cap long; the slides never shrink. With at most
+        /// MaxBeats beats the minimums sum to well under Cap (8 x 1.05 s at the most), so the cap is always met.</summary>
+        static void Pace(List<UnitBeat> beats)
+        {
+            float slides = 0f, full = 0f, least = 0f;
+            for (int i = 0; i < beats.Count; i++)
+            {
+                var b = beats[i];
+                b.Pan = b.Folded ? 0f
+                    : i == 0 ? Timing.PanMax   // where the camera starts is not known here: the longest
+                    : PanSeconds(MapActions.Distance(beats[i - 1].FocusQ, beats[i - 1].FocusR, b.FocusQ, b.FocusR));
+                b.Dwell = b.Engagements > 0 ? (b.Folded ? Timing.AttackMin : Timing.AttackMax) : Timing.MoveDwell;
+                if (b.Slides) slides += UnitTokenMotion.Duration;
+                full += b.Pan + b.Dwell;
+                least += MinPan(b) + MinDwell(b);
+            }
+            if (slides + full <= Timing.Cap || full <= least) return;
+            float share = Math.Max(0f, (Timing.Cap - slides - least) / (full - least));
+            foreach (var b in beats)
+            {
+                b.Pan = MinPan(b) + share * (b.Pan - MinPan(b));
+                b.Dwell = MinDwell(b) + share * (b.Dwell - MinDwell(b));
+            }
+        }
+
+        static float MinPan(UnitBeat b) => b.Folded ? 0f : Timing.MinPan;
+        static float MinDwell(UnitBeat b) => b.Engagements > 0 ? Timing.AttackMin : Timing.MinDwell;
+    }
+}
