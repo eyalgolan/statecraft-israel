@@ -123,10 +123,11 @@ namespace Statecraft.Sim
                         if (destination != null && need.Option.RequiresUnitRegions.Contains(destination.Id, StringComparer.Ordinal)) continue;
                     }
                 }
+                var routes = Movement.Routes(c, probe, id, spent);   // one search for all the candidate hexes
                 var targetHex = need.Option.RequiresUnitRegions
                     .SelectMany(region => c.PlayerRegions.Regions[region].MemberHexes)
                     .Distinct().Where(h => !closed.Contains((h.Q, h.R)))
-                    .Select(h => (Hex: h, Route: Movement.Route(c, probe, id, h.Q, h.R, spent)))
+                    .Select(h => (Hex: h, Route: routes(h.Q, h.R)))
                     .Where(x => x.Route.Count != 0 && Movement.Full(c, probe, unit, x.Hex.Q, x.Hex.R) == null)
                     .OrderBy(x => x.Route[x.Route.Count - 1].Turn).ThenBy(x => x.Route.Count)
                     .ThenBy(x => x.Hex.Q).ThenBy(x => x.Hex.R).FirstOrDefault();
