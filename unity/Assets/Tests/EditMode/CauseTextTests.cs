@@ -88,6 +88,71 @@ public class CauseTextTests
         Assert.IsFalse(Regex.IsMatch(unmarked, "[A-Za-z]"));
     }
 
+    [Test]
+    public void PostponedAndLapsedOperationsNameTheUnitAndRegionsInBothLanguages()
+    {
+        var e = C.Events.Single(x => x.Id == "operation_horev");
+        var s = Simulation.NewGame(C, 23, Mode.Historical);
+        s.Date = e.From; s.PendingEvents.Clear(); s.PendingEvents.Add(e.Id);
+        var why = new List<Cause>(); EventSystem.Delegate(C, s, why);
+        var postponed = why.Single(x => x.Key == CauseKeys.OperationPostponed);
+        var rows = UnitData.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        var en = CauseText.Line(postponed, C, rows, En);
+        StringAssert.Contains("Golani Brigade", en); StringAssert.Contains("Negev", en); StringAssert.Contains("Southern Coast", en);
+        StringAssert.DoesNotContain("golani", en); StringAssert.DoesNotContain("southern_coast", en);
+        var he = CauseText.Line(postponed, C, rows, He);
+        StringAssert.Contains("חטיבת גולני", he); StringAssert.Contains("הנגב", he); StringAssert.Contains("מישור החוף הדרומי", he);
+        // The owner's choice, 7 November 2026: "Neutral form (Recommended)": the decision is the subject, so the verb agrees
+        // with any card title, a plural one such as "קרבות עשרת הימים" included.
+        StringAssert.Contains("ההחלטה על", he); StringAssert.Contains("נדחתה", he);
+        Assert.IsFalse(Regex.IsMatch(he, "golani|southern_coast|negev"), he);
+
+        // R-ENEMY-007 (owner, 7 November 2026: "6 turns (Recommended)"): a postponed card lapses after its wait, not at its window's end.
+        s.Date = e.To!.Value; s.Turn += C.Rules.Mvp!.OperationWaitTurns!.Value + 1; why.Clear(); EventSystem.LapseExpiredOperations(C, s, why);
+        var lapsed = why.Single(x => x.Key == CauseKeys.OperationLapsed);
+        StringAssert.Contains("Golani Brigade", CauseText.Line(lapsed, C, rows, En));
+        var heLapsed = CauseText.Line(lapsed, C, rows, He);
+        StringAssert.Contains("חטיבת גולני", heLapsed);
+        StringAssert.Contains("ההחלטה על", heLapsed); StringAssert.Contains("ירדה מן הפרק", heLapsed);
+    }
+
+    /// <summary>R-ENEMY-007 (owner, 7 November 2026): the lapse on a signed front, the lapse on a lost unit and the wait for
+    /// the front's armistice, from the sim's own causes, each in both languages, Hebrew in the neutral form ("ההחלטה על").
+    /// Horev postponed with Golani out of place, then each ending made.</summary>
+    [Test]
+    public void TheArmisticeAndLostUnitLinesAreWordedInBothLanguages()
+    {
+        var e = C.Events.Single(x => x.Id == "operation_horev");
+        var rows = UnitData.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        GameState Postponed()
+        {
+            var s = Simulation.NewGame(C, 23, Mode.Historical);
+            s.Date = e.From; s.PendingEvents.Clear(); s.PendingEvents.Add(e.Id);
+            EventSystem.Delegate(C, s, new List<Cause>());
+            Assert.IsTrue(s.PostponedOperations.ContainsKey(e.Id));
+            return s;
+        }
+        var signed = Postponed(); signed.ChosenOptions["armistice_egypt"] = "sign";
+        var why = new List<Cause>(); EventSystem.LapseExpiredOperations(C, signed, why);
+        var lapsedSigned = why.Single(x => x.Key == CauseKeys.OperationLapsedSigned);
+        StringAssert.Contains("Egypt", CauseText.Line(lapsedSigned, C, rows, En));
+        var he = CauseText.Line(lapsedSigned, C, rows, He);
+        StringAssert.Contains("ההחלטה על", he); StringAssert.Contains("מצרים", he);
+
+        var lost = Postponed(); lost.Units.Remove(C.StartingForces.FindIndex(f => f.Row == "golani"));
+        why.Clear(); EventSystem.LapseExpiredOperations(C, lost, why);
+        var lapsedLost = why.Single(x => x.Key == CauseKeys.OperationLapsedUnitLost);
+        StringAssert.Contains("Golani Brigade", CauseText.Line(lapsedLost, C, rows, En));
+        StringAssert.Contains("חטיבת גולני", CauseText.Line(lapsedLost, C, rows, He));
+
+        var waiting = Postponed();   // Horev postponed in December, still waiting when Egypt's card comes on 15 February 1949
+        waiting.Date = new System.DateTime(1949, 2, 15); waiting.PendingEvents.Add("armistice_egypt");
+        why.Clear(); EventSystem.Delegate(C, waiting, why);
+        var waits = why.Single(x => x.Key == CauseKeys.OperationWaitsForArmistice);
+        StringAssert.Contains("Egypt", CauseText.Line(waits, C, rows, En));
+        StringAssert.Contains("מצרים", CauseText.Line(waits, C, rows, He));
+    }
+
     /// <summary>The keyed lines the seeded game does not reach: a call-up order, a situation that ends, civilian upkeep and
     /// its borrowing, the currency crisis on both sides, and the legacy loop's food cut and UN ceasefire.</summary>
     [Test]
@@ -249,6 +314,42 @@ public class CauseTextTests
             Assert.AreEqual(row.Message, CauseText.Line(row, C, NoRows, en), row.Key);
             AssertHebrew(CauseText.Line(row, C, NoRows, he), row.Key);
         }
+    }
+
+    /// <summary>R-EFX-009 (#2457): the Debt line an option's debt_dollars writes (an EventAmount cause on "debt") is worded
+    /// in both languages: English is the Message and starts "Debt"; Hebrew names חוב with the event's amount and title.</summary>
+    [Test]
+    public void TheEventDebtLineIsWordedInBothLanguages()
+    {
+        var debt = new Cause("events", "debt", 18.564, $"{PlayerText.Change(C, "debt", 18.564)} (Bonds)",
+            key: CauseKeys.EventAmount, args: new[] { "Bonds", "אג״ח ישראל" });
+        var en = CauseText.Line(debt, C, NoRows, En);
+        Assert.AreEqual(debt.Message, en);
+        StringAssert.StartsWith("Debt", en);
+        var he = CauseText.Line(debt, C, NoRows, He);
+        StringAssert.Contains("חוב", he);
+        StringAssert.Contains(PlayerText.MoneyChange(C, "debt", 18.564), he);
+        StringAssert.Contains("אג״ח ישראל", he);
+        AssertHebrew(he, debt.Key);
+    }
+
+    /// <summary>#2558: in the Money row (the turn report and the Money meter tip, HudModel.Causes) the Israel Bonds Debt
+    /// line reads as its Money effect (EconomySystem.MoneyLine), not as a Debt gain: "Money IL -18.6m (Israel Bonds)" in
+    /// English, and in Hebrew כסף with the same change and the Hebrew title, without חוב.</summary>
+    [Test]
+    public void TheEventDebtLineReadsAsItsMoneyEffectInTheMoneyRow()
+    {
+        var debt = new Cause("events", "debt", 18.564, $"{PlayerText.Change(C, "debt", 18.564)} (Israel Bonds)",
+            key: CauseKeys.EventAmount, args: new[] { "Israel Bonds", "מלווה העצמאות" });
+        var turn = new StepResult(new GameState(), new List<Cause> { debt }, new Rejection[0]);
+        CollectionAssert.AreEqual(new[] { "Money IL -18.6m (Israel Bonds)" },
+            HudModel.Causes(turn, "treasury", C, w => CauseText.Line(w, C, NoRows, En)));
+        var he = HudModel.Causes(turn, "treasury", C, w => CauseText.Line(w, C, NoRows, He)).Single();
+        StringAssert.Contains("כסף", he);
+        StringAssert.Contains(PlayerText.MoneyChange(C, "treasury", -18.564), he);
+        StringAssert.Contains("מלווה העצמאות", he);
+        StringAssert.DoesNotContain("חוב", he);
+        AssertHebrew(he, debt.Key);
     }
 
     [Test]
@@ -438,15 +539,26 @@ public class CauseTextTests
             new Cause("draft", "town", -1, "Town: Housing was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { "housing" }),
             new Cause("draft", "town", 1, "Town: Housing was finished", key: CauseKeys.ProjectCompleted, args: new[] { "housing" }),
             new Cause("draft", "town", 1, "Town: a builder started on Housing", key: CauseKeys.ProjectBuilder, args: new[] { "housing" }),   // #1700
+            new Cause("draft", "town", -1, "Town: a builder left Housing and is free again", key: CauseKeys.ProjectBuilderFreed, args: new[] { "housing" }),   // #1700 slice B
             new Cause("draft", "town", 0, "Town: Housing waits: no builder", key: CauseKeys.ProjectWaiting, args: new[] { "housing", Projects.NoBuilder }),
             new Cause("draft", "arms", 2000000000, "Bought 2000000000 Arms, cost IL\u00A01.3m", key: CauseKeys.ArmsBought, args: new[] { "1.25" }),
             new Cause("draft", "town", 2, "Town: arms workshops staffed: 2", key: CauseKeys.WorkshopWorkers, args: new[] { "2" }),
             new Cause("draft", "town", 1, "Town: an arms workshop made 1 Arms", key: CauseKeys.WorkshopArms),
+            new Cause("draft", "town", 0, "Town: held by the enemy; no job income or project work this turn", key: CauseKeys.CityHeld),   // #1711
             new Cause("draft", "town", 0, "Town: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker }),
             new Cause("draft", "treasury", 1.44, "Converted $4.0m of foreign currency into Money: IL\u00A0+1.4m", key: CauseKeys.DollarsConverted, args: new[] { "4" }),
+            new Cause("draft", "fx_reserves", -4, "Foreign currency converted into Money: $-4.0m", key: CauseKeys.DollarsConvertedFx, args: new[] { "4" }),   // #2527
             new Cause("draft", "food", 2000000000, "Site: the plowed land yielded 2000000000 units of Food", key: CauseKeys.FoodHarvest, args: new[] { "site" }),
-            new Cause("draft", "food", -2000000000, "Food ran out: 2000000000 of 2000000001 units of the month's need went unmet", key: CauseKeys.FoodShortage, args: new[] { "2000000001" }),
+            // #2530: a count of 1 names the singular; the helpers name "1 group"/"1 unit"/"1 turn" in English only.
+            new Cause("draft", "town", 1, "Town: 1 group in work", key: CauseKeys.WorkersAssigned, args: new[] { "1" }),
+            new Cause("draft", "town", 1, "Town: 1 group of immigrants housed", key: CauseKeys.ImmigrantsHoused, args: new[] { "1" }),
+            new Cause("draft", "town", 1, "Town: 1 group more than its homes hold", key: CauseKeys.HousingShortage, args: new[] { "1" }),
+            new Cause("draft", "town", 1, "Town: 1 group of immigrants arrived and wait for homes", key: CauseKeys.ImmigrantsWaiting, args: new[] { "1" }),
+            new Cause("draft", "food", 1, "Site: the plowed land yielded 1 unit of Food", key: CauseKeys.FoodHarvest, args: new[] { "site" }),
+            new Cause("draft", "town", 1, "Town: 1 turn of occupation left", key: CauseKeys.OccupationCountdown),
+            new Cause("draft", "food", 0, "Food ran out: 2000000000 of 2000000001 units of the month's need went unmet", key: CauseKeys.FoodShortage, args: new[] { "2000000000", "2000000001" }),   // informational (#2527): the unmet, then the need
             new Cause("draft", "food", -1, "No Food imported (foreign currency crisis): the stock fell to 2000000000 units", key: CauseKeys.FoodWithoutImports, args: new[] { "2000000000" }),
+            new Cause("draft", "food", 150, "The month's eating and Food imports brought the stock to 2000000000 units", key: CauseKeys.FoodImported, args: new[] { "2000000000" }),   // #2527
             new Cause("draft", "food", -2000000000, "The prisoners held ate 2000000000 units of Food", key: CauseKeys.PrisonerFood),
             new Cause("draft", "morale", -0.025, "The prisoners held went short of 2000000000 units of Food: Social cohesion -2.5%", key: CauseKeys.PrisonerFoodShortage, args: new[] { "2000000000" }),
             new Cause("draft", "town", 1, "Town: 1 group of craftsmen returned to civilian life and keep their training", key: CauseKeys.CraftsmenReturned, args: new[] { "1" }),
@@ -501,7 +613,7 @@ public class CauseTextTests
         var raid = new Cause("map", "town", 0,
             "Town: no decision was made before the game ended, so it counts as a raid", key: CauseKeys.PendingBecameRaid);
         Assert.IsTrue(string.Equals("{0}: מוחזק, תורות שנותרו: {1}", he["why.cause.occupation_countdown"], StringComparison.Ordinal));
-        Assert.IsTrue(string.Equals("{0}: {1} turns of occupation left", en["why.cause.occupation_countdown"], StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals("{0}: {1} of occupation left", en["why.cause.occupation_countdown"], StringComparison.Ordinal));   // #2530: the count names its noun ("1 turn"/"N turns")
         Assert.IsTrue(string.Equals("{0}: לא התקבלה החלטה עד סוף המשחק, ולכן הדבר נחשב לפשיטה", he["why.cause.pending_became_raid"], StringComparison.Ordinal));
         Assert.IsTrue(string.Equals("{0}: no decision was made before the game ended, so it counts as a raid", en["why.cause.pending_became_raid"], StringComparison.Ordinal));
         Assert.IsTrue(string.Equals("Town: 3 turns of occupation left", CauseText.Line(countdown, c, NoRows, en), StringComparison.Ordinal));
@@ -528,9 +640,12 @@ public class CauseTextTests
             CauseKeys.CallUpSet, CauseKeys.CallUpRaised, CauseKeys.CallUpLowered, CauseKeys.Ceasefire,
             CauseKeys.EventAmount, CauseKeys.EventChosen, CauseKeys.EventCity, CauseKeys.EventDelegated,
             CauseKeys.EventDelegatedPartial, CauseKeys.EventGrant, CauseKeys.EventNew, CauseKeys.EventPolicy,
+            CauseKeys.OperationPostponed, CauseKeys.OperationLapsed, CauseKeys.OperationLapsedSigned, CauseKeys.OperationLapsedUnitLost,
+            CauseKeys.OperationWaitsForArmistice,
             CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
             CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
-            CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned }), rows.Select(x => x.Key), "all remaining keys");
+            CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned,
+            CauseKeys.FieldFood }), rows.Select(x => x.Key).Distinct(), "all remaining keys");   // FieldFood (#2471): only the gdd-0.3 field fixture makes it, no turn yet, so no wording yet
         var appointed = rows.Single(x => x.Key == CauseKeys.Appointed);
         StringAssert.Contains("התפקיד שנשמר", CauseText.Line(appointed, c, NoRows, he, names), "historical title, not current title");
     }

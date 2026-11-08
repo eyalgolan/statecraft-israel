@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Statecraft.Sim;
 
 public class ContentLoaderTests
@@ -53,6 +54,27 @@ targets:
         Assert.Equal(ContentLoader.SettlementTargetsFileName, ex.File);
         Assert.Contains(field, ex.Field);
         Assert.Contains(message, ex.Message);
+    }
+
+    // R-CTRL-001 (#2804): Ramla's target is (-3, 24), the owner's ruling on #1796, so another land neighbour of its hex
+    // (-4, 24) is refused, not only a hex that is no neighbour at all.
+    [Fact]
+    public void RamlasTargetIsTheHexTheRuleNames()
+    {
+        var dir = RealContentTests.ContentRoot();
+        var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
+        const string ruled = "    q: -3\n    r: 24\n";
+        Assert.Contains(ruled, File.ReadAllText(Path.Combine(dir, ContentLoader.SettlementTargetsFileName)));
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(dir, rel);
+            if (!File.Exists(path)) return null;
+            var text = File.ReadAllText(path);
+            return rel == ContentLoader.SettlementTargetsFileName ? text.Replace(ruled, "    q: -4\n    r: 25\n") : text;
+        }, events));
+        Assert.Equal(ContentLoader.SettlementTargetsFileName, ex.File);
+        Assert.Equal("targets[ramla].q", ex.Field);
+        Assert.Contains("is not q=-3 r=24", ex.Message);
     }
 
     // R-CTRL-016 (Q-ANNEX-1; OWNER QUESTION 1 (a) on #799): a stayed row loads with its annexation values.
@@ -194,6 +216,8 @@ targets:
     [InlineData("      born: [{}]\n", "people[pm_one].biography_sources.born[0]")]
     [InlineData("      born: [{ checked: 2026-10-11 }]\n", "people[pm_one].biography_sources.born[0]")]
     [InlineData("      born: [{ url: 'https://example.org/birth', checked: 2026-10-11 }, { url: 'https://example.org/b2' }]\n", "people[pm_one].biography_sources.born[1]")]
+    [InlineData("      born: []\n", "people[pm_one].biography_sources.born")]
+    [InlineData("      born: [{ url: 'http://example.org/birth', checked: 2026-10-11 }]\n", "people[pm_one].biography_sources.born[0]")]
     public void BadBiographySourceNamesFileAndField(string sources, string field)
     {
         var ex = LoadPmOneWith("    born: 1900-01-01\n    biography_sources:\n" + sources);
@@ -242,6 +266,49 @@ targets:
         var bad = Fixture.Files["parties.yaml"].Replace("name: Beta", "nmae: Beta");
         var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["parties.yaml"] = bad })));
         Assert.Equal("parties.yaml", ex.File);
+        Assert.StartsWith("nmae (line ", ex.Field);
+        Assert.EndsWith(")", ex.Field);
+    }
+
+    [Theory]
+    [InlineData("offices.yaml", "offices")]
+    [InlineData("parties.yaml", "parties")]
+    [InlineData("people.yaml", "people")]
+    public void RequiredRootListsNameTheirMissingKey(string file, string field)
+    {
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { [file] = "{}\n" })));
+        Assert.Equal(file, ex.File);
+        Assert.Equal(field, ex.Field);
+    }
+
+    [Theory]
+    [InlineData("offices.yaml", "    title: Minister of Finance\n", "", "offices[finance_minister].title")]
+    [InlineData("offices.yaml", "title: Minister of Finance", "title: ' '", "offices[finance_minister].title")]
+    [InlineData("parties.yaml", "    name: Beta\n", "", "parties[beta].name")]
+    [InlineData("parties.yaml", "name: Beta", "name: ' '", "parties[beta].name")]
+    [InlineData("people.yaml", "    name: Def Two\n", "", "people[def_two].name")]
+    [InlineData("people.yaml", "name: Def Two", "name: ' '", "people[def_two].name")]
+    public void RequiredDisplayNamesNameTheirField(string file, string from, string to, string field)
+    {
+        var bad = Fixture.Files[file].Replace(from, to);
+        Assert.NotEqual(Fixture.Files[file], bad);
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { [file] = bad })));
+        Assert.Equal(file, ex.File);
+        Assert.Equal(field, ex.Field);
+    }
+
+    [Theory]
+    [InlineData("      - office: finance_minister\n        from: 1948-05-14\n        sources: *fixture_term_sources\n", "      - office: finance_minister\n        from: 1948-05-14\n", "people[def_two].offices.finance_minister.sources")]
+    [InlineData("      - office: finance_minister\n        from: 1948-05-14\n        sources: *fixture_term_sources", "      - office: finance_minister\n        from: 1948-05-14\n        sources: []", "people[def_two].offices.finance_minister.sources")]
+    [InlineData("https://example.org/term", "http://example.org/term", "people[pm_one].offices.prime_minister.sources[0]")]
+    [InlineData(", checked: 2026-10-18", "", "people[pm_one].offices.prime_minister.sources[0]")]
+    public void OfficeTermSourcesAreRequiredAndComplete(string from, string to, string field)
+    {
+        var bad = Fixture.Files["people.yaml"].Replace(from, to);
+        Assert.NotEqual(Fixture.Files["people.yaml"], bad);
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["people.yaml"] = bad })));
+        Assert.Equal("people.yaml", ex.File);
+        Assert.Equal(field, ex.Field);
     }
 
     [Fact]

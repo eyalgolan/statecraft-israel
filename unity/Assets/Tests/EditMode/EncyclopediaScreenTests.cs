@@ -21,6 +21,7 @@ public class EncyclopediaScreenTests
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
     // A copy with every page approved, so the Hebrew checks also read the pages still pending (security and public_support, #2223).
+    // Then changed (3 Nov 2026): those two were approved (HE batch 2), so no shipped page is pending now.
     static AdvisorCatalog Approved() => AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved"));
 
     [Test]
@@ -154,16 +155,102 @@ public class EncyclopediaScreenTests
             StringAssert.Contains(phrase, line);
     }
 
+    // R-CITY-010: only gdd-0.3 withholds the job income of a city with an enemy military unit on it; gdd-0.1 and legacy keep the base text.
+    [Test]
+    public void Gdd03HeldCityJobIncomeUsesRulesetTextInBothLanguages()
+    {
+        var texts = new[] { En, He };
+        var heldClauses = new[] { "a city with an enemy military unit on it earns no job income that turn", "משרות בעיר שיש בה יחידה צבאית של האויב אינן מכניסות כסף באותו תור" };
+        for (var language = 0; language < texts.Length; language++)
+        {
+            var text = texts[language];
+            foreach (var page in new[] { "cities", "money_debt" })
+            {
+                var variantKey = "advisor.page." + page + ".gdd03.text";
+                var baseKey = "advisor.page." + page + ".text";
+                Assert.IsTrue(text.Has(variantKey), variantKey + " exists");
+                StringAssert.Contains(heldClauses[language], text[variantKey]);
+                StringAssert.DoesNotContain(heldClauses[language], text[baseKey]);
+                foreach (var ruleset in new[] { SaveGame.Gdd03Ruleset, SaveGame.GddRuleset, SaveGame.LegacyRuleset })
+                {
+                    var key = "advisor.page." + page + (ruleset == SaveGame.Gdd03Ruleset ? ".gdd03.text" : ".text");
+                    Assert.IsTrue(text.Has(key), key + " exists");
+                    using var ui = new UiTestKit();
+                    using var nav = new ScreenNav(ui.Root);
+                    using var pedia = new EncyclopediaPresenter(ui.Root, text, Approved(), nav, null, ruleset);
+                    pedia.Open(page);
+                    Assert.AreEqual(text[key], ui.Q<Label>("encyclopedia-page-text").text, key);
+                }
+            }
+        }
+    }
+
+    // R-PROJ-003, R-ARMS-004, R-HOUSE-006: gdd-0.3 names its extra city-project kinds; older rulesets keep the base text.
+    // R-PROJ-003, R-CITY-011: under gdd-0.3 a project moves only with a builder, so the variant does not say it needs no workers.
+    [Test]
+    public void Gdd03ProjectsPageNamesItsExtraKindsInBothLanguages()
+    {
+        var catalog = AdvisorCatalog.Load();
+        var texts = new[] { En, He };
+        var gdd03Kinds = new[]
+        {
+            new[] { "housing", "industry", "arms workshop", "housing repair" },
+            new[] { "דיור", "תעשייה", "סדנת נשק", "שיפוץ דיור" },
+        };
+        for (var language = 0; language < texts.Length; language++)
+        {
+            var text = texts[language];
+            const string baseKey = "advisor.page.projects.text";
+            const string variantKey = "advisor.page.projects.gdd03.text";
+            Assert.IsTrue(text.Has(variantKey), variantKey + " exists");
+            foreach (var kind in gdd03Kinds[language])
+                StringAssert.Contains(kind, text[variantKey]);
+            StringAssert.DoesNotContain(gdd03Kinds[language][2], text[baseKey]);
+            StringAssert.DoesNotContain(gdd03Kinds[language][3], text[baseKey]);
+            var builder = language == 0 ? new[] { "builder", "without one it waits" } : new[] { "יש לו בונה", "בלי בונה הוא ממתין" };
+            foreach (var phrase in builder)
+            {
+                StringAssert.Contains(phrase, text[variantKey]);
+                StringAssert.DoesNotContain(phrase, text[baseKey]);
+            }
+            StringAssert.DoesNotContain(language == 0 ? "needs no workers" : "אינו דורש עובדים", text[variantKey]);
+            var approvedTail = text[baseKey].Substring(text[baseKey].IndexOf(". ", text[baseKey].IndexOf(". ") + 1));
+            StringAssert.EndsWith(approvedTail, text[variantKey], "only the first two sentences change");
+
+            foreach (var ruleset in new[] { SaveGame.Gdd03Ruleset, SaveGame.GddRuleset, SaveGame.LegacyRuleset })
+            {
+                var key = ruleset == SaveGame.Gdd03Ruleset ? variantKey : baseKey;
+                using var ui = new UiTestKit();
+                using var nav = new ScreenNav(ui.Root);
+                using var pedia = new EncyclopediaPresenter(ui.Root, text, catalog, nav, null, ruleset);
+                pedia.Open("projects");
+                Assert.AreEqual(text[key], ui.Q<Label>("encyclopedia-page-text").text, key);
+            }
+        }
+    }
+
+    // R-TURN-004: withdrawal is promised only where the panel offers it.
+    [Test]
+    public void TurnsPageDoesNotPromiseEveryWaitingOrderCanBeWithdrawn()
+    {
+        StringAssert.DoesNotContain("until then you can change or withdraw them", En["advisor.page.turns.text"]);
+        StringAssert.DoesNotContain("ועד אז אפשר לשנות אותן או להסיר אותן", He["advisor.page.turns.text"]);
+        StringAssert.Contains("may be changed (and withdrawn where the panel offers it)", En["advisor.page.turns.text"]);
+        StringAssert.Contains("(ולהסיר אותן אם האפשרות מוצעת במסך)", He["advisor.page.turns.text"]);
+    }
+
     /// <summary>On the SHIPPED catalogue (AdvisorCatalog.Load(), not Approved()), the Hebrew encyclopedia lists every
     /// approved page: the nine that replace How to play, which Beri read as a native speaker on #2095 (1 Nov 2026), and the
     /// other 16, which the owner read as a native speaker the same day ("all 16 pages look good"). Security and Public
-    /// support (#2223) wait for their native read (OQ-4), so they are the only pages the Hebrew list leaves out.</summary>
+    /// support (#2223) wait for their native read (OQ-4), so they are the only pages the Hebrew list leaves out.
+    /// Then changed (3 Nov 2026): the owner read Security and Public support as a native speaker (HE batch 2: "approved"),
+    /// so no page is pending and the Hebrew list leaves none out.</summary>
     [Test]
     public void TheShippedHebrewEncyclopediaListsEveryApprovedPage()
     {
         var shipped = AdvisorCatalog.Load();
         Assert.AreEqual(27, shipped.Pages.Count, "shipped pages");
-        CollectionAssert.AreEquivalent(new[] { "security", "public_support" }, shipped.Pages.Where(p => !p.ApprovedIn(true)).Select(p => p.Id), "pending pages");
+        CollectionAssert.IsEmpty(shipped.Pages.Where(p => !p.ApprovedIn(true)).Select(p => p.Id), "pending pages");
         using var ui = new UiTestKit();
         using var nav = new ScreenNav(ui.Root);
         using var pedia = new EncyclopediaPresenter(ui.Root, He, shipped, nav, null);
@@ -171,8 +258,8 @@ public class EncyclopediaScreenTests
         var entries = ui.Q<ScrollView>("encyclopedia-list").contentContainer.Children().Select(c => c.name).ToList();
         var missing = shipped.Pages.Where(p => p.ApprovedIn(true)).Select(p => p.Id).Where(p => !entries.Contains("encyclopedia-page-" + p)).ToList();
         Assert.IsEmpty(missing, "pages missing from the shipped Hebrew list: " + string.Join(", ", missing));
-        CollectionAssert.DoesNotContain(entries, "encyclopedia-page-security", "pending in Hebrew");
-        CollectionAssert.DoesNotContain(entries, "encyclopedia-page-public_support", "pending in Hebrew");
+        CollectionAssert.Contains(entries, "encyclopedia-page-security", "approved in Hebrew on 3 Nov 2026");
+        CollectionAssert.Contains(entries, "encyclopedia-page-public_support", "approved in Hebrew on 3 Nov 2026");
     }
 
     /// <summary>Under gdd-0.3 a lost city alone does not end the game (R-END-003, #1668): the defeat page says so.</summary>

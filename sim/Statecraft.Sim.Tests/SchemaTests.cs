@@ -29,13 +29,38 @@ public class SchemaTests
     static readonly HashSet<string> Supported = new HashSet<string>
     {
         "$schema", "$ref", "title", "description", "definitions", "type", "properties", "additionalProperties", "required",
-        "items", "minItems", "minLength", "pattern", "minimum", "maximum", "enum",
+        "items", "minItems", "uniqueItems", "minLength", "pattern", "minimum", "exclusiveMinimum", "maximum", "enum",
+        "allOf", "oneOf", "not", "const",
     };
 
     static void Check(JsonElement schema, JsonElement root, JsonNode? value, string path, List<string> errors)
     {
         foreach (var k in schema.EnumerateObject())
             if (!Supported.Contains(k.Name)) throw new InvalidOperationException($"schema keyword '{k.Name}' at {path} is not supported by this test's validator");
+
+        if (schema.TryGetProperty("allOf", out var allOf))
+            foreach (var branch in allOf.EnumerateArray())
+                Check(branch, root, value, path, errors);
+        if (schema.TryGetProperty("oneOf", out var oneOf))
+        {
+            var matches = 0;
+            foreach (var branch in oneOf.EnumerateArray())
+            {
+                var branchErrors = new List<string>();
+                Check(branch, root, value, path, branchErrors);
+                if (branchErrors.Count == 0) matches++;
+            }
+            if (matches != 1) errors.Add($"{path}: must match exactly one allowed shape");
+        }
+        if (schema.TryGetProperty("not", out var not))
+        {
+            var forbiddenErrors = new List<string>();
+            Check(not, root, value, path, forbiddenErrors);
+            if (forbiddenErrors.Count == 0) errors.Add($"{path}: matches a forbidden shape");
+        }
+        if (schema.TryGetProperty("const", out var constant)
+            && !JsonNode.DeepEquals(value, JsonNode.Parse(constant.GetRawText())))
+            errors.Add($"{path}: must equal {constant.GetRawText()}");
 
         if (schema.TryGetProperty("$ref", out var r))
         {
@@ -58,12 +83,16 @@ public class SchemaTests
             else if (val.TryGetValue<double>(out var num) || (val.TryGetValue<long>(out var whole) && (num = whole) == whole))
             {
                 if (schema.TryGetProperty("minimum", out var mn) && num < mn.GetDouble()) errors.Add($"{path}: must be at least {mn.GetDouble()}");
+                if (schema.TryGetProperty("exclusiveMinimum", out var xm) && num <= xm.GetDouble()) errors.Add($"{path}: must be more than {xm.GetDouble()}");
                 if (schema.TryGetProperty("maximum", out var mx) && num > mx.GetDouble()) errors.Add($"{path}: must be at most {mx.GetDouble()}");
             }
         }
         else if (value is JsonArray arr)
         {
             if (schema.TryGetProperty("minItems", out var mi) && arr.Count < mi.GetInt32()) errors.Add($"{path}: needs at least {mi.GetInt32()} entries");
+            if (schema.TryGetProperty("uniqueItems", out var ui) && ui.GetBoolean())
+                for (int i = 0; i < arr.Count; i++)
+                    if (arr.Take(i).Any(x => JsonNode.DeepEquals(x, arr[i]))) { errors.Add($"{path}[{i}]: duplicate entry"); break; }
             if (schema.TryGetProperty("items", out var items))
                 for (int i = 0; i < arr.Count; i++) Check(items, root, arr[i], $"{path}[{i}]", errors);
         }
@@ -143,6 +172,7 @@ public class SchemaTests
     public static IEnumerable<object[]> RealFiles()
     {
         yield return new object[] { "gdd03-events.yaml", "gdd03-events.schema.json" };
+        yield return new object[] { "gdd03-start.yaml", "gdd03-start.schema.json" };
         yield return new object[] { "people.yaml", "people.schema.json" };
         yield return new object[] { "offices.yaml", "offices.schema.json" };
         yield return new object[] { "parties.yaml", "parties.schema.json" };
@@ -198,6 +228,9 @@ public class SchemaTests
         yield return new object[] { "map-overrides.schema.json", "/properties/locations/items", typeof(LocationOverride) };
         yield return new object[] { "gdd03-events.schema.json", "", typeof(ContentLoader).GetNestedType("Gdd03EventsFile", BindingFlags.NonPublic)! };
         yield return new object[] { "gdd03-events.schema.json", "/properties/exclusions/items", typeof(ContentLoader).GetNestedType("EventExclusion", BindingFlags.NonPublic)! };
+        yield return new object[] { "gdd03-start.schema.json", "", typeof(ContentLoader).GetNestedType("Gdd03StartFile", BindingFlags.NonPublic)! };
+        yield return new object[] { "gdd03-start.schema.json", "/properties/military_camps/items", typeof(ContentLoader).GetNestedType("StartCampBinding", BindingFlags.NonPublic)! };
+        yield return new object[] { "gdd03-start.schema.json", "/properties/formation_combat_xp/items", typeof(ContentLoader).GetNestedType("StartFormationCombatXp", BindingFlags.NonPublic)! };
         yield return new object[] { "event.schema.json", "", typeof(GameEvent) };
         yield return new object[] { "event.schema.json", "/properties/conditions/items", typeof(EventCondition) };
         yield return new object[] { "event.schema.json", "/definitions/requirement", typeof(EventRequirement) };
@@ -332,12 +365,95 @@ people:
     }
 
     [Fact]
+    public void OperationRegionsRequireOneOrMoreUniqueNonemptyIds()
+    {
+        const string card = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\noptions:\n  - id: a\n    text: A\n    requires_unit_regions: REGIONS\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        Assert.Empty(Errors("event.schema.json", card.Replace("REGIONS", "[galilee]")));
+        Assert.Contains(Errors("event.schema.json", card.Replace("REGIONS", "[]")), e => e.Contains("at least 1"));
+        Assert.Contains(Errors("event.schema.json", card.Replace("REGIONS", "[galilee, galilee]")), e => e.Contains("duplicate entry"));
+        Assert.Contains(Errors("event.schema.json", card.Replace("REGIONS", "['']")), e => e.Contains("must not be empty"));
+    }
+
+    // R-EFX-009 (review on #2487): debt_dollars is "more than 0", as the loader checks.
+    [Fact]
+    public void DebtDollarsMustBeMoreThanZero()
+    {
+        var card = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\noptions:\n  - { id: a, text: A, debt_dollars: AMOUNT }\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        Assert.Empty(Errors("event.schema.json", card.Replace("AMOUNT", "52")));
+        Assert.Contains(Errors("event.schema.json", card.Replace("AMOUNT", "0")), e => e.Contains("debt_dollars: must be more than 0"));
+    }
+
+    [Fact]
     public void ThePartiesSchemaRejectsATypo() =>
         Assert.Contains(Errors("parties.schema.json", "parties:\n  - { id: mapai, nmae: Mapai }\n"), e => e.Contains("nmae"));
 
     [Fact]
     public void AnUnsupportedKeywordIsRefusedNotIgnored() =>
-        Assert.Throws<InvalidOperationException>(() => Check(JsonDocument.Parse("{\"oneOf\": []}").RootElement, default, JsonValue.Create("x"), "$", new List<string>()));
+        Assert.Throws<InvalidOperationException>(() => Check(JsonDocument.Parse("{\"dependentRequired\": {}}").RootElement, default, JsonValue.Create("x"), "$", new List<string>()));
+
+    [Fact]
+    public void OneOfRequiresExactlyOneMatchingBranch()
+    {
+        var oneMatch = JsonDocument.Parse("{\"oneOf\": [{\"type\": \"string\"}, {\"type\": \"integer\"}]}").RootElement;
+        var twoMatches = JsonDocument.Parse("{\"oneOf\": [{\"type\": \"string\"}, {\"type\": \"string\"}]}").RootElement;
+        var errors = new List<string>();
+        Check(oneMatch, default, JsonValue.Create("x"), "$", errors);
+        Assert.Empty(errors);
+        Check(twoMatches, default, JsonValue.Create("x"), "$", errors);
+        Assert.NotEmpty(errors);
+    }
+
+    [Fact]
+    public void ARequirementSelectsAnOptionOrTrueDivergence()
+    {
+        const string card = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\nREQUIRESoptions:\n  - { id: a, text: A }\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        Assert.Empty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, option: path }]\n")));
+        Assert.Empty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, option: path, diverged: false }]\n")));
+        Assert.Empty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, diverged: true }]\n")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent }]\n")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, diverged: false }]\n")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("REQUIRES", "requires: [{ event: parent, option: path, diverged: true }]\n")));
+    }
+
+    [Fact]
+    public void ConsideredAlternativesNeedWhoWhenAndSources()
+    {
+        const string card = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\noptions:\n  - { id: a, text: A, alternative: ALTERNATIVE }\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        const string source = "[{ url: \"https://example.org\", checked: 2026-10-09 }]";
+        Assert.Empty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, by: the cabinet, date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, by: '', date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: debated, by: '   ', date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, by: '{prime_minister}', date: 1950-01-01, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: debated, by: the cabinet, sources: " + source + " }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: proposed, by: the cabinet, date: 1950-01-01, sources: [] }")));
+        Assert.Empty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: design }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: design, date: 1950-01-01 }")));
+        Assert.NotEmpty(Errors("event.schema.json", card.Replace("ALTERNATIVE", "{ basis: design, by: the cabinet }")));
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(5, true)]
+    [InlineData(0, false)]
+    [InlineData(6, false)]
+    public void SetRungIsOneToFive(int rung, bool valid)
+    {
+        var card = $"id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\noptions:\n  - {{ id: a, text: A, set_rung: {rung} }}\nsources: [{{ url: \"https://example.org\", checked: 2026-10-09 }}]\n";
+        Assert.Equal(valid, Errors("event.schema.json", card).Count == 0);
+    }
+
+    [Fact]
+    public void EventHebrewIsAllOrNone()
+    {
+        const string plain = "id: e\ntitle: T\ntext: X\nfrom: 1950-01-01\nTOPoptions:\n  - { id: a, text: AOPTION }\nsources: [{ url: \"https://example.org\", checked: 2026-10-09 }]\n";
+        Assert.Empty(Errors("event.schema.json", plain.Replace("TOP", "").Replace("OPTION", "")));
+        Assert.Empty(Errors("event.schema.json", plain.Replace("TOP", "title_he: כותרת\ntext_he: טקסט\n").Replace("OPTION", ", text_he: בחירה")));
+        Assert.NotEmpty(Errors("event.schema.json", plain.Replace("TOP", "title_he: כותרת\n").Replace("OPTION", "")));
+        Assert.NotEmpty(Errors("event.schema.json", plain.Replace("TOP", "title_he: כותרת\ntext_he: טקסט\n").Replace("OPTION", "")));
+        Assert.NotEmpty(Errors("event.schema.json", plain.Replace("TOP", "").Replace("OPTION", ", text_he: בחירה")));
+        Assert.NotEmpty(Errors("event.schema.json", plain.Replace("TOP", "text_he_review: agent-checked\n").Replace("OPTION", "")));
+    }
 
     // R-MEDIT-001/002/003: synthetic authoring shape, never runtime content.
     static string SyntheticEditorEnvelope()
@@ -351,7 +467,9 @@ people:
             Regions = new List<MapEditorRegion> { new MapEditorRegion {
                 Hex = new MapEditorHex { Q = 1, R = -2 }, RegionId = "fixture'only" } },
             Infrastructure = new List<MapEditorInfrastructure> { new MapEditorInfrastructure {
-                Hex = new MapEditorHex { Q = 1, R = -2 }, Id = "fixture'only", Kind = "fixture'only", ParentId = "fixture'only" } }
+                Hex = new MapEditorHex { Q = 1, R = -2 }, Id = "fixture'only", Kind = "fixture'only", ParentId = "fixture'only" } },
+            Offsets = new List<MapEditorOffset> { new MapEditorOffset {
+                Id = "fixture_only", Kind = "label", Hex = new MapEditorHex { Q = 1, R = -2 }, EastM = 120, NorthM = -40 } }
         };
         value.Overlay = MapOverrides.Parse("terrain: [{ hex: { q: 1, r: -2 }, value: hills }]\n"
             + "control: [{ hex: { q: 1, r: -2 }, period: fixture_only, value: I }]\n"
@@ -390,6 +508,8 @@ people:
     [InlineData("version: 'map-editor-0.3'", "version: future")]
     [InlineData("ruleset: 'gdd-0.3'", "ruleset: legacy")]
     [InlineData("draft: true", "unknown: true")]
+    [InlineData("kind: 'label'", "kind: 'badge'")]
+    [InlineData("north_m: -40", "north_m: -40.5")]
     public void AuthoringSchemaRejectsWrongVersionRulesetAndMissingFields(string old, string replacement) =>
         Assert.NotEmpty(Errors("map-editor-overlay.schema.json", SyntheticEditorEnvelope().Replace(old, replacement)));
 

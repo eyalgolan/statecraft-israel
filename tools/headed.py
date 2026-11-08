@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["websockets==15.0.1"]
+# dependencies = ["websockets==15.0.1", "pillow==12.3.0"]
 # ///
 """Headed browser checks over the Chrome DevTools Protocol (CDP): real GPU (ANGLE Metal), real mouse events.
 
@@ -9,7 +9,7 @@ serves a WebGL build with web_check's handler, and drives it over one browser-le
 
   boot      boot-phase timings from ?bootlog (optionally under CPU throttling): where the start-up time goes
   navpairs  pairs of clicks on a screen button and a second target, d ms apart or in one frame, under ?navlog
-  loadshot  screenshots during the load and once ready (the loading line, or the boot-failure line)
+  loadshot  screenshots during the load and once ready; a boot-failure line ends the run with exit 1
   profile   visual v1's ?vprofile in a headed 1920x1080 window at --dpr (frame rate uncapped)
   wheel     wheel zoom under ?camlog (#43): a touchpad-like swipe, mouse notches in pixels and lines, over the map and a panel
 
@@ -379,15 +379,48 @@ async def navpairs(args):
     return results
 
 
+def shot_error(path, blank_is_error: bool) -> str | None:
+    """Why the PNG at `path` is no capture: it does not decode, or (blank_is_error) it is one colour throughout. #2697: a
+    loadshot run used to print whatever Chrome wrote. The loading screenshot is only decoded: a plain loading screen is
+    legitimate, the one after GAME OK is not."""
+    from PIL import Image
+    try:
+        with Image.open(path) as im:
+            extrema = im.convert("RGBA").getextrema()
+    except Exception as e:
+        return f"{path} is not a PNG that decodes ({e})"
+    if blank_is_error and all(lo == hi for lo, hi in extrema):
+        return f"{path} is blank (one colour throughout)"
+    return None
+
+
 async def loadshot(args):
     async with Browser(args.build) as b:
         sid = await b.open("bootlog", args.cpu)
-        await b.wait_for(sid, r"BOOT phase=player started|BOOT FAIL")
-        print(await b.shot(sid, args.out + "-loading.png"))
+        line = await b.wait_for(sid, r"BOOT phase=player started|BOOT FAIL")
+        # #2697: a failed boot is a failed run, not a capture. wait_for returns the first match in console order, so a
+        # BOOT FAIL already logged after "player started" is looked for too, before the loading screenshot.
+        line = next((t for t in b.lines(sid) if "BOOT FAIL" in t), line)
+        if "BOOT FAIL" in line:
+            print(f"FAIL: {line}")
+            return 1
+        path = await b.shot(sid, args.out + "-loading.png")
+        if error := shot_error(path, blank_is_error=False):
+            print(f"FAIL: {error}")
+            return 1
+        print(path)
         line = await b.wait_for(sid, r"^GAME OK|BOOT FAIL")
+        if "BOOT FAIL" in line:
+            print(f"FAIL: {line}")
+            return 1
         await asyncio.sleep(2)
         print(line)
-        print(await b.shot(sid, args.out + "-after.png"))
+        path = await b.shot(sid, args.out + "-after.png")
+        if error := shot_error(path, blank_is_error=True):
+            print(f"FAIL: {error}")
+            return 1
+        print(path)
+        return 0
 
 
 async def wheel(args):

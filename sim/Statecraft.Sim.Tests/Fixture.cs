@@ -45,9 +45,11 @@ people:
     offices:
       - office: prime_minister
         from: 1948-05-14
+        sources: &fixture_term_sources [{ url: https://example.org/term, checked: 2026-10-18 }]
       - office: defense_minister
         from: 1948-05-14
         to: 1949-01-01
+        sources: *fixture_term_sources
   - id: def_two
     name: Def Two
     living: false
@@ -56,8 +58,10 @@ people:
     offices:
       - office: defense_minister
         from: 1949-01-01
+        sources: *fixture_term_sources
       - office: finance_minister
         from: 1948-05-14
+        sources: *fixture_term_sources
 ",
         ["legislatures.yaml"] = @"
 legislatures:
@@ -295,6 +299,9 @@ mvp:
   fortify_defence_percent: 150
   hold_defence_percent: 120
   delegation_loyalty_floor: 5
+  operation_wait_turns: 6
+  operation_lapse_security: -0.01
+  operation_truce_break_standing: -0.10
   disloyal_effect_share: 0.5
   move_cost: { coastal_plain: 1, hills: 2, desert: 3 }
   stack_limit: 2

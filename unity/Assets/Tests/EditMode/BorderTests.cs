@@ -33,7 +33,7 @@ public class BorderTests
         MapShaderGlobals.PinWaterTime(100f);   // renders compared pixel for pixel: the sea must not move between them
         // The borders themselves, as SeaTests measures the water: the 1948 villages' houses and trees stand on many edges near
         // gameplay03, and a roof or crown on a walk is not the border's colour.
-        foreach (var n in new[] { "kits", "trees" }) if (VisualToggles.Names.Contains(n)) VisualToggles.Set(n, false);
+        foreach (var n in new[] { "kits", "trees", GroundDetail.Toggle, GroundDetail.ScrubToggle }) if (VisualToggles.Names.Contains(n)) VisualToggles.Set(n, false);
         var cam = Camera.main;
         return (map, cam, cam.GetComponent<CameraRig>());
     }
@@ -319,16 +319,17 @@ public class BorderTests
     /// measured 2026-10-12 (see the test's log), floor below it as the grid readability test does.</summary>
     public const float BandLegibleShare = 0.8f;
 
-    /// <summary>Review M9 (promo-villages): Open measures the bands with the kits and trees off; this one checks them in the
-    /// shipped look. Across proof edges by gameplay03 (the coastal plain's villages) and by Tulkarm, with kits and trees on,
-    /// a walk "reads" when some pixel within 900 m of the edge changes by deltaE76 >= 8 with the borders on against off (a
-    /// roof or crown may cover part of the band, not all of it). At least BandLegibleShare of the walks read.</summary>
+    /// <summary>Review M9 (promo-villages): Open measures the bands with the kits, trees, ground detail and scrub off; this one
+    /// checks them in the shipped look, all four on (#2878's painted scrub and standing bushes are kept off the band, so they
+    /// must not bury it as a roof or crown could). Across proof edges by gameplay03 (the coastal plain's villages) and by
+    /// Tulkarm, a walk "reads" when some pixel within 900 m of the edge changes by deltaE76 >= 8 with the borders on against
+    /// off (a roof, crown or bush may cover part of the band, not all of it). At least BandLegibleShare of the walks read.</summary>
     [UnityTest]
     public IEnumerator TheBandsStillReadThroughTheVillages()
     {
         var (map, cam, rig) = Open();
         yield return null;
-        foreach (var n in new[] { "kits", "trees" }) VisualToggles.Set(n, true);
+        foreach (var n in new[] { "kits", "trees", GroundDetail.Toggle, GroundDetail.ScrubToggle }) VisualToggles.Set(n, true);
         RenderSample.TiltShift(false);
         BorderProof.Show(map);
         int walks = 0, read = 0;
@@ -345,7 +346,7 @@ public class BorderTests
                     shows = Mathf.Abs(w.SignedM[k]) <= 900f && RenderSample.DeltaE(w.On[k], w.Off[k]) >= 8f;
                 if (shows) { read++; here++; }
             }
-            TestContext.WriteLine($"{name}: the band reads on {here} of 9 walks with kits and trees on");
+            TestContext.WriteLine($"{name}: the band reads on {here} of 9 walks in the shipped look");
         }
         float share = read / (float)walks;
         TestContext.WriteLine($"bands legible on {read} of {walks} walks ({share:P0})");

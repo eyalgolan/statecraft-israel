@@ -41,6 +41,10 @@ namespace Statecraft.Game.UI
         readonly Dictionary<string, (Button appoint, Label reason)> rows = new Dictionary<string, (Button, Label)>();
         string? pickFor; string chipsFor = "";
         bool dirty;
+        /// <summary>The seat button last pressed (#2340 M2): Escape from the candidate list gives it the focus back.</summary>
+        string? pressedSeat;
+        readonly PressSource presses;
+        int escapedAt = -1;
 
         public CabinetPresenter(VisualElement root, SimBridge bridge, UiText text, PortraitCatalog? portraits)
         {
@@ -52,7 +56,8 @@ namespace Statecraft.Game.UI
             pmOffices = screen.Q<VisualElement>("cabinet-pm-offices"); chips = screen.Q<VisualElement>("cabinet-parties");
             hemicycle = screen.Q<Hemicycle>("cabinet-hemicycle");
             hemicycle.Mirrored = text["ui.lang"] == UiLanguage.Hebrew;   // the coalition from the right in a right-to-left UI
-            onPm = () => Select(PrimeMinister);
+            presses = new PressSource(screen);
+            onPm = () => Press(PrimeMinister, pmCard.name);
             pmCard.clicked += onPm;
             onPmGeometry = _ => FramePm();
             screen.Q<Label>("cabinet-house-unit").text = text["cabinet.members_unit"];
@@ -69,6 +74,7 @@ namespace Statecraft.Game.UI
         {
             bridge.Changed -= OnChanged;
             pmCard.clicked -= onPm;
+            presses.Dispose();
             pmPortrait?.UnregisterCallback(onPmGeometry); pmPortrait = null;
             foreach (var e in new[] { side, pmOffices, status }) e.UnregisterCallback(onSideGeometry);
             if (screen.userData is System.Action) screen.userData = null;
@@ -86,6 +92,36 @@ namespace Statecraft.Game.UI
         public int Renders { get; private set; }
 
         public void Select(string? office) { Selected = office; Render(); }
+
+        /// <summary>A seat's button (#2340 M2): selects its office, and from the keyboard hands the focus to the first candidate
+        /// that can be appointed. The list comes before the cards in the Tab order, so that candidate was up to 60 Tabs
+        /// away. A pointer press moves no focus (PointerBlur's rule). None can be appointed: the focus stays on the seat.</summary>
+        void Press(string office, string seat)
+        {
+            pressedSeat = seat;
+            Select(office);
+            if (!presses.ByKeyboard) return;
+            var first = candidates.Query<Button>().Where(b => b.enabledInHierarchy).First();
+            if (first == null) return;
+            first.Focus();
+            // The list was hidden until this press, so it may not take the focus before its styles resolve.
+            first.schedule.Execute(() => { if (first.panel != null && first.focusController?.focusedElement is VisualElement v && v.name == seat) first.Focus(); });
+        }
+
+        /// <summary>Escape with the focus in the candidate list (#2340 M2): gives the focus back to the seat that listed them,
+        /// and the Cabinet stays open. True when it did, and also in the frame ScreenNav's Cancel already did it, so
+        /// GameRoot's poll does not close the screen in the same press (AdvisorPresenter.Escape's pattern).</summary>
+        public bool Escape()
+        {
+            if (escapedAt == Time.frameCount) return true;
+            var focused = screen.focusController?.focusedElement as VisualElement;
+            if (focused == null || !candidates.Contains(focused)) return false;
+            var seat = (pressedSeat == null ? null : screen.Q<Button>(pressedSeat)) ?? screen.Q<Button>("seat-" + Selected);
+            if (seat == null) return false;
+            escapedAt = Time.frameCount;
+            FocusReturn.To(seat);
+            return true;
+        }
 
         void OnChanged() { if (ScreenNav.IsOpen(screen)) Render(); else dirty = true; }
 
@@ -154,7 +190,7 @@ namespace Statecraft.Game.UI
                 foreach (var seat in pmHeld)
                 {
                     var office = seat.Office.Id;
-                    var b = new Button(() => Select(office)) { name = "seat-" + office, text = text.Format("cabinet.select_office", ContentNames.Of(text, seat.Office, pm, s.Date)) };
+                    var b = new Button(() => Press(office, "seat-" + office)) { name = "seat-" + office, text = text.Format("cabinet.select_office", ContentNames.Of(text, seat.Office, pm, s.Date)) };
                     b.AddToClassList("pm-office");
                     pmOffices.Add(b);
                 }
@@ -172,7 +208,7 @@ namespace Statecraft.Game.UI
                 foreach (var (key, seat, _) in grid)
                 {
                     var office = seat.Office.Id;
-                    var card = new Button(() => Select(office)) { name = "seat-" + key };
+                    var card = new Button(() => Press(office, "seat-" + key)) { name = "seat-" + key };
                     card.AddToClassList("seat");
                     PersonCard.Build(card, "seat-" + key, text);
                     cards[key] = card;
@@ -272,14 +308,61 @@ namespace Statecraft.Game.UI
             var common = screen.Q<Label>("cabinet-pick-reason");
             common.text = shared == null ? "" : ReasonText(c, shared);
             common.style.display = shared == null ? DisplayStyle.None : DisplayStyle.Flex;
+            // #2743: only a queued appointment changes who can hold an office this turn (Cabinet.cs; Scenario.cs is dated, not
+            // queued), so the exact previews, one per candidate, run only while one is queued.
+            var current = bridge.Queued.Any(x => x is Appoint)
+                ? Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList()) : null;
             foreach (var (person, reason) in list)
             {
                 if (!rows.TryGetValue(person.Id, out var r)) continue;
+                (Rejection rejection, PreviewResult preview)? refused = null;
+                CabinetReason? held = null;
+                if (reason == null && current != null)
+                {
+                    var press = new Appoint(Selected, person.Id);
+                    if (bridge.CanPay(press)) refused = PreviewRefusal(c, press, current);
+                    // Who holds which office once the queue is applied does not depend on Attention, so a person a queued
+                    // appointment puts in another office is disabled even when the press could not be paid for (#2743).
+                    else held = HeldAfterQueue(c, current, person.Id);
+                }
+                var previewReason = refused == null ? null : PreviewReason(c, refused.Value.rejection, refused.Value.preview);
                 r.appoint.text = Describe(person);
-                r.appoint.SetEnabled(reason == null);
-                r.reason.text = shared == null && reason != null ? ReasonText(c, reason) : "";
-                r.reason.style.display = reason == null || shared != null ? DisplayStyle.None : DisplayStyle.Flex;
+                r.appoint.SetEnabled(reason == null && refused == null && held == null);
+                r.reason.text = shared != null ? "" : reason != null ? ReasonText(c, reason) : previewReason ?? (held != null ? ReasonText(c, held) : "");
+                r.reason.style.display = shared == null && (reason != null || refused != null || held != null) ? DisplayStyle.Flex : DisplayStyle.None;
             }
+        }
+
+        /// <summary>The refusal the exact queue left by <paramref name="press"/> would introduce: the press itself, or an
+        /// existing queued order that the current queue accepts. Queue objects are compared by reference so sim-made orders
+        /// never count, and a same-key appointment keeps its existing slot exactly as <see cref="SimBridge.Queue"/> does.</summary>
+        (Rejection rejection, PreviewResult preview)? PreviewRefusal(Content c, Appoint press, PreviewResult current)
+        {
+            var queue = bridge.Queued.ToList();
+            var old = bridge.QueuedLike(press);
+            if (old == null) queue.Add(press);
+            else queue[queue.FindIndex(x => ReferenceEquals(x, old))] = press;
+            var next = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+            var rejection = next.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press))
+                ?? next.Rejected.FirstOrDefault(x => bridge.Queued.Any(q => ReferenceEquals(q, x.Command))
+                    && !current.Rejected.Any(r => ReferenceEquals(r.Command, x.Command)));
+            return rejection == null ? null : (rejection, next);
+        }
+
+        /// <summary>The reasons a queued appointment can create for <paramref name="person"/>: holding another office once the
+        /// queue is applied (Cabinet.CheckReason on the preview's state). Date-bound reasons (a death, an office's dates) are
+        /// left out: the preview's state is a turn later than the appointment.</summary>
+        static readonly string[] HolderKinds = { "is_president", "is_chief_of_staff", "already_holds" };
+
+        CabinetReason? HeldAfterQueue(Content c, PreviewResult current, string person) =>
+            Cabinet.CheckReason(c, current.State, Selected!, person) is CabinetReason r && Array.IndexOf(HolderKinds, r.Kind) >= 0 ? r : null;
+
+        string PreviewReason(Content c, Rejection rejection, PreviewResult preview)
+        {
+            if (rejection.Command is Appoint a && Cabinet.CheckReason(c, preview.State, a.Office, a.Person) is CabinetReason reason
+                && reason.Text == rejection.Reason)
+                return ReasonText(c, reason);
+            return SimBridge.ReasonText(text, rejection.Reason, c, bridge.TownNamesHe);
         }
 
         string ReasonText(Content c, CabinetReason reason)

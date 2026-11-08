@@ -18,7 +18,9 @@ public class Gdd03EventInventoryTests
     static string Num(double v) => v.ToString("G", CultureInfo.InvariantCulture);
 
     /// <summary>Every effect field of every option, in the card's own order: set_policy (by key), set_rung, effects, then
-    /// the structured grant_units, city_effects and unlock_projects. Same-target effects keep their list index.</summary>
+    /// the structured grant_units, city_effects and unlock_projects, then unit_orders (R-ENEMY-005; under gdd-0.3 too since
+    /// R-ENEMY-007, #2543), debt_dollars (R-EFX-009, applied under gdd-0.3 only) and rejoin (R-ALT-009). Same-target effects keep
+    /// their list index.</summary>
     static IEnumerable<(string Field, string Change)> Fields(EventOption o)
     {
         foreach (var kv in o.SetPolicy.OrderBy(kv => kv.Key, StringComparer.Ordinal))
@@ -32,6 +34,10 @@ public class Gdd03EventInventoryTests
             yield return ($"city_effects[{i}].{o.CityEffects[i].City}.{o.CityEffects[i].Field}", Num(o.CityEffects[i].Delta));
         for (int i = 0; i < o.UnlockProjects.Count; i++)
             yield return ($"unlock_projects[{i}]", o.UnlockProjects[i]);
+        for (int i = 0; i < o.UnitOrders.Count; i++)
+            yield return ($"unit_orders[{i}].{o.UnitOrders[i].Unit}", FormattableString.Invariant($"go to ({o.UnitOrders[i].Q}, {o.UnitOrders[i].R})"));
+        if (o.DebtDollars is double debt) yield return ("debt_dollars", Num(debt) + " (US$ m; Debt under gdd-0.3 only)");
+        if (o.Rejoin != "") yield return ("rejoin", $"rejoins `{o.Rejoin}`");
     }
 
     static string Render()
@@ -62,8 +68,12 @@ public class Gdd03EventInventoryTests
                 foreach (var (field, change) in oldFields)
                 {
                     rows++;
+                    // R-ENEMY-005, R-ENEMY-007 (#2543): a card's unit orders run under both GDD rulesets, once the option's
+                    // operation units are in place (requires_unit_regions); the order itself is the same.
                     var (target, delta) = m == null
                         ? ("legacy rulesets only (card excluded)", "none (not in play)")
+                        : field.StartsWith("unit_orders[", StringComparison.Ordinal)
+                        ? ($"`{field}` (same, once its units are in place: R-ENEMY-007)", change)
                         : ($"`{field}` (same)", change);
                     sb.Append($"| `{e.Id}` | `{o.Id}` | `{field}` | {change} | {target} | {delta} | no |\n");
                 }

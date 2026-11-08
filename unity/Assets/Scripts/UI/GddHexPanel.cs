@@ -21,8 +21,9 @@ namespace Statecraft.Game.UI
     /// day it was finished (R-PROJ-001 to R-PROJ-003); under gdd-0.3, on a built arms workshop, its staffing and cycle (#1722,
     /// R-ARMS-005 to R-ARMS-007).</para>
     /// <para>Every number is the sim's, and every order goes through the bridge's queue: the sim rules on it when the turn
-    /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available, Workshops.Check), asked with
-    /// the queue, and a button is disabled only where the sim would refuse that order, or another one in the queue, anyway.</para></summary>
+    /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available, Workshops.Check) and
+    /// Simulation.Preview, asked with the exact queue a press would leave; a button is disabled only where the sim would refuse that
+    /// order, or another one in the queue, anyway.</para></summary>
     public static class GddHexPanel
     {
         public const string HostName = "info-gdd";
@@ -123,9 +124,9 @@ namespace Statecraft.Game.UI
             var target = queued?.Count ?? city.Employed;
             var max = Cities.MaxWorkers(s, id, bridge.Queued);
             var workers = Row(host, "city-workers-row");
-            Button(workers, "city-workers-less", "−", () => Workers(bridge, id, city.Employed, target - 1)).SetEnabled(target > 0);
+            OrderButton(workers, bridge, "city-workers-less", "−", target > 0, () => Workers(bridge, id, city.Employed, target - 1));
             Line(workers, "city-workers", text.Format(queued == null ? "city.workers" : "city.workers_ordered", Groups(text, target)));
-            Button(workers, "city-workers-more", "+", () => Workers(bridge, id, city.Employed, target + 1)).SetEnabled(target < max);
+            OrderButton(workers, bridge, "city-workers-more", "+", target < max, () => Workers(bridge, id, city.Employed, target + 1));
             // The Assign order's Attention price (the queue's, at this turn's start) and when it applies (playtest B7): the
             // Jobs line stays the sim's actual count until End turn. Changing a queued target does not buy another order.
             Line(host, "city-workers-cost", bridge.Content.UsesAttention
@@ -133,15 +134,35 @@ namespace Statecraft.Game.UI
                 : text.Format("city.workers_ordered", Groups(text, target)));
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
-            // each press orders one more group; R-TRAIN-001 takes only civilians without work, and the sim counts every track's
-            // order and the Assign order in the queue against them.
-            var free = Training.Available(s, id, bridge.Queued);
+            // each press orders one more group. The exact preview below asks whether End turn would refuse that order, and
+            // R-TRAIN-001's idle-civilian limit is Training.Available's, over the queue less the orders End turn refuses anyway.
+            // #1548 (owner, 24 October 2026: "Yes, count them"): every queued Train, Reinforce and reassignment still takes
+            // its groups from the civilians without work, as Training.Available counts them (the sim does not take a
+            // reassigned craftsman off them). "Refused anyway" is the current queue's preview, without the press: an order
+            // the press itself would make End turn refuse (a reassignment queued after a Train that takes its civilian) still
+            // counts. The old order's own count is in the queue, so one more group needs one free.
+            var current = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+            var free = Training.Available(s, id, bridge.Queued.Where(x => !current.Rejected.Any(r => ReferenceEquals(r.Command, x))));
             foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && Training.HasFacility(c, s, id, t.Facility)))
             {
-                var ordered = (bridge.QueuedLike(new Train(id, type.Id, 1)) as Train)?.Count ?? 0;
+                var old = bridge.QueuedLike(new Train(id, type.Id, 1));
+                var ordered = (old as Train)?.Count ?? 0;
+                // #2573: the press queues Train(ordered + 1) where SimBridge.Queue puts it (the old order's slot, else last), so
+                // the button asks End turn's own order runner (Simulation.Preview: queue order, conversions before Arms
+                // purchases) whether that exact order would be refused, for a short Arms stock (R-ARMS-003) or any other reason.
+                var press = new Train(id, type.Id, ordered + 1);
+                var queue = bridge.Queued.ToList();
+                var slot = old == null ? -1 : queue.IndexOf(old);
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                // As End turn runs it (GameSession.EndTurn: Step from the turn's start over the committed orders, then the
+                // queue) and as ArmsPurchasePresenter asks it.
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                var accepted = !preview.Rejected.Any(x => ReferenceEquals(x.Command, press));
+                // Nor may the press make End turn refuse a queued order it accepts now (its civilians, Arms or anything else).
+                var causesNoNewRefusal = !bridge.Queued.Any(x => preview.Rejected.Any(r => ReferenceEquals(r.Command, x)) && !current.Rejected.Any(r => ReferenceEquals(r.Command, x)));
                 var row = Row(host, $"city-train-{type.Id}-row");
-                Button(row, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
-                    () => bridge.Queue(new Train(id, type.Id, ordered + 1))).SetEnabled(free >= 1);
+                OrderButton(row, bridge, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
+                    accepted && causesNoNewRefusal && free >= 1, () => bridge.Queue(new Train(id, type.Id, ordered + 1)));
                 if (ordered > 0) Line(row, $"city-train-{type.Id}-ordered", text.Format("city.train_ordered", ordered));
             }
 
@@ -150,8 +171,8 @@ namespace Statecraft.Game.UI
                 var row = Row(host, $"city-cohort-{k.Id}-row");
                 Line(row, $"city-cohort-{k.Id}", text.Format("city.cohort", text["city.track_" + k.Type], Groups(text, k.Count), Turns(text, k.TurnsLeft)));
                 var cancelled = bridge.QueuedLike(new CancelTraining(k.Id)) != null;
-                Button(row, $"city-cohort-{k.Id}-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
-                    () => bridge.Queue(new CancelTraining(k.Id))).SetEnabled(!cancelled);
+                OrderButton(row, bridge, $"city-cohort-{k.Id}-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
+                    !cancelled, () => bridge.Queue(new CancelTraining(k.Id)));
             }
 
             // Return and Reassign (#1511, R-QUAL-002 to R-QUAL-005): one group a press, like Train, shown only where the city has
@@ -162,7 +183,8 @@ namespace Statecraft.Game.UI
             {
                 var back = (bridge.QueuedLike(new ReturnCraftsmen(id, 1)) as ReturnCraftsmen)?.Count ?? 0;
                 var row = Row(host, "city-return-craftsmen-row");
-                Button(row, "city-return-craftsmen", text["city.return_craftsmen"], () => bridge.Queue(new ReturnCraftsmen(id, back + 1))).SetEnabled(back < city.Craftsmen);
+                OrderButton(row, bridge, "city-return-craftsmen", text["city.return_craftsmen"], back < city.Craftsmen,
+                    () => bridge.Queue(new ReturnCraftsmen(id, back + 1)));
                 if (back > 0) Line(row, "city-return-craftsmen-ordered", text.Format("city.train_ordered", back));
             }
             // Training.Available already takes this turn's Train, Reinforce, Assign and Reassign orders off the idle civilians.
@@ -180,8 +202,8 @@ namespace Statecraft.Game.UI
                 var again = bridge.QueuedLike(Order(1));
                 var ordered = again is ReassignCraftsmen rc ? rc.Count : again is ReassignPioneers rp ? rp.Count : 0;
                 var row = Row(host, $"city-reassign-{role}-row");
-                Button(row, "city-reassign-" + role, text.Format("city.reassign_" + role, have), () => bridge.Queue(Order(ordered + 1)))
-                    .SetEnabled(ordered < left && idleLeft >= 1);
+                OrderButton(row, bridge, "city-reassign-" + role, text.Format("city.reassign_" + role, have), ordered < left && idleLeft >= 1,
+                    () => bridge.Queue(Order(ordered + 1)));
                 if (ordered > 0) Line(row, $"city-reassign-{role}-ordered", text.Format("city.train_ordered", ordered));
             }
             var hex = c.SettlementHexes.First(h => h.Id == id);   // every settlement has one
@@ -197,8 +219,8 @@ namespace Statecraft.Game.UI
         {
             var offer = PioneerReturnOrder(bridge, unit);
             if (!offer.Eligible) return;
-            Button(host, $"pioneer-return-{unit}", text.Format("pioneer.return", Group(text, bridge.State, unit)),
-                () => PioneerReturnOrder(bridge, unit, submit: true)).SetEnabled(!offer.WorkOrdered);
+            OrderButton(host, bridge, $"pioneer-return-{unit}", text.Format("pioneer.return", Group(text, bridge.State, unit)), !offer.WorkOrdered,
+                () => PioneerReturnOrder(bridge, unit, submit: true));
         }
 
         /// <summary>The one guarded Return for both the rows and the pioneer card (#1549): Eligible when
@@ -256,10 +278,10 @@ namespace Statecraft.Game.UI
                 {
                     // PioneerWork and StopWork share the unit's key: an order for this unit at this site is this button's.
                     var ordered = bridge.QueuedLike(new PioneerWork(u.Id, action, site.Id)) is PioneerWork p && p.Site == site.Id;
-                    Button(host, $"site-build-{u.Id}", ordered ? text["site.ordered"]
+                    OrderButton(host, bridge, $"site-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("site.build" + key, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, terms.Turns, 0))),
-                        () => bridge.Queue(new PioneerWork(u.Id, action, site.Id))).SetEnabled(!ordered && !taken);
+                        !ordered && !taken, () => bridge.Queue(new PioneerWork(u.Id, action, site.Id)));
                     PioneerReturn(host, bridge, text, u.Id);
                 }
             }
@@ -269,7 +291,8 @@ namespace Statecraft.Game.UI
                 GroupLink(host, bridge, text, unit, selectPioneer);
                 Line(host, "site-state", text.Format("site.building" + key, Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, site, work.TurnsLeft, work.Progress))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
-                Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop" + key], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
+                OrderButton(host, bridge, "site-stop", text[stopping ? "site.ordered" : "site.stop" + key], !stopping,
+                    () => bridge.Queue(new StopWork(unit)));
             }
             else Line(host, "site-state", text.Format("site.built" + key, Date(text, work.BuiltOn.Value)));
         }
@@ -294,13 +317,14 @@ namespace Statecraft.Game.UI
                 if (idle.Count == 0) Line(host, "corridor-no-halutz", text["site.no_halutz"]);
                 // One unit a segment (Q-COR-4): once a group is ordered here, the others' Build is off, as the sim would refuse it.
                 var taken = bridge.Queued.OfType<PioneerWork>().Any(w => w.Site == target);
+                var refusal = Corridors.CheckStart(c, s, action, d, index);
                 foreach (var u in idle)
                 {
                     var ordered = bridge.QueuedLike(new PioneerWork(u.Id, action, target)) is PioneerWork p && p.Site == target;
-                    Button(host, $"corridor-build-{u.Id}", ordered ? text["site.ordered"]
+                    OrderButton(host, bridge, $"corridor-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("corridor.build_" + d.Kind, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Corridors.TurnsToBuild(c, s, u.Id, terms.Turns, 0))),
-                        () => bridge.Queue(new PioneerWork(u.Id, action, target))).SetEnabled(!ordered && !taken);
+                        refusal == null && !ordered && !taken, () => bridge.Queue(new PioneerWork(u.Id, action, target)));
                     PioneerReturn(host, bridge, text, u.Id);
                 }
             }
@@ -310,13 +334,15 @@ namespace Statecraft.Game.UI
                 GroupLink(host, bridge, text, unit, selectPioneer);
                 Line(host, "corridor-state", text.Format("site.building", Group(text, s, unit), Turns(text, Corridors.TurnsToBuild(c, s, unit, terms.Turns - work.Progress, work.Carry))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
-                Button(host, "corridor-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
+                OrderButton(host, bridge, "corridor-stop", text[stopping ? "site.ordered" : "site.stop"], !stopping,
+                    () => bridge.Queue(new StopWork(unit)));
             }
             else Line(host, "corridor-state", text.Format("corridor.built", Date(text, work.BuiltOn.Value)));
         }
 
         /// <summary>The city projects of hex (q, r) (#1122). A project there shows its state and, while it is built, Cancel
-        /// (R-PROJ-002). Else, for the cities in reach (Projects.CitiesFor; none: nothing shows), the city that builds: the one
+        /// (R-PROJ-002); on a city's own hex the list below then holds only the gdd-0.3 housing repair (R-HOUSE-006, #1700),
+        /// which the sim takes there whatever the hex holds. Else, for the cities in reach (Projects.CitiesFor; none: nothing shows), the city that builds: the one
         /// the player picked on this hex, else the queued order's, else the nearest. Build for each kind queues StartProject for
         /// that city and hex, one order a hex (SimBridge's key, so another kind or city replaces it); the Attention is the
         /// bridge's, which refuses an order it cannot pay for as for every order. On a city's own hex (<paramref name="cityHere"/>)
@@ -326,30 +352,73 @@ namespace Statecraft.Game.UI
         {
             var c = bridge.Content; var s = bridge.State;
             string Kind(string id) => PlayerText.Capitalised(ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == id)));
+            var kinds = c.ProjectKinds;
             if (Projects.CityProjectAt(s, q, r) is CityProject project)
             {
                 if (project.BuiltOn is DateTime built)
                 {
                     Line(host, "city-project-state", text.Format("city.project_built", Kind(project.Kind), townName(project.City), Date(text, built)));
                     WorkshopPart(host, bridge, text, project, townName);
-                    return;
                 }
-                Line(host, "city-project-state", text.Format("city.project_building", Kind(project.Kind), townName(project.City), Turns(text, Projects.CityTurnsToBuild(c, s, project.Kind, project.TurnsLeft, project.Progress))));
-                var cancelled = bridge.QueuedLike(new CancelProject(project.Id)) != null;
-                Button(host, "city-project-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
-                    () => bridge.Queue(new CancelProject(project.Id))).SetEnabled(!cancelled);
-                return;
+                else
+                {
+                    Line(host, "city-project-state", text.Format("city.project_building", Kind(project.Kind), townName(project.City), Turns(text, Projects.CityTurnsToBuild(c, s, project.Kind, project.TurnsLeft, project.Progress))));
+                    var cancelled = bridge.QueuedLike(new CancelProject(project.Id)) != null;
+                    OrderButton(host, bridge, "city-project-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
+                        !cancelled, () => bridge.Queue(new CancelProject(project.Id)));
+                    BuilderPart(host, bridge, text, project);
+                }
+                // R-HOUSE-006 (#1700): the sim takes a gdd-0.3 housing repair on its city's own hex whatever that hex holds
+                // (Projects.CheckCityReason), so on a city's own hex the repair is still offered under the project; every other
+                // kind is refused for the project the line above names. No other ruleset loads the kind: nothing more shows.
+                if (!cityHere) return;
+                kinds = c.ProjectKinds.Where(k => k.Id == Projects.HousingRepair).ToList();
             }
+            if (cityHere) Repairs(host, bridge, text, q, r, townName);
             var cities = Projects.CitiesFor(c, s, q, r);
-            if (cities.Count == 0 || c.ProjectKinds.Count == 0) return;
+            if (cities.Count == 0 || kinds.Count == 0) return;
             var queued = bridge.QueuedLike(new StartProject("", "", q, r)) as StartProject;
+
+            // Ask the sim about the exact queue a press would leave: replace this hex's order in its current slot, or append it,
+            // after the committed orders. This costs one preview for each project kind the panel considers while it renders, not
+            // on each frame; an earlier order can make a kind that the current state refuses valid.
+            (string? kind, string? words) Refusal(ProjectKind k, string city)
+            {
+                // #2669 with #2679: a finished game's preview refuses every order, which would replace the buttons with that
+                // refusal; under gdd-0.3 the panel keeps them, disabled by OrderButton (its same rule), so the ended game stays
+                // inspectable. Under the other rules OrderButton does not disable them, so the refusal lines stay.
+                if (s.GameOver != null && c.Ruleset == SaveGame.Gdd03Ruleset) return (null, null);
+                var press = new StartProject(k.Id, city, q, r);
+                var old = bridge.QueuedLike(press);
+                var queue = bridge.Queued.ToList();
+                var slot = old == null ? -1 : queue.IndexOf(old);
+                // An order the Attention left cannot pay for keeps its Build button, as before the preview: the bridge refuses
+                // the press and says why (order.no_attention, SimBridge.Queue). Only the rules are asked, on the state the rest
+                // of the queue leaves (the press replaces this hex's order, so that order is left out too).
+                if (!bridge.CanPay(press))
+                {
+                    if (slot >= 0) queue.RemoveAt(slot);
+                    var rule = Projects.CheckCityReason(c, Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList()).State,
+                        k.Id, city, q, r);
+                    return rule == null ? (null, null) : (rule.Kind, ReasonText(rule, text, c, townName));
+                }
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                var rejected = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press));
+                if (rejected == null) return (null, null);
+
+                var exact = Projects.CheckCityReason(c, preview.State, k.Id, city, q, r);
+                return exact != null
+                    ? (exact.Kind, ReasonText(exact, text, c, townName))
+                    : (null, SimBridge.ReasonText(text, rejected.Reason, c, bridge.TownNamesHe));
+            }
             // Owner ruling on #1150 (21 Oct 2026): under the city's own part the full list ran into the left column on a stacked
             // bar or a short window, so there it folds behind one toggle; a refusal is then one tap away. The open state is the
             // host's class, kept across renders (InfoPanelPresenter.Show closes it for a newly chosen hex).
             var list = host;
             if (cityHere)
             {
-                Button(host, ToggleName, text.Format("city.projects_toggle", c.ProjectKinds.Count), () => host.ToggleInClassList(OpenClass));
+                Button(host, ToggleName, text.Format("city.projects_toggle", kinds.Count), () => host.ToggleInClassList(OpenClass));
                 list = new VisualElement { name = ListName };
                 list.AddToClassList(ListName);
                 host.Add(list);
@@ -373,22 +442,23 @@ namespace Statecraft.Game.UI
                         host.Q("city-project-cities")?.Query<Button>().Where(b => b.enabledSelf).First()?.Focus();
                     }).SetEnabled(id != city);
             }
-            var refusals = c.ProjectKinds.Select(k => Projects.CheckCityReason(c, s, k.Id, city, q, r)).ToList();
-            var words = refusals.Select(x => x == null ? null : ReasonText(x, text, c, townName)).ToList();
+            var refusals = kinds.Select(k => Refusal(k, city)).ToList();
+            var words = refusals.Select(x => x.words).ToList();
             // Every kind refused for one reason (not land, a placement there, the turn's limit): said once, with no buttons,
             // as the map actions do (#398). A kind this city lacks the resource for (R-PROJ-005: the winery outside Rishon
-            // LeZion) does not split that line into one per kind.
-            var shared = words.Where((x, i) => refusals[i]?.Kind != "no_resource").ToList();
+            // LeZion) does not split that line into one per kind, nor does the gdd-0.3 housing repair off its city's own hex
+            // (R-HOUSE-006: repair_city_hex comes before the shared reasons, so it would hide them on every other hex).
+            var shared = words.Where((x, i) => refusals[i].kind != "no_resource" && refusals[i].kind != "repair_city_hex").ToList();
             if (words.All(x => x != null) && shared.Count > 0 && shared.Distinct().Count() == 1) { Line(list, "city-project-reason", shared[0]!); return; }
             // A kind the sim refuses shows its reason alone, which names the kind (no disabled Build above it: one line, not two).
-            for (int i = 0; i < c.ProjectKinds.Count; i++)
+            for (int i = 0; i < kinds.Count; i++)
             {
-                var k = c.ProjectKinds[i];
+                var k = kinds[i];
                 if (words[i] != null) { Line(list, $"city-project-{k.Id}-reason", words[i]!); continue; }
                 var ordered = queued != null && queued.ProjectKind == k.Id && queued.City == city;
-                Button(list, "city-project-" + k.Id, ordered ? text.Format("city.project_ordered", ContentNames.Of(text, k))
+                OrderButton(list, bridge, "city-project-" + k.Id, ordered ? text.Format("city.project_ordered", ContentNames.Of(text, k))
                         : text.Format("city.project_start", ContentNames.Of(text, k), PlayerText.Money(c, "treasury", k.Cost), Turns(text, Projects.CityTurnsToBuild(c, s, k.Id, k.Turns, 0))),
-                    () => bridge.Queue(new StartProject(k.Id, city, q, r))).SetEnabled(!ordered);
+                    !ordered, () => bridge.Queue(new StartProject(k.Id, city, q, r)));
             }
         }
 
@@ -397,7 +467,8 @@ namespace Statecraft.Game.UI
         /// city's first n built workshops in ascending id, so the stepper is the city's count (Workshops.Staffed, or the queued
         /// order's) of Workshops.Built; stepping back to the current count withdraws the order. + is off where Workshops.Check,
         /// asked with this turn's queue, refuses one more, and while a workshop is left unstaffed that refusal shows in the UI's
-        /// language (SimBridge.ReasonText). This workshop: staffed or not (its Workshop record), its cycle under way (staffed
+        /// language (SimBridge.ReasonText). This workshop: staffed or not (its Workshop record, or with an order queued what the
+        /// order makes it, Workshops.Staffs), its cycle under way (staffed
         /// months of Workshops.CycleMonths and the Money paid) or, staffed before or not, the next cycle's price
         /// (Workshops.NextCyclePrice, what the production step would charge), the pause while the enemy holds its city
         /// (Cities.Held, R-CITY-010), and the last turn's pauses for its city as the Why screen words them
@@ -413,21 +484,94 @@ namespace Statecraft.Game.UI
             var target = queued?.Count ?? staffed;
             var refusal = Workshops.Check(c, s, city, target + 1, bridge.Queued);
             var row = Row(host, "city-workshops-row");
-            Button(row, "city-workshops-less", "−", () => Staff(bridge, city, staffed, target - 1)).SetEnabled(target > 0);
+            OrderButton(row, bridge, "city-workshops-less", "−", target > 0, () => Staff(bridge, city, staffed, target - 1));
             Line(row, "city-workshops", text.Format(queued == null ? "city.workshops_staffed" : "city.workshops_ordered", target, built));
-            Button(row, "city-workshops-more", "+", () => Staff(bridge, city, staffed, target + 1)).SetEnabled(refusal == null);
+            OrderButton(row, bridge, "city-workshops-more", "+", refusal == null, () => Staff(bridge, city, staffed, target + 1));
             if (refusal != null && target < built) Line(host, "city-workshops-reason", SimBridge.ReasonText(text, refusal, c, bridge.TownNamesHe));
 
             s.Workshops.TryGetValue(project.Id, out var w);
-            Line(host, "city-workshop-state", text[w?.Staffed == true ? "city.workshop_staffed" : "city.workshop_unstaffed"]);
+            // #2711 item 1: with an order queued, the line follows it as the count above does (Workshops.Staffs), not the record.
+            Line(host, "city-workshop-state", text[queued != null
+                ? (Workshops.Staffs(c, s, project, target) ? "city.workshop_ordered_staffed" : "city.workshop_ordered_unstaffed")
+                : w?.Staffed == true ? "city.workshop_staffed" : "city.workshop_unstaffed"]);
             if (w != null && w.PaidCost is decimal paid)
                 Line(host, "city-workshop-cycle", text.Format("city.workshop_cycle", w.Progress, Workshops.CycleMonths(c)!.Value, PlayerText.Money(c, "treasury", (double)paid)));
             else if (Workshops.NextCyclePrice(c, s, project.Id) is decimal next)
                 Line(host, "city-workshop-cycle", text.Format("city.workshop_next", PlayerText.Money(c, "treasury", (double)next)));
             if (Cities.Held(c, s).Contains(city)) Line(host, "city-workshop-held", text.Format("city.workshop_held", townName(city)));
-            var paused = (bridge.Session.Last?.Why ?? Array.Empty<Cause>()).Where(x => x.Key == CauseKeys.WorkshopPaused && x.Target == city)
+            var paused = (bridge.Session.Last?.Why ?? Array.Empty<Cause>()).Where(x => x.Key == CauseKeys.WorkshopPaused && x.Target == city && x.Args.Count > 1 && x.Args[1] == project.Id.ToString(CultureInfo.InvariantCulture))
                 .Select(x => CauseText.Line(x, c, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text, bridge.TownNamesHe)).Distinct().ToList();
             for (int i = 0; i < paused.Count; i++) Line(host, "city-workshop-paused-" + i.ToString(CultureInfo.InvariantCulture), paused[i]);
+        }
+
+        /// <summary>R-CITY-011 (#1700, #2477), gdd-0.3 only: on a city project being built, whether it has a builder, and its
+        /// city's builder stepper. AssignWorkers(city, "build", n) sets how many of the city's projects being built have one
+        /// (Projects.AssignBuilders), so the stepper is the city's count (Projects.Builders, or the queued order's) of its
+        /// projects being built; stepping back to the current count withdraws the order. + asks End turn's own order runner
+        /// (Simulation.Preview, as Train does) whether n + 1 in the order's slot would be refused, or would make it refuse an
+        /// order of the queue it accepts now, so the queue's job, training, workshop, start and builder orders all count
+        /// whichever runs first. While a project is left without one, that refusal shows in the UI's language. A repair's line
+        /// is <paramref name="line"/>; <paramref name="stepper"/> off leaves the stepper to another project of the hex (Repairs).</summary>
+        static void BuilderPart(VisualElement host, SimBridge bridge, UiText text, CityProject project, string line = "city-project-builder", bool stepper = true)
+        {
+            var c = bridge.Content; var s = bridge.State;
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return;
+            var city = project.City;
+            Line(host, line, text[project.Builder ? "city.project_builder" : "city.project_no_builder"]);
+            if (!stepper) return;
+            var building = s.CityProjects.Values.Count(p => p.City == city && p.BuiltOn == null);
+            var builders = Projects.Builders(s, city);
+            var queued = bridge.QueuedLike(new AssignWorkers(city, Projects.BuildRole, 0)) as AssignWorkers;
+            var target = queued?.Count ?? builders;
+            string? refusal = null;
+            var accepted = true;
+            // A finished game's preview refuses every order: OrderButton already disables + there (#2669), with no reason line.
+            if (s.GameOver == null && target < building)
+            {
+                var press = new AssignWorkers(city, Projects.BuildRole, target + 1);
+                var queue = bridge.Queued.ToList();
+                var slot = queued == null ? -1 : queue.IndexOf(queued);
+                if (slot >= 0) queue[slot] = press; else queue.Add(press);
+                var current = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+                var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+                refusal = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press))?.Reason;
+                // Nor may the press make End turn refuse a queued order it accepts now (a Train or a workshop's worker); then
+                // that order's refusal is the reason line (#2477 review), so a greyed + always says why.
+                var broken = refusal != null ? null : preview.Rejected.FirstOrDefault(r => !ReferenceEquals(r.Command, press)
+                    && queue.Any(x => ReferenceEquals(x, r.Command)) && !current.Rejected.Any(k => ReferenceEquals(k.Command, r.Command)));
+                accepted = refusal == null && broken == null;
+                refusal ??= broken?.Reason;
+            }
+            var row = Row(host, "city-builders-row");
+            OrderButton(row, bridge, "city-builders-less", "−", target > 0, () => Build(bridge, city, builders, target - 1));
+            Line(row, "city-builders", text.Format(queued == null ? "city.builders" : "city.builders_ordered", target, building));
+            OrderButton(row, bridge, "city-builders-more", "+", target < building && accepted, () => Build(bridge, city, builders, target + 1));
+            if (refusal != null) Line(host, "city-builders-reason", SimBridge.ReasonText(text, refusal, c, bridge.TownNamesHe));
+        }
+
+        /// <summary>R-HOUSE-006 with R-CITY-011 (#2477 review): a housing repair being built has no hex of its own
+        /// (Projects.CityProjectAt skips it), so it shows on its city's own hex, where it is offered: its line and whether it
+        /// has a builder. Its city's builder stepper shows once on the hex: under the hex's own project being built when that
+        /// is the same city's, else under the city's first repair, so a city whose only project being built is a repair has
+        /// one too.</summary>
+        static void Repairs(VisualElement host, SimBridge bridge, UiText text, int q, int r, Func<string, string> townName)
+        {
+            var c = bridge.Content; var s = bridge.State;
+            var stepped = new System.Collections.Generic.HashSet<string>();
+            if (Projects.CityProjectAt(s, q, r) is CityProject { BuiltOn: null } here) stepped.Add(here.City);
+            foreach (var repair in s.CityProjects.Values.Where(p => p.Kind == Projects.HousingRepair && p.Q == q && p.R == r && p.BuiltOn == null).OrderBy(p => p.Id))
+            {
+                var kind = PlayerText.Capitalised(ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == repair.Kind)));
+                Line(host, "city-repair-state", text.Format("city.project_building", kind, townName(repair.City),
+                    Turns(text, Projects.CityTurnsToBuild(c, s, repair.Kind, repair.TurnsLeft, repair.Progress))));
+                BuilderPart(host, bridge, text, repair, "city-repair-builder", stepped.Add(repair.City));
+            }
+        }
+
+        static void Build(SimBridge bridge, string city, int current, int count)
+        {
+            if (count != current) { bridge.Queue(new AssignWorkers(city, Projects.BuildRole, count)); return; }
+            if (bridge.QueuedLike(new AssignWorkers(city, Projects.BuildRole, 0)) is Command order) bridge.Withdraw(order);
         }
 
         static void Staff(SimBridge bridge, string city, int current, int count)
@@ -444,10 +588,13 @@ namespace Statecraft.Game.UI
         {
             switch (reason.Kind)
             {
-                case "maabarot_policy": case "not_land": return text["info.map_action_reason." + reason.Kind];
+                case "maabarot_policy": case "not_land": case "depopulated":
+                    return text["info.map_action_reason." + reason.Kind];
                 case "occupied": return text.Format("info.map_action_reason.occupied", text["info.map_action." + reason.Values[0]]);
                 case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), ResourceName(text, reason.Values[1]),
                     ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == reason.Values[2])));
+                case "city_cap": return text.Format("city.project_reason.city_cap", townName(reason.Values[0]));   // R-PROJ-001, gdd-0.3 (#1700)
+                case "repair_city_hex": return text.Format("city.project_reason.repair_city_hex", townName(reason.Values[0]));   // R-HOUSE-006, gdd-0.3
                 case "turn_cap": return text.Format("city.project_reason.turn_cap", int.Parse(reason.Values[0], CultureInfo.InvariantCulture));
                 default: return reason.Text;
             }
@@ -506,6 +653,15 @@ namespace Statecraft.Game.UI
             var b = new Button(onClick) { name = name };
             parent.Add(b);
             b.text = label;   // set once on the panel, so UiDirection's change callback gives it its direction (#1915)
+            return b;
+        }
+
+        /// <summary>An order-producing control: in gdd-0.3, after GameOver it is read-only like the other order panels, while
+        /// disclosure and navigation controls made with <see cref="Button"/> stay available for inspecting the finished game.</summary>
+        static Button OrderButton(VisualElement parent, SimBridge bridge, string name, string label, bool enabled, Action onClick)
+        {
+            var b = Button(parent, name, label, onClick);
+            b.SetEnabled(enabled && (bridge.Content.Ruleset != SaveGame.Gdd03Ruleset || bridge.State.GameOver == null));
             return b;
         }
     }

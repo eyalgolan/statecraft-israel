@@ -179,7 +179,9 @@ public class UnitsInPlayTests
     [Test]
     public void HebrewUnitNumbersAreSourcedAndAgentChecked()
     {
-        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        var withNumberHe = Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)).ToList();
+        Assert.IsNotEmpty(withNumberHe);
+        foreach (var u in withNumberHe)
         {
             StringAssert.IsMatch("[א-ת]", u.NumberHe, u.Id);
             Assert.AreEqual("agent-checked", u.NumberHeReview, u.Id);
@@ -195,7 +197,9 @@ public class UnitsInPlayTests
     {
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
         var state = StateAt(C.Rules.Start, 5, 0.8);
-        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        var withNumberHe = Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)).ToList();
+        Assert.IsNotEmpty(withNumberHe);
+        foreach (var u in withNumberHe)
         {
             var anchor = u.Anchors.FirstOrDefault() ?? new UnitAnchor { Place = "test position" };
             var placed = new PlacedToken(new UnitToken(u, anchor, 0, "", false), default);
@@ -415,7 +419,10 @@ public class UnitsInPlayTests
     // entries taken out, the logged rosters hash to those again).
     // #1536: Givati's token carries the armoured car from 12 June 1948 (was e11d180e... and b459d9a4...; only Givati's
     // lines from the week of 12 June on gain "+figure-vehicle-sandwich-convoy-1948-v2").
-    const string RosterGolden1950 = "2cdb0f00eac9b4ae63f69a9e8067a28ce91dfecddb369b029ba605d727c443a6";
+    // #2551 (#2574; the owner chose "Move them a turn earlier (Recommended)", 4 November 2026): armistice_egypt opens on
+    // 15 February 1949, so its set_rung: 2 comes a turn earlier and the 15 March 1949 roster is already the post-armistice
+    // one (was 2cdb0f00...; the hash comes from the wave-1e stacked gate's he_IL log).
+    const string RosterGolden1950 = "6165e0a830ff1ee24d5df0eec573b83819915aa1cc146800fa8474bc3d1da981";
     const string WeeklyGolden = "10926451645267fe6dbbf146b0e75d6cac84a21f098cf0eb8e2189a84eb7a46f";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
@@ -451,6 +458,7 @@ public class UnitsInPlayTests
             var hexAt = C.Hexes.ToDictionary(h => (h.Q, h.R));
             var anchors = units.Where(UnitRoster.OnMap).SelectMany(u => u.Anchors.Select(a => (u, a))).ToList();
             var log = new List<string>();
+            int airChecked = 0;
             foreach (var (u, a) in anchors)
             {
                 var at = $"{u.Id} {a.Place}";
@@ -470,7 +478,12 @@ public class UnitsInPlayTests
                 }
                 else
                 {
-                    float disc = UnitShowcase.RingRadius * hex * (s.Compact ? UnitGround.CompactScale : 1f);
+                    // #2729: an air token keeps clear by the larger of its ring and the parked aircraft's span; every other
+                    // service by its ring, as before.
+                    float disc = layer.PlacementGround.ClearanceRadius(u.Service, s.Compact);
+                    // Review (#2751, fresh eyes): the expected clearance comes from the placement's own helper, so pin the air
+                    // span independently of it: a parked aircraft keeps at least its full-wing span clear (ParkedSpanRadiusM).
+                    if (u.Service == UnitData.Air) { airChecked++; Assert.GreaterOrEqual(disc, ParkedSpanRadiusM, $"{at}: the air clearance covers the parked span"); }
                     foreach (var (fc, fr) in map.SettlementFootprints)
                         Assert.GreaterOrEqual((fc - c).magnitude, fr * UnitGround.FootprintMargin + disc, $"{at}: the ring reaches a town's buildings");
                 }
@@ -487,6 +500,7 @@ public class UnitsInPlayTests
                     bool overlap = UnitData.Day(a.From) < UnitData.Day(b.To) && UnitData.Day(b.From) < UnitData.Day(a.To);
                     if (overlap) Assert.AreNotEqual((layer.Spots[a].Q, layer.Spots[a].R), (layer.Spots[b].Q, layer.Spots[b].R), $"{anchors[i].u.Id} and {anchors[j].u.Id} share a hex");
                 }
+            Assert.Greater(airChecked, 0, "an air anchor outside the towns was checked against the parked span");
             Debug.Log("UNITS spots\n" + string.Join("\n", log));
             // Review MF1: the anchors whose nearest clear spot was the other side's ground stand on their own side (Etzioni in
             // West Jerusalem; Harel by Saris on the corridor road), and the 7th Brigade is anchored at Hulda, not Latrun.
@@ -543,7 +557,8 @@ public class UnitsInPlayTests
                     continue;
                 }
                 outside++;
-                float ring = layer.PlacementGround.RingRadius(s.Compact);
+                float ring = layer.PlacementGround.ClearanceRadius(u.Service, s.Compact);   // #2729: the span for a parked aircraft
+                if (u.Service == UnitData.Air) Assert.GreaterOrEqual(ring, ParkedSpanRadiusM, $"{at}: the air clearance covers the parked span");
                 foreach (var (fc, fr, id) in footprints)
                 {
                     float reach = fr * (id.StartsWith("camp:") ? 1f : UnitGround.FootprintMargin) + ring;
@@ -672,6 +687,188 @@ public class UnitsInPlayTests
         var p = m.GetColumn(3); var at = new Vector2(p.x, p.z);
         float crown = Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(kind, m);
         return plinths.Any(f => (f.centre - at).sqrMagnitude < (f.radius + crown) * (f.radius + crown));
+    }
+
+    static Bounds MeshBounds(Transform root, bool local)
+    {
+        Bounds? all = null;
+        foreach (var f in root.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (f.sharedMesh == null || f.GetComponentInParent<UnitBadge>(true) != null) continue;
+            var b = f.sharedMesh.bounds;
+            for (int c = 0; c < 8; c++)
+            {
+                var p = f.transform.TransformPoint(new Vector3((c & 1) == 0 ? b.min.x : b.max.x,
+                    (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
+                if (local) p = root.InverseTransformPoint(p);
+                if (all is Bounds a) { a.Encapsulate(p); all = a; } else all = new Bounds(p, Vector3.zero);
+            }
+        }
+        Assert.IsTrue(all.HasValue, root.name + " has mesh geometry");
+        return all!.Value;
+    }
+
+    static Rect ScreenRect(Camera cam, IEnumerable<Vector3> points)
+    {
+        float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+        foreach (var p in points)
+        {
+            var q = cam.WorldToScreenPoint(p);
+            x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+        }
+        return Rect.MinMaxRect(x0, y0, x1, y1);
+    }
+
+    static IEnumerable<Vector3> Corners(Bounds b)
+    {
+        for (int c = 0; c < 8; c++)
+            yield return new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y,
+                (c & 4) == 0 ? b.min.z : b.max.z);
+    }
+
+    static Transform Aircraft(MapScene map) => map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens/squadron_101/Aircraft");
+
+    /// <summary>Issue #2729 option 1: the parked fighter gets one circular tree hole centred on its renderer footprint's
+    /// world-XZ box and reaching all four corners. The planted-tree assertion makes the hide check bite.</summary>
+    [Test]
+    public void ParkedSquadronLeavesNoKitTreeUnderItsFootprint()
+    {
+        // Red-first prediction at ae4bfdaab: fails because the air branch adds no tree hole.
+        var map = BuildMapWithTrees();
+        try
+        {
+            var veg = map.GetComponentInChildren<Statecraft.Game.Map.Kits.VegetationLayer>(true);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 20), 1, 0.8));
+            var aircraft = Aircraft(map); Assert.IsNull(aircraft.GetComponent<ShowcaseFlight>(), "security below 4 parks the aircraft");
+            var bounds = MeshBounds(aircraft, local: false);
+            var centre = new Vector2(bounds.center.x, bounds.center.z);
+            var holes = layer.TreeHoles.Where(h => (h.centre - centre).sqrMagnitude < 1f).ToList();
+            Assert.AreEqual(1, holes.Count, "the parked aircraft has exactly one renderer-sized tree hole");
+            foreach (var x in new[] { bounds.min.x, bounds.max.x })
+                foreach (var z in new[] { bounds.min.z, bounds.max.z })
+                    Assert.LessOrEqual((new Vector2(x, z) - holes[0].centre).magnitude, holes[0].radius + 0.1f,
+                        "every corner of the aircraft's world-XZ footprint is in its tree hole");
+            bool Intersects(Statecraft.Game.Map.Kits.TreeKind kind, Matrix4x4 m)
+            {
+                var p = m.GetColumn(3); float crown = Statecraft.Game.Map.Kits.VegetationLayer.CrownRadius(kind, m);
+                return (new Vector2(p.x, p.z) - holes[0].centre).magnitude < holes[0].radius + crown;
+            }
+            Assert.Greater(veg.Planted().Count(t => Intersects(t.kind, t.m)), 0, "some planted tree reaches the aircraft footprint");
+            Assert.IsFalse(veg.Drawable().Any(t => Intersects(t.kind, t.m)), "no drawn crown reaches the parked aircraft footprint");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Issue #2729 option 1: the parked fighter's conservative footprint is the sourced 11.23 m span at 420x,
+    /// as a disc about its renderer centre; no planned town-model rectangle may meet that disc.</summary>
+    /// <summary>#2729: the parked fighter's clearance radius at the approved aircraft scale (the Spitfire's full-wing
+    /// 11.23 m span at UnitShowcase.AircraftScale, a conservative bound above the clipped LF Mk IXe's about 10.2 m, Efrati
+    /// p. 14), written here so the test builds before the fix too.</summary>
+    const float ParkedSpanRadiusM = 11.23f * UnitShowcase.AircraftScale * 0.5f;
+
+    [Test]
+    public void ParkedSquadronStandsClearOfTownBuildings()
+    {
+        // Red-first prediction at ae4bfdaab: fails at the compact Herzliya-area spot, whose clearing is only the token ring.
+        var map = BuildMapWithTrees();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 20), 1, 0.8));
+            var aircraft = Aircraft(map); Assert.IsNull(aircraft.GetComponent<ShowcaseFlight>(), "security below 4 parks the aircraft");
+            var b = MeshBounds(aircraft, local: false); var flat = new Vector2(b.center.x, b.center.z);
+            var towns = map.GetComponentInChildren<Statecraft.Game.Map.Kits.TownModelLayer>(true);
+            int examined = 0;
+            foreach (var f in map.KitFootprints)
+                foreach (var house in towns.InstancesOf(f.id))
+                {
+                    examined++;
+                    var local = Quaternion.Euler(0f, -house.Yaw, 0f) * new Vector3(flat.x - house.C.x, 0f, flat.y - house.C.y);
+                    var near = new Vector2(Mathf.Clamp(local.x, -0.5f * house.W, 0.5f * house.W),
+                        Mathf.Clamp(local.z, -0.5f * house.D, 0.5f * house.D));
+                    Assert.GreaterOrEqual((new Vector2(local.x, local.z) - near).magnitude, ParkedSpanRadiusM,
+                        $"the parked fighter overlaps {f.id}'s {house.Model} at {house.C}");
+                }
+            Assert.Greater(examined, 0, "planned town houses were examined");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Issue #2729: at the reported 12 km close view, the tail region is the rear 40% of the aircraft's local-Z
+    /// mesh box (the model contract faces +Z). Its projected rectangle must not meet the projected badge rectangle.</summary>
+    [Test]
+    public void ParkedAircraftBadgeDoesNotCoverItsTailRegion()
+    {
+        // Red-first prediction at ae4bfdaab: fails because the air badge remains at the token centre with no airframe offset.
+        var map = BuildMap(); var cam = Camera.main; var oldPosition = cam.transform.position; var oldRotation = cam.transform.rotation;
+        var oldTarget = cam.targetTexture; var target = new RenderTexture(1920, 1080, 0); cam.targetTexture = target;
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 20), 1, 0.8));
+            var aircraft = Aircraft(map); Assert.IsNull(aircraft.GetComponent<ShowcaseFlight>(), "security below 4 parks the aircraft");
+            var local = MeshBounds(aircraft, local: true);
+            local.max = new Vector3(local.max.x, local.max.y, Mathf.Lerp(local.min.z, local.max.z, 0.4f));
+            var tail = Corners(local).Select(aircraft.TransformPoint).ToList();
+            cam.transform.rotation = Quaternion.Euler(CameraRig.Pitch, 0f, 0f);
+            cam.transform.position = aircraft.position - cam.transform.forward * 12000f;
+            layer.FaceCamera(cam);
+            var badge = aircraft.parent.Find("Badge"); float half = badge.lossyScale.x * 0.5f;
+            var badgeRect = ScreenRect(cam, new[] { badge.position - cam.transform.right * half - cam.transform.up * half,
+                badge.position - cam.transform.right * half + cam.transform.up * half, badge.position + cam.transform.right * half - cam.transform.up * half,
+                badge.position + cam.transform.right * half + cam.transform.up * half });
+            Assert.IsFalse(badgeRect.Overlaps(ScreenRect(cam, tail)), "the badge does not cover the projected rear 40% of the parked fighter");
+            // #2729 captures: a badge pushed up past the whole aircraft went under the HUD (12 km) and onto a neighbour's plinth
+            // (31 km). On screen it now stays within one plate of the aircraft: no higher than one plate above its top (where an
+            // unmoved badge stands), and not beyond its sides.
+            var plane = ScreenRect(cam, Corners(MeshBounds(aircraft, local: true)).Select(aircraft.TransformPoint));
+            Assert.LessOrEqual(badgeRect.yMax, plane.yMax + badgeRect.height + 1f, "the badge is not pushed up past the parked aircraft");
+            Assert.IsTrue(badgeRect.center.x >= plane.xMin - badgeRect.width && badgeRect.center.x <= plane.xMax + badgeRect.width
+                && badgeRect.center.y >= plane.yMin - badgeRect.height, "the badge stays by the parked aircraft");
+            int token = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "squadron_101");
+            Assert.AreEqual(badge.position, layer.KeepClear[token][0].center, "the names' keep-clear follows the offset badge");
+        }
+        finally
+        {
+            cam.targetTexture = oldTarget; cam.transform.SetPositionAndRotation(oldPosition, oldRotation);
+            UnityEngine.Object.DestroyImmediate(target); UnityEngine.Object.DestroyImmediate(map.gameObject);
+        }
+    }
+
+    /// <summary>Issue #2729 regression guard: a flying aircraft keeps no tree hole and its badge keeps the old centred home,
+    /// including the existing close-view size adjustment.</summary>
+    [Test]
+    public void FlyingAircraftTokenKeepsItsTreeAndBadgeBehaviour()
+    {
+        // Red-first prediction at ae4bfdaab: passes before the fix; it guards the required flying-token non-change and is
+        // intentionally not weakened.
+        var map = BuildMapWithTrees(); var cam = Camera.main; var oldPosition = cam.transform.position; var oldRotation = cam.transform.rotation;
+        var oldTarget = cam.targetTexture; var target = new RenderTexture(1920, 1080, 0); cam.targetTexture = target;
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 10, 20), 5, 0.8));
+            var aircraft = Aircraft(map); Assert.IsNotNull(aircraft.GetComponent<ShowcaseFlight>(), "security 5 flies the aircraft");
+            var token = aircraft.parent; var badge = token.Find("Badge");
+            var spot = layer.Tokens.Single(p => p.Token.Unit.Id == "squadron_101").Spot;
+            var centre = UnitShowcase.Ground(map, new Vector3((float)spot.X, 0f, (float)spot.Z));
+            cam.transform.rotation = Quaternion.Euler(CameraRig.Pitch, 0f, 0f);
+            cam.transform.position = centre - cam.transform.forward * 12000f;
+            layer.FaceCamera(cam);
+            var home = centre + Vector3.up * (UnitBadge.FigureHeightM * UnitShowcase.FigureScale + UnitBadge.LiftM);
+            float size = UnitBadge.SizeFor(Vector3.Dot(home - cam.transform.position, cam.transform.forward), cam.projectionMatrix[1, 1], cam.orthographic);
+            var expected = home - cam.transform.up * (0.5f * (UnitBadge.SizeM - size));
+            Assert.Less((badge.position - expected).magnitude, 0.1f, "the flying badge retains its centred pre-#2729 position");
+            Assert.AreEqual(size, badge.lossyScale.x, 0.1f, "the flying badge retains its close-view size");
+            var airBounds = MeshBounds(aircraft, local: false); var airCentre = new Vector2(airBounds.center.x, airBounds.center.z);
+            Assert.IsFalse(layer.TreeHoles.Any(h => (h.centre - airCentre).sqrMagnitude < 1f), "a flying aircraft adds no tree hole");
+        }
+        finally
+        {
+            cam.targetTexture = oldTarget; cam.transform.SetPositionAndRotation(oldPosition, oldRotation);
+            UnityEngine.Object.DestroyImmediate(target); UnityEngine.Object.DestroyImmediate(map.gameObject);
+        }
     }
 
     /// <summary>Issue #249: on every date the units are checked on, no kit tree that is drawn has its crown within a shown
@@ -921,7 +1118,13 @@ public class UnitsInPlayTests
             Assert.AreEqual(3, kiryati.Cast<Transform>().Count(t => t.name.StartsWith("Rifleman")), "three riflemen at full strength (Q-UI-3)");
             var badge = kiryati.Find("Badge");
             Assert.IsNotNull(badge, "the promo's badge over every token");
-            Assert.AreEqual(2, badge.GetComponentsInChildren<MeshRenderer>().Length, "a plate and a glyph");
+            // A plate and a glyph show; the hit's flash plate (#2614) is there but off until a hit lands, and nothing else is.
+            var badgeRenderers = badge.GetComponentsInChildren<MeshRenderer>();
+            CollectionAssert.AreEqual(new[] { "Plate", "Glyph" }, badgeRenderers.Where(r => r.enabled).Select(r => r.name).ToArray(), "a plate and a glyph");
+            var hitFlash = badge.Find("HitFlash");
+            Assert.IsNotNull(hitFlash, "the hit's flash plate");
+            Assert.IsFalse(hitFlash.GetComponent<MeshRenderer>().enabled, "the hit's flash is off until a hit lands");
+            Assert.AreEqual(3, badgeRenderers.Length, "the plate, the glyph and the flash, nothing else");
             Assert.Greater(badge.position.y, kiryati.Find("Rifleman0").position.y + UnitBadge.FigureHeightM * UnitShowcase.FigureScale, "above the figures");
             for (int i = 0; i < 3; i++)
             {
@@ -961,6 +1164,25 @@ public class UnitsInPlayTests
             StringAssert.Contains(u.SectorHe ?? u.Sector, UnitCard.For(placed, state, he).Body, u.Id + ": sourced biography retained");
             StringAssert.Contains(u.Sector, UnitCard.For(placed, state, Text).Body, u.Id + ": English biography retained");
         }
+    }
+
+    /// <summary>#2735 item 3 (HE-09): a Latin name inside a Hebrew sector goes between left-to-right marks on the Hebrew
+    /// card, so it stays one run in the right-to-left line; the Hebrew text is otherwise as written, and the English card
+    /// keeps its sector unmarked.</summary>
+    [TestCase("ins_haganah", "HMCS Norsyd")]
+    [TestCase("ins_wedgwood", "HMCS Beauharnois")]
+    [TestCase("lebanese_army", "CIA")]
+    public void TheHebrewCardMarksALatinNameInsideAHebrewSector(string id, string latin)
+    {
+        var u = Units.Single(x => x.Id == id);
+        var placed = new PlacedToken(new UnitToken(u, u.Anchors.FirstOrDefault() ?? new UnitAnchor(), 0, "", false), default);
+        var state = StateAt(C.Rules.Start, 5, 0.8);
+        // Ordinal: NUnit's StringAssert compares by culture, which ignores U+200E, so it would pass with no marks at all.
+        var body = UnitCard.For(placed, state, He).Body;
+        Assert.IsTrue(body.Contains(u.SectorHe!.Replace(latin, "\u200E" + latin + "\u200E"), StringComparison.Ordinal), body);
+        var english = UnitCard.For(placed, state, Text).Body;
+        Assert.IsTrue(english.Contains(u.Sector, StringComparison.Ordinal), english);
+        Assert.IsFalse(english.Contains("\u200E", StringComparison.Ordinal), english);
     }
 
     [Test]
@@ -1148,7 +1370,7 @@ public class UnitsInPlayTests
         StringAssert.Contains("commissioned 1948", ship.Subtitle);
         StringAssert.Contains("Wikipedia only", UnitCard.For(Token("golani", start), start, text).Note, "Golani is still Wikipedia only; Kiryati cites the Haganah lexicon (P66)");
         var hatzor = StateAt(new DateTime(1948, 12, 1), 5, 0.8);
-        StringAssert.DoesNotContain("Wikipedia only", UnitCard.For(Token("squadron_101", hatzor), hatzor, text).Note,
+        StringAssert.DoesNotContain(text["unit.draft_wikipedia"], UnitCard.For(Token("squadron_101", hatzor), hatzor, text).Note,
             "Hatzor's position cites Eduard (review M8: the note is per position)");
         var july = StateAt(new DateTime(1948, 7, 1), 5, 0.8);
         StringAssert.Contains("Wikipedia only", UnitCard.For(Token("squadron_101", july), july, text).Note, "Herzliya's position is Wikipedia only");

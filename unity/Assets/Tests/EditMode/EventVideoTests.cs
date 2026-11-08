@@ -43,6 +43,7 @@ public class EventVideoTests
     {
         var rows = Rows;
         Assert.GreaterOrEqual(rows.Count, 10, "about 12 events have a clip");
+        Assert.IsTrue(rows.All(r => !string.IsNullOrWhiteSpace(r.AltHe) && r.AltHeReview == "agent-checked"), "every shipped clip has agent-checked Hebrew alt text");
         var problems = EventVideoMapping.Problems(rows, C, id => Photos.Find(id) != null, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
         Assert.IsNotEmpty(EventVideoMapping.Load(), "the game finds the mapping in Resources");
@@ -82,6 +83,34 @@ public class EventVideoTests
         Assert.IsTrue(problems.Any(p => p.Contains("no archival photograph")), "no photograph");
         Assert.IsTrue(problems.Any(p => p.Contains("ai_generated must be true")), "not marked AI");
         Assert.IsTrue(problems.Any(p => p.Contains("alt text")), "no proper alt text");
+        var blankReview = Rows.First(r => r.Event == "law_of_return");
+        blankReview.AltHeReview = "";
+        problems = EventVideoMapping.Problems(new[] { blankReview }, C, _ => true, _ => true);
+        Assert.IsTrue(problems.Any(p => p.Contains("alt_he_review must be agent-checked")), "a present blank marker is invalid; remove the key after review");
+    }
+
+    [Test]
+    public void ParseEnforcesTheHebrewReviewLifecycleForBothLists()
+    {
+        const string cleared = "clips:\n  - event: example\n    alt_he: תיאור בעברית\n";
+        Assert.DoesNotThrow(() => EventVideoMapping.Parse(cleared));
+        Assert.Throws<InvalidOperationException>(() => EventVideoMapping.Parse(
+            "clips:\n  - event: example\n    alt_he_review: agent-checked\n"));
+        Assert.Throws<InvalidOperationException>(() => EventVideoMapping.ParseOutcomes(
+            "outcomes:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: pending\n"));
+    }
+
+    [TestCase("")]
+    [TestCase("\"\"")]
+    [TestCase("'   '")]
+    public void BothParsePathsRefuseAPresentBlankHebrewReview(string blank)
+    {
+        var clipError = Assert.Throws<InvalidOperationException>(() => EventVideoMapping.Parse(
+            "clips:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: " + blank + "\n"));
+        StringAssert.Contains("alt_he_review must be agent-checked", clipError!.Message);
+        var outcomeError = Assert.Throws<InvalidOperationException>(() => EventVideoMapping.ParseOutcomes(
+            "outcomes:\n  - event: example\n    alt_he: תיאור בעברית\n    alt_he_review: " + blank + "\n"));
+        StringAssert.Contains("alt_he_review must be agent-checked", outcomeError!.Message);
     }
 
     [Test]
@@ -100,8 +129,9 @@ public class EventVideoTests
     {
         public readonly VisualElement Root; public readonly EventCardPresenter Card; public readonly CardVideo? Video;
         readonly GameObject go; readonly PanelSettings ps; readonly RenderTexture rt;
-        public Rig(string eventId, Func<string, EventVideoMapping.Row?>? clipFor, bool video = true)
+        public Rig(string eventId, Func<string, EventVideoMapping.Row?>? clipFor, bool video = true, UiText? text = null)
         {
+            var t = text ?? Text;
             rt = new RenderTexture(1920, 1080, 0);
             ps = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture = rt;
             go = new GameObject("VideoCardTest"); go.SetActive(false);
@@ -112,7 +142,7 @@ public class EventVideoTests
             g.State.Date = C.Events.First(e => e.Id == eventId).From;
             g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(eventId);
             Video = video ? new CardVideo() : null;
-            Card = new EventCardPresenter(Root, new SimBridge(g, Text), Text, null, Photos, Video, clipFor);
+            Card = new EventCardPresenter(Root, new SimBridge(g, t), t, null, Photos, Video, clipFor);
         }
         public Button Switch => Root.Q<Button>("event-illustration");
         public Label Credit => Root.Q<Label>("event-photo-credit");
@@ -162,6 +192,25 @@ public class EventVideoTests
             Assert.AreEqual("Illustration", r.Switch.text);
             Assert.AreEqual(credit, r.Credit.text, "the photograph's credit is back");
             Assert.IsFalse(r.Card.IllustrationShown);
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator InHebrewTheIllustrationUsesHebrewAltAndFallsBackToEnglish()
+    {
+        LogAssert.ignoreFailingMessages = true;
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var row = Rows.First(x => x.Event == "law_of_return");
+        using (var r = new Rig("law_of_return", From(Rows), text: he))
+        {
+            yield return Frames(4); Press(r.Switch); yield return Frames(2);
+            Assert.AreEqual(row.AltHe, r.Root.Q("event-photo").tooltip);
+        }
+        var fallback = new EventVideoMapping.Row { Event = row.Event, File = row.File, Alt = row.Alt, AltHe = "" };
+        using (var r = new Rig("law_of_return", _ => fallback, text: he))
+        {
+            yield return Frames(4); Press(r.Switch); yield return Frames(2);
+            Assert.AreEqual(row.Alt, r.Root.Q("event-photo").tooltip);
         }
     }
 

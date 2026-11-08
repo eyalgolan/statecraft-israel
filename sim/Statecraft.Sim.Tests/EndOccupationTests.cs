@@ -12,7 +12,7 @@ public class EndOccupationTests
     internal static GameState AwaitingEnd(Content c, bool fled, params Unit[] units) => AwaitingEnd(c, "town_a", fled, units);
 
     /// <summary>A new game with <paramref name="units"/> and <paramref name="id"/> awaiting the end of its occupation. The
-    /// fixture's cities.yaml already has a town_a city, so the stayed annexation tests use town_c (hex 4,0).</summary>
+    /// stayed annexation tests use town_c (hex 4,0).</summary>
     static GameState AwaitingEnd(Content c, string id, bool fled, params Unit[] units)
     {
         var s = CombatTests.With(c, units);
@@ -47,6 +47,13 @@ public class EndOccupationTests
         var s = CombatTests.With(c, Soldier(1, 1, 0));
         var result = Simulation.Step(c, s, new Command[] { new EndOccupation("town_a", SettlementControl.Annex) });
         Assert.Contains("not awaiting the end of its occupation", Assert.Single(result.Rejected).Reason);
+        // #2733 item 1: with a cost the Attention could pay, the refused order's Attention comes back.
+        var costly = CaptureTests.Load(f => f["rules.yaml"] = f["rules.yaml"].Replace("end_occupation: 0", "end_occupation: 2"), CaptureTests.AllTargets);
+        s.Attention = 5;
+        Assert.InRange(AttentionSystem.Cost(costly, s, SettlementControl.EndKind), 0.1, s.Attention);
+        var refused = Simulation.Preview(costly, s, new Command[] { new EndOccupation("town_a", SettlementControl.Annex) });
+        Assert.Contains("not awaiting the end of its occupation", Assert.Single(refused.Rejected).Reason);
+        Assert.Equal(s.Attention, refused.State.Attention);
     }
 
     // R-CTRL-015: Annex then Withdraw, nothing else, no puppet.
@@ -54,7 +61,7 @@ public class EndOccupationTests
     public void TheOptionsAreAnnexThenWithdraw()
     {
         var c = CaptureTests.Load(CaptureTests.AllTargets);
-        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));   // town_a is a fixture city
+        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));
         var before = s.Describe();
         var options = SettlementControl.EndOptions(c, s, "town_c");
         Assert.Equal(new[] { SettlementControl.Annex, SettlementControl.WithdrawOutcome }, options.Select(x => x.Outcome).ToArray());
@@ -103,7 +110,7 @@ public class EndOccupationTests
         Assert.True(s.Settlements["town_a"].Depopulated);
     }
 
-    // R-CTRL-015: withdrawing at the end is the Raid withdrawal: the units leave, the record goes.
+    // R-CTRL-015: withdrawing at the end is the Raid withdrawal: the units leave and the ownerless lost marker remains.
     [Fact]
     public void WithdrawAtTheEndIsTheRaidWithdrawal()
     {
@@ -111,7 +118,8 @@ public class EndOccupationTests
         var s = AwaitingEnd(c, false, Soldier(2, 1, 0));
         var after = Simulation.Step(c, s, new Command[] { new EndOccupation("town_a", SettlementControl.WithdrawOutcome) });
         Assert.Empty(after.Rejected);
-        Assert.False(after.State.Settlements.ContainsKey("town_a"));
+        var lost = after.State.Settlements["town_a"];
+        Assert.Equal(("", "", s.Date, false), (lost.Owner, lost.State, lost.Since, lost.Fled));
         Assert.NotEqual((1, 0), (after.State.Units[2].Q, after.State.Units[2].R));
         Assert.Contains(after.Why, x => x.Target == "town_a" && x.Message.Contains("Its residents are unchanged"));
     }
@@ -182,12 +190,51 @@ public class EndOccupationTests
         Assert.Equal(cities + 1, s.Cities.Count);
     }
 
+    // R-CITY-008, R-CTRL-016 (owner on #2608, 4 November 2026: "Yes, add them (Recommended)"): a stayed town's 60 approved
+    // people join GameState.Population (in the annexed group, our design), so the national record still holds every
+    // city's people. A fled town adds no one ("Territory only, no gain").
+    [Fact]
+    public void AnnexingAStayedPlaceAddsItsPeopleToThePopulationAndAFledOneAddsNone()
+    {
+        var c = CaptureTests.Load(CaptureTests.AllTargets);   // fixture rows are stayed, people 60
+        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));
+        var (total, before) = (s.TotalPopulation, new Dictionary<string, double>(s.Population));
+        Assert.DoesNotContain(Cities.AnnexedGroup, before.Keys);
+        Assert.Null(SettlementControl.End(c, s, "town_c", SettlementControl.Annex, new List<Cause>()));
+        Assert.Equal(60d, s.Population[Cities.AnnexedGroup]);
+        Assert.Equal(total + 60, s.TotalPopulation);
+        Assert.All(before, kv => Assert.Equal(kv.Value, s.Population[kv.Key]));   // the other groups are untouched
+
+        var fled = CaptureTests.LoadFled(new[] { "town_a" }, CaptureTests.AllTargets);
+        var f = AwaitingEnd(fled, true, Soldier(1, 1, 0));
+        var pop = new Dictionary<string, double>(f.Population);
+        Assert.Null(SettlementControl.End(fled, f, "town_a", SettlementControl.Annex, new List<Cause>()));
+        Assert.Equal(pop, f.Population);
+    }
+
+    // R-CITY-008 (#2620 review): an initialized gdd-0.3 ledger fixture keeps its own record of people (R-POP-001), so
+    // annexing a stayed real town there still adds its city but leaves GameState.Population as it was.
+    [Fact]
+    public void AnnexingIntoAnInitializedGdd03LedgerLeavesThePopulationAlone()
+    {
+        var c = PlayerRegionsContentTests.Load(File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "regions.yaml")));
+        var s = PlayerRegions.CreateFixture(c,
+            c.PlayerRegions.Regions.Keys.Select(id => new PlayerRegionPool(id, 0, 0m, 0, 0, Array.Empty<PlayerRegionFacility>())),
+            Array.Empty<PopulationInventoryRow>(), Array.Empty<PopulationTarget>(), Array.Empty<string>(), Array.Empty<string>());
+        Assert.True(s.PopulationLedger.IsInitialized);
+        var pop = new Dictionary<string, double>(s.Population);
+        Assert.Null(Cities.Annex(c, s, c.SettlementTargets.Single(x => x.Id == "nazareth")));
+        Assert.Contains("nazareth", s.Cities.Keys);
+        Assert.Equal(pop, s.Population);
+    }
+
     // R-CTRL-016: an id that is already a city is refused, the state unchanged (Cities.Annex adds one city, never two).
     [Fact]
     public void AnnexingOntoAnExistingCityIsRefused()
     {
         var c = CaptureTests.Load(CaptureTests.AllTargets);
-        var s = AwaitingEnd(c, false, Soldier(1, 1, 0));   // the fixture already has a town_a city
+        var s = AwaitingEnd(c, false, Soldier(1, 1, 0));
+        s.Cities["town_a"] = new City("town_a", 12, 8, 10, 6, 0);   // by hand: the loader refuses a target that is a city (R-CITY-006)
         var before = s.Describe();
         Assert.NotNull(SettlementControl.End(c, s, "town_a", SettlementControl.Annex, new List<Cause>()));
         Assert.Equal(before, s.Describe());
@@ -229,7 +276,7 @@ public class EndOccupationTests
     public void TheEndPreviewIsTheOutcome()
     {
         var c = CaptureTests.Load(f => f["rules.yaml"] = f["rules.yaml"].Replace("end_occupation: 0", "end_occupation: 1"), CaptureTests.AllTargets);
-        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));   // town_a is a fixture city
+        var s = AwaitingEnd(c, "town_c", false, Soldier(1, 4, 0));
         s.Attention = 5;
         var cost = AttentionSystem.Cost(c, s, SettlementControl.EndKind);
         Assert.True(cost > 0);

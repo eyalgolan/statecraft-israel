@@ -10,6 +10,11 @@ namespace Statecraft.Sim
 
         /// <summary>The command kind that converts foreign currency into Money (R-MONEY-004).</summary>
         public const string ConvertDollarsKind = "convert_dollars";
+        /// <summary>R-MONEY-004: the smallest conversion, in US$ millions. DollarsRefusal refuses below it and the UI words that
+        /// refusal from it (SimBridge.ReasonText), so the two cannot drift apart (#2704).</summary>
+        public const int DollarsMinimum = 1;
+        /// <summary>The sim's English for a conversion below <see cref="DollarsMinimum"/>. A constant, since tests name it in
+        /// attributes; DollarsTests pins it to DollarsMinimum.</summary>
         public const string RefusedDollarsMinimum = "Convert at least $1m";
         public const string RefusedDollarsNotAtWar = "Dollars can be converted only during the war";
         public const string RefusedDollarsMonthly = "That is more dollars than may be converted this month";
@@ -35,8 +40,24 @@ namespace Statecraft.Sim
         /// Money, R-MONEY-001), its Delta that change: a Treasury line, and a city's job income (R-CITY-002), whose Target is the
         /// city. A borrowing line (Target debt) is not one: it moves the Treasury and the Debt by the same amount, and the cost it
         /// borrowed for has its own Treasury line. The turn's lines it picks add up to the change (MoneyCausesTests); the turn
-        /// report and the meter tip show the largest (HudModel.Causes).</summary>
-        public static bool MovesMoney(Cause w) => w.Target == "treasury" || w.Key == CauseKeys.WagesPaid;
+        /// report and the meter tip show the largest (HudModel.Causes). An event's Debt line (R-EFX-009, #2457) is one too: the
+        /// Debt it adds has no Treasury line, so it moves the Money (net) by <see cref="MoneyDelta"/>, its Delta negated.</summary>
+        public static bool MovesMoney(Cause w) => w.Target == "treasury" || w.Key == CauseKeys.WagesPaid
+            || (w.Target == "debt" && w.Key == CauseKeys.EventAmount);
+
+        /// <summary>The change a <see cref="MovesMoney"/> line makes to the Money (net): its Delta, negated for a Debt line.</summary>
+        public static double MoneyDelta(Cause w) => w.Target == "debt" ? -w.Delta : w.Delta;
+
+        /// <summary>#2558: <paramref name="w"/> as the Money row (HudModel.Causes) words it. An event's Debt line becomes a
+        /// Money line of its <see cref="MoneyDelta"/> with the same key and Args (the event's title), so it reads "Money IL
+        /// -18.6m (Israel Bonds)" and not as a Debt gain beside the Money lines; any other line is returned as it is.</summary>
+        public static Cause MoneyLine(Content c, Cause w)
+        {
+            if (w.Target != "debt" || w.Key != CauseKeys.EventAmount) return w;
+            var delta = MoneyDelta(w);
+            // "events" as a literal (every event_amount Debt line is EventSystem's), so WhyScreenTests' source scan sees it.
+            return new Cause("events", "treasury", delta, $"{PlayerText.Change(c, "treasury", delta)} ({w.Args[0]})", key: w.Key, args: w.Args);
+        }
 
         /// <summary>#2212: the one Money line for the causes a list leaves out. The turn report and the meter tip show the
         /// largest Money causes (HudModel.Causes, at most HudModel.MaxCauses); this is the sum of the turn's other lines
@@ -45,7 +66,7 @@ namespace Statecraft.Sim
         /// (PlayerText.MoneyChange's rounding). The line is the UI's, never one of the turn's (StepResult.Why).</summary>
         public static Cause? OtherMoney(Content c, IEnumerable<Cause> why, IReadOnlyCollection<Cause> shown)
         {
-            var rest = why.Where(w => MovesMoney(w) && !shown.Contains(w)).Sum(w => w.Delta);
+            var rest = why.Where(w => MovesMoney(w) && !shown.Contains(w)).Sum(MoneyDelta);
             if (PlayerText.MoneyChange(c, "treasury", rest) == PlayerText.MoneyChange(c, "treasury", 0)) return null;
             return new Cause("economy", "treasury", rest, $"{PlayerText.Change(c, "treasury", rest)} (other causes)", key: CauseKeys.MoneyOther);
         }
@@ -109,6 +130,9 @@ namespace Statecraft.Sim
             why.Add(new Cause("economy", "treasury", money,
                 $"Converted {PlayerText.Money(c, "fx_reserves", amount)} of foreign currency into Money: {PlayerText.MoneyChange(c, "treasury", money)}",
                 key: CauseKeys.DollarsConverted, args: new[] { CauseKeys.Number(amount) }));
+            why.Add(new Cause("economy", "fx_reserves", -amount,
+                $"Foreign currency converted into Money: {PlayerText.MoneyChange(c, "fx_reserves", -amount)}",
+                key: CauseKeys.DollarsConvertedFx, args: new[] { CauseKeys.Number(amount) }));
             return null;
         }
 
@@ -120,7 +144,7 @@ namespace Statecraft.Sim
         public static string? DollarsRefusal(Content c, GameState s, int amount, int thisTurn = 0, int? startRung = null)
         {
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires the three values in the GDD loop
-            if (amount < 1) return RefusedDollarsMinimum;
+            if (amount < DollarsMinimum) return RefusedDollarsMinimum;
             if ((startRung ?? s.Rung) < WarRung) return RefusedDollarsNotAtWar;
             if ((long)thisTurn + amount > r.DollarsPerTurn!.Value) return RefusedDollarsMonthly;
             if ((long)s.DollarsConverted + amount > r.DollarsTotal!.Value) return RefusedDollarsTotal;
@@ -181,18 +205,24 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary><see cref="Allocate"/>'s refusals (#2707); the UI maps each to its own string (SimBridge.ReasonText). The English is what a
+        /// Rejected list and a save carry, so it does not change.</summary>
+        public const string RefusedBudgetRequired = "Budget shares are required", RefusedBudgetMinistry = "The budget names a ministry that does not exist in this game",
+            RefusedBudgetFinite = "Budget shares must be finite numbers", RefusedBudgetEveryMinistry = "The budget must give a share to every ministry, and only to them",
+            RefusedBudgetSum = "Budget shares must sum to 1", RefusedBudgetNegative = "Budget shares cannot be negative";
+
         /// <summary>Returns null on success, or the reason the allocation was rejected.</summary>
         public static string? Allocate(Content c, GameState s, Dictionary<string, double> shares)
         {
-            if (shares == null) return "Budget shares are required";
+            if (shares == null) return RefusedBudgetRequired;
             var unknown = shares.Keys.OrderBy(k => k, StringComparer.Ordinal).FirstOrDefault(k => c.Offices.All(o => o.Id != k) && !c.Rules.BudgetStart.ContainsKey(k));   // ordinal: play and replay name the same office
-            if (unknown != null) return "The budget names a ministry that does not exist in this game";
-            if (shares.Values.Any(v => double.IsNaN(v) || double.IsInfinity(v))) return "Budget shares must be finite numbers";
+            if (unknown != null) return RefusedBudgetMinistry;
+            if (shares.Values.Any(v => double.IsNaN(v) || double.IsInfinity(v))) return RefusedBudgetFinite;
             if (!new HashSet<string>(shares.Keys).SetEquals(c.Rules.BudgetStart.Keys))
-                return "The budget must give a share to every ministry, and only to them";
+                return RefusedBudgetEveryMinistry;
             // Summed in key order, not dictionary order, so play and replay agree to the bit whatever order the caller built the map in.
-            if (Math.Abs(shares.OrderBy(kv => kv.Key, StringComparer.Ordinal).Sum(kv => kv.Value) - 1.0) > 1e-6) return "Budget shares must sum to 1";
-            if (shares.Values.Any(v => v < 0)) return "Budget shares cannot be negative";
+            if (Math.Abs(shares.OrderBy(kv => kv.Key, StringComparer.Ordinal).Sum(kv => kv.Value) - 1.0) > 1e-6) return RefusedBudgetSum;
+            if (shares.Values.Any(v => v < 0)) return RefusedBudgetNegative;
             s.Budget = new Dictionary<string, double>(shares);
             return null;
         }

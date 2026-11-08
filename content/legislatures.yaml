@@ -3,7 +3,8 @@ legislatures:
   # its English name, "Constituent Assembly (First Knesset)" (owner, 2026-10-14): he.wiki's "האספה המכוננת" (the
   # election's title; the page redirects to the First Knesset) with the First Knesset's title.
   # body_he_review: agent-checked marks a name an AI agent checked against its sources and no person has read yet
-  # (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15); a native speaker reviews it (#564) and then removes the flag.
+  # (CONTENT_POLICY section 2, rule 6; owner, 2026-10-15); a native speaker, or an AI-assisted contributor who discloses it,
+  # reviews it and then removes the flag (#564; owner, 4 November 2026: "AI-assisted can clear it").
   - id: provisional_state_council
     body: Provisional State Council
     body_he: "מועצת המדינה הזמנית"

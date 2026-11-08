@@ -18,8 +18,9 @@ public class NoAttentionTests
     {
         foreach (var r in c.EraRules.Values.Append(c.Rules)) { r.AttentionCost.Clear(); r.AttentionPerTurn=double.NaN; r.RungAttentionStep=double.NaN; }
     }
+    // R-WAR-005 (#1709): gdd-0.3's quiet-turn counts and the turn's engaged fronts are taken out with the ledger.
     internal static string WithoutLegacyAccounting(string canonical) =>
-        Regex.Replace(Regex.Replace(canonical, @"\npopulation-ledger\{(?:\n  [^\n]*)*", "").Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
+        Regex.Replace(Regex.Replace(canonical, @"\n(?:population-ledger|quiet)\{(?:\n  [^\n]*)*|\nengaged\[(?:\n  [^\n]*)*", "").Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
     static bool Unavailable(string kind) => kind is "map_action" or "set_mobilization" or "security_order";
     static (Content c,GameState s,Command valid,Command invalid) Case(string kind,bool modern)
     {
@@ -83,8 +84,10 @@ public class NoAttentionTests
         var oldGood=Simulation.Preview(oldContent,oldState,new[]{oldValid});
         var oldBad=Simulation.Preview(oldContent,oldState,new[]{oldInvalid});
         Assert.Equal(oldBad.Rejected.Single().Reason,bad.Rejected.Single().Reason);
-        // R-CITY-011 (#1700): under gdd-0.3 a start takes a free person as its builder, its one difference from gdd-0.1.
-        string Same(string modern) { if (kind != "start_project") return modern; Assert.Single(Regex.Matches(modern, ";builder")); return modern.Replace(";builder", ""); }
+        // R-CITY-011 and R-PROJ-001 (#1700 slices A and B): under gdd-0.3 a start takes a free person as its builder and is
+        // counted for its city, its two differences from gdd-0.1.
+        string Same(string modern) { if (kind != "start_project") return modern; Assert.Single(Regex.Matches(modern, ";builder")); Assert.Contains("\ncstart{", modern);
+            return Regex.Replace(modern.Replace(";builder", ""), @"\ncstart\{(?:\n  [^\n]*)*", ""); }
         Assert.Equal(WithoutLegacyAccounting(oldGood.State.Describe()),WithoutLegacyAccounting(Same(good.State.Describe())));
         Assert.Equal(WithoutLegacyAccounting(oldBad.State.Describe()),WithoutLegacyAccounting(bad.State.Describe()));
         Assert.Equal(WithoutLegacyAccounting(Simulation.Step(oldContent,oldState,new[]{oldValid}).State.Describe()),WithoutLegacyAccounting(Same(step.State.Describe())));
@@ -138,12 +141,12 @@ public class NoAttentionTests
         g.State.Units[99]=new Unit(99,"recruit",1,0,side:"israel",strength:1);g.State.NextId=100;
         Assert.Null(g.Commit(new Move(99,2,0)));Assert.Equal(55,g.Now.State.Attention);
         g.EndTurn(Array.Empty<Command>());Assert.Equal(55,g.State.Attention);
-        var text=g.Save.Write();Assert.Equal(4,SaveGame.Parse(text,c.Ruleset).Version);
+        var text=g.Save.Write();Assert.Equal(5,SaveGame.Parse(text,c.Ruleset).Version);
         // Use a fresh session without injected units for actual replay of an authored deferred command.
         var clean=GameSession.New(c,1,Mode.Historical);clean.Step(new[]{new AssignWorkers("town_a","job",1)});
         Assert.Equal(clean.State.Hash(),GameSession.Load(c,clean.Save.Write(),out _).State.Hash());
     }
-    [Fact] public void OpenTurnSchema4ReplaysWithoutInjectedStateAndRejectsTampering()
+    [Fact] public void OpenTurnSchema5ReplaysWithoutInjectedStateAndRejectsTampering()
     {
         var files=Fixture.Gdd(new Dictionary<string,string> {
             ["map/units_1948.yaml"]="units:\n- id: test_force\n  service: army\n  side: israel\n  status: draft\n  strength: { value: 1000, as_of: '1948-05-15' }\n  anchors:\n  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n",

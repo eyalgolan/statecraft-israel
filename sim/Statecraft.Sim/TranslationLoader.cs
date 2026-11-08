@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 
@@ -17,8 +18,10 @@ namespace Statecraft.Sim
 
         static readonly string[] LanguageFiles = { Translations.UiFile, Translations.EventsFile, Translations.ContentFile };
 
-        /// <summary>UI keys only Hebrew may translate, for now (owner, 24 October 2026, #1604): the advisors and How to play.</summary>
-        public static readonly IReadOnlyList<string> HebrewOnlyUi = new[] { "advisor.", "how_to_play." };
+        /// <summary>UI keys only Hebrew may translate, for now (owner, 24 October 2026, #1604): the advisors and How to play, and
+        /// the encyclopedia that replaced How to play (#1606: once the game shows a translated ui.yaml, this is what keeps it
+        /// English or Hebrew, as translations/README.md and tools/translate.py already treat it).</summary>
+        public static readonly IReadOnlyList<string> HebrewOnlyUi = new[] { "advisor.", "how_to_play.", "encyclopedia." };
 
         /// <summary>translations/ beside a folder named content: the repository's beside content/, StreamingAssets/translations
         /// beside StreamingAssets/content. Null for a content folder with another name, such as a test fixture, so a fixture
@@ -129,6 +132,47 @@ namespace Statecraft.Sim
                 if (HebrewOnlyUi.Any(p => kv.Key.StartsWith(p, StringComparison.Ordinal)))
                     throw new ContentException(Where(set, Translations.UiFile), kv.Key,
                         "the advisors and How to play stay English or Hebrew only, for now (owner, 24 October 2026, #1604)");
+        }
+
+        // A placeholder as tools/translate.py's TOKEN reads one: braces around anything that is not a brace.
+        static readonly Regex Token = new Regex(@"\{[^{}]+\}");
+
+        /// <summary>The English UI table of a checkout (unity/Assets/UI/strings.en.yaml beside the folder holding
+        /// <paramref name="contentRoot"/>), or null when there is none, as in a player's StreamingAssets or a test fixture.</summary>
+        internal static string? EnglishUi(string contentRoot)
+        {
+            var parent = Path.GetDirectoryName(Path.GetFullPath(contentRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            var path = parent == null ? null : Path.Combine(parent, "unity", "Assets", "UI", "strings.en.yaml");
+            return path != null && File.Exists(path) ? File.ReadAllText(path) : null;
+        }
+
+        /// <summary>#2598: every non-Hebrew ui.yaml keys only strings that <paramref name="englishUi"/> (strings.en.yaml) has,
+        /// each with as many of each placeholder as the English one, the rule tools/translate.py's _check applies to an
+        /// editor save. A hand-edited file is otherwise never compared: a misspelt key leaves the real one in English with no
+        /// word, and a dropped or renamed placeholder loses its value or makes string.Format throw (UiText.Format). Hebrew is
+        /// held to strings.he.yaml by its own tests.</summary>
+        internal static void CheckUiAgainstEnglish(IEnumerable<TranslationSet> sets, string englishUi)
+        {
+            var english = new Dictionary<string, string>(StringComparer.Ordinal);
+            var stream = new YamlStream();
+            try { stream.Load(new StringReader(englishUi)); }
+            catch (YamlException e) { throw new ContentException("strings.en.yaml", $"line {e.Start.Line}", e.InnerException?.Message ?? e.Message); }
+            if (stream.Documents.Count > 0 && stream.Documents[0].RootNode is YamlMappingNode map)
+                foreach (var kv in map.Children)
+                    if (kv.Key is YamlScalarNode k && kv.Value is YamlScalarNode v) english[k.Value ?? ""] = v.Value ?? "";
+            foreach (var set in sets.Where(s => s.Lang != Translations.Hebrew))
+            {
+                var where = Where(set, Translations.UiFile);
+                var unblock = Unblock(set, where, "it", "string");
+                foreach (var kv in set.Ui)
+                {
+                    if (!english.TryGetValue(kv.Key, out var en)) throw new ContentException(where, kv.Key, "strings.en.yaml has no such key" + unblock);
+                    var tokens = Token.Matches(en).Cast<Match>().Select(m => m.Value).ToList();
+                    var mine = Token.Matches(kv.Value).Cast<Match>().Select(m => m.Value);
+                    if (!tokens.OrderBy(t => t, StringComparer.Ordinal).SequenceEqual(mine.OrderBy(t => t, StringComparer.Ordinal), StringComparer.Ordinal))
+                        throw new ContentException(where, kv.Key, $"placeholders differ from the English ({(tokens.Count == 0 ? "none" : string.Join(", ", tokens))})" + unblock);
+                }
+            }
         }
 
         /// <summary>How a writer unblocks a stale translation without a translator (owner, 1 November 2026: "Refuse + say how

@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/generated-1948-02-netanya-two-storey-balcony-house/generated-1948-02-netanya-two-storey-balcony-house.fbx",
+    "source_sha256": "ea562007b1a42c37a11031fc22c00e45389e887badd6a13d28ae1a63d69c58a7",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/generated-1948-02-netanya-two-storey-balcony-house/generated-1948-02-netanya-two-storey-balcony-house_basecolor.jpg",
+    "colour_map_sha256": "7b4f453f5219857b52b98e59d33f631f4ec1344b2da78d4e0f70e7e61726f704",
+    "source_triangles": 4798,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

@@ -22,12 +22,14 @@ Material:
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs: []
+    m_TexEnvs:
+    - _KitAtlas:
+        m_Texture: {fileID: 18700000, guid: 9094acea2187414c8667b0ab50412374, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _CityWindowDark: 0.95
     - _Jitter: 0
-    - _WindowDark: 0.55
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

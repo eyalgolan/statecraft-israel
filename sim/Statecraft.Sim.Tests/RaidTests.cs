@@ -29,8 +29,7 @@ public class RaidTests
     static ResolveCapture Raid(string id = "town_a") => new ResolveCapture(id, SettlementControl.Raid);
 
     // R-CTRL-010 (Q-RAID-1 (a)): the player's units leave, the soldier and a halutz alike, each to the first free
-    // neighbouring hex, and the place's record goes at once: it is under enemy control again, so the turn's capture check
-    // finds nobody there and nothing to take.
+    // neighbouring hex, and the place keeps only an ownerless lost marker: it is under enemy control again.
     [Fact]
     public void RaidWithdrawsThePlayersUnitsAndReturnsThePlaceToEnemyControl()
     {
@@ -38,22 +37,25 @@ public class RaidTests
         var s = Awaiting(c, Soldier(1, 1, 0), new Unit(2, "halutz", 1, 0));
         var result = Step(c, s, Raid());
         Assert.Empty(result.Rejected);
-        Assert.Empty(result.State.Settlements);
+        var lost = Assert.Single(result.State.Settlements).Value;
+        Assert.Equal(("", "", s.Date, false), (lost.Owner, lost.State, lost.Since, lost.Fled));
         Assert.Equal((2, 0), (result.State.Units[1].Q, result.State.Units[1].R));
         Assert.Equal((2, 0), (result.State.Units[2].Q, result.State.Units[2].R));
         Assert.Contains(result.Why, x => x.Target == "town_a" && x.Message.Contains("under enemy control again"));
         Assert.Contains(Movement.NoEntry(c, result.State), h => h == (1, 0));   // no withdrawal ends on it (R-CTRL-010)
     }
 
-    // R-CTRL-010 (Q-RAID-1 (a), "residents unchanged"): Raid changes the units' hexes and removes the record, and nothing
-    // else: the turn ends exactly as it does for a twin whose units were moved by hand and whose record was never written.
+    // R-CTRL-010 (Q-RAID-1 (a), "residents unchanged"): Raid changes the units' hexes and replaces the capture with the
+    // ownerless marker, and nothing else.
     [Fact]
     public void RaidChangesOnlyTheUnitsHexesAndTheRecord()
     {
         var c = Load();
         var s = Awaiting(c, Soldier(1, 1, 0));
-        var twin = CombatTests.With(c, Soldier(1, 2, 0));
-        Assert.Equal(Step(c, twin).State.Describe(), Step(c, s, Raid()).State.Describe());
+        var next = Step(c, s, Raid()).State;
+        var without = next.Clone(); without.Settlements.Clear();
+        var twin = Step(c, CombatTests.With(c, Soldier(1, 2, 0))).State;
+        Assert.Equal(twin.Describe(), without.Describe());
     }
 
     // R-CTRL-010: a neighbour with an enemy unit, or one already full under the stack limit (the fixture's 2), is passed
@@ -66,7 +68,7 @@ public class RaidTests
         var next = Step(c, s, Raid()).State;
         Assert.Equal((0, 0), (next.Units[1].Q, next.Units[1].R));   // (2, 0) holds an enemy unit
         Assert.Equal((0, 1), (next.Units[2].Q, next.Units[2].R));   // (0, 0) now holds two Israeli units
-        Assert.Empty(next.Settlements);
+        Assert.Equal("", next.Settlements["town_a"].Owner);
     }
 
     // R-CTRL-010, R-CTRL-007: when a unit has no free hex to withdraw to, Raid is refused with a reason, the Attention is
@@ -82,7 +84,27 @@ public class RaidTests
         Assert.Contains("A unit has no free hex", SettlementControl.Resolve(c, s, "town_a", SettlementControl.Raid, why));
         Assert.Empty(why);
         Assert.Equal(before.Describe(), s.Describe());
+        Assert.Equal(before.Hash(), s.Hash());
         Assert.Single(Step(c, before, Raid()).Rejected);
+        // #2733 item 1: with a cost the Attention could pay, the refused order's Attention comes back.
+        var costly = CaptureTests.Load(f => f["rules.yaml"] = f["rules.yaml"].Replace("resolve_capture: 0,", "resolve_capture: 2,"), CaptureTests.AllTargets);
+        before.Attention = 5;
+        Assert.InRange(AttentionSystem.Cost(costly, before, SettlementControl.ResolveKind), 0.1, before.Attention);
+        var refused = Simulation.Preview(costly, before, new Command[] { Raid() });
+        Assert.Contains("A unit has no free hex", Assert.Single(refused.Rejected).Reason);
+        Assert.Equal(before.Attention, refused.State.Attention);
+    }
+
+    [Fact]
+    public void TheLegacyLoopStillRefusesCaptureChoicesWithoutChangingTheirPreview()
+    {
+        var c = ContentLoader.Load(Fixture.Write());   // legacy content, as EraSystemsTests.WithoutTheSwitchTheLoopIsLegacy
+        Assert.False(c.IsGdd);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var before = Simulation.Preview(c, s, Array.Empty<Command>());
+        var result = Simulation.Preview(c, s, new Command[] { new ResolveCapture("town_a", SettlementControl.Raid) });
+        Assert.Equal("That order is not available in this game", Assert.Single(result.Rejected).Reason);
+        Assert.Equal(before.State.Hash(), result.State.Hash());
     }
 
     // R-CTRL-007: ResolveCapture is valid only for a settlement awaiting the choice, and only for an outcome that is built;
@@ -125,7 +147,7 @@ public class RaidTests
     }
 
     // R-CTRL-008 (#797, "Counts as Raid"): on the turn that reaches the game's end, a capture still waiting resolves as
-    // Raid: the units leave and the record goes, and the end state, score included, is the twin's that raided by hand.
+    // Raid: the units leave and the ownerless marker remains.
     [Fact]
     public void ACaptureStillWaitingAtTheEndCountsAsRaid()
     {
@@ -135,28 +157,43 @@ public class RaidTests
         s.Date = twin.Date = c.End.AddDays(-10);   // the next turn ends on the game's end
         var result = Step(c, s);
         Assert.NotNull(result.State.GameOver);
-        Assert.Empty(result.State.Settlements);
+        Assert.Equal("", result.State.Settlements["town_a"].Owner);
         Assert.Equal((2, 0), (result.State.Units[1].Q, result.State.Units[1].R));
         var raid = Assert.Single(result.Why, x => x.Target == "town_a" && x.Key == CauseKeys.PendingBecameRaid);
         Assert.Equal(c.SettlementNames["town_a"] + ": no decision was made before the game ended, so it counts as a raid", raid.Message);
         var other = Step(c, twin).State;
         Assert.Equal(other.Score, result.State.Score);
-        Assert.Equal(other.Describe(), result.State.Describe());
+        var without = result.State.Clone(); without.Settlements.Clear();
+        Assert.Equal(other.Describe(), without.Describe());
     }
 
-    // R-CTRL-008: at the end, a unit with nowhere to go stays while the others leave, and the record still goes (the game
-    // is over). Unit 1 fits on (2, 0) beside unit 7; unit 6 then has no room, and enemy units hold the other neighbours.
+    // R-CTRL-008: at the end, a unit with nowhere to go stays while the others leave, and the record becomes ownerless (the game
+    // is over). The lost marker still remains. Unit 1 fits on (2, 0) beside unit 7; unit 6 then has no room, and enemy units hold the other neighbours.
     [Fact]
-    public void AtTheEndTheRecordGoesEvenWithNowhereToWithdraw()
+    public void AtTheEndTheLostMarkerRemainsEvenWithNowhereToWithdraw()
     {
         var c = Load();
         var s = Awaiting(c, Soldier(1, 1, 0), Soldier(6, 1, 0), Soldier(7, 2, 0), Enemy(3, 0, 0), Enemy(4, 0, 1), Enemy(5, 1, 1));
         s.Date = c.End.AddDays(-10);   // the next turn ends on the game's end
         var next = Step(c, s).State;
         Assert.NotNull(next.GameOver);
-        Assert.Empty(next.Settlements);
+        Assert.Equal("", next.Settlements["town_a"].Owner);
         Assert.Equal((2, 0), (next.Units[1].Q, next.Units[1].R));
         Assert.Equal((1, 0), (next.Units[6].Q, next.Units[6].R));
+    }
+
+    // R-CTRL-008 (#2733 item 3): the captures still waiting at the end resolve in ordinal id order, whatever order they were
+    // captured in: town_c (taken first) resolves after town_a.
+    [Fact]
+    public void PendingCapturesResolveAtTheEndInOrdinalOrder()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Soldier(1, 1, 0), Soldier(2, 4, 0));
+        s.Settlements["town_c"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date);
+        s.Settlements["town_a"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date);
+        s.Date = c.End.AddDays(-10);   // the next turn ends on the game's end
+        var why = Step(c, s).Why;
+        Assert.Equal(new[] { "town_a", "town_c" }, why.Where(x => x.Key == CauseKeys.PendingBecameRaid).Select(x => x.Target));
     }
 
     // R-CTRL-010: a unit keeps its orders when it withdraws, as after a Move; a fortify names the place's hex, so the

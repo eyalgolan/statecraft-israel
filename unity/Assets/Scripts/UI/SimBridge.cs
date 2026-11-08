@@ -16,6 +16,7 @@ namespace Statecraft.Game.UI
     {
         readonly List<Command> deferred = new List<Command>();
         readonly HashSet<int> skipped = new HashSet<int>();
+        readonly HashSet<string> endingCardsSeen = new HashSet<string>(StringComparer.Ordinal);
 
         public GameSession Session { get; private set; }
         public Content Content => Session.Content;
@@ -47,14 +48,40 @@ namespace Statecraft.Game.UI
         public event Action<IReadOnlyList<Rejection>>? TurnEnded;
         /// <summary>Raised after a move or unit order is committed, with the Why lines it added (an attack's result).</summary>
         public event Action<IReadOnlyList<Cause>>? Committed;
-        /// <summary>The engagements the player has just seen resolve, raised after <see cref="Changed"/> has redrawn the map
-        /// (UnitAttackPresenter plays them, #1867): an attack order's at once, and at End Turn only the turn's new ones, not
-        /// the open turn's attack orders, which the turn runs again first. Never on a load or a refused turn.</summary>
+        /// <summary>The engagements the player has just seen resolve, with the lines of the units they destroyed, raised after
+        /// <see cref="Changed"/> has redrawn the map (UnitAttackPresenter plays them, #1867): an attack order's at once, and at
+        /// End Turn only the turn's new ones, not the open turn's attack orders, which the turn runs again first. Never on a
+        /// load or a refused turn.</summary>
         public event Action<IReadOnlyList<Cause>>? CombatResolved;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
         /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
         public event Action? RefusedForAttention;
+        /// <summary>Raised when the player has answered the last objective card of the turn that ended the game
+        /// (<see cref="SeeEndingCard"/>): the end screen shows then (#2536).</summary>
+        public event Action? EndingCardsSeen;
+
+        /// <summary>The cards of the turn that ended the game the player has answered (#2536): Settings' language switch carries
+        /// them to the rebuilt bridge, as it carries Skipped.</summary>
+        public IReadOnlyCollection<string> EndingCardsAnswered => endingCardsSeen;
+        /// <summary>True while a card of the turn that ended the game waits: the objective cards that turn raised (R-OBJ-003,
+        /// R-LOOP-004; the owner's choice "Show the card (Recommended)", 4 November 2026) show before the end screen.</summary>
+        public bool EndingCardWaiting => State.PendingEvents.Any(id => IsEndingCard(id) && !endingCardsSeen.Contains(id));
+        /// <summary>Whether the waiting event is a card of the turn that ended the game (EventSystem.EndingCard).</summary>
+        public bool IsEndingCard(string id) => EventSystem.EndingCard(State, Content.Events.First(e => e.Id == id));
+        /// <summary>Whether the player has answered this card of the turn that ended the game.</summary>
+        public bool EndingCardSeen(string id) => endingCardsSeen.Contains(id);
+
+        /// <summary>Answers a card of the turn that ended the game (#2536). An ended game runs no more turns, so the answer is
+        /// no order: the card is marked seen, and once none waits <see cref="EndingCardsSeen"/> is raised. An objective's card
+        /// has one option and its score is already counted (R-OBJ-003), so nothing in the state changes. Does nothing for
+        /// any other event, or one that is not waiting.</summary>
+        public void SeeEndingCard(string id)
+        {
+            if (!State.PendingEvents.Contains(id) || !IsEndingCard(id) || !endingCardsSeen.Add(id)) return;
+            Notify(Changed);
+            if (!EndingCardWaiting) Notify(EndingCardsSeen);
+        }
 
         readonly UiText text;
         readonly Func<GameSession, IReadOnlyList<Command>, StepResult> step;
@@ -205,7 +232,7 @@ namespace Statecraft.Game.UI
                     return Unknown("city_project", p.ProjectKind, Content.ProjectKinds.Select(x => x.Id)) ?? Unknown("city", p.City, Content.Cities.Select(x => x.Id));
                 case CancelProject x:
                     return Unknown("city_project", x.Project.ToString(System.Globalization.CultureInfo.InvariantCulture), State.CityProjects.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-                // Buying Arms (#781): no ids; the sim refuses a count below one, and borrowing past the debt ceiling (#2198), itself.
+                // Buying Arms (#781): no ids; the sim refuses the count, stock capacity and debt ceiling itself.
                 case BuyArms _: return null;
                 // Answering a capture (#797): the sim refuses a place not awaiting the choice, or an outcome not built yet, with
                 // its own reason and never throws on the id. The capture dialog is PR 10.
@@ -218,7 +245,8 @@ namespace Statecraft.Game.UI
             }
         }
 
-        /// <summary>The sim's English refusals that have a UI string: Orders.Check's (#2045) and the Arms purchase refused at the debt ceiling (#2198).
+        /// <summary>The sim's English refusals that have a UI string: Orders.Check's (#2045) and the Arms-purchase refusals
+        /// (#2198, #2590).
         /// Keyed on the English, so the same words from another check (Movement, Combat, Training, Demobilization give "That
         /// unit is not yours", "There is no such unit" too) read in the UI's language as well.</summary>
         static readonly Dictionary<string, string> ReasonKeys = new Dictionary<string, string>
@@ -245,6 +273,52 @@ namespace Statecraft.Game.UI
             [Training.RefusedNoTraining] = "unit.reinforce_refused.no_training",
             [Training.RefusedCount] = "unit.reinforce_refused.count",
             [Pools.RefusedDebtCeiling] = "arms.refused_debt_ceiling",
+            [Pools.RefusedStockCapacity] = "arms.refused_stock_capacity",
+            [Orders.RefusedCardOrder] = "unit.order_refused.card_order",   // R-ENEMY-005: an operation card's refused go-to
+            [Orders.RefusedLastGarrison] = "unit.order_refused.last_garrison",   // R-CTRL-013: a card's go-to held back
+            // #2707: the move's and the go-to's refusals, Arms bought below one, the call-up's range and Send home's.
+            [Movement.RefusedNoHex] = "unit.move_refused.no_hex",
+            [Movement.RefusedCannotMove] = "unit.move_refused.cannot_move",
+            [Movement.RefusedAlreadyThere] = "unit.move_refused.already_there",
+            [Movement.RefusedOffLand] = "unit.move_refused.off_land",
+            [Movement.RefusedEnemyHex] = "unit.move_refused.enemy_hex",
+            [Movement.RefusedClosed] = "unit.move_refused.closed",
+            [Movement.RefusedNoRoute] = "unit.move_refused.no_route",
+            [Movement.RefusedOutOfReach] = "unit.move_refused.out_of_reach",
+            [Pools.RefusedCount] = "arms.refused_count",
+            [SecuritySystem.RefusedMobilization] = "defence.refused_mobilization",
+            [Demobilization.RefusedNoArmistice] = "unit.send_home_refused.no_armistice",
+            // #2707, batch 2: the workers, craftsmen and pioneers orders, pioneer work, a city project cancel and a training cancel.
+            [Cities.RefusedNoRole] = "city.assign_refused.no_role",
+            [Cities.RefusedNegativeWorkers] = "city.assign_refused.negative",
+            [Qualification.RefusedReturnCount] = "city.qualification_refused.return_count",
+            [Qualification.RefusedReassignCount] = "city.qualification_refused.reassign_count",
+            [Qualification.RefusedNoQualification] = "city.qualification_refused.no_qualification",
+            [Qualification.RefusedNotPioneer] = "unit.order_refused.not_pioneer",
+            [Qualification.RefusedPioneerBusy] = "unit.order_refused.pioneer_busy",
+            [Training.RefusedNoCohort] = "training.cancel_refused.no_group",
+            [Projects.RefusedNotHalutz] = "site.refused.not_halutz",
+            [Projects.RefusedNoWork] = "site.refused.no_work",
+            [Projects.RefusedNoSite] = "site.refused.no_site",
+            [Projects.RefusedNotBuilding] = "site.refused.not_building",
+            [Projects.RefusedNoCityProject] = "city.project_reason.no_project",
+            [Corridors.RefusedNoSegment] = "corridor.refused.no_segment",
+            [EconomySystem.RefusedBudgetRequired] = "budget.refused.required",
+            [EconomySystem.RefusedBudgetMinistry] = "budget.refused.ministry",
+            [EconomySystem.RefusedBudgetFinite] = "budget.refused.finite",
+            [EconomySystem.RefusedBudgetEveryMinistry] = "budget.refused.every_ministry",
+            [EconomySystem.RefusedBudgetSum] = "budget.refused.sum",
+            [EconomySystem.RefusedBudgetNegative] = "budget.refused.negative",
+            [Orders.RefusedNamesNoHex] = "unit.order_refused.names_no_hex",
+            // #2707, batch 3 (the owner's option (b)): a capture answer the end of turn refuses reads as the capture dialog's
+            // reviewed capture.refusal.* line. "Deport is not built yet" and the two "not awaiting" answers have no reviewed line
+            // that fits (capture.refusal.not_awaiting names the place, these do not), so they stay the sim's English.
+            [SettlementControl.RefusedNoOneToDeport] = "capture.refusal.no_one_to_deport",
+            [SettlementControl.RefusedUnknownOutcome] = "capture.refusal.unknown_outcome",
+            // R-ENEMY-007 (#2543): an operation whose units are not in place, or whose front's armistice comes first or is signed.
+            [EventSystem.RefusedOperationUnitsNotInPlace] = "event.operation_refused",
+            [EventSystem.RefusedOperationArmisticeFirst] = "event.operation_refused_armistice_first",
+            [EventSystem.RefusedOperationArmisticeSigned] = "event.operation_refused_armistice_signed",
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -268,19 +342,56 @@ namespace Statecraft.Game.UI
             (Workshops.RefusedBuilt, "workshop.refused_built"),
             (Workshops.RefusedPeople, "workshop.refused_people"),
             (Workshops.RefusedPeopleNoJob, "workshop.refused_people_no_job"),
-        }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
+            // R-CITY-011 (#2477): a builder order past the city's projects being built (Projects.AssignBuilders).
+            (Projects.RefusedBeingBuiltOne, "builder.refused_being_built_one"),
+            (Projects.RefusedBeingBuilt, "builder.refused_being_built"),
+            // R-PROJ-001 under gdd-0.3 (#1700 slice B): a second city project start in one city in one turn.
+            (Projects.RefusedCityCap, "city.project_reason.city_cap"),
+            // #2707: a hex at the stack limit, an instant order short of Attention (the queue's own line), a housing repair off its city.
+            (Movement.RefusedFull, "unit.move_refused.full"),
+            (AttentionSystem.RefusedAttention, "order.no_attention"),
+            (Projects.RefusedRepairCityHex, "city.project_reason.repair_city_hex"),
+            // #2707, batch 3 (option (b)): the capture and end-of-occupation answers that need a unit or a free hex, and an
+            // annexed place that is already a city, as the capture dialog's reviewed lines; {0} is the place.
+            (SettlementControl.RefusedOccupyNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedAnnexNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedWithdrawNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedNoFreeHex, "capture.refusal.no_free_hex"),
+            (Cities.RefusedAlreadyCity, "capture.refusal.already_city"),
+        }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+(?::[^}]*)?\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
         /// else the sim's English as given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's
         /// (ToastPresenter) go through it. With <paramref name="c"/> a value that is a settlement's name reads as the UI names the
-        /// town (its Hebrew name from <paramref name="townsHe"/> in Hebrew), and a course's English as why.cause.course.*.</summary>
+        /// town (its Hebrew name from <paramref name="townsHe"/> in Hebrew), a course's English as why.cause.course.* and a money
+        /// amount in the content's format.</summary>
         public static string ReasonText(UiText text, string reason, Content? c = null, IReadOnlyDictionary<string, string>? townsHe = null)
         {
-            if (ReasonKeys.TryGetValue(reason, out var key)) return text[key];
+            if (ReasonKeys.TryGetValue(reason, out var key))
+            {
+                if (reason != EconomySystem.RefusedDollarsMinimum) return text[key];
+                return c == null ? reason : text.Format(key, PlayerText.Money(c, "fx_reserves", EconomySystem.DollarsMinimum));
+            }
             foreach (var (pattern, format) in ReasonFormats)
                 if (pattern.Match(reason) is { Success: true } m)
-                    return text.Format(format, m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe)).ToArray());
+                    return text.Format(format, CountNoun(text, format,
+                        m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe)).ToArray()));
             return reason;
+        }
+
+        /// <summary>#2530: an English count names its noun in the singular for 1 ("1 civilian without work"); the Hebrew
+        /// strings name the number in a label, grammatical for any count. Any other count reads as the sim's own English.</summary>
+        static object[] CountNoun(UiText text, string key, object[] values)
+        {
+            if (text["ui.lang"] == UiLanguage.Hebrew || values.Length != 2 || values[1] is not string n) return values;
+            values[1] = key switch
+            {
+                "unit.reinforce_refused.idle" => n == "1" ? "1 civilian without work" : n + " civilians without work",
+                "workshop.refused_people" => n == "1" ? "1 civilian or craftsman" : n + " civilians and craftsmen",
+                "workshop.refused_people_no_job" => n == "1" ? "1 civilian or craftsman without a job" : n + " civilians and craftsmen without a job",
+                _ => values[1],
+            };
+            return values;
         }
 
         static string ReasonValue(UiText text, string value, Content? c, IReadOnlyDictionary<string, string>? townsHe)
@@ -299,7 +410,7 @@ namespace Statecraft.Game.UI
 
         string? Refuse(string reason) { reason = ReasonText(text, reason, Content, TownNamesHe); Refused?.Invoke(reason); return reason; }
 
-        static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement).ToList();
+        static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement || x.Key == WhyKeys.Destroyed).ToList();
 
         static void Notify(Action? handlers)
         {
@@ -332,6 +443,7 @@ namespace Statecraft.Game.UI
                 var before = Session.Now.Why.Count;
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
+                WithdrawUnmetOperations();
                 Notify(Changed);
                 var added = Session.Now.Why.Skip(before).ToList();
                 Notify(Committed, added);
@@ -352,6 +464,20 @@ namespace Statecraft.Game.UI
             if (old != null) deferred[deferred.IndexOf(old)] = c; else deferred.Add(c);
             Notify(Changed);
             return null;
+        }
+
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Re-show the card (Recommended)"): after an instant order, a queued
+        /// operation choice whose required units are no longer in place in the state the card shows (<see cref="State"/>) is
+        /// withdrawn, which refunds its Attention, so its card shows again with the missing unit's "Move ... before" line
+        /// instead of End Turn refusing the choice and handing the card to its minister. The caller notifies.</summary>
+        void WithdrawUnmetOperations()
+        {
+            foreach (var q in deferred.OfType<ChooseEventOption>().ToList())
+            {
+                var option = Content.Events.FirstOrDefault(e => e.Id == q.EventId)?.Options.FirstOrDefault(o => o.Id == q.OptionId);
+                if (option != null && option.RequiresUnitRegions.Count != 0 && !EventSystem.OperationStatus(Content, State, option).Met)
+                    deferred.Remove(q);
+            }
         }
 
         public void Withdraw(Command c)
@@ -377,7 +503,7 @@ namespace Statecraft.Game.UI
                 if (e is ArgumentException) UnityEngine.Debug.LogWarning("End Turn refused: " + e.Message);
                 else UnityEngine.Debug.LogException(e);
                 deferred.Clear(); skipped.Clear();
-                LastBatch = Array.Empty<Command>();
+                LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
                 var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
                 var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
                 Notify(Changed);
@@ -392,12 +518,12 @@ namespace Statecraft.Game.UI
             return r;
         }
 
-        /// <summary>Switches to another session (a loaded save), dropping queued orders.</summary>
+        /// <summary>Switches to another session (a loaded save), dropping queued orders and the last batch's metadata.</summary>
         public void Replace(GameSession session)
         {
             Session = session ?? throw new ArgumentNullException(nameof(session));
-            LastBatch = Array.Empty<Command>();
-            deferred.Clear(); skipped.Clear();
+            LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
+            deferred.Clear(); skipped.Clear(); endingCardsSeen.Clear();
             Notify(Changed);
         }
     }

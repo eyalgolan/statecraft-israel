@@ -21,19 +21,26 @@ namespace Statecraft.Game.Map.Collection
     /// into Lydda on 24 September 1950 (<see cref="C54From"/>, <see cref="C54To"/>);</item>
     /// <item>the Egyptian Spitfire flying a slow loop near the western board edge (about 30 km in) toward el-Arish and back (<see cref="SpitfireLoop"/>),
     /// banked into its turns, its propeller turning, its shadow on the ground and a small Egyptian flag over its tail, from 15 May 1948 to 2 January 1949
-    /// (<see cref="SpitfireFrom"/>, <see cref="SpitfireTo"/>, #1932), never on a hex or an airfield.</item>
+    /// (<see cref="SpitfireFrom"/>, <see cref="SpitfireTo"/>, #1932), never on a hex or an airfield;</item>
+    /// <item>two Egyptian Dakotas, a pair on one loop over Tel Aviv, bombing the city (<see cref="DakotaLoop"/>; owner, 4
+    /// November 2026, #2482: "1 + make the visual 2 slightly smaller planes and not 0ne big one"), banked into their turns,
+    /// their propellers turning, their shadows on the ground and Egypt's flag over each tail, on the turns of the first
+    /// bombing period, 15 May to 11 June 1948 (<see cref="DakotaFrom"/>, <see cref="DakotaTo"/>; SeaAirCollection.Dakota.cs), and
+    /// of the second, 8 to 17 July 1948 (<see cref="DakotaSecondFrom"/>), when Tel Aviv's air defence flies against them: two
+    /// of 101 Squadron's Avia S-199s attack the lead, hitting it but never bringing it down, and anti-aircraft fire brings
+    /// the wing down (<see cref="TelAvivAirDefence"/>; SeaAirCollection.AirDefence.cs).</item>
     /// </list>
     /// The boats lie on the open sea past the surf, where SeaCraft's own boats sail (SeaCraft.OffshoreNearM to OffshoreM out
     /// from the same shore points), each hull clear of the harbour works, of SeaCraft's boats and of each other
     /// (SeaCraft.Clear). Every craft is at the one world scale of the map's ambient models (<see cref="SizeOf"/>: 24x real,
     /// set by the steam train; #1030, #1033), except the Spitfire at the unit tokens'
-    /// aircraft scale (420x, #2014). The C-54 stands on the nearest free ground by the airport, clear of the kits,
+    /// aircraft scale (420x, #2014) and the Dakotas a little under it (<see cref="DakotaScale"/>, #2482). The C-54 stands on the nearest free ground by the airport, clear of the kits,
     /// routes, units and the player's placements, with the kit trees under it left out (VegetationLayer.Hide, as under the
     /// unit figures). Every craft draws at every zoom, as SeaCraft's boats do. Each model is the Far mesh, asked of
     /// <see cref="CollectionStream"/> when first wanted, so nothing is fetched before the first frame. It fails open: a model
     /// that does not stream logs one warning and is not drawn; the map plays on.</summary>
     [ExecuteAlways]
-    public sealed class SeaAirCollection : MonoBehaviour
+    public sealed partial class SeaAirCollection : MonoBehaviour
     {
         public const string Name = "SeaAirCollection";
         public const string Altalena = "vehicle-altalena-lst-1948-v2wl";
@@ -41,6 +48,7 @@ namespace Statecraft.Game.Map.Collection
         public const string Steamer = "vehicle-immigrant-steamer-1948-v2wl";
         public const string C54 = "figure-vehicle-c54-skymaster-1948-v2";
         public const string Spitfire = CollectionCatalog.EgyptianSpitfire;
+        public const string Dakota = CollectionCatalog.EgyptianDakota;
 
         /// <summary>The card whose window dates the Altalena (content/events/altalena.yaml).</summary>
         public const string AltalenaEvent = "altalena";
@@ -78,16 +86,18 @@ namespace Statecraft.Game.Map.Collection
         const float FootM = 0.3048f;
         public static float RealLengthM(string model) => model switch
         {
-            Altalena => 328f * FootM, C54 => 35.81f, Steamer => 80f, FishingBoat => 10f, Spitfire => 11.23f,
+            Altalena => 328f * FootM, C54 => 35.81f, Steamer => 80f, FishingBoat => 10f, Spitfire => 11.23f, Dakota => DakotaSpanM,
             _ => throw new ArgumentException($"'{model}' is not one of #669's models", nameof(model)),
         };
 
         /// <summary>The model's long side on the map (m): its real size at the one world scale of every Tal Heuberger model that is not
         /// a game piece (SettlementKits.ModelScale, 24x: an 8.5 m house as long as the steam train's 204 m locomotive car; the
         /// owner, 18 October 2026, #1033: "Train scale for all ambient life"). The Altalena is 2.4 km, the C-54 860 m across. The one exception is the
-        /// Spitfire, drawn at the unit tokens' aircraft scale (UnitShowcase.AircraftScale, 420x: 4.7 km across), so it reads at strategic zoom (owner ruling, #2014).</summary>
+        /// Spitfire, drawn at the unit tokens' aircraft scale (UnitShowcase.AircraftScale, 420x: 4.7 km across), so it reads at strategic zoom (owner ruling, #2014),
+    /// and the Dakotas, each <see cref="DakotaScale"/> of that (owner, #2482: "2 slightly smaller planes and not 0ne big one").</summary>
         public static float SizeOf(string model) =>
-            RealLengthM(model) * (model == Spitfire ? Statecraft.Game.Map.Units.UnitShowcase.AircraftScale : SettlementKits.ModelScale);
+            RealLengthM(model) * (model == Spitfire ? Statecraft.Game.Map.Units.UnitShowcase.AircraftScale
+                : model == Dakota ? Statecraft.Game.Map.Units.UnitShowcase.AircraftScale * DakotaScale : SettlementKits.ModelScale);
 
         /// <summary>DESIGN VALUE: every craft lies with its length east-west (SeaCraft heading 0), side-on to the gameplay
         /// camera looking north, as SeaCraft's boats lie. A model is turned 0 or 90 degrees about the vertical, on top of its
@@ -122,6 +132,7 @@ namespace Statecraft.Game.Map.Collection
                 wants.Add(new Want("tel-aviv-altalena", Altalena, "tel_aviv"));
             if (date >= C54From && date <= C54To) wants.Add(new Want("lod-c54", C54, "lod"));
             if (date >= SpitfireFrom && date <= SpitfireTo) wants.Add(new Want("el-arish-spitfire", Spitfire, "el_arish"));
+            if (DakotaWanted(date)) foreach (var key in DakotaKeys) wants.Add(new Want(key, Dakota, DakotaTown));
             return wants;
         }
 
@@ -267,16 +278,31 @@ namespace Statecraft.Game.Map.Collection
             var keys = residencyView?.Keys;
             return keys == null ? wants : wants.Where(w => keys.Contains(w.Key));
         }
-        IEnumerable<(string key, Vector3 at, float radius)> Anchors()
+        Action<List<(string key, Vector3 at, float radius)>>? fillResidencyAnchors;
+        void FillResidencyAnchors(List<(string key, Vector3 at, float radius)> anchors)
         {
-            if (map == null) yield break;
+            if (map == null) return;
             var edge = EdgeSpot(map.Frame);   // the Spitfire's anchor is on the ground under it; only its distance counts
-            foreach (var w in wants)
+            for (int i = 0; i < wants.Count; i++)
             {
-                var c = SeaCraft.Coasts.FirstOrDefault(x => x.place == w.Place);
-                yield return (w.Key, w.Model == C54 ? map.Frame.ToWorld(LodLon, LodLat, 0) : w.Model == Spitfire ? new Vector3(edge.x, 0, edge.y)
-                    : map.Frame.ToWorld(c.lon, c.lat, 0), SizeOf(w.Model));
+                var w = wants[i];
+                if (w.Model == Dakota)   // its anchor is on the ground under its loop's centre, as far out as it flies (#2482)
+                {
+                    if (DakotaCentre() is Vector2 d) anchors.Add((w.Key, new Vector3(d.x, 0f, d.y), DakotaSweptHalf.magnitude));
+                    continue;
+                }
+                var c = default((string place, double lon, double lat, Vector2 seaward, int boats));
+                for (int j = 0; j < SeaCraft.Coasts.Length; j++)
+                    if (SeaCraft.Coasts[j].place == w.Place) { c = SeaCraft.Coasts[j]; break; }
+                anchors.Add((w.Key, w.Model == C54 ? map.Frame.ToWorld(LodLon, LodLat, 0) : w.Model == Spitfire ? new Vector3(edge.x, 0, edge.y)
+                    : map.Frame.ToWorld(c.lon, c.lat, 0), SizeOf(w.Model)));
             }
+        }
+        static bool SameKeys(HashSet<string> before, HashSet<string> after)
+        {
+            if (before.Count != after.Count) return false;
+            foreach (string key in before) if (!after.Contains(key)) return false;
+            return true;
         }
         void RefreshResidency() => RefreshResidencyCore(true);
         void RefreshResidencyCore(bool redraw)
@@ -305,7 +331,7 @@ namespace Statecraft.Game.Map.Collection
             }
             // Each drawn craft's own keep-clear boxes (the Spitfire's cover its whole loop, its flag included); the Spitfire's
             // shadow and flag object has none.
-            keepAll = originals.Values.SelectMany(list => list).Where(go => go != null && keepOf.ContainsKey(go)).Select(go => keepOf[go]).ToList();
+            RebuildKeepAll();
             return removed;
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement()
@@ -321,7 +347,7 @@ namespace Statecraft.Game.Map.Collection
                 var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
                 if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
-            Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>(); keepOf.Clear();
+            Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>(); keepOf.Clear(); dakotaKeeps.Clear(); airDefenceKeeps.Clear(); AirDefence = null;
             originals.Clear();
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
@@ -329,8 +355,8 @@ namespace Statecraft.Game.Map.Collection
         void ObserveResidency(Camera camera)
         {
             var before = residencyView!.Keys;
-            residencyView.Observe(camera, Anchors(), Time.frameCount);
-            if (!before.SetEquals(residencyView.Keys))
+            residencyView.Observe(camera, fillResidencyAnchors ??= FillResidencyAnchors, Time.frameCount);
+            if (!SameKeys(before, residencyView.Keys))
             { if (Application.isPlaying) residencyDirty = true; else RefreshResidencyCore(false); }
         }
         void LateUpdate()
@@ -350,6 +376,7 @@ namespace Statecraft.Game.Map.Collection
         List<(Vector2 centre, float radius)> taken = new List<(Vector2, float)>();
         List<WildlifeLayer.Want>? wildlife;
         DateTime date;
+        bool airDefenceShown;   // AirDefenceWanted at the last rebuild: 15 May and 15 July want the same craft, so the date alone must rebuild (#2649)
 
         /// <summary>The craft drawn (key, model, spot at the water's or ground's height; the centre of the Spitfire's loop, in the air): a test aid.</summary>
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
@@ -358,8 +385,28 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Every drawn craft's world box, for the map labels to keep clear of, as they do of the unit tokens
         /// (MapLabelsPresenter's keepClear, issue #197). A new list after every rebuild and the same list otherwise, so the
-        /// labels re-read it only when it changes.</summary>
-        public IReadOnlyList<Bounds[]> KeepClear => !isActiveAndEnabled ? (IReadOnlyList<Bounds[]>)Array.Empty<Bounds[]>() : keepAll;
+        /// labels re-read it only when it changes. The Dakotas' boxes follow them round their loop (FollowDakotas, #2490), so
+        /// while they fly it is a new list once a step (DakotaKeepStepS).</summary>
+        public IReadOnlyList<Bounds[]> KeepClear
+        {
+            get
+            {
+                if (!isActiveAndEnabled) return Array.Empty<Bounds[]>();
+                FollowDakotas();
+                FollowAirDefence();
+                return keepAll;
+            }
+        }
+        /// <summary>A new <see cref="KeepClear"/> list from every drawn craft's own boxes, and the air defence's fighters' (keyed
+        /// by each fighter's plane, a child of the air defence, which is one of the Dakotas' originals: kept while it is).</summary>
+        void RebuildKeepAll()
+        {
+            var drawn = originals.Values.SelectMany(list => list).Where(go => go != null).ToList();
+            keepAll = drawn.Where(keepOf.ContainsKey).Select(go => keepOf[go])
+                .Concat(airDefenceKeeps.Where(k => k.Go != null && k.Defence != null && keepOf.ContainsKey(k.Go) && drawn.Contains(k.Defence.gameObject))
+                    .Select(k => keepOf[k.Go]))
+                .ToList();
+        }
         List<Bounds[]> keepAll = new List<Bounds[]>();
         readonly Dictionary<GameObject, Bounds[]> keepOf = new Dictionary<GameObject, Bounds[]>();
         void Keep(GameObject go, Bounds box) { var boxes = new[] { box }; keepAll.Add(boxes); keepOf[go] = boxes; }
@@ -384,8 +431,9 @@ namespace Statecraft.Game.Map.Collection
         {
             date = at;
             var others = next.Any(w => w.Model == C54) ? Taken() : new List<(Vector2, float)>();
-            if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken)) return;
-            wants = next; placements = placed; taken = others;
+            bool defence = AirDefenceWanted(at);
+            if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken) && defence == airDefenceShown) return;
+            wants = next; placements = placed; taken = others; airDefenceShown = defence;
             OriginalModelRequests.WhenVisible(this, () => RefreshResidency());
         }
 
@@ -411,14 +459,16 @@ namespace Statecraft.Game.Map.Collection
                 Vector2? at = null;
                 if (prefab != null)
                 {
-                    at = w.Model == C54 ? LandSpot(ground) : w.Model == Spitfire ? EdgeSpot(map.Frame) : SeaSpot(w, ground, works, boats);
-                    if (at != null && w.Model != C54 && w.Model != Spitfire) boats.Add(new SeaCraft.Craft(SeaCraft.Kind.Steamer, at.Value, Heading, SizeOf(w.Model), w.Place));
+                    at = w.Model == C54 ? LandSpot(ground) : w.Model == Spitfire ? EdgeSpot(map.Frame) : w.Model == Dakota ? DakotaCentre()
+                        : SeaSpot(w, ground, works, boats);
+                    if (at != null && w.Model != C54 && w.Model != Spitfire && w.Model != Dakota) boats.Add(new SeaCraft.Craft(SeaCraft.Kind.Steamer, at.Value, Heading, SizeOf(w.Model), w.Place));
                 }
                 if (at == null) { Missing.Add(w.Key); continue; }
                 var go = Instantiate(prefab!, transform, false); go.name = w.Key;
                 if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
                 owned.Add(go);
                 if (w.Model == Spitfire) { Fly(go, prefab!, at.Value, ground); continue; }
+                if (w.Model == Dakota) { FlyDakota(go, prefab!, at.Value, ground, Array.IndexOf(DakotaKeys, w.Key)); continue; }
                 // The yaw goes on top of the prefab's own rotation: every Collection Far prefab's root carries the FBX axis
                 // conversion (-90 degrees about X), and setting the yaw alone lays a model on its side (#979).
                 go.transform.localRotation = prefab!.transform.localRotation;
@@ -434,6 +484,7 @@ namespace Statecraft.Game.Map.Collection
                 Placed.Add((w.Key, w.Model, pos));
                 Keep(go, Bounds(go));
             }
+            FlyAirDefence(ground);   // the S-199s and the anti-aircraft fire beside the Dakotas, on the second period's turns
             // The kit trees under the C-54 are left out at draw time, as under the unit figures (VegetationLayer.Hide, #249).
             var plane = Placed.Where(p => p.Model == C54).Select(p => (new Vector2(p.At.x, p.At.z), 0.5f * SizeOf(C54))).ToList();
             Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, plane);
@@ -460,7 +511,9 @@ namespace Statecraft.Game.Map.Collection
             var centre = new Vector3(at.x, Statecraft.Game.Map.Units.UnitShowcase.LoopFloor(map!, new Vector3(at.x, 0f, at.y), SpitfireLoopHalfLengthM + size)
                 + Statecraft.Game.Map.Units.UnitShowcase.AltitudeM, at.y);
             go.transform.position = centre; b = Bounds(go);
-            foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = ShadowCastingMode.On;
+            // The soft disc (Shadow) is its shadow: a cast one would lie about 7.7 km off at the drawn height, a second shadow
+            // (e21's AFTER captures of #2728, 5 November 2026).
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true)) { r.shadowCastingMode = ShadowCastingMode.Off; Gloss(r); }
             // The shadow and the flag stand beside the aircraft in this layer, so they neither bank nor turn with it, and go
             // with it (its model's originals) when its dates end.
             var marks = new GameObject(go.name + SpitfireMarksSuffix);
@@ -470,7 +523,7 @@ namespace Statecraft.Game.Map.Collection
             var flag = Flag(marks.transform);
             // The aircraft's half box at level, nose east: half its length, its height and its span.
             var half = 0.5f * new Vector3(b.size.x, b.size.y, b.size.z);
-            loop.Attach(Propeller(go), Shadow(marks.transform), flag, map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), half, ground.SeaLevelY);
+            loop.Attach(Propeller(go), Shadow(marks.transform, spitfire: true), flag, map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), half, ground.SeaLevelY);
             // Edit mode and screenshots hold the loop's start, as the train does (RouteLayer.ModeFor).
             loop.Configure(centre, level, b.center - go.transform.position, !Application.isPlaying || VisualShots.Requested());
             var cam = Camera.main;
@@ -507,20 +560,39 @@ namespace Statecraft.Game.Map.Collection
             disc.transform.SetParent(airframe.transform, false);
             disc.transform.localPosition = new Vector3(mesh.center.x, mesh.min.y + PropBehindNoseShare * mesh.size.y, mesh.max.z - radius);
             disc.transform.localScale = Vector3.one * radius;
-            disc.AddComponent<MeshFilter>().sharedMesh = propMesh != null ? propMesh : propMesh = Own(PropellerDisc());
+            disc.AddComponent<MeshFilter>().sharedMesh = spitfirePropMesh != null ? spitfirePropMesh : spitfirePropMesh = Own(SpitfirePropellerDisc());
             var r = disc.AddComponent<MeshRenderer>();
             r.sharedMaterial = Blur(); r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
             r.localBounds = new Bounds(Vector3.zero, new Vector3(Mathf.Sqrt(2f), 2f * PropLayer, Mathf.Sqrt(2f)));
             return disc.transform;
         }
 
+        /// <summary>Gives the Spitfire's renderer <paramref name="r"/> glossy copies of its materials (the streamed model's are
+        /// fully matte): the same shader, maps and colours, with <see cref="Statecraft.Game.Map.Units.UnitShowcase.AircraftSmoothness"/>.
+        /// One copy a source material for this layer, owned by it, so a redraw makes none. A copy whose source is gone (its
+        /// model released under residency, then streamed again as a new material) is destroyed, so they do not pile up.</summary>
+        void Gloss(Renderer r)
+        {
+            foreach (var dead in glossy.Keys.Where(k => k == null).ToList()) { DestroyNow(glossy[dead]); glossy.Remove(dead); }
+            var mats = r.sharedMaterials;
+            for (int i = 0; i < mats.Length; i++)
+            {
+                var m = mats[i];
+                if (m == null || !m.HasProperty(Statecraft.Game.Map.Units.UnitShowcase.SmoothnessProperty)) continue;
+                if (!glossy.TryGetValue(m, out var g)) glossy[m] = g = Own(Statecraft.Game.Map.Units.UnitShowcase.Glossy(m));
+                mats[i] = g;
+            }
+            r.sharedMaterials = mats;
+        }
+
         /// <summary>The aircraft's soft shadow on the ground (owner's report: "it doesnt look fliying"), placed by SpitfireLoop
         /// where the map's sun casts it.</summary>
-        Transform Shadow(Transform parent)
+        Transform Shadow(Transform parent, bool spitfire = false)
         {
             var go = new GameObject(SpitfireShadowName);
             go.transform.SetParent(parent, false);
-            go.AddComponent<MeshFilter>().sharedMesh = shadowMesh != null ? shadowMesh : shadowMesh = Own(ShadowDisc());
+            go.AddComponent<MeshFilter>().sharedMesh = spitfire ? spitfireShadowMesh != null ? spitfireShadowMesh : spitfireShadowMesh = Own(SpitfireShadowDisc())
+                : shadowMesh != null ? shadowMesh : shadowMesh = Own(ShadowDisc());
             var r = go.AddComponent<MeshRenderer>();
             r.sharedMaterial = Blur(); r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
             return go.transform;
@@ -595,10 +667,12 @@ namespace Statecraft.Game.Map.Collection
         }
 
         static void DestroyMesh(Mesh m) { if (Application.isPlaying) Destroy(m); else DestroyImmediate(m); }
+        static void DestroyNow(UnityEngine.Object o) { if (Application.isPlaying) Destroy(o); else DestroyImmediate(o); }
 
         MapRuntimeAssets? assets;
         bool flagMissing;
-        Material? blur; Material[]? flagCloth; Mesh? propMesh, shadowMesh, flagMesh;
+        Material? blur; Material[]? flagCloth; Mesh? propMesh, spitfirePropMesh, shadowMesh, spitfireShadowMesh, flagMesh;
+        readonly Dictionary<Material, Material> glossy = new Dictionary<Material, Material>();
 
         /// <summary>Takes <paramref name="o"/>, made once for this layer, to be destroyed with it.</summary>
         T Own<T>(T o) where T : UnityEngine.Object
@@ -614,7 +688,7 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>A flat disc of radius 1 in the XZ plane (normal +y), one copy at each of <paramref name="layers"/> (its y): a
         /// centre and rings of <paramref name="segments"/> vertices at <paramref name="rings"/>, coloured <paramref name="colour"/>
         /// with the alpha <paramref name="alpha"/> gives at (radius, angle in degrees from +x towards +z).</summary>
-        static Mesh Disc(string name, int segments, float[] rings, float[] layers, Color colour, Func<float, float, float> alpha)
+        internal static Mesh Disc(string name, int segments, float[] rings, float[] layers, Color colour, Func<float, float, float> alpha)
         {
             int per = 1 + segments * rings.Length, perTris = 3 * segments + 6 * segments * (rings.Length - 1);
             var verts = new Vector3[per * layers.Length]; var colours = new Color32[verts.Length]; var tris = new int[perTris * layers.Length];
@@ -644,16 +718,40 @@ namespace Statecraft.Game.Map.Collection
             return Statecraft.Game.Map.Units.UnitPlinth.Upload(mesh);
         }
 
-        /// <summary>DESIGN VALUES: the propeller's blur, near-black (the units' propeller paint): three blades, each a dark
-        /// leading edge whose smear fades behind it (the way SpitfireLoop turns it), over a half-opaque whole disc that dims
-        /// the fused model's still blades, clear at the spinner and fading out at the rim; two layers (<see cref="PropLayer"/>).</summary>
+        /// <summary>DESIGN VALUES: the Dakotas' propeller blur, near-black (the units' propeller paint): three blades, each a dark
+        /// leading edge whose smear fades behind it (the way the loop turns it), over a half-opaque whole disc, clear at the
+        /// spinner and fading out at the rim; two layers (<see cref="PropLayer"/>).</summary>
         static Mesh PropellerDisc() => Disc("SpitfirePropellerBlur", 72, new[] { 0.18f, 0.4f, 0.7f, 0.9f, 1f }, new[] { -PropLayer, PropLayer }, new Color(0.06f, 0.06f, 0.06f), (r, deg) =>
             r >= 1f ? 0f : Mathf.Min(1f, r / 0.4f) * (0.45f + 0.45f * Mathf.Exp(-Mathf.Repeat(-deg, 120f) / 35f)));
 
-        /// <summary>DESIGN VALUES: the shadow, a dark warm grey (the map's shadows are warm under its sun), 0.42 opaque at its
+        /// <summary>DESIGN VALUES (agent-chosen, coordinator-approved plan, 5 November 2026; checked in captures): the Spitfire's
+        /// propeller blur, light (a turning propeller reads as a pale haze against the ground): three blades, each a brighter
+        /// streak whose smear fades behind it (the way SpitfireLoop turns it), over a faint whole disc that softens the fused
+        /// model's still blades, clear at the spinner and fading out at the rim; two layers (<see cref="PropLayer"/>).</summary>
+        static Mesh SpitfirePropellerDisc() => Disc("SpitfirePropellerBlur", 72, new[] { 0.18f, 0.4f, 0.7f, 0.9f, 1f }, new[] { -PropLayer, PropLayer }, PropBlurColour,
+            (r, deg) => r >= 1f ? 0f : Mathf.Min(1f, r / 0.4f) * PropBlurAlpha(deg, 120f, 0f));
+
+        /// <summary>DESIGN VALUE: the light propeller blurs' colour, a pale warm grey (the Spitfire's and the 101 Squadron
+        /// aircraft's, UnitShowcase.PropellerBlur).</summary>
+        internal static readonly Color PropBlurColour = new Color(0.82f, 0.81f, 0.78f);
+
+        /// <summary>DESIGN VALUES: a light blur's opacity at <paramref name="deg"/> round the disc for blades every
+        /// <paramref name="spacing"/> degrees whose leading edges are at <paramref name="edge"/>: a faint 0.22 everywhere and up
+        /// to 0.55 at a blade, fading behind it (the disc's angle grows as both loops turn their propellers).</summary>
+        internal static float PropBlurAlpha(float deg, float spacing, float edge) =>
+            0.22f + 0.33f * Mathf.Exp(-Mathf.Repeat(edge - deg, spacing) / (0.25f * spacing));
+
+        /// <summary>DESIGN VALUES: the Dakotas' shadow, a dark warm grey (the map's shadows are warm under its sun), 0.42 opaque at its
         /// middle and fading to nothing at its rim, (1 - r²)^1.5.</summary>
-        static Mesh ShadowDisc() => Disc("SpitfireShadow", 48, new[] { 0.3f, 0.55f, 0.75f, 0.9f, 1f }, new[] { 0f }, new Color(0.10f, 0.08f, 0.06f), (r, _) =>
+        internal static Mesh ShadowDisc() => Disc("DakotaShadow", 48, new[] { 0.3f, 0.55f, 0.75f, 0.9f, 1f }, new[] { 0f }, new Color(0.10f, 0.08f, 0.06f), (r, _) =>
             0.42f * Mathf.Pow(1f - r * r, 1.5f));
+
+        /// <summary>DESIGN VALUES (agent-chosen, from e21's AFTER captures of #2728, 5 November 2026: the near disc at 0.42 was
+        /// too faint over sand and sea, and 0.6 over the brown hills in v2): the Spitfires' shadow, as <see cref="ShadowDisc"/>
+        /// (the Dakotas', unchanged) but 0.75 opaque at its middle, still fading to nothing at its rim; it is now their only
+        /// shadow (they cast none, Fly).</summary>
+        internal static Mesh SpitfireShadowDisc() => Disc("SpitfireShadow", 48, new[] { 0.3f, 0.55f, 0.75f, 0.9f, 1f }, new[] { 0f }, new Color(0.10f, 0.08f, 0.06f), (r, _) =>
+            0.75f * Mathf.Pow(1f - r * r, 1.5f));
 
         /// <summary>The ground the other 1948 Collection layers hold (GameRoot shows them first), for the C-54 to keep off, as
         /// SpecialBuildingModels keeps off the people and the wildlife: the civilians (#666), the wildlife (#670), the farm

@@ -94,7 +94,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .year-row { flex-direction: row; justify-content: space-between; align-items: center; }
 #score { font-size: 17px; flex-shrink: 0; }
 /* The exhausted-turn count (R-END-002) takes a line of its own under the date, only while it is above 0. */
-#exhausted { font-size: 13px; }   /* "turn" widens the line to fit the 196 px plate only at 13 px; wrapping runs it into the frame */
+#exhausted { font-size: 15px; white-space: nowrap; }   /* one line: wrapping runs it into the frame; at 15 px (#2522) the plate widens to it (HudPresenter.PadPlate) */
 .date-row Label { font-size: 15px; margin-right: 8px; }
 .year { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 27px; color: var(--ink); }
 .meters { flex-direction: row; flex-grow: 1; align-items: center; }
@@ -115,16 +115,19 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* In the bar a long caption wraps rather than widen its meter; on the roomy bar it keeps one line, as in the promo (B8). */
 .meter .meter-name { max-width: 120px; }
 .top-bar--roomy .meter .meter-name { max-width: none; white-space: nowrap; }
-#security-level { font-size: 15px; color: var(--ink-dim); margin-left: 6px; white-space: nowrap; flex-shrink: 0; }
+#security-level { font-size: 15px; color: var(--ink-dim); margin-left: 6px; margin-right: 0; white-space: nowrap; flex-shrink: 0; }   /* margin-right: 0, or the default theme's Label margin stays on the far side (#2687) */
 .meter-row { flex-direction: row; align-items: flex-end; }
 .meter-value { font-size: 21px; color: var(--ink); }
 .meter-delta { font-size: 16px; margin-left: 7px; }
+/* Room before a rise or a fall for its up or down mark, so the change is not told by colour alone (L1, #2340; painted by
+   HudPresenter.PaintChange, 9 px = its ChangeMarkPadPx). */
+.meter-delta.delta-up, .meter-delta.delta-down { padding-left: 9px; }
 /* The screen buttons: a round, gold-rimmed icon with its name under it (the name keeps them legible without tooltips). */
 .nav { flex-direction: row; flex-shrink: 0; align-items: center; }
 .nav-button {
     width: 60px; height: 86px; margin: 0 1px; padding: 56px 0 0 0;
     background-color: rgba(0, 0, 0, 0); border-width: 0;
-    font-size: 14px; color: var(--ink-dim); -unity-text-align: upper-center; white-space: nowrap;
+    font-size: 15px; color: var(--ink-dim); -unity-text-align: upper-center; white-space: nowrap;
 }
 .nav-disc {
     position: absolute; top: 2px; left: 5px; width: 50px; height: 50px; padding: 11px;
@@ -191,7 +194,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* In Hebrew each caption, and Security's wrapped caption row, ends at the text column's right edge (review of #859: the
    wrapped row had moved to the column's left). */
 .lang-he.hud-three-row .meter-body { align-items: flex-end; }
-.lang-he.hud-three-row .meter-caption-row { justify-content: flex-end; }
+.lang-he.hud-three-row .meter-caption-row { justify-content: flex-start; }
 .hud-three-row .right-column, .hud-three-row .left-column, .hud-three-row .event-gutter, .hud-three-row .event-layer, .hud-three-row .screen, .hud-three-row .toast { top: 456px; }
 /* The owner's ruling on #859 (17 October 2026): on a phone no rail button sits under the decision card, Why? and Settings
    included. The card starts right of the column (the layer's left padding, from its 16 px: the column's 60 px and a 12 px gap; padding, so
@@ -292,8 +295,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    the options scroll together (event-scroll, #1853), while the head and the foot with Hide stay in the card. */
 .event-card { width: 1040px; max-width: 100%; max-height: 100%; flex-shrink: 1; min-height: 0; overflow: hidden; padding: 16px 40px 10px 40px; }
 .hud-two-row .event-card { padding-left: 16px; padding-right: 16px; }
-/* The card takes the keyboard focus when an event opens (EventCardPresenter.FocusCard): a lighter gold edge says so. */
+/* The card takes the keyboard focus when an event opens (EventCardPresenter.FocusCard): a lighter gold edge says so.
+   #2340 L3: the edge is 2 px when focused, the card's own 1 px border and 1 px more on its trim overlay just inside it.
+   The overlay lays nothing out (.ui-frame), so nothing in the card moves when the focus comes or goes; a 2 px border on
+   the card itself would take a pixel from its content box, and at 150% UI scale the panel's pixel snapping keeps 1 px
+   less padding from giving it back exactly (measured: the content moved by one screen pixel). */
 .event-card:focus { border-color: var(--gold-light); }
+.event-card:focus > .ui-frame { border-width: 1px; border-color: var(--gold-light); }
 .event-card > * { flex-shrink: 0; }
 .event-card > .event-scroll { flex-shrink: 1; min-height: 48px; }
 #event-options { flex-shrink: 0; }
@@ -330,7 +338,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .outcome-open .event-layer { display: none; }
 .outcome-frame { width: 1000px; max-width: 100%; padding: 16px 20px 12px 20px; align-items: stretch; }
 .outcome-media { width: 100%; height: 540px; justify-content: flex-end; background-color: var(--navy-deep); background-size: cover; border-width: 1px; border-color: var(--gold); }
-.outcome-label { font-size: 13px; -unity-font-style: italic; -unity-text-align: middle-center; margin: 0; padding: 2px 8px 3px 8px; color: var(--ink); background-color: rgba(5, 9, 18, 0.92); }
+.outcome-label { font-size: 15px; -unity-font-style: italic; -unity-text-align: middle-center; margin: 0; padding: 2px 8px 3px 8px; color: var(--ink); background-color: rgba(5, 9, 18, 0.92); }
 .outcome-caption { font-size: 26px; white-space: normal; -unity-text-align: middle-center; margin: 10px 0 2px 0; color: var(--gold-light); }
 .outcome-hint { font-size: 15px; -unity-text-align: middle-center; margin: 0; }
 /* The Illustration switch (decision videos): over the media header's top right corner (the card's padding plus 8 px; it
@@ -341,7 +349,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
     background-color: rgba(5, 9, 18, 0.88); border-color: var(--gold); color: var(--gold-light);
 }
 .event-photo-credit {
-    flex-shrink: 0; font-size: 13px; white-space: normal; -unity-text-align: middle-center; margin: 0; padding: 2px 8px 3px 8px;
+    flex-shrink: 0; font-size: 15px; white-space: normal; -unity-text-align: middle-center; margin: 0; padding: 2px 8px 3px 8px;
     color: var(--ink); background-color: rgba(5, 9, 18, 0.92); -unity-font-style: italic;   /* 0.92: blending is linear, so less reads grey */
 }
 .event-office { white-space: normal; -unity-text-align: middle-center; font-size: 18px; }
@@ -358,8 +366,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    option are in the same muted ink, indented 46 px to line up with the option's text after its round sign (.event-option padding). */
 .event-alt-banner { display: none; white-space: normal; margin: 0 0 8px 0; padding: 2px 0 2px 10px; border-left-width: 2px; border-color: var(--gold); }
 .lang-he .event-alt-banner { border-left-width: 0; border-right-width: 2px; padding: 2px 10px 2px 0; }
-.event-rejoin, .event-effect { white-space: normal; margin: -1px 0 4px 46px; }
-.lang-he .event-rejoin, .lang-he .event-effect { margin: -1px 46px 4px 0; }
+.event-rejoin, .event-effect, .event-requirement, .event-requirement-unmet { white-space: normal; margin: -1px 0 4px 46px; }
+.event-requirement-unmet { color: var(--down); }
+.event-requirement, .event-requirement-unmet { font-size: 15px; }
+.lang-he .event-rejoin, .lang-he .event-effect, .lang-he .event-requirement, .lang-he .event-requirement-unmet { margin: -1px 46px 4px 0; }
 /* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
 .event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
 /* The capture dialog (CaptureDialogPresenter): under each option its plain description, then the sim's preview of what
@@ -675,7 +685,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .card-office { font-size: 15px; color: var(--ink-dim); -unity-text-align: upper-center; white-space: normal; margin: 0 6px; padding: 0; }
 .card-party { font-size: 15px; color: var(--gold); -unity-text-align: upper-center; white-space: normal; -unity-font-style: italic; margin: 0 6px 4px 6px; padding: 0; }
 .card-stat { flex-direction: row; align-items: center; height: 21px; padding: 0 10px; }
-.card-stat-name { width: 82px; flex-shrink: 0; font-size: 14px; color: var(--ink-dim); -unity-text-align: middle-left; padding: 0; margin: 0; }
+.card-stat-name { width: 82px; flex-shrink: 0; font-size: 15px; color: var(--ink-dim); -unity-text-align: middle-left; padding: 0; margin: 0; }
 .card-stat-value { width: 24px; flex-shrink: 0; font-size: 16px; color: var(--ink); -unity-text-align: middle-right; padding: 0; margin: 0; }
 .seat-selected { border-color: var(--gold-light); background-color: var(--navy-raised); }
 /* The selected seat's tag (#41 M6): a gold band with a word across the foot of the plate, the mark that is not a colour.
@@ -727,7 +737,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .hemicycle { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .hemicycle-count { position: absolute; left: 0; right: 0; bottom: 0; align-items: center; }
 .house-size { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 34px; color: var(--ink); padding: 0; margin: 0; -unity-text-align: lower-center; }
-.house-unit { font-size: 13px; letter-spacing: 2px; color: var(--ink-dim); padding: 0; margin: 0; -unity-text-align: upper-center; }
+.house-unit { font-size: 15px; letter-spacing: 2px; color: var(--ink-dim); padding: 0; margin: 0; -unity-text-align: upper-center; }
 .house-legend { flex-grow: 1; flex-shrink: 1; min-width: 260px; }
 .house-coalition { font-size: 20px; color: var(--ink); white-space: normal; }
 .house-stability { flex-grow: 0; height: 8px; margin: 3px 0 6px 0; max-width: 360px; }
@@ -737,10 +747,10 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .party-group { flex-direction: row; flex-wrap: wrap; align-items: center; }
 .party-group-heading {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
-    font-size: 14px; color: var(--ink); padding: 0; margin: 0 10px 2px 0;
+    font-size: 15px; color: var(--ink); padding: 0; margin: 0 10px 1px 0;
 }
-.party-chip { flex-direction: row; align-items: center; margin: 0 12px 2px 0; }
-.party-chip > Label { font-size: 14px; color: var(--ink-dim); padding: 0; margin: 0; }
+.party-chip { flex-direction: row; align-items: center; margin: 0 12px 1px 0; }   /* 1 px under each row (was 2): the 15 px chips (#2522) keep a card row in view at 2560x1080, 125% */
+.party-chip > Label { font-size: 15px; color: var(--ink-dim); padding: 0; margin: 0; }
 .party-swatch { width: 11px; height: 11px; border-radius: 6px; margin-right: 5px; }
 .party-swatch--hollow { border-width: 1.2px; border-color: var(--ink-dim); }
 #cabinet-seats .unity-scroll-view__content-container { flex-direction: row; flex-wrap: wrap; }
@@ -879,7 +889,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
     position: absolute;
     translate: -50% 0;
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
-    font-size: 14px;
+    font-size: 15px;
     color: rgb(243, 234, 216);
     background-color: rgba(14, 22, 38, 0.92);
     border-width: 1px;
@@ -927,8 +937,11 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
     font-size: 34px; color: var(--ink); -unity-text-align: middle-center; white-space: normal; margin: 4px 0 0 0;
 }
 .start-he-date { font-size: 28px; margin-top: 12px; }
-.start-en { font-size: 18px; color: var(--ink-dim); letter-spacing: 1px; -unity-text-align: middle-center; white-space: normal; margin: 2px 0 0 0; }
-.start-source { font-size: 15px; color: var(--ink-dim); -unity-text-align: middle-center; white-space: normal; margin: 14px 0 0 0; }
+/* --ink, not --ink-dim (#2340 L5): the panel blends in linear light, so the lit hats behind it took --ink-dim down to
+   2.9:1 at 1568x752 (still 4.3:1 at 0.94 alpha); --ink holds 4.5:1 even where the painting is white. Their size keeps
+   them under the Hebrew. */
+.start-en { font-size: 18px; color: var(--ink); letter-spacing: 1px; -unity-text-align: middle-center; white-space: normal; margin: 2px 0 0 0; }
+.start-source { font-size: 15px; color: var(--ink); -unity-text-align: middle-center; white-space: normal; margin: 14px 0 0 0; }
 .start-actions { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
 /* A whole-pixel height (#1168): with Star on GitHub wrapped under New game on a phone held upright, a fractional row
    height shifts the panel's lines off whole pixels and the band layout (StartScreenPresenter.Fit) then rounds the
@@ -998,7 +1011,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* The Hebrew plate shows the first name's initial and the surname ("י. ידין", PersonCard.InitialAndSurname), not two
    letters: at 36 px the longest, "פ. ברנשטיין", fits the narrowest plate (measured by PromoScreensTests). */
 .lang-he .card-initials { font-size: 36px; }
-.lang-he .top-bar, .lang-he .year-row, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
+.lang-he .top-bar, .lang-he .year-row, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-caption-row, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
 .lang-he .event-foot, .lang-he .event-head, .lang-he .info-panel, .lang-he .info-row, .lang-he .card-stat, .lang-he .pm-offices,
 .lang-he .cabinet-house, .lang-he .party-group, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
 .lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container, .lang-he .start-recording,
@@ -1010,20 +1023,23 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .date-row Label { margin-right: 0; margin-left: 8px; }
 .lang-he .meter { border-right-width: 0; border-left-width: 1px; padding: 0 3px 0 4px; }
 .lang-he .meter-icon { margin-right: 0; margin-left: 5px; }
+.lang-he #security-level { margin-left: 0; margin-right: 6px; }
 .lang-he .meter-delta { margin-left: 0; margin-right: 7px; }
 .lang-he.hud-narrow .meter-delta { margin-right: 0; }
+.lang-he .meter-delta.delta-up, .lang-he .meter-delta.delta-down { padding-left: 0; padding-right: 9px; }
 .lang-he .event-hide { margin: 2px 12px 0 0; }
 .lang-he .event-image { margin-right: 0; margin-left: 12px; }
 .lang-he .info-thumb { margin-right: 0; margin-left: 14px; }
 .lang-he .info-row-sign { margin: 3px 0 0 10px; }
 .lang-he .info-body > .row Button { margin-right: 0; margin-left: 6px; }
 .lang-he .why-line { padding-left: 0; padding-right: 12px; }
+.lang-he .turn-report-causes { padding: 4px 14px 4px 2px; }
 .lang-he .section-title { margin: 0 2px 8px 0; }
 .lang-he .cabinet-side { margin-right: 0; margin-left: 14px; }
 .lang-he .pm-office { margin: 0 0 4px 6px; }
 .lang-he .hemicycle-box { margin-right: 0; margin-left: 18px; }
-.lang-he .party-chip { margin: 0 0 2px 12px; }
-.lang-he .party-group-heading { margin: 0 0 2px 10px; }
+.lang-he .party-chip { margin: 0 0 1px 12px; }   /* 1 px, as the English .party-chip (#2522) */
+.lang-he .party-group-heading { margin: 0 0 1px 10px; }
 .lang-he .party-swatch { margin-right: 0; margin-left: 5px; }
 .lang-he .rung { border-left-width: 0; border-right-width: 3px; }
 .lang-he .rung-target { border-left-width: 1px; border-right-width: 3px; }
@@ -1065,7 +1081,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .hud-tight .top-bar { padding-top: 4px; padding-bottom: 3px; }
 .hud-tight .meter { min-width: 0; padding: 0 4px; }
 .hud-tight .meter-value { font-size: 16px; }
-.hud-tight .meter-delta { font-size: 12px; }
+.hud-tight .meter-delta { font-size: 15px; }
 /* The tight three-row bar keeps the narrow bar's values (22 px, deltas 15 px): a phone held upright at 100% is tight too,
    and at its 0.49 scale 16 px values were 8 screen px, smaller than the floored captions above them. Its rows grow the
    bar (PlaceUnderBar). */
@@ -1198,6 +1214,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-overlay-words { flex-shrink: 1; min-height: 0; }
 
 .advisor-watching .advisor-head { position: absolute; right: 8px; top: 8px; margin: 0; }
+.lang-he .advisor-watching .advisor-head { right: auto; left: 8px; }
 .advisor-no-portrait.advisor-has-media .advisor-portrait { display: flex; }
 
 .advisor-watching .advisor-head > .advisor-portrait, .advisor-watching .advisor-head > .advisor-names { display: none; }

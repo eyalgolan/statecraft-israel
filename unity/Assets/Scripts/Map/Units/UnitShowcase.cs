@@ -24,6 +24,18 @@ namespace Statecraft.Game.Map.Units
         /// showcase trio at close30 (T54 audit), so 1400x (refs #197). The aircraft and the ship are sized against him, as
         /// Civ draws them, not against each other.</summary>
         public const float FigureScale = 1400f;
+        /// <summary>DESIGN VALUES (#2430, the owner judges them on the captures): a token's figures and flag from a far camera, as a
+        /// share of <see cref="FigureScale"/>. Up to <see cref="ZoomScaleFromM"/>, the far edge of the close switch's hysteresis
+        /// (TownModelLayer.CloseExitM), they keep FigureScale, so T29's ratio to a house holds wherever a close building model
+        /// draws, and SpecialBuildingModels.FigureShadowM's reach holds wherever a workshop does. From there they grow to <see cref="ZoomScaleMax"/> at
+        /// <see cref="ZoomScaleToM"/> and stay there: a figure at 60 km was about 57 px of 1080, and this holds it near promo 03's
+        /// about 71 px. The token's base does not grow: the figures keep their spacing and <see cref="UnitPlinth.BaseToTrio"/> leaves
+        /// them room on it. The constant stays: spacing elsewhere (CivilianPeople) derives from it.</summary>
+        public const float ZoomScaleFromM = Kits.TownModelLayer.CloseExitM, ZoomScaleToM = 60000f, ZoomScaleMax = 1.3f;
+        /// <summary>The share of <see cref="FigureScale"/> a token's figures draw at for a camera at <paramref name="viewM"/>
+        /// (TownModelLayer.ViewDistance).</summary>
+        public static float ZoomScale(float viewM) =>
+            Mathf.Lerp(1f, ZoomScaleMax, Mathf.InverseLerp(ZoomScaleFromM, ZoomScaleToM, viewM));
         /// <summary>The house T29's ratio is measured against at close30, as the T54 audit did: the White City block beside
         /// the showcase trio, the kit's seven-storey heart block (7 x 3.3 m at <see cref="Kits.KitScale.DefaultCityBlocks"/>;
         /// measured on the close30 render at about 1,300 m). A two-storey village house is about half of it.</summary>
@@ -31,6 +43,142 @@ namespace Statecraft.Game.Map.Units
         /// <summary>A figure's height over <see cref="ReferenceHouseM"/>: about 1.8, as T29.</summary>
         public const float HouseRatio = UnitBadge.FigureHeightM * FigureScale / ReferenceHouseM;
         public const float AircraftScale = 420f;        // span 11.2 m x 420 = 4.7 km: wider than a man is tall
+
+        /// <summary>DESIGN VALUE (agent-chosen, coordinator-approved plan, 5 November 2026; checked in captures): the aircraft's
+        /// paint smoothness (URP Lit), a satin sheen in the map's sun. The Egyptian Spitfire's streamed model is fully matte
+        /// (0) and the units' shared paint 0.18; only the code-built 101 Squadron Spitfire and the Egyptian one take it. 0.4 read
+        /// as still mostly matte at 31 km in e21's AFTER captures (5 November 2026).</summary>
+        public const float AircraftSmoothness = 0.5f;
+
+        /// <summary>The URP Lit smoothness property.</summary>
+        internal const string SmoothnessProperty = "_Smoothness";
+
+        /// <summary>DESIGN VALUE: the 101 Squadron Spitfire's propeller blur radius in the aircraft's frame: the blades' reach
+        /// (UnitModels.SpitfirePropeller, 1.6) and a little more.</summary>
+        public const float PropellerBlurRadius = 1.65f;
+
+        /// <summary>DESIGN VALUE: the 101 Squadron Spitfire's haze over the Egyptian one's opacity, in one layer: at the same
+        /// opacity in two layers it read as a near-opaque white plate under its dark rods (e21's AFTER captures of #2728).</summary>
+        public const float PropellerBlurOpacity = 0.65f;
+
+        /// <summary>The names of the 101 Squadron Spitfire's propeller blur (a child of its propeller) and ground shadow (a child
+        /// of the aircraft), and of an authored model's propeller (a child of its prefab's root, turned by ShowcaseFlight).</summary>
+        public const string PropellerBlurName = "PropellerBlur", ShadowName = "Shadow", AuthoredPropellerName = "Propeller";
+
+        /// <summary>A copy of <paramref name="source"/> (same shader, maps and colours) with <see cref="AircraftSmoothness"/>.
+        /// The caller owns it.</summary>
+        internal static Material Glossy(Material source)
+        {
+            var m = new Material(source) { name = source.name + " (glossy)" };
+            m.SetFloat(SmoothnessProperty, AircraftSmoothness);
+            return m;
+        }
+
+        /// <summary>The blurs' and the shadow's material: alpha-blended, unlit, both faces, its colour the meshes' vertex colours
+        /// (HexMaterials' shipped under-attack border template, so a player build keeps the shader's variant), as the Egyptian
+        /// Spitfire's (SeaAirCollection). The caller owns it.</summary>
+        internal static Material BlurMaterial() => Statecraft.HexTiles.HexMaterials.New(Statecraft.HexTiles.HexMaterials.AttackBorder);
+
+        /// <summary>DESIGN VALUES: the 101 Squadron Spitfire's propeller blur, the Egyptian Spitfire's light haze
+        /// (SeaAirCollection.PropBlurColour, PropBlurAlpha) for its four blades (UnitModels.SpitfirePropeller: every 90 degrees
+        /// from 20, which this disc, turned to face along +z, sees at 70 degrees and every 90 after), clear at the spinner,
+        /// fading out at the rim, one layer through the blades' hub, at <see cref="PropellerBlurOpacity"/>. Uploaded; the caller owns it.</summary>
+        internal static Mesh PropellerBlurMesh() => Collection.SeaAirCollection.Disc("SpitfirePropellerBlur101", 48, new[] { 0.15f, 0.4f, 0.7f, 0.9f, 1f },
+            new[] { 0f }, Collection.SeaAirCollection.PropBlurColour,
+            (r, deg) => r >= 1f ? 0f : PropellerBlurOpacity * Mathf.Min(1f, r / 0.4f) * Collection.SeaAirCollection.PropBlurAlpha(deg, 90f, 70f));
+
+        /// <summary>Puts the light blur <paramref name="mesh"/> on the propeller <paramref name="prop"/> (it turns about +z), so it
+        /// turns with it: the disc (made in XZ) turned to face along +z, <paramref name="radius"/> across.</summary>
+        internal static Transform PropellerBlur(Transform prop, Mesh mesh, Material blur, float radius = PropellerBlurRadius)
+        {
+            var go = new GameObject(PropellerBlurName);
+            go.transform.SetParent(prop, false);
+            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            go.transform.localScale = Vector3.one * radius;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = blur; r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false;
+            return go.transform;
+        }
+
+        /// <summary>The flying 101 Squadron Spitfire's soft ground shadow (the Egyptian Spitfire's disc, SeaAirCollection.ShadowDisc),
+        /// a child of <paramref name="plane"/> that ShowcaseFlight lays on the ground each frame, so it goes with the aircraft.</summary>
+        internal static Transform GroundShadow(Transform plane, Mesh mesh, Material blur)
+        {
+            var go = new GameObject(ShadowName);
+            go.transform.SetParent(plane, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = blur; r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false;
+            return go.transform;
+        }
+
+        /// <summary>A flying Spitfire's look, whichever model draws it (the code-built one, or an authored model in
+        /// <see cref="AuthoredFolder"/>, coordinator, 5 November 2026): its propeller (<paramref name="codeProp"/>, or the authored
+        /// prefab's child named <see cref="AuthoredPropellerName"/>) carries the light blur, sized to the propeller's own mesh;
+        /// a soft shadow, sized to the airframe as drawn, lies on the ground (ShowcaseFlight lays it); and the aircraft casts
+        /// no shadow of its own (<see cref="CastNoShadow"/>). Returns the propeller for ShowcaseFlight to turn (null when
+        /// there is none) and the shadow and its half size across and along the heading (m). Call before the aircraft is
+        /// placed or turned: the size is measured in its own frame.</summary>
+        internal static Transform? FlyingSpitfire(Transform plane, GameObject airframe, Transform? codeProp, Mesh blurMesh, Material blur,
+            Mesh shadowMesh, out Transform shadow, out Vector2 shadowHalf)
+        {
+            var size = SizeInFrame(plane);   // before the blur and the shadow are added
+            shadowHalf = 0.5f * Collection.SeaAirCollection.ShadowShare * AircraftScale * new Vector2(size.x, size.z);
+            var prop = codeProp != null ? codeProp : airframe.transform.Find(AuthoredPropellerName);
+            if (prop != null)
+            {
+                // The code-built blades reach 1.6 (UnitModels.SpitfirePropeller); the blur reaches a little beyond any blades.
+                float reach = codeProp != null ? 1.6f : PropellerReach(prop);
+                PropellerBlur(prop, blurMesh, blur, reach > 0f ? reach * PropellerBlurRadius / 1.6f : PropellerBlurRadius);
+            }
+            shadow = GroundShadow(plane, shadowMesh, blur);
+            CastNoShadow(plane);
+            return prop;
+        }
+
+        /// <summary>The meshes under <paramref name="plane"/> measured in its own frame, in the model's units (metres for a
+        /// model to scale: the frame's own scale is taken out), so a code-built and an authored airframe size their shadow alike.</summary>
+        static Vector3 SizeInFrame(Transform plane)
+        {
+            Bounds? box = null;
+            foreach (var p in Corners(plane, plane))
+                if (box is Bounds b) { b.Encapsulate(p); box = b; } else box = new Bounds(p, Vector3.zero);
+            return box?.size ?? Vector3.zero;
+        }
+
+        /// <summary>How far an authored propeller's blades reach from its hub in its turning plane (its local X and Y), in its
+        /// own units: the largest of its meshes' extents along either axis (a bounding box's corner would overstate a
+        /// blade by up to the square root of 2). 0 when it has no mesh.</summary>
+        static float PropellerReach(Transform prop)
+        {
+            float reach = 0f;
+            foreach (var p in Corners(prop, prop)) reach = Mathf.Max(reach, Mathf.Abs(p.x), Mathf.Abs(p.y));
+            return reach;
+        }
+
+        /// <summary>The corners of every mesh's bounds under <paramref name="root"/>, in <paramref name="frame"/>'s local space.</summary>
+        static IEnumerable<Vector3> Corners(Transform root, Transform frame)
+        {
+            foreach (var f in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (f.sharedMesh == null) continue;
+                var m = frame.worldToLocalMatrix * f.transform.localToWorldMatrix;
+                var b = f.sharedMesh.bounds;
+                for (int c = 0; c < 8; c++)
+                    yield return m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
+            }
+        }
+
+        /// <summary>A flying code-built Spitfire casts no shadow of its own: its soft disc (<see cref="GroundShadow"/>) is its
+        /// shadow, and a cast one would lie about 7 km off at its drawn height (e21's AFTER captures of #2728).</summary>
+        internal static void CastNoShadow(Transform plane)
+        {
+            foreach (var r in plane.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
+        /// <summary>The sea's surface (world y), as KitGround has it: the heightmap's 0 m.</summary>
+        internal static float SeaLevelY(MapScene map) => map.Terrain.transform.position.y - map.ElevMinM * MapBuilder.VerticalExaggeration;
         public const float ShipScale = 95f;             // 63.4 m x 95 = 6.0 km: about a hex, like the promo's boats
         /// <summary>Trio spacing and the ring, as fractions of the hex circumradius. <see cref="TrioSpread"/> is the spacing
         /// the placer checks a token's spot with (UnitGround), kept so no spot moved.</summary>
@@ -39,6 +187,10 @@ namespace Statecraft.Game.Map.Units
         /// across; ours 1.15 too: 2 x 950 m between the outer figures' centres plus a figure's width, against a 2.5 km man).
         /// Narrower than <see cref="TrioSpread"/>, so the drawn figures stand inside the ground the placer checked.</summary>
         public const float DrawSpread = 0.19f;
+        /// <summary>The share of <see cref="DrawSpread"/> a compact token's figures stand at (#2430): at the compact ring's half
+        /// (UnitGround.CompactScale) three figures merged into one shape. DESIGN VALUE: wider and the base's ring runs into the
+        /// selection ring, which stands at the town clearing's radius (UnitGround.RingRadius, #588).</summary>
+        public const float CompactSpread = 0.6f;
         /// <summary>How far (in hexes) from <see cref="TrioAt"/> the showcase trio may move to stand clear of the kits and
         /// the routes (<see cref="TrioSpot"/>).</summary>
         public const float SpotSearchHexes = 2.2f;
@@ -132,6 +284,7 @@ namespace Statecraft.Game.Map.Units
             var palette = assets.Own(UnitPalette.MakeTexture(readable: false));
             var paint = assets.Own(new Material(template) { name = "UnitMiniature (palette)" });
             paint.SetTexture("_BaseMap", palette);
+            var aircraftPaint = assets.Own(Glossy(paint));
             Mesh Built(Mesh m) { assets.Own(m); return UnitPlinth.Upload(m); }   // no CPU copy kept in players
             float hex = map.Hexes.hex_size_km * 1000f;
 
@@ -159,18 +312,22 @@ namespace Statecraft.Game.Map.Units
             // The aircraft and, when code-built, its propeller.
             var plane = new GameObject("Spitfire1948");
             plane.transform.SetParent(root.transform, false);
-            Piece(plane.transform, "Airframe", SpitfireType, () => Built(UnitModels.Spitfire("Spitfire1948")), paint,
+            var airframe = Piece(plane.transform, "Airframe", SpitfireType, () => Built(UnitModels.Spitfire("Spitfire1948")), aircraftPaint,
                 Vector3.zero, Quaternion.identity, 1f, out bool authoredAircraft);
-            Transform? prop = null;
+            Transform? codeProp = null;
             if (!authoredAircraft)
             {
-                prop = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), paint, Vector3.zero, Quaternion.identity, 1f).transform;
-                prop.localPosition = UnitModels.SpitfirePropellerHub;
+                codeProp = Piece(plane.transform, "Propeller", Built(UnitModels.SpitfirePropeller("SpitfirePropeller")), aircraftPaint, Vector3.zero, Quaternion.identity, 1f).transform;
+                codeProp.localPosition = UnitModels.SpitfirePropellerHub;
             }
+            // Its blur, shadow and no cast shadow, whichever model draws it (an authored one brings its own propeller).
+            var prop = FlyingSpitfire(plane.transform, airframe, codeProp, assets.Own(PropellerBlurMesh()), assets.Own(BlurMaterial()),
+                assets.Own(Collection.SeaAirCollection.SpitfireShadowDisc()), out var shadow, out var shadowHalf);
             plane.transform.localScale = Vector3.one * AircraftScale;
             var loopCentre = map.Frame.ToWorld(LoopCentre.lon, LoopCentre.lat, 0);
             var flight = plane.AddComponent<ShowcaseFlight>();
-            flight.Configure(loopCentre, LoopRadiusM, LoopFloor(map, loopCentre, LoopRadiusM) + AltitudeM, LoopSeconds, BankDegrees, prop, still ? StillPhase : (float?)null);
+            flight.Configure(loopCentre, LoopRadiusM, LoopFloor(map, loopCentre, LoopRadiusM) + AltitudeM, LoopSeconds, BankDegrees, prop, still ? StillPhase : (float?)null,
+                shadow, map.Terrain, SeaLevelY(map), shadowHalf);
 
             // The corvette, at the sea surface.
             var ship = Ground(map, map.Frame.ToWorld(ShipAt.lon, ShipAt.lat, 0));

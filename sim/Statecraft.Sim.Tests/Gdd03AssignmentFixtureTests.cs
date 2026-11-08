@@ -39,7 +39,7 @@ public class Gdd03AssignmentFixtureTests
             new PopulationUnit(0, PopulationStatus.FreeCivilian, c.RequirePopulationInteger("reception.turns"), place,
                 PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
         var state = PlayerRegions.CreateFixture(c,
-            new[] { new PlayerRegionPool(region, 3, 1m, 2, 2, Array.Empty<PlayerRegionFacility>()) }, people,
+            PlayerRegionsContentTests.CompletePools(c, new PlayerRegionPool(region, 3, 1m, 2, 2, Array.Empty<PlayerRegionFacility>())), people,
             slots.Select(x => new PopulationTarget(x.Id, PopulationAssignmentKind.Work, region)), Array.Empty<string>(), Array.Empty<string>());
         var fixture = new Gdd03AssignmentFixture(c, state, slots);
         fixture.Assign(0, slots[0].Id); fixture.Assign(1, slots[1].Id);
@@ -76,9 +76,26 @@ public class Gdd03AssignmentFixtureTests
         }
         var same = s.Describe();
         Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, f.Assign(0, Slots[0].Id)); Assert.Equal(same, s.Describe());
-        s.PopulationLedger.Replace(s.PopulationLedger.Get(1).WithReception(0));
+        // Ineligible: a refugee is not a free civilian (reception progress is no longer the test, docs/GDD.md:386).
+        var refugee = s.PopulationLedger.Get(1);
+        s.PopulationLedger.Replace(refugee.WithPlacement(PopulationStatus.Refugee, refugee.Location, PopulationAssignment.Unassigned, refugee.Captor, refugee.Home));
         same = s.Describe(); Assert.Throws<ArgumentException>(() => f.Assign(1, Slots[2].Id)); Assert.Equal(same, s.Describe());
         Assert.Throws<ArgumentException>(() => new Gdd03AssignmentFixture(c, s, Slots.Concat(new[] { Slots[0] })));
+    }
+
+    // R-CITY-001, R-CITY-004: the MVP has no reception-bed layer (owner, 1 November 2026, "No reception-bed layer
+    // (Recommended)", docs/GDD.md:386), so a free civilian with no reception progress may take and leave a job.
+    [Fact] public void AFreeCivilianWithNoReceptionProgressIsEligible()
+    {
+        var c = Content(); var s = State(c, Person());
+        s.PopulationLedger.Replace(s.PopulationLedger.Get(0).WithReception(0));
+        var f = new Gdd03AssignmentFixture(c, s, Slots);
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(0, Slots[0].Id));
+        Assert.Equal(Slots[0].Id, s.PopulationLedger.Get(0).Assignment.Target);
+        Assert.Equal(0, s.PopulationLedger.Get(0).ReceptionTicks);
+        Assert.Equal(1m, f.IndustryRate(Slots[0].Id));
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(0, null));
+        Assert.Equal(PopulationAssignmentKind.Unassigned, s.PopulationLedger.Get(0).Assignment.Kind);
     }
 
     // R-CITY-001: independent seeded model checks capacity, exclusivity and conservation after every step.
@@ -234,9 +251,9 @@ public class Gdd03AssignmentFixtureTests
         var rows = Enumerable.Range(0, people).Select(i => new PopulationInventoryRow("synthetic", i,
             new PopulationUnit(0, PopulationStatus.FreeCivilian, ticks, at, PopulationAssignment.Unassigned,
                 CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
-        var s = PlayerRegions.CreateFixture(c, new[] {
+        var s = PlayerRegions.CreateFixture(c, PlayerRegionsContentTests.CompletePools(c,
                 new PlayerRegionPool(RegionA, 0, 0m, industry, workshop, Array.Empty<PlayerRegionFacility>()),
-                new PlayerRegionPool(RegionB, 0, 0m, 0, 0, Array.Empty<PlayerRegionFacility>()) },
+                new PlayerRegionPool(RegionB, 0, 0m, 0, 0, Array.Empty<PlayerRegionFacility>())),
             rows, slots.Select(x => new PopulationTarget(x.Id, PopulationAssignmentKind.Work, RegionA)),
             Array.Empty<string>(), Array.Empty<string>());
         return (s, new Gdd03AssignmentFixture(c, s, slots));
@@ -298,9 +315,9 @@ public class Gdd03AssignmentFixtureTests
         var rows = Enumerable.Range(0, 4).Select(i => new PopulationInventoryRow("synthetic", i,
             new PopulationUnit(0, PopulationStatus.FreeCivilian, content.RequirePopulationInteger("reception.turns"), locations[i / 2],
                 PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
-        var state = PlayerRegions.CreateFixture(content, new[] {
+        var state = PlayerRegions.CreateFixture(content, PlayerRegionsContentTests.CompletePools(content,
             new PlayerRegionPool(RegionA, 2, 0m, 0, 0, new[] { new PlayerRegionFacility("synthetic-a-facility", "ramla", facilityKind, 1) }),
-            new PlayerRegionPool(RegionB, 2, 0m, 0, 0, new[] { new PlayerRegionFacility("synthetic-b-facility", "rishon_lezion", facilityKind, 1) }) },
+            new PlayerRegionPool(RegionB, 2, 0m, 0, 0, new[] { new PlayerRegionFacility("synthetic-b-facility", "rishon_lezion", facilityKind, 1) })),
             rows, slots.Select((slot, i) => new PopulationTarget(slot.Id, PopulationAssignmentKind.Work, i < 2 ? RegionA : RegionB)),
             Array.Empty<string>(), Array.Empty<string>());
         var fixture = new Gdd03AssignmentFixture(content, state, slots);

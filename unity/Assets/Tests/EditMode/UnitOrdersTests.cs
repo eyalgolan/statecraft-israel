@@ -430,6 +430,35 @@ public class UnitOrdersTests
         }
     }
 
+    // Red-first prediction at ae4bfdaab: the card runs the sim's Reinforce on a copy of the displayed state, without the queue,
+    // so it offers Reinforce even though the earlier craftsman reassignment leaves End turn no idle civilian for it.
+    [Test]
+    public void AQueuedCraftsmanReassignmentHidesReinforceThatEndTurnWouldRefuse()
+    {
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var bridge = new SimBridge(g, Text);
+        var token = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
+        var id = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+        var u = g.State.Units[id];
+        var city = C.SettlementHexes.Single(h => h.Id == "tel_aviv");
+        g.State.Units[id] = new Unit(u.Id, u.Type, city.Q, city.R, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity, u.Strength);
+        var telAviv = g.State.Cities[city.Id];
+        g.State.Cities[city.Id] = telAviv.WithCounts(1, 0, 0).WithCraftsmen(0).WithQualified(new Qualified(1, 0, System.Array.Empty<int>()));
+        g.State.Arms = 100;
+        Assert.IsNull(bridge.Queue(new ReassignCraftsmen(city.Id, 1)));
+        Assert.AreEqual(0, Training.Available(g.State, city.Id, bridge.Queued), "the queued reassignment reserves the only idle civilian");
+        var candidate = new Reinforce(id, city.Id, 1);
+        var preview = Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).Append(candidate).ToList());
+        var rejected = preview.Rejected.Single(x => ReferenceEquals(x.Command, candidate));
+        StringAssert.Contains("0 civilians without work", rejected.Reason, "precondition: the exact End-turn preview refuses Reinforce");
+
+        PlacedToken? selected = new PlacedToken(token, new AnchorSpot(0, 0, 0, 0, false));
+        using var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => selected);
+        info.ShowUnit();
+        Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("info-reinforce").style.display.value);
+    }
+
     /// <summary>#2072, owner review item 1: a Reinforce the sim refuses for Arms ("Tel Aviv: not enough Arms for basic training
     /// (need ..)") reaches the player through SimBridge, in Hebrew whole: the town and the course in Hebrew too, no Latin
     /// letter. The bridge queues it (a Reinforce waits for End turn) and End turn raises the sim's refusal, which the toast
@@ -586,7 +615,7 @@ public class UnitOrdersTests
             string Odds(int q, int r)
             {
                 var p = Combat.Preview(C, bridge.State, id, q, r)!.Value;
-                var bands = Combat.Outcomes(C, bridge.State, p.Row).Select(b => Text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
+                var bands = Combat.Outcomes(C, bridge.State, p.Row, id, q, r).Select(b => Text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
                     b.Faces, b.Of, b.AttackersLose, b.DefendersLose));
                 var names = string.Join(", ", bridge.State.Units.Values.Where(u => (u.Q, u.R) == (q, r)).Where(u => u.Side != "" && u.Side != Movement.PlayerSide).Select(u => "Unit-" + u.Id));
                 return Text.Format("unit.attack_odds", names, p.RatioPercent) + "\n" + string.Join("\n", bands);   // one band a line
@@ -726,6 +755,47 @@ public class UnitOrdersTests
             GameRoot.OnHexClicked(map, layer, info, far.Q, far.R);
             Assert.AreEqual((Movement.GoTo, $"{far.Q},{far.R}"), (bridge.State.Units[id].Order, bridge.State.Units[id].OrderTarget));
             StringAssert.Contains(Text.Format("unit.go_to_given", 1), ui.Q<Label>("info-settlements").text);
+            info.Dispose();
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>R-ENEMY-005 on screen (the owner's ruling on #2087, 1 November 2026): the card of a unit on an operation
+    /// card's go-to counts the turns of the card's march, which goes round an enemy-held place it was not sent to, not those
+    /// of the player's own route through it. Golani stands at 3,12, sent by a card to 10,5 beyond enemy-held Acre (8,7): on the
+    /// 4.4 km grid (#1796) no start and target within 7 hexes of Nazareth (8,11) make the way round cost a turn, so it is Acre.</summary>
+    [Test]
+    public void ACardOrderedUnitsCardCountsTheWayRound()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var session = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            var id = UnitCard.SimUnit(C, session.State, Units.Single(e => e.Id == "golani"))!.Value;
+            var u = session.State.Units[id];
+            session.State.Units[id] = new Unit(u.Id, u.Type, 3, 12, u.Service, u.Side, u.Strength, Movement.GoTo, "10,5", u.HomeCity, u.Full);
+            session.State.CardOrders[id] = new System.DateTime(1949, 2, 24);
+            var bridge = new SimBridge(session, Text);
+            // Any committed order re-runs the turn's preview, in which the march takes this turn's step (RunOrders).
+            var other = UnitCard.SimUnit(C, session.State, Units.Single(e => e.Id == "carmeli"))!.Value;
+            Assert.IsNull(bridge.Queue(new UnitOrder(other, Orders.Hold)));
+            var now = bridge.Session.Now;
+            var plain = Movement.Route(C, now.State, id, 10, 5, now.Spent);
+            var card = Movement.Route(C, now.State, id, 10, 5, now.Spent, card: true);
+            Assert.IsTrue(now.State.CardOrders.ContainsKey(id), "the card's order still stands");
+            Assert.IsTrue(plain.Any(h => (h.Q, h.R) == (8, 7)) && !card.Any(h => (h.Q, h.R) == (8, 7)), "the player's route crosses Acre, the card's goes round");
+            Assert.AreNotEqual(plain[plain.Count - 1].Turn, card[card.Count - 1].Turn, "the way round costs a turn, so the card shows which route it counts");
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(bridge.Content, bridge.State);
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
+                selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
+                showReachable: map.ShowReachable, showRoute: map.ShowRoute);
+            var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+            GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
+            var shown = ui.Q<Label>("info-settlements").text;
+            StringAssert.Contains(Text.Format("unit.go_to_given", card[card.Count - 1].Turn - 1), shown);
+            StringAssert.DoesNotContain(Text.Format("unit.go_to_given", plain[plain.Count - 1].Turn - 1), shown);
             info.Dispose();
         }
         finally { Object.DestroyImmediate(map.gameObject); }

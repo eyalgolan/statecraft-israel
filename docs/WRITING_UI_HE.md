@@ -18,6 +18,7 @@ Revision 21 October 2026, localisation follow-up: event/unit field fallbacks and
 - A writer or translator reads the rules and the checklist.
 - A native reviewer works through the "For the native reviewer" lists, decides each open point, and signs off by name and date (HE-14).
 - An AI agent reads the agent brief first. It must never finalise Hebrew and must flag every Hebrew string for native review.
+- An AI-assisted contributor may do the native read and clear an `agent-checked` flag, when the pull request's "AI assistance" section discloses the AI help and lists the strings read (the owner, 4 November 2026: "AI-assisted can clear it"; https://github.com/eyalgolan/statecraft-israel/pull/2481#issuecomment-6623108295).
 - Every quoted string is a real string from `strings.he.yaml` or `strings.en.yaml`, or a real line from the sources named. Rewrites are labelled "candidate".
 
 Rule status legend: **observed** (already the practice), **proposed** (new), **maintainer** (needs Eyal's decision), **native** (needs a native Hebrew reviewer), **code** (needs a code change).
@@ -37,11 +38,11 @@ Use when writing or reviewing Hebrew for Statecraft: Israel. Never present a pro
 1. Hebrew mirrors English key for key, with the same placeholders (HE-01).
 2. One Hebrew word per concept, from the glossary. Do not introduce a second word for a concept already in use (HE-02).
 3. Do not use the masculine imperative or slash forms. Prefer an action noun, "יש ל...", a word ending in ך or ת, or a neutral first person (HE-03).
-4. Write counts as "Label: N". Do not build sentences whose wording changes with the number (HE-04).
+4. Use the established singular and plural selector families where wording changes with the number; otherwise prefer "Label: N" (HE-04).
 5. Full spelling (ktiv male) for modern text (HE-05).
 6. Punctuation is ASCII, as in English. Acronyms take gershayim before the last letter. Use the typographic gershayim ״ (U+05F4) everywhere, in strings and in content (HE-06, settled in #630).
 7. A prefix before a numeral or Latin letters takes a maqaf, per the Academy (HE-07).
-8. Digits are Latin. Do not type dates or money into a string. Month names come from the `date.*` keys; money is not yet localised (HE-08).
+8. Digits are Latin. Do not type dates or money into a string, except the six sourced citation and credit dates listed in HE-08. Month names come from the `date.*` keys; money is not yet localised (HE-08).
 9. Inserted values are wrapped in direction marks by the UI (#543). Static Hebrew text has no Latin letters, names included. Do not put a colon or bracket directly after a Latin word typed in a Hebrew sentence without checking the display. Preview with `?lang=he` (HE-09).
 10. No left or right, above or below (HE-11).
 11. Do not write a verb or pronoun after a placeholder in a form that only fits one gender, when the placeholder can be a body or a person of either gender (HE-15).
@@ -75,14 +76,14 @@ For the native reviewer: choose the word for each open concept above and record 
 
 ### HE-03 Form of address
 Status: proposed, native; source read directly. Source: the Israeli National Digital Agency's guide to government language, section 1.3.3 (paraphrased; reuse terms not found). It says: do not address users only in the masculine singular; do not use slash or dot forms; first priority is a setting that adapts the form to the user; second, a second person without a gender marker (words ending in ך, ת or ה); then a neutral first person; then an action noun, an infinitive, or rephrasing such as "יש לשלוח".
-- The strings already follow this apart from one masculine imperative: "הסתר" (`event.hide`). Candidate: "הסתרה" or "להסתיר".
-- Examples using "יש ל..." include "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משבצת; גרירה בלחצן הימני מזיזה את המפה" (`info.hint`). Action-noun labels include "הקמת מעברה ({0})" (`info.build_camp`), "הגשת התקציב" (`budget.submit`), "העלאת הדרגה" (`defence.raise`), "השמעת ההקלטה" (`start.listen`) and "איפוס" (`budget.reset`). One uses the ך ending: "{0} (מינוי שלך)" (`card.appointed_name`).
+- The strings follow this, apart from the two forms below. The one masculine imperative, "הסתר" (`event.hide`), is now the action noun "הסתרה".
+- Examples using neutral instructions include "לחיצה על יחידה ואז על משבצת מזיזה אותה; לחיצה על המפה, או Tab ו־Enter, בודקת משבצת; גרירה מזיזה את המפה" (`info.hint`). Action-noun labels include "הקמת מעברה ({0})" (`info.build_camp`), "הגשת התקציב" (`budget.submit`), "העלאת הדרגה" (`defence.raise`), "השמעת ההקלטה" (`start.listen`) and "איפוס" (`budget.reset`). One uses the ך ending: "{0} (מינוי שלך)" (`card.appointed_name`).
 - Two forms the reviewer should look at: "טוען את ההקלטה…" (`start.loading`), a masculine present-tense form with the program as its implied subject; and "המשך" (`start.continue`), which reads as a noun and also matches a masculine imperative. The Hebrew README addresses the reader as "אתם" (plural), a different choice again.
 - A player setting for the form of address is the guide's first priority. It is a design decision for the owner and is not proposed here.
-For the native reviewer: confirm that "יש ל..." and action nouns are right for a game, rule on the two forms above, and choose between "הסתרה" and "להסתיר".
+For the native reviewer: confirm that "יש ל..." and action nouns are right for a game, and rule on the two forms above.
 
 ### HE-04 Counts and plurals
-Status: observed in the Hebrew strings, maintainer for a mechanism. Reason: Hebrew has three plural categories for cardinal numbers (one, two, other; Unicode CLDR 48), and the game has no general way to choose a form by count. The Hebrew file already writes counts as "Label: N": "החלטות ממתינות נוספות: {0}" (`event.more`), which needs no plural form, and a repo test pins it as count-neutral. The top bar picks between two keys by count: "{0:0} נקודה" (`hud.say_point`) and "{0:0} נקודות" (`hud.say_points`). The objective early/late month messages also have singular variants selected in EventCardPresenter.ObjectiveLine. The city panel adds city.groups_one/city.groups and city.turns_one/city.turns (#869). These explicit selectors do not provide a general language-category mechanism; native review must assess their wording.
+Status: observed in the Hebrew strings, maintainer for a mechanism. Reason: Hebrew has three plural categories for cardinal numbers (one, two, other; Unicode CLDR 48), and the game has no general way to choose a form by count. Nine explicit selector families change the Hebrew wording by count. The top bar picks between two keys: "{0:0} נקודה" (`hud.say_point`) and "{0:0} נקודות" (`hud.say_points`). "החלטות ממתינות נוספות: {0}" (`event.more`) is written as "Label: N" and a repo test pins it; a count of one uses `event.more_one` (`EventCardTests`: "the owner's singular label (25 Oct)"). The objective early/late month messages have singular variants (`event.objective_early_one`, `event.objective_late_one`) selected in EventCardPresenter.ObjectiveLine. The city panel adds city.groups_one/city.groups and city.turns_one/city.turns (#869). The other three are `why.line.unit_moved_one` / `why.line.unit_moved`, `info.map_action_reason.too_far_one` / `info.map_action_reason.too_far_many` and `workshop.refused_built_one` / `workshop.refused_built`. These explicit selectors do not provide a general language-category mechanism; native review must assess their wording.
 - Gendered numerals (the form of a number depends on the gender of the counted noun) are a separate question. No source was found, and the rule is not written here.
 For the native reviewer: list any strings where a number appears next to a noun and say which form is needed, and say whether the two-key form of `hud.say_point` is enough for a digit numeral.
 
@@ -94,7 +95,7 @@ For the native reviewer: confirm full spelling for all UI text, and decide the s
 Status: gershayim adopted (maintainer, #630), subject to a native-reviewer overrule in #564. Other punctuation recommendations remain proposed for native review.
 - Hebrew uses ASCII punctuation: full stop, comma, question mark, exclamation mark and colon work as in English, and the question mark is not mirrored (r12a).
 - Acronyms take gershayim before the last letter, for example "הרמטכ״ל" and "האו״ם". The correct character is the typographic gershayim ״ (U+05F4); a straight quote is a common substitute because of keyboards, and r12a notes it sits too high (r12a). The Academy's own examples use the straight quote and do not discuss the typographic character. The strings checked use ״, including defence.command, defence.ceasefire, defence.ceasefire_stops, defence.ceasefire_starts and the newer cabinet.reason.is_chief_of_staff / cabinet.reason.not_career_officer (#985). The abbreviation mark geresh is the typographic ׳ (U+05F3), in "מס׳ 1" (`start.source`) and in `info.hex`. The gershayim choice ״ was adopted in #630 for strings and content. A native reviewer may overrule it in #564. Geresh and quotation-style recommendations still need native review.
-- Quotation marks are not paired. In principle ” opens and closes and ’ nests, but straight quotes are common in practice (r12a). The strings contain no double quotation marks. The one string that put straight single quotes around a placeholder, `order.unknown`, no longer does: since #651 it reads "לא ניתן לזהות {0}" and shows no id (UI-07). No string quotes a value now. Choose one style before content needs it.
+- Quotation marks are not paired. In principle ” opens and closes and ’ nests, but straight quotes are common in practice (r12a). Nine values use the typographic gershayim ״ (U+05F4) at both ends of a quotation: `advisor.page.objectives.text`, `advisor.page.why.title`, `advisor.page.why.text`, `advisor.page.cabinet.text`, `advisor.page.arms.text`, `advisor.page.arms.gdd03.text`, `advisor.page.truces.text`, `advisor.page.capture.text` and `report.all`. The one string that put straight single quotes around a placeholder, `order.unknown`, no longer does: since #651 it reads "לא ניתן לזהות {0}" and shows no id (UI-07). No string quotes a value now.
 - #630 made the content match the strings. `content/offices.yaml` gives the Haganah post as רמטכ״ל ההגנה, and a scan of `content/parties.yaml` and `content/offices.yaml` found no straight quote inside a Hebrew word. The strings and the content now use ״ alike. The #630 description also lists a title and one person's name; those were not re-checked here.
 For the native reviewer: record any overrule of the adopted ״ convention, and choose a quotation style.
 
@@ -104,13 +105,14 @@ Status: proposed, native. Reason: the Academy's punctuation rules use a maqaf wh
 - Code: a placeholder written straight after a prefix ("ב{0}") is joined to a Hebrew value ("בתל אביב"), and UiText.Format adds the maqaf when the value starts with a digit or a Latin letter ("ב־Haifa", for a name with no Hebrew form yet). Write "ב־{0}" only where the value is always a numeral or a date.
 - Native review: owner, 25 Oct 2026 (recommendations page), #1636: direct joining before Hebrew names, the maqaf only before a numeral or Latin letters, and "10 ק״מ מדרום־מערב לחיפה" for `why.hex.away`.
 - Candidate: "יישובים ב־1948: {0}".
-- A second place: the map legend joins two colour words with a hyphen-minus, "כתום-אדום" (`map.legend_held`, also `map.legend_armistice`). r12a's note on the hyphen between compounds points to the maqaf there too. Candidate: "כתום־אדום".
+- A second place: the map legend joined two colour words with a hyphen-minus. `map.legend_held` and `map.legend_armistice` now use the maqaf, "כתום־אדום", as r12a's note on the hyphen between compounds suggests.
 For the native reviewer: confirm the maqaf for prefixes before numerals and Latin letters, for the colour compound, and the numeral range style in `why.turn`.
 
 ### HE-08 Numbers, dates and money
 Status: proposed, maintainer, code.
 - Digits are Latin. A range written with a hyphen-minus reads left to right inside Hebrew text (r12a), while the Academy writes a numeric range right to left with an en dash, the first number at the right (פרקים 5 to 12, not 12 to 5). The two behave differently under the bidi algorithm, so avoid typed ranges, as the strings already do with "מ־{0} עד {1}" (`why.turn`), and test any range in Unity before adopting one.
 - The map, top bar, Budget, Why and info panel use localized date.* keys via Control1948.DateText or LineDateText (#687, #701). PlayerText.Date itself remains English; remaining callers need individual checks. Money still uses PlayerText.Money and its currency prefix from content. UiText.Format wraps inserted values without Hebrew in U+200E marks, which addresses direction but does not translate the value.
+- Six sourced citation or credit strings intentionally type their dates, matching the English catalogue: `start.source`, `map.caption_adjusted`, `advisor.quote.q1.source`, `advisor.credit.ben_gurion`, `advisor.credit.meyerson` and `advisor.credit.dayan`. This is the exception to the no-typed-dates rule; gameplay dates still use the `date.*` keys.
 - Currency needs a decision. The money format is "IL 1.2m". For the years the game covers, "IL" is, as far as is known, the Israeli pound (an inference, not checked in a source), not the new shekel, so the shekel sign ₪ that Hebrew UI guidance normally uses would be wrong. How the Israeli pound is written in Hebrew is a question for the native reviewer and Eyal.
 For the native reviewer: confirm the twelve month names as the style the game should use, supply the Hebrew way to write the Israeli pound, and the format for large amounts ("1.2m"). The spoken form already says "מיליון" (`hud.say_million`).
 
@@ -119,7 +121,7 @@ Status: proposed, native, test in Unity. Reason: Hebrew runs right to left and e
 - To test: "לא ניתן היה להפעיל את Statecraft: {0}. יש לטעון את הדף מחדש." (`boot.failed`), where a colon follows a Latin word and a placeholder follows it.
 - To test: "לחיצה, Enter או רווח לדילוג · Esc מדלג על הכול" (`outcome.skip`), which is new since 14 October.
 - Settled since 14 October: the recording credit keeps no Latin name. It is "הקלטה: ראלף הלינגר, ארכיון המדינה" (`start.recording_credit`), as the Israel State Archives spell the name, and the Hebrew UI test rejects Latin letters in any static Hebrew text, names included.
-- Already in place: each text takes its direction from its own first letter (`InHebrewEachTextTakesItsDirectionFromItsOwnWords`), and the Hebrew test bans the explicit embedding and override characters U+202A to U+202E. Since #543 every value inserted into a Hebrew pattern is wrapped in left-to-right marks (U+200E), and `HebrewValuesTests` renders the lines to check that a minus sign and an English date draw correctly and that the marks draw nothing. Those tests cover the inserted-value cases described; they do not establish correctness for every mixed-direction string. A Latin word typed inside a Hebrew sentence is not covered by the tests reviewed.
+- Already in place: each text takes its direction from its own first letter (`InHebrewEachTextTakesItsDirectionFromItsOwnWords`), and the Hebrew catalogue test bans the explicit embedding and override characters U+202A to U+202E in string values. Since #543 every value inserted into a Hebrew pattern is wrapped in left-to-right marks (U+200E), and `HebrewValuesTests` renders the lines to check that a minus sign and an English date draw correctly and that the marks draw nothing. The code-level exception is the end screen: `EndScreenPresenter` wraps each Hebrew date in RLE and PDF (U+202B and U+202C, #2060), because UI Toolkit's text generator still misordered that date with the isolates (measured on Unity 6000.3). Those tests cover the inserted-value cases described; they do not establish correctness for every mixed-direction string. A Latin word typed inside a Hebrew sentence is not covered by the tests reviewed.
 - How to see it: open the game with `?lang=he`.
 - To test: "ספיטפייר LF Mk IXe" (`unit.aircraft.spitfire`).
 - To test: in the game, the lines that receive an English date or amount, to confirm the marks do what the rendered test describes (HE-08).
@@ -135,8 +137,13 @@ Status: observed in English, proposed for Hebrew. The settings.tiltshift string 
 Check: a pattern search over the strings files.
 
 ### HE-12 Content text (events, units, names)
-Status: implemented localisation, native review pending (#564). In the Hebrew UI, EventCardPresenter uses the Hebrew title, body and option labels where supplied through ContentNames.Fill; each missing field falls back to English. An alternate-timeline variant without Hebrew keeps its English variant text. UnitCard uses a sourced Hebrew unit name and optional Hebrew place, commander and sector text where supplied, otherwise the English value for that field. Names of offices, parties, governments, legislatures and places have sourced Hebrew forms in the content since #558, and Unity reads Hebrew names of places, Cabinet refusal names (#985), and the people, office, party, government and legislature forms handled by ContentNames.Of (#861). Since 15 October a Hebrew display name that an agent has checked against its sources and no person has read carries its own flag beside it, `name_he_review`, `title_he_review`, `title_he_f_review` or `body_he_review: agent-checked`. The native reviewer removes the line once they have read the name (CONTENT_POLICY section 2, rule 6; #564). Localised content keeps the same rules: every historical claim keeps its sources, no quote is invented, and Hebrew names of people and places are checked against a source and not guessed. Sensitive events need review by a native reader and the existing sensitivity review, in addition to the historian review.
+Status: implemented localisation, native review pending (#564). In the Hebrew UI, EventCardPresenter uses the Hebrew title, body and option labels where supplied through ContentNames.Fill; each missing field falls back to English. An alternate-timeline variant without Hebrew keeps its English variant text. UnitCard uses a sourced Hebrew unit name and optional Hebrew place, commander and sector text where supplied, otherwise the English value for that field. Names of offices, parties, governments, legislatures and places have sourced Hebrew forms in the content since #558, and Unity reads Hebrew names of places, Cabinet refusal names (#985), and the people, office, party, government and legislature forms handled by ContentNames.Of (#861). Since 15 October a Hebrew display name that an agent has checked against its sources and no person has read carries its own flag beside it, `name_he_review`, `title_he_review`, `title_he_f_review` or `body_he_review: agent-checked`. A native speaker, or an AI-assisted contributor who discloses it, removes the line once they have read the name (CONTENT_POLICY section 2, rule 6; #564; owner, 4 November 2026: "AI-assisted can clear it"). Localised content keeps the same rules: every historical claim keeps its sources, no quote is invented, and Hebrew names of people and places are checked against a source and not guessed. Sensitive events must be `sensitivity-reviewed` (CONTENT_POLICY section 2, rule 1), and the Hebrew read of their text is done, as for any Hebrew text, by a native speaker or by a disclosed AI-assisted contributor who clears the `agent-checked` flag (CONTENT_POLICY section 2, rule 6). Historian review is planned for M4 and is not yet a gate.
 For the maintainer: the remaining localisation scope and review ownership; the Hebrew fields and per-field English fallbacks above are already implemented.
+
+Media descriptions on event photographs, illustration loops, outcome clips and opening media follow the same per-field
+fallback: `alt_he` in Hebrew when supplied, otherwise `alt`. Agent-drafted descriptions carry
+`alt_he_review: agent-checked` pending #564's native read. The feedback preview's field labels and visible title prefixes
+also come from the active string table; the GitHub form itself keeps its English title prefix.
 
 ### HE-13 Tone
 Status: proposed, native. The project voice is sober, direct and institutional. Hebrew should match: no slang, no drama, no filler. The government guide's principle of personal but gender-neutral wording (HE-03) applies. No Hebrew-specific tone source has been found beyond that.
@@ -154,15 +161,13 @@ For the native reviewer: review any new body name against these sentences and ma
 
 | Key | Today | Candidate | Rule |
 |---|---|---|---|
-| `event.hide` | הסתר | הסתרה, or להסתיר | HE-03 |
 | `info.localities` | יישובים ב-1948: {0} | יישובים ב־1948: {0} | HE-07 |
-| `map.legend_held` | כתום-אדום (in the line) | כתום־אדום | HE-07 |
 | `unit.national` | רמת ביטחון {1} מתוך 5 | the same word as `hud.level` (דרגה) | HE-02 |
 | `info.biome.valley`, `info.biome.lowland` | בקע, עמק | reviewer to say whether the two are swapped | HE-02 |
 | `start.loading` | טוען את ההקלטה… | reviewer to rule on the masculine present form | HE-03 |
 | `boot.failed` | ...את Statecraft: {0}. ... | check the display; isolate the Latin name | HE-09 |
 
-Addressed by #1081 and removed from this table: the three legislature vote strings (HE-15). Settled by the owner since 14 October and also removed: `card.competence` (now כישורים), `defence.section_ladder` (now המצב הביטחוני) and the separate unit for the Provisional State Council (`cabinet.seats_appointed`).
+Addressed by #1081 and removed from this table: the three legislature vote strings (HE-15). Done since, and also removed: `event.hide` (now "הסתרה", HE-03) and the colour compound in `map.legend_held` and `map.legend_armistice` (now "כתום־אדום", HE-07). Settled by the owner since 14 October and also removed: `card.competence` (now כישורים), `defence.section_ladder` (now המצב הביטחוני) and the separate unit for the Provisional State Council (`cabinet.seats_appointed`).
 
 ## Review checklist
 
@@ -185,7 +190,7 @@ Run in order. A "no" is a finding, cited by rule ID.
 
 For the maintainer:
 - Review any remaining English date callers and decide the localized money format (HE-08). The main date surfaces listed above are already localized.
-- Where else to isolate a value (HE-09). The text generator honours the isolates (#1414, `HebrewValuesTests`), and per-text direction is already tested.
+- Where else to isolate a value (HE-09). The text generator honours the isolates (#1414, `HebrewValuesTests`), and per-text direction is already tested; end-screen dates retain the measured RLE/PDF exception above.
 - Hebrew for content, and its review (HE-12, #55).
 - A player setting for the form of address (HE-03).
 - Whether the two-key plural is enough, or a general mechanism is wanted (HE-04).

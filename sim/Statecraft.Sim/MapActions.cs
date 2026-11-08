@@ -103,7 +103,7 @@ namespace Statecraft.Sim
             var reason = Check(c, s, action, q, r);
             if (reason != null) return reason;
             var rule = c.RulesAt(s.Date).MapActions[action];
-            if (s.MapActionsTurnDate != s.Date) { s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = 0; }
+            if (s.MapActionsTurnDate != s.Date) { s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = 0; s.CityStartsThisTurn.Clear(); }
             s.MapActionsThisTurn++;
             s.Placements.RemoveAll(p => p.Q == q && p.R == r);
             s.Placements.Add(new Placement(action, q, r, s.Date));

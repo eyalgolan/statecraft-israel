@@ -230,3 +230,25 @@ def test_a_row_a_person_signed_off_leaves_the_queue_and_is_counted(tmp_path):
     gov.write_text(gov.read_text(encoding="utf-8").replace("reviewed_by: eyalgolan", "reviewed_by: eyal@example.org"), encoding="utf-8")
     entries, human, signed = rq.queue(repo)
     assert [e.row for e in entries if e.kind == "status"] == ["g1"] and signed == 0
+
+
+def test_a_moved_hebrew_flag_is_listed_with_its_english_records_row_and_sources(tmp_path):
+    """#1618: after the Hebrew moves into translations/he/, its agent-checked flags stay in the queue, with the row and the
+    sources of the English record (the sources stay there)."""
+    repo = make_repo(tmp_path)
+    (repo / "content" / "people.yaml").write_text(PEOPLE.replace("    name_he: איש לדוגמה\n    name_he_review: agent-checked\n", ""),
+                                                  encoding="utf-8")
+    (repo / "translations" / "he").mkdir(parents=True)
+    (repo / "translations" / "he" / "content.yaml").write_text(
+        '"people.yaml#people.example.name":\n  text: "איש לדוגמה"\n  review: "agent-checked"\n'
+        '"offices.yaml#offices.fm.title":\n  text: "שר האוצר"\n', encoding="utf-8")
+    (repo / "translations" / "he" / "events.yaml").write_text(
+        'truce:\n  title: "הפוגה"\n  text: "הפוגה."\n  options:\n    ok: "בסדר"\n  review: "agent-checked"\n', encoding="utf-8")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "languages: move the Hebrew")
+    entries, _, _ = rq.queue(repo)
+    moved = [(e.file, e.line, e.row, e.field, e.value, e.sources) for e in entries if e.file.startswith("translations/")]
+    assert moved == [("translations/he/content.yaml", 3, "example", "name_he", "איש לדוגמה", ["https://example.org/hebrew-name"]),
+                     ("translations/he/events.yaml", 6, "truce", "text_he", "הפוגה.", ["https://example.org/truce"])]
+    assert all(e.checked_by == "an AI agent (the `agent-checked` flag)" for e in entries if e.file.startswith("translations/"))
+    assert "| example | name_he | איש לדוגמה | <https://example.org/hebrew-name> |" in rq.page(entries, 0, "0123456789abcdef")

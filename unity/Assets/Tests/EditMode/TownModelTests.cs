@@ -2,9 +2,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map;
+using Statecraft.Game.Map.Collection;
 using Statecraft.Game.Map.Kits;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -14,7 +16,8 @@ using M = Statecraft.Game.Map.Kits.TownModel;
 
 /// <summary>Issue #659 step 2: the towns are built from Tal Heuberger's building models, by town type (the
 /// issue's table), one model per placed building, fitted to the kit's footprints (the layout and census unchanged), loaded
-/// with the map through the scene (never through a Resources folder), drawn instanced with baked levels of detail.</summary>
+/// with the map through the scene (never through a Resources folder), drawn instanced: the originals below the close switch
+/// (#1273), their far-off copies beyond it (#2378).</summary>
 public class TownModelTests
 {
     [TearDown]
@@ -190,10 +193,11 @@ public class TownModelTests
     {
         var map = OpenMap();
         var built = Build(map, out var placed);
-        // With the four cities drawn from their building models at every zoom (owner, 2 November 2026), which have no whole-town model.
+        // With the four major cities, which have no whole-town model: their building models draw below the close switch
+        // (owner, 7 November 2026, "Tal's models close (Recommended)"), their kits from 40 km out (TownModels.IsMajorCity).
         var mapped = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null
             || TownLandmarksTests.BigCities.Contains(s.Id)).ToList();
-        TestContext.WriteLine($"{mapped.Count} towns with a whole-town model or buildings at every zoom: {string.Join(", ", mapped.Select(s => s.Id))}");
+        TestContext.WriteLine($"{mapped.Count} towns with a whole-town model or major cities: {string.Join(", ", mapped.Select(s => s.Id))}");
         var ids = mapped.Select(s => s.Id).ToHashSet();
         CollectionAssert.IsSubsetOf(new[] { "tel_aviv", "jerusalem", "haifa", "rishon_lezion", "degania_alef", "nahalal", "nazareth" }, ids);
         Assert.AreEqual(new[] { "arab_town", "city", "kibbutz", "moshav", "town" }, mapped.Select(s => s.Type).Distinct().OrderBy(t => t).ToArray());
@@ -313,7 +317,11 @@ public class TownModelTests
         }
         var deps = AssetDatabase.GetDependencies("Assets/Map.unity", true);
         CollectionAssert.DoesNotContain(deps, TownModels.SetPath, "#1273: the map scene must not eagerly load the original list");
-        foreach (var id in TownModels.Ids) CollectionAssert.DoesNotContain(deps, $"{TownModels.Folder}/{id}/{id}.fbx", id + " streams after the first frame");
+        foreach (var id in TownModels.Ids)
+        {
+            CollectionAssert.DoesNotContain(deps, $"{TownModels.Folder}/{id}/{id}.fbx", id + " streams after the first frame");
+            CollectionAssert.DoesNotContain(deps, TownModels.FarStem(id) + ".asset", id + ": its far-off copy streams too");
+        }
         Assert.IsFalse(TownModels.SetPath.Split('/').Any(x => x.Equals("Resources", StringComparison.OrdinalIgnoreCase)));
         var inResources = AssetDatabase.GetAllAssetPaths()
             .Where(p => p.StartsWith("Assets/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)
@@ -322,7 +330,7 @@ public class TownModelTests
         CollectionAssert.DoesNotContain(AssetDatabase.GetDependencies(inResources, true), TownModels.SetPath, "the list is reached from a Resources folder");
     }
 
-    /// <summary>The fail-open check (#700): a model list that is missing, or lacks a model or a level, never leaves a town's
+    /// <summary>The fail-open check (#700): a model list that is missing, or lacks a model or a far copy, never leaves a town's
     /// plots empty. The map still builds, says so in an error, and every town keeps its kit buildings at every zoom, the
     /// close views included (no model is drawn and no kit mesh gives way to its close mesh). The editor's bake still
     /// refuses an incomplete list (Validate).</summary>
@@ -336,7 +344,7 @@ public class TownModelTests
             // fake null and test the "no list" case twice.
             var c = ScriptableObject.CreateInstance<TownModelSet>(); c.hideFlags = HideFlags.DontUnloadUnusedAsset;
             c.meshes = (Mesh[])full.meshes.Clone(); c.materials = (Material[])full.materials.Clone();
-            c.mid = (Mesh[])full.mid.Clone(); c.far = (Mesh[])full.far.Clone(); c.farthest = (Mesh[])full.farthest.Clone();
+            c.mid = (Mesh[])full.mid.Clone(); c.far = (Mesh[])full.far.Clone(); c.farMaterials = (Material[])full.farMaterials.Clone();
             return c;
         }
         var probe = Clone();
@@ -344,9 +352,12 @@ public class TownModelTests
         {
             Assert.IsNull(probe.Missing(), "the full list");
             probe.far[(int)M.B17CourtyardHouse] = null!;
-            StringAssert.Contains("B17CourtyardHouse has no far level", probe.Missing());
-            Assert.Throws<System.IO.InvalidDataException>(() => probe.Validate(), "the bake refuses a missing level");
+            StringAssert.Contains("B17CourtyardHouse has no far mesh", probe.Missing());
+            Assert.Throws<System.IO.InvalidDataException>(() => probe.Validate(), "the bake refuses a missing far copy");
             probe.far[(int)M.B17CourtyardHouse] = AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath).far[(int)M.B17CourtyardHouse];
+            probe.farMaterials[(int)M.B17CourtyardHouse] = null!;
+            StringAssert.Contains("B17CourtyardHouse has no far material", probe.Missing());
+            probe.farMaterials[(int)M.B17CourtyardHouse] = AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath).farMaterials[(int)M.B17CourtyardHouse];
             probe.meshes[(int)M.B17CourtyardHouse] = null!;
             StringAssert.Contains("B17CourtyardHouse has no mesh", probe.Missing());
             var empty = ScriptableObject.CreateInstance<TownModelSet>();
@@ -393,34 +404,68 @@ public class TownModelTests
         }
     }
 
-    /// <summary>#1273: every compatibility detail alias is the same original FBX mesh. No baked lighter substitute.
-    /// Strategic distance hides originals, separately checked by OriginalModelsStreamingTests.</summary>
+    /// <summary>The record FarModelLevels writes beside each far-off copy (the fields this test reads).</summary>
+    [Serializable]
+    sealed class FarRecord
+    {
+        public string source = "", source_sha256 = "", colour_map = "", colour_map_sha256 = "", provenance = "";
+        public int triangles = -1, target_triangles = -1;
+    }
+
+    /// <summary>#1273 near, #2378 far. Below the close switch every town draws Tal Heuberger's original FBX mesh, GPU-only,
+    /// with no baked lighter substitute: the near tier and its mid alias (the hex-tile sandbox's "@mid" ids) are that mesh.
+    /// Beyond the close switch the towns draw the far-off copies (owner, 3 November 2026: "Ask Tal; allow them far off only",
+    /// then "I have Tal's OK; go ahead", "it must be high quality"): a derived mesh of at most TownModels.FarTriangles
+    /// triangles, under a fifth of the original, with Tal's shader and a colour map baked from Tal's (never Tal's own JPG),
+    /// made from the sources whose hashes its record holds, so a far copy older than its source fails here. The far prefab
+    /// (what its bundle streams) depends on none of the original's files.</summary>
     [Test]
-    public void EveryDetailAliasReferencesTheSameOriginalMesh()
+    public void TheNearTierIsTheOriginalAndTheFarTierIsItsDerivedCopy()
     {
         var set = AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath);
         set.Validate();
         foreach (M model in Enum.GetValues(typeof(M)))
         {
             var full = set.Mesh(model); string id = TownModels.Ids[(int)model];
-            Assert.AreEqual($"{TownModels.Folder}/{id}/{id}.fbx", AssetDatabase.GetAssetPath(full), model + " full original");
+            string fbx = $"{TownModels.Folder}/{id}/{id}.fbx", jpg = $"{TownModels.Folder}/{id}/{id}_basecolor.jpg";
+            Assert.AreEqual(fbx, AssetDatabase.GetAssetPath(full), model + " full original");
             Assert.Greater(full.GetIndexCount(0), 0, model + " geometry present");
             Assert.IsFalse(full.isReadable, model + " GPU-only");
-            for (int level = 0; level <= TownModelSet.Levels; level++)
-                Assert.AreSame(full, set.Mesh(model, level), model + " no generated LOD or substitute at level " + level);
+            Assert.AreSame(full, set.mid[(int)model], model + ": no generated LOD or substitute near");
+            var far = set.FarMesh(model);
+            Assert.AreEqual(TownModels.FarStem(id) + ".asset", AssetDatabase.GetAssetPath(far), model + " far-off copy");
+            int triangles = (int)(far.GetIndexCount(0) / 3), source = (int)(full.GetIndexCount(0) / 3);
+            Assert.That(triangles, Is.InRange(1, TownModels.FarTriangles), model + " far triangles");
+            Assert.Less(triangles * 5, source, model + ": the far copy is under a fifth of the original");
+            Assert.AreEqual(1, far.subMeshCount, model + " far copy: one material");
+            var farMaterial = set.FarMaterial(model);
+            Assert.AreEqual(TownModels.FarStem(id) + ".mat", AssetDatabase.GetAssetPath(farMaterial), model + " far material");
+            Assert.AreEqual(set.Material(model).shader, farMaterial.shader, model + ": the far material keeps Tal's shader");
+            Assert.IsTrue(farMaterial.enableInstancing, model + " far material instanced");
+            Assert.AreEqual(TownModels.FarStem(id) + ".png", AssetDatabase.GetAssetPath(farMaterial.mainTexture), model + " far colour map");
+            var record = JsonUtility.FromJson<FarRecord>(File.ReadAllText(TownModels.FarStem(id) + ".json"));
+            Assert.AreEqual(fbx, record.source, model + " record source");
+            Assert.AreEqual(CollectionCatalog.Sha256(fbx), record.source_sha256, model + ": the far copy was made from this FBX");
+            Assert.AreEqual(jpg, record.colour_map, model + " record colour map");
+            Assert.AreEqual(CollectionCatalog.Sha256(jpg), record.colour_map_sha256, model + ": and from this colour map");
+            Assert.AreEqual(triangles, record.triangles, model + " record triangles");
+            Assert.AreEqual(TownModels.FarTriangles, record.target_triangles, model + " record target");
+            StringAssert.Contains("owner confirms Tal's permission, 3 Nov 2026 (#2378)", record.provenance, model.ToString());
+            // The far bundle carries nothing of the original: its prefab reaches the far mesh, material and map only.
+            string prefab = CollectionCatalog.PrefabPath(CollectionCatalog.FarCopy(id), CollectionDetail.Far);
+            var deps = AssetDatabase.GetDependencies(prefab, true);
+            CollectionAssert.Contains(deps, TownModels.FarStem(id) + ".asset", model + " far prefab mesh");
+            CollectionAssert.Contains(deps, TownModels.FarStem(id) + ".png", model + " far prefab map");
+            CollectionAssert.DoesNotContain(deps, fbx, model + ": the far prefab must not pull the original mesh");
+            CollectionAssert.DoesNotContain(deps, jpg, model + ": the far prefab must not pull the original colour map");
+            CollectionAssert.DoesNotContain(deps, $"{TownModels.Folder}/{id}/{id}.mat", model + ": nor the original material");
         }
-        // A 840 m block (a Tel Aviv block at 60x), 1080 px tall, the camera's 30 degrees: at tel_aviv30 (30 km) about 56 px,
-        // the mid mesh; at the 6 km closest zoom about 280 px, the full mesh.
-        int L = TownModelSet.Levels + 1;
-        Assert.AreEqual(3, TownModelLayer.LodFor(840f, 30000f, 30f, 1080f, L), "tel_aviv30: the mid mesh");
-        Assert.AreEqual(2, TownModelLayer.LodFor(460f, 12000f, 30f, 1080f, L), "jaffa12, a village house: the mid mesh");
-        Assert.AreEqual(0, TownModelLayer.LodFor(840f, CameraController.MinDistance, 30f, 1080f, L), "the closest zoom: the full mesh");
-        Assert.AreSame(set.mid[0], set.Mesh((M)0, 2)); Assert.AreSame(set.mid[0], set.Mesh((M)0, 3));
     }
 
     /// <summary>Owner ruling on #700, "Models up close only": the switch picks by the camera's view distance with
-    /// hysteresis (models from below 40 km, kits again from above 45 km), on either side of the geometric middle of
-    /// tel_aviv30 and gameplay03, the band wider than one wheel notch; the view distance is the camera rig's zoom.</summary>
+    /// hysteresis (the originals from below 40 km, never above 45 km), on either side of the geometric middle of
+    /// tel_aviv30 and gameplay03, the band wider than one wheel notch; the view distance is the camera rig's zoom. Beyond
+    /// it the far band (#2378) admits the far-off copies out to 100 km.</summary>
     [Test]
     public void TheSwitchHasHysteresisBetweenTheCloseViewsAndGameplay()
     {
@@ -430,8 +475,21 @@ public class TownModelTests
         Assert.IsFalse(TownModelLayer.CloseAt(46000f, true)); Assert.IsTrue(TownModelLayer.CloseAt(39000f, false));
         Assert.That(Mathf.Sqrt(30000f * 60000f), Is.InRange(TownModelLayer.CloseEnterM, TownModelLayer.CloseExitM), "the band holds the middle");
         Assert.Greater(TownModelLayer.CloseExitM / TownModelLayer.CloseEnterM - 1f, CameraController.ZoomPerStep, "wider than one notch");
-        foreach (var pose in PromoPose.All) Assert.Greater(pose.Distance, TownModelLayer.CloseExitM, pose.Name + " draws the kits");
-        foreach (var pose in PromoPose.CloseUps) Assert.Less(pose.Distance, TownModelLayer.CloseEnterM, pose.Name + " draws the models");
+        foreach (var pose in PromoPose.All) Assert.Greater(pose.Distance, TownModelLayer.CloseExitM, pose.Name + " draws no original");
+        foreach (var pose in PromoPose.CloseUps) Assert.Less(pose.Distance, TownModelLayer.CloseEnterM, pose.Name + " draws the originals");
+        // The far band (#2378): the far-off copies from the close switch out to 100 km, the same hysteresis shape, this
+        // layer's alone (the seven other layers keep the 40/45 km switch untouched); it holds the 60 km gameplay view and
+        // the 90 km opening, not diorama02, and ends under the strategic cap.
+        Assert.IsTrue(TownModelLayer.FarAt(99_000f, null)); Assert.IsFalse(TownModelLayer.FarAt(101_000f, null));
+        Assert.IsTrue(TownModelLayer.FarAt(105_000f, true), "zooming out: still the far copies inside the band");
+        Assert.IsFalse(TownModelLayer.FarAt(105_000f, false), "zooming in: still the kits inside the band");
+        Assert.IsFalse(TownModelLayer.FarAt(113_000f, true)); Assert.IsTrue(TownModelLayer.FarAt(99_000f, false));
+        Assert.Greater(TownModelLayer.FarExitM / TownModelLayer.FarEnterM - 1f, CameraController.ZoomPerStep, "the far band is wider than one notch");
+        Assert.Greater(TownModelLayer.FarEnterM, TownModelLayer.CloseExitM, "the far band begins where the close switch ends");
+        Assert.LessOrEqual(TownModelLayer.FarExitM, OriginalModelDistance.EnterM, "under the strategic cap");
+        Assert.Less(PromoPose.Gameplay03.Distance, TownModelLayer.FarEnterM, "gameplay03 draws the far copies");
+        Assert.Less(90_000f, TownModelLayer.FarEnterM, "the 90 km opening draws the far copies");
+        Assert.Greater(PromoPose.Diorama02.Distance, TownModelLayer.FarExitM, "diorama02 draws the kits");
         var go = new GameObject("cam"); var cam = go.AddComponent<Camera>(); var rig = go.AddComponent<CameraRig>();
         try
         {
@@ -472,12 +530,17 @@ public class TownModelTests
         UnityEngine.Object.DestroyImmediate(close);
     }
 
-    /// <summary>Owner ruling on #700, "Models up close only": at gameplay03 and diorama02 every kit mesh draws (main's
-    /// towns) and no model does, but for Tel Aviv, Jerusalem, Haifa and Jaffa, whose building models draw at every zoom
-    /// (owner, 2 November 2026, "Yes, small buildings at every zoom"); at the close views (tel_aviv30, jaffa12) the models
-    /// draw (well over a hundred), every kit individual-town mesh gives way to its close mesh (mixed locality tiles keep
-    /// fallback), and the models stay within the fixture's complete original-geometry work; zooming back out restores
-    /// the kits. The "kits" toggle stops the models too. The log line is the draw cost at each pose.</summary>
+    /// <summary>Owner ruling on #700, "Models up close only", and #2378 (owner, 3 November 2026, "allow them far off only"):
+    /// at the close views (tel_aviv30, jaffa12, petah_tikva30) the originals draw (well over a hundred), every kit
+    /// individual-town mesh gives way to its close mesh, the major cities' included (mixed locality tiles keep fallback), and
+    /// the models stay within the fixture's complete original-geometry work. The major cities (TownModels.IsMajorCity) draw
+    /// Tal Heuberger's models below the close switch (owner, 7 November 2026, "Tal's models close (Recommended)") and keep
+    /// their kits from 40 km out (owner, 6 November 2026, "Big blocks, every zoom", which "Tal's models close
+    /// (Recommended)" supersedes below the switch). Within the far band (gameplay03 at 60 km, the 90 km opening) the
+    /// towns with a whole-town model draw their far-off copies instead (owner, 3 November 2026, "Cities/towns only
+    /// (Recommended)"), at most TownModels.FarTriangles each, so the 90 km opening stays under four million triangles; the
+    /// 1948 localities keep their kits. At diorama02 (250 km) no model draws. Zooming back out restores the kits. The "kits"
+    /// toggle stops the models too. The log line is the draw cost at each pose.</summary>
     [UnityTest]
     public IEnumerator TheKitsDrawFarAndTheModelsUpClose()
     {
@@ -506,23 +569,50 @@ public class TownModelTests
         var kitRs = map.Settlements.Select(s => root.Find(s.Id).GetComponent<MeshRenderer>())
             .Concat(renderers.Where(r => r.name.StartsWith("Localities ") && !r.name.EndsWith(KitLayer.CloseSuffix))).ToList();
         Assert.Greater(closeRs.Count, 20, "close meshes"); Assert.Greater(kitRs.Count, 40, "kit meshes");
-        Assert.IsNotNull(root.Find("tel_aviv" + KitLayer.CloseSuffix), "Tel Aviv keeps its landmarks and palms up close");
+        Assert.IsNotNull(root.Find("tel_aviv" + KitLayer.CloseSuffix), "Tel Aviv's close mesh is still built (a major city: it never swaps in)");
         var originals = AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath);
         // Full-original geometry has no decimated-mesh triangle cap. Bound submitted WORK instead:
         // rendering more than every fixture instance once is a duplicate-submission regression.
         long maxGeometryWork = layer.Instances().Sum(i => (long)originals.meshes[(int)i.model].triangles.Length / 3);
         var results = new List<string>();
-        var big = TownLandmarksTests.BigCities;
+        var big = map.Settlements.Where(s => TownModels.IsMajorCity(s.Id)).Select(s => s.Id).ToList();
+        CollectionAssert.AreEquivalent(TownLandmarksTests.BigCities, big, "the four major cities");
         int bigInstances = big.Sum(id => layer.CountFor(id));
-        void Check(PromoPose pose, bool close)
+        // The places that draw the far-off copies beyond the close switch (KitLayer): every settlement with a whole-town
+        // model, i.e. the moshavot and towns, the kibbutzim, Nahalal and the Arab towns (Q15 option a). Not the four major
+        // cities, which keep their kits from 40 km out (owner, 6 November 2026, "Big blocks, every zoom").
+        var farTier = map.Settlements.Where(s => Statecraft.Game.Map.Collection.TownLandmarks.ModelFor(s) != null)
+            .Select(s => s.Id).ToHashSet();
+        CollectionAssert.IsEmpty(farTier.Intersect(big).ToList(), "the four major cities take no far-off copies");
+        CollectionAssert.Contains(farTier, "petah_tikva", "a moshava draws its far-off copies");
+        // The far tier pinned to the content, not to the condition above: the 21 game settlements of
+        // content/map/settlements_1948.yaml that are not major cities, written out by hand (the six moshavot, Tiberias, Safed,
+        // Netanya and Ramla; the five kibbutzim and Nahalal; Acre, Nazareth, Lod, Gaza and Beersheba). KitLayer's own list is
+        // checked, so a broken condition there cannot pass by agreeing with this test's copy of it.
+        string[] expectedFarTier =
         {
-            // Up close every detailed town; far off only the four cities, and in this fixture only within its focus admission
-            // (OriginalModelDistance.EnterM, 120 km: gameplay03 at 60 km, not diorama02 at 250 km). This fixture has no view
-            // admission; TheFourCitiesDrawTheirBuildingModelsAtEveryZoom checks production's at 250 km.
+            "acre", "beersheba", "degania_alef", "ein_harod", "gaza", "hadera", "hanita", "lod",
+            "nahalal", "nazareth", "netanya", "petah_tikva", "ramla", "rehovot", "revivim", "rishon_lezion", "rosh_pinna",
+            "safed", "tiberias", "yad_mordechai", "zikhron_yaakov",
+        };
+        Assert.AreEqual(21, expectedFarTier.Distinct().Count(), "the expected far tier names 21 settlements");
+        var productionFarTier = (HashSet<string>?)typeof(TownModelLayer).GetField("farTowns", fixtureFlags)!.GetValue(layer);
+        Assert.IsNotNull(productionFarTier, "KitLayer passes the far tier to the layer");
+        CollectionAssert.AreEquivalent(expectedFarTier, productionFarTier!, "KitLayer's far tier: exactly the 21 game settlements, no major city, no locality");
+        CollectionAssert.Contains(productionFarTier!, "degania_alef", "a kibbutz (a whole-town row by type) draws its far-off copies");
+        CollectionAssert.AreEquivalent(expectedFarTier, farTier, "this test's far tier matches the content");
+        int farInstances = farTier.Sum(id => layer.CountFor(id));
+        void Check(PromoPose pose, bool close, string? floorTown = null)
+        {
+            // Up close every detailed town, the major cities included; within the far band the far-tier places (never a major
+            // city), beyond it none, and in this fixture only within its focus admission (OriginalModelDistance.EnterM, 120 km:
+            // gameplay03 at 60 km and the 90 km opening, not diorama02 at 250 km). This fixture has no view admission;
+            // TheFourCitiesKeepTheirKitsFarAndDrawTalsModelsClose checks production's at 250 km.
             bool farFocus = pose.Distance < Statecraft.Game.Map.Collection.OriginalModelDistance.EnterM;
-            bool Ready(string town) => layer.CountFor(town) > 0 && (close || (big.Contains(town) && farFocus));
+            bool farBand = TownModelLayer.FarAt(pose.Distance, null);
+            bool Ready(string town) => layer.CountFor(town) > 0 && (close || (farFocus && farBand && !big.Contains(town) && farTier.Contains(town)));
             foreach (var s in map.Settlements)
-                if (!close && !big.Contains(s.Id)) Assert.IsFalse(layer.ReadyForTown(s.Id, cam), pose.Name + ": " + s.Id + " has no building model far off");
+                Assert.AreEqual(Ready(s.Id), layer.ReadyForTown(s.Id, cam), pose.Name + ": " + s.Id + (Ready(s.Id) ? " draws its building models" : " has no building model"));
             Assert.AreEqual(close, layer.LastClose, pose.Name);
             foreach (var renderer in kitRs)
             {
@@ -540,21 +630,38 @@ public class TownModelTests
             results.Add($"{pose.Name}: close={close} {layer.LastDrawn} models, {layer.LastTriangles} triangles, {layer.LastDraws} draws");
             if (!close)
             {
-                // Far off, only the four cities' buildings, never more than all of theirs: some at gameplay03 (Tel Aviv and
-                // Jaffa in view), none at diorama02 (outside this fixture's focus admission).
-                Assert.LessOrEqual(layer.LastDrawn, bigInstances, pose.Name + ": no other town's building model");
-                if (farFocus) Assert.Greater(layer.LastDrawn, 0, pose.Name + ": the four cities' buildings in view");
+                // Beyond the close switch only the far-off copies: never more instances than the far-tier places hold, and
+                // never more than TownModels.FarTriangles each; some at gameplay03 and at the 90 km opening, none at
+                // diorama02 (outside this fixture's focus admission).
+                Assert.LessOrEqual(layer.LastDrawn, farBand ? farInstances : 0, pose.Name + ": no other town's building model");
+                Assert.LessOrEqual(layer.LastTriangles, (long)layer.LastDrawn * TownModels.FarTriangles, pose.Name + ": the far-off copies, not the originals");
+                if (farFocus) Assert.Greater(layer.LastDrawn, 0, pose.Name + ": the buildings in view");
                 else Assert.AreEqual(0, layer.LastDrawn, pose.Name + ": nothing outside the fixture's focus admission");
                 return;
             }
+            // Up close: well over a hundred models, and over floorTown at least all of its instances.
             Assert.Greater(layer.LastDrawn, 100, pose.Name + ": models drawn");
+            if (floorTown != null)
+            {
+                Assert.Greater(layer.CountFor(floorTown), 0, floorTown + " has building models");
+                Assert.GreaterOrEqual(layer.LastDrawn, layer.CountFor(floorTown), pose.Name + ": " + floorTown + "'s models drawn");
+            }
             Assert.LessOrEqual(layer.LastTriangles, maxGeometryWork, pose.Name + ": no more than all original instances once");
         }
         foreach (var pose in PromoPose.All) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(pose, false); }
         foreach (var pose in PromoPose.CloseUps) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(pose, true); }
+        // Petah Tikva at 30 km (its settlements_1948.yaml point), framed as tel_aviv30: a close view over a town that draws
+        // its building models.
+        var petah30 = new PromoPose("petah_tikva30", 34.8864, 32.0889, 30000f, 10f);
+        petah30.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(petah30, true, "petah_tikva");
         PromoPose.Gameplay03.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(PromoPose.Gameplay03, false);
-        TestContext.WriteLine($"{layer.Count} models ({bigInstances} in the four cities: " +
-            string.Join(", ", big.Select(id => $"{id} {layer.CountFor(id)}")) + "); " + string.Join("; ", results));
+        // The opening camera of today (CameraRig.Distance, 90 km, over 34.95E 31.95N): the far-off copies' budget there.
+        var start90 = new PromoPose("start90", 34.95, 31.95, 90_000f, 0f);
+        start90.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(start90, false);
+        Assert.GreaterOrEqual(layer.LastDrawn, layer.CountFor("lod"), "start90: the far copies of Lod, under the opening's centre, and more");
+        Assert.LessOrEqual(layer.LastTriangles, 4_000_000L, "start90: the far tier's budget at the 90 km opening");
+        TestContext.WriteLine($"{layer.Count} models ({bigInstances} in the four major cities, drawn below the close switch: " +
+            string.Join(", ", big.Select(id => $"{id} {layer.CountFor(id)}")) + $"; {farInstances} in the {farTier.Count} far-tier game settlements); " + string.Join("; ", results));
         PromoPose.CloseUps[0].Apply(rig, map.Frame);
         VisualToggles.Set("kits", false); RenderSample.Render(cam, 320, 180);
         Assert.IsFalse(layer.Draw, "the kits toggle hides the models");

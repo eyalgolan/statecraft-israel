@@ -14,8 +14,9 @@ Each language has a folder named by its code (`ro`, `fr`, `pt-BR`), with up to t
 | `content.yaml` | every content field that has a Hebrew form (`name_he`, `title_he_f`, `sector_he` ...), as `text` and `review` | `<file under content/>#<record path>.<field>`, for example `people.yaml#people.ben_gurion.name` |
 
 The rules are the Hebrew ones ([docs/WRITING_EVENTS.md](../docs/WRITING_EVENTS.md)): an event is all or none, placeholders
-match the English, one line each, no direction marks, and `review: agent-checked` until a native speaker has read the
-text (#564). The tool rewrites these files whole, so only their header comment is kept.
+match the English, one line each, no direction marks, and `review: agent-checked` until a native speaker, or an
+AI-assisted contributor who discloses it, has read the text (#564; owner, 4 November 2026: "AI-assisted can clear it").
+The tool rewrites these files whole, so only their header comment is kept.
 
 `ro/` is an example of the layout: `ui.yaml` holds one string (`ui.lang`, the language code) and `events.yaml` the
 `first_truce` event. Start a language with `uv run tools/translate.py`, then "To" > "New language…".

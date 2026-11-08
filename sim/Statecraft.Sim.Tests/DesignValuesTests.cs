@@ -67,6 +67,9 @@ public partial class DesignValuesTests
         ("rules.yaml", "mvp.hold_defence_percent"),      // R-ORDER-003, #746 (Q-HOLD-2)
         ("rules.yaml", "attention_cost.unit_order"),     // R-ORDER-001, #746 (D-A6)
         ("rules.yaml", "mvp.delegation_loyalty_floor"),   // R-EVT-003, #107
+        ("rules.yaml", "mvp.operation_wait_turns"),   // R-ENEMY-007, #2543
+        ("rules.yaml", "mvp.operation_lapse_security"),   // R-ENEMY-007, #2543 (Q8)
+        ("rules.yaml", "mvp.operation_truce_break_standing"),   // R-ENEMY-007, #2543 (late Ten Days in the truce)
         ("rules.yaml", "mvp.disloyal_effect_share"),
         ("rules.yaml", "mvp.enemy_attack_ratio_percent"),   // R-ENEMY-003, #749 (Q-ENEMY-2)
         // Q-START-1 (owner, 15 October 2026, #375): no city has a sourced housing stock or job count, so every city's
@@ -148,6 +151,12 @@ public partial class DesignValuesTests
         ("projects.yaml", "projects[arms_workshop].condition"),
         ("projects.yaml", "projects[arms_workshop].job_slots"),
         ("projects.yaml", "projects[arms_workshop].worker_slots"),
+        // R-HOUSE-006 (#1700, #1703; owner, 1 November 2026: "Fixed price 0.5 Money + 1 work"): gdd-0.3 only.
+        ("projects.yaml", "projects[housing_repair].cost"),
+        ("projects.yaml", "projects[housing_repair].turns"),
+        ("projects.yaml", "projects[housing_repair].capacity"),
+        ("projects.yaml", "projects[housing_repair].condition"),
+        ("projects.yaml", "projects[housing_repair].job_slots"),
         // Movement (Phase 5 PR 5, #744; Q-MOVE-1, Q-MOVE-3): agent-proposed under "Take all recommendations" (#375).
         ("rules.yaml", "attention_cost.move"),
         ("rules.yaml", "mvp.move_cost.coastal_plain"),

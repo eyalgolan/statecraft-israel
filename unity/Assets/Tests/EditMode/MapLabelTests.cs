@@ -292,6 +292,115 @@ public class MapLabelTests
         Assert.IsEmpty(failures, string.Join("\n", failures));
     }
 
+    /// <summary>#1701 slice F: Tal Heuberger's workshop model (b21) at an arms workshop built on Rehovot's own hex (gdd-0.3) and
+    /// the map's names do not cover each other. With the real prefab placed and the camera at 30 km over the model (inside its
+    /// close zoom), no shown settlement, locality or location pill overlaps the model's projected bounds.</summary>
+    [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModel() { yield return NoPillCovers("rehovot"); }
+    /// <summary>The same at a major city's edge (owner, 6 November 2026, verbatim: "make the workshop at the edge of the city",
+    /// which replaces "Among the houses" of 2 November 2026 there): Tel Aviv and Jerusalem.</summary>
+    [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModelInTelAviv() { yield return NoPillCovers("tel_aviv"); }
+    /// <summary>Jerusalem, every pill through the close zoom (15 to 45 km) but one: the "East Jerusalem / Old City"
+    /// location's pill is checked up to the close zoom's entry (40 km) only. At its exit (45 km, reached only on the way out)
+    /// that pill (263 px wide, about 7.6 km there, set above the Old City's kit) covers the b21: an open item on #2281.
+    /// The plan models the place names' bands (SpecialBuildingModels.ClearOfName), not a location pill at that zoom.</summary>
+    [UnityTest] public IEnumerator NoNamePillCoversAWorkshopModelInJerusalem() { yield return NoPillCovers("jerusalem"); }
+
+    /// <summary>Review of #2281 on main: every city's workshop model, not only these three, clear of every name pill through the
+    /// close zoom (15 to 45 km), so keeping off the map locations' pills moved no overlap elsewhere.</summary>
+    [UnityTest]
+    public IEnumerator NoNamePillCoversAnyCitysWorkshopModel()
+    {
+        var cities = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content).Cities.Select(c => c.Id).OrderBy(x => x, System.StringComparer.Ordinal).ToList();
+        Assert.Greater(cities.Count, 5);
+        foreach (var city in cities) yield return NoPillCovers(city);
+    }
+
+    /// <summary>The one pill, and the distances, the owner's ruling of 3 November 2026 accepts over the Jerusalem b21; that pill
+    /// is not checked beyond the close zoom's entry (40 km).</summary>
+    static readonly string OldCityPill = "slot-east_jerusalem_old_city";
+    static readonly float[] OldCityPillAcceptedM = { 25000f, 30000f, 40000f };
+    const float OldCityPillFarthestM = 40000f;
+
+    IEnumerator NoPillCovers(string city)
+    {
+        var saved = Statecraft.Game.Map.Collection.SpecialBuildingModels.Request;
+        Statecraft.Game.Map.Collection.SpecialBuildingModels.Request = (id, detail, done) =>
+            done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, detail)));
+        var hd = new HdPanel(cam);
+        MapLabelsPresenter? labels = null;
+        try
+        {
+            var content = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+            foreach (var era in content.Eras) { era.Systems.Ruleset = Statecraft.Sim.SaveGame.Gdd03Ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
+            var home = content.SettlementHexes.Single(h => h.Id == city);
+            var built = new System.DateTime(1949, 3, 1);
+            var layer = CollectionGeometryFixture.Special(map, built, content,
+                new[] { new Statecraft.Sim.CityProject(9, Statecraft.Sim.Workshops.ArmsWorkshop, city, home.Q, home.R, 0, built) })!;
+            var model = layer.transform.Find(Statecraft.Game.Map.Collection.SpecialBuildingModels.WorkshopKey(9));
+            Assert.IsNotNull(model, "the workshop model stands at " + city);
+            // As GameRoot wires it (#1701 slice F, option 3): the names keep clear of the drawn b21 (SpecialBuildingModels.KeepClear).
+            labels = new MapLabelsPresenter(hd.Root, map, cam, keepClear: () => layer.KeepClearFor(cam), locations: Locations());
+            var all = labels.Labels.Concat(labels.LocalityLabels).Concat(labels.LocationLabels).ToList();
+            var slots = labels.Slots.Concat(labels.LocalitySlots).Concat(labels.LocationSlots).ToList();
+            var failures = new System.Collections.Generic.List<string>();
+            // Review of #2281 (N1): not one framing only. The camera over the model, and 2.5 km to either side of it (the model
+            // off the frame's centre), at 15 km, 25 km, 30 km, at 40 km (the close zoom's entry) and at 45 km (its exit: the model
+            // is still drawn there on the way out). Not at the 6 km minimum (CameraController.MinDistance): owner, 3 November 2026,
+            // verbatim: "Fine at 6 km (Recommended)": at the minimum zoom a city's own name may not be shown.
+            foreach (var distance in new[] { 15000f, 25000f, 30000f, 40000f, 45000f })
+                foreach (var offset in new[] { 0f, -2500f, 2500f })
+                {
+                    rig.LookAt = model!.position + new Vector3(offset, 0f, 0f); rig.Distance = distance; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+                    layer.Choose(default, cam);   // the render callback's close-zoom switch, as a camera rendering would run it
+                    // Beyond the close zoom (the view ray's ground distance, TownModelLayer.ViewDistance) the b21 is not drawn.
+                    if (!layer.LastClose) { TestContext.WriteLine($"{distance:0} m, {offset:0} m: the b21 is not drawn here"); continue; }
+                    for (int i = 0; i < 20 && all.Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
+                    labels.Refresh(force: true); yield return null;
+                    labels.Refresh(force: true); yield return null;
+                    float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+                    foreach (var r in model.GetComponentsInChildren<Renderer>(true))
+                    {
+                        var b = r.bounds;
+                        for (int c = 0; c < 8; c++)
+                        {
+                            var corner = new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z);
+                            var q = hd.ToPanel(corner, out bool front); Assert.IsTrue(front, city + "'s workshop model is in front of the camera");
+                            x0 = Mathf.Min(x0, q.x); y0 = Mathf.Min(y0, q.y); x1 = Mathf.Max(x1, q.x); y1 = Mathf.Max(y1, q.y);
+                        }
+                    }
+                    var rect = Rect.MinMaxRect(x0, y0, x1, y1);
+                    var shown = slots.Where(Shown).ToList();
+                    if (shown.Count == 0) failures.Add($"{distance:0} m, {offset:0} m: no name shown over {city}");
+                    foreach (var slot in shown)
+                    {
+                        var pill = slot.Q<Label>().worldBound;
+                        TestContext.WriteLine($"{distance:0} m, {offset:0} m: {slot.name} pill {pill}; workshop model {rect}");
+                        // Owner, 3 November 2026 (~07:02), verbatim: "Accept it at 30-40 km (Recommended)", and later that day, verbatim:
+                        // "Accept at 25 km too (Recommended)": the "East Jerusalem / Old City" city pill may sit over the Jerusalem b21
+                        // at 25, 30 and 40 km (as at 45 km: "Accept it (Recommended)", 2 November 2026). Exactly that pill, at exactly
+                        // those distances; every other pill and distance is checked.
+                        if (city == "jerusalem" && slot.name == OldCityPill && distance > OldCityPillFarthestM)
+                        {
+                            TestContext.WriteLine($"{distance:0} m, {offset:0} m: {slot.name} not checked beyond {OldCityPillFarthestM:0} m (open item on #2281)");
+                            continue;
+                        }
+                        if (city == "jerusalem" && slot.name == OldCityPill && System.Array.IndexOf(OldCityPillAcceptedM, distance) >= 0)
+                        {
+                            if (pill.Overlaps(rect)) TestContext.WriteLine($"{distance:0} m, {offset:0} m: {slot.name} over the b21, accepted by the owner's ruling");
+                            continue;
+                        }
+                        if (pill.Overlaps(rect)) failures.Add($"{distance:0} m, {offset:0} m: {slot.name}'s pill {pill} covers the workshop model {rect}");
+                    }
+                }
+            Assert.IsEmpty(failures, city + ": " + string.Join("\n" + city + ": ", failures));
+        }
+        finally
+        {
+            labels?.Dispose(); hd.Dispose();
+            Statecraft.Game.Map.Collection.SpecialBuildingModels.Request = saved;
+        }
+    }
+
     /// <summary>Issue #1008 beside #707: the Latrun police fort's pill and Tal Heuberger's Tegart fort model (SpecialBuildingModels,
     /// streamed close up from 15 May 1948) do not cover each other. With the real prefab placed and the camera at 30 km over
     /// Latrun (inside the model's close zoom), the pill is shown and its rectangle clears the model's projected bounds.</summary>
@@ -467,6 +576,45 @@ public class MapLabelTests
         for (int i = 0; i < 20 && labels.Labels.Concat(labels.LocalityLabels).Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
         labels.Refresh(force: true); yield return null;   // the first refresh with sizes declutters
         labels.Refresh(force: true); yield return null;
+    }
+
+    /// <summary>#2572: the camera inset includes the safe area above the top bar, while a zero inset keeps the top bar's
+    /// old share of the window. Built in GameRoot's order (TopBarInset, then SafeAreaFit) and never told to update: the
+    /// padding SafeAreaFit puts on the root must reach the camera through the layout's own events.</summary>
+    [UnityTest]
+    public IEnumerator TheCameraInsetIncludesTheSafeAreaAboveTheTopBar()
+    {
+        var hd = new HdPanel(cam);
+        var safeInsets = (l: 0f, r: 0f, t: 0f, b: 0f);
+        var inset = new TopBarInset(hd.Root, rig);
+        var safeArea = new SafeAreaFit(hd.Root, () => safeInsets);
+        try
+        {
+            var bar = hd.Root.Q<VisualElement>("top-bar");
+            for (int i = 0; i < 20 && (float.IsNaN(bar.worldBound.height) || bar.worldBound.height <= 0); i++) yield return null;
+            yield return null; yield return null;
+            var panelBounds = hd.Root.panel.visualTree.worldBound;
+            var window = panelBounds.height;
+            Assert.AreEqual(panelBounds.yMin, bar.worldBound.yMin, 1e-3f, "with no safe area the bar starts at the panel top");
+            Assert.AreEqual(bar.worldBound.height / window, rig.TopInset, 1e-3f,
+                "with no safe-area inset the bar starts at the panel top, so its bottom edge is its height");
+
+            const float safeTop = 47f;
+            safeInsets = (0f, 0f, safeTop, 0f);   // what SafeAreaFit's per-frame poll reads next
+            safeArea.Apply(0f, 0f, safeTop, 0f);   // and what it then writes: the root's padding, as on a notched phone
+            var expected = 0f;
+            for (int i = 0; i < 20; i++)
+            {
+                EditorApplication.QueuePlayerLoopUpdate();
+                yield return null;
+                expected = (bar.worldBound.yMax - panelBounds.yMin) / window;
+                if (bar.worldBound.yMin - panelBounds.yMin >= safeTop - 1f && Mathf.Abs(rig.TopInset - expected) < 1e-3f) break;
+            }
+            Assert.AreEqual(safeTop, bar.worldBound.yMin - panelBounds.yMin, 1f, "precondition: the padding moved the bar down");
+            Assert.AreEqual((safeTop + bar.worldBound.height) / window, rig.TopInset, 1e-3f,
+                "the camera leaves room for the safe area and the top bar, with no call to Update");
+        }
+        finally { safeArea.Dispose(); inset.Dispose(); hd.Dispose(); }
     }
 
     /// <summary>Independent of the presenter's own projection call: the Tel Aviv pill sits centred over its kit and just
@@ -1434,6 +1582,74 @@ public class MapLabelTests
             Assert.AreEqual(new Rect(25, 25, 50, 50), (Rect)args[5], "all eight corners produce the expected hull");
             Assert.AreEqual(8L, MapLabelsPresenter.ProjectedCornersForTests - beforeBox,
                 "one box requires eight transforms; repeating the same corners 3x does not get a free pass");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    [UnityTest]
+    public IEnumerator ASettledRefreshDoesNotReadEveryLabelSize()
+    {
+        var hd = new HdPanel(cam); var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            yield return Settle(labels);
+            long reads = labels.LabelSizeReadsForTests, placements = labels.PlacementVisitsForTests;
+            // This fixture owns a bare presenter, not a GameRoot component; Refresh is the production operation that
+            // GameRoot.LateUpdate calls, without booting an unrelated scene-wide presenter into these counters.
+            for (int i = 0; i < 5; i++) labels.Refresh();
+            Assert.AreEqual(reads, labels.LabelSizeReadsForTests, "settled refreshes do not poll every label's resolved size");
+            Assert.AreEqual(placements, labels.PlacementVisitsForTests, "settled refreshes do no placement work");
+
+            labels.Labels[0].text += " wider";
+            yield return null;   // UI Toolkit delivers the label's real GeometryChangedEvent.
+            labels.Refresh();
+            Assert.Greater(labels.PlacementVisitsForTests, placements, "changed text invalidates real placement");
+            Assert.Greater(labels.LabelSizeReadsForTests, reads, "sizes are read while that placement work runs");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    [UnityTest]
+    public IEnumerator HoverAndPillHitsAreCachedUntilPointerOrPlacementChanges()
+    {
+        var hd = new HdPanel(cam); var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            Pose(35.50, 32.49, 30000f); yield return Settle(labels);
+            var origin = hd.Root.Q<VisualElement>(MapLabelsPresenter.ContainerName).worldBound.position;
+            var locality = labels.LocalitySlots.Single(x => x.name == "slot-beit_shean");
+            var hover = locality.Q<Label>().worldBound.center - origin;
+            var city = labels.Slots.First(Shown).Q<Label>().worldBound.center - origin;
+            var panel = hd.Root.panel;
+            Assert.IsNotNull(panel, "the labels have a live panel");
+            Vector2 panelZero = UiPointer.ToPanel(panel, Vector2.zero, Screen.height);
+            Vector2 panelX = UiPointer.ToPanel(panel, Vector2.right * 100f, Screen.height) - panelZero;
+            Vector2 panelY = UiPointer.ToPanel(panel, Vector2.up * 100f, Screen.height) - panelZero;
+            Vector2 ScreenPoint(Vector2 layerPoint)
+            {
+                var wanted = layerPoint + origin - panelZero;
+                return new Vector2(wanted.x / panelX.x * 100f, wanted.y / panelY.y * 100f);
+            }
+            var hoverScreen = ScreenPoint(hover); var cityScreen = ScreenPoint(city);
+
+            labels.Hover(hoverScreen); long hoverVisits = labels.HoverVisitsForTests;
+            labels.Hover(hoverScreen);
+            Assert.AreEqual(hoverVisits, labels.HoverVisitsForTests, "the unchanged hover reuses its hit");
+            labels.Hover(ScreenPoint(hover + Vector2.right));
+            Assert.Greater(labels.HoverVisitsForTests, hoverVisits, "a moved hover recomputes");
+
+            labels.PillAt(cityScreen); long pillVisits = labels.PillVisitsForTests;
+            labels.PillAt(cityScreen);
+            Assert.AreEqual(pillVisits, labels.PillVisitsForTests, "the unchanged city-pill hit is reused");
+            labels.PillAt(ScreenPoint(city + Vector2.right));
+            Assert.Greater(labels.PillVisitsForTests, pillVisits, "a moved pill probe recomputes");
+
+            // As above, the bare presenter has no player-loop method of its own; GameRoot owns this Refresh call in play.
+            labels.Refresh(force: true);
+            hoverVisits = labels.HoverVisitsForTests; pillVisits = labels.PillVisitsForTests;
+            labels.Hover(hoverScreen); labels.PillAt(cityScreen);
+            Assert.Greater(labels.HoverVisitsForTests, hoverVisits, "new placement invalidates hover hits");
+            Assert.Greater(labels.PillVisitsForTests, pillVisits, "new placement invalidates pill hits");
         }
         finally { labels.Dispose(); hd.Dispose(); }
     }

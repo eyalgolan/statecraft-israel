@@ -25,13 +25,13 @@ macOS IL2CPP parity check is not an MVP release gate.
    tag after a squash merge. Before building, check that the disk has several GB free for `unity/Library/Bee`.
 
    ```bash
-   "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
+   uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 74fbe989d84a987728ba983a263714dcbe05abc2768033c15c3aed212cf34b63"
-   # and "GOLDEN OK hash1952 d74296940a6a6c8346b38679d80ed25ef0b537d2e709048eb4989ad46a259a66"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 832e8ccc38e3fb36228826816b452477fbbd6ab667ee30cdaef40e5b1b2fe869"
+   # and "GOLDEN OK hash1952 841f05536a49b68cd10d3f1ca548e559098415119284d483620f14bb6a4bb44e"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6"
+     --expect "SMOKE OK 5 turns 1948-10-15 12f088f62bd0694ae59b5f6472751579ad96c2198308d0869a8cf795f1aad051"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
@@ -63,10 +63,10 @@ macOS IL2CPP parity check is not an MVP release gate.
    and only a `-shareable` build may be published. Check it and package it the same way:
 
    ```bash
-   "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
+   uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6"
+     --expect "SMOKE OK 5 turns 1948-10-15 12f088f62bd0694ae59b5f6472751579ad96c2198308d0869a8cf795f1aad051"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90
@@ -226,15 +226,22 @@ The gates, in order. The first one that fails ends the night as REFUSED, and not
    same bar as a release.
 3. The sim tests under `he_IL` and `en_US` (`sim-he_IL`, `sim-en_US`).
 4. The Unity warm-up and the full EditMode run (`editmode`), with at least one test and no failure.
-5. The two WebGL builds, the gzip one and the Pages one (`build-web`), with the nightly version stamped in after the
-   gates; the tree must be clean afterwards, and the stamp is never committed. Then both zips (`package`).
+5. The two WebGL builds, the gzip one (`build-web-gz`) and the Pages one (`build-web-pages`), with the nightly version
+   stamped in after the gates; the tree must be clean afterwards, and the stamp is never committed. Then the gzip
+   zip (`package-gz`) and the Pages zip (`package-pages`).
 6. `web_check.py` on both builds (`web-check`).
 7. Download size (`sizes`): compare the combined total of the data, wasm and framework files with this job's last
    published night (`state.json`'s `last_published`), even if that release is now a draft. On a first night with no
    saved publication, use the newest non-draft release carrying a `*-web.zip`. The total may grow at most 2%, plus
    the size budget below.
 8. Headless boot time (`boot`): the median of three boots. The first 5 published nights set the baseline; after
-   that a boot slower than the slowest baseline night plus the spread of the baseline is refused.
+   that a boot slower than the slowest baseline night plus the spread of the baseline is refused. Before the first
+   boot the machine settles: the job waits until the 1-minute load average is under 2.0, at most 5 minutes, and
+   measures anyway if it never gets there. Each `boot-N.log` starts with the machine's load averages,
+   `vm.swapusage`, `memory_pressure`'s free percentage and `pmset -g therm`, and `boot-1.log` also says how long
+   the wait took. A median over the bound is measured once more: the machine settles again, three more boots run
+   (`boot-4.log` to `boot-6.log`), and the night is refused only if that second median is also over the bound,
+   naming both. The log records both medians when the second one passes (#2921).
 
 A nightly never moves a golden: golden moves arrive through reviewed pull requests, and the nightly only needs the
 golden tests of the full run to pass.
@@ -362,7 +369,7 @@ first (`python3 tools/build_sim_for_unity.py`), run Unity with graphics (not `-n
 `xvfb-run -a`), then encode the frames with ffmpeg:
 
 ```sh
-"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity \
+uv run tools/machine_lock.py --shared --wait-unity -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity \
   -executeMethod MapCapture.Trailer -captureDir "$PWD/captures/<name>" -seed 1948 -logFile "$PWD/unity-trailer.log"
 ffmpeg -framerate 60 -i captures/<name>/frame-%05d.png -vf scale=out_color_matrix=bt709 \
   -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 \

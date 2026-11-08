@@ -28,10 +28,13 @@ namespace Statecraft.Sim
                 .Select(e => e.Id).OrderBy(x => x, StringComparer.Ordinal).ToList();
 
         /// <summary>R-UNIT-006, Q-START-3 (owner, 15 October 2026; #743, owner, 20 October 2026): the units_1948.yaml rows a
-        /// new game starts a unit from whose status is not yet fact-checked, in id order. Once the sim reads a row it is game
-        /// state, so a shareable build refuses while this is not empty.</summary>
+        /// new game starts a unit from whose status is not yet fact-checked (by row id), and (#2722, owner, option (c), 5 November
+        /// 2026) each field of a fact-checked row whose sources were checked after the row's checked_on, naming the row and the
+        /// field, in id order. Once the sim reads a row it is game state, so a shareable build refuses while this is not empty.</summary>
         public static IReadOnlyList<string> StartingForcesUnchecked(Content c) =>
-            c.StartingForces.Where(f => f.Status != "fact-checked").Select(f => f.Row).OrderBy(x => x, StringComparer.Ordinal).ToList();
+            c.StartingForces.OrderBy(f => f.Row, StringComparer.Ordinal).SelectMany(f => f.Status != "fact-checked" ? new[] { f.Row }
+                : f.SourcesChecked.Where(x => string.CompareOrdinal(x.Checked, f.CheckedOn) > 0)
+                    .Select(x => $"{f.Row}: {x.Field}, sources checked {x.Checked}, row checked {f.CheckedOn}")).ToList();
 
         /// <summary>R-CTRL-001, Q-TGT-3 (b) (owner, 18 October 2026; #783): the settlement_targets.yaml rows whose status is not
         /// yet sensitivity-reviewed, in id order. A shareable build refuses while this is not empty (#1274).</summary>

@@ -56,6 +56,10 @@ namespace Statecraft.Game.Map
         /// 1948 localities' and the Bedouin camps' footprints (empty without the kits). Anything placed on the map "off the
         /// towns" (unit tokens: review I5) keeps clear of these, not of the 25 settlements alone.</summary>
         public IReadOnlyList<(Vector2 centre, float radius, string id)> KitFootprints => KitStats?.Footprints ?? (IReadOnlyList<(Vector2, float, string)>)System.Array.Empty<(Vector2, float, string)>();
+        /// <summary>#2876: the major cities' kit blocks after the last Build (KitLayer.Stats.MajorCityBlocks; empty without the
+        /// kits): what those cities draw from 40 km out, in place of their building models, which they draw below the close
+        /// switch (owner, 7 November 2026, "Tal's models close (Recommended)").</summary>
+        public IReadOnlyList<Kits.SettlementKits.Placed> MajorCityBlocks => KitStats?.MajorCityBlocks ?? (IReadOnlyList<Kits.SettlementKits.Placed>)System.Array.Empty<Kits.SettlementKits.Placed>();
         /// <summary>The game date the routes were last shown at (RouteLayer.ShowAt), so a rebuild draws them as at that date;
         /// null before the game has set one (the routes then show as at the game's start).</summary>
         public DateTime? RouteDate { get; set; }
@@ -576,6 +580,10 @@ namespace Statecraft.Game.Map
         /// (RouteLayer.UnitRoutes, #786), so the units keep their figures off them. Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> RouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
 
+        /// <summary>Every route of content/map/routes_1948.yaml as the last Build read them, with its id (empty before Build, or
+        /// when the file is missing or malformed): SpecialBuildingModels stands the low wall beside one road by id.</summary>
+        public IReadOnlyList<Routes.RoutePath> RouteList { get; private set; } = new List<Routes.RoutePath>();
+
         /// <summary>The corridors the kits keep off: those of the routes drawn at the game's start (RouteLayer.KitRoutes, #786).
         /// Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> KitRouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
@@ -631,11 +639,12 @@ namespace Statecraft.Game.Map
                 ? UnitEntries : Units.UnitData.ReadOrNone(yaml, warn);
 
         /// <summary>Where the kits keep their buildings and trees off the units (centre x, z; radius m): the spot of a unit that
-        /// stands in a town (UnitPlacer's last round, UnitGround.ClearingRadius), so no token stands in a building. Empty before
+        /// stands in a town (UnitPlacer's last round, UnitGround.ClearingRadius), so no token stands in a building. An air
+        /// anchor uses the parked fighter's footprint; every other service keeps the compact ring. Empty before
         /// Build or without the unit file.</summary>
         public IReadOnlyList<(Vector2 centre, float radius)> UnitClearings { get; private set; } = new List<(Vector2, float)>();
 
-        /// <summary>The unit tokens that stand outside the towns (centre x, z; ring radius m), as the kits get them
+        /// <summary>The unit tokens that stand outside the towns (centre x, z; footprint radius m), as the kits get them
         /// (KitGround.Tokens), with the day the token's window ends (its anchor's `to`, exclusive): the transit camps
         /// PlacementLayer builds later keep off those still present on the camp's date (KitGround.DatedTokens). Empty before
         /// Build.</summary>
@@ -769,6 +778,7 @@ namespace Statecraft.Game.Map
             // The 1948 railways and roads (issue #35), read before the kits so buildings and trees keep off them.
             // From the baked runtime form when it matches the YAML (issue #321: boot time), else from the YAML with a warning.
             var routes = Routes.RoutePaths.ReadRuntimeOrYaml(inputs.RoutesTsv, inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
+            RouteList = routes;
             DiagLog.BootPhase("route paths read");   // issue #321: the splits of the units' phase
             // Only the routes drawn at the start keep the kits off (#786); the units keep off those drawn while they stand.
             KitRouteCorridors = Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.KitRoutes(routes));
@@ -802,11 +812,17 @@ namespace Statecraft.Game.Map
                 foreach (var kv in spots.OrderBy(k => k.Value.X).ThenBy(k => k.Value.Z))
                 {
                     var c = new Vector2((float)kv.Value.X, (float)kv.Value.Z);
-                    if (kv.Value.InTown && !clearings.Exists(x => x.centre == c)) clearings.Add((c, unitGround.ClearingRadius));
+                    var service = unitData.First(u => u.Anchors.Contains(kv.Key)).Service;
+                    if (kv.Value.InTown && !clearings.Exists(x => x.centre == c))
+                    {
+                        // Only an air anchor gets the parked fighter's span; army census clearings keep their compact radius.
+                        clearings.Add((c, unitGround.ClearingRadius(service)));
+                    }
                     else if (!kv.Value.InTown)
                     {
-                        unitRings.Add((c, unitGround.RingRadius(kv.Value.Compact)));
-                        datedRings.Add((c, unitGround.RingRadius(kv.Value.Compact), Units.UnitData.Day(kv.Key.To)));
+                        float radius = unitGround.ClearanceRadius(service, kv.Value.Compact);
+                        unitRings.Add((c, radius));
+                        datedRings.Add((c, radius, Units.UnitData.Day(kv.Key.To)));
                     }
                 }
             }
@@ -847,6 +863,10 @@ namespace Statecraft.Game.Map
             Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate,
                 Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml), this);
             DiagLog.BootPhase("routes built");
+            // The ground between the towns (#2878): grain, scrub and stones, a pass over the terrain.
+            GroundDetail.Build(transform, Terrain, Frame, Hexes, heights, SettlementFootprints.Concat(UnitClearings).Concat(UnitTokens.Select(t => (t.centre, t.radius))),
+                KitRouteCorridors, terrainMaterial, terrainGo.GetComponent<MapRuntimeAssets>(), bushes: kitsOn);
+            DiagLog.BootPhase("ground detail");
             // The 1949 armistice lines as their true polylines (#237), unless the run turns them off with the
             // "noarmisticelines" flag; a missing or malformed file means no overlay and a warning. Display only.
             if (ArmisticeLines.Wanted() && inputs.ArmisticeLinesGeojson == "") Debug.LogWarning($"ARMISTICE LINES: {ArmisticeLines.FileName} is missing; no overlay");
@@ -861,7 +881,10 @@ namespace Statecraft.Game.Map
             }
 
             if (!cam.TryGetComponent(out CameraRig rig)) rig = cam.gameObject.AddComponent<CameraRig>();
-            rig.LookAt = Frame.ToWorld(34.95, 31.95, 0); rig.Init(); // central Israel: Tel Aviv–Jerusalem corridor
+            // The opening: Tel Aviv and Jaffa both in frame at CameraRig.StartDistance, including on a phone held upright
+            // (owner, 3 November 2026: "Open at ~30 km, like the promo").
+            var telAviv = list.Single(s => s.Id == "tel_aviv"); var jaffa = list.Single(s => s.Id == "jaffa");
+            rig.LookAt = CameraRig.OpeningLookAt(Frame, cam.aspect, telAviv, jaffa); rig.Init();
             rig.Volume.transform.SetParent(transform, true);
             // VolumeProfile's own teardown only releases its components, it does not destroy them (Core RP 17.3), so own both.
             var assets = terrainGo.GetComponent<MapRuntimeAssets>();
@@ -956,6 +979,7 @@ namespace Statecraft.Game.Map
             UnitEntries = Array.Empty<Units.UnitEntry>(); unitsYamlRead = null;
             Subdistricts = null; regionsYamlRead = null;
             UnitSpots = new Dictionary<Units.UnitAnchor, Units.AnchorSpot>(); UnitHexes = Array.Empty<Statecraft.Sim.MapHex>();
+            RouteList = new List<Routes.RoutePath>();
         }
     }
 }

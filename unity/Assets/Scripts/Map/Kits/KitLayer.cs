@@ -40,6 +40,17 @@ namespace Statecraft.Game.Map.Kits
             /// kit and close renderers that draw it as their submesh 1 (the code-built fallback), its yaw and its boxes far off and
             /// up close.</summary>
             public IReadOnlyList<LandmarkPart> LandmarkParts = System.Array.Empty<LandmarkPart>();
+            /// <summary>#1701 slice F: everything the kits placed that is not a building (walls, platforms, landmarks, harbour
+            /// works, street palms: SettlementKits.Placed, its yaw as KitMesh.Corners), then each landmark's close copy as its
+            /// world box (yaw 0), so a model placed among a town's houses (SpecialBuildingModels.TownGap) keeps off them.</summary>
+            public IReadOnlyList<SettlementKits.Placed> Landmarks = System.Array.Empty<SettlementKits.Placed>();
+            /// <summary>#2876: the kit blocks of the major cities (TownModels.IsMajorCity), which draw their kits from 40 km out
+            /// (owner, 6 November 2026, "Big blocks, every zoom") and Tal Heuberger's building models below the close switch
+            /// (owner, 7 November 2026, "Tal's models close (Recommended)"): each "building" and "wing" the kits placed for one
+            /// of them (SettlementKits.Placed, Id the city's, its yaw as KitMesh.Corners), in placement order, so a model placed
+            /// among a major city's houses (SpecialBuildingModels.TownGap) keeps off the blocks drawn there as well as off its
+            /// building models.</summary>
+            public IReadOnlyList<SettlementKits.Placed> MajorCityBlocks = System.Array.Empty<SettlementKits.Placed>();
             public override string ToString() =>
                 $"KITS buildings={Buildings} vertices={Vertices} triangles={Triangles} trees={Trees} route_segments={CorridorSegments} build_ms={BuildMs:0} plant_ms={PlantMs:0} " +
                 $"localities={Localities} locality_buildings={LocalityBuildings} camps={Camps} tents={Tents} boats={Boats} draws={Draws} models={Models} close_vertices={CloseVertices}";
@@ -145,8 +156,26 @@ namespace Statecraft.Game.Map.Kits
             var towns = townGo.AddComponent<TownModelLayer>();
             if (residency == null) throw new System.ArgumentNullException(nameof(residency));
             towns.ConfigureProduction(residency.Towns);
-            towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds);
+            // #2378: beyond the close switch every settlement with a whole-town model (the moshavot and towns, the kibbutzim,
+            // Nahalal and the Arab towns: Acre, Nazareth, Lod, Gaza, Beersheba) draws the far-off copies of its building
+            // models, in place of the whole-town model within the far band (owner, 3 November 2026, "Cities/towns only
+            // (Recommended)"); the 271 1948 localities keep their kit blocks. The major cities (TownModels.IsMajorCity) have
+            // no whole-town model and take no far-off copies: they draw their kits from 40 km out (owner, 6 November 2026, "Big
+            // blocks, every zoom", which superseded the 2 November 2026 ruling, "Yes, small buildings at every zoom") and their
+            // building models below the close switch, as every place (owner, 7 November 2026, "Tal's models close
+            // (Recommended)", which supersedes "Big blocks, every zoom" below 40 km).
+            var farTowns = new List<string>();
+            foreach (var s in settlements)
+                if (Collection.TownLandmarks.ModelFor(s) != null) farTowns.Add(s.Id);
+            towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds, farTowns);
             stats.LandmarkParts = parts;
+            var landmarks = new List<SettlementKits.Placed>();
+            foreach (var p in placed) if (p.Kind != "building" && p.Kind != "wing") landmarks.Add(p);
+            foreach (var p in built.CloseLandmarks) landmarks.Add(new SettlementKits.Placed(p.Id, p.Kind, p.C, 0f, p.W, p.D, p.H, p.Wall, p.Y));
+            stats.Landmarks = landmarks;
+            var majorBlocks = new List<SettlementKits.Placed>();
+            foreach (var p in placed) if ((p.Kind == "building" || p.Kind == "wing") && TownModels.IsMajorCity(p.Id)) majorBlocks.Add(p);
+            stats.MajorCityBlocks = majorBlocks;
             var localityIds = new HashSet<string>(System.StringComparer.Ordinal);
             foreach (var locality in localities) localityIds.Add(locality.Id);
             towns.ConfigureTownFootprints(stats.Footprints, localityIds);

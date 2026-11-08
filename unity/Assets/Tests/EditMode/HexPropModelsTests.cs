@@ -552,6 +552,134 @@ namespace Statecraft.Game.Tests
             CollectionAssert.AreEqual(propsFirst, after.Placed.Select(p => (p.Name, p.At)).ToList(), "the same places in either order");
         }
 
+        /// <summary>#1701 slice F with #2266: the props keep clear of the b21 planned at each built arms workshop (gdd-0.3), as of
+        /// the other special buildings' plan. Workshops stand on the hex nearest each prop's anchor, the props' own ground.</summary>
+        [Test]
+        public void PropsKeepClearOfTheBuiltArmsWorkshops()
+        {
+            var map = OpenMap();
+            var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+            foreach (var era in c.Eras) { era.Systems.Ruleset = Statecraft.Sim.SaveGame.Gdd03Ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
+            var land = c.Hexes.Where(h => h.Land).Select(h => (h, at: map.Frame.ToWorld(h.Lon, h.Lat, 0))).ToList();
+            var hexes = HexPropModels.Wants(map, Opening)
+                .Select(w => land.OrderBy(x => (new Vector2(x.at.x, x.at.z) - w.Anchor).sqrMagnitude).First().h).Distinct().ToList();
+            var projects = hexes.Select((h, i) => new Statecraft.Sim.CityProject(300 + i, Statecraft.Sim.Workshops.ArmsWorkshop, "rehovot", h.Q, h.R, 0, Opening)).ToList();
+            CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), c);
+            CollectionGeometryFixture.Rural(map);
+            var special = CollectionGeometryFixture.Special(map, Opening, c, projects)!;
+            var layer = HexPropModels.ShowAt(map, Opening, c, projects)!;
+            layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            AnswerAll();
+            var b21 = special.Placed.Where(p => p.Model == SpecialBuildingModels.Workshop)
+                .Select(p => (new Vector2(p.At.x, p.At.z), SpecialBuildingModels.ClearanceOf(p.Model))).ToList();
+            Assert.Greater(b21.Count, 0, "workshops stand by the props' places");
+            Assert.Greater(layer.Placed.Count, 0);
+            var kept = layer.Others(map, Opening);
+            foreach (var (at, _) in b21)
+                Assert.IsTrue(kept.Any(d => (d.centre - at).magnitude < 1f), $"the workshop at {at} is in the props' planned keep-clear ground");
+            foreach (var p in layer.Placed)
+                Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(new Vector2(p.At.x, p.At.z), HexPropModels.ClearanceOf(p.Model), b21),
+                    p.Name + ": no prop stands on a workshop");
+        }
+
+        /// <summary>Review of #2281's merge with #2266 (C3): the hex props and the workshops' b21 stand on ONE rural plan, also
+        /// after it changes. All three layers are shown as GameRoot shows them, with a b21 wanted at each farm scene; then the
+        /// ground the rural scenes keep clear of
+        /// changes so that a farm scene moves and a b21 with it (both asserted as the premise), the rural layer is shown again,
+        /// and GameRoot's next refresh (the same date and workshops) rebuilds both consumers: every b21 is drawn where the new
+        /// plan puts it, and no prop stands on one.</summary>
+        [Test]
+        public void ARuralPlanChangeRebuildsTheWorkshopsAndThePropsOntoTheNewPlan()
+        {
+            var map = OpenMap();
+            var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+            foreach (var era in c.Eras) { era.Systems.Ruleset = Statecraft.Sim.SaveGame.Gdd03Ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
+            CollectionGeometryFixture.People(map, Opening, Array.Empty<Statecraft.Sim.Placement>(), c);
+            var rural = CollectionGeometryFixture.Rural(map)!;
+            var before = RuralLife.PlanOf(map);
+            int version = RuralLife.VersionOf(map);
+            Assert.Greater(before.Count, 0);
+            Assert.AreSame(before, RuralLife.PlanOf(map), "the plan is computed once for what was shown");
+            // A workshop's b21 wanted right at each farm scene's planned spot (the contested ground), passed as GameRoot passes
+            // the state's workshops (ShowAt(map, date, workshops)).
+            var workshops = before.Select((f, i) =>
+            {
+                var (lon, lat) = map.Frame.ToLonLat(new Vector3(f.spot.x, 0f, f.spot.y));
+                // At b21's drawn scale, as ArmsWorkshops' rows (#2876), so its ground is the one ClearanceOf(Workshop) reads.
+                return new SpecialBuildingModels.Want(SpecialBuildingModels.WorkshopKey(400 + i), SpecialBuildingModels.Workshop, Opening, null, lon, lat, "test: at a farm scene",
+                    SpecialBuildingModels.Siting.Seeded, "", SpecialBuildingModels.WorkshopScale);
+            }).ToList();
+            var buildings = SpecialBuildingModels.Placements(Opening).Concat(workshops).ToList();
+            Dictionary<string, Vector2> B21(IReadOnlyList<(RuralLife.Want want, Vector2 spot)> plan) =>
+                SpecialBuildingModels.Plan(map, Opening, buildings, _ => true, log: false, plan)
+                    .Where(x => x.want.Model == SpecialBuildingModels.Workshop).ToDictionary(x => x.want.Key, x => x.at);
+            var oldB21 = B21(before);
+            // The change: other ground on one farm scene's planned spot, the first that moves a b21 when its scene moves.
+            List<(Vector2 centre, float radius)>? nextOthers = null; List<(RuralLife.Want want, Vector2 spot)>? after = null;
+            foreach (var (_, spot) in before)
+            {
+                var others = new List<(Vector2 centre, float radius)>(rural.OthersShown) { (spot, 50f) };
+                var plan = RuralLife.Plan(map, rural.Wanted, others, _ => true);
+                var moved = B21(plan);
+                if (moved.Count == oldB21.Count && moved.All(kv => oldB21.TryGetValue(kv.Key, out var o) && (o - kv.Value).sqrMagnitude < 1e-6f)) continue;
+                nextOthers = others; after = plan; break;
+            }
+            Assert.IsNotNull(nextOthers, "premise: some change of the farm scenes' ground moves a b21");
+            var special = CollectionGeometryFixture.Special(map, Opening, workshops)!;
+            var props = HexPropModels.ShowAt(map, Opening, workshops)!;
+            props.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+            AnswerAll();
+            Dictionary<string, Vector2> Drawn() => special.Placed.Where(p => p.Model == SpecialBuildingModels.Workshop)
+                .ToDictionary(p => p.Key, p => new Vector2(p.At.x, p.At.z));
+            foreach (var kv in Drawn()) Assert.Less((oldB21[kv.Key] - kv.Value).magnitude, 1e-3f, kv.Key + " drawn on the shown plan");
+
+            // The ground changes; the rural layer is shown again (GameRoot shows it on every refresh), then the next refresh.
+            rural.ShowForTest(rural.Wanted.ToList(), nextOthers!);
+            Assert.AreNotEqual(version, RuralLife.VersionOf(map), "the plan's version moved");
+            var now = RuralLife.PlanOf(map);
+            Assert.IsFalse(now.SequenceEqual(before), "premise: the shown plan changed");
+            Assert.IsTrue(now.SequenceEqual(after!), "the new plan is the one the changed ground gives");
+            CollectionGeometryFixture.Special(map, Opening, workshops);
+            HexPropModels.ShowAt(map, Opening, workshops);
+            AnswerAll();
+            var newB21 = B21(now);
+            var drawn = Drawn();
+            CollectionAssert.AreEquivalent(newB21.Keys, drawn.Keys, "the workshops drawn are the new plan's");
+            foreach (var kv in drawn) Assert.Less((newB21[kv.Key] - kv.Value).magnitude, 1e-3f, kv.Key + " rebuilt onto the new plan");
+            var discs = drawn.Values.Select(at => (at, SpecialBuildingModels.ClearanceOf(SpecialBuildingModels.Workshop))).ToList();
+            foreach (var p in props.Placed)
+                Assert.IsTrue(Statecraft.Game.Map.Collection.TownLandmarks.Clear(new Vector2(p.At.x, p.At.z), HexPropModels.ClearanceOf(p.Model), discs),
+                    p.Name + ": no prop stands on a b21 drawn on the new plan");
+            var kept = props.Others(map, Opening);
+            foreach (var at in drawn.Values)
+                Assert.IsTrue(kept.Any(d => (d.centre - at).magnitude < 1f), $"the b21 at {at} is in the props' keep-clear ground");
+        }
+
+        /// <summary>#2274's cap (SpecialBuildingModels.MaxPropOffset): a prop whose nearest clear spot is past it is not drawn, so the
+        /// hex props keep no ground for it. With the cap lowered to 1 m, none of the props of 15 May 1948 keeps a disc, and the
+        /// plan places none of them.</summary>
+        [Test]
+        public void HexPropsKeepNoGroundForAPropPastTheCap()
+        {
+            var map = OpenMap();
+            var layer = HexPropModels.ShowAt(map, Opening)!;
+            var uncapped = SpecialBuildingModels.Plan(map, Opening, SpecialBuildingModels.Placements(Opening), _ => true, log: false)
+                .Where(x => x.want.TownEdge).ToList();
+            Assert.AreEqual(3, uncapped.Count, "premise: the well, the crates and the wall on 15 May 1948");
+            var saved = SpecialBuildingModels.MaxPropOffset;
+            SpecialBuildingModels.MaxPropOffset = 1f;
+            try
+            {
+                var kept = layer.Others(map, Opening);
+                foreach (var (w, at) in uncapped)
+                    Assert.IsFalse(kept.Any(d => (d.centre - at).magnitude < 1f && Mathf.Abs(d.radius - SpecialBuildingModels.ClearanceOf(w)) < 0.01f),
+                        w.Key + ": no ground kept for a prop the cap leaves undrawn");
+                CollectionAssert.IsEmpty(SpecialBuildingModels.Plan(map, Opening, SpecialBuildingModels.Placements(Opening), _ => true, log: false)
+                    .Where(x => x.want.TownEdge).ToList(), "the plan places no prop past the cap");
+            }
+            finally { SpecialBuildingModels.MaxPropOffset = saved; }
+        }
+
         sealed class Lease : IDisposable { public void Dispose() { } }
 
         /// <summary>Review of #2266's delta, C1, on today's map: with one model withheld and the rest streamed in later, every
@@ -697,10 +825,10 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(0, moved, "no prop moves when another model is missing or the answers come in another order");
         }
 
-        /// <summary>Review of #2266 at f9802bed6, C2: a camera that asks for the props while rendering does not get its answer
-        /// built inside the render, even when the answer comes at once: the request waits for LateUpdate.</summary>
+        /// <summary>Review of #2266 at f9802bed6, C2: the ChooseCore render-mode branch does not build an immediate answer;
+        /// the request waits for LateUpdate.</summary>
         [Test]
-        public void NothingIsBuiltInsideACameraRender()
+        public void RenderModeDefersHexPropsUntilLateUpdate()
         {
             var map = OpenMap();
             HexPropModels.Request = (id, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)));   // answers at once

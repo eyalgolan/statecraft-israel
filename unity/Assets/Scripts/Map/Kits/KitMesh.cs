@@ -5,13 +5,20 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Kits
 {
-    /// <summary>Facade styles, carried in the vertex colour's alpha and read by Statecraft/Kit (Kit.shader): which window
-    /// pattern a wall gets. Roofs, domes and trees are Plain.</summary>
-    public enum Facade : byte { Plain = 0, Stone = 64, Village = 128, WhiteCity = 255 }
+    /// <summary>A surface, carried in the vertex colour's alpha and read by Statecraft/Kit (Kit.shader): which cell of the one
+    /// shared atlas (#2428, Art/Kits/kit_atlas.png, asset-sources/kit-atlas/make_kit_atlas.py) a face shows. The alpha is the
+    /// atlas layer + 1, times 17, so it survives the vertex's 8 bits. The first five cells are facades: windows and doors over
+    /// a ground storey. Plain (trees, boats, tents, the ma'abara's patched sheet) has no cell and draws its vertex colour.</summary>
+    public enum Facade : byte
+    {
+        Plain = 0, WhiteCity = 17, Stone = 34, Village = 51, Mud = 68, Moshava = 85, Plaster = 102, Ashlar = 119, Rubble = 136,
+        RoofTile = 153, FlatRoof = 170, RibbonGlass = 187, BalconyRail = 204, Corrugated = 221, Planks = 238,
+    }
 
     /// <summary>Grows one mesh from procedural parts (boxes, roofs, domes, towers, crowns). Vertex layout: position, normal,
-    /// colour (sRGB albedo, alpha = <see cref="Facade"/>), uv0 = a wall's (along, up) position in real metres before the
-    /// symbolic scale, so the shader draws storeys and windows at their real proportions on symbolic-size buildings.</summary>
+    /// colour (sRGB albedo, alpha = <see cref="Facade"/>), uv0 = where on that surface's atlas cell the vertex lies, from its
+    /// real size before the symbolic scale (<see cref="Tile"/>), so storeys, tiles and courses keep their real proportions on
+    /// symbolic-size buildings. u counts cells; v counts cells, or on a facade storeys above the wall's ground level.</summary>
     public sealed class KitMesh
     {
         readonly List<Vector3> pos = new List<Vector3>();
@@ -21,6 +28,48 @@ namespace Statecraft.Game.Map.Kits
         readonly List<int> tri = new List<int>();
 
         public int VertexCount => pos.Count;
+        /// <summary>The vertex colours and uvs so far (test aids: ToMesh's upload drops the CPU copy).</summary>
+        internal IReadOnlyList<Color32> Colours => col;
+        internal IReadOnlyList<Vector2> Uvs => uv;
+
+        /// <summary>A storey (real m), as everywhere in the kits.</summary>
+        public const float StoreyM = 3.3f;
+        /// <summary>A facade cell's width (real m); it holds a whole number of the facade's <see cref="BayM"/>.</summary>
+        public const float FacadeCellM = 12f;
+
+        /// <summary>The real metres one atlas cell covers on this surface, across and up (make_kit_atlas.py's CELLS). On a facade
+        /// the height is one storey, since Kit.shader lays out a facade's storeys itself.</summary>
+        public static Vector2 Tile(Facade f)
+        {
+            switch (f)
+            {
+                case Facade.WhiteCity: case Facade.Stone: case Facade.Village: case Facade.Mud: case Facade.Moshava:
+                    return new Vector2(FacadeCellM, StoreyM);
+                case Facade.Plaster: return new Vector2(12f, 12f);
+                case Facade.Ashlar: return new Vector2(6f, 6f);
+                case Facade.FlatRoof: return new Vector2(16f, 16f);
+                case Facade.RibbonGlass: return new Vector2(6f, 1.2f);
+                case Facade.BalconyRail: return new Vector2(12f, 1.25f);
+                default: return new Vector2(4f, 4f);
+            }
+        }
+
+        /// <summary>A facade's window bay (real m), or 0 on a surface with no bays: a wall counts whole bays, so a corner never
+        /// cuts a window.</summary>
+        public static float BayM(Facade f) => f == Facade.WhiteCity ? 3f : f == Facade.Stone || f == Facade.Moshava ? 4f : f == Facade.Village || f == Facade.Mud ? 6f : 0f;
+
+        /// <summary>The plain surface that goes with a facade: its parapets, gable ends and the like, where no window belongs.</summary>
+        public static Facade Solid(Facade f) => f == Facade.Stone ? Facade.Ashlar : f == Facade.Village ? Facade.Rubble
+            : f == Facade.WhiteCity || f == Facade.Moshava || f == Facade.Mud ? Facade.Plaster : f;
+
+        /// <summary>A building's own start along its surface, in whole bays (whole cells without bays), so walls of one size do not
+        /// all show the same stain and the same shutters. From the position alone: no random stream moves.</summary>
+        static float Phase(float x, float z, int salt, float cells)
+        {
+            uint h = (uint)Mathf.RoundToInt(x) * 73856093u ^ (uint)Mathf.RoundToInt(z) * 19349663u ^ (uint)salt * 83492791u;
+            h ^= h >> 13; h *= 1274126177u; h ^= h >> 16;
+            return (h % 64u) * cells;
+        }
         // ---- Issue #659: the close mesh (owner ruling on #700: "Models up close only") --------------------------------
         // Up close the towns' buildings are Tal Heuberger's models (TownModelLayer); far off they are this mesh's kit buildings, as
         // before. The close mesh is this mesh without its buildings (their vertex and index spans, CutStart/CutEnd), plus
@@ -258,66 +307,128 @@ namespace Statecraft.Game.Map.Kits
             tri.Add(i); tri.Add(i + 1); tri.Add(i + 2);
         }
 
+        /// <summary>A flat-shaded triangle with a uv per corner, clockwise seen from its front.</summary>
+        public void Triangle(Vector3 a, Vector3 b, Vector3 c, Color32 colour, Vector2 ta, Vector2 tb, Vector2 tc)
+        {
+            var n = Vector3.Cross(b - a, c - a).normalized;
+            int i = V(a, n, colour, ta); V(b, n, colour, tb); V(c, n, colour, tc);
+            tri.Add(i); tri.Add(i + 1); tri.Add(i + 2);
+        }
+
         /// <summary>The walls (and, unless <paramref name="roofed"/>, the flat roof) of a box: footprint centred on
         /// (<paramref name="x"/>, <paramref name="z"/>), <paramref name="w"/> wide along its own x after a yaw of
         /// <paramref name="yawDeg"/>, <paramref name="d"/> deep; walls from <paramref name="bottom"/> (sunk into the slope) to
         /// <paramref name="ground"/> + <paramref name="h"/>. <paramref name="metresPerReal"/> turns world metres into real
-        /// metres for the facade uv (the symbolic scale).</summary>
+        /// metres for the facade uv (the symbolic scale). With <paramref name="parapet"/> above 0 and a flat roof, a plastered
+        /// rim stands round the roof's edge (Parapet).</summary>
         public void Box(float x, float z, float yawDeg, float w, float d, float bottom, float ground, float h, Color32 wall, Color32 roof,
-            Facade facade, float metresPerReal, bool roofed = false)
+            Facade facade, float metresPerReal, bool roofed = false, float parapet = 0f, float parapetThickness = 0f, Facade? roofSurface = null)
         {
             var c = Corners(x, z, yawDeg, w, d);
             float top = ground + h;
             var wallC = wall; wallC.a = (byte)facade;
-            float vb = (bottom - ground) / metresPerReal, vt = h / metresPerReal;
+            var tile = Tile(facade);
+            float vb = (bottom - ground) / metresPerReal / tile.y, vt = h / metresPerReal / tile.y;
+            float bay = BayM(facade), step = bay > 0f ? bay / tile.x : 1f;
             for (int i = 0; i < 4; i++)
             {
                 var a = c[i]; var b = c[(i + 1) % 4];
-                float len = (b - a).magnitude / metresPerReal;
+                // A facade's wall counts whole bays (at least one), stretched a little to fit; anything else runs in real metres.
+                float len = (b - a).magnitude / metresPerReal / tile.x;
+                if (bay > 0f) len = Mathf.Max(1f, Mathf.Round(len / step)) * step;
+                float u0 = Phase(x, z, i, step);
                 Face(new Vector3(a.x, bottom, a.y), new Vector3(a.x, top, a.y), new Vector3(b.x, top, b.y), new Vector3(b.x, bottom, b.y), wallC,
-                    new Vector2(0, vb), new Vector2(0, vt), new Vector2(len, vt), new Vector2(len, vb));
+                    new Vector2(u0, vb), new Vector2(u0, vt), new Vector2(u0 + len, vt), new Vector2(u0 + len, vb));
             }
             if (!roofed)
             {
-                var r = roof; r.a = 0;
+                // A flat roof is limed, unless the part is Plain (a boat's deck) or says otherwise (a hut's tin).
+                var top2 = roofSurface ?? (facade == Facade.Plain ? Facade.Plain : Facade.FlatRoof);
+                var r = roof; r.a = (byte)top2;
+                var cell = Tile(top2);
+                float ru = w / metresPerReal / cell.x, rv = d / metresPerReal / cell.y, r0 = Phase(x, z, 4, 1f);
                 Face(new Vector3(c[0].x, top, c[0].y), new Vector3(c[3].x, top, c[3].y), new Vector3(c[2].x, top, c[2].y), new Vector3(c[1].x, top, c[1].y), r,
-                    Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+                    new Vector2(r0, r0), new Vector2(r0, r0 + rv), new Vector2(r0 + ru, r0 + rv), new Vector2(r0 + ru, r0));
+                if (parapet > 0f && 2f * parapetThickness < Mathf.Min(w, d))
+                    Parapet(c, Corners(x, z, yawDeg, w - 2f * parapetThickness, d - 2f * parapetThickness), top, parapet, wall, Solid(facade), metresPerReal);
             }
+        }
+
+        /// <summary>A flat roof's parapet: a rim <paramref name="height"/> high on the roof
+        /// at <paramref name="roofY"/>, between the footprint's corners <paramref name="outer"/> and the inner corners
+        /// <paramref name="inner"/> (both as Corners gives them). Its outer face continues the wall upwards but is Plain (no
+        /// window rows), so it reads as a light band at the roof's edge; its inner face looks onto the roof; its top is one
+        /// ring of 8 vertices. 40 vertices in all.</summary>
+        void Parapet(Vector2[] outer, Vector2[] inner, float roofY, float height, Color32 colour, Facade surface, float metresPerReal)
+        {
+            colour.a = (byte)surface;
+            float y = roofY + height;
+            var tile = Tile(surface);
+            float tv = height / metresPerReal / tile.y;
+            Vector3 P(Vector2 q, float h) => new Vector3(q.x, h, q.y);
+            for (int i = 0; i < 4; i++)
+            {
+                int j = (i + 1) % 4;
+                // Outside (as Box's walls), then inside: the same edge reversed, so it faces the roof.
+                float to = (outer[j] - outer[i]).magnitude / metresPerReal / tile.x, ti = (inner[j] - inner[i]).magnitude / metresPerReal / tile.x;
+                Face(P(outer[i], roofY), P(outer[i], y), P(outer[j], y), P(outer[j], roofY), colour, Vector2.zero, new Vector2(0f, tv), new Vector2(to, tv), new Vector2(to, 0f));
+                Face(P(inner[j], roofY), P(inner[j], y), P(inner[i], y), P(inner[i], roofY), colour, Vector2.zero, new Vector2(0f, tv), new Vector2(ti, tv), new Vector2(ti, 0f));
+            }
+            int o = pos.Count;
+            for (int i = 0; i < 4; i++) V(P(outer[i], y), Vector3.up, colour, Vector2.zero);
+            for (int i = 0; i < 4; i++) V(P(inner[i], y), Vector3.up, colour, Vector2.zero);
+            // Clockwise seen from above, as the roof (outer i, inner i, inner i+1, outer i+1).
+            for (int i = 0; i < 4; i++) { int j = (i + 1) % 4; Quad(o + i, o + 4 + i, o + 4 + j, o + j); }
         }
 
         /// <summary>A gable roof on a w x d box whose walls end at <paramref name="eaves"/>: the ridge runs along the longer
         /// side, <paramref name="rise"/> above the eaves, with a small overhang.</summary>
-        public void Gable(float x, float z, float yawDeg, float w, float d, float eaves, float rise, Color32 roof, Color32 gableWall)
+        public void Gable(float x, float z, float yawDeg, float w, float d, float eaves, float rise, Color32 roof, Color32 gableWall,
+            float metresPerReal = 1f, Facade surface = Facade.RoofTile, Facade gableSurface = Facade.Plaster)
         {
             if (d > w) { yawDeg += 90f; (w, d) = (d, w); }
             float ow = w * 1.06f, od = d * 1.12f;
             var c = Corners(x, z, yawDeg, ow, od);           // 0 (-w,-d), 1 (+w,-d), 2 (+w,+d), 3 (-w,+d) in local axes
             var r0 = (c[0] + c[3]) * 0.5f; var r1 = (c[1] + c[2]) * 0.5f;   // ridge ends
-            var g = gableWall; g.a = 0; var rf = roof; rf.a = 0;
+            var g = gableWall; g.a = (byte)gableSurface; var rf = roof; rf.a = (byte)surface;
             Vector3 P(Vector2 p, float y) => new Vector3(p.x, y, p.y);
-            Face(P(c[0], eaves), P(r0, eaves + rise), P(r1, eaves + rise), P(c[1], eaves), rf, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
-            Face(P(c[2], eaves), P(r1, eaves + rise), P(r0, eaves + rise), P(c[3], eaves), rf, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
-            Triangle(P(c[1], eaves), P(r1, eaves + rise), P(c[2], eaves), g);
-            Triangle(P(c[3], eaves), P(r0, eaves + rise), P(c[0], eaves), g);
+            // A slope's uv: along the ridge and up the slope, so the tile rows run with the eaves.
+            var tile = Tile(surface);
+            float us = ow / metresPerReal / tile.x, vs = Mathf.Sqrt(rise * rise + 0.25f * od * od) / metresPerReal / tile.y, p0 = Phase(x, z, 5, 1f);
+            Face(P(c[0], eaves), P(r0, eaves + rise), P(r1, eaves + rise), P(c[1], eaves), rf,
+                new Vector2(p0, 0f), new Vector2(p0, vs), new Vector2(p0 + us, vs), new Vector2(p0 + us, 0f));
+            Face(P(c[2], eaves), P(r1, eaves + rise), P(r0, eaves + rise), P(c[3], eaves), rf,
+                new Vector2(p0, 0f), new Vector2(p0, vs), new Vector2(p0 + us, vs), new Vector2(p0 + us, 0f));
+            var gt = Tile(gableSurface);
+            float gu = od / metresPerReal / gt.x, gv = rise / metresPerReal / gt.y;
+            var ga = Vector2.zero; var gb = new Vector2(0.5f * gu, gv); var gc = new Vector2(gu, 0f);
+            Triangle(P(c[1], eaves), P(r1, eaves + rise), P(c[2], eaves), g, ga, gb, gc);
+            Triangle(P(c[3], eaves), P(r0, eaves + rise), P(c[0], eaves), g, ga, gb, gc);
         }
 
         /// <summary>A four-sided pyramid cap (a clock tower's or a tiled hip roof).</summary>
-        public void Pyramid(float x, float z, float yawDeg, float w, float d, float y, float rise, Color32 colour)
+        public void Pyramid(float x, float z, float yawDeg, float w, float d, float y, float rise, Color32 colour, float metresPerReal = 1f,
+            Facade surface = Facade.RoofTile)
         {
-            var c = Corners(x, z, yawDeg, w, d); var apex = new Vector3(x, y + rise, z); colour.a = 0;
+            var c = Corners(x, z, yawDeg, w, d); var apex = new Vector3(x, y + rise, z); colour.a = (byte)surface;
+            var tile = Tile(surface);
             for (int i = 0; i < 4; i++)
             {
                 var a = c[i]; var b = c[(i + 1) % 4];
-                Triangle(new Vector3(a.x, y, a.y), apex, new Vector3(b.x, y, b.y), colour);
+                float len = (b - a).magnitude / metresPerReal / tile.x;
+                float slope = Vector3.Distance(new Vector3(0.5f * (a.x + b.x), y, 0.5f * (a.y + b.y)), apex) / metresPerReal / tile.y;
+                Triangle(new Vector3(a.x, y, a.y), apex, new Vector3(b.x, y, b.y), colour, Vector2.zero, new Vector2(0.5f * len, slope), new Vector2(len, 0f));
             }
         }
 
         /// <summary>A smooth dome (a mosque's or a house's) of radius r standing on y: a hemisphere, or, with
         /// <paramref name="rise"/> under 1, a lower cap rising rise x r (a village house's shallow vault).</summary>
-        public void Dome(float x, float z, float y, float r, Color32 colour, int segments = 10, int rings = 4, float rise = 1f)
+        public void Dome(float x, float z, float y, float r, Color32 colour, int segments = 10, int rings = 4, float rise = 1f, float metresPerReal = 1f,
+            Facade surface = Facade.FlatRoof)
         {
-            colour.a = 0;
+            colour.a = (byte)surface;
             int first = pos.Count;
+            var tile = Tile(surface);
             for (int j = 0; j <= rings; j++)
             {
                 float phi = Mathf.PI * 0.5f * j / rings;
@@ -327,7 +438,8 @@ namespace Statecraft.Game.Map.Kits
                     var n = new Vector3(Mathf.Cos(phi) * Mathf.Cos(th), Mathf.Sin(phi), Mathf.Cos(phi) * Mathf.Sin(th));
                     // An ellipsoid's normal: the sphere's with its height scaled by 1 / rise (unchanged for a hemisphere).
                     var nn = rise == 1f ? n : new Vector3(n.x * rise, n.y, n.z * rise).normalized;
-                    V(new Vector3(x, y, z) + new Vector3(n.x * r, n.y * r * rise, n.z * r), nn, colour, Vector2.zero);
+                    V(new Vector3(x, y, z) + new Vector3(n.x * r, n.y * r * rise, n.z * r), nn, colour,
+                        new Vector2(th * r / metresPerReal / tile.x, phi * r / metresPerReal / tile.y));
                 }
             }
             for (int j = 0; j < rings; j++)
@@ -344,13 +456,14 @@ namespace Statecraft.Game.Map.Kits
         {
             colour.a = (byte)facade;
             int first = pos.Count;
+            var tile = Tile(facade);
             for (int i = 0; i <= sides; i++)
             {
                 float th = 2f * Mathf.PI * i / sides;
                 var n = new Vector3(Mathf.Cos(th), 0f, Mathf.Sin(th));
-                float u = th * r0 / metresPerReal;
+                float u = th * r0 / metresPerReal / tile.x;
                 V(b0 + n * r0, n, colour, new Vector2(u, 0f));
-                V(b1 + n * r1, n, colour, new Vector2(u, (b1.y - b0.y) / metresPerReal));
+                V(b1 + n * r1, n, colour, new Vector2(u, (b1.y - b0.y) / metresPerReal / tile.y));
             }
             for (int i = 0; i < sides; i++)
             {

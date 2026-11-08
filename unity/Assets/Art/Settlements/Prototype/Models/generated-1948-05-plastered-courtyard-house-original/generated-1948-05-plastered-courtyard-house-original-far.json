@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/generated-1948-05-plastered-courtyard-house-original/generated-1948-05-plastered-courtyard-house-original.fbx",
+    "source_sha256": "7f4bad13bf36c5872864932f9cdb03bace11f3b4adabd8e7726dcccd4ee71e9a",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/generated-1948-05-plastered-courtyard-house-original/generated-1948-05-plastered-courtyard-house-original_basecolor.jpg",
+    "colour_map_sha256": "adb3527de145df3a556b7b349237238806d47a61635eea03377d31908dc8a5ef",
+    "source_triangles": 8193,
+    "triangles": 400,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

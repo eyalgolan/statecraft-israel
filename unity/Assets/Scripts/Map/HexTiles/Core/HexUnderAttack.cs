@@ -11,8 +11,11 @@ namespace Statecraft.HexTiles
     /// the simulation can drive later (show it on a hex, hide it); nothing here reads or writes the simulation, and it is
     /// never saved in a board or its overrides. Movement and combat rules are the owner's (docs/gdd/military-combat.md).
     /// Kept calm, not cinematic: a few grey smoke columns drifting east on the prevailing west wind, a low warm glow
-    /// where each rises, and a muted red border that pulses slowly. Three meshes and three materials, all made by and
-    /// destroyed with the look's object (HexUnderAttackLook).</summary>
+    /// where each rises with small flames burning in it, and a muted red border that pulses slowly. The smoke and the
+    /// flames are Unity Labs' CC0 flipbooks (Flipbook: the smoke cloud and the explosion's burning frames, as #2490's
+    /// Dakotas draw them; owner, 4 November 2026: "Fire/smoke on attacked hexes"), each one mesh per hex, so one draw call
+    /// each. Four meshes and four materials, all made by and destroyed with the look's object (HexUnderAttackLook); the
+    /// flipbook textures are Resources assets and stay.</summary>
     public static class HexUnderAttack
     {
         public static string Name(int q, int r) => $"under attack {q},{r}";
@@ -94,11 +97,28 @@ namespace Statecraft.HexTiles
             /// <summary>Where the smoke starts: above the flames, so they show at its foot.</summary>
             public const float FootShare = 0.04f;
             public const float Alpha = 0.92f, GlowM = 0.11f;
+            /// <summary>DESIGN VALUE: how fast a puff's smoke boils through the flipbook (frames a second), as the Dakotas'
+            /// columns (SeaAirCollection.DakotaColumnFps).</summary>
+            public const float Fps = 6f;
+            /// <summary>DESIGN VALUE: the smoke flipbook's grey averages 0.44 where it is opaque (DakotaBombRun's measure), so
+            /// its puffs' colours are this much brighter to draw the same shade as the soft puff they replace.</summary>
+            public const float FlipbookGain = 2.2f;
+        }
+
+        /// <summary>The flames burning in each column's glow: <see cref="PerColumn"/> camera-facing quads of the explosion
+        /// flipbook's burning frames (Flipbook.ExplosionFireFrames), additive, so its black smoke adds nothing and only the
+        /// fire shows. Each flame flares and dies down over <see cref="CycleS"/>, running through those frames, offset per
+        /// flame so the fire never pulses as one. Sizes are shares of the hex size S, as the cones they replace (0.045 to
+        /// 0.075 S tall).</summary>
+        public static class Fire
+        {
+            public const int PerColumn = 3;
+            public const float CycleS = 0.9f, SizeShare = 0.07f, SizeSpread = 0.4f;
         }
     }
 
-    /// <summary>Animates one shown look, in edit mode and in play: Time(t) samples the smoke, the glow's flicker and the
-    /// border's pulse at t seconds, as a pure function of t and the hex (seeded by q, r), so captures and tests are
+    /// <summary>Animates one shown look, in edit mode and in play: Time(t) samples the smoke, the flames, the glow's flicker
+    /// and the border's pulse at t seconds, allocating nothing, as a pure function of t and the hex (seeded by q, r), so captures and tests are
     /// deterministic. Set Hold to keep a sampled time (Update then leaves it). Destroys its meshes and materials with
     /// its object.</summary>
     [ExecuteAlways]
@@ -132,12 +152,24 @@ namespace Statecraft.HexTiles
         }
         /// <summary>The board camera's view (HexBoardCapture and the game rig: pitch 50 degrees, facing north).</summary>
         static readonly Quaternion BoardView = Quaternion.Euler(50f, 0f, 0f);
-        // Glow: fixed vertices (discs on the ground, small flame cones), per-vertex base colour scaled by the flicker.
-        Vector3[] glowRest = Array.Empty<Vector3>(), glowV = Array.Empty<Vector3>(); Color[] glowBase = Array.Empty<Color>(); Color32[] glowC = Array.Empty<Color32>();
-        int[] glowColumn = Array.Empty<int>(); bool[] glowFlameTip = Array.Empty<bool>();
+        // Smoke flipbook: each puff's octagon UVs sit in the frame it shows (Time writes them); a grid of 1 is the drawn puff.
+        Vector2[] smokeUV = Array.Empty<Vector2>(); int smokeGrid = 1; float smokeGain = 1f;
+        // The puffs of one column in height order, reused every sample (no allocation per frame).
+        (float u, int i)[] order = Array.Empty<(float, int)>();
+        // Glow: fixed vertices (discs on the ground), per-vertex base colour scaled by the flicker.
+        Vector3[] glowRest = Array.Empty<Vector3>(); Color[] glowBase = Array.Empty<Color>(); Color32[] glowC = Array.Empty<Color32>();
+        int[] glowColumn = Array.Empty<int>();
+        // Fire: one camera-facing quad per flame, its UVs on the frame it shows; Time samples, Face writes the corners.
+        Mesh fire = null!;
+        Vector3[] flameFoot = Array.Empty<Vector3>(), flameAt = Array.Empty<Vector3>(); float[] flameSize = Array.Empty<float>(), flamePhase = Array.Empty<float>(), flameHalf = Array.Empty<float>();
+        int[] flameColumn = Array.Empty<int>();
+        Vector3[] fireV = Array.Empty<Vector3>(), fireN = Array.Empty<Vector3>(); Vector2[] fireUV = Array.Empty<Vector2>(); Color32[] fireC = Array.Empty<Color32>();
+        int fireGrid = 1, fireFrames = 1;
 
         static readonly Color SmokeLow = new Color(0.13f, 0.12f, 0.115f), SmokeHigh = new Color(0.40f, 0.395f, 0.385f);
         static readonly Color GlowCore = new Color(1f, 0.34f, 0.08f), FlameCore = new Color(1f, 0.62f, 0.22f);
+        /// <summary>DESIGN VALUE: the flames keep the flipbook's own fire colours, a touch warmer; additive, so alpha is their strength.</summary>
+        static readonly Color FlameTint = new Color(1f, 0.9f, 0.78f, 0.9f);
         static readonly Color BorderColour = new Color(0.78f, 0.13f, 0.10f);
         const float BorderLowAlpha = 0.3f, BorderHighAlpha = 0.88f;
 
@@ -169,11 +201,22 @@ namespace Statecraft.HexTiles
                     tris[(p * PuffSides + k) * 3] = o; tris[(p * PuffSides + k) * 3 + 1] = o + 1 + (k + 1) % PuffSides; tris[(p * PuffSides + k) * 3 + 2] = o + 1 + k;
                 }
             }
+            // The flipbooks are assets (not owned: Resources keeps them); without them the smoke falls back to the drawn
+            // puff and the flames to the puff tinted as fire, one frame each.
+            var cloud = Flipbook.Load(Flipbook.SmokeResource); var blast = Flipbook.Load(Flipbook.ExplosionResource);
+            if (cloud == null || blast == null) Debug.LogWarning("UNDER ATTACK: the smoke or explosion flipbook is missing from Resources/Effects; the drawn puff stands in.");
+            Texture2D? drawnPuff = cloud == null || blast == null ? Own(PuffTexture()) : null;
+            if (cloud != null) { smokeGrid = Flipbook.SmokeGrid; smokeGain = HexUnderAttack.Smoke.FlipbookGain; }
+            smokeUV = uv;
             smoke.vertices = smokeV; smoke.normals = smokeN; smoke.colors32 = smokeC; smoke.uv = uv; smoke.triangles = tris;
-            Part("Smoke", smoke, HexMaterials.AttackSmoke).SetTexture("_BaseMap", Own(PuffTexture()));
+            Part("Smoke", smoke, HexMaterials.AttackSmoke).SetTexture("_BaseMap", (cloud != null ? cloud : drawnPuff)!);
 
             glow = Own(BuildGlow(Ground)); glow.MarkDynamic();
             Part("Glow", glow, HexMaterials.AttackGlow);
+
+            if (blast != null) { fireGrid = Flipbook.ExplosionGrid; fireFrames = Flipbook.ExplosionFireFrames; }
+            fire = Own(BuildFire(Ground)); fire.MarkDynamic();
+            Part("Fire", fire, HexMaterials.AttackGlow).SetTexture("_BaseMap", (blast != null ? blast : drawnPuff)!);
 
             var ring = Own(BuildBorder(Ground));
             border = Part("Border", ring, HexMaterials.AttackBorder);
@@ -201,13 +244,14 @@ namespace Statecraft.HexTiles
             int P = HexUnderAttack.Smoke.Puffs;
             float S = sizeM, top = HexUnderAttack.Smoke.HeightShare * S;
             int slot = 0;
-            var order = new (float u, int i)[P];
+            if (order.Length != P) order = new (float u, int i)[P];
             for (int c = 0; c < bases.Length; c++)
             {
                 for (int i = 0; i < P; i++) order[i] = (HexUnderAttack.Frac(t / HexUnderAttack.Smoke.LifeS + (i + phase[c]) / P), i);
-                Array.Sort(order, (a, b) => a.u.CompareTo(b.u));   // low first: the camera is above, so higher puffs are nearer
-                foreach (var (u, i) in order)
+                SortLowFirst(order);   // low first: the camera is above, so higher puffs are nearer
+                for (int n = 0; n < P; n++)
                 {
+                    var (u, i) = order[n];
                     float seed = c * 7.31f + i * 1.93f, own = HexUnderAttack.Frac(Mathf.Sin(seed * 12.9898f) * 43758.547f);
                     // Each puff its own size and offset, so a column reads as smoke rather than a stack of beads.
                     float radius = Mathf.Lerp(HexUnderAttack.Smoke.BaseRadius, HexUnderAttack.Smoke.TopRadius, Mathf.Sqrt(u)) * S * (0.8f + 0.4f * own);
@@ -217,33 +261,35 @@ namespace Statecraft.HexTiles
                     var wobble = new Vector3(Mathf.Sin(seed * 3.1f + u * 5f), 0f, Mathf.Cos(seed * 2.3f + u * 4f)) * (0.02f * S * Mathf.Sqrt(u));
                     var at = bases[c] + new Vector3(0f, HexUnderAttack.Smoke.FootShare * S + radius * 0.5f + u * top, 0f)
                         + HexUnderAttack.Smoke.Wind * (HexUnderAttack.Smoke.DriftM * S * Mathf.Pow(u, 1.4f)) + wobble;
-                    var colour = Color.Lerp(SmokeLow, SmokeHigh, Mathf.SmoothStep(0f, 1f, u / 0.7f)); colour.a = alpha;
+                    var colour = Color.Lerp(SmokeLow, SmokeHigh, Mathf.SmoothStep(0f, 1f, u / 0.7f)) * smokeGain; colour.a = alpha;
                     Color32 c32 = colour;
                     puffAt[slot] = at; puffRadius[slot] = radius; puffSpin[slot] = (own - 0.5f) * 0.7f + u * 0.6f;
                     for (int v = 0; v <= PuffSides; v++) smokeC[slot * (PuffSides + 1) + v] = c32;
+                    // Its smoke boils through the flipbook as it rises, each puff from its own frame.
+                    int frames = smokeGrid * smokeGrid;
+                    PuffUVs(slot, Flipbook.Looping((double)u * HexUnderAttack.Smoke.LifeS * HexUnderAttack.Smoke.Fps + own * frames, frames));
                     slot++;
                 }
             }
-            smoke.colors32 = smokeC;
-            Face(BoardView * Vector3.right, BoardView * Vector3.up);
+            smoke.SetColors(smokeC); smoke.SetUVs(0, smokeUV);
 
             for (int v = 0; v < glowRest.Length; v++)
             {
                 float f = Flicker(t, phase[glowColumn[v]]);
                 var col = glowBase[v]; col.a *= f;
                 glowC[v] = col;
-                var p = glowRest[v];
-                if (glowFlameTip[v]) p.y = bases[glowColumn[v]].y + (p.y - bases[glowColumn[v]].y) * (0.8f + 0.35f * Flicker(t * 1.7f, phase[glowColumn[v]] + v * 0.13f));
-                glowV[v] = p;
             }
-            glow.vertices = glowV; glow.colors32 = glowC; glow.RecalculateBounds();
+            glow.SetColors(glowC);
+
+            SampleFire(t);
+            Face(BoardView * Vector3.right, BoardView * Vector3.up);
 
             var b = BorderColour; b.a = Mathf.Lerp(BorderLowAlpha, BorderHighAlpha, HexUnderAttack.Pulse(t));
             border.SetColor("_BaseColor", b);
         }
 
-        /// <summary>Writes the smoke puffs to face a view with these world right and up axes (the puffs are round, so
-        /// only the view matters, not the time).</summary>
+        /// <summary>Writes the smoke puffs and the flames to face a view with these world right and up axes, about the
+        /// centres and sizes the last sample gave them.</summary>
         void Face(Vector3 right, Vector3 up)
         {
             right = transform.InverseTransformDirection(right); up = transform.InverseTransformDirection(up);
@@ -258,12 +304,66 @@ namespace Statecraft.HexTiles
                 smokeV[o] = c; smokeN[o] = normal;
                 for (int k = 0; k < PuffSides; k++) { smokeV[o + 1 + k] = c + x * PuffRim[k].x + y * PuffRim[k].y; smokeN[o + 1 + k] = normal; }
             }
-            smoke.vertices = smokeV; smoke.normals = smokeN; smoke.RecalculateBounds();
+            smoke.SetVertices(smokeV); smoke.SetNormals(smokeN); smoke.RecalculateBounds();
+            // The flames upright on the screen (no spin), each centred where SampleFire put it.
+            for (int f = 0; f < flameAt.Length; f++)
+            {
+                Vector3 x = right * flameHalf[f], y = up * flameHalf[f], c = flameAt[f];
+                int o = f * 4;
+                fireV[o] = c - x - y; fireV[o + 1] = c + x - y; fireV[o + 2] = c - x + y; fireV[o + 3] = c + x + y;
+                for (int k = 0; k < 4; k++) fireN[o + k] = normal;
+            }
+            if (fire != null) { fire.SetVertices(fireV); fire.SetNormals(fireN); fire.RecalculateBounds(); }
+        }
+
+        /// <summary>Puff <paramref name="slot"/>'s octagon UVs on flipbook frame <paramref name="frame"/>. The octagon
+        /// circumscribes the unit disc and is inscribed in its square, so its UVs stay inside the frame.</summary>
+        void PuffUVs(int slot, int frame)
+        {
+            var o = Flipbook.FrameOrigin(frame, smokeGrid, out float k);
+            int b = slot * (PuffSides + 1);
+            smokeUV[b] = new Vector2(o.x + 0.5f * k, o.y + 0.5f * k);
+            for (int r = 0; r < PuffSides; r++)
+                smokeUV[b + 1 + r] = new Vector2(o.x + k * Mathf.Clamp01(0.5f + 0.5f * PuffRim[r].x), o.y + k * Mathf.Clamp01(0.5f + 0.5f * PuffRim[r].y));
+        }
+
+        /// <summary>The flames as they are at <paramref name="t"/>: each <see cref="HexUnderAttack.Fire.CycleS"/> a flame flares
+        /// from a little under its size, burns through the explosion's burning frames and dies down, its own phase apart from
+        /// the others, flickering with its column's glow. Writes their UVs, colours and centres; Face writes the corners.</summary>
+        void SampleFire(float t)
+        {
+            for (int f = 0; f < flameAt.Length; f++)
+            {
+                float b = HexUnderAttack.Frac(t / HexUnderAttack.Fire.CycleS + flamePhase[f]);
+                var o = Flipbook.FrameOrigin(Flipbook.FrameAt(b, fireFrames), fireGrid, out float k);
+                int v = f * 4;
+                fireUV[v] = o; fireUV[v + 1] = new Vector2(o.x + k, o.y); fireUV[v + 2] = new Vector2(o.x, o.y + k); fireUV[v + 3] = new Vector2(o.x + k, o.y + k);
+                float size = flameSize[f] * FlipbookBursts.Swell(b, 0.6f, 0.15f);
+                flameHalf[f] = 0.5f * size;
+                // Its foot on the ground: the fire fills about the middle four fifths of its frame.
+                flameAt[f] = flameFoot[f] + Vector3.up * (0.4f * size);
+                var c = fireGrid > 1 ? FlameTint : FlameCore;
+                c.a *= Mathf.SmoothStep(0f, 1f, b / 0.12f) * (1f - Mathf.SmoothStep(0f, 1f, (b - 0.55f) / 0.45f)) * Flicker(t, phase[flameColumn[f]]);
+                Color32 c32 = c;
+                for (int n = 0; n < 4; n++) fireC[v + n] = c32;
+            }
+            if (fire != null) { fire.SetUVs(0, fireUV); fire.SetColors(fireC); }
+        }
+
+        /// <summary>Sorts a column's puffs by height, low first, in place (an insertion sort: few puffs, no allocation).</summary>
+        static void SortLowFirst((float u, int i)[] a)
+        {
+            for (int j = 1; j < a.Length; j++)
+            {
+                var x = a[j]; int k = j - 1;
+                while (k >= 0 && a[k].u > x.u) { a[k + 1] = a[k]; k--; }
+                a[k + 1] = x;
+            }
         }
 
         /// <summary>A soft, slightly lumpy puff (white, alpha falling to the rim; a little darker below, as smoke
-        /// shades itself). Pure arithmetic, so every look draws the same texture.</summary>
-        static Texture2D PuffTexture()
+        /// shades itself). Pure arithmetic, so every look draws the same texture. The gun's muzzle smoke draws it too (UnitGunFire).</summary>
+        internal static Texture2D PuffTexture()
         {
             const int N = 64;
             var t = new Texture2D(N, N, TextureFormat.RGBA32, true) { name = "under-attack-puff", wrapMode = TextureWrapMode.Clamp };
@@ -286,18 +386,19 @@ namespace Statecraft.HexTiles
         void OnDisable() => RenderPipelineManager.beginCameraRendering -= FaceCamera;
         void FaceCamera(ScriptableRenderContext context, Camera cam)
         {
-            if (smoke != null && puffAt.Length > 0) Face(cam.transform.right, cam.transform.up);
+            if (smoke != null && (puffAt.Length > 0 || flameAt.Length > 0)) Face(cam.transform.right, cam.transform.up);
         }
 
         /// <summary>A slow, irregular flicker between about 0.65 and 1 (two sines), offset per column.</summary>
         static float Flicker(float t, float phase) =>
             0.82f + 0.11f * Mathf.Sin(2f * Mathf.PI * (t * 0.7f + phase)) + 0.07f * Mathf.Sin(2f * Mathf.PI * (t * 1.9f + phase * 2.3f));
 
-        /// <summary>Per column: a soft warm disc on the ground (centre bright, rim clear) and a few small flame cones.</summary>
+        /// <summary>Per column: a soft warm disc on the ground (centre bright, rim clear). The flames burning in it are the
+        /// fire mesh's (<see cref="BuildFire"/>).</summary>
         Mesh BuildGlow(Func<Vector3, float> ground)
         {
-            const int Rim = 18, Flames = 3, Sides = 5; const float LiftM = 22f;
-            var v = new List<Vector3>(); var col = new List<Color>(); var cols = new List<int>(); var tip = new List<bool>(); var tris = new List<int>();
+            const int Rim = 18; const float LiftM = 22f;
+            var v = new List<Vector3>(); var col = new List<Color>(); var cols = new List<int>(); var tris = new List<int>();
             var rng = new System.Random(unchecked(Q * 19349663 ^ R * 83492791 ^ 0x6A0));
             for (int c = 0; c < bases.Length; c++)
             {
@@ -313,27 +414,40 @@ namespace Statecraft.HexTiles
                     v.Add(p); col.Add(new Color(GlowCore.r, GlowCore.g * 0.8f, GlowCore.b, 0f));
                     tris.AddRange(new[] { o, o + 1 + (k + 1) % Rim, o + 1 + k });
                 }
-                for (int k = 0; k <= Rim; k++) { cols.Add(c); tip.Add(false); }
-                for (int f = 0; f < Flames; f++)
-                {
-                    float a = (float)rng.NextDouble() * 2f * Mathf.PI, d = (float)rng.NextDouble() * rad * 0.4f;
-                    var foot = b + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * d; foot.y = ground(foot) + LiftM * 0.5f;
-                    float h = sizeM * (0.045f + 0.03f * (float)rng.NextDouble()), w = sizeM * (0.016f + 0.008f * (float)rng.NextDouble());
-                    int o2 = v.Count;
-                    for (int s = 0; s < Sides; s++)
-                    {
-                        float sa = s * 2f * Mathf.PI / Sides + a;
-                        v.Add(foot + new Vector3(Mathf.Cos(sa), 0f, Mathf.Sin(sa)) * w); col.Add(new Color(GlowCore.r, GlowCore.g, GlowCore.b, 0.8f));
-                        cols.Add(c); tip.Add(false);
-                    }
-                    v.Add(foot + Vector3.up * h); col.Add(new Color(FlameCore.r, FlameCore.g, FlameCore.b, 0.15f)); cols.Add(c); tip.Add(true);
-                    for (int s = 0; s < Sides; s++) tris.AddRange(new[] { o2 + s, o2 + Sides, o2 + (s + 1) % Sides });
-                }
+                for (int k = 0; k <= Rim; k++) cols.Add(c);
             }
-            glowRest = v.ToArray(); glowV = (Vector3[])glowRest.Clone(); glowBase = col.ToArray(); glowC = new Color32[glowRest.Length];
-            glowColumn = cols.ToArray(); glowFlameTip = tip.ToArray();
+            glowRest = v.ToArray(); glowBase = col.ToArray(); glowC = new Color32[glowRest.Length];
+            glowColumn = cols.ToArray();
             var mesh = new Mesh { name = "under-attack-glow" };
-            mesh.vertices = glowV; mesh.colors32 = glowC; mesh.triangles = tris.ToArray(); mesh.RecalculateNormals();
+            mesh.vertices = glowRest; mesh.colors32 = glowC; mesh.triangles = tris.ToArray(); mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        /// <summary>The flames: <see cref="HexUnderAttack.Fire.PerColumn"/> per column, each a quad (Face turns it to the camera)
+        /// standing in the inner part of its column's glow, its size and phase seeded by the hex.</summary>
+        Mesh BuildFire(Func<Vector3, float> ground)
+        {
+            const float LiftM = 11f;
+            int n = bases.Length * HexUnderAttack.Fire.PerColumn;
+            flameFoot = new Vector3[n]; flameAt = new Vector3[n]; flameSize = new float[n]; flamePhase = new float[n]; flameHalf = new float[n]; flameColumn = new int[n];
+            fireV = new Vector3[n * 4]; fireN = new Vector3[n * 4]; fireUV = new Vector2[n * 4]; fireC = new Color32[n * 4];
+            var tris = new int[n * 6];
+            var rng = new System.Random(unchecked(Q * 2654435 ^ R * 73856093 ^ 0xF1A3E));
+            for (int c = 0, f = 0; c < bases.Length; c++)
+                for (int k = 0; k < HexUnderAttack.Fire.PerColumn; k++, f++)
+                {
+                    float a = (float)rng.NextDouble() * 2f * Mathf.PI, d = (float)rng.NextDouble() * HexUnderAttack.Smoke.GlowM * sizeM * 0.4f;
+                    var foot = bases[c] + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * d; foot.y = ground(foot) + LiftM;
+                    flameFoot[f] = foot; flameColumn[f] = c;
+                    flameSize[f] = sizeM * HexUnderAttack.Fire.SizeShare * (1f - 0.5f * HexUnderAttack.Fire.SizeSpread + HexUnderAttack.Fire.SizeSpread * (float)rng.NextDouble());
+                    // Spread over the cycle, so a column's flames take turns.
+                    flamePhase[f] = (k + 0.6f * (float)rng.NextDouble()) / HexUnderAttack.Fire.PerColumn;
+                    int o = f * 4, t6 = f * 6;
+                    // Clockwise as the viewer sees it, as the built-in quad: 0 3 1, 3 0 2.
+                    tris[t6] = o; tris[t6 + 1] = o + 3; tris[t6 + 2] = o + 1; tris[t6 + 3] = o + 3; tris[t6 + 4] = o; tris[t6 + 5] = o + 2;
+                }
+            var mesh = new Mesh { name = "under-attack-fire" };
+            mesh.vertices = fireV; mesh.normals = fireN; mesh.uv = fireUV; mesh.colors32 = fireC; mesh.triangles = tris;
             return mesh;
         }
 

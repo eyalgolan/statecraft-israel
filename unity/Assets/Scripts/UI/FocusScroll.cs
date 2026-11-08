@@ -87,18 +87,8 @@ namespace Statecraft.Game.UI
 
         static bool LaidOut(Rect r) => !float.IsNaN(r.width) && !float.IsNaN(r.height) && r.width > 0f && r.height > 0f;
 
-        /// <summary>The views whose bar is the only way a keyboard player can scroll them, so it stays in the Tab
-        /// order. `KeyScroll` gives PageUp, PageDown, Home and End to the open screen's main view and to the decision
-        /// card's text, but it has no target for these views (`KeyScroll.MainViews`), and `GameRoot` turns those keys
-        /// off entirely while the turn report or the end screen is open (`GameRoot`, the `report?.IsOpen != true &&
-        /// end?.IsOpen != true` guard). Their rows are plain labels, so Tab reaches nothing inside them either. Taking
-        /// their bar out would leave no way at all to scroll them once they overflow, which is worse than the stray
-        /// stop. Giving `KeyScroll` a route to these is the better answer and is its own change; until then they stay
-        /// out of the sweep (#41 K6, the owner's review).</summary>
-        static readonly string[] OnlyReachableByTheirBar = { "turn-report-rows", "end-screen-rows", "capture-scroll", "info-panel" };
-
         /// <summary>Takes every scroll bar under <paramref name="root"/> out of the Tab order (accessibility audit, #41,
-        /// K3 widened), except the few in <see cref="OnlyReachableByTheirBar"/>. #1453 did the Cabinet's two views,
+        /// K3 widened). #1453 did the Cabinet's two views,
         /// which is where the audit found the stop: the seat list is the one long enough to show its bar in a 1280x720
         /// window. Every other view's slider stayed focusable, and a ScrollView hides its scroller only while the
         /// content fits, so the stop came back as soon as a view overflowed: a shorter window, or enough content.
@@ -107,13 +97,14 @@ namespace Statecraft.Game.UI
         ///
         /// The same reasoning as K3, no wider: a bar is always in sight and a list is reached by Tabbing its rows, and
         /// for the lists that hold labels only (why-rows, defence-body, the event card's text) there is nothing to Tab
-        /// to at all, while KeyScroll already gives PageUp, PageDown, Home and End with or without focus. Dragging the
-        /// bar and the wheel are untouched: this changes focusability, not behaviour.</summary>
+        /// to at all, while KeyScroll already gives PageUp, PageDown, Home and End with or without focus. The turn
+        /// report, the ending, the capture dialog and the info panel kept their bar until KeyScroll could page them too
+        /// (#41 K6, the owner's review; #2479). Dragging the bar and the wheel are untouched: this changes focusability,
+        /// not behaviour.</summary>
         public static void NoScrollBarIsATabStop(VisualElement root)
         {
             foreach (var view in root.Query<ScrollView>().Build())
-                if (System.Array.IndexOf(OnlyReachableByTheirBar, view.name) < 0)
-                    BarsAreNotTabStops(view);
+                BarsAreNotTabStops(view);
         }
 
         /// <summary>Takes a scroll view's own scroll bars out of the Tab order (accessibility audit, #41, the keyboard-only

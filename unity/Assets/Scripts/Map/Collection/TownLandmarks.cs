@@ -15,8 +15,11 @@ namespace Statecraft.Game.Map.Collection
     /// (BuildingPreview at 3ef0a7a5): White City at Tel Aviv, the stone city at Jerusalem, the port city at Haifa, the
     /// moshava town at the six moshavot, Nahalal at the moshav, the compound at every kibbutz, the stone village at every
     /// Arab town, the ma'abara at a transit camp and the shikun at a housing project.
-    /// Owner ruling of 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa have no
-    /// whole-town model; their building models draw at every zoom instead (<see cref="Kits.TownModels.AtEveryZoom"/>). Tel
+    /// Tel Aviv, Jerusalem, Haifa and Jaffa, the major cities (<see cref="Kits.TownModels.IsMajorCity"/>), have no whole-town
+    /// model: since the owner's ruling of 6 November 2026, "Big blocks, every zoom", their kits draw from 40 km out, and since
+    /// the owner's ruling of 7 November 2026, "Tal's models close (Recommended)", their building models below the close
+    /// switch (before them, the 2 November 2026 ruling, "Yes, small buildings at every zoom" (superseded), drew their building
+    /// models at every zoom). Tel
     /// Aviv's, Jerusalem's and Haifa's whole-town models stay in the repository and the streamed catalogue, unused on the map;
     /// the stone village still stands at the other Arab towns but Ramla (its own town, see <see cref="ById"/>).
     /// Owner ruling of 18 October 2026 (recorded on #917, #663, #659 and #700): the towns are Tal Heuberger's models, "Whole model
@@ -60,7 +63,9 @@ namespace Statecraft.Game.Map.Collection
             Ramla = CollectionCatalog.RamlaTown;
 
         /// <summary>By settlement id first (#507's mapping). Tel Aviv, Jerusalem and Haifa have no row: the owner, 2 November
-        /// 2026, "Yes, small buildings at every zoom" (<see cref="Kits.TownModels.AtEveryZoom"/>). That replaces #507's
+        /// 2026, "Yes, small buildings at every zoom" (superseded on 6 November 2026 by "Big blocks, every zoom", itself
+        /// superseded below the close switch on 7 November 2026 by "Tal's models close (Recommended)"; both keep them without a
+        /// whole-town model: <see cref="Kits.TownModels.IsMajorCity"/>). That replaces #507's
         /// White City at Tel Aviv and port city at Haifa, and the owner's ruling of 21 October 2026 on #708
         /// (issuecomment-6323524970) that #336's second stone city (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) "is
         /// Jerusalem's only far-zoom model for the whole game". <see cref="TelAviv"/>, <see cref="Haifa"/>,
@@ -101,9 +106,10 @@ namespace Statecraft.Game.Map.Collection
         internal static Action<string, CollectionDetail, Action<GameObject?>> Request = DefaultRequest;
         internal static Func<string, CollectionDetail, Action<GameObject?>, IDisposable> Acquire = CollectionStream.Acquire;
 
-        /// <summary>The model for settlement <paramref name="s"/>, or null for none: none for the cities drawn from their
-        /// building models at every zoom (Jaffa, an Arab town, would otherwise take <see cref="ByType"/>'s stone village).</summary>
-        public static string? ModelFor(Settlement s) => Kits.TownModels.AtEveryZoom(s.Id) ? null
+        /// <summary>The model for settlement <paramref name="s"/>, or null for none: none for the major cities, which draw their
+        /// kits from 40 km out and their building models below the close switch (<see cref="Kits.TownModels.IsMajorCity"/>; Jaffa, an Arab town, would otherwise take
+        /// <see cref="ByType"/>'s stone village).</summary>
+        public static string? ModelFor(Settlement s) => Kits.TownModels.IsMajorCity(s.Id) ? null
             : ById.TryGetValue(s.Id, out var m) ? m : ByType.TryGetValue(s.Type, out var t) ? t : null;
 
         /// <summary>The model for a placement of <paramref name="action"/> as at <paramref name="date"/>, or null: none for that
@@ -333,6 +339,8 @@ namespace Statecraft.Game.Map.Collection
         List<Want> wants = new List<Want>();
         DateTime date;
         bool dirty;
+        bool refreshDirty;
+        bool? refreshedAllowed;
 
         /// <summary>The landmarks drawn (key, model, the spot its footprint is centred on, at ground height): a test aid.</summary>
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
@@ -416,18 +424,19 @@ namespace Statecraft.Game.Map.Collection
                     (w.Key, new Bounds(new Vector3(w.At.x, 0, w.At.y), new Vector3(w.Radius * 2, 0, w.Radius * 2)))).ToList());
                 layer.WholeTownReady = WholeReady;
             }
-            dirty = true; RefreshWanted();
+            dirty = true; refreshDirty = true; RefreshWanted();
         }
 
         /// <summary>Whether <see cref="RefreshWanted"/> has work: a redraw, a lease to retire, or a change of the admitted towns
         /// or of the models asked for. RefreshWanted returns at once without it, and the edit-mode render callback asks for a
         /// player-loop update only with it, so a settled layer never keeps the editor updating (#2099).</summary>
-        internal bool RefreshPending => dirty || retiring.Count != 0
-            || !admittedKeys.SetEquals(wants.Where(Allowed).Select(w => w.Key)) || !asked.SetEquals(wants.Where(Allowed).Select(w => w.Model));
+        internal bool RefreshPending => dirty || refreshDirty || retiring.Count != 0 || pendingRetirementLeases != 0
+            || refreshedAllowed != (map?.Residency.Towns.Enabled ?? true);
 
         void RefreshWanted()
         {
             if (!RefreshPending) return;
+            if (pendingRetirementLeases != 0) return;
             var keep = new HashSet<string>(StringComparer.Ordinal);
             var keys = new HashSet<string>(StringComparer.Ordinal);
             foreach (var want in wants) if (Allowed(want)) { keep.Add(want.Model); keys.Add(want.Key); }
@@ -462,6 +471,11 @@ namespace Statecraft.Game.Map.Collection
             {
                 // Admission already validated this camera's production policy. The stream itself waits for GameReady.
                 RequestWanted();
+            }
+            if (retiring.Count == 0 && pendingRetirementLeases == 0)
+            {
+                refreshedAllowed = map?.Residency.Towns.Enabled ?? true;
+                refreshDirty = false;
             }
         }
 
@@ -500,7 +514,7 @@ namespace Statecraft.Game.Map.Collection
             CollectionResidencyMetrics.AfterDestroyed("whole_towns", instances, batch, () =>
             {
                 pendingRetirementLeases -= batch.Length;
-                if (this != null && isActiveAndEnabled) RefreshWanted();
+                if (this != null && isActiveAndEnabled) { refreshDirty = true; RefreshWanted(); }
                 CollectionResidencyMetrics.MarkDirty();
             }, Application.isPlaying && Acquire == CollectionStream.Acquire ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys);
         }
@@ -617,8 +631,20 @@ namespace Statecraft.Game.Map.Collection
         /// road vehicle layers read it from here.</summary>
         public static float ViewDistance(Camera cam) => Kits.TownModelLayer.ViewDistance(cam);
 
-        /// <summary>#700's building layer of this map (null without kits).</summary>
-        Kits.TownModelLayer? Layer() => map == null ? null : map.GetComponentInChildren<Kits.TownModelLayer>(true);
+        /// <summary>#700's building layer of this map (null without kits). Found once and kept: WholeReady asks for it for
+        /// every town swap, up to three times per camera per frame, and the walk of the whole map hierarchy grows below the
+        /// close switch (frame cost finding, 7 November 2026). A destroyed layer, or one no longer under this map, is looked
+        /// up again.</summary>
+        Kits.TownModelLayer? Layer()
+        {
+            if (map == null) return null;
+            if (buildingLayer != null && buildingLayer.transform.IsChildOf(map.transform)) return buildingLayer;
+            LayerLookups++;
+            return buildingLayer = map.GetComponentInChildren<Kits.TownModelLayer>(true);
+        }
+        Kits.TownModelLayer? buildingLayer;
+        /// <summary>How many times <see cref="Layer"/> has walked the map's hierarchy for the building layer (a test aid).</summary>
+        internal int LayerLookups { get; private set; }
 
         void OnEnable()
         {
@@ -699,11 +725,9 @@ namespace Statecraft.Game.Map.Collection
         }
         void EndCamera(ScriptableRenderContext _, Camera camera) => RestoreRenderers();
 
-        void LateUpdate()
-        {
-            // The layer prunes quiet cameras too; releases must not depend on another camera starting a render.
-            RefreshWanted();
-        }
+        /// <summary>One production frame's reconciliation; exposed internally so allocation tests measure no reflection.</summary>
+        internal void Tick() => RefreshWanted();
+        void LateUpdate() => Tick();
 
         /// <summary>The render callback. Nothing is acquired, instantiated or destroyed while a camera renders, in edit mode
         /// either (a Scene or Game view camera): the change waits for LateUpdate, as in play mode.</summary>

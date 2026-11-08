@@ -132,6 +132,19 @@ public class WarEvents1948Tests
         s.Date = e.From;
         SecuritySystem.SetRung(C, s, 3, new List<Cause>());   // a level no option sets, so any change is visible
         s.PendingEvents.Add(id);
+        if (option.RequiresUnitRegions.Count != 0)
+        {
+            var at = C.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+            foreach (var order in option.UnitOrders)
+            {
+                int unitId = C.StartingForces.FindIndex(f => f.Row == order.Unit);
+                var force = C.StartingForces[unitId];
+                var unit = s.Units.TryGetValue(unitId, out var present) ? present
+                    : new Unit(unitId, force.Type, force.Q, force.R, side: force.Side, strength: force.Strength);
+                s.Units[unitId] = new Unit(unit.Id, unit.Type, at.Q, at.R, unit.Service, unit.Side, unit.Strength,
+                    unit.Order, unit.OrderTarget, unit.HomeCity, unit.Full, unit.CombatXp);
+            }
+        }
         var before = C.Indicators.ToDictionary(i => i.Id, i => s.Indicators[i.Id]);
         Assert.Null(EventSystem.Choose(C, s, id, option.Id, new List<Cause>()));
         Assert.Equal(row.Rung ?? 3, s.Rung);
@@ -203,13 +216,46 @@ public class WarEvents1948Tests
     }
 
     /// <summary>Every card is answered by HistoricalAI on the turn it appears, and nothing is refused for attention
-    /// (fix round 1: attention at or under the cap on every turn).</summary>
+    /// (fix round 1: attention at or under the cap on every turn). One known refusal: Operation Hiram's order to the 7th
+    /// Brigade (R-ENEMY-005; owner, 1 November 2026, #2087), refused on the 15 November 1948 turn because the ALA's unit
+    /// still holds al-Malikiyya, as the player's own go-to would be.</summary>
     [Fact]
     public void NoTurnBeforeTheArmisticeRefusesAnOrder()
     {
         foreach (var t in Run)
-            Assert.True(t.Rejected.Count == 0, $"turn {t.Start:yyyy-MM-dd}: refused {string.Join("; ", t.Rejected.Select(r => r.Reason))}");
+            Assert.True(t.Rejected.All(IsTheMalkiyaRefusal), $"turn {t.Start:yyyy-MM-dd}: refused {string.Join("; ", t.Rejected.Select(r => r.Reason))}");
+        Assert.Equal(new[] { new DateTime(1948, 11, 15) }, Run.Where(t => t.Rejected.Any(IsTheMalkiyaRefusal)).Select(t => t.Start));
     }
+
+    /// <summary>A game played with no commands at all: under R-ENEMY-007 the untouched player never puts the operation
+    /// brigades in place, so each delegated operation is postponed (keyed, naming the units to move) and, after its wait,
+    /// lapses (keyed), none is launched, and no card order is ever given, so none is refused. Ten Days, postponed on the
+    /// 15 July 1948 turn, waits mvp.operation_wait_turns turns and lapses inside these 12 turns.</summary>
+    [Fact]
+    public void AnUntouchedGamePostponesOperationsWithoutIssuingTheirOrders()
+    {
+        var s = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
+        var refused = new List<(int Turn, DateTime Start, Rejection X)>();
+        var why = new List<Cause>();
+        for (int turn = 1; turn <= 12; turn++)
+        {
+            var r = Simulation.Step(C, s, new Command[0]);
+            refused.AddRange(r.Rejected.Select(x => (turn, s.Date, x)));
+            why.AddRange(r.Why);
+            s = r.State;
+        }
+        Assert.Empty(refused);
+        foreach (var op in new[] { "ten_days", "operation_yoav", "operation_hiram" })
+        {
+            Assert.Contains(why, x => x.Key == CauseKeys.OperationPostponed && x.Target == op);
+            Assert.DoesNotContain(op, s.ChosenOptions.Keys);
+        }
+        Assert.Contains(why, x => x.Key == CauseKeys.OperationLapsed && x.Target == "ten_days");
+    }
+
+    /// <summary>Operation Hiram's refused card order: the 7th Brigade (unit 13, R-UNIT-009) to al-Malikiyya (14,4).</summary>
+    internal static bool IsTheMalkiyaRefusal(Rejection x) =>
+        x.Reason == Orders.RefusedCardOrder && x.Command is UnitOrder { Unit: 13, Q: 14, R: 4 };
 
     [Fact]
     public void TheHistoricalRunMovesThroughTheTruces()

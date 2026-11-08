@@ -70,6 +70,12 @@ namespace Statecraft.Sim
         public double Attention;
         public SortedSet<string> FiredEvents = new SortedSet<string>(StringComparer.Ordinal);
         public List<string> PendingEvents = new List<string>();
+        /// <summary>Soft events that were eligible but found no slot, by id (R-EVT-001). They remain here until they fire.</summary>
+        public SortedSet<string> CappedEvents = new SortedSet<string>(StringComparer.Ordinal);
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Keep the option (Recommended)", "Wait, with a limit (Recommended)"): each
+        /// pending operation card a delegation postponed, by id: the option it was postponed with, which later delegations
+        /// keep instead of drawing again, and the turn of its first postponement, from which its wait is counted.</summary>
+        public SortedDictionary<string, PostponedOperation> PostponedOperations = new SortedDictionary<string, PostponedOperation>(StringComparer.Ordinal);
         /// <summary>The option each resolved event was resolved with (chosen or delegated), for events' `requires`.</summary>
         public Dictionary<string, string> ChosenOptions = new Dictionary<string, string>();
         /// <summary>Player appointments by office id; valid while the government in AppointedUnder is in office (Cabinet).</summary>
@@ -81,6 +87,11 @@ namespace Statecraft.Sim
         /// acceptance, so replacing a camp with housing cannot reopen the per-turn cap; a new date starts from zero.</summary>
         public DateTime MapActionsTurnDate;
         public int MapActionsThisTurn;
+        /// <summary>R-PROJ-001 under gdd-0.3 only (#1700 slice B): the city projects each city started in the turn of
+        /// <see cref="MapActionsTurnDate"/>, by city id (ordinal), counted on acceptance. Read only while that date is the
+        /// turn's, and cleared when a start or map action moves it on, as MapActionsThisTurn is reset. Empty under every
+        /// other ruleset, and then left out of the hash.</summary>
+        public SortedDictionary<string, int> CityStartsThisTurn = new SortedDictionary<string, int>(StringComparer.Ordinal);
         /// <summary>Why the game ended, as one of the <see cref="GameOverCodes"/>; null while it is on. Never display it: use PlayerText.GameOver.</summary>
         public string? GameOver;
         // GDD v0.1 state (spec 2026-10-12 section 2.2). Empty in the legacy loop, and then left out of the hash (R-LOOP-002).
@@ -102,6 +113,9 @@ namespace Statecraft.Sim
         public SortedDictionary<string, CorridorWork> Corridors = new SortedDictionary<string, CorridorWork>(StringComparer.Ordinal);
         /// <summary>The locked projects.yaml kinds an event option has unlocked (R-EFX-008), by id (ordinal).</summary>
         public SortedSet<string> UnlockedProjects = new SortedSet<string>(StringComparer.Ordinal);
+        /// <summary>The units whose go-to an operation card gave (R-ENEMY-005), by unit id, each with the day the order ends: the
+        /// end of the window of the anchor it goes to (the owner's answer 1 on #2087, "Orders expire with the operation").</summary>
+        public SortedDictionary<int, DateTime> CardOrders = new SortedDictionary<int, DateTime>();
         /// <summary>The next id a new unit, training cohort or city project takes (they share it). Ids are never reused.</summary>
         public int NextId;
         /// <summary>The date each completed objective was completed, by objective id (ordinal).</summary>
@@ -135,12 +149,19 @@ namespace Statecraft.Sim
         public SortedDictionary<string, int> PrisonersReturned = new SortedDictionary<string, int>(StringComparer.Ordinal);
         /// <summary>The player's soldiers held by the enemy, in population units, by the side that took them (R-POW-005; Q-POW-4).</summary>
         public SortedDictionary<string, int> SoldiersHeld = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>R-WAR-005, under exact gdd-0.3 only: each front's consecutive quiet turns (Q48), set at every turn end;
+        /// R-WAR-006 sets a front to 0 on a refused armistice. Empty under every other ruleset.</summary>
+        public SortedDictionary<string, int> QuietTurns = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>R-WAR-005: the fronts with a unit in an engagement this turn, instant attacks included, and a front whose armistice was refused this turn (R-WAR-006, Q49); cleared at the turn end.</summary>
+        public SortedSet<string> EngagedFronts = new SortedSet<string>(StringComparer.Ordinal);
         /// <summary>The places the player has deported, the permanent record of R-CTRL-018 and R-CTRL-019: a count of places,
         /// not people (Q-CAP-2 (b)), with no destination on the board (Q-DEP-3 (a)).</summary>
         public int DisplacedByPlayer;
 
         public double TotalPopulation => PopulationLedger.IsInitialized
-            ? PopulationLedger.TotalPeople : Population.Values.Sum();
+            ? PopulationLedger.TotalPeople
+            // R-FOOD-001: in ordinal key order, since .NET does not promise a Dictionary's enumeration order and the sum feeds the economy's per-capita tax and spending (EconomySystem), which is what moves the hashed debt and fx.
+            : Population.OrderBy(kv => kv.Key, StringComparer.Ordinal).Sum(kv => kv.Value);
 
         public GameState Clone()
         {
@@ -157,6 +178,8 @@ namespace Statecraft.Sim
             c.playerRegions = new SortedDictionary<string, PlayerRegionPool>(playerRegions, StringComparer.Ordinal);
             c.FiredEvents = new SortedSet<string>(FiredEvents, StringComparer.Ordinal);
             c.PendingEvents = new List<string>(PendingEvents);
+            c.CappedEvents = new SortedSet<string>(CappedEvents, StringComparer.Ordinal);
+            c.PostponedOperations = new SortedDictionary<string, PostponedOperation>(PostponedOperations, StringComparer.Ordinal);
             c.ChosenOptions = new Dictionary<string, string>(ChosenOptions);
             c.Appointments = new Dictionary<string, Appointment>(Appointments);
             c.Placements = new List<Placement>(Placements);
@@ -165,14 +188,18 @@ namespace Statecraft.Sim
             c.Cohorts = new SortedList<int, Cohort>(Cohorts);
             c.Sites = new SortedDictionary<string, SiteWork>(Sites, StringComparer.Ordinal);
             c.CityProjects = new SortedList<int, CityProject>(CityProjects);
+            c.CityStartsThisTurn = new SortedDictionary<string, int>(CityStartsThisTurn, StringComparer.Ordinal);
             c.Workshops = new SortedList<int, Workshop>(Workshops);
             c.Corridors = new SortedDictionary<string, CorridorWork>(Corridors, StringComparer.Ordinal);
             c.UnlockedProjects = new SortedSet<string>(UnlockedProjects, StringComparer.Ordinal);
+            c.CardOrders = new SortedDictionary<int, DateTime>(CardOrders);
             c.Objectives = new SortedDictionary<string, DateTime>(Objectives, StringComparer.Ordinal);
             c.Settlements = new SortedDictionary<string, SettlementControl>(Settlements, StringComparer.Ordinal);
             c.PrisonersHeld = new SortedDictionary<string, int>(PrisonersHeld, StringComparer.Ordinal);
             c.PrisonersReturned = new SortedDictionary<string, int>(PrisonersReturned, StringComparer.Ordinal);
             c.SoldiersHeld = new SortedDictionary<string, int>(SoldiersHeld, StringComparer.Ordinal);
+            c.QuietTurns = new SortedDictionary<string, int>(QuietTurns, StringComparer.Ordinal);
+            c.EngagedFronts = new SortedSet<string>(EngagedFronts, StringComparer.Ordinal);
             return c;
         }
 
@@ -229,6 +256,12 @@ namespace Statecraft.Sim
             Num("mob", Mobilization); Num("stab", CoalitionStability); if (usesAttention) Num("att", Attention);
             List("fired", FiredEvents);
             List("pending", PendingEvents);
+            // R-EVT-001: absent when no event has waited for the cap, so all existing golden hashes stay byte-for-byte stable.
+            if (CappedEvents.Count > 0) Section("capped", '[', ']', CappedEvents);
+            // R-ENEMY-007: absent while no operation waits, as `capped`, so a run that postpones none hashes as before.
+            if (PostponedOperations.Count > 0)
+                Section("postponed", '{', '}', PostponedOperations.Select(kv => kv.Key + "=" + kv.Value.Option + "@" + kv.Value.Turn.ToString(CultureInfo.InvariantCulture)
+                    + "@" + kv.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
             Nl(); sb.Append("chosen{");
             foreach (var kv in ChosenOptions.OrderBy(k => k.Key, StringComparer.Ordinal)) { Entry(); sb.Append(kv.Key).Append('=').Append(kv.Value); Sep(); }
             Close('}');
@@ -261,9 +294,13 @@ namespace Statecraft.Sim
             if (Cohorts.Count > 0) Section("train", '[', ']', Cohorts.Values.Select(x => x.Canonical()));
             if (Sites.Count > 0) Section("site", '{', '}', Sites.Values.Select(x => x.Canonical()));
             if (CityProjects.Count > 0) Section("cproj", '[', ']', CityProjects.Values.Select(x => x.Canonical()));
+            if (CityStartsThisTurn.Count > 0)   // R-PROJ-001, gdd-0.3 only
+                Section("cstart", '{', '}', CityStartsThisTurn.Select(kv => kv.Key + "=" + kv.Value.ToString(CultureInfo.InvariantCulture)));
             if (Workshops.Count > 0) Section("wshop", '[', ']', Workshops.Values.Select(x => x.Canonical()));   // R-ARMS-005, gdd-0.3 only
             if (Corridors.Count > 0) Section("corr", '{', '}', Corridors.Values.Select(x => x.Canonical()));
             if (UnlockedProjects.Count > 0) Section("unlocked", '[', ']', UnlockedProjects);
+            if (CardOrders.Count > 0)   // R-ENEMY-005: only while a card's order stands, so a game with none hashes as before
+                Section("cardorders", '{', '}', CardOrders.Select(kv => kv.Key.ToString(CultureInfo.InvariantCulture) + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
             if (NextId != 0) { Sep(); Nl(); sb.Append("next=").Append(NextId.ToString(CultureInfo.InvariantCulture)); }
             if (Objectives.Count > 0)
                 Section("obj", '{', '}', Objectives.Select(kv => kv.Key + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
@@ -290,6 +327,9 @@ namespace Statecraft.Sim
             if (PrisonersHeld.Count > 0) Section("pow", '{', '}', Counts(PrisonersHeld));
             if (PrisonersReturned.Count > 0) Section("powret", '{', '}', Counts(PrisonersReturned));
             if (SoldiersHeld.Count > 0) Section("ownheld", '{', '}', Counts(SoldiersHeld));
+            // R-WAR-005: gdd-0.3 only, so every other ruleset hashes as before.
+            if (QuietTurns.Count > 0) Section("quiet", '{', '}', Counts(QuietTurns));
+            if (EngagedFronts.Count > 0) Section("engaged", '[', ']', EngagedFronts);
             if (DisplacedByPlayer != 0) { Sep(); Nl(); sb.Append("displaced=").Append(DisplacedByPlayer.ToString(CultureInfo.InvariantCulture)); }   // R-CTRL-019: only after a Deport
             if (UsesPopulationLedger) Section("population-ledger", '{', '}', PopulationLedger.Canonical());
             if (UsesPopulationLedger && playerRegions.Count > 0)
@@ -299,5 +339,16 @@ namespace Statecraft.Sim
             }
             return sb.ToString();
         }
+    }
+
+    /// <summary>R-ENEMY-007: a postponed operation card's kept option, and the turn (GameState.Turn) and date of its first
+    /// postponement: the wait is counted from the turn, and a late launch's orders end later by the time since the date (Q4).
+    /// Immutable, so GameState.Clone can share it.</summary>
+    public sealed class PostponedOperation
+    {
+        public string Option { get; }
+        public int Turn { get; }
+        public DateTime Date { get; }
+        public PostponedOperation(string option, int turn, DateTime date) { Option = option; Turn = turn; Date = date; }
     }
 }

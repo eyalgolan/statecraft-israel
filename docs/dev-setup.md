@@ -39,6 +39,8 @@ Unity, a Unity licence and macOS are only needed for `unity/`. The sim, the cont
 
 `scripts/check.sh` runs all the checks in one go, cheapest first, plus a sim build with warnings as errors. It stops at the first failure and shows the end of its output. It takes the base ref as its argument (default `origin/main`); set `CHECK_NO_CHANGELOG=1` if the PR has the `no-changelog` label.
 
+In CI the reviewed_by guard also reads the pull request's "AI assistance" section, and a disclosed AI-assisted sign-off passes (owner, 4 November 2026: "Yes, it counts"). Run locally, it has no description and treats AI assistance as not disclosed. To check with your PR's description: `gh pr view <number> --json body --jq '{pull_request: {body: .body}}' > pr-event.json`, then add `--pr-event pr-event.json`.
+
 To try a rules.yaml change without editing it, use the writer preview: `dotnet run --project sim/Statecraft.Cli -- --preview --set tax_per_capita_per_year=0.00007 --show morale,treasury,fx`. It plays the historical run on the real content and on the same content with the change applied in memory, then prints the changed final-state lines (grouped like a golden failure) and a table of the values you ask for. Other options: `--until YYYY-MM-DD` (default 1950-01-01), `--seed N`, `--every N` (turns between table rows, default 8). It takes single-value top-level keys of `rules.yaml` (an era's own `content/rules/<era>.yaml` value still wins in that era) and writes nothing. A typo fails with the key named, a wrong type with the line.
 
 To see the course a saved game took, run `dotnet run --project sim/Statecraft.Cli -- --timeline-course path/to/game.save`. It replays the save as loading it in the game does and prints a tab-separated table with one row per answered event, in the timeline screen's order: `event`, `chosen`, `historical` (the record's option, `-` if none), `diverged` (`true` when the choice left the record; it stays `true` after a rejoin) and `rejoined_by` (the consequence card that brought it back, or `-`). These are the rows the timeline screen shows. Load warnings go to stderr; a file it cannot read or a save the game refuses exits 1 with no table. It writes nothing, and it runs on its own: with `--preview`, `--release-gate`, `--timeline-report`, `--auto`, `--set`, `--show`, `--until`, `--every`, `--seed` or `--turns` it exits 1 rather than ignore the flag.
@@ -54,8 +56,9 @@ Not possible without Unity and not in CI: the Unity EditMode tests, player build
   (output `unity/Builds/Mac/Statecraft.app`).
 - Browser check: `uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&smoke=5"` with the three full `--expect`
   values pinned in `docs/determinism.md` (both goldens and the smoke line).
-  It uses Chrome for Testing from the Playwright cache (`~/Library/Caches/ms-playwright/chromium-1228` on this Mac;
-  elsewhere `npx playwright install chromium`).
+  It uses Chrome for Testing: on macOS the newest one in the Playwright cache (`~/Library/Caches/ms-playwright/chromium-1228`
+  on this Mac; `npx playwright install chromium` puts it there). `find_chrome()` looks nowhere else, so on any other
+  platform set `CHROME_PATH` to a Chrome for Testing executable (`tools/web_check.py`).
 - Page flags: `?golden` (golden check), `?smoke=N` (play N turns through the UI; bare `?smoke` = 5, `?smoke=0` = off),
   `?profile` (terrain profile), `?camlog` (log the camera distance), `?bootlog` (each boot phase's timing) and `?navlog`
   (every UI pointer and submit event, screen toggle and map click, with its frame), `?vprofile` (the visual frame-time
@@ -71,7 +74,8 @@ Not possible without Unity and not in CI: the Unity EditMode tests, player build
   (headless), `... -- uv run tools/headed.py profile --build <build> --dpr 1` (headed; `--dpr 2` is the
   fill-rate stress proxy) and `... -- uv run tools/headed.py boot --build <build> --runs 3 --baseline <ms>
   --baseline-first-frame <ms>` (the boot budget: two spans, default allowance max(300 ms, 50%)); all of them fix the
-  viewport to 1920x1080 over CDP and fail on another `res=`; wrap Unity
+  viewport to 1920x1080 over CDP. The headless run and `headed.py profile` fail on a console line with another `res=`;
+  `headed.py boot` never checks `res=`, it only compares the two boot spans with their baselines; wrap Unity
   batch commands in `uv run tools/machine_lock.py --shared -- ...`; `tools/art_checkpoint.sh [--no-build] <name>` for the
   owner's side-by-side images.
 - Quality tiers: `uv run tools/machine_lock.py --shared -- "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.QualityTiers.Apply`

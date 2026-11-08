@@ -169,6 +169,44 @@ public class ControlTests
         Assert.AreNotEqual(Control1948.Side.Israel, c.At(YadMordechaiHex.q, YadMordechaiHex.r, Truce1).side, "fallen on 24 May");
     }
 
+    [Test]
+    public void LiveSettlementControlOverridesOnlyEffectiveHistoricalDifferences()
+    {
+        var m = Regions();
+        var historical = m.LayerOn(Start)!;
+        Assert.AreSame(historical, m.LayerOn(Start, Array.Empty<(int q, int r, bool player)>()));
+        Assert.AreSame(historical, m.LayerOn(Start, new[] { (YadMordechaiHex.q, YadMordechaiHex.r, true) }),
+            "a live holder matching the dated colour is a no-op");
+
+        var captured = m.LayerOn(Start, new[] { (AcreHex.q, AcreHex.r, true) })!;
+        Assert.AreEqual(BorderStyle.Primary, captured.StyleOf(captured.RegionOf(AcreHex.q, AcreHex.r)));
+        Assert.AreEqual(historical.RegionOf(JerusalemHex.q, JerusalemHex.r), captured.RegionOf(JerusalemHex.q, JerusalemHex.r));
+        Assert.AreEqual(Control1948.Side.Contested, m.Control!.At(AcreHex.q, AcreHex.r, Start).side,
+            "the immutable dated source is unchanged");
+
+        var lost = m.LayerOn(Start, new[] { (YadMordechaiHex.q, YadMordechaiHex.r, false) })!;
+        Assert.AreEqual(BorderStyle.Secondary, lost.StyleOf(lost.RegionOf(YadMordechaiHex.q, YadMordechaiHex.r)));
+    }
+
+    /// <summary>#2742: without the side data the dated layer is the sub-districts, where ids 1 and 2 are Acre and Beisan,
+    /// not Israel and Arab. A lost settlement in Acre must restyle its own hex only, not every hex of Beisan.</summary>
+    [Test]
+    public void OnTheSubdistrictLayerTheLiveOverlayLeavesAcreAndBeisanAlone()
+    {
+        var m = new MapRegions(Subdistricts1948.Parse(SubText), Armistice1949.Parse(ArmText));
+        var historical = m.LayerOn(Start)!;
+        var acre = historical.RegionOf(AcreHex.q, AcreHex.r);
+        Assert.AreEqual(1, acre, "Acre's id on the sub-district layer");
+        var otherAcre = historical.Hexes.First(h => h != AcreHex && historical.RegionOf(h.q, h.r) == 1);
+        var beisan = historical.Hexes.First(h => historical.RegionOf(h.q, h.r) == 2);
+
+        var lost = m.LayerOn(Start, new[] { (AcreHex.q, AcreHex.r, false) })!;
+        Assert.AreNotSame(historical, lost);
+        Assert.AreEqual(BorderStyle.Secondary, lost.StyleOf(lost.RegionOf(AcreHex.q, AcreHex.r)), "the lost settlement's hex");
+        Assert.AreEqual(historical.StyleOf(1), lost.StyleOf(lost.RegionOf(otherAcre.q, otherAcre.r)), "the rest of Acre");
+        Assert.AreEqual(historical.StyleOf(2), lost.StyleOf(lost.RegionOf(beisan.q, beisan.r)), "Beisan");
+    }
+
     /// <summary>Kept for a side file whose first period starts later: before it the sub-districts are grey, never blue.</summary>
     [Test]
     public void BeforeAFirstPeriodTheSubdistrictsAreGreyNotBlue()
@@ -239,7 +277,7 @@ public class ControlTests
         StringAssert.DoesNotContain("not held", en, "nothing is ever drawn grey for land held by no one");
         StringAssert.Contains("18 July 1948", en);
         StringAssert.Contains("Israel State Archives", en);
-        StringAssert.StartsWith("בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום-אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו", he);
+        StringAssert.StartsWith("בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום־אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו", he);
         StringAssert.Contains("18 ביולי 1948", he, "the date in Hebrew month names (review S5)");
         StringAssert.DoesNotContain("July", he);
         StringAssert.Contains("ארכיון המדינה", he);
@@ -258,7 +296,7 @@ public class ControlTests
         var after = m.ControlLabel(After, k => En[k])!;
         StringAssert.StartsWith("Israeli side of the armistice line: blue · Arab side: orange-red · No-man's land or demilitarized zone: grey, dashed", after);
         StringAssert.Contains("Jordan (low accuracy)", after, "D-A ruling 2: the Jordan line is labelled low-accuracy on the map");
-        StringAssert.StartsWith("הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום-אדום · שטח הפקר או אזור מפורז: אפור, מקווקו", m.ControlLabel(After, k => He[k]));
+        StringAssert.StartsWith("הצד הישראלי של קו שביתת הנשק: כחול · הצד הערבי: כתום־אדום · שטח הפקר או אזור מפורז: אפור, מקווקו", m.ControlLabel(After, k => He[k]));
         var mixed = m.ControlLabel(Mixed, k => En[k])!;
         StringAssert.StartsWith("Israeli side of the armistice line", mixed);
         StringAssert.Contains("Egypt, Jordan (low accuracy), Lebanon", mixed);
@@ -293,7 +331,7 @@ public class ControlTests
         // a demilitarized zone hex: the zone's own line, not a second "Demilitarized zone"
         var dmz = m.Control!.Periods.Count > 0 ? FindHex(m, After, Control1948.Side.Dmz) : default;
         Assert.AreEqual("Demilitarized zone", InfoPanelPresenter.ControlText(m, En, dmz.q, dmz.r, After));
-        StringAssert.DoesNotContain("Demilitarized zone", InfoPanelPresenter.RegionText(m, En, dmz.q, dmz.r, After));
+        StringAssert.DoesNotContain(En["info.control_dmz"], InfoPanelPresenter.RegionText(m, En, dmz.q, dmz.r, After));
         // no-man's land from a minimal file too (the data has it only in the opening period, in the Old City's hex)
         var nml = Control1948.Parse("layer: x\nshown_from: 1948-06-11\nperiods:\n  - { id: a, from: 1948-06-11, until: null, legend: held, line_date: '1948-07-09', fronts: [] }\nhexes:\n  - [1, 2, 'm']\n");
         Assert.AreEqual((Control1948.Side.NoMansLand, (string?)null), nml.At(1, 2, Truce1));
@@ -331,6 +369,26 @@ public class ControlTests
         StringAssert.StartsWith("control_1948_49:truce2", MapBorders.Current!.Name);
         StringAssert.StartsWith("Held by Israel: blue", label.text);
         StringAssert.Contains("18 July 1948", label.text);
+    }
+
+    [Test]
+    public void ANormalGameRedrawsLiveSettlementControlWithoutChangingDate()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Begin(Inputs, 0);
+        var acre = Inputs.Content.SettlementHexes.Single(x => x.Id == "acre");
+        var captured = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+        captured.State.Settlements["acre"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, captured.State.Date);
+        root.Bridge!.Replace(captured);
+        Assert.AreEqual(BorderStyle.Primary, MapBorders.Current!.StyleOf(MapBorders.Current.RegionOf(acre.Q, acre.R)));
+
+        var lost = GameSession.New(Inputs.Content, GoldenRun.Seed, Mode.Historical);
+        lost.State.Settlements["acre"] = new SettlementControl(since: lost.State.Date);
+        root.Bridge!.Replace(lost);
+        Assert.AreEqual(BorderStyle.Secondary, MapBorders.Current!.StyleOf(MapBorders.Current.RegionOf(acre.Q, acre.R)));
     }
 
     [Test]
@@ -381,7 +439,7 @@ public class ControlTests
                 doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
                 go.SetActive(true);
                 var root = doc.rootVisualElement;
-                // Mirror GameRoot.Begin (GameRoot.cs:244-247): Hebrew uses its own face and layout classes.
+                // Mirror GameRoot.Begin: Hebrew uses its own face and layout classes.
                 root.Q("root").EnableInClassList(UiLanguage.HebrewClass, lang["ui.lang"] == UiLanguage.Hebrew);
                 root.Q("root").RemoveFromClassList("loading");
                 var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), lang);
@@ -392,7 +450,7 @@ public class ControlTests
                 // and the GDD column shown at once squeeze the text column to 0 px, and a later layout pass can stack the order
                 // row over 1300 px tall, so the panel's height depended on how many passes ran before the check.
                 var info = new InfoPanelPresenter(root, bridge, lang, new Dictionary<string, string>());
-                // GameRoot.cs:585: paragraph direction is applied after the presenters have rendered.
+                // GameRoot.Begin / UiDirection: paragraph direction is applied after the presenters have rendered.
                 var direction = lang["ui.lang"] == UiLanguage.Hebrew ? new UiDirection(root, bridge) : null;
                 try
                 {
@@ -431,10 +489,14 @@ public class ControlTests
     }
 
     /// <summary>Rendered: on a coastal-plain proof edge at gameplay03's zoom, the Primary band measures about the owner's
-    /// deeper blue (promo 03's Israeli side, about 89,119,156 on screen), against main's lighter 120,142,192.</summary>
+    /// deeper blue (promo 03's Israeli side, about 89,119,156 on screen), against main's lighter 120,142,192. Drawn in the
+    /// default variant, the stronger tier (A2), so its glow (#2431) is on: the bound is the owner's #519 ruling's
+    /// (docs/visual-v1.md, "Less pink, then merge", 2026-10-15).</summary>
     [UnityTest]
     public IEnumerator ThePrimaryStripeIsTheDeeperBlueOfTheRuling()
     {
+        MapBorders.Variant = MapBorders.DefaultVariant;
+        Assert.IsTrue(MapBorders.Strong(MapBorders.Variant), "the default is the stronger tier, which glows");
         var (map, cam, rig) = BorderTests.Open();
         yield return null;
         RenderSample.TiltShift(false);
@@ -452,6 +514,9 @@ public class ControlTests
         float md = d.OrderBy(x => x).ElementAt(d.Count / 2), mm = dMain.OrderBy(x => x).ElementAt(dMain.Count / 2);
         TestContext.WriteLine($"median deltaE76 to the ruling's blue {md:0.0}, to main's {mm:0.0}");
         Assert.Less(md, 10f, "about the ruling's deeper blue");
+        // #519 (2026-10-15, "Less pink, then merge"): "bring the stripe back to about 3 deltaE76 of the ruled blue or less";
+        // the stronger tier's glow (#2431) is carried by the halo, not by moving this stripe off the ruled blue.
+        Assert.LessOrEqual(md, 3f, "the stronger tier's stripe: \"bring the stripe back to about 3 deltaE76 of the ruled blue or less\" (#519)");
         Assert.Less(md, mm, "nearer the deeper blue than main's lighter one");
     }
     /// <summary>Not a check: the contact sheet's raw renders (run on demand: -testFilter ControlTests.ContactSheetRenders, the

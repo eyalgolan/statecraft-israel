@@ -23,8 +23,7 @@ public class PlayerTextTests
             s = r.State;
         }
         return messages;
-    }
-
+}
     [Fact]
     public void NoCauseInTheHistoricalRunShowsAContentIdOrAnIsoDate()
     {
@@ -151,6 +150,25 @@ public class PlayerTextTests
                 g.Date = e.From;
                 ContentWindows.Update(c, g, start);
                 g.PendingEvents.Clear(); g.PendingEvents.Add(e.Id);
+                if (o.RequiresUnitRegions.Count != 0)
+                {
+                    var at = c.PlayerRegions.Regions[o.RequiresUnitRegions[0]].MemberHexes[0];
+                    foreach (var unitOrder in o.UnitOrders)
+                    {
+                        int unitId = c.StartingForces.FindIndex(f => f.Row == unitOrder.Unit);
+                        var force = c.StartingForces[unitId];
+                        var unit = g.Units.TryGetValue(unitId, out var present) ? present
+                            : new Unit(unitId, force.Type, force.Q, force.R, side: force.Side, strength: force.Strength);
+                        g.Units[unitId] = new Unit(unit.Id, unit.Type, at.Q, at.R, unit.Service, unit.Side, unit.Strength,
+                            unit.Order, unit.OrderTarget, unit.HomeCity, unit.Full, unit.CombatXp);
+                    }
+                    // This fixture exercises each option's cause text, not the separate refused-card-order contract.
+                    // Give every staged operation a legal card order by clearing enemy holders from its authored targets.
+                    foreach (var target in o.UnitOrders)
+                        foreach (var held in g.Units.Values.Where(u => u.Side != Movement.PlayerSide
+                            && (u.Q, u.R) == (target.Q, target.R)).Select(u => u.Id).ToList())
+                            g.Units.Remove(held);
+                }
                 var r = Simulation.Step(c, g, new Command[] { new ChooseEventOption(e.Id, o.Id) });
                 Assert.Empty(r.Rejected);
                 causes.AddRange(r.Why);
@@ -461,6 +479,9 @@ public class PlayerTextTests
     /// <summary>Playtest 2, P2-5: a portrait carries its documented focal point (the face's height as a share of the
     /// picture, 0..1), required, so the event card can keep the face in view.</summary>
     [Theory]
+    [InlineData("    portrait: { license: Public domain, source: s, focus_y: 0.5 }\n", "people[pm_one].portrait.file")]
+    [InlineData("    portrait: { file: a.jpg, source: s, focus_y: 0.5 }\n", "people[pm_one].portrait.license")]
+    [InlineData("    portrait: { file: a.jpg, license: Public domain, focus_y: 0.5 }\n", "people[pm_one].portrait.source")]
     [InlineData("    portrait: { file: a.jpg, license: Public domain, source: s }\n", "people[pm_one].portrait.focus_y")]
     [InlineData("    portrait: { file: a.jpg, license: Public domain, source: s, focus_y: 1.4 }\n", "people[pm_one].portrait.focus_y")]
     public void APortraitNeedsItsFocalPoint(string portrait, string field)
@@ -468,6 +489,15 @@ public class PlayerTextTests
         var ex = ValidationTests.Bad("people.yaml", "  - id: pm_one\n", "  - id: pm_one\n" + portrait);
         Assert.Equal("people.yaml", ex.File);
         Assert.Equal(field, ex.Field);
+    }
+
+    [Fact]
+    public void PresentEmptyPortraitStringsMatchTheSchema()
+    {
+        var yaml = Fixture.Files["people.yaml"].Replace("  - id: pm_one\n",
+            "  - id: pm_one\n    portrait: { file: '', license: '', source: '', focus_y: 0.5 }\n");
+        var portrait = ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["people.yaml"] = yaml })).People[0].Portrait!;
+        Assert.Equal(("", "", "", 0.5), (portrait.File, portrait.License, portrait.Source, portrait.FocusY!.Value));
     }
 
     [Fact]
@@ -498,4 +528,3 @@ public class PlayerTextTests
         Assert.Equal("Arms -2 units", PlayerText.Change(c, Pools.ArmsTarget, -2));
     }
 }
-

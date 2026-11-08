@@ -71,6 +71,8 @@ namespace Statecraft.Game.Map
     public sealed class MapPointer : MonoBehaviour
     {
         public MapScene? Map;
+        /// <summary>The game camera supplied by GameRoot; tests and tools without one fall back to Camera.main.</summary>
+        public Camera? View;
         public Func<Vector2, bool>? IsOverUi;
         /// <summary>A picked hex and whether its pointer hit was a city's name pill. Keyboard picks always pass false.</summary>
         public event Action<int, int, bool>? HexClicked;
@@ -79,6 +81,33 @@ namespace Statecraft.Game.Map
         /// <summary>The hex a point goes to before the terrain is asked, or null: a city's name pill sends its click to the
         /// city's hex (#1063), wherever the land under the pill is.</summary>
         public Func<Vector2, (int q, int r)?>? PillHex;
+
+        Camera? cachedMain;
+        Terrain? cachedTerrainRoot;
+        int cachedHierarchyCount = -1;
+        (Terrain terrain, TerrainCollider? collider)[] grounds = Array.Empty<(Terrain, TerrainCollider?)>();
+        GroundSignature[] pickedGrounds = Array.Empty<GroundSignature>();
+        Units.UnitLayer? cachedUnits;
+        bool pickCached;
+        Vector2 pickedAt;
+        Camera? pickedCamera;
+        Matrix4x4 pickedView, pickedProjection;
+        Rect pickedPixelRect;
+        Units.UnitLayer? pickedUnits;
+        long pickedUnitsVersion;
+        bool pickedUnitsActive;
+        (int q, int r)? pickedHex;
+
+        struct GroundSignature
+        {
+            public bool TerrainActive, DrawHeightmap, ColliderActive;
+            public int TerrainData;
+            public Matrix4x4 LocalToWorld;
+        }
+#if UNITY_EDITOR
+        internal long UncachedPicksForTests { get; private set; }
+        internal long TerrainCacheBuildsForTests { get; private set; }
+#endif
 
         // Every press, at the position of its own input event (InputConfig keeps a release from merging into the next move),
         // queued and evaluated in order in Update: several presses in one slow frame are each checked where they happened,
@@ -288,27 +317,104 @@ namespace Statecraft.Game.Map
             if (overUi) return null;                                    // the UI is asked first, whatever else is missing
             if (Map == null || Map.Terrain == null) return null;
             if (pills && PillHex?.Invoke(pos) is (int, int) pill) { cityPill = true; return pill; }
-            var cam = Camera.main;
+            var cam = View != null ? View : cachedMain != null ? cachedMain : cachedMain = Camera.main;
+            RefreshSceneCache(Map);
             // A unit's badge and figures stand above the ground: a click on them is a click on the unit's hex, not on the
             // terrain behind them (owner's report on v0.2.0). Not for the keyboard's look-at point (pills false).
-            var units = pills && cam != null ? Map.Terrain.transform.Find(Units.UnitLayer.RootName) : null;
-            if (units != null && units.TryGetComponent<Units.UnitLayer>(out var layer) && layer.TokenAtScreen(cam!, pos) is Units.PlacedToken token)
-                return (token.Q, token.R);
-            if (cam == null || !TryGroundHit(Map, cam.ScreenPointToRay(pos), out var hit)) return null;
-            return Pick(Map, hit.point);
+            return CachedSceneHex(pos, cam, pills ? cachedUnits : null);
+        }
+
+        void RefreshSceneCache(MapScene map)
+        {
+            int hierarchy = map.transform.hierarchyCount;
+            // A board replaced by one of the same shape (HexTilesLook.Apply) keeps the count but destroys the cached
+            // terrains: a destroyed one (Unity's null) rebuilds the cache too (Codex review of 981951be0).
+            if (cachedTerrainRoot == map.Terrain && cachedHierarchyCount == hierarchy && GroundsAlive()) return;
+            cachedTerrainRoot = map.Terrain;
+            cachedHierarchyCount = hierarchy;
+            var found = map.GetComponentsInChildren<Terrain>(true);
+            grounds = new (Terrain, TerrainCollider?)[found.Length];
+            for (int i = 0; i < found.Length; i++) grounds[i] = (found[i], found[i].GetComponent<TerrainCollider>());
+            pickedGrounds = new GroundSignature[found.Length];
+            cachedUnits = map.Terrain.transform.Find(Units.UnitLayer.RootName)?.GetComponent<Units.UnitLayer>();
+            pickCached = false;
+#if UNITY_EDITOR
+            TerrainCacheBuildsForTests++;
+#endif
+        }
+
+        bool GroundsAlive()
+        {
+            foreach (var (terrain, collider) in grounds)
+                // A terrain with no collider is cached as a real null; one destroyed since is Unity's null.
+                if (terrain == null || (!ReferenceEquals(collider, null) && collider == null)) return false;
+            return true;
+        }
+
+        /// <summary>For a rebuilt scene whose replacement children happen to have the same hierarchy count.</summary>
+        internal void InvalidateSceneCache()
+        {
+            cachedTerrainRoot = null; cachedHierarchyCount = -1; cachedUnits = null; pickCached = false;
+        }
+
+        (int q, int r)? CachedSceneHex(Vector2 pos, Camera? cam, Units.UnitLayer? layer)
+        {
+            if (cam == null) return null;
+            var view = cam.worldToCameraMatrix;
+            var projection = cam.projectionMatrix;
+            var pixelRect = cam.pixelRect;
+            long version = layer?.PickVersion ?? 0;
+            bool active = layer != null && layer.gameObject.activeInHierarchy;
+            bool groundsUnchanged = UpdateGroundSignatures();
+            if (pickCached && pickedAt == pos && pickedCamera == cam && pickedView == view && pickedProjection == projection
+                && pickedPixelRect == pixelRect && pickedUnits == layer && pickedUnitsVersion == version && pickedUnitsActive == active
+                && groundsUnchanged)
+                return pickedHex;
+#if UNITY_EDITOR
+            UncachedPicksForTests++;
+#endif
+            pickedAt = pos; pickedCamera = cam; pickedView = view; pickedProjection = projection; pickedPixelRect = pixelRect;
+            pickedUnits = layer; pickedUnitsActive = active;
+            if (layer != null && layer.TokenAtScreen(cam, pos) is Units.PlacedToken token) pickedHex = (token.Q, token.R);
+            else pickedHex = TryGroundHit(cam.ScreenPointToRay(pos), out var hit) ? Pick(Map!, hit.point) : ((int, int)?)null;
+            // TokenAtScreen calls FaceCamera, which may observe newly supplied figure geometry.
+            pickedUnitsVersion = layer?.PickVersion ?? 0;
+            pickCached = true;
+            return pickedHex;
+        }
+
+        bool UpdateGroundSignatures()
+        {
+            bool unchanged = pickCached && pickedGrounds.Length == grounds.Length;
+            for (int i = 0; i < grounds.Length; i++)
+            {
+                var (terrain, collider) = grounds[i];
+                var next = new GroundSignature
+                {
+                    TerrainActive = terrain.isActiveAndEnabled,
+                    DrawHeightmap = terrain.drawHeightmap,
+                    ColliderActive = collider != null && collider.enabled,   // a Collider is not a Behaviour; the terrain's own check covers the object being active
+                    TerrainData = terrain.terrainData != null ? terrain.terrainData.GetInstanceID() : 0,
+                    LocalToWorld = terrain.transform.localToWorldMatrix,
+                };
+                var previous = pickedGrounds[i];
+                if (previous.TerrainActive != next.TerrainActive || previous.DrawHeightmap != next.DrawHeightmap
+                    || previous.ColliderActive != next.ColliderActive || previous.TerrainData != next.TerrainData
+                    || !previous.LocalToWorld.Equals(next.LocalToWorld)) unchanged = false;
+                pickedGrounds[i] = next;
+            }
+            return unchanged;
         }
 
         // The opt-in board draws its own terrain above the lowered real map. Use the nearest displayed ground,
         // falling through its sea/outside holes to the real map. Props and markers never decide the clicked hex.
-        static bool TryGroundHit(MapScene map, Ray ray, out RaycastHit hit)
+        bool TryGroundHit(Ray ray, out RaycastHit hit)
         {
             hit = default;
             bool found = false;
-            foreach (var terrain in map.GetComponentsInChildren<Terrain>())
+            foreach (var (terrain, collider) in grounds)
             {
-                if (!terrain.enabled || !terrain.drawHeightmap) continue;
-                var collider = terrain.GetComponent<TerrainCollider>();
-                if (collider == null || !collider.enabled ||
+                if (!terrain.isActiveAndEnabled || !terrain.drawHeightmap || collider == null || !collider.enabled ||
                     !collider.Raycast(ray, out var candidate, found ? hit.distance : 1_000_000f)) continue;
                 hit = candidate;
                 found = true;

@@ -13,7 +13,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 [![Assets license: CC BY 4.0 / content CC BY-SA 4.0](https://img.shields.io/badge/assets-CC%20BY%20%2F%20BY--SA%204.0-lightgrey.svg)](LICENSING.md)
 [![Unity 6000.3.25f1](https://img.shields.io/badge/Unity-6000.3.25f1-black.svg)](unity/ProjectSettings/ProjectVersion.txt)
 ![Status: playable 1948–1951 prototype](https://img.shields.io/badge/status-playable%201948%E2%80%931951-orange.svg)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00.svg?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/eyalgolan)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00.svg?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/statecraftisrael)
 
 **A turn-based grand-strategy game about governing Israel. You are the prime minister on 15 May 1948. The ministers are the real ones, the map is real, and every historical fact comes with a source.**
 
@@ -66,15 +66,15 @@ It is an early, honest prototype.
 
 **What works now (M3, 1948–1951):**
 - Monthly turns from 15 May 1948 to 15 January 1952.
-- The start screen, and an opening after New game: three sourced stills that you can skip, or replay from the start screen.
-- English and Hebrew: you choose the language on the start screen, and can switch it in Settings. Most of the advisors' encyclopedia pages in Hebrew still wait for a native speaker's review.
+- The start screen, and an opening after New game: three sourced photographs with short, silent AI-generated loops that you can skip, or replay from the start screen.
+- English and Hebrew: you choose the language on the start screen, and can switch it in Settings. Some Hebrew names still wait for a native speaker's review.
 - The 1948 map: towns, villages and Bedouin camps, railways and roads, and the 1949 armistice zones and lines from each agreement's date.
 - The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. A brigade's card can order it to move, attack, fortify or hold, and shows the odds before an attack. The Arab forces move and attack on their own, and the turn report lists what they did.
 - The twelve cities, with housing, jobs and training.
 - Pioneers who build yishuvim, training camps, fields, roads and railways, and drain the Hula swamp.
 - The Cabinet with appointments.
 - The Budget screen.
-- The Defence screen, which shows the escalation ladder and the reserve call-up as the events set them.
+- The Defence screen, which shows the escalation ladder and the reserve call-up as the events set them, and where you buy Arms and, during the war, convert foreign currency.
 - Sourced historical events from the 1948 war through the 1951 foreign-currency crisis, most with an archival photograph.
 - The "Why?" panel, a turn report after End turn, and the advisors David Ben-Gurion, Golda Meyerson and Moshe Dayan, who walk you through the first turn and explain each mechanic in their encyclopedia.
 - A Timeline screen that sets your course beside the historical record.
@@ -84,7 +84,7 @@ It is an early, honest prototype.
 - The browser (WebGL) build.
 
 **What is missing:**
-- The art in the concept image above. Settlements and trees are still placeholder art.
+- The art in the concept image above. Many settlements and trees are still placeholder art.
 - Most of the [GDD](docs/GDD.md): the war objective, and the rest of settlement control.
 - Diplomacy.
 - Anything after 1951.
@@ -118,8 +118,8 @@ flowchart LR
 | 3 | Every city, with housing, jobs and immigrant absorption | Done: 8 of 8 PRs merged | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | Pioneers, building sites, roads and railways | In progress: 6 of 8 PRs merged | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
 | 5 | Military units, movement and combat | In progress: 13 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
-| 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | In progress: 7 of 12 PRs merged | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
-| 7 | Ministers, events and the full 44-turn game | In progress: 5 of 13 PRs merged | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
+| 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | In progress: 8 of 12 PRs merged | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
+| 7 | Ministers, events and the full 44-turn game | In progress: 6 of 13 PRs merged | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
 
 ### Other tracks
 
@@ -147,7 +147,7 @@ Troubleshooting: `error CS0246 'PlayerPrefsBool'` means the Unity-MCP package (`
 
 ## History, sources and accuracy
 
-- Every event, minister, date and number in `content/` carries `sources:` with URLs and check dates. Wikipedia (English and Hebrew) is a primary cited source for many facts, which is why `content/` is CC BY-SA 4.0.
+- Every historical event, minister, date and number in `content/` carries `sources:` with URLs and check dates; game-balance values are design choices and need none. Wikipedia (English and Hebrew) is a primary cited source for many facts, which is why `content/` is CC BY-SA 4.0.
 - The model behind the game, and its framing, embed assumptions. It is not neutral, and this page says so.
 - No quotes are invented. Text paraphrases its sources.
 - The framing is Israeli. Contested narratives are not presented as parallel accounts.
@@ -182,7 +182,7 @@ You need Unity **6000.3.25f1 (6.3 LTS)** with Web Build Support; the exact versi
 
 This project is built with heavy AI assistance, disclosed here using itch.io's categories:
 - **Code:** written with AI coding agents and reviewed through tests and review gates.
-- **Graphics:** the concept and promo images in `promo/` are AI-generated, as is the start screen's painting, and the web page's tab icon was drawn with AI help. Tal Heuberger made the 3D models with Tripo, an AI 3D tool. The game's terrain comes from real elevation data. The portraits are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (credited in NOTICE), and the event cards use archival photographs; on some cards an Illustration switch plays a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both labelled as such. Some advisor lines have a short clip of the advisor speaking: a real archival photograph, colorized or tinted, animated and lip-synced with AI, labelled "AI animation and voice. Fictional dialogue." and credited.
+- **Graphics:** the concept and promo images in `promo/` are AI-generated, as is the start screen's painting, and the web page's tab icon was drawn with AI help. Tal Heuberger made the 3D models with Tripo, an AI 3D tool. The game's terrain comes from real elevation data. The portraits are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (credited in NOTICE), and the event cards use archival photographs; on some cards an Illustration switch plays a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both labelled as such. The opening after New game shows short, silent AI-generated loops, labelled as such. Some advisor lines have a short clip of the advisor speaking: a real archival photograph, colorized or tinted, animated and lip-synced with AI, labelled "AI animation and voice. Fictional dialogue." and credited.
 - **Text:** event and content text was drafted with AI, and every fact is checked against the cited source.
 - **Sound:** the game's three short sound effects (turn ended, refused order, event card) were made with ElevenLabs, and the trailer's music is AI-generated (ElevenLabs Music). The start screen can play the original 1948 recording of Ben-Gurion reading the Declaration (Israel State Archives). The advisors' clip voices are synthetic (ElevenLabs and Fish Audio voice clones made from Israel State Archives recordings) and speak game dialogue, never quotes.
 
@@ -195,13 +195,14 @@ Nothing is generated live while you play.
 - **Game content text** (`content/`, which paraphrases its sources, many from Wikipedia): [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt).
 - **AI-generated images:** marked [CC0](LICENSES/CC0-1.0.txt), with no rights claimed.
 - **3D models by Tal Heuberger:** [CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt).
+- **Music by Afik Faerman:** [CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt).
 - **Third-party material:** fonts, public-domain, CC0, CC BY 4.0 and CC BY-SA 4.0 portraits, the archival event photographs, Ben-Gurion's 1948 recording, and the Unity engine and packages are under their own terms.
 
-Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml).
+Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml) and [ASSETS.portraits.yaml](ASSETS.portraits.yaml).
 
 ## Community and credits
 
 Questions and ideas go in [Discussions](https://github.com/eyalgolan/statecraft-israel/discussions); bugs and historical errors go in the [issue tracker](https://github.com/eyalgolan/statecraft-israel/issues). Report security problems privately ([SECURITY.md](SECURITY.md)). [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) applies everywhere.
 
-Created by Eyal Golan. Original models by Tal Heuberger (#507, #336). Source credits live with each fact in `content/`, the portrait credits are in `content/people.yaml`, and third-party credits are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Created by Eyal Golan. Original models by Tal Heuberger (#507, #336). Main theme by Afik Faerman. Source credits live with each fact in `content/`, the portrait credits are in `content/people.yaml`, and third-party credits are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 

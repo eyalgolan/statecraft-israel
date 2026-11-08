@@ -1,6 +1,7 @@
 """scripts/oss/reviewed_by_guard.py (#375, "Yes, humans only"): no commit an AI agent co-wrote adds, changes or removes a
-`reviewed_by` / `reviewed_on` line in content/, and a person's `reviewed_on` is not after their commit. It fails closed.
-Runs on throwaway git repositories."""
+`reviewed_by` / `reviewed_on` line in content/, unless the pull request's "AI assistance" section discloses the AI help and
+names the check (owner, 4 November 2026, "Yes, it counts"; #2481), and even then it never removes one; a `reviewed_on` is
+not after its commit. It fails closed. Runs on throwaway git repositories."""
 import os
 import subprocess
 
@@ -295,3 +296,353 @@ def test_an_anchor_a_signed_row_uses_is_part_of_it(tmp_path):
     edit(root2, merge.replace("note: n", "note: m"))
     commit(root2, "content: change the defaults" + AI)
     assert len(guard.check(root2, base2, "HEAD")) == 1
+
+
+# ---- owner ruling, 4 November 2026 ("Yes, it counts"): an AI-assisted sign-off counts when the PR discloses the AI help --
+
+TEMPLATE = ("## What this changes\n\nSigns off A.\n\n## AI assistance\n\n<!-- One line: the tool, and what it did. Write \"None\" "
+            "if no AI tool was used. -->\n{ai}\n\n## Evidence\n\n```\n```\n")
+DISCLOSED = TEMPLATE.format(ai="Claude Code opened the source with me; I read page 3 of the Knesset record and checked A's dates.")
+
+
+def event(tmp_path, body, name="event.json"):
+    import json
+    path = tmp_path / name
+    path.write_text(json.dumps({"pull_request": {"number": 1, "body": body}}), encoding="utf-8")
+    return str(path)
+
+
+def test_the_ai_assistance_section_is_read_from_the_template():
+    assert guard.disclosed(DISCLOSED)
+    assert guard.disclosed(DISCLOSED.replace("\n", "\r\n"))
+    for body in (TEMPLATE.format(ai=""), TEMPLATE.format(ai="None"), TEMPLATE.format(ai="None."), TEMPLATE.format(ai="n/a"),
+                 TEMPLATE.format(ai="<!-- unclosed comment hides the rest: Claude Code did it"), "", None,
+                 "## What this changes\n\nClaude Code wrote it.\n",   # said elsewhere, not in the section
+                 DISCLOSED.replace("## AI assistance", "## Evidence of AI assistance")):
+        assert not guard.disclosed(body), body
+
+
+def test_a_disclosed_ai_assisted_sign_off_passes(tmp_path, capsys):
+    root, base = repo(tmp_path)
+    edit(root, SIGNED)
+    commit(root, "content: sign off A" + AI)
+    assert guard.check(root, base, "HEAD", ai_disclosed=True) == []
+    assert guard.main(["--repo", str(root), "--base", base, "--head", "HEAD", "--pr-event", event(tmp_path, DISCLOSED)]) == 0
+    assert "AI assistance disclosed" in capsys.readouterr().out
+
+
+def test_an_undisclosed_ai_sign_off_still_fails(tmp_path):
+    import json
+    root, base = repo(tmp_path)
+    edit(root, SIGNED)
+    commit(root, "content: sign off A" + AI)
+    assert len(guard.check(root, base, "HEAD")) == 1
+    no_pr = tmp_path / "push.json"
+    no_pr.write_text(json.dumps({"ref": "refs/heads/main"}), encoding="utf-8")
+    for i, path in enumerate([None, str(no_pr), event(tmp_path, TEMPLATE.format(ai="None"), "none.json"),
+                              event(tmp_path, TEMPLATE.format(ai=""), "empty.json"), event(tmp_path, None, "null.json")]):
+        args = ["--repo", str(root), "--base", base, "--head", "HEAD"] + (["--pr-event", path] if path else [])
+        assert guard.main(args) == 1, i
+
+
+def test_an_unreadable_event_file_fails_closed(tmp_path, capsys):
+    root, base = repo(tmp_path)
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not json", encoding="utf-8")
+    for path in (str(bad), str(tmp_path / "missing.json")):
+        assert guard.main(["--repo", str(root), "--base", base, "--head", "HEAD", "--pr-event", path]) == 1
+    assert "cannot read the event file" in capsys.readouterr().out
+
+
+def test_human_only_commits_are_judged_the_same_when_disclosed(tmp_path):
+    root, base = repo(tmp_path)
+    edit(root, SIGNED)
+    commit(root, "content: sign off A")
+    assert guard.check(root, base, "HEAD") == guard.check(root, base, "HEAD", ai_disclosed=True) == []
+    root2, base2 = repo(tmp_path / "late")
+    edit(root2, SIGNED.replace("2026-10-15", "2026-10-16"))
+    commit(root2, "content: sign off A")
+    assert len(guard.check(root2, base2, "HEAD")) == len(guard.check(root2, base2, "HEAD", ai_disclosed=True)) == 1
+
+
+def test_a_disclosed_ai_sign_off_dated_after_its_commit_fails(tmp_path):
+    root, base = repo(tmp_path)
+    edit(root, SIGNED.replace("2026-10-15", "2026-10-16"))
+    commit(root, "content: sign off A" + AI)
+    problems = guard.check(root, base, "HEAD", ai_disclosed=True)
+    assert len(problems) == 1 and "after" in problems[0]
+
+
+def test_disclosure_does_not_let_an_ai_commit_edit_a_signed_row_without_signing_it_again(tmp_path):
+    """#629 ("Block it in CI") still holds: a disclosed AI-assisted commit that edits a signed row must sign it again."""
+    root, base = repo(tmp_path, TWO)
+    edit(root, TWO.replace("name: A", "name: A2"))
+    commit(root, "content: edit A" + AI)
+    problems = guard.check(root, base, "HEAD", ai_disclosed=True)
+    assert len(problems) == 1 and "signed off" in problems[0] and "'a'" in problems[0]
+    edit(root, TWO.replace("name: A", "name: A2").replace("2026-10-15", "2026-10-16"))
+    commit(root, "content: re-read A and sign again" + AI, date="2026-10-16T12:00:00+00:00")
+    assert guard.check(root, base, "HEAD", ai_disclosed=True) == []
+    assert len(guard.check(root, base, "HEAD")) == 2   # undisclosed: the re-sign is refused and A stays edited
+
+
+# ---- review of #2481: a "no AI" statement is not a disclosure, and disclosure never lets an AI commit remove a sign-off --
+
+def test_a_statement_that_no_ai_was_used_is_not_a_disclosure():
+    for ai in ("None used.", "No AI was used", "Not used", "**None**, I checked it myself", "N/A: checked by hand",
+               "Nothing; I checked each fact", "_No._ Checked by hand."):
+        assert not guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_naming_a_tool_without_the_check_is_not_a_disclosure():
+    for ai in ("Claude Code drafted the test.", "Copilot wrote the YAML.", "Claude Code helped (checklist in the PR)"):
+        assert not guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_the_template_example_is_a_disclosure():
+    assert guard.disclosed(TEMPLATE.format(ai="Claude Code drafted the test; I checked each fact against its source."))
+    assert guard.disclosed(TEMPLATE.format(ai="Codex read the scans; I am checking the dates against page 4."))
+
+
+def test_a_disclosed_ai_commit_may_not_remove_a_sign_off(tmp_path):
+    for i, after in enumerate([ROW,                                                      # both keys gone
+                               ROW + "    reviewed_by: eyalgolan\n",                   # one key gone
+                               ROW + "    # reviewed_by: eyalgolan\n    # reviewed_on: 2026-10-15\n"]):   # commented out
+        root, base = repo(tmp_path / str(i), SIGNED)
+        edit(root, after)
+        commit(root, "content: drop the sign-off" + AI)
+        problems = guard.check(root, base, "HEAD", ai_disclosed=True)
+        assert any("removes a" in p for p in problems), (i, problems)
+
+
+def test_a_disclosed_ai_removal_does_not_release_an_edited_row(tmp_path):
+    """Rule 2: an AI commit edits signed row A, then a disclosed AI commit removes A's sign-off. A stays edited."""
+    root, base = repo(tmp_path, TWO)
+    edit(root, TWO.replace("name: A", "name: A2"))
+    commit(root, "content: edit A" + AI)
+    edit(root, TWO.replace("name: A", "name: A2").replace("    reviewed_by: eyalgolan\n    reviewed_on: 2026-10-15\n", ""))
+    commit(root, "content: unsign A" + AI)
+    problems = guard.check(root, base, "HEAD", ai_disclosed=True)
+    assert any("removes a" in p for p in problems) and any("signed off" in p and "'a'" in p for p in problems), problems
+
+
+def test_a_disclosed_ai_add_or_re_sign_passes_and_an_undisclosed_add_fails(tmp_path):
+    root, base = repo(tmp_path)
+    edit(root, SIGNED)
+    commit(root, "content: sign off A" + AI)
+    assert guard.check(root, base, "HEAD", ai_disclosed=True) == []
+    assert len(guard.check(root, base, "HEAD")) == 1
+    root2, base2 = repo(tmp_path / "re", SIGNED)
+    edit(root2, SIGNED.replace("reviewed_by: eyalgolan", "reviewed_by: someone-else").replace("2026-10-15", "2026-10-16"))
+    commit(root2, "content: re-sign A" + AI, date="2026-10-16T12:00:00+00:00")
+    assert guard.check(root2, base2, "HEAD", ai_disclosed=True) == []
+
+
+# ---- second review of #2481: the check verbs, list markers and code fences ----------------------------------------------
+
+def test_a_short_list_of_check_verbs_names_the_check():
+    for ai in ("Claude drafted it; I verified every date against the cited source.", "Codex drafted it; I verify each date.",
+               "Claude drafted it; I compared each name with the scan.", "Claude found the pages; I opened each one.",
+               "Claude found the page; I read it in full."):
+        assert guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_a_section_with_none_of_the_verbs_does_not_name_the_check():
+    for ai in ("Claude drafted it; the dates were already there.", "Copilot suggested the bread-and-butter wording.",
+               "Claude Code wrote the YAML and the tests."):
+        assert not guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_list_markers_are_stripped_before_the_first_word():
+    for ai in ("1. None, I checked it", "1) None, I checked it", "- [x] None, I checked it", "* [ ] No AI, checked by hand",
+               "+ [X] Not used; I checked it"):
+        assert not guard.disclosed(TEMPLATE.format(ai=ai)), ai
+    for ai in ("- Claude Code drafted the test; I checked each fact against its source.",
+               "1. Claude Code drafted the test; I checked each fact against its source.",
+               "- [x] Claude Code drafted the test; I checked each fact against its source."):
+        assert guard.disclosed(TEMPLATE.format(ai=ai)), ai
+
+
+def test_a_heading_inside_a_code_fence_is_not_a_section():
+    fenced = "## What this changes\n\n```\n## AI assistance\nClaude Code; I checked it.\n```\n\n## AI assistance\n\nNone\n"
+    assert guard.ai_assistance(fenced) == "None" and not guard.disclosed(fenced)
+    inside = TEMPLATE.format(ai="Claude Code drafted it; I checked each date:\n```\n# a shell comment\n```")
+    assert "a shell comment" in guard.ai_assistance(inside) and guard.disclosed(inside)
+
+
+# ---- translations/he/ (owner, 25 October 2026, #1618: "Yes, carry them over") ----
+
+EVENT = """id: vote
+title: The vote
+title_he: "ההצבעה"
+text: Vote now?
+text_he: >-
+  להצביע
+  עכשיו?
+text_he_review: agent-checked
+options:
+  - id: yes_vote
+    text: Vote
+    text_he: "להצביע"
+status: fact-checked
+reviewed_by: eyalgolan
+reviewed_on: 2026-10-15
+"""
+EVENT_EN = EVENT.replace('title_he: "ההצבעה"\n', "").replace("text_he: >-\n  להצביע\n  עכשיו?\n", "") \
+    .replace("text_he_review: agent-checked\n", "").replace('    text_he: "להצביע"\n', "")
+EVENT_HE = 'vote:\n  title: "ההצבעה"\n  text: "להצביע עכשיו?"\n  options:\n    yes_vote: "להצביע"\n  review: "agent-checked"\n'
+PERSON = SIGNED.replace("    name: A\n", '    name: A\n    name_he: "א"\n    name_he_review: agent-checked\n')
+PERSON_HE = '"people.yaml#people.a.name":\n  text: "א"\n  review: "agent-checked"\n'
+
+
+def event_repo(tmp_path, text=EVENT, he=None):
+    root, base = repo(tmp_path)
+    (root / "content" / "events").mkdir()
+    edit(root, text, "content/events/vote.yaml")
+    if he is not None:
+        (root / "translations" / "he").mkdir(parents=True)
+        edit(root, he, "translations/he/events.yaml")
+    return root, commit(root, "content: the vote")
+
+
+def move(root, en, he, rel, he_rel):
+    edit(root, en, rel)
+    (root / "translations" / "he").mkdir(parents=True, exist_ok=True)
+    edit(root, he, he_rel)
+
+
+def test_an_agent_may_move_a_signed_events_hebrew_with_the_same_decoded_text(tmp_path):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN, EVENT_HE, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    assert EVENT_EN.count("_he") == 0 and guard.check(root, base, "HEAD") == []
+
+
+@pytest.mark.parametrize("he", [EVENT_HE.replace("עכשיו", "כעת"), EVENT_HE.replace('  review: "agent-checked"\n', ""),
+                                EVENT_HE.replace('    yes_vote: "להצביע"\n', ""), ""])
+def test_a_move_that_changes_drops_or_loses_the_hebrew_is_an_edit(tmp_path, he):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN, he, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "content/events/vote.yaml row 'vote'" in problems[0]
+
+
+def test_a_move_that_also_edits_the_english_is_an_edit(tmp_path):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN.replace("Vote now?", "Vote today?"), EVENT_HE, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    assert len(guard.check(root, base, "HEAD")) == 1
+
+
+def test_an_agent_edit_of_a_moved_signed_translation_fails_until_a_person_signs_again(tmp_path):
+    root, base = event_repo(tmp_path, EVENT_EN, EVENT_HE)
+    edit(root, EVENT_HE.replace("עכשיו", "כעת"), "translations/he/events.yaml")
+    sha = commit(root, "languages: reword" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and sha[:10] in problems[0] and "row 'vote'" in problems[0]
+    edit(root, EVENT_EN.replace("2026-10-15", "2026-10-16"), "content/events/vote.yaml")
+    commit(root, "content: read the vote again", date="2026-10-16T12:00:00+00:00")
+    assert guard.check(root, base, "HEAD") == []
+
+
+def test_an_agent_may_translate_an_unsigned_event(tmp_path):
+    unsigned = EVENT_EN.replace("reviewed_by: eyalgolan\nreviewed_on: 2026-10-15\n", "")
+    root, base = event_repo(tmp_path, unsigned, EVENT_HE)
+    edit(root, EVENT_HE.replace("עכשיו", "כעת"), "translations/he/events.yaml")
+    commit(root, "languages: reword" + AI)
+    assert guard.check(root, base, "HEAD") == []
+
+
+def test_an_agent_may_move_a_signed_rows_content_hebrew_but_not_edit_it(tmp_path):
+    root, base = repo(tmp_path, PERSON)
+    move(root, SIGNED, PERSON_HE, "content/people.yaml", "translations/he/content.yaml")
+    commit(root, "languages: move the names" + AI)
+    assert guard.check(root, base, "HEAD") == []
+    edit(root, PERSON_HE.replace('"א"', '"אָ"'), "translations/he/content.yaml")
+    sha = commit(root, "languages: a vowel" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and sha[:10] in problems[0] and "content/people.yaml row 'a'" in problems[0]
+
+
+def test_dropping_a_signed_rows_hebrew_without_moving_it_is_an_edit(tmp_path):
+    root, base = repo(tmp_path, PERSON)
+    edit(root, SIGNED)
+    commit(root, "content: drop the name" + AI)
+    assert len(guard.check(root, base, "HEAD")) == 1
+
+
+def test_an_unreadable_translation_fails_closed(tmp_path):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN, "vote: [", "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move" + AI)
+    with pytest.raises(guard.GuardError, match="cannot parse translations/he/events.yaml"):
+        guard.check(root, base, "HEAD")
+
+
+def test_removing_a_hebrew_names_source_is_not_a_move(tmp_path):
+    """biography_sources.name_he holds a source, not Hebrew text: dropping it from a signed row is an edit."""
+    name = '      name_he: [{ url: "https://example.org/a", checked: 2026-10-14 }]\n'
+    sourced = PERSON + "    biography_sources:\n" + name + '      name: [{ url: "https://example.org/b", checked: 2026-10-14 }]\n'
+    root, base = repo(tmp_path, sourced)
+    edit(root, sourced.replace(name, ""))
+    commit(root, "content: drop a source" + AI)
+    assert len(guard.check(root, base, "HEAD")) == 1
+    root2, base2 = repo(tmp_path / "two", PERSON + "    name_he_sources:\n      - https://example.org/a\n")
+    edit(root2, PERSON)
+    commit(root2, "content: drop a source" + AI)
+    assert len(guard.check(root2, base2, "HEAD")) == 1
+
+
+# Owner review of #2501: moves that change where the text goes, or what it decodes to, are edits.
+
+@pytest.mark.parametrize("he", [
+    EVENT_HE.replace("vote:", "other:"),                                   # another event (row)
+    EVENT_HE.replace("yes_vote:", "no_vote:"),                             # another option
+    EVENT_HE.replace("  title: ", "  text_f: "),                           # another field
+    EVENT_HE.replace("עכשיו", "‎עכשיו"),                              # an added left-to-right mark
+    EVENT_HE.replace("עכשיו", "‏עכשיו"),                              # an added right-to-left mark
+    EVENT_HE.replace("להצביע עכשיו", "להצביע־עכשיו"),                      # a maqaf for the space
+    EVENT_HE.replace('"להצביע עכשיו?"', '"להצביע\\nעכשיו?"'),              # a quoting that keeps the line break
+])
+def test_a_move_to_another_place_or_to_other_decoded_text_is_an_edit(tmp_path, he):
+    root, base = event_repo(tmp_path)
+    move(root, EVENT_EN, he, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "row 'vote'" in problems[0], problems
+
+
+def test_a_content_name_moved_to_another_record_is_an_edit(tmp_path):
+    two = PERSON + "  - id: b\n    name: B\n"
+    root, base = repo(tmp_path, two)
+    move(root, SIGNED + "  - id: b\n    name: B\n", PERSON_HE.replace("people.a.name", "people.b.name"),
+         "content/people.yaml", "translations/he/content.yaml")
+    commit(root, "languages: move the names" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "row 'a'" in problems[0], problems
+
+
+def test_a_move_split_over_two_commits_is_an_edit(tmp_path):
+    """Removing the inline Hebrew in one commit and adding the same text to translations/he/ in the next: the first
+    commit drops the signed row's Hebrew, so it is an edit, whatever the next one does."""
+    root, base = event_repo(tmp_path)
+    edit(root, EVENT_EN, "content/events/vote.yaml")
+    first = commit(root, "languages: drop the Hebrew" + AI)
+    (root / "translations" / "he").mkdir(parents=True)
+    edit(root, EVENT_HE, "translations/he/events.yaml")
+    commit(root, "languages: add it back" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and first[:10] in problems[0], problems
+
+
+@pytest.mark.parametrize("extra", ['title_he_f: "ההצבעה"\n',            # no place in translations/he/
+                                   '    text_he_review: agent-checked\n'])   # an option's own flag
+def test_removing_a_hebrew_field_translations_cannot_hold_is_an_edit(tmp_path, extra):
+    anchor = '    text_he: "להצביע"\n' if extra.startswith("    ") else 'title_he: "ההצבעה"\n'
+    signed = EVENT.replace(anchor, anchor + extra)
+    root, base = event_repo(tmp_path, signed)
+    move(root, EVENT_EN, EVENT_HE, "content/events/vote.yaml", "translations/he/events.yaml")
+    commit(root, "languages: move the events' Hebrew" + AI)
+    problems = guard.check(root, base, "HEAD")
+    assert len(problems) == 1 and "row 'vote'" in problems[0], problems

@@ -8,15 +8,16 @@ the translation on the right.
 
 Usage: uv run tools/translate.py [--port 8765] [--no-open]   (serves http://127.0.0.1:PORT; Ctrl+C stops it)
 
-Hebrew is written where the game reads it: the events' title_he / text_he / options' text_he (#1064) and
+Hebrew is written where the game reads it: the events' title_he / text_he / late_text_he / options' text_he (#1064) and
 unity/Assets/UI/strings.he.yaml (#12), changing only the edited lines so comments and layout stay. Hebrew content names
 are shown but not edited here: they carry their own sources. Any other language is written to
 translations/<lang>/{events,ui,content}.yaml, which the game does not read yet. Every language keeps the Hebrew rules
 (docs/WRITING_EVENTS.md; the sim's EventRules): an event is all or none, placeholders match the English with no stray
 '{' or '}', one line, no direction marks, and a Hebrew event field has Hebrew letters. Of tools/tests/test_hebrew_ui.py
 it applies only the general rules (every key has a value, the same format tokens, no direction marks), not its checks of
-particular keys' wording, so run the tests after saving. A translation is marked agent-checked until a native speaker
-has read it, and goes back to agent-checked when its text changes (#564). Every write is read back first, and nothing
+particular keys' wording, so run the tests after saving. A translation is marked agent-checked until a native speaker,
+or an AI-assisted contributor who discloses it, has read it, and goes back to agent-checked when its text changes
+(#564; owner, 4 November 2026: "AI-assisted can clear it"). Every write is read back first, and nothing
 is written when any edited string is refused. It never touches status,
 reviewed_by or reviewed_on, and it does not commit.
 """
@@ -55,6 +56,7 @@ HEBREW = re.compile("[\u05d0-\u05ea]")
 MAX_BODY = 4_000_000
 BIDI = re.compile("[\u202a-\u202e\u2066-\u2069]")
 REVIEW = "agent-checked"
+YAML11_BOOL = re.compile(r"y|Y|yes|Yes|YES|n|N|no|No|NO|on|On|ON|off|Off|OFF")
 
 
 class Refused(ValueError):
@@ -160,13 +162,19 @@ def _put(lines: list[str], key: str, value: str, indent: int, after: int, lo: in
 
 
 def set_event(text: str, changes: dict) -> tuple[str, list[str]]:
-    """changes: title_he, text_he, options {id: text_he}, native_read. Returns the new file text and its warnings."""
+    """changes: title_he, text_he, late_text_he (optional), options {id: text_he}, native_read. Returns the new file text
+    and its warnings."""
     data = yaml12.load(text)
     options = {o["id"]: o for o in data.get("options") or []}
     if set(changes["options"]) - set(options):
         raise Refused(f"unknown option {sorted(set(changes['options']) - set(options))}")
+    late_he = changes.get("late_text_he", "").strip()
+    has_late = isinstance(data.get("late_text"), str)
+    if late_he and not has_late:
+        raise Refused("a late text in Hebrew needs the event's late_text (R-ENEMY-007)")
     fields = [("title", "title_he", changes["title_he"].strip(), data.get("title", "")),
               ("text", "text_he", changes["text_he"].strip(), data.get("text", ""))]
+    fields += [("late text", "late_text_he", late_he, data["late_text"])] if has_late else []
     fields += [(f"option {oid}", oid, changes["options"].get(oid, "").strip(), o.get("text", ""))
                for oid, o in options.items()]
     warnings = check_unit([(name, v, en) for name, _, v, en in fields], hebrew=True)
@@ -176,8 +184,10 @@ def set_event(text: str, changes: dict) -> tuple[str, list[str]]:
     lines = text.split("\n")
     title_he, text_he = fields[0][2], fields[1][2]
     review = REVIEW if filled and not changes.get("native_read") else ""
-    for key, value in (("title_he", title_he), ("text_he", text_he), ("text_he_review", review)):
-        prev = {"title_he": "text", "text_he": "title_he", "text_he_review": "text_he"}[key]
+    keys = (("title_he", title_he), ("text_he", text_he), ("text_he_review", review)) + \
+        ((("late_text_he", late_he),) if has_late else ())
+    for key, value in keys:
+        prev = {"title_he": "text", "text_he": "title_he", "text_he_review": "text_he", "late_text_he": "late_text"}[key]
         after = _find(lines, prev, 0)
         _put(lines, key, value, 0, _find(lines, "text", 0) if after is None else after)
         expected.pop(key, None)
@@ -223,24 +233,25 @@ def check_unit(fields: list[tuple[str, str, str]], hebrew: bool) -> list[str]:
     """fields: (name, value, English) of one event. All or none, then each value's own checks; returns the warnings."""
     filled = [f for f in fields if f[1]]
     if filled and len(filled) != len(fields):
-        raise Refused("all or none: the title, the body and every option's text (docs/WRITING_EVENTS.md)")
+        raise Refused("all or none: the title, the body, the late text when the event has one, and every option's text "
+                      "(docs/WRITING_EVENTS.md)")
     return [w for name, value, english in filled for w in _check(name, value, english, hebrew, event=True)]
 
 
-def _events() -> dict[str, tuple[Path, dict]]:
+def _events(events: Path | None = None) -> dict[str, tuple[Path, dict]]:
     found = {}
-    for path in sorted(EVENTS.glob("*.yaml")):
+    for path in sorted((events or EVENTS).glob("*.yaml")):
         data = _parse(path)
         found[data["id"]] = (path, data)
     return dict(sorted(found.items(), key=lambda kv: (kv[1][1].get("from", ""), kv[0])))
 
 
-def _content() -> list[dict]:
+def _content(content: Path | None = None) -> list[dict]:
     """Every content field with a Hebrew form (name_he, title_he_f, sector_he ...): a row for each record of that shape
-    with the English beside it, whether or not that record has its Hebrew yet."""
-    out = []
-    for path in sorted(CONTENT.glob("*.yaml")) + sorted((CONTENT / "map").glob("*.yaml")):
-        rel, nodes = path.relative_to(CONTENT).as_posix(), []
+    with the English beside it, whether or not that record has its Hebrew yet. he_review is the flag's text, "" for none."""
+    out, content = [], content or CONTENT
+    for path in sorted(content.glob("*.yaml")) + sorted((content / "map").glob("*.yaml")):
+        rel, nodes = path.relative_to(content).as_posix(), []
 
         def walk(node, ids: list[str], shape: tuple) -> None:
             if isinstance(node, dict):
@@ -261,10 +272,10 @@ def _content() -> list[dict]:
                 if s != shape or not isinstance(node.get(m.group(1)), str):
                     continue
                 field, where = m.group(1) + ("_f" if m.group(2) else ""), ".".join(ids)
-                he = node.get(he_key)
+                he, review = node.get(he_key), node.get(he_key + "_review")
                 out.append({"key": f"content:{rel}#{where}.{field}", "label": f"{where} · {field}",
                             "group": f"content:{rel}", "group_label": rel, "unit": None, "en": node[m.group(1)],
-                            "he": he if isinstance(he, str) else "", "he_review": bool(node.get(he_key + "_review"))})
+                            "he": he if isinstance(he, str) else "", "he_review": review if isinstance(review, str) else ""})
     return out
 
 
@@ -276,6 +287,8 @@ def catalog() -> list[dict]:
         group = {"group": unit, "group_label": d.get("title", eid), "unit": unit}
         rows.append({"key": f"{unit}:title", "label": "Title", "en": d.get("title", ""), **group})
         rows.append({"key": f"{unit}:text", "label": "Body", "en": d.get("text", ""), **group})
+        if isinstance(d.get("late_text"), str):
+            rows.append({"key": f"{unit}:late_text", "label": "Late text", "en": d["late_text"], **group})
         rows += [{"key": f"{unit}:option:{o['id']}", "label": f"Option · {o['id']}", "en": o.get("text", ""), **group}
                  for o in d.get("options") or []]
     for k, v in _parse(UI_EN).items():
@@ -322,6 +335,8 @@ def load(lang: str) -> tuple[dict[str, str], set[str]]:
             unit = f"event:{eid}"
             if d.get("title_he"):
                 texts[f"{unit}:title"], texts[f"{unit}:text"] = d["title_he"], d.get("text_he", "")
+            if d.get("late_text_he"):
+                texts[f"{unit}:late_text"] = d["late_text_he"]
             texts.update({f"{unit}:option:{o['id']}": o["text_he"] for o in d.get("options") or [] if o.get("text_he")})
             if d.get("text_he_review"):
                 flagged.add(unit)
@@ -334,7 +349,7 @@ def load(lang: str) -> tuple[dict[str, str], set[str]]:
         return texts, flagged
     for eid, e in _lang_data(lang, "events").items():
         unit = f"event:{eid}"
-        texts.update({f"{unit}:{k}": e[k] for k in ("title", "text") if e.get(k)})
+        texts.update({f"{unit}:{k}": e[k] for k in ("title", "text", "late_text") if e.get(k)})
         texts.update({f"{unit}:option:{oid}": t for oid, t in (e.get("options") or {}).items() if t})
         if e.get("review"):
             flagged.add(unit)
@@ -347,12 +362,17 @@ def load(lang: str) -> tuple[dict[str, str], set[str]]:
 
 
 def _yaml_key(key: str) -> str:
-    return key if re.fullmatch(r"[A-Za-z0-9_.\-]+", key) else json.dumps(key, ensure_ascii=False)
+    """A key, plain only when every YAML reader takes it as this text: letters, digits, '_', '.' and '-', and not something
+    the 1.2 core schema types (null, true, 1948, 1e3) or a YAML 1.1 boolean (on, yes). The sim's Translations.Key() is
+    the same rule (#1626)."""
+    plain = re.fullmatch(r"[A-Za-z0-9_.\-]+", key) and not any(r.match(key) for _, r, _ in yaml12.CORE_RESOLVERS) \
+        and not YAML11_BOOL.fullmatch(key)
+    return key if plain else json.dumps(key, ensure_ascii=False)
 
 
 def _dump(header: str, data: dict) -> str:
     """Block mappings down to double-quoted strings; anything else (a list of sources) as one JSON flow value."""
-    lines = [f"# {line}".rstrip() for line in header.split("\n")]
+    lines = [f"# {line}".rstrip() for line in header.split("\n")] if header else []
 
     def emit(mapping: dict, indent: int) -> None:
         for k, v in mapping.items():
@@ -369,16 +389,45 @@ def _dump(header: str, data: dict) -> str:
     return out
 
 
+def inline_hebrew(content: Path, ui_en: Path, ui_he: Path) -> tuple[str, str, str]:
+    """Today's inline Hebrew as the bodies (no header comment) of translations/he/ui.yaml, events.yaml and content.yaml,
+    byte for byte as the sim's Translations.InlineHebrew and Write give them (docs/translations.md; the shared fixture in
+    sim/Statecraft.Sim.Tests/translations_fixture/). The events come by date and id, the UI strings in strings.en.yaml's
+    order (any only in Hebrew last, by key), the content fields as the catalog lists them."""
+    events = {}
+    for eid, (_, d) in _events(content / "events").items():
+        if not isinstance(d.get("title_he"), str) or not d["title_he"]:
+            continue
+        e = {"title": d["title_he"], "text": d.get("text_he") if isinstance(d.get("text_he"), str) else ""}
+        if isinstance(d.get("late_text_he"), str) and d["late_text_he"]:
+            e["late_text"] = d["late_text_he"]
+        e |= {"options": {o["id"]: o["text_he"] for o in d.get("options") or []
+                          if isinstance(o, dict) and isinstance(o.get("id"), str) and isinstance(o.get("text_he"), str) and o["text_he"]}}
+        if isinstance(d.get("text_he_review"), str) and d["text_he_review"]:
+            e["review"] = d["text_he_review"]
+        events[eid] = e
+    order = {k: i for i, k in enumerate(yaml12.load(_read(ui_en)) or {})}
+    he = {k: v for k, v in (yaml12.load(_read(ui_he)) or {}).items() if isinstance(v, str)}
+    ui = dict(sorted(he.items(), key=lambda kv: (order.get(kv[0], len(order)), kv[0])))
+    fields = {}
+    for r in _content(content):
+        if r["he"]:
+            fields[r["key"].removeprefix("content:")] = {"text": r["he"], **({"review": r["he_review"]} if r["he_review"] else {})}
+    return tuple(_dump("", data) if data else "" for data in (ui, events, fields))
+
+
 TITLES = {"events": "Events", "ui": "UI strings", "content": "Content fields"}
 HEADER = """{name} ({lang}) for tools/translate.py. The English in content/ and unity/Assets/UI/ is the source of record.
 The game does not read this file yet. Same rules as the Hebrew (docs/WRITING_EVENTS.md): an event is all or none,
-placeholders match the English, one line each; review: agent-checked until a native speaker has read it (#564).
+placeholders match the English, one line each; review: agent-checked until a native speaker, or an AI-assisted
+contributor who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it").
 The tool rewrites this file: comments other than this header are not kept."""
 
 
 def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = False) -> dict:
     """Check every edited string, and write them all only when none is refused. native: event unit or content key ->
-    whether a native speaker has read it (a missing one keeps its state; a new translation starts agent-checked)."""
+    whether a native speaker, or an AI-assisted contributor who discloses it, has read it (a missing one keeps its
+    state; a new translation starts agent-checked)."""
     lang_code(lang, target=True)
     if not isinstance(edits, dict) or not isinstance(native, dict) or \
             not all(isinstance(v, str) for v in edits.values()) or not all(isinstance(v, bool) for v in native.values()):
@@ -401,8 +450,9 @@ def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = 
         return any(new.get(k, "") != old.get(k, "") for k in keys)
 
     def read(key: str) -> bool:
-        """Whether an event unit or content key counts as read by a native speaker after this save: a ticked box, or
-        a text that was read and has not changed (a native read covers only the text that was read)."""
+        """Whether an event unit or content key counts as read after this save (#564: by a native speaker, or by an
+        AI-assisted contributor who discloses it): a ticked box, or a text that was read and has not changed (a read
+        covers only the text that was read)."""
         if key in native:
             return native[key]
         return bool(old.get(key + ":title" if key.startswith("event:") else key)) and key not in flagged \
@@ -434,6 +484,7 @@ def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = 
         for unit in units:
             path, d = events[unit[6:]]
             changes = {"title_he": new.get(f"{unit}:title", ""), "text_he": new.get(f"{unit}:text", ""),
+                       "late_text_he": new.get(f"{unit}:late_text", ""),
                        "native_read": read(unit),
                        "options": {o["id"]: new.get(f"{unit}:option:{o['id']}", "") for o in d.get("options") or []}}
             try:
@@ -450,10 +501,12 @@ def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = 
         events, ui, content = _lang_data(lang, "events"), _lang_data(lang, "ui"), _lang_data(lang, "content")
         for unit in units:
             eid, keys = unit[6:], [r["key"] for r in rows.values() if r["unit"] == unit]
-            entry = {k: v for k, v in events.get(eid, {}).items() if k not in ("title", "text", "options", "review")}
-            if new.get(keys[0]):
-                entry = {"title": new[keys[0]], "text": new[keys[1]],
-                         "options": {k.split(":")[-1]: new[k] for k in keys[2:]}, **entry}
+            entry = {k: v for k, v in events.get(eid, {}).items()
+                     if k not in ("title", "text", "late_text", "options", "review")}
+            if new.get(f"{unit}:title"):
+                late = {"late_text": new[f"{unit}:late_text"]} if f"{unit}:late_text" in keys else {}
+                entry = {"title": new[f"{unit}:title"], "text": new[f"{unit}:text"], **late,
+                         "options": {k.split(":")[-1]: new[k] for k in keys if k.startswith(f"{unit}:option:")}, **entry}
                 if not read(unit):
                     entry["review"] = REVIEW
                 events[eid] = entry
@@ -613,7 +666,7 @@ textarea.dirty { border-color:var(--accent); } textarea[readonly] { background:v
   <label>From <select id="src"></select></label>
   <label>To <select id="lang"></select></label>
   <input id="q" placeholder="Filter keys and text">
-  <select id="show"><option value="">All strings</option><option value="todo">Not translated</option><option value="flag">Not read by a native speaker</option></select>
+  <select id="show"><option value="">All strings</option><option value="todo">Not translated</option><option value="flag">Not read by a native speaker or disclosed AI-assisted contributor</option></select>
   <span id="progress" class="note"></span>
   <span style="flex:1"></span><span id="status"></span>
   <button class="primary" id="save" disabled>Save</button>
@@ -681,14 +734,14 @@ function render() {
     const rs = g.rows.filter(visible); if (!rs.length) continue;
     if (shown + rs.length > 800 && shown) { html += `<p class="note">More strings below the first 800: pick a group on the left or filter.</p>`; break; }
     shown += rs.length;
-    html += `<section><h2>${esc(g.label)}${g.unit ? `<label><input type="checkbox" data-native="${esc(g.unit)}" ${isRead(g.unit) ? 'checked' : ''}> read by a native speaker</label>` : ''}</h2>`;
+    html += `<section><h2>${esc(g.label)}${g.unit ? `<label><input type="checkbox" data-native="${esc(g.unit)}" ${isRead(g.unit) ? 'checked' : ''}> read by a native speaker, or an AI-assisted contributor who discloses it</label>` : ''}</h2>`;
     if (g.unit) html += msgs(g.unit);
     if (he && g.id.startsWith('content:')) html += `<p class="note">Hebrew content names are kept in content/ with their sources; edit them there by hand.</p>`;
     for (const r of rs) {
       const s = r.src || r.en, fallback = !r.src && src !== 'en', v = value(r), rk = reviewKey(r);
       const lines = Math.max(1, Math.ceil(Math.max(r.en.length, v.length) / 55));
       html += `<div class="row" data-key="${esc(r.key)}"><div class="key">${esc(r.label)}${!r.unit && rk && !r.readonly && v ?
-        `<label><input type="checkbox" data-native="${esc(rk)}" ${isRead(rk) ? 'checked' : ''}> read by a native speaker</label>` : ''}</div>
+        `<label><input type="checkbox" data-native="${esc(rk)}" ${isRead(rk) ? 'checked' : ''}> read by a native speaker, or an AI-assisted contributor who discloses it</label>` : ''}</div>
         <div class="src ${fallback ? 'fallback' : ''}" dir="${dir(fallback ? 'en' : src)}">${hl(s)}</div>
         <div><textarea dir="${dir(lang)}" lang="${esc(lang)}" rows="${lines}" ${r.readonly ? 'readonly' : ''} class="${r.key in edits ? 'dirty' : ''}">${esc(v)}</textarea>
         ${toks(r.en).length && !r.readonly ? `<div class="chips">${[...new Set(toks(r.en))].map(t => `<button type="button" data-tok="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}</div>

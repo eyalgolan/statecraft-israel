@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Xunit;
 
@@ -10,28 +11,48 @@ namespace Statecraft.Sim.Tests
     /// there; an event's set_rung still moves the rung. The legacy loop keeps all of them while the code exists (D-E1; SecurityTests pins the legacy clock).</summary>
     public class WarStateTests
     {
-        static Content Gdd(Dictionary<string, string>? extra = null) => ContentLoader.Load(Fixture.Write(Fixture.Gdd(extra)));
+        static Content Gdd(string ruleset, Dictionary<string, string>? extra = null)
+        {
+            var c = ContentLoader.Load(Fixture.Write(As(ruleset, Fixture.Gdd(extra))));
+            Assert.Equal(ruleset, c.Ruleset);
+            return c;
+        }
+
+        /// <summary>#2806 item 12: the GDD-loop cases run under gdd-0.1 (the fixture's default) and again under exact gdd-0.3,
+        /// the identity and the real catalogue set as Gdd03MovementFortTests.Files sets them.</summary>
+        static Dictionary<string, string> As(string ruleset, Dictionary<string, string> f)
+        {
+            if (ruleset == SaveGame.GddRuleset) return f;
+            f["eras.yaml"] = f["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: " + ruleset);
+            f[Gdd03BalanceCatalogue.FileName] = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), Gdd03BalanceCatalogue.FileName));
+            return f;
+        }
 
         // R-WAR-002: the refusal reads as the not-available convention (R-CITY-001's wording), before charging, so the
         // state and the Attention are exactly what a turn without the order leaves.
-        [Fact]
-        public void TheCallUpIsRefusedInTheGddLoop()
+        [Theory]
+        [InlineData(SaveGame.GddRuleset)]
+        [InlineData(SaveGame.Gdd03Ruleset)]
+        public void TheCallUpIsRefusedInTheGddLoop(string ruleset)
         {
-            var c = Gdd();
+            var c = Gdd(ruleset);
             var s = Simulation.NewGame(c, 42, Mode.Historical);
             var refused = Simulation.Step(c, s, new Command[] { new SetMobilization(0.5) });
             var rejection = Assert.Single(refused.Rejected);
             Assert.Equal("That order is not available in this game", rejection.Reason);
             var clean = Simulation.Step(c, s, new Command[0]);
-            Assert.Equal(3, refused.State.Attention);   // the fixture's attention_per_turn, untouched
+            // The fixture's attention_per_turn, untouched; gdd-0.3 has no Attention pool (R-GOV-002), so it stays 0 there.
+            Assert.Equal(ruleset == SaveGame.Gdd03Ruleset ? 0 : 3, refused.State.Attention);
             Assert.Equal(clean.State.Hash(), refused.State.Hash());
         }
 
         // R-WAR-002: the security order the ladder's buttons send.
-        [Fact]
-        public void TheSecurityOrderIsRefusedInTheGddLoop()
+        [Theory]
+        [InlineData(SaveGame.GddRuleset)]
+        [InlineData(SaveGame.Gdd03Ruleset)]
+        public void TheSecurityOrderIsRefusedInTheGddLoop(string ruleset)
         {
-            var c = Gdd();
+            var c = Gdd(ruleset);
             var s = Simulation.NewGame(c, 42, Mode.Historical);
             var refused = Simulation.Step(c, s, new Command[] { new SecurityOrder(1) });
             Assert.Equal("That order is not available in this game", Assert.Single(refused.Rejected).Reason);
@@ -41,10 +62,12 @@ namespace Statecraft.Sim.Tests
 
         // R-WAR-002: HistoricalAI stops generating the retired call-up; below the rung's floor it would send one in the
         // legacy loop (EconomyM3Tests.HistoricalAiSendsReservesHomeToTheRungMinimum pins that side).
-        [Fact]
-        public void HistoricalAiSendsNoCallUpInTheGddLoop()
+        [Theory]
+        [InlineData(SaveGame.GddRuleset)]
+        [InlineData(SaveGame.Gdd03Ruleset)]
+        public void HistoricalAiSendsNoCallUpInTheGddLoop(string ruleset)
         {
-            var c = Gdd();
+            var c = Gdd(ruleset);
             var s = Simulation.NewGame(c, 42, Mode.Historical);
             s.Rung = 1;
             s.Mobilization = 0.5;   // above rung 1's 0.02 floor: the legacy loop would send SetMobilization(0.02)
@@ -53,10 +76,12 @@ namespace Statecraft.Sim.Tests
 
         // R-WAR-003 (the slice's clock half): the 52-week countdown never ticks in the GDD loop, so it never ends the
         // war on its own.
-        [Fact]
-        public void TheCountdownNeverEndsTheWarInTheGddLoop()
+        [Theory]
+        [InlineData(SaveGame.GddRuleset)]
+        [InlineData(SaveGame.Gdd03Ruleset)]
+        public void TheCountdownNeverEndsTheWarInTheGddLoop(string ruleset)
         {
-            var c = Gdd();
+            var c = Gdd(ruleset);
             var s = Simulation.NewGame(c, 42, Mode.Historical);
             Assert.Equal(5, s.Rung);
             s.CeasefireWeeksLeft = 1;   // a monthly turn is more weeks than that
@@ -68,10 +93,12 @@ namespace Statecraft.Sim.Tests
 
         // R-WAR-003 (the slice's clock half): the clock never starts in the GDD loop, so no screen can promise a ceasefire
         // the sim will not impose; the legacy loop starts its 52 weeks on entering full war.
-        [Fact]
-        public void TheGddLoopStartsNoCeasefireClock()
+        [Theory]
+        [InlineData(SaveGame.GddRuleset)]
+        [InlineData(SaveGame.Gdd03Ruleset)]
+        public void TheGddLoopStartsNoCeasefireClock(string ruleset)
         {
-            var c = Gdd();
+            var c = Gdd(ruleset);
             var s = Simulation.NewGame(c, 42, Mode.Historical);
             Assert.Equal(5, s.Rung);
             Assert.Equal(0, s.CeasefireWeeksLeft);
@@ -93,13 +120,16 @@ options:
     text: The way it went
     historical: true
     set_rung: 3
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
         // Q-WAR-4 in the slice: an event's set_rung still moves the rung in the GDD loop.
-        [Fact]
-        public void AnEventSetRungStillMovesTheRungInTheGddLoop()
+        [Theory]
+        [InlineData(SaveGame.GddRuleset)]
+        [InlineData(SaveGame.Gdd03Ruleset)]
+        public void AnEventSetRungStillMovesTheRungInTheGddLoop(string ruleset)
         {
-            var c = Gdd(new Dictionary<string, string> { ["events/rung.yaml"] = RungEvent });
+            var c = Gdd(ruleset, new Dictionary<string, string> { ["events/rung.yaml"] = RungEvent });
             var s = Simulation.NewGame(c, 1, Mode.Historical);
             var r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("rung", "history") });
             Assert.Empty(r.Rejected);
@@ -109,10 +139,12 @@ options:
         // R-WAR-002 (the owner's condition on #1148): with the call-up order retired, the reserves follow the rung down. A
         // rung an event sets lowers the call-up to that rung's rung_min_mobilization, as HistoricalAI's order did in the
         // legacy loop, so the 1949 armistices still send the army home (EconomyCalibrationTests keeps the debt anchor).
-        [Fact]
-        public void TheReservesGoHomeWithTheRungInTheGddLoop()
+        [Theory]
+        [InlineData(SaveGame.GddRuleset)]
+        [InlineData(SaveGame.Gdd03Ruleset)]
+        public void TheReservesGoHomeWithTheRungInTheGddLoop(string ruleset)
         {
-            var c = Gdd(new Dictionary<string, string> { ["events/rung.yaml"] = RungEvent });
+            var c = Gdd(ruleset, new Dictionary<string, string> { ["events/rung.yaml"] = RungEvent });
             var s = Simulation.NewGame(c, 1, Mode.Historical);
             Assert.Equal(0.8, s.Mobilization);   // the rung-5 floor at the start
             var r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("rung", "history") });
@@ -157,10 +189,12 @@ options:
         // an attack refused in a truce, and a move leave International Support (intl_standing) and
         // Social cohesion (morale) exactly where a turn without them does. R-POW-002's prisoner Food-shortfall
         // cohesion cost is the stated exemption (PrisonersTests pins it).
-        [Fact]
-        public void MilitaryActionsMoveNoParameter()
+        [Theory]
+        [InlineData(SaveGame.GddRuleset)]
+        [InlineData(SaveGame.Gdd03Ruleset)]
+        public void MilitaryActionsMoveNoParameter(string ruleset)
         {
-            var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+            var c = ContentLoader.Load(Fixture.Write(As(ruleset, Fixture.Gdd(new Dictionary<string, string>
             {
                 ["model.yaml"] = Fixture.Files["model.yaml"].Replace(
                     "policies:", "  - id: intl_standing\n    base: 0.5\n    name: Standing\npolicies:"),
@@ -169,14 +203,15 @@ options:
                     + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n",
                 ["map/hexes.json"] = MovementTests.Board(),
                 ["corridors.yaml"] = "corridors: []\n",
-            })));
-            GameState State(DateTime? date = null, params (string Event, string Option)[] chosen)
+            }))));
+            Assert.Equal(ruleset, c.Ruleset);
+            GameState State(DateTime? date = null, int enemy = 3, params (string Event, string Option)[] chosen)
             {
                 var s = Simulation.NewGame(c, 42, Mode.Historical);
                 if (date is DateTime d) s.Date = d;
                 s.Arms = 10;
                 s.Units.Add(1, new Unit(1, "soldier", 3, 0, side: "israel", strength: 5));
-                s.Units.Add(2, new Unit(2, "enemy", 2, 0, side: "egypt", strength: 3));
+                s.Units.Add(2, new Unit(2, "enemy", 2, 0, side: "egypt", strength: enemy));
                 foreach (var (e, o) in chosen) s.ChosenOptions[e] = o;
                 return s;
             }
@@ -197,9 +232,9 @@ options:
             // An attack refused in a truce (R-COMBAT-009): the refusal leaves the state as the turn without the
             // order does.
             var inside = new DateTime(1948, 6, 15);
-            var refused = Step(State(inside, ("first_truce", "accept")), new UnitOrder(1, Combat.Attack, 2, 0));
+            var refused = Step(State(inside, 3, ("first_truce", "accept")), new UnitOrder(1, Combat.Attack, 2, 0));
             Assert.Equal("A truce is in force", Assert.Single(refused.Rejected).Reason);
-            Assert.Equal(Params(Step(State(inside, ("first_truce", "accept"))).State), Params(refused.State));
+            Assert.Equal(Params(Step(State(inside, 3, ("first_truce", "accept"))).State), Params(refused.State));
 
             // A move. The sim has no frontier (Q-MOVE-4: units may enter any land hex), so a frontier crossing
             // is an ordinary Move.
@@ -207,6 +242,16 @@ options:
             Assert.Empty(move.Rejected);
             Assert.Equal((4, 0), (move.State.Units[1].Q, move.State.Units[1].R));
             Assert.Equal(clean, Params(move.State));
+
+            // An attack the enemy leads (#2806 item 12): at three times the soldier's strength the enemy script attacks it
+            // (R-ENEMY-003), and step 2's resolution costs the soldier a strength point and drives it back, so the case is
+            // not vacuous. The parameters stay where the clean turn leaves them.
+            var struck = Step(State(enemy: 15));
+            Assert.Empty(struck.Rejected);
+            Assert.Equal(4, struck.State.Units[1].Strength);
+            Assert.NotEqual((3, 0), (struck.State.Units[1].Q, struck.State.Units[1].R));
+            Assert.Equal(15, struck.State.Units[2].Strength);
+            Assert.Equal(clean, Params(struck.State));
         }
     }
 }

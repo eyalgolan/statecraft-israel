@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import time
+from contextlib import nullcontext
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,10 @@ import pytest
 fcntl = pytest.importorskip("fcntl", reason="fcntl is POSIX-only (machine_lock uses flock); not available on Windows")
 
 import machine_lock as ml  # noqa: E402
+
+
+def completed(command, code=0, stdout="", stderr=""):
+    return subprocess.CompletedProcess(command, code, stdout, stderr)
 
 
 def test_the_command_follows_the_double_dash_and_a_mode_is_required():
@@ -66,6 +71,65 @@ def test_an_editor_holding_a_worktree_lockfile_counts_as_unity(tmp_path):
     assert pids == [4242]
     assert asked == [str(temp / "UnityLockfile")]
     assert ml.lockfile_holders([tmp_path / "b"], lsof=lambda files: "1\n") == []
+
+
+@pytest.mark.parametrize("failed_field", ["comm", "args"])
+def test_failed_ps_refuses_unity_discovery(monkeypatch, failed_field):
+    def run(command, **kwargs):
+        field = command[-1]
+        return completed(command, 1, stderr="ps failed") if failed_field in field else completed(command)
+
+    monkeypatch.setattr(ml.subprocess, "run", run)
+    with pytest.raises(ml.DiscoveryFailed, match="ps"):
+        ml.unity_batch_pids()
+
+
+def test_failed_git_worktree_list_refuses_unity_discovery(monkeypatch):
+    monkeypatch.setattr(
+        ml.subprocess, "run",
+        lambda command, **kwargs: completed(command, 1, stderr="git failed"))
+    with pytest.raises(ml.DiscoveryFailed, match="git worktree list"):
+        ml.worktrees()
+
+
+def test_failed_lsof_refuses_unity_discovery(monkeypatch, tmp_path):
+    lockfile = tmp_path / "wt/unity/Temp/UnityLockfile"
+    lockfile.parent.mkdir(parents=True)
+    lockfile.write_text("")
+
+    def run(command, **kwargs):
+        assert command[:2] == ["lsof", "-t"]
+        return completed(command, 1, stderr="lsof failed")
+
+    monkeypatch.setattr(ml.subprocess, "run", run)
+    with pytest.raises(ml.DiscoveryFailed, match="lsof"):
+        ml.lockfile_holders([tmp_path / "wt"])
+
+
+def test_lsof_no_holder_is_a_successful_empty_result(monkeypatch, tmp_path):
+    lockfile = tmp_path / "wt/unity/Temp/UnityLockfile"
+    lockfile.parent.mkdir(parents=True)
+    lockfile.write_text("")
+
+    def run(command, **kwargs):
+        assert command[:2] == ["lsof", "-t"]
+        return completed(command)
+
+    monkeypatch.setattr(ml.subprocess, "run", run)
+    assert ml.lockfile_holders([tmp_path / "wt"]) == []
+
+
+def test_discovery_failure_never_launches_the_guarded_command(monkeypatch, capsys):
+    monkeypatch.setattr(ml, "hold", lambda **kwargs: nullcontext())
+    monkeypatch.setattr(
+        ml.subprocess, "run",
+        lambda command, **kwargs: completed(command, 1, stderr="ps failed"))
+    monkeypatch.setattr(
+        ml.subprocess, "Popen",
+        lambda *args, **kwargs: pytest.fail("guarded command was launched"))
+
+    assert ml.main(["--exclusive", "--wait-unity", "--", "unused"]) == 4
+    assert "discovery failed" in capsys.readouterr().err
 
 
 UNITY_EXE = "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity"
@@ -250,3 +314,32 @@ def test_python_hold_uses_the_same_shared_lock_and_releases_on_exit(tmp_path, mo
         with open(path, "a+") as released:
             fcntl.flock(released, fcntl.LOCK_EX | fcntl.LOCK_NB)
             fcntl.flock(released, fcntl.LOCK_UN)
+
+
+@pytest.mark.parametrize("returncode, stdout, stderr, expected", [
+    (0, "123\n456\n", "", "123\n456\n"),                                  # holders found
+    (1, "", "", ""),                                                       # nobody holds the lockfiles
+    (1, "", "lsof: status error on /x/UnityLockfile: No such file or directory\n", ""),   # vanished since the check
+])
+def test_lsof_exit_1_without_a_real_error_means_no_holder(monkeypatch, returncode, stdout, stderr, expected):
+    monkeypatch.setattr(ml.subprocess, "run",
+                        lambda cmd, **kw: subprocess.CompletedProcess(cmd, returncode, stdout, stderr))
+    assert ml.lsof_holders_output(["/x/UnityLockfile"]) == expected
+
+
+@pytest.mark.parametrize("returncode, stderr", [(1, "lsof: illegal option character: Q\n"), (2, "boom\n")])
+def test_lsof_with_a_real_error_is_a_discovery_failure(monkeypatch, returncode, stderr):
+    monkeypatch.setattr(ml.subprocess, "run",
+                        lambda cmd, **kw: subprocess.CompletedProcess(cmd, returncode, "", stderr))
+    with pytest.raises(ml.DiscoveryFailed):
+        ml.lsof_holders_output(["/x/UnityLockfile"])
+
+
+def test_lsof_is_called_without_flags_this_macs_lsof_lacks(monkeypatch):
+    calls = []
+    def fake(cmd, **kw):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 1, "", "")
+    monkeypatch.setattr(ml.subprocess, "run", fake)
+    ml.lsof_holders_output(["/x/UnityLockfile"])
+    assert calls == [["lsof", "-t", "/x/UnityLockfile"]]

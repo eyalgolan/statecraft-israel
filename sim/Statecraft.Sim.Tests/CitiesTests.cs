@@ -40,6 +40,17 @@ public class CitiesTests
         Assert.False(r.State.Cities["tel_aviv"].JobsDefault);   // R-CITY-009: the order fixes the number
     }
 
+    // R-CITY-001, #2530: a count of 1 names the singular.
+    [Fact]
+    public void ASingleGroupInWorkNamesTheSingular()
+    {
+        var c = Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = Step(c, s, new AssignWorkers("town_a", "job", 1));
+        Assert.Empty(r.Rejected);
+        Assert.Contains(r.Why, x => x.System == "city" && x.Message == "Town A: 1 group in work");
+    }
+
     // R-CITY-001
     [Theory]
     [InlineData("town_a", "job", -1, "The number of workers cannot be negative")]
@@ -131,13 +142,14 @@ public class CitiesTests
         Assert.Equal(6 * 1.2 * SimTime.YearFraction(TurnLength.Week), paid, 9);   // the fixture's first turn is a week
     }
 
-    /// <summary>Two cities with free job slots: town_b (listed first in cities.yaml) has more civilians than jobs, town_a more
-    /// jobs than civilians, so each limit of min(job slots, civilians + craftsmen) is met once.</summary>
+    /// <summary>Two cities with free job slots: town_b (listed first in the settlements file and so in cities.yaml, R-CITY-006)
+    /// has more civilians than jobs, town_a more jobs than civilians, so each limit of min(job slots, civilians + craftsmen) is
+    /// met once.</summary>
     static Content TwoTowns() => ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
     {
         ["map/settlement_hexes.yaml"] = "settlements:\n  - { id: town_a, q: 1, r: 0 }\n  - { id: town_b, q: 2, r: 1 }\n",
-        ["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"]
-            + "  - { id: town_b, name: Town B, lon: 34.42, lat: 33.28, type: town, founded: 1900, pre_modern: false }\n",
+        ["map/settlements_1948.yaml"] = Fixture.Files["map/settlements_1948.yaml"].Replace("settlements:\n",
+            "settlements:\n  - { id: town_b, name: Town B, lon: 34.42, lat: 33.28, type: town, founded: 1900, pre_modern: false }\n"),
         ["cities.yaml"] = "cities:\n" + Fixture.City("town_b", 40, 8, 10, 0) + Fixture.City("town_a", 40, 20, 10, 6),
     })));
 

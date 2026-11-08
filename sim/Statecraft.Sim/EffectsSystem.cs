@@ -179,8 +179,9 @@ namespace Statecraft.Sim
             }
         }
 
+        // The weights are summed in ordinal key order: a floating-point sum depends on its order, and a Dictionary's is not promised (#2511).
         public static double Approval(Content c, GameState s) =>
             c.At(s.Date).VoterGroups.Count == 0 ? 0.5 :
-            c.At(s.Date).VoterGroups.Average(g => Math.Max(0, Math.Min(1, g.Weights.Sum(w => w.Value * s.Indicators[w.Key]))));
+            c.At(s.Date).VoterGroups.Average(g => Math.Max(0, Math.Min(1, g.Weights.OrderBy(w => w.Key, StringComparer.Ordinal).Sum(w => w.Value * s.Indicators[w.Key]))));
     }
 }

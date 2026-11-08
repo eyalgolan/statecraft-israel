@@ -8,7 +8,7 @@ public class Gdd03SyntheticAbsorptionBoundaryTests
         ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!;
 
     // All counts here are test-only synthetic settled facts, not population/region initialization.
-    // 100/101 follows the strict target/scale in gdd03-balance.yaml:46-49,512-515.
+    // 100/101 follows the strict target/scale in gdd03-balance.yaml `population.people_per_unit` and `absorption.population_target`.
     [Theory]
     [InlineData(100, false)]
     [InlineData(101, true)]
@@ -18,14 +18,17 @@ public class Gdd03SyntheticAbsorptionBoundaryTests
             Catalogue(), own, false, 0, 0, 0, 0));
     }
 
-    // The caller supplies canonical waiting, not a location/status inferred by this predicate.
+    // Refugees waiting never block the result in the MVP (owner, 1 November 2026, #1696: "No reception-bed layer
+    // (Recommended)"; option (a) of #738 has no waiting clause), so either flag passes when the other gates pass.
     [Theory]
-    [InlineData(false, true)] // synthetic legal reception bed: no waiting
-    [InlineData(true, false)] // synthetic port queue OR refugee evacuation transit: waiting
-    public void OnlyTheSuppliedCanonicalWaitingFlagBlocksReception(bool waiting, bool expected)
+    [InlineData(false)] // synthetic legal reception bed: no waiting
+    [InlineData(true)] // synthetic port queue OR refugee evacuation transit: waiting
+    public void TheWaitingFlagDoesNotBlockTheResult(bool waiting)
     {
-        Assert.Equal(expected, Gdd03SyntheticAbsorptionBoundary.HoldsForSyntheticSettledFacts(
+        Assert.True(Gdd03SyntheticAbsorptionBoundary.HoldsForSyntheticSettledFacts(
             Catalogue(), 101, waiting, 0, 0, 0, 0));
+        Assert.False(Gdd03SyntheticAbsorptionBoundary.HoldsForSyntheticSettledFacts(
+            Catalogue(), 100, waiting, 0, 0, 0, 0)); // the population gate still decides
     }
 
     // Synthetic demand 100 and free civilians 10; source percentages are 10 and 40.
@@ -52,7 +55,7 @@ public class Gdd03SyntheticAbsorptionBoundaryTests
             Catalogue(), 0, false, overflow, demand, employed, free));
     }
 
-    // Invalid test-only facts must fail even if the population/waiting gate would already fail.
+    // Invalid test-only facts must fail even if the population gate would already fail.
     [Theory]
     [InlineData(-1, 0, 0, 0, 0)]
     [InlineData(101, -1, 100, 4, 10)]

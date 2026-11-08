@@ -520,8 +520,11 @@ public class SettingsScreenTests
             Assert.IsEmpty(opened, "nothing opens before a choice");
             Assert.IsFalse(ui.Q<VisualElement>("screen-settings").enabledSelf, "the screen under the panel is out of Tab's reach");
             var env = ReportLinks.Environment();
-            Assert.AreEqual($"title: {ReportLinks.BugTitle}\nversion: 0.1.0 / content ab12\nenv: {env}", ui.Q<Label>("feedback-bug-preview").text);
-            Assert.AreEqual($"title: {ReportLinks.FeatureTitle}", ui.Q<Label>("feedback-feature-preview").text);
+            var bugTitle = text["feedback.preview.bug_title"];
+            var featureTitle = text["feedback.preview.feature_title"];
+            Assert.AreEqual($"{text["feedback.preview.title"]}: {bugTitle}\n{text["feedback.preview.version"]}: 0.1.0 / content ab12\n{text["feedback.preview.env"]}: {env}",
+                ui.Q<Label>("feedback-bug-preview").text);
+            Assert.AreEqual($"{text["feedback.preview.title"]}: {featureTitle}", ui.Q<Label>("feedback-feature-preview").text);
             PressWithPointer(ui.Q<Button>("feedback-bug"));
             UiTestKit.Press(ui.Q<Button>("feedback-feature"));
             UiTestKit.Press(ui.Q<Button>("feedback-itch"));
@@ -543,11 +546,11 @@ public class SettingsScreenTests
         finally { ExternalLink.Opener = ExternalLink.Default; }
     }
 
-    /// <summary>#1169: with the screens' navigation wired as GameRoot wires it, Esc in the report panel closes the panel
+    /// <summary>#1169: with the unit fixture's injected ScreenNav hook, Esc in the report panel closes the panel
     /// only; ScreenNav's Cancel handler trickles down from the root before the panel's own and asks the panel first.
     /// (Time.frameCount does not move in an edit-mode test, so after this the panel keeps saying "used this frame".)</summary>
     [Test]
-    public void EscapeInTheReportPanelLeavesTheSettingsScreenOpen()
+    public void AnInjectedScreenNavHookLeavesSettingsUnderTheReportPanelOpen()
     {
         using var ui = new UiTestKit();
         using var nav = new ScreenNav(ui.Root);

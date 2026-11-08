@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
 
@@ -36,7 +37,7 @@ namespace Statecraft.Game.UI
             {
                 // An amount the sim already refuses is never queued: the panel keeps showing why (Render).
                 if (bridge.Content.IsGdd && bridge.State.GameOver == null
-                    && EconomySystem.DollarsRefusal(bridge.Content, bridge.State, amount.value) != null) { Render(); return; }
+                    && Refusal(new ConvertDollars(amount.value)) != null) { Render(); return; }
                 var reason = bridge.Queue(new ConvertDollars(amount.value));
                 Render();
                 if (reason != null) panel.Q<Label>("dollars-refusal").text = reason;
@@ -59,8 +60,9 @@ namespace Statecraft.Game.UI
                 if (bridge.Content.IsGdd && bridge.State.GameOver == null
                     && bridge.QueuedLike(new ConvertDollars(1)) is ConvertDollars queued && queued.Amount != amount.value)
                 {
-                    if (EconomySystem.DollarsRefusal(bridge.Content, bridge.State, amount.value) != null) bridge.Withdraw(queued);
-                    else if ((reason = bridge.Queue(new ConvertDollars(amount.value))) != null) bridge.Withdraw(queued);
+                    var replacement = new ConvertDollars(amount.value);
+                    if (Refusal(replacement) != null) bridge.Withdraw(queued);
+                    else if ((reason = bridge.Queue(replacement)) != null) bridge.Withdraw(queued);
                 }
                 Render();
                 if (reason != null) panel.Q<Label>("dollars-refusal").text = reason;
@@ -71,6 +73,16 @@ namespace Statecraft.Game.UI
             if (bridge.QueuedLike(new ConvertDollars(1)) is ConvertDollars old) amount.SetValueWithoutNotify(old.Amount);
             else if (bridge.Content.IsGdd) amount.SetValueWithoutNotify(bridge.Content.RulesAt(bridge.State.Date).Mvp!.DollarsPerTurn!.Value);
             Render();
+        }
+
+        string? Refusal(ConvertDollars candidate)
+        {
+            var queue = bridge.Queued.ToList();
+            var old = bridge.QueuedLike(candidate);
+            var slot = old == null ? -1 : queue.IndexOf(old);
+            if (slot >= 0) queue[slot] = candidate; else queue.Add(candidate);
+            var preview = Simulation.Preview(bridge.Content, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
+            return preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, candidate))?.Reason;
         }
 
         public void Render()
@@ -96,11 +108,11 @@ namespace Statecraft.Game.UI
             panel.Q<Label>("dollars-queued").text = queued == null ? "" : text.Format("dollars.queued", PlayerText.Money(c, "fx_reserves", queued.Amount));
             convert.SetEnabled(s.GameOver == null && amount.value > 0);
             withdraw.SetEnabled(s.GameOver == null && queued != null);
-            // The sim's own check (EconomySystem.DollarsRefusal) on the state as it is now: End turn refuses the same amount.
-            var refused = s.GameOver != null ? null : EconomySystem.DollarsRefusal(c, s, amount.value);
+            // Ask the sim about the exact queue a press would leave, including every earlier order End turn will run.
+            var refused = s.GameOver != null ? null : Refusal(order);
             panel.Q<Label>("dollars-refusal").text = s.GameOver != null ? text["order.game_over"]
                 : !war ? text["dollars.wartime_only"]
-                : refused != null ? SimBridge.ReasonText(text, refused)
+                : refused != null ? SimBridge.ReasonText(text, refused, c)
                 : !bridge.CanPay(order) ? text["dollars.no_attention"] : "";
         }
 

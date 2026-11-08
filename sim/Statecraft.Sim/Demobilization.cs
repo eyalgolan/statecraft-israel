@@ -15,7 +15,7 @@ namespace Statecraft.Sim
 
         /// <summary>The armistice event that signs each front (content/events/armistice_<front>.yaml); the sign option is
         /// `sign` in all four.</summary>
-        static bool Signed(GameState s, string front) =>
+        internal static bool Signed(GameState s, string front) =>
             s.ChosenOptions.TryGetValue("armistice_" + front, out var o) && o == "sign";
 
         /// <summary>The front <paramref name="u"/> fights on (owner, 22 October 2026, #1309): of the enemy units it attacked
@@ -24,25 +24,29 @@ namespace Statecraft.Sim
         /// one's, ties by the lowest unit id. Null when no front-bearing enemy unit is attacked or bordered: the ruling's
         /// "no enemy units in play" case, which any signed armistice covers (accepted per maintainer comment 6341877062
         /// on #1309: a frontless enemy counts as none in play).</summary>
-        internal static string? Front(GameState s, Unit u, IReadOnlyDictionary<int, (int Q, int R)>? attacked = null)
+        internal static string? Front(GameState s, Unit u, IReadOnlyDictionary<int, AttackRecord>? attacked = null)
         {
-            (int Q, int R)? attacks = null;
-            if (attacked != null && attacked.TryGetValue(u.Id, out var target)) attacks = target;
             var candidates = s.Units.Values
                 .Where(e => e.Side != "" && e.Side != Movement.PlayerSide && Prisoners.FrontOf.ContainsKey(e.Side))
-                .Where(e => MapActions.Distance(u.Q, u.R, e.Q, e.R) == 1 || (attacks != null && attacks.Value == (e.Q, e.R)))
+                .Where(e => MapActions.Distance(u.Q, u.R, e.Q, e.R) == 1)
+                .Select(e => (Distance: 1, Unit: e.Id, Front: Prisoners.FrontOf[e.Side]))
                 .ToList();
+            if (attacked != null && attacked.TryGetValue(u.Id, out var target)
+                && target.Unit is int targetUnit && target.Front is string targetFront)
+                candidates.Add((MapActions.Distance(u.Q, u.R, target.Q, target.R), targetUnit, targetFront));
             if (candidates.Count == 0) return null;
-            var pick = candidates.OrderBy(e => MapActions.Distance(u.Q, u.R, e.Q, e.R)).ThenBy(e => e.Id).First();
-            return Prisoners.FrontOf[pick.Side];
+            return candidates.OrderBy(e => e.Distance).ThenBy(e => e.Unit).First().Front;
         }
+
+        /// <summary>Send home's refusal while no armistice is signed (#2707: a constant, for the UI's string).</summary>
+        public const string RefusedNoArmistice = "No armistice is signed";
 
         /// <summary>R-UNIT-005's refusals: null when <see cref="Give"/> takes the order, else the reason shown to the player.
         /// Changes nothing: the unit card asks it before it offers Send home. Refused for an unknown unit, a unit with no
         /// side (a halutz) or an enemy unit, as the standing orders are; then while the armistice on the unit's front is
         /// unsigned, or - no enemy attacked or bordered - while no armistice is signed at all.</summary>
         public static string? Check(Content c, GameState s, int unitId,
-                                    IReadOnlyDictionary<int, (int Q, int R)>? attacked = null)
+                                    IReadOnlyDictionary<int, AttackRecord>? attacked = null)
         {
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (u.Side == "") return "Only a military unit takes that order";
@@ -50,7 +54,7 @@ namespace Statecraft.Sim
             var front = Front(s, u, attacked);
             if (front != null)
                 return Signed(s, front) ? null : $"The armistice with {PlayerText.Capitalised(front)} is not signed";
-            return Prisoners.Fronts.Any(f => Signed(s, f)) ? null : "No armistice is signed";
+            return Prisoners.Fronts.Any(f => Signed(s, f)) ? null : RefusedNoArmistice;
         }
 
         /// <summary>R-UNIT-005: sends the unit home at once, like CancelTraining returns a cohort (R-TRAIN-002): the unit
@@ -58,7 +62,7 @@ namespace Statecraft.Sim
         /// in the city's jobs and housing rules from the same turn. Refused, state untouched, with <see cref="Check"/>'s
         /// reason.</summary>
         internal static string? Give(Content c, GameState s, int unitId,
-                                     IReadOnlyDictionary<int, (int Q, int R)>? attacked, List<Cause> why)
+                                     IReadOnlyDictionary<int, AttackRecord>? attacked, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
             var refused = Check(c, s, unitId, attacked);

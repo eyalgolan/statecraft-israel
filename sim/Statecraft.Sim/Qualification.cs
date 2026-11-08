@@ -20,7 +20,7 @@ namespace Statecraft.Sim
 
         public Qualified(int craftsmen, int veterans, IReadOnlyList<int> halutzim)
         {
-            Craftsmen = craftsmen; Veterans = veterans; Halutzim = halutzim.OrderBy(x => x).ToArray();
+            Craftsmen = craftsmen; Veterans = veterans; Halutzim = Array.AsReadOnly(halutzim.OrderBy(x => x).ToArray());
         }
 
         public int Total => Craftsmen + Veterans + Halutzim.Count;
@@ -60,6 +60,13 @@ namespace Statecraft.Sim
     /// the trained role without R-TRAIN-001's training.</summary>
     public static class Qualification
     {
+        /// <summary>The refusals of the return and reassign orders and of the pioneer's return (#2707); the unit and city ones are
+        /// Orders.RefusedNoUnit and Training.RefusedNoCity. The UI maps each to its own string (SimBridge.ReasonText); the English
+        /// is what a Rejected list and a save carry, so it does not change.</summary>
+        public const string RefusedReturnCount = "Return at least one group", RefusedReassignCount = "Reassign at least one group",
+            RefusedNotPioneer = "Only a pioneer unit takes that order", RefusedPioneerBusy = "That unit is at work; stop the work first",
+            RefusedNoQualification = "There is no such qualification";
+
         public const string ReturnCraftsmenKind = "return_craftsmen";
         public const string ReassignCraftsmenKind = "reassign_craftsmen";
         public const string ReassignPioneersKind = "reassign_pioneers";
@@ -74,7 +81,7 @@ namespace Statecraft.Sim
         {
             PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
-            if (count < 1) return "Return at least one group";
+            if (count < 1) return RefusedReturnCount;
             var name = PlayerText.Settlement(c, city);
             if (count > x.Craftsmen) return FormattableString.Invariant($"{name} has {x.Craftsmen} craftsmen");
             s.Cities[city] = x.WithCraftsmen(x.Craftsmen - count).WithCounts(x.Civilians + count, x.Employed, x.Refugees)
@@ -85,15 +92,16 @@ namespace Statecraft.Sim
 
         /// <summary>R-QUAL-004: <paramref name="count"/> of the city's qualified craftsmen, without a job, become craftsmen
         /// again. Refused, state untouched, for an unknown city, a count below 1, more than the qualified craftsmen, or more than
-        /// the civilians without work (<see cref="Training.Idle"/>).</summary>
+        /// the civilians without work (<see cref="Training.Idle(GameState, City)"/>: a staffed workshop's worker or a builder is
+        /// not idle, R-ARMS-005, R-CITY-011; #2730).</summary>
         public static string? ReassignCraftsmen(Content c, GameState s, string city, int count, List<Cause> why)
         {
             PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
-            if (count < 1) return "Reassign at least one group";
+            if (count < 1) return RefusedReassignCount;
             var name = PlayerText.Settlement(c, city);
             if (count > x.Qualified.Craftsmen) return FormattableString.Invariant($"{name} has {x.Qualified.Craftsmen} qualified craftsmen");
-            var idle = Training.Idle(x);
+            var idle = Training.Idle(s, x);   // R-ARMS-005, R-CITY-011: as Train and ReassignPioneers count it
             if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
             s.Cities[city] = x.WithCounts(x.Civilians - count, x.Employed, x.Refugees).WithCraftsmen(x.Craftsmen + count)
                 .WithQualified(x.Qualified.WithCraftsmen(x.Qualified.Craftsmen - count));
@@ -107,8 +115,8 @@ namespace Statecraft.Sim
         public static string? CheckReturn(GameState s, int unitId)
         {
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
-            if (!Projects.IsPioneer(u.Type)) return "Only a pioneer unit takes that order";
-            if (Projects.IsBusy(s, unitId)) return "That unit is at work; stop the work first";
+            if (!Projects.IsPioneer(u.Type)) return RefusedNotPioneer;
+            if (Projects.IsBusy(s, unitId)) return RefusedPioneerBusy;
             return null;
         }
 
@@ -137,8 +145,8 @@ namespace Statecraft.Sim
             PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             var veteran = track == Projects.VeteranType;
-            if (!veteran && track != "halutz") return "There is no such qualification";
-            if (count < 1) return "Reassign at least one group";
+            if (!veteran && track != "halutz") return RefusedNoQualification;
+            if (count < 1) return RefusedReassignCount;
             var name = PlayerText.Settlement(c, city);
             var have = veteran ? x.Qualified.Veterans : x.Qualified.Halutzim.Count;
             if (count > have) return FormattableString.Invariant($"{name} has {have} qualified {(veteran ? "veteran pioneers" : "halutzim")}");

@@ -7,19 +7,36 @@ Where the game's sounds live and what plays them (#39).
 | Sound effects (turn end, refusal, event card) | `unity/Assets/Resources/Audio/` | `GameAudio`, at the Settings "Sound effects" volume |
 | Ben-Gurion's 1948 recording | `unity/Assets/StreamingAssets/audio/` | `DeclarationRecording`, from its button on the start screen ([declaration-recording.md](declaration-recording.md)) |
 | Music | `unity/Assets/StreamingAssets/audio/music/` | `MenuMusic`, on the start screen, at the Settings "Music" volume |
+| Advisor narration | `unity/Assets/StreamingAssets/advisors/` | `AdvisorMedia`, when an advisor's clip is played (see "Advisor narration") |
 
 ## Music files
 
 - Music goes in `unity/Assets/StreamingAssets/audio/music/`, as Ogg Vorbis (`.ogg`) only (owner, 2 Nov 2026).
   StreamingAssets is not imported or re-encoded by Unity, so the file ships byte for byte. It is not part of the first
   download: the whole file is downloaded when the theme is about to play (on the web, after the page's first click, tap
-  or key), then decoded in full. It is not streamed.
+  or key other than Escape, which never counts), then decoded in full. It is not streamed.
 - Memory: a decoded clip is uncompressed. On the web the browser decodes it to 32-bit float samples, which is about
   0.35 MB per second of stereo 44.1 kHz audio, for example about 88 MB for a 4 min 10 s theme. The clip is released
   when the menu's fade ends.
 - The start menu's theme is the file `MenuMusic.File` names. A renamed file is renamed there too. Once a theme is
   committed, `MenuMusicTests.ThePlayerPicksTheThemeInStreamingAssetsMusic` fails while the two differ.
+- The theme plays from 0:00 once, then loops between its loop points (#2338): Afik's proposed 00:10 to 04:03, kept as
+  data in `unity/Assets/Resources/Music/menu-music.yaml` (`file`, `loop_start_s`, `loop_end_s`), not in the OGG, which
+  stays as delivered. Resources, not the music folder: that folder holds OGG files only, and the game reads Resources
+  at start with no second download. At each seam, two `AudioSource`s hand over on the audio clock: one ends and the
+  other is scheduled to start at the loop start at the same `dspTime`. That is the design; nobody has listened to the
+  seam in a web build yet (#2338 stays open for it). Measured in the OGG with ffmpeg, the cut lands on a step of about
+  -45 dBFS in a quiet passage. `MenuMusicTests.TheTwoSourcesHandOverAtEachSeamOnTheAudioClock` checks the scheduling
+  calls with a fake audio clock, not the sound. A missing or invalid region (no file, another file's name, an end before
+  the start or past the clip's end) loops the whole clip, with one plain `MUSIC no loop region` line in the log. `MenuMusicTests.TheThemeLoopsBetweenAfiksLoopPoints` checks the region
+  against the committed file.
 - With no file (or any failed download) the start menu is silent for the rest of the page: no error and no warning,
   one plain `MUSIC no theme` line in the log. A reload tries again.
 - Each file needs its rows like any other asset: `ASSETS.yaml` (source, licence, SHA-256), `LICENSING.md` and the
   credit. Keep it under the repository's 10 MiB per-file limit (`scripts/oss/oss_policy.py`).
+
+## Advisor narration
+
+- The advisors' voiced lines are `<id>.<lang>.wav` files in `unity/Assets/StreamingAssets/advisors/` (`AdvisorCatalog.MediaFolder`), next to each clip's silent `<id>.mp4` picture. The catalogue (`AdvisorCatalog`) names a narration file per language in each media row, and its checks reject a row whose file is not in that folder. English files only so far; the catalogue checks reject a Hebrew narration before its review is approved.
+- `AdvisorMedia` plays them, for the advisor presenter (`AdvisorPresenter`). It fetches nothing until a row is played, fetches the whole narration file, then starts picture and audio together; the audio position drives the live captions. A row with no picture plays the narration alone.
+- The output is its own `AudioSource` (`DeclarationRecording.SourceOutput`), created in `GameRoot`. Nothing in `SettingsPresenter` reaches it, so the Settings "Sound effects" and "Music" volumes do not change it.

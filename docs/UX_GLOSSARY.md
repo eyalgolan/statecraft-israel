@@ -48,7 +48,7 @@ Revision 21 October 2026, localisation follow-up: the Cabinet reads government a
 | resources-and-meters | pending-gdd | open | open | Eyal |
 | treasury-and-money | preferred | Money; Money (net) for the top-bar net position | כסף, for the GDD resource (the owner's word) | Eyal; native reviewer for the Hebrew |
 | foreign-currency | preferred | foreign currency | מטבע חוץ | Eyal |
-| reserves | use-with-caution | reserves, for the military reserve only | מילואים, for the military reserve | Eyal |
+| reserves | use-with-caution | reserves, for the military reserve; foreign currency reserves (with the qualifier) for the money | מילואים, for the military reserve; יתרות מטבע החוץ for the money | Eyal |
 | budget | preferred | budget | תקציב | Eyal; native reviewer for the spelling |
 | legislature-vote | preferred | 'must approve', 'votes on it, but its vote does not bind', 'does not vote' | open | Native reviewer; Eyal for any key change |
 | stability | preferred | stability | יציבות | Eyal; native reviewer for the Hebrew |
@@ -71,7 +71,7 @@ Revision 21 October 2026, localisation follow-up: the Cabinet reads government a
 
 ### spelling (preferred)
 
-The rule exists but only as a comment in content/offices.yaml: office titles keep Israel's official English ('Ministry of Defense', 'Minister of Defense') because they are proper nouns, and the UI is otherwise British English, so the screen and its button say 'Defence'. The comment says not to 'fix' it (playtest 1, item 8). No document in docs/ or CONTRIBUTING.md states it, no reference dictionary is named, and docs/GDD.md mixes both spellings ('defence' in the soldier actions table, 'defense' under settlement control).
+The rule is written in the defence-screen-and-office entry below and in a comment in content/offices.yaml: office titles keep Israel's official English ('Ministry of Defense', 'Minister of Defense') because they are proper nouns, and the UI is otherwise British English, so the screen and its button say 'Defence'. The comment says not to 'fix' it (playtest 1, item 8). `docs/WRITING_GUIDE.md` does not state it, no reference dictionary is named, and docs/GDD.md mixes both spellings ('defence' in the soldier actions table, 'defense' under settlement control).
 
 Recommendation (see status): Move the rule from the offices.yaml comment into docs/WRITING_GUIDE.md so it covers every surface, name one reference dictionary for the British spelling, and say which spelling the GDD and docs follow. Pattern from the Google developer documentation style guide and the GOV.UK style guide.
 
@@ -1036,7 +1036,7 @@ Category: game-system. Scope: ui, events, code.
 **Definition.** The state's stock of foreign currency, held in US dollar millions. When it is exhausted, food imports are cut and the food supply falls.
 
 **English.** Preferred: foreign currency.
-Avoid: fx and forex in player text; reserves for this meaning (see 'reserves').
+Avoid: fx and forex in player text; a bare "reserves" for this meaning in player text (see 'reserves'; "foreign currency reserves" is allowed).
 
 | In use | Where |
 |---|---|
@@ -1065,26 +1065,30 @@ Avoid: fx and forex in player text; reserves for this meaning (see 'reserves').
 
 Category: game-system. Scope: ui, code, docs.
 
-**Definition.** A word with two meanings in the project: the military reserve the player calls up, and, in code and comments, the foreign-currency stock.
+**Definition.** A word with two meanings in the project: the military reserve the player calls up, and the foreign-currency stock.
 
-**English.** Preferred: reserves, for the military reserve only.
-Avoid: reserves for the currency in player text.
+**English.** Preferred: reserves, for the military reserve; for the money, "foreign currency reserves", always with the qualifier, or with the currency named in the same phrase ("dollars in the reserves") (owner, 5 November 2026: "Allow both").
+Avoid: a bare "reserves" for the money in player text, where it could be read as the military reserve.
 
 | In use | Where |
 |---|---|
 | {0} of reserves called up | strings.en.yaml defence.mob |
 | Reserve call-up | strings.en.yaml defence.section_callup |
+| Foreign currency reserves are exhausted | strings.en.yaml why.cause.fx_crisis_began |
+| There are not enough dollars in the reserves | strings.en.yaml dollars.refused_reserves |
 | id: fx_reserves | content/model.yaml |
 | set so reserves run out in the last quarter of 1951 | content/rules.yaml comment |
 
-**Hebrew.** Preferred: מילואים, for the military reserve.
+**Hebrew.** Preferred: מילואים, for the military reserve; יתרות מטבע החוץ for the money.
 
 | In use | Where |
 |---|---|
 | גיוס מילואים | strings.he.yaml defence.section_callup |
+| יתרות מטבע החוץ אזלו | strings.he.yaml why.cause.fx_crisis_began |
+| אין די דולרים ביתרות מטבע החוץ | strings.he.yaml dollars.refused_reserves |
 
 **Recommendation (see status).**
-- English: In player text, use 'reserves' for the military reserve and 'foreign currency' for the money. The ids and comments can keep 'reserves' for the currency.
+- Decided (owner, 5 November 2026, "Allow both", recorded on #2779 by an agent): 'reserves' for the military reserve, and 'foreign currency reserves' for the money, with the qualifier. The ids and comments can keep 'reserves' for the currency.
 - Hebrew: The strings already use different words for the two (מילואים and מטבע חוץ), so no change is proposed.
 - Reasons: (1) A player who reads 'reserves' in the Budget flow line could take it for either.
 

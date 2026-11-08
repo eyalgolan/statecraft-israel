@@ -9,7 +9,8 @@ using Statecraft.Sim;
 /// halutz holds nothing, "enemy-held" means mvp.enemy_held_localities, and enemy units alone on an awaiting_choice target
 /// take it back. The fixture's places are fixture values, not
 /// history: town_a and town_c are arab_town targets the fixture lists as enemy-held, town_d an arab_town target that is
-/// not, and town_e an enemy-held arab_town that is not a target.</summary>
+/// not, and town_e an enemy-held arab_town that is not a target. town_h, a town on (0, 2), is the fixture's one city: the loader
+/// holds cities.yaml to the city and town rows (R-CITY-006).</summary>
 public class CaptureTests
 {
     const string Types = Fixture.GddUnitTypes
@@ -24,7 +25,7 @@ public class CaptureTests
 
     /// <summary>A target row. Stayed by default, so every Raid, Occupy and Deport test keeps its behaviour (#799 plan, Task 1);
     /// the annexation values are fixture values (people 60, employed_share 0.5), not history.</summary>
-    static string Target(string id, int q, int r, bool fled = false) => FormattableString.Invariant(
+    internal static string Target(string id, int q, int r, bool fled = false) => FormattableString.Invariant(
         $"  - {{ id: {id}, q: {q}, r: {r}, operation: fixture_operation, sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-18 }}], ")
         + (fled ? "residents: fled, " : "residents: stayed, ")
         + FormattableString.Invariant($"residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-18 }}], ")
@@ -48,9 +49,11 @@ public class CaptureTests
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
             ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
-            ["map/settlement_hexes.yaml"] = "settlements:\n" + string.Concat(Places.Select(p => FormattableString.Invariant($"  - {{ id: {p.Id}, q: {p.Q}, r: {p.R} }}\n"))),
+            ["map/settlement_hexes.yaml"] = "settlements:\n" + string.Concat(Places.Select(p => FormattableString.Invariant($"  - {{ id: {p.Id}, q: {p.Q}, r: {p.R} }}\n"))) + "  - { id: town_h, q: 0, r: 2 }\n",
             ["map/settlements_1948.yaml"] = "settlements:\n" + string.Concat(Places.Select(p => FormattableString.Invariant(
-                $"  - {{ id: {p.Id}, name: {p.Id.Replace("town_", "Town ").ToUpperInvariant()}, lon: 34.29, lat: 33.35, type: {p.Type}, founded: 1900, pre_modern: false }}\n"))),
+                $"  - {{ id: {p.Id}, name: {p.Id.Replace("town_", "Town ").ToUpperInvariant()}, lon: 34.29, lat: 33.35, type: {p.Type}, founded: 1900, pre_modern: false }}\n")))
+                + "  - { id: town_h, name: Town H, lon: 34.29, lat: 33.15, type: town, founded: 1900, pre_modern: false }\n",
+            ["cities.yaml"] = "cities:\n" + Fixture.City("town_h", 12, 8, 10, 6, "[military_camp, hakhshara]"),
             ["settlement_targets.yaml"] = targets.Length == 0 ? "targets: []\n" : "targets:\n" + string.Concat(targets.Select(id => { var p = Places.Single(x => x.Id == id); return Target(p.Id, p.Q, p.R, fled.Contains(p.Id)); })),
         });
         files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities: []", "enemy_held_localities: [town_a, town_c, town_e]");
@@ -133,7 +136,7 @@ public class CaptureTests
     }
 
     // R-CTRL-004 (#796, 21 October 2026): a captured target the enemy holds again, with no player combatant there, is back
-    // under enemy control.
+    // under enemy control, with the ownerless lost marker retained.
     [Fact]
     public void AnEnemyUnitHoldingACapturedTargetReturnsItToEnemyControl()
     {
@@ -141,7 +144,23 @@ public class CaptureTests
         var s = With(c, Enemy(1, 1, 0));
         s.Settlements["town_a"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date);
         Capture(c, s);
-        Assert.Empty(s.Settlements);
+        var lost = Assert.Single(s.Settlements).Value;
+        Assert.Equal(("", "", s.Date, false), (lost.Owner, lost.State, lost.Since, lost.Fled));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AStayedLostMarkerCanBeCapturedAgainWithANewDate(bool gdd03)
+    {
+        var c = OccupyTests.Load(gdd03);
+        var s = With(c, Soldier(1, 1, 0));
+        var old = s.Date.AddDays(-7);
+        s.Settlements["town_a"] = new SettlementControl(since: old);
+        var next = s.Date.AddDays(7);
+        Capture(c, s);
+        var record = s.Settlements["town_a"];
+        Assert.Equal((Movement.PlayerSide, SettlementControl.AwaitingChoice, next), (record.Owner, record.State, record.Since));
     }
 
     // R-CTRL-001: a player unit on a locality that is not on the list changes nothing.
@@ -307,7 +326,7 @@ public class CaptureTests
         var s = With(c, Soldier(1, 0, 1));
         var ended = Simulation.Step(c, s, new Command[] { new Move(1, 1, 0), new ResolveCapture("town_a", SettlementControl.Raid) });
         Assert.Empty(ended.Rejected);
-        Assert.False(ended.State.Settlements.ContainsKey("town_a"));
+        Assert.Equal("", ended.State.Settlements["town_a"].Owner);
     }
 
     // R-CTRL-004: the automatic route stop is checked before any order (spec 4.4, 6.3).

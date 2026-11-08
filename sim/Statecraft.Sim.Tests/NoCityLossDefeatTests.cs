@@ -192,6 +192,25 @@ public class NoCityLossDefeatTests
         Assert.True(retaken.State.Objectives.ContainsKey("already_awarded"));
     }
 
+    // R-CITY-010, R-CITY-004, R-CITY-009: a held gdd-0.3 city pays no job income but still absorbs its refugees as civilians
+    // and fills its free default jobs from its people without a job, exactly as an unheld city does (town_b is the control).
+    [Fact]
+    public void Gdd03HeldCityStillAbsorbsRefugeesAndFillsDefaultJobs()
+    {
+        var c = Load(); var s = Simulation.NewGame(c, 1, Mode.Historical); Occupy(s);
+        s.Objectives["already_awarded"] = s.Date;
+        foreach (var id in new[] { "town_a", "town_b" })
+            s.Cities[id] = new City(id, housingCapacity: 20, jobSlots: 8, civilians: 4, employed: 2, refugees: 2, jobsDefault: true);
+        var result = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.False(Paid(result, "town_a"));
+        Assert.True(Paid(result, "town_b"));
+        var held = result.State.Cities["town_a"]; var control = result.State.Cities["town_b"];
+        Assert.Equal(0, held.Refugees);
+        Assert.Equal(6, held.Civilians);   // 4 + 2 refugees housed
+        Assert.Equal(6, held.Employed);    // the 6 civilians fill 6 of the 8 slots (2 were already in work)
+        Assert.Equal((control.Refugees, control.Civilians, control.Employed), (held.Refugees, held.Civilians, held.Employed));
+    }
+
     // R-CITY-010, R-UNIT-001: a halutz holds nothing, and gdd-0.1 keeps paying the turn its R-END-003 defeat fires.
     [Theory]
     [InlineData(SaveGame.Gdd03Ruleset, true)]
@@ -205,5 +224,37 @@ public class NoCityLossDefeatTests
         var result = Simulation.Step(c, s, Array.Empty<Command>());
         Assert.True(Paid(result, "town_a"));
         Assert.Equal(2, result.State.CityProjects[10].TurnsLeft);
+    }
+
+    static List<Cause> HeldLines(StepResult result) => result.Why.Where(w => w.Key == CauseKeys.CityHeld).ToList();
+
+    // R-CITY-010 (#1711): the turn report's line for a held city comes from the sim. Each turn the enemy holds Town A, one
+    // line names it with no change of its own; Town B, never held, gets none; once retaken, Town A gets none either.
+    [Fact]
+    public void Gdd03HeldCityGetsOneLineEachTurnUntilRetaken()
+    {
+        var c = Load(); var s = Simulation.NewGame(c, 1, Mode.Historical); Occupy(s);
+        for (int i = 0; i < 2; i++)
+        {
+            var result = Simulation.Step(c, s, Array.Empty<Command>());
+            var line = Assert.Single(HeldLines(result));
+            Assert.Equal("town_a", line.Target);
+            Assert.Equal(0.0, line.Delta);
+            Assert.Equal("Town A: held by the enemy; no job income or project work this turn", line.Message);
+            s = result.State;
+        }
+        s.Units.Remove(1);   // retaken
+        Assert.Empty(HeldLines(Simulation.Step(c, s, Array.Empty<Command>())));
+    }
+
+    // R-CITY-010: gdd-0.1 has no held city, so the same enemy unit gives no line; nor does a halutz under gdd-0.3.
+    [Theory]
+    [InlineData(SaveGame.GddRuleset, false)]
+    [InlineData(SaveGame.Gdd03Ruleset, true)]
+    public void OnlyAGdd03HeldCityGetsTheLine(string ruleset, bool halutz)
+    {
+        var c = Load(ruleset); var s = Simulation.NewGame(c, 1, Mode.Historical);
+        if (halutz) s.Units.Add(1, new Unit(1, "halutz", 1, 0)); else Occupy(s);
+        Assert.Empty(HeldLines(Simulation.Step(c, s, Array.Empty<Command>())));
     }
 }

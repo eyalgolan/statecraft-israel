@@ -168,9 +168,37 @@ public class TranslationLoaderTests
             Refused(new Dictionary<string, string> { ["ro/ui.yaml"] = "ui.lang: \"fr\"\n" }).Message);
     }
 
+    // #2598: a hand-edited ui.yaml is held to the English table (unity/Assets/UI/strings.en.yaml) when the content is a
+    // checkout's, as tools/translate.py holds an editor save: a misspelt key would leave the real one in English unnoticed.
+    [Fact]
+    public void AUiKeyTheEnglishLacksIsRefused()
+    {
+        var e = Refused(new Dictionary<string, string> { ["ro/ui.yaml"] = Ro + "hud.trun: \"Tura {0}\"\n" });
+        Assert.Equal(("translations/ro/ui.yaml", "hud.trun"), (e.File, e.Field));
+        Assert.Contains("strings.en.yaml has no such key", e.Message);
+        Assert.Contains("delete it from translations/ro/ui.yaml", e.Message);
+    }
+
+    // The same rule as translate.py's _check: as many of each {...} token as the English (hud.attention: "Attention {0:0.0}
+    // of {1:0.0}"), in any order, so a dropped {0} cannot lose its value and a renamed one cannot throw in string.Format.
+    [Theory]
+    [InlineData("Atenție {0:0.0}", false)]               // one dropped
+    [InlineData("Atenție {0} din {1:0.0}", false)]       // one renamed (its format changed)
+    [InlineData("Atenție {0:0.0} din {1:0.0} {1:0.0}", false)] // one twice
+    [InlineData("{1:0.0} rămasă din {0:0.0}", true)]      // reordered: the same tokens
+    public void UiPlaceholdersMustMatchTheEnglish(string text, bool loads)
+    {
+        var files = new Dictionary<string, string> { ["ro/ui.yaml"] = Ro + $"hud.attention: \"{text}\"\n" };
+        if (loads) { Assert.Single(LoadReal(files).Translations); return; }
+        var e = Refused(files);
+        Assert.Equal(("translations/ro/ui.yaml", "hud.attention"), (e.File, e.Field));
+        Assert.Contains("placeholders differ from the English ({0:0.0}, {1:0.0})", e.Message);
+    }
+
     [Theory]
     [InlineData("advisor.defeat_economy")]
     [InlineData("how_to_play.title")]
+    [InlineData("encyclopedia.title")]
     public void OnlyHebrewTranslatesTheAdvisorsAndHowToPlay(string key)
     {
         var e = Refused(new Dictionary<string, string> { ["ro/ui.yaml"] = Ro + $"{key}: \"x\"\n" });
@@ -225,7 +253,7 @@ public class TranslationLoaderTests
         f["gdd03-events.yaml"] = "ruleset: gdd-0.3\nexclusions:\n  - { id: probe, reason: Fixture }\n";
         var dir = Fixture.Write(f, new Dictionary<string, string>
         {
-            ["probe.yaml"] = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n",
+            ["probe.yaml"] = "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\nsources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n",
         });
         var c = WithFolder(new Dictionary<string, string> { ["ro/ui.yaml"] = Ro, ["ro/events.yaml"] = RoEvent("probe", "ok") }, t => ContentLoader.Load(dir, t));
         Assert.DoesNotContain(c.Events, e => e.Id == "probe");

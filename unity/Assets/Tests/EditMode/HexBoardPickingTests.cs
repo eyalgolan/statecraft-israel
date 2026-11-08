@@ -40,6 +40,7 @@ public class HexBoardPickingTests
         Assert.AreNotSame(map.Terrain, board);
         pointer = map.gameObject.AddComponent<MapPointer>();
         pointer.Map = map;
+        pointer.View = cam;
         pointer.IsOverUi = _ => false;
         pointer.HexClicked += (q, r, cityPill) => clicked.Add((q, r));
         Physics.SyncTransforms();
@@ -152,6 +153,13 @@ public class HexBoardPickingTests
         var point = new Vector3(0, 0, map.Frame.LengthM) + HexGeometry.Centre(1, 15, HexScale.HexM);
         try
         {
+            point.y = board.transform.position.y + board.SampleHeight(point);
+            rig.LookAt = point; rig.Distance = 20000f; rig.Yaw = 90f; rig.TopInset = 0f; rig.Apply();
+            var unchanged = cam.WorldToScreenPoint(point);
+            pointer.HexAt(unchanged); long initialBuilds = pointer.TerrainCacheBuildsForTests;
+            pointer.HexAt(unchanged);
+            Assert.AreEqual(initialBuilds, pointer.TerrainCacheBuildsForTests, "unchanged picks reuse terrain and collider discovery");
+
             HexTilesLook.Apply(map, false);
             Physics.SyncTransforms();
             point.y = map.Terrain.transform.position.y + map.Terrain.SampleHeight(point);
@@ -160,6 +168,7 @@ public class HexBoardPickingTests
             Assert.IsTrue(map.Terrain.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(screen), out var real, 1000000f));
             clicked.Clear(); Assert.IsTrue(pointer.HandleClick(screen));
             CollectionAssert.AreEqual(new[] { MapPointer.Pick(map, real.point) }, clicked);
+            Assert.AreEqual(initialBuilds + 1, pointer.TerrainCacheBuildsForTests, "removing the displayed board invalidates discovery");
             HexTilesLook.Apply(map, true);
             HexTilesLook.Apply(map, true);
             board = map.transform.Find(HexTilesLook.RootName).GetComponentsInChildren<Terrain>().Single();
@@ -169,12 +178,60 @@ public class HexBoardPickingTests
             Assert.IsTrue(board.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(screen), out var visible, 1000000f));
             clicked.Clear(); Assert.IsTrue(pointer.HandleClick(screen));
             CollectionAssert.AreEqual(new[] { MapPointer.Pick(map, visible.point) }, clicked);
+            Assert.AreEqual(initialBuilds + 2, pointer.TerrainCacheBuildsForTests, "recreating the displayed board invalidates discovery again");
+
+            // Codex review of 981951be0: the board replaced directly by one of the same shape, after a pick on it, keeps the
+            // hierarchy count; the destroyed board's cached terrain must not be used.
+            var replaced = board;
+            HexTilesLook.Apply(map, true);
+            board = map.transform.Find(HexTilesLook.RootName).GetComponentsInChildren<Terrain>().Single();
+            Assert.AreNotSame(replaced, board, "fixture: a new board");
+            Physics.SyncTransforms();
+            Assert.IsTrue(board.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(screen), out var again, 1000000f));
+            clicked.Clear(); Assert.IsTrue(pointer.HandleClick(screen));
+            CollectionAssert.AreEqual(new[] { MapPointer.Pick(map, again.point) }, clicked, "the new board's hex, not a stale surface");
+            Assert.AreEqual(initialBuilds + 3, pointer.TerrainCacheBuildsForTests, "a same-shape replacement invalidates discovery too");
         }
         finally
         {
             if (map.transform.Find(HexTilesLook.RootName) == null) HexTilesLook.Apply(map, true);
             board = map.transform.Find(HexTilesLook.RootName).GetComponentsInChildren<Terrain>().Single();
         }
+    }
+
+    [Test]
+    public void ChangingGroundStateInvalidatesThePickAtAnUnmovedPointer()
+    {
+        Vector2 screen = default;
+        (int q, int r) displayed = default, real = default;
+        bool foundDifferentGrounds = false;
+        foreach (var (q, r) in new[] { (1, 15), (4, 15), (4, 19) })
+        foreach (float offset in new[] { -15f, 15f })
+        {
+            var origin = new Vector3(0f, Shader.GetGlobalVector(MapShaderGlobals.Map).z, map.Frame.LengthM);
+            var edge = (origin + HexGeometry.Centre(q, r, HexScale.HexM)
+                + origin + HexGeometry.Centre(q + 1, r, HexScale.HexM)) * 0.5f;
+            var point = edge + Vector3.right * offset;
+            point.y = board.transform.position.y + board.SampleHeight(point);
+            rig.LookAt = point; rig.Distance = 20000f; rig.Yaw = 90f; rig.TopInset = 0f; rig.Apply();
+            screen = cam.WorldToScreenPoint(point);
+            var ray = cam.ScreenPointToRay(screen);
+            if (!board.GetComponent<TerrainCollider>().Raycast(ray, out var boardHit, 1_000_000f)
+                || !map.Terrain.GetComponent<TerrainCollider>().Raycast(ray, out var realHit, 1_000_000f)) continue;
+            displayed = MapPointer.Pick(map, boardHit.point);
+            real = MapPointer.Pick(map, realHit.point);
+            if (displayed != real) { foundDifferentGrounds = true; break; }
+        }
+        Assert.IsTrue(foundDifferentGrounds, "precondition: the displayed board and lowered real terrain pick different hexes somewhere");
+
+        Assert.AreEqual(displayed, pointer.HexAt(screen), "the displayed ground is initially nearest");
+        try
+        {
+            board.drawHeightmap = false;
+            Assert.AreEqual(real, pointer.HexAt(screen),
+                "changing ground state invalidates the same-pointer, same-camera pick and falls through to the real terrain");
+        }
+        finally { board.drawHeightmap = true; }
     }
 
 }

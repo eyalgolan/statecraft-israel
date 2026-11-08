@@ -23,6 +23,7 @@ options:
   - id: continue
     text: Continue
     historical: true
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     const string PartsYaml = @"
@@ -61,6 +62,7 @@ options:
   - id: continue
     text: Continue
     historical: true
+sources: [{{ url: https://example.org/event, checked: 2026-10-18 }}]
 ";
 
     static Content LoadParts(string objectives = PartsYaml)
@@ -623,6 +625,93 @@ eras:
         Assert.True(s.Objectives.ContainsKey("first_goal"));
     }
 
+    /// <summary>The absorb fixture under <paramref name="ruleset"/>: gdd-0.1 is the fixture's own GDD loop; gdd-0.3 names the
+    /// ruleset in eras.yaml and adds the real balance catalogue it needs, as Gdd03MovementFortTests does.</summary>
+    static Content LoadAbsorbIn(string ruleset)
+    {
+        var f = Fixture.Gdd();
+        f["objectives.yaml"] = AbsorbYaml;
+        if (ruleset == SaveGame.Gdd03Ruleset)
+        {
+            f["eras.yaml"] = f["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: " + ruleset);
+            f[Gdd03BalanceCatalogue.FileName] = System.IO.File.ReadAllText(System.IO.Path.Combine(RealContentTests.ContentRoot(), Gdd03BalanceCatalogue.FileName));
+        }
+        var c = ContentLoader.Load(Fixture.Write(f, new Dictionary<string, string> { ["first_card.yaml"] = Card }));
+        Assert.Equal(ruleset, c.Ruleset);
+        return c;
+    }
+
+    /// <summary>Runs step 11 on a new game whose only city is town_a, housing 100 (so nothing overflows), with the counts
+    /// given; returns the state.</summary>
+    static GameState AbsorbWith(Content c, int population, int civilians, int craftsmen, int employed)
+    {
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Population = new Dictionary<string, double> { ["veterans"] = population };
+        s.Cities.Clear();
+        s.Cities["town_a"] = new City("town_a", 100, 100, civilians, employed, 0, craftsmen: craftsmen);
+        Objectives.Complete(c, s, c.Rules.Mvp!, D("1949-04-15"), new List<Cause>());
+        return s;
+    }
+
+    // R-OBJ-004 with R-CITY-005 (owner, 3 November 2026, #1714: "Both rulesets (Recommended)"): the employment share's
+    // denominator is civilians plus craftsmen, as R-CITY-005 counts it, in gdd-0.1 and gdd-0.3 alike. Employed includes the
+    // craftsmen in jobs (City.Employed), so dividing by civilians alone could pass a share above 100%.
+    [Theory]
+    [InlineData(SaveGame.GddRuleset, 6, 4, 4, true)]      // 4 of 10 = 40%: on the bound
+    [InlineData(SaveGame.GddRuleset, 6, 5, 4, false)]     // 4 of 11 = 36% (civilians alone: 4 of 6 = 67%)
+    [InlineData(SaveGame.GddRuleset, 2, 8, 8, true)]      // 8 of 10 = 80% (civilians alone: 400%)
+    [InlineData(SaveGame.GddRuleset, 2, 20, 8, false)]    // 8 of 22 = 36% (civilians alone: 400%)
+    [InlineData(SaveGame.Gdd03Ruleset, 6, 4, 4, true)]
+    [InlineData(SaveGame.Gdd03Ruleset, 6, 5, 4, false)]
+    [InlineData(SaveGame.Gdd03Ruleset, 2, 8, 8, true)]
+    [InlineData(SaveGame.Gdd03Ruleset, 2, 20, 8, false)]
+    public void AbsorptionCountsCraftsmenInTheEmploymentDenominator(string ruleset, int civilians, int craftsmen, int employed, bool done)
+    {
+        var s = AbsorbWith(LoadAbsorbIn(ruleset), 1500, civilians, craftsmen, employed);
+        Assert.Equal(done, s.Objectives.ContainsKey("first_goal"));
+    }
+
+    // R-OBJ-004: the population gate still decides first, with craftsmen counted: below it nothing completes however well
+    // the cities employ; at it (at or above, as main has it) the same cities complete it. Both rulesets.
+    [Theory]
+    [InlineData(SaveGame.GddRuleset, 1499, false)]
+    [InlineData(SaveGame.GddRuleset, 1500, true)]
+    [InlineData(SaveGame.Gdd03Ruleset, 1499, false)]
+    [InlineData(SaveGame.Gdd03Ruleset, 1500, true)]
+    public void ThePopulationGateDecidesFirstWithCraftsmenCounted(string ruleset, int population, bool done)
+    {
+        var s = AbsorbWith(LoadAbsorbIn(ruleset), population, 6, 4, 10);   // 10 of 10 employed
+        Assert.Equal(done, s.Objectives.ContainsKey("first_goal"));
+    }
+
+    // R-OBJ-004 and R-CITY-005 (#1714 Done-when: "The same employment aggregate feeds the objective and the cohesion link"):
+    // above the gate and with no overflow, the objective completes exactly when the cohesion link's employed share
+    // (Cities.EmployedShare) is at least the objective's 40%. Two cities, so the sums cross cities. Both rulesets.
+    [Theory]
+    [InlineData(SaveGame.GddRuleset)]
+    [InlineData(SaveGame.Gdd03Ruleset)]
+    public void TheObjectiveAndTheCohesionLinkReadTheSameEmployment(string ruleset)
+    {
+        var c = LoadAbsorbIn(ruleset);
+        var cases = new[] { (3, 2, 1, 2, 1, 1), (3, 2, 2, 2, 3, 2), (5, 0, 1, 0, 5, 4), (1, 9, 4, 0, 0, 0), (4, 1, 3, 1, 4, 1) };
+        var outcomes = new List<bool>();
+        foreach (var (civA, crA, empA, civB, crB, empB) in cases)
+        {
+            var s = Simulation.NewGame(c, 1, Mode.Historical);
+            s.Population = new Dictionary<string, double> { ["veterans"] = 1500 };
+            s.Cities.Clear();
+            s.Cities["town_a"] = new City("town_a", 100, 100, civA, empA, 0, craftsmen: crA);
+            s.Cities["town_b"] = new City("town_b", 100, 100, civB, empB, 0, craftsmen: crB);
+            var share = Cities.EmployedShare(s);
+            Objectives.Complete(c, s, c.Rules.Mvp!, D("1949-04-15"), new List<Cause>());
+            Assert.True(share >= 0.40 == s.Objectives.ContainsKey("first_goal"),
+                $"{ruleset} {(civA, crA, empA, civB, crB, empB)}: share {share} but objective {s.Objectives.ContainsKey("first_goal")}");
+            outcomes.Add(s.Objectives.ContainsKey("first_goal"));
+        }
+        Assert.Contains(true, outcomes);    // the cases cover both verdicts
+        Assert.Contains(false, outcomes);
+    }
+
     // R-OBJ-004 (#738): Q-ABS-2 as first recorded (no refugees waiting, overflow <= 10%, employed >= 40%) already
     // holds at the end of the real game's first turn, with nobody absorbed: the census start values are 41% employed with no
     // overflow (#738, issuecomment-6242964308). The population gate keeps the objective open.
@@ -676,7 +765,7 @@ eras:
 
     static string GddRules(string from, string to) => Fixture.Gdd()["rules.yaml"].Replace(from, to);
 
-    static string TwoOptions => Card + "  - id: refuse\n    text: Refuse\n    alternative: { basis: design }\n";
+    static string TwoOptions => Card.Replace("sources:", "  - id: refuse\n    text: Refuse\n    alternative: { basis: design }\nsources:");
 
     static string Objective(string from, string to) => ObjectivesYaml.Replace(from, to);
 
@@ -695,6 +784,10 @@ eras:
         new object[] { "objectives.yaml", Objective("card: first_card", "card: no_card"), Card, "objectives.yaml", "objectives[first_goal].card", "unknown event 'no_card'" },
         new object[] { "objectives.yaml", ObjectivesYaml, Card.Replace("objective: first_goal\n", ""), "events/first_card.yaml", "events[first_card].objective", "must be 'first_goal'" },
         new object[] { "objectives.yaml", ObjectivesYaml, TwoOptions, "events/first_card.yaml", "events[first_card].options", "exactly one option" },
+        new object[] { "objectives.yaml", ObjectivesYaml, Card.Replace("from: 1948-05-15", "from: 1948-06-15"), "events/first_card.yaml", "events[first_card].from", "opens at the game's start, or its era's (1948-05-15)" },
+        new object[] { "objectives.yaml", ObjectivesYaml, Card.Replace("to: 1957-01-01", "to: 1956-12-15"), "events/first_card.yaml", "events[first_card].to", "stays open to the game's end, or its era's (1957-01-01)" },
+        new object[] { "events/other.yaml", Card.Replace("id: first_card", "id: other").Replace("objective: first_goal\n", ""), Card.Replace("objective: first_goal\n", "objective: first_goal\nrequires: [{ event: other, option: continue }]\n"), "events/first_card.yaml", "events[first_card].requires", "waits for nothing but its objective" },
+        new object[] { "objectives.yaml", ObjectivesYaml, Card.Replace("objective: first_goal\n", "objective: first_goal\nconditions: [{ indicator: morale, max: 0.9 }]\n"), "events/first_card.yaml", "events[first_card].conditions", "waits for nothing but its objective" },
         new object[] { "objectives.yaml", "objectives: []\n", Card, "events/first_card.yaml", "events[first_card].objective", "unknown objective 'first_goal'" },
         new object[] { "objectives.yaml", Objective("site_built: site_a", "site_built: nowhere"), Card, "objectives.yaml", "objectives[first_goal].completes_when.site_built", "unknown site 'nowhere'" },
         new object[] { "objectives.yaml", Objective("reference_date: 1949-06-12", "reference_date: 1949-06-08"), Card, "objectives.yaml", "objectives[first_goal].reference_date", "must be 1949-06-12, the founding date of site 'site_a'" },
@@ -740,7 +833,9 @@ eras:
         Assert.All(after.Skip(1), o => { Assert.False(o.Done); Assert.Null(o.Completed); });
     }
 
-    /// <summary>#1187: an objective's Hebrew name loads beside the English, agent-checked until a native read (#564).</summary>
+    /// <summary>#1187: an objective's Hebrew name loads beside the English, agent-checked until a native speaker, or an
+    /// AI-assisted contributor who discloses it, has read it (#564; owner, 4 November 2026:
+    /// "AI-assisted can clear it").</summary>
     [Fact]
     public void TheHebrewNameLoadsBesideTheEnglish()
     {

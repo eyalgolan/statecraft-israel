@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Isolated gdd-0.3 map authoring envelope",
-  "description": "R-MEDIT-001/002/003: legacy format is unchanged. The explicit gdd-0.3 envelope is authoring infrastructure only, not runtime content or a validation receipt. Registry ids require owning validators; canonical export is blocked until those contracts are integrated. Offset units and base manifest remain deferred.",
+  "description": "R-MEDIT-001/002/003: legacy format is unchanged. The explicit gdd-0.3 envelope is authoring infrastructure only, not runtime content or a validation receipt. Registry ids require owning validators; canonical export is blocked until those contracts are integrated. Offsets are an axial hex plus whole metres east and north of its centre (Q59). The base manifest remains deferred.",
   "definitions": {
     "hex": {
       "type": "object",
@@ -107,7 +107,8 @@
     "overlay",
     "workable",
     "regions",
-    "infrastructure"
+    "infrastructure",
+    "offsets"
   ],
   "properties": {
     "version": {
@@ -201,6 +202,42 @@
           "parent_id": {
             "type": "string",
             "pattern": "^[^\\s\\u0000-\\u001f\\u007f]+(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    "offsets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "hex",
+          "east_m",
+          "north_m"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "visual",
+              "label"
+            ]
+          },
+          "hex": {
+            "$ref": "#/definitions/hex"
+          },
+          "east_m": {
+            "type": "integer"
+          },
+          "north_m": {
+            "type": "integer"
           }
         }
       }

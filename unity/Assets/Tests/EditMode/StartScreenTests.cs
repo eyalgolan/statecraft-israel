@@ -210,6 +210,36 @@ public class StartScreenTests
         return store;
     }
 
+    // #2707 item 3: the start-up notes (here an unreadable autosave) stay in the toast when the recording fails to play,
+    // the failure line sits under them, and pressing the button again takes only that line away.
+    [Test]
+    public void ARecordingFailureIsAddedToTheStartNotesAndGoesWithTheNextPress()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "statecraft-start-" + Guid.NewGuid().ToString("N"));
+        temp.Add(dir);
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, SaveStore.AutosaveName), "not a save");
+        var store = new SaveStore(dir);
+        using var ui = new RenderedUi();
+        var notes = new List<string>();
+        var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, notes, Text, out var resumed), Text);
+        using var toast = new ToastPresenter(ui.Root, bridge, Text);
+        toast.Show(notes);                                              // as GameRoot, once the screens are ready
+        Assert.IsNotEmpty(notes);
+        var label = ui.Q<Label>("toast");
+        var start = label.text;
+        StringAssert.StartsWith("Your saved game could not be loaded", start);
+        var fails = true;
+        using var recording = new DeclarationRecording(ui.Root, Text, toast.RecordingFailed,
+            (url, done) => { if (fails) done(null, "no network"); return new NoAnswer(); }, retry: toast.RecordingRetried);
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("^RECORDING failed"));
+        ui.Press("start-listen");
+        Assert.AreEqual(start + "\n" + Text["start.recording_failed"], label.text, "the notes stay, the failure is added");
+        fails = false;
+        ui.Press("start-listen");                                       // the retry
+        Assert.AreEqual(start, label.text, "the failure line goes with the retry; the notes stay");
+    }
+
     /// <summary>Ben-Gurion's recording (docs/declaration-recording.md) plays only from its own button: never when the screen
     /// opens, never on Continue or New Game; the screen closing stops it.</summary>
     [Test]
@@ -290,6 +320,21 @@ public class StartScreenTests
         Assert.IsTrue(rig.Start.IsOpen);
     }
 
+    /// <summary>#2710: the recording plays over the still painting only (docs/declaration-recording.md), so the report
+    /// panel opening over the screen stops it, although the start screen stays open under the panel.</summary>
+    [Test]
+    public void TheReportButtonStopsTheRecording()
+    {
+        using var rig = new Rig(TempStore());
+        using var feedback = new FeedbackPresenter(rig.Ui.Root, null, "0.1.0 / content ab12");
+        rig.Ui.Press("start-listen");
+        Assert.IsTrue(rig.Recording.Playing, "precondition: its button plays it");
+        rig.Ui.Press("start-report");
+        Assert.IsTrue(feedback.IsOpen);
+        Assert.IsTrue(rig.Start.IsOpen, "the start screen stays under it");
+        Assert.IsFalse(rig.Recording.Playing, "the panel covers the painting: the recording stops");
+    }
+
     [Test]
     public void ContinueShowsOnlyWithASaveAndLoadsIt()
     {
@@ -333,7 +378,9 @@ public class StartScreenTests
         rig.Ui.Press("start-new-game");
         Assert.IsFalse(rig.Start.IsOpen);
         Assert.AreEqual(0, rig.Bridge.State.Turn, "a new game");
-        Assert.IsFalse(File.Exists(store.AutosavePath), "the abandoned save is gone");
+        Assert.IsTrue(File.Exists(store.AutosavePath), "the replacement game is saved immediately");
+        var resumed = GameStart.Begin(C, store, () => 1UL, new List<string>(), Text);
+        Assert.AreEqual(rig.Bridge.State.Hash(), resumed.State.Hash());
         Assert.IsFalse(rig.Start.Resumed);
     }
 
@@ -451,60 +498,58 @@ public class StartScreenTests
     /// <summary>#400: a turn-1 save keeps the build buttons disabled anyway, so the test above cannot see them. With a save
     /// from after August 1950, a selected hex and an event waiting, the build buttons and the event's options are live, and
     /// still none of them takes the focus under the start screen.
-    /// Built in GameRoot's order: the HUD, ScreenNav, the info panel and the event card, then the screen.</summary>
+    /// Booted through GameRoot.Begin: the HUD, ScreenNav, the info panel and the event card, then the screen.</summary>
     [UnityTest]
-    public IEnumerator ASaveFrom1950KeepsTheLiveHudOutOfReach()
+    public IEnumerator AContinuedGameBootKeepsTheLiveHudOutOfReach()
     {
-        var legacy = SimBridgeGddTests.Legacy;   // the live Build buttons are the legacy loop's (R-PROJ-004)
-        var g = GameSession.New(legacy, 9, Mode.Historical);
-        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(legacy, g.State));
+        var g = GameSession.New(Inputs.Content, 9, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0)
+            g.Step(HistoricalAI.Commands(Inputs.Content, g.State));
         var store = TempStore();
         store.WriteAutosave(g.Save.Write());
-        using var ui = new RenderedUi();
-        var bridge = new SimBridge(GameStart.Begin(legacy, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
-        var owned = new List<IDisposable>();
-        try
+        var root = OpenScene(store);
+        root.Begin(Inputs, 0, startScreen: true);
+        var ui = Ui;
+        var offers = (from hex in Inputs.Content.Hexes
+                      where hex.Land
+                      where !Inputs.Content.SettlementHexes.Any(x => x.Q == hex.Q && x.R == hex.R
+                          && root.Bridge!.State.Cities.ContainsKey(x.Id))
+                      from city in Projects.CitiesFor(Inputs.Content, root.Bridge!.State, hex.Q, hex.R)
+                      from kind in Inputs.Content.ProjectKinds
+                      where Projects.CheckCityReason(Inputs.Content, root.Bridge!.State, kind.Id, city, hex.Q, hex.R) == null
+                      select (hex, kind)).ToList();
+        Assert.IsNotEmpty(offers, "precondition: the continued current-ruleset state has a build action");
+        var offer = offers[0];
+        root.Info!.Show(offer.hex.Q, offer.hex.R);
+        for (int i = 0; i < 4; i++) yield return null;
+        Assert.GreaterOrEqual(root.Bridge!.State.Date, new DateTime(1950, 8, 1), "precondition: the 1950 save is continued");
+        var build = ui.Q<Button>("city-project-" + offer.kind.Id);
+        Assert.IsNotNull(build, "precondition: the eligible current-ruleset city-project build action exists");
+        Assert.IsTrue(build.enabledSelf && build.resolvedStyle.display != DisplayStyle.None,
+            "precondition: the current-ruleset city-project build action is enabled and visible");
+        Assert.IsNotNull(ui.Q("event-options").Q<Button>(), "precondition: an event's options are shown");
+        void NoneReachable(string where)
         {
-            ui.Root.Q("root").RemoveFromClassList("loading");
-            owned.Add(new HudPresenter(ui.Root, bridge, Text));
-            owned.Add(new ScreenNav(ui.Root));
-            var info = new InfoPanelPresenter(ui.Root, bridge, Text, legacy.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
-            var card = new EventCardPresenter(ui.Root, bridge, Text, null); owned.Add(card);
-            var toast = new ToastPresenter(ui.Root, bridge, Text); owned.Add(toast);
-            var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 5UL); owned.Add(newGame);
-            var tlv = legacy.SettlementHexes.Single(x => x.Id == "tel_aviv");
-            info.Show(tlv.Q, tlv.R);
-            var start = new StartScreenPresenter(ui.Root, newGame, resumed); owned.Add(start);
-            start.Show();
-            for (int i = 0; i < 4; i++) yield return null;
-            Assert.IsTrue(resumed, "precondition: the 1950 save is continued");
-            var build = ui.Q<Button>("build-camp");
-            Assert.IsTrue(build.enabledSelf && build.style.display.value == DisplayStyle.Flex, "precondition: build-camp is live: " + ui.Q<Label>("info-reason").text);
-            Assert.IsNotNull(ui.Root.Q("event-options").Q<Button>(), "precondition: an event's options are shown");
-            void NoneReachable(string where)
-            {
-                foreach (var region in new[] { "top-bar", "right-column", "info-panel", "event-layer" })
-                    foreach (var b in ui.Root.Q(region).Query<Button>().ToList())
-                    {
-                        Assert.IsFalse(b.canGrabFocus, $"{where}: {region} {b.name} cannot take the focus under the start screen");
-                        b.Focus();
-                        Assert.AreNotSame(b, ui.Root.focusController?.focusedElement, $"{where}: {region} {b.name} is not focused");
-                    }
-            }
-            NoneReachable("under the start screen");
-            ui.Press("start-continue");
-            yield return null; yield return null;
-            // The waiting event's card opens in the middle (decision cards) and takes the focus (review S1); its options are
-            // in reach, the panels under its backdrop are not; Hide gives them back.
-            yield return null;
-            Assert.AreSame(ui.Root.Q("event-card"), ui.Root.panel.focusController.focusedElement, "the event card has the focus once the screen closes");
-            Assert.IsTrue(ui.Root.Q("event-options").Q<Button>().canGrabFocus, "the event's options are in reach once the screen closes");
-            Assert.IsFalse(build.canGrabFocus, "the info panel waits under the decision card's backdrop");
-            card.Collapse();
-            yield return null;
-            Assert.IsTrue(build.canGrabFocus, "the build button is back once the card is hidden");
+            foreach (var region in new[] { "top-bar", "right-column", "info-panel", "event-layer" })
+                foreach (var b in ui.Q(region).Query<Button>().ToList())
+                {
+                    Assert.IsFalse(b.canGrabFocus, $"{where}: {region} {b.name} cannot take the focus under the start screen");
+                    b.Focus();
+                    Assert.AreNotSame(b, ui.focusController?.focusedElement, $"{where}: {region} {b.name} is not focused");
+                }
         }
-        finally { for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose(); }
+        NoneReachable("under the start screen");
+        UiTestKit.Press(ui.Q<Button>("start-continue"));
+        yield return null; yield return null;
+        // The waiting event's card opens in the middle (decision cards) and takes the focus (review S1); its options are
+        // in reach, the panels under its backdrop are not; Hide gives them back.
+        yield return null;
+        Assert.AreSame(ui.Q("event-card"), ui.panel.focusController.focusedElement, "the event card has the focus once the screen closes");
+        Assert.IsTrue(ui.Q("event-options").Q<Button>().canGrabFocus, "the event's options are in reach once the screen closes");
+        Assert.IsFalse(build!.canGrabFocus, "the info panel waits under the decision card's backdrop");
+        root.Card!.Collapse();
+        yield return null;
+        Assert.IsTrue(build.canGrabFocus, "the build button is back once the card is hidden");
     }
 
     // --- Layout ------------------------------------------------------------------------------------------------------
@@ -627,6 +672,69 @@ public class StartScreenTests
                 Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
             }
         }
+    }
+
+    /// <summary>#2340 L5: the English lines and the source line stay at 4.5:1 or more over the brightest pixel of the panel
+    /// behind them, where the painting's lit hats show through, at the audit's 1568x752 window. One frame is rendered with
+    /// those lines' text hidden, so each line's rect holds only the panel over the painting; its brightest pixel is set
+    /// against the line's resolved colour (both sRGB: the target is an sRGB texture, read back encoded). The rect spans the
+    /// panel's width, wider than the glyphs, so this is the worst case on purpose.</summary>
+    [UnityTest]
+    public IEnumerator TheSecondaryLinesKeep4p5To1OverTheBrightestPaintingBehindThem()
+    {
+        const int W = 1568, H = 752;
+        using var ui = new RenderedUi(W, H);
+        var store = WithSave(TempStore(), 1);
+        var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
+        var toast = new ToastPresenter(ui.Root, bridge, Text);
+        var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 5UL);
+        var start = new StartScreenPresenter(ui.Root, newGame, resumed);
+        var tex = new Texture2D(W, H, TextureFormat.RGBA32, false);
+        try
+        {
+            ui.Root.Q("root").RemoveFromClassList("loading");
+            start.Show();
+            var lines = new[] { "start-en-proclamation", "start-en-date", "start-source" };
+            for (int i = 0; i < 20 && (float.IsNaN(ui.Root.Q("start-panel").worldBound.width) || ui.Root.Q("start-panel").worldBound.width <= 0); i++) yield return null;
+            for (int i = 0; i < 4; i++) yield return null;      // the band height is set from the first layout
+            var ink = lines.ToDictionary(n => n, n => ui.Q<Label>(n).resolvedStyle.color);
+            foreach (var n in lines) ui.Q<Label>(n).style.color = Color.clear;
+            for (int i = 0; i < 3; i++) yield return null;
+            RenderTexture.active = ui.Doc.panelSettings.targetTexture;
+            tex.ReadPixels(new Rect(0, 0, W, H), 0, 0); tex.Apply();
+            RenderTexture.active = null;
+
+            static float Lum(Color c)
+            {
+                static float Lin(float v) => v <= 0.04045f ? v / 12.92f : Mathf.Pow((v + 0.055f) / 1.055f, 2.4f);
+                return 0.2126f * Lin(c.r) + 0.7152f * Lin(c.g) + 0.0722f * Lin(c.b);
+            }
+            var window = ui.Root.panel.visualTree.worldBound;
+            float sx = W / window.width, sy = H / window.height;
+            var report = new List<string>();
+            float worst = float.MaxValue;
+            foreach (var n in lines)
+            {
+                var r = ui.Root.Q(n).worldBound;
+                Color brightest = Color.black;
+                for (int y = Mathf.FloorToInt(r.yMin * sy); y < Mathf.CeilToInt(r.yMax * sy); y++)
+                    for (int x = Mathf.FloorToInt(r.xMin * sx); x < Mathf.CeilToInt(r.xMax * sx); x++)
+                    {
+                        var p = tex.GetPixel(x, H - 1 - y);                     // ReadPixels row 0 is the bottom
+                        if (Lum(p) > Lum(brightest)) brightest = p;
+                    }
+                float ratio = (Lum(ink[n]) + 0.05f) / (Lum(brightest) + 0.05f);
+                worst = Mathf.Min(worst, ratio);
+                report.Add($"{n} {ratio:0.00}:1 over {(Color32)brightest}");
+            }
+            TestContext.Out.WriteLine(string.Join("; ", report));
+            // The fallback .start-screen background (--navy-deep, about 0.0045) must not pass for the painting, or the
+            // samples above are panel over navy and the ratios come out too easy: a lit painting pixel is well above 0.02.
+            var top = Lum(tex.GetPixel(W / 2, H - 20));
+            Assert.Greater(top, 0.02f, $"the painting was drawn at the top of the window (luminance {top:0.0000}; navy-deep alone is about 0.0045)");
+            Assert.GreaterOrEqual(worst, 4.5f, string.Join("; ", report));
+        }
+        finally { Object.DestroyImmediate(tex); start.Dispose(); newGame.Dispose(); toast.Dispose(); }
     }
 
     /// <summary>#530: a player build shows "Replay the opening" in the start row between New game and Star on GitHub
@@ -840,7 +948,7 @@ public class StartScreenTests
         var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), text, out var resumed), text);
         var toast = new ToastPresenter(root, bridge, text);
         var newGame = new NewGamePresenter(root, bridge, store, toast, text, () => 5UL);
-        var recording = new DeclarationRecording(root, text, toast.Show, (url, done) => new NoAnswer());   // as GameRoot
+        var recording = new DeclarationRecording(root, text, toast.RecordingFailed, (url, done) => new NoAnswer(), retry: toast.RecordingRetried);   // as GameRoot
         var start = new StartScreenPresenter(root, newGame, resumed, null, recording, text);
         var at = hebrew ? "Hebrew 390x844" : "English 390x844";
         Application.logMessageReceived += Capture;

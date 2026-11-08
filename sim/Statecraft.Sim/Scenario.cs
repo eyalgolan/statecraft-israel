@@ -23,7 +23,8 @@ namespace Statecraft.Sim
     /// set_mobilization (level), security_order (delta), appoint (office, person), map_action (action, q, r), assign_workers
     /// (city, role, count), train (city, track, count), cancel_training (cohort), return_craftsmen (city, count), reassign_craftsmen (city, count), reassign_pioneers (city, track, count), pioneer_work (unit, action, site), stop_work
     /// (unit), move (unit, q, r; GDD content only), unit_order (unit, order, and q, r for an attack; GDD content only). A turn with no
-    /// scripted command passes; events nobody answered are delegated, as in the game. A command the sim rejects fails the run.</summary>
+    /// scripted command passes; events nobody answered are delegated, as in the game. Instant commands run before deferred
+    /// commands in each turn, as in live play. A command the sim rejects fails the run.</summary>
     public sealed class Scenario
     {
         public string Name { get; set; } = "";
@@ -125,19 +126,50 @@ namespace Statecraft.Sim
             return (int)v;
         }
 
-        /// <summary>Plays the scenario and returns the final state. Fails with the date, the order and the sim's reason when a command is rejected.</summary>
+        /// <summary>An operation card's unit order the sim refused (R-ENEMY-005), not a command of the scenario's.</summary>
+        static bool CardRefusal(Rejection j) => j.Reason == Orders.RefusedCardOrder || j.Reason == Orders.RefusedLastGarrison;
+
+        /// <summary>Plays the scenario and returns the final state. Fails with the date, the order and the sim's reason when a command is rejected.
+        /// An operation card's refused unit order (R-ENEMY-005, <see cref="Orders.RefusedCardOrder"/>) is not one of the scenario's
+        /// commands: the 7th Brigade's Hiram order is refused in every run while the ALA holds al-Malikiyya (#2087). Nor is one
+        /// held back to keep the last unit on an occupied place (<see cref="Orders.RefusedLastGarrison"/>).</summary>
         public GameState Play(Content c)
         {
             var s = Simulation.NewGame(c, Seed ?? GoldenRun.Seed, Mode.Historical);
             var pending = Steps.OrderBy(x => x.OnDate).ToList();
+            var scriptedThrough = Steps.SelectMany(step => step.Built.Select(command => (step.OnDate, Unit: command is Move m
+                    ? (int?)m.Unit : command is UnitOrder o ? o.Unit : null)))
+                .Where(x => x.Unit.HasValue).GroupBy(x => x.Unit!.Value)
+                .ToDictionary(g => g.Key, g => g.Max(x => x.OnDate).AddMonths(1));
             for (int turn = 0; turn < 1000 && s.Date < UntilDate && s.GameOver == null; turn++)
             {
-                var now = new List<Command>();
+                // The scenario is the player: stage the historical/recommended operation choice with ordinary go-to orders.
+                // Let an explicitly scripted movement and its following turn finish first, then return that unit to the
+                // automated plan. After this turn's scripted commands are appended, preview the combined player queue so an
+                // operation whose last unit arrives now is answered now rather than delegated.
+                var now = HistoricalAI.OperationMoves(c, s, e => e.Options.FirstOrDefault(o => o.Historical)
+                    ?? e.Options.FirstOrDefault(o => o.Recommended) ?? e.Options[0])
+                    .Where(x => x is not UnitOrder o || !scriptedThrough.TryGetValue(o.Unit, out var through) || s.Date > through).ToList();
                 while (pending.Count > 0 && pending[0].OnDate <= s.Date) { now.AddRange(pending[0].Built); pending.RemoveAt(0); }
-                var r = Simulation.Step(c, s, now);
-                if (r.Rejected.Count > 0)
+                now = now.Where(Simulation.IsInstant).Concat(now.Where(x => !Simulation.IsInstant(x))).ToList();
+                var staged = Simulation.Preview(c, s, now).State;
+                var operationChoices = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id))
+                    .Select(e => (Event: e, Option: e.Options.FirstOrDefault(o => o.Historical)
+                        ?? e.Options.FirstOrDefault(o => o.Recommended) ?? e.Options[0]))
+                    .Where(x => x.Option.RequiresUnitRegions.Count != 0 && EventSystem.OperationStatus(c, staged, x.Option).Met)
+                    .Select(x => (Command)new ChooseEventOption(x.Event.Id, x.Option.Id));
+                var attention = c.UsesAttention ? staged.Attention : double.PositiveInfinity;
+                foreach (var choice in operationChoices)
                 {
-                    var x = r.Rejected[0];
+                    var cost = c.UsesAttention ? AttentionSystem.Cost(c, s, choice.Kind) : 0;
+                    if (cost > attention + 1e-9) continue;
+                    attention -= cost;
+                    now.Add(choice);
+                }
+                var r = Simulation.Step(c, s, now);
+                if (r.Rejected.Any(j => !CardRefusal(j)))
+                {
+                    var x = r.Rejected.First(j => !CardRefusal(j));
                     throw new InvalidOperationException($"scenario '{Name}': on {s.Date:yyyy-MM-dd} the sim rejected {x.Command.Kind} ({Describe(x.Command)}): {x.Reason}");
                 }
                 s = r.State;

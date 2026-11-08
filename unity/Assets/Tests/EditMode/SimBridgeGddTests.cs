@@ -36,6 +36,29 @@ public class SimBridgeGddTests
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static SimBridge Bridge(Content c) => new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), Text);
 
+    [Test]
+    public void ReplaceClearsThePreviousBatchDate()
+    {
+        var bridge = Bridge(Slice);
+        bridge.EndTurn();
+        bridge.Replace(GameSession.New(Slice, GoldenRun.Seed, Mode.Historical));
+        Assert.AreEqual(default(System.DateTime), bridge.LastBatchDate);
+    }
+
+    [Test]
+    public void AFailedEndTurnClearsThePreviousBatchDate()
+    {
+        var calls = 0;
+        var bridge = new SimBridge(GameSession.New(Slice, GoldenRun.Seed, Mode.Historical), Text,
+            (session, commands) => ++calls == 1
+                ? session.EndTurn(commands)
+                : throw new System.ArgumentException("refused by the test"));
+        bridge.EndTurn();
+        Assert.AreNotEqual(default(System.DateTime), bridge.LastBatchDate, "the successful turn records its date");
+        bridge.EndTurn();
+        Assert.AreEqual(default(System.DateTime), bridge.LastBatchDate);
+    }
+
     /// <summary>R-TURN-004: a Move given through the bridge shows at once (State), and End turn keeps it.</summary>
     [Test]
     public void AMoveShowsAtOnce()

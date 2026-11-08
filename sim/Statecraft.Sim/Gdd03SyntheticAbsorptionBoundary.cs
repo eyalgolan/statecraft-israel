@@ -14,7 +14,9 @@ namespace Statecraft.Sim
         /// Regional aggregation and monthly-versus-end-state sampling are deliberately outside this contract.
         /// Empty valid pairs satisfy their subcondition. Invalid inputs throw rather than defaulting.
         /// Current catalogue quantities must be single Agreed whole numbers; later fractional design values
-        /// require a reviewed contract extension. Calling this does not record completion or choose its date.</summary>
+        /// require a reviewed contract extension. Calling this does not record completion or choose its date.
+        /// The waiting flag is kept for callers but never blocks the result: the MVP has no reception-bed layer (owner,
+        /// 1 November 2026, #1696: "No reception-bed layer (Recommended)") and option (a) of #738 has no waiting clause.</summary>
         public static bool HoldsForSyntheticSettledFacts(
             Gdd03BalanceCatalogue catalogue,
             long representedOwnUnits,
@@ -42,7 +44,6 @@ namespace Statecraft.Sim
             // Exact unbounded integer products; 100 is the definition of percent, not a balance default.
             // No rounded shares, binary floating point, text formatting, RNG or state mutation.
             return new BigInteger(representedOwnUnits) * peoplePerUnit > populationTarget
-                && !hasRefugeeAwaitingLegalBed
                 && new BigInteger(ordinaryOverflow) * 100 <= new BigInteger(ordinaryDemand) * maxOverflow
                 && new BigInteger(employedFreeCivilians) * 100 >= new BigInteger(allFreeCivilians) * minEmployment;
         }

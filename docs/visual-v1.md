@@ -45,7 +45,7 @@ models on them. New models and visual PRs are judged against these four referenc
 - Headed frame time: `uv run tools/headed.py profile --dpr 1` (`--dpr 2` is the fill-rate stress proxy). `--wait-unity`
   also waits for an interactive Unity editor that has any worktree open (it holds `unity/Temp/UnityLockfile`): close it,
   or the profile waits.
-- Screenshots: `tools/art_checkpoint.sh [--no-build] [--units] <name>` (WebGL `?shot` + editor renders of both tiers + side-by-side
+- Screenshots: `tools/art_checkpoint.sh [--no-build] [--units] [--borderproof] <name>` (WebGL `?shot` + editor renders of both tiers + side-by-side
   images and their deuteranopia/protanopia copies under `captures/visual/<name>/`, git-ignored; rows in the main
   checkout's `captures/visual/art-log.tsv` with the branch, short commit and the image's absolute path). It refuses to run
   while `QualitySettings.asset` (and, when it builds, `unity/Assets/Settings` or `ProjectSettings.asset`) has unstaged
@@ -53,6 +53,8 @@ models on them. New models and visual PRs are judged against these four referenc
   worktree's build target WebGL -> OSXUniversal (editor renders) and back at the next build, a reimport each way: budget
   a few minutes per checkpoint. `--units` adds the units (`docs/units.md`): `&units` on the WebGL shots and
   `-units` on the editor renders. That shows both the unit art slice and the units in play as a new game starts.
+  `--borderproof` adds the region borders' synthetic proof pattern (see "Region borders") to the editor renders only (a
+  release WebGL build ignores `&borderproof`); its art-log rows are named `<name>-borderproof`.
   Normal play draws the units in play, but a `?shot` run switches them off unless `&units` is given
   (`UnitLayer.HiddenInCaptures`), and the editor draws them only with `-units`. So plain checkpoints never show units, and
   the `--units` rows are named `<name>-units`, so they are never compared with plain ones.
@@ -745,7 +747,7 @@ beyond budget + the larger spread.
 | Baked shading texture | block-compressed | block-compressed | review minor 9: recorded, not changed (mobile browsers are outside the 1920x1080 target) |
 | WebGPU, GPU Resident Drawer, compute | not used | not used | research notes 2.1 (an M5 evaluation) |
 | Weak GPU | SwiftShader run passes golden and shots | — | `captures/visual/t10-swiftshader` (both GOLDEN OK lines and SHOT done; gameplay03 saturation / contrast / warmth 0.5656 / 0.1960 / 0.0773 against the GPU's 0.5655 / 0.1960 / 0.0771) |
-| Runtime quality fallback (issue #44) | on | off | see "Runtime quality fallback" below: when the frame-time p95 stays over the 30 fps floor, render scale 1.0 -> 0.9 -> 0.8, then the tilt-shift off; back up in reverse |
+| Runtime quality fallback (issue #44) | on | off | see "Runtime quality fallback" below: when the frame-time p95 stays over the 30 fps floor, render scale 1.0 -> 0.9 -> 0.8, then the tilt-shift off, then the town building models' far-off copies without shadows at every zoom; back up in reverse |
 
 Colour after the decisions (WebGL `?shot`, t10-tiers against t-merge-r3): diorama02 saturation 0.4694 -> 0.4686, contrast
 0.2034 -> 0.2032, warmth 0.1045 -> 0.1038 (bars: warmth 0.087-0.145, saturation <= 0.48); gameplay03 saturation 0.5646 ->
@@ -767,9 +769,14 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
 (pure logic) and `QualityFallbackDriver` (feeds it `Time.unscaledDeltaTime`, applies its step), attached by
 `CameraRig.Init` through the map's teardown like the visual toggles.
 - **Steps:** level 0 is the tier (scale 1.0, tilt-shift on); 1: scale 0.9; 2: scale 0.8 (the research's 0.8-1.0 dynamic
-  range, notes 2.3); 3: scale 0.8 and the tilt-shift off. One step per decision, up in reverse. The scale is the active
+  range, notes 2.3); 3: scale 0.8 and the tilt-shift off; 4 (v0.3.7): as 3, and the town building models draw their far-off
+  copies without shadows at every zoom (`TownModelLayer.LowTier`), the 30 km opening too. Since v0.3.5 the opening sits
+  below the close switch (40 km), so the originals and their shadows draw from the first frame; the nightly's start-screen
+  p95 on its software GPU went from 35-88 ms (v0.3.4) to 320-690 ms (v0.3.5, v0.3.6). The opening and the switch stay;
+  only a device still over the floor after step 3 loses the originals. One step per decision, up in reverse. The scale is the active
   URP asset's `renderScale` (never above the tier's own); the tilt-shift uses its own `TiltShift.FallbackOff`, so stepping
-  up never turns on a tilt-shift the player (`?notiltshift`) or a profile turned off. The map's teardown puts both back.
+  up never turns on a tilt-shift the player (`?notiltshift`) or a profile turned off. The map's teardown puts all three
+  back, and a fixed quality choice clears the last two.
 - **Window: 3 s, back to back, one decision each.** The p95 of a 3 s window is over only when at least 5% of its frames
   are (5 of 90 at 30 fps), so a one-off hitch (End Turn's redraw, a GC, a first shader compile) never trips it and a real
   shortfall does within 3 s. Nothing is measured in the first 3 s after the map is built, or 0.5 s after each change; a
@@ -788,23 +795,26 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
   capture target (its renders and `-vprofile` must show the tier's own look), and in the editor a scale change would
   change the URP asset. Even on WebGL it stays off under `?vprofile`, `?profile` and `?shot` (instruments that must see the
   tier as configured) and with `?nofallback`; every change logs `QUALITY level=<n> scale=<s> tiltshift=<on|off>
-  p95_ms=<ms>`.
+  towns=<close|far> p95_ms=<ms>`.
 - **The player's quality choice (#40).** Automatic in Settings is this behaviour. High (the PC tier at render scale 1.0)
   and Low (the Mobile tier at 0.8) fix the quality: the fallback holds while one is set (`QualityFallbackDriver.Feed`),
   and every switch starts it again from the top (`GraphicsQuality.Changed`).
-- **Presentation only:** it reads no sim state and writes only the render scale and the tilt-shift flag, so turns, hashes
-  and saves cannot change. The goldens and the 5-turn smoke match with it in the build: `uv run tools/web_check.py
-  unity/Builds/Web-disabled --query "golden&smoke=5"` with the three `--expect` values from `docs/determinism.md`: PASS.
+- **Presentation only:** it reads no sim state and writes only the render scale, the tilt-shift flag and the towns' low
+  tier, so turns, hashes and saves cannot change. The goldens and the 5-turn smoke match with the original #44 fallback
+  in that build: `uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&smoke=5"` with the three
+  `--expect` values from `docs/determinism.md`: PASS. This is #44's evidence; the v0.3.7 step changes no sim code.
 - **Tests** (`QualityFallbackTests`, EditMode, synthetic frame times): the step order and range, one step per window and
   not before a full window, nothing during start-up, hitches, a pause and 33/34 ms frames do not trigger, recovery in
   reverse only after 3 good windows, the dead band holds and restarts the count, a failed step up doubles the wait (capped);
   integration: no driver in the editor; with the web tier's answer forced, `MapScene.Build` attaches one, its steps reach
-  the URP asset and `TiltShift.FallbackOff` (not `TiltShift.Enabled`), and a rebuild or teardown removes it and restores the
-  scale.
-- **In a real browser** (headed Chrome for Testing, ANGLE Metal, 1920x1080 at DPR 1, under `machine_lock.py --exclusive
-  --wait-unity`, a scratch CDP script on `headed.Browser`): 30 s idle at `--cpu 1`, no `QUALITY` line. With CPU throttling
-  at 20x from t = 30 s: `QUALITY level=1 scale=0.90 tiltshift=on p95_ms=97.00`, `level=2 scale=0.80 tiltshift=on
-  p95_ms=97.00`, `level=3 scale=0.80 tiltshift=off p95_ms=107.00` (level 3 at t = 39.6 s). Throttling lifted at t = 49.6 s:
+  the URP asset, `TiltShift.FallbackOff` (not `TiltShift.Enabled`) and `TownModelLayer.LowTier`, and a rebuild or teardown
+  removes it and restores the scale and the town originals. `TownModelResidencyTests` checks that the low tier at the
+  opening draws Tel Aviv's far copies with no shadow casters, and that clearing it puts the originals back.
+- **Original #44 evidence in a real browser (predates the `towns=` field and level 4):** headed Chrome for Testing,
+  ANGLE Metal, 1920x1080 at DPR 1, under `machine_lock.py --exclusive --wait-unity`, a scratch CDP script on
+  `headed.Browser`: 30 s idle at `--cpu 1`, no `QUALITY` line. With CPU throttling at 20x from t = 30 s:
+  `QUALITY level=1 scale=0.90 tiltshift=on p95_ms=97.00`, `level=2 scale=0.80 tiltshift=on p95_ms=97.00`,
+  `level=3 scale=0.80 tiltshift=off p95_ms=107.00` (level 3 at t = 39.6 s). Throttling lifted at t = 49.6 s:
   `level=2 ... tiltshift=on p95_ms=17.00`, `level=1 scale=0.90`, `level=0 scale=1.00` (t = 77.4 s, about 9.5 s apart), then
   no line in the next 15 s. At DPR 2 (the fill-rate stress proxy, frame rate uncapped) 60 s idle: no `QUALITY` line, as the
   DPR-2 p95 (20 ms at diorama02) is under the floor.
@@ -1014,15 +1024,15 @@ from the Civ-like prototype's sheet (`captures/pr-1794`, `civ-borders/sheet.png`
 otherwise. Next to main's look, A2's bands keep their weight when the camera pulls out (no far fade); the colour stripe
 is never under 6 px, the light stripe 1 px and the wash 12 px, measured across the edge so they hold under the tilt.
 Both sides wash alike at 0.45, falling as 1 - x squared, so the wash holds well into the hex and reaches a quarter of
-its inradius (about 1,080 m); a light tint of the region's colour covers the territory, 0.12 up close and rising to
-0.25 at the overview. Band plus wash never pass half the inradius, so a far hex is not filled by its outline. The
+its inradius (about 953 m on 4.4 km hexes); a light tint of the region's colour covers the territory, 0.12 up close and rising to
+0.25 at the overview. Since #2431 the stronger tier's two sides also glow ("Issue #2431", below). Band plus wash never pass half the inradius, so a far hex is not filled by its outline. The
 neutral grey keeps its 0.14 wash and its dashes, never shorter than 8 px. The other variants stay selectable for
 comparison: `?bordervariant=legacy` in the WebGL URL (or `-bordervariant legacy` on desktop and in the editor) draws
 main's earlier look exactly, and `a`, `b`, `c`, `b2` and `c2` draw the prototype's other variants; anything else draws A2
 (`MapBorders.VariantRequested`). The paragraphs below describe the drawing every variant shares; their widths, wash
 strengths and the 2 px floor are Legacy's.
 
-**What is drawn.** `MapBorders` (C#) bakes one texel per hex (`RegionHexes`, RGBA8 linear, point-sampled, 47 x 58: r + 256 g
+**What is drawn.** `MapBorders` (C#) bakes one texel per hex (`RegionHexes`, RGBA8 linear, point-sampled, 54 x 66 on the current `hexes.json`: r + 256 g
 the region id, b the style; since issue #195, a's low six bits say which edges border another region) and sets the
 globals; `StatecraftBorders.hlsl`'s `ScBorderApply`, called last in the terrain
 function, draws the band along each edge whose neighbour is in another region. A pixel farther from its hex's edges than
@@ -1140,7 +1150,7 @@ the game's start: the Administrative Divisions (Amendment) Proclamation, 1947 (P
   480 px (`.map-layer`, was 160 px), so the longest label is three lines, checked beside a real event card at seven window
   shapes (`ArmisticeTests.TheLongestMapLabelFitsBesideTheEventCard`). The sub-district layer stays as the base
   while the lines leave gaps. A line is visible as a band only where it bounds a zone or is the Mandate frontier; at
-  5-km hexes two of the three Syrian DMZ parts take no hex (true-polyline overlay: #237).
+  4.4-km hexes two of the three Syrian DMZ parts take no hex (true-polyline overlay: #237).
 
 **Shared edges and the far line (refs #196, `.superpowers/borders-routes-r1/PLAN.md` B1 and B3).** Every sub-district
 is Primary, so where two meet both drew their full band: blue, white, white, blue, about 11-13 px across at gameplay03
@@ -1271,10 +1281,14 @@ D-C (owner-verify).
   renderer takes (`RegionLayer`). Every entry is submitted `fact-checked`; the owner sets `sensitivity-reviewed` before a
   shareable build (chapters design §13).
 - *Limits of the renderer's data seam (review M8), for the data work to plan around:*
-  1. Two drawn styles (Primary, Secondary) plus None. The 1949 lines set Israel against four neighbours; with two styles
-     the four share the red-orange band (the texel's style takes b's low two bits since the shared edges, so one more style fits; each new style needs colours that stay
-     apart for colour-blind players, so it is a design task, not a constant). Districts may want a neutral third style.
-  2. One layer at a time: districts and armistice lines cannot show together.
+  1. No longer true as written: there are now three drawn styles plus None, `Neutral = 3` (a grey band: contested,
+     no-man's land, a demilitarized zone, or the 1947 sub-districts before any side is sourced; owner ruling 2026-10-14;
+     `MapBorders.BorderStyle`). Originally two (Primary, Secondary): the 1949 lines set Israel against four neighbours,
+     and the four still share the red-orange band. The texel's style takes b's low two bits, which the four values now
+     fill, so a further style needs more bits as well as colours that stay apart for colour-blind players (a design task,
+     not a constant).
+  2. No longer true: layers do show together. `MapRegions` keeps the Mandate sub-districts as the base and draws each
+     front's 1949 armistice zones over them from the date that front switches (`unity/Assets/Scripts/Map/MapRegions.cs`).
   3. Styles are per region, not per edge: an edge's look comes from the regions on its two sides.
   4. Hex snapping moves a line by up to half a hex (see the owner decision below).
   Follow-up: more styles or per-edge styles when the data and the owner's ruling on snapping need them.
@@ -2066,7 +2080,9 @@ place carries on; Lydda and Ramle for the game settlements `lod` and `ramla`; Ne
 - **Labels:** smaller pills (`.map-label-locality`), only nearer than 40 km (`MapLabelsPresenter.LocalityDistanceM`), placed
   after every game settlement with the same declutter rules.
   - Hovering one shows its tooltip, in the UI's language (`ui.lang`).
-  - Touch and keyboard players have no route to the tooltip yet (#245).
+  - A touch tap on a pill shows it, and a second tap on the same pill, or a tap anywhere else, hides it (#245;
+    `MapLabelsPresenter.Tap`, called from `GameRoot`). Keyboard players still have no route to it: only a hovering
+    pointer or a touch reaches the pills.
 - **Units in play (review I5, merged with #250):** the unit tokens keep off the villages and camps as they keep off the
   game towns.
   - The units are placed before the kits are built, since their clearings feed the kit build. So
@@ -2892,9 +2908,9 @@ It describes the windows as small and recessed, not ribbon windows. The strips f
   that ignores `_ScTiltShiftNear` (near 0.19-0.33: the three render tests) and the near strength applied to both bands
   (far 0.34 at 60 km, 1.00 at diorama02: three render tests); the C# curve held at 1, or not reaching 0 at the
   overview, fails the unit test.
-- **Quality fallback.** Unchanged: `TiltShift.Draws` still needs `!FallbackOff`, so the fallback's last step still turns
-  both bands off (`QualityFallbackTests` pass). The pass draws as before whenever the tilt-shift is on, even where the near
-  band is 0, so frame time does not depend on the new strength.
+- **Quality fallback.** Unchanged: `TiltShift.Draws` still needs `!FallbackOff`, so level 3 and every lower-quality step
+  still turn both bands off (`QualityFallbackTests` pass). The pass draws as before whenever the tilt-shift is on, even
+  where the near band is 0, so frame time does not depend on the new strength.
 - **Fill rate.** Headed `?vprofile` at DPR 2 (`headed.py profile --dpr 2`), main, branch, branch, main under one
   `machine_lock.py --exclusive --wait-unity`, 2026-10-14. The machine was loaded by other sessions (load 6-13), so the
   spreads are 1.5-7 ms. diorama02 `all`: main 41.81 / 33.81 ms, branch 41.09 / 39.46; `none`: main 28.02 / 23.97, branch
@@ -2999,8 +3015,9 @@ It describes the windows as small and recessed, not ribbon windows. The strips f
 
 ## HUD round 1: the info panel and the gilt trim (#398, #397)
 
-Art-track gap 4, first step. The gap list and the later steps (the minimap and settlement badges; the top bar and card
-head, which wait for owner rulings) are in the issue.
+Art-track gap 4, first step. The gap list and the later steps (the minimap; the top bar and card head, which wait for
+owner rulings) are in the issue. The settlement badge, the population tier in a city's or town's pill, has shipped:
+owner-approved as shipped (#710, 18 October 2026, "Accept as shipped"; `MapLabelsPresenter.TierClass`).
 - The info panel: before a hex is chosen it is a one-line hint (promo 03 shows no panel until a tile is chosen). The
   hex's facts are icon rows with gold signs (`UiIcon` region, house, village, flag): the region, the settlements, the 1948
   localities and the placement. There are no yields (owner ruling) and no land-use name, because the land-use bake is
@@ -3526,3 +3543,157 @@ Captures and colour-blind comparison images were retained locally with hashes. L
 are in-engine captures at the source above; right panels are the existing AI-generated promo references,
 not gameplay. Pending: a person's look at judea30 and the transport anomaly noted above. No simulation hash,
 human review flag, licence declaration or release gate changed.
+
+## Issue #2431: brighter, glowing borders at the gameplay zoom
+Branch `visual/2431`, on #2427's lighting. The band's width was not the gap: at gameplay03 A2 draws about 10 px against the promo's 8. The colour was: the blue stripe's saturation was 0.44 against the promo's 0.59 (72,114,176), and nothing marked the band as lit.
+
+- **What changed.** On A2, B2 and C2 (the stronger tier; Legacy, A, B and C are as they were): a brighter orange edge stripe, `_ScBorderStripe2` (sRGB 0.92, 0.37, 0.14), while the blue stripe stays the owner's ruled blue (`Primary`'s colour; C2 keeps its own blue; see "The owner's blue" below), and a halo along the inside of the light stripe (`_ScBorderGlow`: pale blue 0.66, 0.78, 0.97 and warm 1.02, 0.57, 0.22, opacity 0.72 at the stripe, falling as a square over 320 m, at least 6 px). Grey does not glow, so contested ground stays flat and dashed. The tint and wash keep `Style.Colour`.
+- **Why a split colour.** A brighter `Colour` also brightens the fill. At gameplay03 the fill at the new colours gave rose +4 -> +7, land warmth 0.232 -> 0.248, saturation 0.426 -> 0.435 and palette distance 0.308 -> 0.345, though its hue came nearer the promo (27.9 -> 26.5). With the stripe apart from the fill, the land's numbers do not move. B2's rim is drawn from the stripe colour, so on the orange side it follows the brighter stripe.
+- **Why in the shader.** Bloom is a full-screen pass and #2427 kept it off. The halo is drawn in the wash's room: no fetch (`TheBordersReadOneTexelAPixel`), no wider reach (it is never wider than the wash, `GlowWidthPx`, so the early-out stays exact, `TheEarlyOutIsExactInEveryVariant`, and a far hex whose wash has given way has no glow). Not under the stripes or a rim.
+- **The tint is not the golden gap.** Editor frames at gameplay03, composited with the UI, one session, the same state, the projection at 16:9 (the rig sets `cam.aspect`: #2882); the crop as in "Issue #38: grade retune". #2427's hypothesis was that the tint explains much of what is left. It does not:
+
+| Land at gameplay03 | hue | rose | saturation | palette distance |
+|---|---|---|---|---|
+| promo | 26.6 | +5 | 0.364 | |
+| as played (tint 0.12, wash 0.45) | 27.9 | +4 | 0.426 | 0.308 |
+| tint 0.06 | 28.2 | +4 | 0.424 | 0.305 |
+| tint 0 | 28.4 | +3 | 0.423 | 0.303 |
+| tint 0, wash 0.25 | 28.5 | +3 | 0.423 | 0.305 |
+| borders off | 32.9 | -5 | 0.407 | 0.309 |
+
+  (The issue's 0.40 is the Primary style's own strength; A2 draws 0.45, `StrongWashStrength`.) Taking the tint away moves the hue half a degree, away from the promo, takes 0.003 off the saturation and 0.005 off the distance. With the borders off the land is further from the promo on hue, rose and distance, and nearer on saturation (0.407): the territory colour helps the hue and costs some saturation; the distance barely moves. The tint and wash stay as they were; the rest of the gap is not the borders (hypothesis: the land and town art).
+- **Rendered (`TheStripesGlowAtGameplay03`, proof edge on the coastal plain).** Old colours against the first fit (blue stripe 0.26, 0.40, 0.61, since withdrawn): blue stripe saturation 0.45 -> 0.52, orange stripe value 0.79 -> 0.91, the glow's lift over the far wash -0.003 -> 0.130 (blue) and -0.015 -> 0.074 (orange). The two halos stand 38.3 apart under simulated deuteranopia and protanopia at worst (bar 15), and `ColourBlindPlayersTellTheStylesApartInEveryVariant` passes on every variant, Neutral included.
+- **The owner's blue.** The first fit's brighter blue stripe took `ThePrimaryStripeIsTheDeeperBlueOfTheRuling` from 2.6 to 8.8 deltaE76, past the owner's #519 bound ("bring the stripe back to about 3 deltaE76 of the ruled blue or less", above). Retuned on the owner's ruling of 7 Nov 2026 (relayed by the coordinator): the blue stripe is `Primary`'s ruled colour again on every tier and the halo carries the Israeli side's glow; the test now asserts the bound (`md <= 3`) for the default, stronger tier. Expected about #2427's 2.6, since the stripe colour is #2427's again: **to be measured** (the halo's first pixel may still count in the stripe's read). With it, `TheStripesGlowAtGameplay03`'s blue saturation bar is the ruled blue's: 89,119,156 has HSV saturation (156-89)/156 = 0.429, so the bar is at least 0.42 (the tightest under it), in place of 0.50; the bars on the blue and orange halo lifts, the halos' colour-blind distance and the orange stripe's value are unchanged. The numbers in "Rendered" above and in "WebGL `?shot`" below are the first fit's, **to be measured** again.
+- **WebGL `?shot`, against #2427's final values.** Gameplay03: land mean (145, 115, 87), hue 28.9, saturation 0.422, whole-frame warmth 0.091 and palette distance 0.32 on both sides. Overview: sand 0.347 -> 0.348, sea -0.237 -> -0.239, both inside their bands; Negev clipped 0.088% on both. `art_checkpoint.sh` passed: goldens, shots and material guards.
+- **Cost: NOT MEASURED.** `?vprofile` needs `machine_lock.py --exclusive`, which the lanes may not take. From the source: on every land pixel of a drawn region, two colour selects, a max and a lerp; inside the band's branch, the halo (a division, a min, a max, a square). No fetch, pass or variant. That is an argument, not a number. Boot: NOT MEASURED. Web build, uncompressed: 567,916 KB by `du` (`wasm` 65,096 KB, `data` 36,072 KB); only a shader and C# changed, no asset.
+- **Colour-blind copies.** In the deuteranopia copy of gameplay03 the blue reads clearly; the orange reads as a pale yellow band, near the land's own hue on the plain and carried by its contrast. The rendered bars above pass; a player's eye on it is the owner's call.
+- **Readability.** Looked at in composited frames, before and after: label pills, the map legend, English and Hebrew; a Move pick (#2201's lit hexes) over the Jordan Valley front: its fill and outline draw over the bands, as before. The sea and the Negev are unchanged by eye and in the numbers (`TheSunlitDesertDoesNotClip`: 0.00%).
+
+## Issue #2427: second lighting and grade pass (warm golden land, sea held)
+Branch `visual/2427`. The issue called the land flat khaki next to promo 03. Measured on main at the gameplay pose, in WebGL, the land's means are already near the promo's. What differs is the spread: the promo's lit ground runs wider (hue 15-40 degrees) and its shade is greyer, ours sits in a narrow terracotta band with a pink cast. Much of that band in the frame is the territory tint of the 15 May 1948 control layer (`_ScBorderTint`), which the editor's `MapCapture.Promo` does not draw: orange-red over the hills, blue over the Israeli plain, which turns its fields lilac-grey. That tint is the borders lane's (#2431), not the grade's. Hypothesis, not tested: most of what is left between this pass and the promo's hills is the tint and the land's own colours.
+
+- **What changed.** `MapLighting`: sun 1.6 -> 1.8, colour (1.00, 0.84, 0.64) -> (1.00, 0.83, 0.63), the fill about a tenth lower, as colours (0.47, 0.54, 0.65), (0.43, 0.415, 0.38), (0.235, 0.20, 0.155). `MapGrade`: contrast 18 -> 20, and a `ColorCurves` with three LUT curves: `HueVsHue` (terracotta up, greens down, to gold), `HueVsSat` (the land, and a narrow band at the sea's own hue), `LumVsSat` (dark tones 9% less saturated). Post exposure 0.45, vignette 0.26 / 0.45, temperature, tint, split toning and global saturation are untouched. The sun's elevation and azimuth are unchanged (27 degrees changed the picture little; the land bake's bush shadows follow azimuth 285).
+- **Why hue curves.** #38 found one global grade cannot warm the land and keep the sea. No hue moves at the sea or the stripes, so that limit does not apply. The ambient does not reach the water (`ScWaterShade` reads the sun, not the SH). The sun does: a stronger sun lights the sea with its colour, and the first version of this pass took gameplay03's open sea from warmth -0.202 to -0.187, the #38 failure (found in review; the changelog then wrongly said the sea stayed). The fix is a saturation band at the sea's own hue, 8% at 0.57-0.592 ending at 0.606, short of the ruled stripe, with the sun's blue back near main's (0.63) and less dark-tone desaturation. A band to 0.615 pushed the stripe to 3.1 deltaE76. All three curves are inputs to the same LUT: no pass and no shader variant added. Keys are flat (zero tangents): smoothed tangents overshot into the sea's hue and took 0.011 off its luma.
+- **Bloom.** Not brought back. In the editor, LDR bloom 0.2 above 0.8 moved the gameplay land's luma by 0.003 and the Negev's mean by about 3/255 against the same grade without it: nothing a player would see, so no cost run was needed. SSAO was not tried (Tier decisions: metre radius cannot reach km relief).
+
+WebGL `?shot`, 1920x1080, main `5f8fa9fcd` against this grade on `14fcb0c3b` plus these values; crops as in "Issue #38: grade retune":
+
+| | promo | main | this grade |
+|---|---|---|---|
+| g03 land mean colour | (130, 104, 84) | (143, 114, 89) | (145, 115, 87) |
+| g03 land luma / p5 / contrast | 0.425 / 0.145 / 0.187 | 0.464 / 0.148 / 0.179 | 0.468 / 0.147 / 0.188 |
+| g03 land saturation / warmth | 0.364 / 0.181 | 0.404 / 0.212 | 0.422 / 0.230 |
+| g03 land hue, rose index | 26.6, +5 | 27.2, +5 | 28.9, +2 |
+| g03 open sea luma / p5 / warmth | 0.351 / 0.295 / -0.248 | 0.326 / 0.273 / -0.202 | 0.329 / 0.273 / -0.206 |
+| whole frame saturation / contrast / warmth, g03 | 0.37 / 0.196 / 0.078 | 0.40 / 0.174 / 0.080 | 0.42 / 0.179 / 0.091 |
+| palette distance g03 / d02 | | 0.32 / 0.53 | 0.32 / 0.49 |
+| d02 sand / sea warmth (bands [0.304, 0.456] / [-0.312, -0.208]) | 0.380 / -0.260 | 0.319 / -0.225 | 0.347 / -0.237 |
+| d02 Negev mean colour, pixels clipped in the crop | (190, 156, 128) | (201, 169, 113), 0.016% | (205, 170, 111), 0.088% |
+| d02 table mean colour | | (59, 44, 31) | (58, 44, 34) |
+
+- **What held it back.** A stronger first fit (sun 1.8, fill a quarter lower, land saturation 0.476 in the editor, against 0.401 on main) read more golden but failed five existing tests. No test or threshold was changed for this; the values were brought back until they pass: olive crown saturation 0.431 (bar 0.37), `TheBeachIsWide...` luma 0.685 (bar 0.72), `TheBakesCarveTheRelief` ratio 1.06 (bar 1.08), a neutral band's colour-blind distance 14.6 (bar 15) and the A2 wash 1.29 (bar 1.3). The beach's luma floor is why the land stays as bright as main's, 0.468 against the promo's 0.425. If the owner wants the stronger look, these are the bars to revisit: that is a design call, not a tuning step.
+- **Readability.** Editor renders at the gameplay pose: `ThePrimaryStripeIsTheDeeperBlueOfTheRuling` 2.6 deltaE76 (main 2.1, the #519 bound about 3), `TheSunlitDesertDoesNotClip` 0.00% in the Negev and at gameplay03, olive crown saturation 0.356 (bar 0.37). `TheLandReadsGoldenAndTheSeaHolds` guards the sea at gameplay03 in the editor: luma at least main's 0.368 and warmth at most main's -0.218 (it fails on the first version, -0.208). The editor read the second attempt as level with main while WebGL still read 0.005 greyer, so that guard is a floor, not proof: the WebGL number above is the one to trust.
+- **Board mode (`?hex-tiles`).** `HexLook` multiplies the sun by 1.22 (2.196 now, 1.952 on main) and sets saturation +30 over these curves. `HexBoardCapture.Run -board tel_aviv -boardOnly`, 1920x1080, in the editor on both sides: no pixel of the board at or over 0.995 in any channel on either side; mean board colour (136, 151, 57) -> (160, 154, 38), so its greens go more yellow, saturation 0.776 -> 0.802. The local ground textures are absent here, so this is the flat-colour fallback, not the textured board, and `HexLook` was not changed.
+- **HUD.** The top bar and date plate are pixel-identical between the two WebGL shots at gameplay03 (mean difference 0.00-0.01/255); the translucent help bar and legend move by 0.3 and 0.85/255 on average, and the minimap's frame by about 0.8/255 where map shows through. English and Hebrew composited frames were looked at, before and after. Label pills were looked at, not measured.
+- **Cost: NOT MEASURED.** `?vprofile` needs `machine_lock.py --exclusive` and the lanes may not take it. By construction only LUT inputs changed (as in #38), but that is an argument, not a number; the sun and ambient are uniforms. Boot: NOT MEASURED. The web build, uncompressed, is 555 MB on both sides by `du`; `wasm` 65,092 KB and `data` 36,072 KB on this branch.
+- **Seen, not changed.** Close views (hero06negev) show contour bands on the terrain before and after; not caused by this pass.
+
+## Issue #2428: one shared atlas for the town kits
+The kits drew vertex colours and a procedural window pattern. They now also sample one shared atlas,
+`unity/Assets/Art/Kits/kit_atlas.png`, painted by `asset-sources/kit-atlas/make_kit_atlas.py` (`uv run`; no input files, no
+image model, same bytes every run). It is a 4 x 4 sheet of 512 px cells imported as one `Texture2DArray` (16 layers), so a cell
+tiles and has its own mipmaps with no bleeding. The cells: five facades (White City, stone, hill village, mud plaster, moshava),
+plaster, ashlar, rubble, roof tile, flat roof, ribbon glass, balcony rail, corrugated iron, planks, and two spare white ones.
+- **Mesh:** the vertex layout, the meshes and the one material are as before, so no town gains a draw (`KITS ... draws=65` before
+  and after). The colour's alpha is now the surface, `KitMesh.Facade`: the layer + 1, times 17. uv0 is in cells; on a facade v
+  counts storeys, and `Kit.shader` lays out one ground storey under three repeating ones. A facade wall counts whole bays, so a
+  corner never cuts a window, and starts at a phase hashed from its position, so no random stream moves. Plain (trees, boats,
+  tents, the ma'abara's patched sheet) has no cell.
+- **Light:** the atlas is albedo only. Stains and street dust are dirt in the colour, not shadow; `KitAtlasTests` checks that a
+  solid cell has no brighter side. The shader's old contact darkening at a wall's foot stays.
+- **Far off:** mipmaps replace the window pattern's box filter; a wall fades to its mean with no moire. The atlas is
+  sampled with explicit gradients taken outside the branch, because `fwidth` inside it is undefined on WebGL 2.
+- **Ribbon windows** start one storey up, so the ground storey shows the facade's doors and shop.
+- **Size:** the build's `.data` gzips (level 6, the player built with `-compression disabled`) 1,316,744 bytes larger, about 3.2%
+  of the download, so the PR carries a nightly size budget line.
+- **Frame time, not measured to this document's standard:** `?vprofile` needs the exclusive lock, which this lane did not take. A
+  run under the shared lock at load 11-16, main against the branch, read gameplay03 23.53 -> 22.12 ms (spreads 2.93, 3.93) and
+  diorama02 25.78 -> 28.03 ms (spreads 1.56, 2.98): a noisy reading, not a cost.
+
+## Issue #2877: a plowed field or drained swamp on its hex's ground
+
+The owner's answer on #2812 was "Ground change only", so a built field or a drained swamp has no kit and no pill and the
+hex's ground shows it. `SiteGroundLayer` drapes one mesh per site over the terrain (about 2,100 vertices), drawn by
+`Statecraft/SiteGround` after the ground and before the roads, in the order of `HulaPapyrusLayer`: `GameRoot` calls it on
+every `Changed`, it reads `State.Sites`, and it builds a mesh only for a site that changed, so a loaded save draws its own.
+A repaint of `_ScBiomeTex` was rejected: it is one map-wide upload, which would fall on End turn. A zero-area mesh draws from
+the first frame, meant to keep the shader's first draw off the End turn that finishes the first site (measured below).
+The look is a design value (no field layout or crop is sourced): seeded parcels of ploughed earth, young crop and stubble with
+pale tracks; a drained swamp is dark earth with straight canals. The patch keeps off water, off ground that rises over 45 m
+(world) round a vertex and off the inner 70% of every locality's footprint, and it fades out short of the hex's edge, so the
+grid and the region borders stay on top. A hex with both the swamp and its field shows the field.
+
+Cost, on a WebGL build (`Build.Web -compression disabled`), `?vprofile` under the **shared** machine lock on a busy machine
+(load 4-9), so these are not the "How to measure" idle numbers. A throwaway patch, never committed, built seven sites and
+limited the run to `all` against `-siteground` at the poses below, 3 interleaved runs of 300 frames each:
+
+| Pose | `all` ms (spread) | `-siteground` ms (spread) | cost ms |
+|---|---|---|---|
+| Beit Kama, 60 km | 21.94 (3.43) | 21.66 (0.31) | +0.28 |
+| Beit Kama, 15 km | 19.89 (0.47) | 20.14 (0.16) | -0.25 |
+| Beit Kama, 6 km | 16.14 (0.24) | 16.36 (0.16) | -0.22 |
+| Hula, 6 km | 15.27 (0.52) | 15.91 (0.19) | -0.64 |
+| gameplay03 | 25.27 (0.20) | 25.41 (0.29) | -0.14 |
+
+All are inside the 2.5 ms budget and within this busy machine's noise, so they say "no measurable cost here", not a number. The
+first run at the first pose (24.85 ms, p95 48) is the 3.43 spread; the two runs after it were 21.42 and 21.94 ms.
+Not measured: the same run under the exclusive lock.
+
+Time on the main thread, on a WebGL build at `220a7d0a9` with a throwaway timing patch, never committed, under the shared lock
+(load about 6-9), six page loads. Each field was left one turn from done in `State.Sites`, and the sim finished it in a real
+`SimBridge.EndTurn`, with the camera on the fields at 31 km:
+
+| Step | `ShowAt` ms |
+|---|---|
+| The first field (one mesh plus `PlacementLayer.CampGround`) | 2.5-5.3 |
+| Each later field (one mesh) | 0.9-1.5 |
+| `SimBridge.Replace` with seven built fields, four of them new meshes | 3.4-4.3 |
+
+So one mesh is about 1 ms; seven new at once would be about 7 ms by that rate, not measured. The End turn around it took
+668-2,253 ms with or without a field (`EndTurn` alone, on controls and on field turns alike), so that freeze is not this layer's.
+The load was the `Replace` path with a session whose sites were set by hand, not a save file read from disk.
+
+The warm mesh: three runs with it and three without (`sgnowarm` in the throwaway patch) gave the same frames after the first
+field's End turn, the worst of the next 12 being 416-441 ms with it and 417-478 ms without, on this Mac's Chrome (ANGLE over
+Metal). Two controls without a field had a 601-621 ms frame in five of the six runs, so that spike is not traced to the field. The
+later fields' worst frame was 74-127 ms against about 50 ms on the control turn, with or without the warm mesh and outside
+`ShowAt`; the cause is not traced. So the warm mesh shows no gain here; its use on other GPU drivers is not measured.
+
+With #2884 (the border glow) merged locally, the 60 km stills of Beit Kama and Mefalsim show the blue and white stripes whole: the patch
+stops inside them. It does cover the wash inside the hex where a parcel lies.
+
+## Issue #2878: ground detail and low 3D scrub between the towns
+
+**Survey (main `93cd2f174`).** Between the towns the only ground is `landuse.png`, 79 x 105 m a texel, so it reads as smooth
+colour at the 31 km opening and blurs at 12 km. The trees are 1,267 to 2,562 instances in view at 31 km and 779 to 1,464 at 12 km:
+large and far apart. Promo 03's land between its towns is covered with small bushes and worn ground.
+
+**Why not in the terrain shader.** That function sits at the cliff recorded under issue #391, and `land_bake.py` is outside this
+lane. So the paint is a pass of its own, `GroundDetail.shader`: a `Blend DstColor SrcColor` mesh in the queue right after the
+terrain, with one tiling texture (grain, bushes as a height field, their shadows, stones) built at boot.
+
+**Standing scrub.** `GroundScrub.shader`: one mesh of 1,089 bushes covers a 15 km tile and is drawn once for each tile in view,
+a few tile instances a frame, not one instance a bush. Its vertex shader stands each bush on a half-float height texture and shrinks to a
+point any bush whose rank is over the density. Its bushes stop at 55 m, under the 60 m lip of the smallest unit base (a compact
+token's), so a moved token covers them.
+
+**Where it grows (`StatecraftGroundDetail.hlsl`, shared).** By biome (`hexes.json`), the land-use weight (rainfall and slope
+from `land_bake.py`), the bake's curvature (thin in gullies) and a broad clump noise; along the land bake's painted hedges;
+off the towns, the routes and the units' start clearings (a keep-out texture); off the beaches and dune coasts; off drawn
+region borders. Biome scrub shares are design values. It adds no paths: the land round 2 ruling keeps tracks to the
+1946 Survey's roads. The shader-side bush shadow assumes `MapLighting.SunAzimuth` 285 degrees: if #2427 turns the sun, the
+offset in `GroundDetail.FillTexels` turns with it. A warmer or darker grade changes the multiply's result in proportion and
+is not expected to change its balance (hypothesis).
+
+**Tests that now switch the layers off.** `BorderTests.Open` and `TerrainShaderTests.TheBakesCarveTheRelief` measure bare
+stripes and bakes, so they switch both new toggles off, as they do the kits and trees. Their thresholds are unchanged.

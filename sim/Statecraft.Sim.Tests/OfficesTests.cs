@@ -35,7 +35,7 @@ public class OfficesTests
     {
         var offices = Fixture.Files["offices.yaml"] + "  - id: minister_2\n    title: Second Minister\n";
         var people = Fixture.Files["people.yaml"].Replace("      - office: prime_minister\n",
-            "      - office: minister_2\n        from: 1948-05-14\n      - office: prime_minister\n");
+            "      - office: minister_2\n        from: 1948-05-14\n        sources: [{ url: https://example.org/term, checked: 2026-10-18 }]\n      - office: prime_minister\n");
         var c = ContentLoader.Load(Fixture.Write(new System.Collections.Generic.Dictionary<string, string> { ["offices.yaml"] = offices, ["people.yaml"] = people }));
         Assert.Equal("Pm One speaks.", Offices.Fill(c, "{minister_2} speaks.", new DateTime(1949, 6, 1)));
     }

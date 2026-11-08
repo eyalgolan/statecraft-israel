@@ -296,7 +296,8 @@ namespace Statecraft.Sim
     /// <summary>A city project (projects.yaml; R-PROJ-001 to R-PROJ-003): <see cref="Kind"/> built for <see cref="City"/> on hex
     /// (<see cref="Q"/>, <see cref="R"/>) with <see cref="TurnsLeft"/> more turns to go, or, once <see cref="BuiltOn"/> is set,
     /// built on that date (its capacity, condition and slots added then, once). A built project keeps its record, so its hex
-    /// stays taken (Q-PROJ-2) and the map can draw it (Phase 3 PR 8). No workers (Q-PROJ-3); under gdd-0.3 at most one
+    /// stays taken (Q-PROJ-2) and the map can draw it (Phase 3 PR 8); a gdd-0.3 housing repair, which has no hex of its own,
+    /// leaves no record once done (R-HOUSE-006). No workers (Q-PROJ-3); under gdd-0.3 at most one
     /// builder (<see cref="Builder"/>, R-CITY-011). Immutable; a change replaces the record.</summary>
     public sealed class CityProject
     {
@@ -407,7 +408,7 @@ namespace Statecraft.Sim
         public string Id { get; }
         public IReadOnlyList<SegmentWork?> Segments { get; }
 
-        public CorridorWork(string id, SegmentWork?[] segments) { Id = id; Segments = (SegmentWork?[])segments.Clone(); }
+        public CorridorWork(string id, SegmentWork?[] segments) { Id = id; Segments = Array.AsReadOnly((SegmentWork?[])segments.Clone()); }
 
         /// <summary>The same corridor with segment <paramref name="index"/> (0-based) replaced; null when no segment is left
         /// with a record.</summary>

@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/b03b-jerusalem-external-stair-v2/b03b-jerusalem-external-stair-v2.fbx",
+    "source_sha256": "8983220ccbfc3525e333fb1c7c0866fee00351ed78fee3e52e8c7830a9cdc776",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/b03b-jerusalem-external-stair-v2/b03b-jerusalem-external-stair-v2_basecolor.jpg",
+    "colour_map_sha256": "51d1a1273f3f9f75d6e363be9c9e3729d9d29e8aa0ad4ac0339f1b07dee1be28",
+    "source_triangles": 6000,
+    "triangles": 399,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

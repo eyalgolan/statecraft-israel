@@ -42,8 +42,12 @@ namespace Statecraft.Game.UI
             return webgl ? Array.Exists(flags, f => Boot.UrlFlags.Has(url, f)) : Array.Exists(flags, f => Array.IndexOf(args, "-" + f) >= 0);
         }
 
-        public static bool ForcedOff() =>
-            ForcedOff(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
+        /// <summary>Test seam (internal; the tests see it through InternalsVisibleTo): an EditMode test cannot set the URL or the
+        /// command line, so it sets this to boot as the automated runs do, with no video. Reset it after the test.</summary>
+        internal static bool ForceOffForTests;
+
+        public static bool ForcedOff() => ForceOffForTests
+            || ForcedOff(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
 
         /// <summary>The clip's URL in the build's StreamingAssets/video folder, with the build's id on the web (issue #437).</summary>
         public static string Url(string file) => Boot.GameInputs.WithBuildId(Application.streamingAssetsPath + "/video/" + file, Application.buildGUID);

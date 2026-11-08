@@ -1,0 +1,15 @@
+{
+    "tool": "FarModelLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/generated-1948-04-dark-basalt-house/generated-1948-04-dark-basalt-house.fbx",
+    "source_sha256": "e2bc341f784d9ba436c183f3d081c1c65d8cb054c00fcd719e724531fd15f3f6",
+    "colour_map": "Assets/Art/Settlements/Prototype/Models/generated-1948-04-dark-basalt-house/generated-1948-04-dark-basalt-house_basecolor.jpg",
+    "colour_map_sha256": "4eb18455b5d2ec3281a4cd6346964ec0f3109e9dcf33252a9934caf6443e4d42",
+    "source_triangles": 5624,
+    "triangles": 399,
+    "target_triangles": 400,
+    "cell_px": 8,
+    "supersample": 3,
+    "sample_px": 512,
+    "atlas_px": 256,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX and colour map above) by FarModelLevels: a subset of the model's own vertices (exact positions, none added or moved) and a colour map baked from the original's. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger; lighter far-off derived copy; owner confirms Tal's permission, 3 Nov 2026 (#2378)."
+}

@@ -29,7 +29,24 @@
             }
           }
         }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "basis": { "enum": ["proposed", "debated"] },
+            "by": { "type": "string", "pattern": "^[^{}]*\\S[^{}]*$" },
+            "sources": { "minItems": 1 }
+          },
+          "required": ["by", "date", "sources"]
+        },
+        {
+          "properties": {
+            "basis": { "const": "design" },
+            "by": { "const": "" }
+          },
+          "not": { "required": ["date"] }
+        }
+      ]
     },
     "requirement": {
       "type": "object",
@@ -40,7 +57,18 @@
         "event": { "$ref": "#/definitions/id" },
         "option": { "$ref": "#/definitions/id" },
         "diverged": { "type": "boolean" }
-      }
+      },
+      "oneOf": [
+        {
+          "required": ["option"],
+          "properties": { "diverged": { "const": false } }
+        },
+        {
+          "required": ["diverged"],
+          "properties": { "diverged": { "const": true } },
+          "not": { "required": ["option"] }
+        }
+      ]
     },
     "variant": {
       "type": "object",
@@ -74,7 +102,7 @@
     "text": { "type": "string", "minLength": 1, "description": "May contain office placeholders. No invented quotes." },
     "title_he": { "type": "string", "minLength": 1, "description": "The title in Hebrew (#1064). An event with Hebrew text has title_he, text_he and every option's text_he, or none of them (the UI keeps the English). Same placeholders as the English." },
     "text_he": { "type": "string", "minLength": 1, "description": "The text in Hebrew (#1064): the English meaning, no added facts. Same placeholders as the English." },
-    "text_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of the event's Hebrew text (title_he, text_he and the options' text_he). agent-checked: an AI agent wrote or checked the text and no person has read it yet (CONTENT_POLICY section 2, rule 6; review in #564). Leave out once a native speaker has reviewed it." },
+    "text_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of the event's Hebrew text (title_he, text_he and the options' text_he). agent-checked: an AI agent wrote or checked the text and no person has read it yet (CONTENT_POLICY section 2, rule 6). Leave out once a native speaker, or an AI-assisted contributor who discloses it, has reviewed it (#564; owner, 4 November 2026: \"AI-assisted can clear it\")." },
     "tags": { "type": "array", "items": { "type": "string" }, "description": "holocaust, terror, massacre, war-casualties and displacement are sensitive. A displacement option cannot raise Money, Food, Arms, Social cohesion, International Support or score (R-EFX-007), and the event must be sensitivity-reviewed before release (R-GATE-001)." },
     "anchor": { "enum": ["hard", "soft"], "description": "Default soft. A hard anchor needs a historical option." },
     "office": { "$ref": "#/definitions/id", "description": "The office the event goes to when the player does not answer." },
@@ -82,6 +110,11 @@
     "site": { "$ref": "#/definitions/id", "description": "A swamp site (sites.yaml) whose works this event is about. In the GDD loop it fires only while that site is being worked; the legacy loop ignores it." },
     "prisoners": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "The front whose prisoners this exchange card returns (R-POW-004). It fires only while that front holds prisoners or the player's soldiers, and has exactly one option. Jordan's card also returns the Iraqi prisoners." },
     "deported": { "$ref": "#/definitions/id", "description": "A settlement target (settlement_targets.yaml) whose residents stayed. This Deport follow-up card fires only once the player's Deport has depopulated that place, carries the displacement tag and has exactly one option (R-EVT-007)." },
+    "front_quiet": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "The front of this armistice_<front> card, on that card only. Under gdd-0.3 the card may also come before its from, and again after a refusal, once that front is quiet (Armistice.MayOfferEarly), and then it takes the first soft slot (R-WAR-008, R-EVT-002)." },
+    "armistice_front": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "On an operation card or a following card only: the front whose signed armistice ends the card. A pending operation lapses once it is signed, and the card never first fires after it (R-ENEMY-007)." },
+    "follows": { "type": "boolean", "description": "Under the GDD loop: the card follows the decision its requires waits for, and fires on the turn after that decision even when its own window has closed, so a late operation still brings it (R-ENEMY-007). Needs requires." },
+    "late_text": { "type": "string", "description": "On a following card or an operation card only: the text shown when the card is shown after its own window has closed (a late follow-up, or an operation shown again while it waits), with no dates that would mislead (R-ENEMY-007)." },
+    "late_text_he": { "type": "string", "description": "late_text in Hebrew; required exactly when the card has Hebrew text (R-ENEMY-007)." },
     "order": { "type": "integer", "description": "Default 0. Among the cards that fire on the same turn with the same from, a lower order comes first, then the id (R-EVT-006). Set it only to put one card after another on purpose." },
     "from": { "$ref": "#/definitions/date", "description": "First day of the window." },
     "to": { "$ref": "#/definitions/date", "description": "End of the window (exclusive). Leave out for an open window." },
@@ -126,7 +159,7 @@
               }
             }
           },
-          "set_rung": { "type": "integer" },
+          "set_rung": { "type": "integer", "minimum": 1, "maximum": 5 },
           "set_policy": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }, "description": "Policy id to a level in [0, 1]." },
           "grant_units": {
             "type": "array",
@@ -159,11 +192,33 @@
               "else": { "properties": { "delta": { "type": "integer", "minimum": -2147483647, "maximum": 2147483647 } } }
             }
           },
+          "unit_orders": {
+            "type": "array",
+            "description": "R-ENEMY-005 (GDD loop, both gdd-0.1 and gdd-0.3): go-to orders for the unit of a map/units_1948.yaml row, toward one of that row's anchor hexes in map/unit_anchor_hexes.yaml, through the player's own go-to.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["unit", "q", "r"],
+              "properties": {
+                "unit": { "type": "string", "minLength": 1 },
+                "q": { "type": "integer" },
+                "r": { "type": "integer" }
+              }
+            }
+          },
+          "requires_unit_regions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "R-ENEMY-007: player-region ids. Every unit_orders row's starting unit must be in any one listed region before this military-operation option can resolve.",
+            "items": { "type": "string", "minLength": 1 }
+          },
           "unlock_projects": {
             "type": "array",
             "description": "R-EFX-008 (GDD loop only): projects.yaml ids of locked kinds this option makes available to StartProject. A sensitive event may not unlock (R-EFX-005).",
             "items": { "type": "string", "minLength": 1 }
           },
+          "debt_dollars": { "type": "number", "exclusiveMinimum": 0, "description": "R-EFX-009 (applied under gdd-0.3 only): US$ millions, more than 0, this option also adds to Debt, in IL millions at the mvp.il_per_dollar rate in force on the event's date." },
           "alternative": { "$ref": "#/definitions/alternative" }
         }
       }
@@ -182,7 +237,31 @@
       }
     },
     "status": { "enum": ["draft", "fact-checked", "historian-reviewed", "sensitivity-reviewed"], "description": "The review status. Default draft." },
-    "reviewed_by": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$", "description": "The GitHub handle of the person who signed this row off (#375): written only by that person, never by an AI agent (scripts/oss/reviewed_by_guard.py); never an email. Needs reviewed_on." },
+    "reviewed_by": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$", "description": "The GitHub handle of the person who signed this row off (#375): written only by that person, never by an AI agent on its own; an AI-assisted contributor's source check counts when the pull request discloses the AI help and says what was checked; an AI-co-authored commit never removes it (owner, 4 November 2026: \"Yes, it counts\", #2481 comment 6623108295; scripts/oss/reviewed_by_guard.py); never an email. Needs reviewed_on." },
     "reviewed_on": { "$ref": "#/definitions/date", "description": "The day of that sign-off. Needs reviewed_by." }
-  }
+  },
+  "oneOf": [
+    {
+      "required": ["title_he", "text_he"],
+      "properties": {
+        "options": {
+          "items": { "required": ["text_he"] }
+        }
+      }
+    },
+    {
+      "allOf": [
+        { "not": { "required": ["title_he"] } },
+        { "not": { "required": ["text_he"] } },
+        { "not": { "required": ["text_he_review"] } },
+        {
+          "properties": {
+            "options": {
+              "items": { "not": { "required": ["text_he"] } }
+            }
+          }
+        }
+      ]
+    }
+  ]
 }

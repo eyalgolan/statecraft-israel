@@ -127,6 +127,22 @@ public class MapOverridesTests
         Assert.Equal((1, 0), (s.Q, s.R));
     }
 
+    // #2512: a hex left without q or r is refused, not read as coordinate 0.
+    [Theory]
+    [InlineData("terrain:\n  - { hex: { r: 1 }, value: hills }\ncontrol: []\nlocations: []\n", "terrain[0].hex.q")]
+    [InlineData("terrain: []\ncontrol:\n  - { hex: { q: 1 }, period: opening, value: I }\nlocations: []\n", "control[0].hex.r")]
+    [InlineData("terrain: []\ncontrol: []\nlocations:\n  - { id: town_a, hex: { q: 2 } }\n", "locations[0].hex.r")]
+    public void TheLoaderRefusesAMissingCoordinate(string yaml, string field)
+    {
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string>
+        {
+            [MapOverrides.FileName] = yaml,
+        })));
+        Assert.Equal(MapOverrides.FileName, ex.File);
+        Assert.Equal(field, ex.Field);
+        Assert.Contains("required", ex.Message);
+    }
+
     [Fact]
     public void TheLoaderRejectsAnUnknownLocationNamingTheOverrideFile()
     {
@@ -153,7 +169,7 @@ public class MapOverridesTests
         + "base_revision: fixture-only\nbase_digest: "
         + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
         + "overlay: { terrain: [], control: [], locations: [] }\n"
-        + "workable: []\nregions: []\ninfrastructure: []\n";
+        + "workable: []\nregions: []\ninfrastructure: []\noffsets: []\n";
 
     [Fact]
     public void EditorEnvelopeRoundTripsWithoutEnteringTheLegacyParser()
@@ -180,6 +196,13 @@ public class MapOverridesTests
     [InlineData("workable: []", "workable: [{ hex: { q: 1 }, value: true }]", "MAPEDIT_SHAPE")]
     [InlineData("regions: []", "regions: [{ hex: { q: 1, r: 2 }, region_id: '' }]", "MAPEDIT_SHAPE")]
     [InlineData("infrastructure: []", "infrastructure: [{ id: fixture_only, hex: { q: 1, r: 2 }, kind: fixture_only, parent_id: fixture_only, capacity: 3 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []\n", "", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: badge, hex: { q: 1, r: 2 }, east_m: 0, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: Town, kind: label, hex: { q: 1, r: 2 }, east_m: 0, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 1.5, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1 }, east_m: 0, north_m: 0 }]", "MAPEDIT_SHAPE")]
+    [InlineData("offsets: []", "offsets: [{ id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 0, north_m: 0 }, { id: town_a, kind: label, hex: { q: 1, r: 2 }, east_m: 5, north_m: 5 }]", "MAPEDIT_DUPLICATE")]
     public void EditorShapeRefusalsHaveNamedErrors(string old, string replacement, string code)
     {
         var error = Assert.Throws<ContentException>(() =>
@@ -442,6 +465,17 @@ public class MapOverridesTests
         Assert.Equal(9, c.StartingForces[0].Q);
     }
 
+    // R-MEDIT-003 (#2309): the force-anchor adapter blocks a scripted anchor hex that is not land, naming its row and hex.
+    [Fact]
+    public void ASeaScriptedAnchorBlocksWithItsIdAndExactHex()
+    {
+        var c = DependencyFixture();
+        c.StartingForces[0].Script.Add((3, 0, new DateTime(1948, 7, 8)));
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("anchors[unit_a]", row.Field);
+        Assert.Equal("scripted anchor hex q=3 r=0 is not a land hex of the map", row.Message);
+    }
+
     [Fact]
     public void ABrokenTargetBindingBlocksWithItsId()
     {
@@ -453,6 +487,29 @@ public class MapOverridesTests
         Assert.Equal("targets[town_a]", row.Field);
         Assert.False(value.CanExport);
         Assert.Equal((0, 0), (c.SettlementTargets[0].Q, c.SettlementTargets[0].R));
+    }
+
+    // R-MEDIT-003 (#2309): the target adapter blocks a target hex that is not land, even while it still matches its settlement.
+    [Fact]
+    public void ASeaTargetBlocksWithItsIdAndExactHex()
+    {
+        var c = DependencyFixture();
+        c.SettlementHexes.Add(new SettlementHex { Id = "town_b", Q = 3, R = 0 });
+        c.SettlementTargets.Add(new SettlementTarget { Id = "town_b", Q = 3, R = 0 });
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("targets[town_b]", row.Field);
+        Assert.Equal("target hex q=3 r=0 is not a land hex of the map", row.Message);
+    }
+
+    // R-MEDIT-003 (#2309): a target with no settlement hex gets that one row, and no "no longer matches" row after it.
+    [Fact]
+    public void ATargetWithoutASettlementHexProducesOnlyItsExactDiagnostic()
+    {
+        var c = DependencyFixture();
+        c.SettlementTargets.Add(new SettlementTarget { Id = "ghost", Q = 1, R = 0 });
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("targets[ghost]", row.Field);
+        Assert.Equal("settlement 'ghost' has no hex", row.Message);
     }
 
     [Fact]
@@ -481,5 +538,115 @@ public class MapOverridesTests
         // A settlement moved onto the objective's yishuv site breaks that objective's site binding as well.
         var moved = Broken(DependencyDiagnostics(DependencyFixture(), "[{ id: town_a, hex: { q: 2, r: 0 } }]"));
         Assert.Contains(moved, x => x.Field == "objectives[objective_b]" && x.Message.Contains("site_a"));
+    }
+
+    // #2309: MapOverrides' objective dependency diagnostics inspect every SitesBuilt entry, not only SiteBuilt.
+    [Fact]
+    public void APluralSiteObjectiveBindingBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SitesBuilt = new List<string> { "site_a" } };
+        c.SettlementTargets.Clear();   // isolate the objective adapter from the target moved by this overlay
+        var row = Assert.Single(Broken(DependencyDiagnostics(c, "[{ id: town_a, hex: { q: 2, r: 0 } }]")));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("site 'site_a' hex q=2 r=0 now holds the settlement town_a", row.Message);
+    }
+
+    // #2309: in the objective dependency diagnostics, an unknown objective site produces one diagnostic and is not dereferenced.
+    [Fact]
+    public void AnUnknownObjectiveSiteBlocksOnceWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SiteBuilt = "no_site" };
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("unknown site 'no_site'", row.Message);
+    }
+
+    // #2309: in the objective dependency diagnostics, an objective site without the yishuv kind is diagnosed.
+    [Fact]
+    public void ANonYishuvObjectiveSiteBlocksWithItsId()
+    {
+        var c = DependencyFixture();
+        c.Sites.Add(new Site { Id = "site_b", Q = 1, R = 0, Kinds = new List<string> { "industry" } });
+        c.Objectives[1].CompletesWhen = new ObjectiveCondition { SiteBuilt = "site_b" };
+        var row = Assert.Single(Broken(DependencyDiagnostics(c)));
+        Assert.Equal("objectives[objective_b]", row.Field);
+        Assert.Equal("site 'site_b' cannot be built as a yishuv", row.Message);
+    }
+
+    // R-MEDIT-003 (#2309): the objective adapter skips an objective with no completion condition (no row, no exception).
+    [Fact]
+    public void AnObjectiveWithoutACompletionConditionNeedsNoDependencyDiagnostic()
+    {
+        var c = DependencyFixture();
+        c.Objectives.Add(new Objective { Id = "objective_c" });
+        Assert.Empty(Broken(DependencyDiagnostics(c)));
+    }
+
+    // R-MEDIT-004, Q58/Q59 (#1721 slice B): a visual or label offset is the axial hex plus whole metres east and north of
+    // its centre, valid while the point stays inside that 4.4 km pointy-top hex. Leaving it only warns. SYNTHETIC fixtures.
+    static MapEditorOverlay WithOffsets(string offsets) => MapEditorOverlay.Parse(
+        EditorFixture.Replace("draft: true", "draft: false").Replace("offsets: []", "offsets: " + offsets), SaveGame.Gdd03Ruleset);
+
+    static List<MapEditorDiagnostic> OutsideHex(MapEditorOverlay value) => value.Diagnostics("fixture-only", new string('a', 64))
+        .Where(x => x.Code == "MAPEDIT_OFFSET_OUTSIDE_HEX").ToList();
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(3810, 0)]       // just inside the flat east side (inradius 3810.5 m)
+    [InlineData(-3810, 0)]
+    [InlineData(0, 4400)]       // the north vertex
+    [InlineData(0, -4400)]
+    [InlineData(3000, 2000)]
+    public void AnOffsetInsideItsHexRoundTripsSaveAndReloadByteForByte(int east, int north)
+    {
+        var value = WithOffsets(System.FormattableString.Invariant(
+            $"[{{ id: town_b, kind: visual, hex: {{ q: 2, r: -1 }}, east_m: 7, north_m: -3 }}, {{ id: town_a, kind: label, hex: {{ q: 1, r: 2 }}, east_m: {east}, north_m: {north} }}]"));
+        Assert.Empty(OutsideHex(value));
+        var saved = MapEditorOverlay.Serialize(value);
+        Assert.Contains(System.FormattableString.Invariant(
+            $"offsets:\n  - {{ id: 'town_a', kind: 'label', hex: {{ q: 1, r: 2 }}, east_m: {east}, north_m: {north} }}\n  - {{ id: 'town_b', kind: 'visual', hex: {{ q: 2, r: -1 }}, east_m: 7, north_m: -3 }}\n"), saved);
+        Assert.Equal("town_b", value.Offsets[0].Id);   // the caller's list is not reordered
+        var reloaded = MapEditorOverlay.Parse(saved, SaveGame.Gdd03Ruleset);
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(saved), System.Text.Encoding.UTF8.GetBytes(MapEditorOverlay.Serialize(reloaded)));
+        var back = reloaded.Offsets.Single(x => x.Id == "town_a");
+        Assert.Equal(new int?[] { 1, 2, east, north }, new[] { back.Hex.Q, back.Hex.R, back.EastM, back.NorthM });
+    }
+
+    [Theory]
+    [InlineData(3811, 0)]       // past the flat east side
+    [InlineData(-3811, 0)]
+    [InlineData(0, 4401)]       // past the north vertex
+    [InlineData(3000, 3000)]    // past a slanted side
+    [InlineData(-2000, -3500)]
+    public void AnOffsetOutsideItsHexWarnsAndDoesNotBlock(int east, int north)
+    {
+        var without = WithOffsets("[]").Diagnostics("fixture-only", new string('a', 64));
+        var value = WithOffsets(System.FormattableString.Invariant(
+            $"[{{ id: town_a, kind: label, hex: {{ q: 1, r: 2 }}, east_m: {east}, north_m: {north} }}]"));
+        var row = Assert.Single(OutsideHex(value));
+        Assert.Equal("offsets[town_a/label]", row.Field);
+        Assert.False(row.Blocking);
+        Assert.Contains(System.FormattableString.Invariant($"east_m={east} north_m={north}"), row.Message);
+        Assert.Contains("q=1 r=2", row.Message);
+        // The warning adds no blocking row: every other row is the same as for the overlay without the offset.
+        var rest = value.Diagnostics("fixture-only", new string('a', 64)).Where(x => x.Code != row.Code).ToList();
+        Assert.Equal(without.Select(x => (x.Code, x.Field, x.Blocking)), rest.Select(x => (x.Code, x.Field, x.Blocking)));
+        Assert.All(rest, x => Assert.True(x.Blocking));
+        // Nothing is repaired: the offset keeps its authored point.
+        Assert.Equal(new int?[] { east, north }, new[] { value.Offsets[0].EastM, value.Offsets[0].NorthM });
+        var back = MapEditorOverlay.Parse(MapEditorOverlay.Serialize(value), SaveGame.Gdd03Ruleset);
+        Assert.Equal(new int?[] { east, north }, new[] { back.Offsets[0].EastM, back.Offsets[0].NorthM });
+    }
+
+    // The offset check's hex is the map's hex: content/map/hexes.json gives the circumradius in km (pointy-top, #1796).
+    [Fact]
+    public void TheOffsetHexIsTheMapsHex()
+    {
+        var text = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "map", "hexes.json"));
+        var size = System.Text.RegularExpressions.Regex.Match(text, "\"hex_size_km\":([0-9.]+)").Groups[1].Value;
+        Assert.Equal(MapEditorOverlay.OffsetHexCircumradiusM, double.Parse(size, System.Globalization.CultureInfo.InvariantCulture) * 1000, 6);
+        Assert.Contains("\"layout\":\"pointy\"", text);
     }
 }

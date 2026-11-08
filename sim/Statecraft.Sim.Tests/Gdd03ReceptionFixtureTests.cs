@@ -10,7 +10,7 @@ public class Gdd03ReceptionFixtureTests
     static Content Catalogue()
     {
         var c = PopulationLedgerTests.Content();
-        // content/gdd03-balance.yaml:214-221 at the pinned base: Agreed 3 beds, 6 turns.
+        // content/gdd03-balance.yaml `reception.capacity` and `reception.turns` at the pinned base: Agreed 3 beds, 6 turns.
         c.Gdd03Balance!.Values["reception.capacity"] = new Gdd03DesignValue {
             Basis = "Agreed", Values = new() { 3 }, Note = "Agreed catalogue reception.capacity" };
         return c;

@@ -12,11 +12,11 @@ namespace Statecraft.Game.UI
     public static class AdvisorSignals
     {
         public const string NewGame = "new_game", TurnEnded = "turn_ended", Opening = "opening",
-            AttentionRefused = "attention_refused", BudgetUnsubmitted = "budget_unsubmitted", CityShown = "city_shown", UnitShown = "unit_shown";
+            AttentionRefused = "attention_refused", BudgetUnsubmitted = "budget_unsubmitted", CityShown = "city_shown", UnitShown = "unit_shown", CourseOpen = "course_open";
         public static readonly IReadOnlyCollection<string> Events = new[] { NewGame, TurnEnded, Opening, AttentionRefused, BudgetUnsubmitted, CityShown, UnitShown };
         public static readonly IReadOnlyDictionary<string, Func<AdvisorContext, bool>> States = new Dictionary<string, Func<AdvisorContext, bool>>
         {
-            // Spec 6's critical warnings and the defeat lines (R-END-001 to R-END-003, docs/rules/mvp.md:377-381).
+            // Spec 6's critical warnings and the defeat lines (R-END-001 to R-END-003).
             ["city_at_risk"] = ctx => Threats.CitiesAtRisk(ctx.Content, ctx.State).Count > 0,
             ["exhausted"] = ctx => ctx.State.ExhaustedTurns > 0,
             ["in_debt"] = ctx => ctx.State.Debt > 0,
@@ -45,8 +45,10 @@ namespace Statecraft.Game.UI
             ["debt_ratio_at_least"] = ctx => ctx.Content.RulesAt(ctx.State.Date).Mvp?.DebtCeiling is double ceiling && ceiling > 0 ? ctx.State.Debt / ceiling : 0,
             ["refugees_at_least"] = ctx => ctx.State.Cities.Values.Sum(x => x.Refugees),
             ["cards_waiting_at_least"] = ctx => ctx.Card?.Shown != null ? 1 : 0,
+            // The game's turn, the first being 1 (State.Turn starts at 0).
+            ["turn_at_least"] = ctx => ctx.State.Turn + 1,
         };
-        public static IEnumerable<string> Names => Events.Concat(States.Keys);
+        public static IEnumerable<string> Names => Events.Concat(States.Keys).Append(CourseOpen);
 
         /// <summary>The Arms the costliest single Arms action takes under the rules in force: a recruit group
         /// (mvp.arms_per_recruit_group, R-ARMS-003), an attack (mvp.arms_per_attack, R-COMBAT-004), or one of our unit types'
@@ -73,6 +75,7 @@ namespace Statecraft.Game.UI
         {
             var holding = new HashSet<string>(session.FiredTurn == ctx.State.Turn ? session.Fired : Enumerable.Empty<string>(), StringComparer.Ordinal);
             foreach (var kv in States) if (kv.Value(ctx)) holding.Add(kv.Key);
+            if (session.Settings.CourseOpen) holding.Add(CourseOpen);   // a settings line, not the state: it needs the session
             return holding;
         }
     }

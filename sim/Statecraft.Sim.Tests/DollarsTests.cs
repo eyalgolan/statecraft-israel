@@ -25,6 +25,21 @@ public class DollarsTests
 
     static PreviewResult Orders(Content c, GameState s, params Command[] orders) => Simulation.Preview(c, s, orders);
 
+    // R-MONEY-004: the smallest conversion is EconomySystem.DollarsMinimum (US$1m). The sim refuses below it, the UI words
+    // the refusal from the same constant (SimBridge.ReasonText; DollarConversionTests pins that), and the sim's own English,
+    // a constant tests name in attributes, says the same amount, so none of the three can drift from the others (#2704).
+    [Fact]
+    public void TheConversionMinimumIsOneConstantTheRefusalAndItsWordingShare()
+    {
+        var c = Gdd();
+        var s = War(c);
+        Assert.Equal(EconomySystem.RefusedDollarsMinimum, EconomySystem.DollarsRefusal(c, s, EconomySystem.DollarsMinimum - 1));
+        Assert.NotEqual(EconomySystem.RefusedDollarsMinimum, EconomySystem.DollarsRefusal(c, s, EconomySystem.DollarsMinimum));
+        Assert.Equal(EconomySystem.RefusedDollarsMinimum,
+            string.Format(System.Globalization.CultureInfo.InvariantCulture, "Convert at least ${0}m", EconomySystem.DollarsMinimum));
+        Assert.True(EconomySystem.RefusedDollarsMinimum == "Convert at least $1m", "the sim's English stays byte for byte as it was");
+    }
+
     // R-MONEY-004: $3m at IL 0.5 per $ moves IL 1.5m into the Treasury and takes $3m from the reserves, with a cause line.
     [Fact]
     public void ConvertingMovesTheDollarsTimesTheRateIntoMoney()
@@ -35,11 +50,45 @@ public class DollarsTests
         var r = Orders(c, s, new ConvertDollars(3));
         Assert.Empty(r.Rejected);
         Assert.Equal((2.5, 0.0, 47.0, 3), (r.State.Treasury, r.State.Debt, r.State.FxReserves, r.State.DollarsConverted));
-        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConverted);
+        var line = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConverted && w.Target == "treasury");
         Assert.Equal(("economy", "treasury", 1.5), (line.System, line.Target, line.Delta));
         Assert.Equal(new[] { "3" }, line.Args);
         Assert.Contains(CauseKeys.DollarsConverted, CauseKeys.All);   // so the UI words it (CauseText)
         Assert.Equal("Converted $3.0m of foreign currency into Money: " + PlayerText.MoneyChange(c, "treasury", 1.5), line.Message);
+    }
+
+    // R-MONEY-004, R-ARMS-002 under gdd-0.3 (#2733 item 13): a conversion queued after an Arms purchase still runs before
+    // it, so the purchase spends the converted Money and borrows nothing. The gdd-0.3 fixture's Arms cost IL 0.25 and $1
+    // converts at IL 0.5, so 8 Arms cost exactly the IL 2m that $4m brings. Run in queue order, the purchase would borrow.
+    [Fact]
+    public void UnderGdd03AConversionQueuedAfterAnArmsPurchasePaysForIt()
+    {
+        var c = Gdd03MovementFortTests.Load();
+        Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
+        Assert.Equal((0.25, 0.5), (c.Rules.Mvp!.ArmsPrice, c.Rules.Mvp.IlPerDollarOn(c.Rules.Start)));
+        var s = War(c);
+        s.Treasury = 0;
+        var r = Orders(c, s, new BuyArms(8), new ConvertDollars(4));
+        Assert.Empty(r.Rejected);
+        Assert.Equal((s.Arms + 8, 0.0, 0.0, 46.0, 4), (r.State.Arms, r.State.Treasury, r.State.Debt, r.State.FxReserves, r.State.DollarsConverted));
+        var keys = r.Why.Select(w => w.Key).ToList();
+        Assert.True(keys.IndexOf(CauseKeys.DollarsConverted) >= 0 && keys.IndexOf(CauseKeys.DollarsConverted) < keys.IndexOf(CauseKeys.ArmsBought),
+            "the conversion's cause comes before the purchase's: " + string.Join(", ", keys));
+    }
+
+    // #2527: the same conversion also explains the reserves' drop, so the HUD's foreign-currency meter (which lists the
+    // causes aimed at fx_reserves, HudModel.cs) shows its reason.
+    [Fact]
+    public void TheConversionAlsoExplainsTheReservesDrop()
+    {
+        var c = Gdd();
+        var s = War(c);
+        var r = Orders(c, s, new ConvertDollars(3));
+        Assert.Empty(r.Rejected);
+        var fx = Assert.Single(r.Why, w => w.Key == CauseKeys.DollarsConvertedFx);
+        Assert.Equal(("economy", -3.0), (fx.System, fx.Delta));
+        Assert.Equal(new[] { "3" }, fx.Args);
+        Assert.Equal("Foreign currency converted into Money: " + PlayerText.MoneyChange(c, "fx_reserves", -3.0), fx.Message);
     }
 
     // R-MONEY-004: the rate is the one in force on the turn's date (mvp.il_per_dollar, each rate from its day on).
@@ -156,6 +205,7 @@ options:
     text: The way it went
     historical: true
     set_rung: RUNG
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
 ";
 
     // R-MONEY-004: the war is the rung the turn started at. An earlier order of the same turn that moves the rung (an
@@ -467,7 +517,7 @@ options:
         {
             var orders = perTurn > 0 && s.Rung >= 4 ? new Command[] { new ConvertDollars(perTurn) } : Array.Empty<Command>();
             var r = Simulation.Step(Real, s, orders);
-            Assert.Empty(r.Rejected);
+            Assert.DoesNotContain(r.Rejected, j => !WarEvents1948Tests.IsTheMalkiyaRefusal(j));   // R-ENEMY-005: Hiram's refused order, pinned there
             s = r.State;
             if (s.Date == new DateTime(1949, 4, 15)) april = s.Debt;
             if (crisis == null && s.ActiveSituations.Contains(EconomySystem.FxCrisis)) crisis = s.Date;
@@ -486,18 +536,25 @@ options:
     // lost and the turns they are lost on change, and with them mvp.military_upkeep_per_turn (IL 0.05m a formation a turn):
     // the same run now ends at IL 40.54m on 15 April 1949 and IL 178.74m, the conversion at IL 25.89m and IL 164.09m. The
     // crisis dates and the IL 14.652m are the same on both grids.
+    // #2551 (R-TURN-002): armistice_egypt now comes on 15 February 1949, a turn earlier, and signing it sets rung 2, so the
+    // war has 10 turns at rung 4 or 5, not 11. One war turn less costs IL 3.75m less debt (IL 36.79m on 15 April 1949 and
+    // IL 174.99m at the end); the conversion is $40m, IL 13.32m less debt (IL 23.47m and IL 161.67m), and with $4m more
+    // foreign currency kept the converting run's crisis comes on 15 April 1951. The no-lever crisis is unchanged.
+    // R-ENEMY-007 (#2543) changes it deliberately again: this no-orders run leaves required formations out of place, so its
+    // operations postpone and lapse. With both changes the run ends at IL 28.94m on 15 April 1949 and IL 168.79m, the
+    // conversion at IL 15.62m and IL 155.47m (still $40m, IL 13.32m less debt); both crisis dates are as with #2551 alone.
     [Fact]
     public void TheWarOnlyRunReproducesThePrototypeAtTheSourcedRate()
     {
         var none = Prototype(0);
-        Assert.Equal((40.54, 178.74), (Math.Round(none.April1949, 2), Math.Round(none.End.Debt, 2)));
+        Assert.Equal((28.94, 168.79), (Math.Round(none.April1949, 2), Math.Round(none.End.Debt, 2)));
         Assert.Equal(new DateTime(1951, 12, 15), none.Crisis);
         var sold = Prototype(4);
-        Assert.Equal(44, sold.Converted);
-        var saved = 44 * 0.333;
+        Assert.Equal(40, sold.Converted);
+        var saved = 40 * 0.333;
         Assert.Equal(none.April1949 - saved, sold.April1949, 9);
         Assert.Equal(none.End.Debt - saved, sold.End.Debt, 9);
-        Assert.Equal((25.89, 164.09), (Math.Round(sold.April1949, 2), Math.Round(sold.End.Debt, 2)));
-        Assert.Equal(new DateTime(1951, 3, 15), sold.Crisis);
+        Assert.Equal((15.62, 155.47), (Math.Round(sold.April1949, 2), Math.Round(sold.End.Debt, 2)));
+        Assert.Equal(new DateTime(1951, 4, 15), sold.Crisis);
     }
 }

@@ -4,9 +4,11 @@
 # ///
 """Read-only scan of every ADDED line in every commit reachable from the given ref (merge commits included, diffed
 against each parent), plus every commit message and author/committer email, for secret shapes, personal emails and
-home paths (the patterns in oss_policy.py). Prints commit, file and pattern type, NEVER the matched text.
+home paths (the patterns in oss_policy.py). Prints commit, file and pattern type, NEVER the matched text; OPEN rows
+that are not secret-shaped print as one count per pattern type.
 
-Information only (owner ruling 2026-10-11: no history rewriting, no history enforcement), so the exit code is always 0.
+Findings are information only (owner ruling 2026-10-11: no history rewriting, no history enforcement) and do not change
+the exit code. A command failure is non-zero because the scan is incomplete.
 Rows already handled are listed in docs/oss/history-accepted.tsv (commit, path, kind, action, date) and are shown as
 "accepted", so a rotated key or a reviewed false positive never blocks anything twice. A real secret is fixed by
 revoking or rotating it at its provider; history is never rewritten.
@@ -47,7 +49,9 @@ def scan(repo: Path, refs: list[str]) -> list[tuple[str, str, str]]:
             path = line[6:] if line.startswith("+++ b/") else ""
         elif line.startswith("+") and path:
             hits.update((commit, path, k) for k in _kinds(line[1:]))
-    proc.wait()
+    code = proc.wait()
+    if code != 0:
+        raise subprocess.CalledProcessError(code, cmd)
     meta = subprocess.run(["git", "-C", str(repo), "log", *refs, "--format=%H%x00%ae%x00%ce%x00%B%x1e"],
                           capture_output=True, check=True).stdout.decode("utf-8", "replace")
     for rec in meta.split("\x1e"):
@@ -80,13 +84,25 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--all", action="store_true")
     args = ap.parse_args(argv)
     refs = [args.ref] if args.ref and not args.all else ["--all"]
-    hits = scan(args.repo, refs)
+    try:
+        hits = scan(args.repo, refs)
+    except subprocess.CalledProcessError as e:
+        print(f"HISTORY SCAN FAILED: git log exited {e.returncode}; the history scan is incomplete", file=sys.stderr)
+        return 1
     done = accepted(args.repo)
     open_secrets = 0
+    # OPEN rows that are not secret-shaped (personal emails, home paths) print as one count per kind: on main they are
+    # over a thousand commit identities, and listed one by one they buried the summary line (#2655 item 7).
+    other_open: dict[str, int] = {}
     for commit, path, kind in hits:
         state = "accepted" if (commit, path, kind) in done else "OPEN"
         open_secrets += state == "OPEN" and kind in SECRET_KINDS
+        if state == "OPEN" and kind not in SECRET_KINDS:
+            other_open[kind] = other_open.get(kind, 0) + 1
+            continue
         print(f"{commit}  {path}  {kind}  {state}")
+    for kind, n in sorted(other_open.items()):
+        print(f"{kind}  {n} OPEN rows (not secret-shaped, not listed)")
     count = len(subprocess.run(["git", "-C", str(args.repo), "rev-list", *refs], capture_output=True, text=True,
                                check=True).stdout.split())
     print(f"scanned {count} commits ({' '.join(refs)}): {len(hits) or 'no'} findings, "

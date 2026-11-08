@@ -14,9 +14,10 @@ import subprocess
 import sys
 from collections.abc import Sequence
 
-USER_VISIBLE = ("content/", "sim/Statecraft.Sim/", "sim/Statecraft.Cli/", "unity/Assets/", "unity/ProjectSettings/",
-                "unity/Packages/")
-NOT_USER_VISIBLE = ("unity/Assets/Tests/",)
+# translations/ ships beside the content to every player (#1618, step 2); its README.md is not a language (TranslationLoader).
+USER_VISIBLE = ("content/", "translations/", "sim/", "unity/Assets/",
+                "unity/ProjectSettings/", "unity/Packages/")
+NOT_USER_VISIBLE = ("sim/Statecraft.Sim.Tests/", "unity/Assets/Tests/", "translations/README.md")
 FRAGMENTS = "changelog.d/"
 
 
@@ -51,15 +52,16 @@ def verdict(paths: list[str], skip_label: bool, fragments: Sequence[str] = ()) -
 
 
 def changed_paths(base: str, head: str) -> list[str]:
-    out = subprocess.run(["git", "diff", "--name-only", f"{base}...{head}"], capture_output=True, text=True, check=True)
-    return [p for p in out.stdout.splitlines() if p]
+    out = subprocess.run(["git", "diff", "--name-only", "-z", f"{base}...{head}"], capture_output=True, text=True,
+                         check=True)
+    return [p for p in out.stdout.split("\0") if p]
 
 
 def added_fragments(base: str, head: str) -> list[str]:
     """Fragments the PR adds with an entry in them. An edited, renamed or deleted fragment does not count."""
-    out = subprocess.run(["git", "diff", "--name-only", "--find-renames", "--diff-filter=A", f"{base}...{head}", "--",
-                          FRAGMENTS], capture_output=True, text=True, check=True)
-    return [p for p in out.stdout.splitlines() if is_fragment(p) and has_entry(
+    out = subprocess.run(["git", "diff", "--name-only", "-z", "--find-renames", "--diff-filter=A",
+                          f"{base}...{head}", "--", FRAGMENTS], capture_output=True, text=True, check=True)
+    return [p for p in out.stdout.split("\0") if p and is_fragment(p) and has_entry(
         subprocess.run(["git", "show", f"{head}:{p}"], capture_output=True, text=True, check=True).stdout)]
 
 

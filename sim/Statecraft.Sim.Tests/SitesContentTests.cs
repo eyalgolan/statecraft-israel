@@ -69,6 +69,27 @@ public class SitesContentTests
         Assert.Contains((site.Q, site.R), lineHexes);
     }
 
+    /// <summary>R-CTRL-020 (#2804): a depopulated place closes its target's hex, and Ramla's target (-3, 24) is not a
+    /// settlement's hex (ContentLoader.TargetOnANeighbour), so the site guard refuses a site on any target's hex too.</summary>
+    [Fact]
+    public void ASiteOnASettlementTargetsHexFailsLoad()
+    {
+        var root = RealContentTests.ContentRoot();
+        var events = Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
+        const string mefalsim = "    q: -11\n    r: 31\n";
+        Assert.Contains(mefalsim, File.ReadAllText(Path.Combine(root, "sites.yaml")));
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(root, rel);
+            if (!File.Exists(path)) return null;
+            var text = File.ReadAllText(path);
+            return rel == "sites.yaml" ? text.Replace(mefalsim, "    q: -3\n    r: 24\n") : text;
+        }, events));
+        Assert.Equal("sites.yaml", ex.File);
+        Assert.Equal("sites[mefalsim].q", ex.Field);
+        Assert.Contains("hex q=-3 r=24 is the settlement target ramla", ex.Message);
+    }
+
     /// <summary>R-SITE-004, Q-SITE-1 and Q-SITE-2 (owner, 17 October 2026, #782: "take all of the plan's recommendations"): the
     /// MVP's yishuv sites are the four of the settlements note whose founding day two sources agree on (criteria 1, 2 and 4 of
     /// Task 5.0). Each is founded inside the MVP's years and cites at least two sources with a checked date. Kiryat Shmona and
@@ -148,7 +169,9 @@ public class SitesContentTests
     public void EachYishuvSiteHasOneFieldSiteInItsHex()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
-        foreach (var y in c.Sites.Where(x => x.Kinds.Contains("yishuv")))
+        var yishuvs = c.Sites.Where(x => x.Kinds.Contains("yishuv")).ToList();
+        Assert.NotEmpty(yishuvs);
+        foreach (var y in yishuvs)
         {
             var others = c.Sites.Where(x => x != y && x.Q == y.Q && x.R == y.R).ToList();
             var field = Assert.Single(others);
@@ -206,6 +229,8 @@ public class SitesContentTests
         new object[] { Second("[hakhshara]", "    city: nowhere\n"), "sites[site_b].city", "unknown city 'nowhere'" },
         new object[] { Second("[field]", "    city: town_a\n"), "sites[site_b].city", "only a camp site has a city" },
         new object[] { Second("[field]", "    founded: 1949-06-12\n"), "sites[site_b].founded", "only a yishuv site has a founding date" },
+        new object[] { Site("kinds: [yishuv]\n    founded: 1949-06-12\n", "kinds: [yishuv, military_camp]\n    founded: 1949-06-12\n    city: town_a\n"), "sites[site_a].kinds", "a yishuv site cannot also be a military_camp site (its built record is its built camp)" },
+        new object[] { Site("kinds: [yishuv]\n    founded: 1949-06-12\n", "kinds: [hakhshara, yishuv]\n    founded: 1949-06-12\n    city: town_a\n"), "sites[site_a].kinds", "a yishuv site cannot also be a hakhshara site (its built record is its built camp)" },
     };
 
     [Theory]

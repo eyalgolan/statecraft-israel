@@ -164,16 +164,15 @@ public class DemobilizationTests
         Assert.Null(Demobilization.Check(c, bordered, 1));
     }
 
-    // R-UNIT-005: the attack-target clause of Front() matters on its own. A gun attacks beyond the next hex
-    // (Combat.InReach), so an enemy two hexes away that nothing borders still names the front: drop
-    // `|| (attacks != null && ...)` and this becomes the any-armistice case and goes green after the Jordan signature.
+    // R-UNIT-005: the attack record matters on its own. A gun attacks beyond the next hex (Combat.InReach), so an enemy
+    // two hexes away that nothing borders still names the front; without the record the Jordan signature would open it.
     [Fact]
     public void AnAttackTargetTwoHexesAwayNamesItsFront()
     {
         var c = Load();
         var s = State(c, new Unit(1, "gun", 3, 0, side: "israel", strength: 2, order: Combat.Attack, orderTarget: "1,0"),
             new Unit(2, "enemy", 1, 0, side: "egypt", strength: 3));
-        var attacked = new Dictionary<int, (int Q, int R)> { [1] = (1, 0) };
+        var attacked = new Dictionary<int, AttackRecord> { [1] = new AttackRecord(1, 0, 2, "egypt") };
         Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1, attacked));
         s.ChosenOptions["armistice_jordan"] = "sign";   // would open the order if the target did not count
         Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1, attacked));
@@ -194,6 +193,78 @@ public class DemobilizationTests
 
         var attacking = State(c, Soldier(1, 3, 0), new Unit(2, "enemy", 2, 0, side: "egypt", strength: 3));
         Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, attacking, 1,
-            new Dictionary<int, (int Q, int R)> { [1] = (2, 0) }));
+            new Dictionary<int, AttackRecord> { [1] = new AttackRecord(2, 0, 2, "egypt") }));
+    }
+
+    // R-UNIT-005: an accepted attack keeps its front for the rest of the turn even when combat removes the defender.
+    [Fact]
+    public void ADestroyedAttackTargetStillNamesItsFront()
+    {
+        var c = Load();
+        var s = State(c, new Unit(1, "gun", 3, 0, side: "israel", strength: 2),
+            new Unit(2, "enemy", 1, 0, side: "egypt", strength: 1));
+        s.ChosenOptions["armistice_syria"] = "sign";
+
+        var result = Step(c, s, new UnitOrder(1, Combat.Attack, 1, 0),
+            new UnitOrder(1, Demobilization.SendHome));
+
+        Assert.DoesNotContain(2, result.State.Units.Keys);
+        Assert.Contains(1, result.State.Units.Keys);
+        Assert.Equal("The armistice with Egypt is not signed", Assert.Single(result.Rejected).Reason);
+    }
+
+    // R-UNIT-005: retreating away from the attacked hex does not erase the attacker's front during the turn.
+    [Fact]
+    public void ARetreatedAttackTargetStillNamesItsFront()
+    {
+        var c = Load();
+        c.Rules.Mvp!.CombatTable[0].DefenderLoss = new List<int> { 0, 0 };
+        c.Rules.Mvp!.CombatTable[0].DefenderRetreats = new List<int> { 1, 1 };
+        var s = State(c, new Unit(1, "gun", 3, 0, side: "israel", strength: 2),
+            new Unit(2, "enemy", 1, 0, side: "egypt", strength: 3), Soldier(3, 2, 0));
+        s.ChosenOptions["armistice_syria"] = "sign";
+
+        var result = Step(c, s, new UnitOrder(1, Combat.Attack, 1, 0),
+            new UnitOrder(1, Demobilization.SendHome));
+
+        Assert.Equal((0, 0), (result.State.Units[2].Q, result.State.Units[2].R));
+        Assert.Contains(1, result.State.Units.Keys);
+        Assert.Equal("The armistice with Egypt is not signed", Assert.Single(result.Rejected).Reason);
+    }
+
+    // R-UNIT-005 ties (#2683 review): two front-bearing defenders on the attacked hex name the lower unit id's front,
+    // as the unit-by-unit choice did before the attack record kept only one of them.
+    [Fact]
+    public void TwoDefendersOnTheAttackedHexNameTheLowerIdsFront()
+    {
+        var c = Load();
+        var s = State(c, new Unit(1, "gun", 3, 0, side: "israel", strength: 2),
+            new Unit(2, "enemy", 1, 0, side: "egypt", strength: 30), new Unit(3, "syrian", 1, 0, side: "syria", strength: 30));
+        s.ChosenOptions["armistice_syria"] = "sign";
+
+        var result = Step(c, s, new UnitOrder(1, Combat.Attack, 1, 0), new UnitOrder(1, Demobilization.SendHome));
+
+        Assert.Equal("The armistice with Egypt is not signed", Assert.Single(result.Rejected).Reason);
+    }
+
+    // R-UNIT-005 ties (#2683 review): a nearer bordered enemy names the front before a ranged attack's target.
+    [Fact]
+    public void ANearerBorderedEnemyNamesTheFrontBeforeARangedTarget()
+    {
+        var c = Load();
+        GameState Start(string signed)
+        {
+            var s = State(c, new Unit(1, "gun", 3, 0, side: "israel", strength: 2),
+                new Unit(2, "enemy", 1, 0, side: "egypt", strength: 30), new Unit(3, "syrian", 2, 0, side: "syria", strength: 30));
+            s.ChosenOptions[signed] = "sign";
+            return s;
+        }
+        var cmds = new Command[] { new UnitOrder(1, Combat.Attack, 1, 0), new UnitOrder(1, Demobilization.SendHome) };
+
+        var egyptSigned = Step(c, Start("armistice_egypt"), cmds);
+        Assert.Equal("The armistice with Syria is not signed", Assert.Single(egyptSigned.Rejected).Reason);
+        var syriaSigned = Step(c, Start("armistice_syria"), cmds);
+        Assert.Empty(syriaSigned.Rejected);
+        Assert.DoesNotContain(1, syriaSigned.State.Units.Keys);
     }
 }

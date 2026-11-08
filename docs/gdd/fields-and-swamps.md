@@ -19,6 +19,8 @@ As a player of the MVP, I want to send a group of halutzim to plow the fields of
 - Drained, the swamp site does nothing else; the Hula field site becomes ready to plow. Before that a plow order there is refused with the state unchanged (R-SWAMP-001).
 - `hula_drainage` (window 7 March to 18 May 1951) carries `site: hula`, so it fires only while the player's works at the Hula are in progress: with no works, or once the Hula is drained, it does not fire (R-SWAMP-002, `Q-SWAMP-2` [S3]). Its text, options and sources are unchanged. The reference player drains no swamp, so the card does not come in the goldens' run.
 
+Then changed (3 Nov 2026): a plowed field with no workers, as above, holds under `gdd-0.1`; under `gdd-0.3` a field takes one farmer and an unworked field produces nothing (R-FIELD-002; owner, 3 November 2026, #1694 [S5]).
+
 ## Data touched
 
 - `rules.yaml` `mvp.plow_fields_turns`, `mvp.plow_fields_cost` and `mvp.field_food_per_turn`: labelled design values, required in the GDD loop.
@@ -46,6 +48,7 @@ As a player of the MVP, I want to send a group of halutzim to plow the fields of
 - [S2] GDD Phase 4 plan, PR 4 and the owner questions table, docs/superpowers/plans/2026-10-15-gdd-phase-4.md
 - [S3] GDD Phase 4 owner answers, https://github.com/eyalgolan/statecraft-israel/issues/782, checked 2026-10-17
 - [S4] Q-SWAMP-3, the owner's decision on the Hula, https://github.com/eyalgolan/statecraft-israel/issues/789, checked 2026-10-17
+- [S5] The owner's ruling on #1694, 3 November 2026, "One farmer per field (Recommended)", https://github.com/eyalgolan/statecraft-israel/issues/1694#issuecomment-6610258738, checked 2026-11-03
 
 ## Open questions
 

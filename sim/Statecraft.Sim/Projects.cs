@@ -55,11 +55,14 @@ namespace Statecraft.Sim
             : "";
 
         /// <summary>The GDD minister system a city project's kind belongs to (R-MIN-001; Q-MIN-1): housing, a transit
-        /// camp included (Q-HOUSE-3's low-condition housing type), and industry construction are Labour's; a kind the map
-        /// does not name is "" (neutral).</summary>
+        /// camp included (Q-HOUSE-3's low-condition housing type) and a gdd-0.3 housing repair (R-HOUSE-006; maintainer call
+        /// (not an owner ruling): a repair counts as a Housing build, so housing construction's multiplier applies and with a
+        /// weak minister it can take more than one turn), and industry construction are Labour's; a kind the map does not
+        /// name is "" (neutral).</summary>
         public static string SystemOfKind(string kind) =>
             kind == "industry" ? EffectsSystem.IndustryConstructionSystem
-            : kind == "housing" || kind == "transit_camp" ? EffectsSystem.HousingConstructionSystem
+            // HousingRepair here is a maintainer call, not an owner ruling (R-HOUSE-006): see the summary above.
+            : kind == "housing" || kind == "transit_camp" || kind == HousingRepair ? EffectsSystem.HousingConstructionSystem
             : "";
 
         /// <summary>The turns, this one included, in which the unit completes the site's remaining whole work and
@@ -120,6 +123,13 @@ namespace Statecraft.Sim
         /// (D-D6).</summary>
         public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit) || Corridors.WorkOf(s, unit) != null;
 
+        /// <summary><see cref="Start"/>'s and <see cref="Stop"/>'s refusals that name nothing (#2707), and CancelCity's; the unit one is
+        /// Orders.RefusedNoUnit. The UI maps each to its own string (SimBridge.ReasonText); the English is what a Rejected list and a
+        /// save carry, so it does not change.</summary>
+        public const string RefusedNotHalutz = "Only halutzim do pioneer work", RefusedNoWork = "There is no such pioneer work",
+            RefusedNoSite = "There is no such site", RefusedNotBuilding = "That group of halutzim is not building anything",
+            RefusedNoCityProject = "There is no such city project";
+
         /// <summary>R-SITE-001: an idle halutz unit starts <paramref name="action"/> (build_yishuv) at a yishuv site that has no
         /// record. The Treasury pays build_yishuv_cost now and borrows what it lacks; the site gets build_yishuv_turns to go; the unit
         /// does not move. Refused, state untouched, for an unknown unit, a unit that is not a halutz or is busy, an unknown
@@ -132,16 +142,16 @@ namespace Statecraft.Sim
         public static string? Start(Content c, GameState s, int unit, string action, string site, List<Cause> why)
         {
             if (!s.Units.TryGetValue(unit, out var u)) return "There is no such unit";
-            if (!IsPioneer(u.Type)) return "Only halutzim do pioneer work";
+            if (!IsPioneer(u.Type)) return RefusedNotHalutz;
             var busy = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
             if (busy != null) return $"That group of halutzim is already building {PlayerText.Site(c, busy.Site)}";
             if (Corridors.WorkOf(s, unit) is var (cw, ci))
                 return $"That group of halutzim is already building {Corridors.SegmentName(c.Corridors.First(x => x.Id == cw.Id), ci)}";
             // Phase 4 PR 2 (#786): build_road and build_rail take a corridor segment, "corridor:N" (R-COR-001).
             if (Corridors.IsAction(action)) return Corridors.Start(c, s, unit, action, site, why);
-            if (action != BuildYishuv && action != BuildCamp && action != PlowFields && action != DrySwamp) return "There is no such pioneer work";
+            if (action != BuildYishuv && action != BuildCamp && action != PlowFields && action != DrySwamp) return RefusedNoWork;
             var place = c.Sites.FirstOrDefault(x => x.Id == site);
-            if (place == null) return "There is no such site";
+            if (place == null) return RefusedNoSite;
             var camp = action == BuildCamp;
             var plow = action == PlowFields;
             var drain = action == DrySwamp;
@@ -199,7 +209,7 @@ namespace Statecraft.Sim
         {
             if (!s.Units.ContainsKey(unit)) return "There is no such unit";
             var work = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
-            if (work == null) return Corridors.Stop(c, s, unit, why) ? null : "That group of halutzim is not building anything";
+            if (work == null) return Corridors.Stop(c, s, unit, why) ? null : RefusedNotBuilding;
             s.Sites.Remove(work.Site);
             why.Add(new Cause("map", work.Site, -1, $"{PlayerText.Site(c, work.Site)}: the halutzim stopped building; the Money spent is not returned", key: CauseKeys.SiteCancelled));
             return null;
@@ -268,21 +278,45 @@ namespace Statecraft.Sim
 
         static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
 
-        /// <summary>The city project at hex (q, r), being built or built, or null (Q-PROJ-2: one project or placement a hex).</summary>
-        public static CityProject? CityProjectAt(GameState s, int q, int r) => s.CityProjects.Values.FirstOrDefault(p => p.Q == q && p.R == r);
+        /// <summary>R-PROJ-001 under gdd-0.3 only (#1700 slice B; owner, 3 November 2026: "One per city, plus 2 nationally"):
+        /// the city projects one city may start in a turn. A design value from that ruling, not construction.starts_per_turn
+        /// (content/gdd03-balance.yaml), whose 1 is Amir's nationwide catalogue reading; map_actions_per_turn stays the
+        /// national limit.</summary>
+        public const int Gdd03CityStartsPerTurn = 1;
+
+        /// <summary>R-PROJ-001 under gdd-0.3: the city_cap refusal, formatted with the settlement's name ({0}). The English is
+        /// what a turn's Rejected list and a save carry; the UI words it in its language (SimBridge.ReasonText).</summary>
+        public const string RefusedCityCap = "{0} has started a city project this turn";
+
+        /// <summary>R-HOUSE-006 (#1700, #1703), gdd-0.3 only (the loader keeps the row out of every other ruleset): the
+        /// projects.yaml id of the housing repair, a city project done on its city's own hex with no hex of its own (owner,
+        /// 3 November 2026: "No hex needed (Recommended)").</summary>
+        public const string HousingRepair = "housing_repair";
+
+        /// <summary>R-HOUSE-006: a housing repair's refusal on a hex other than its city's own, formatted with the settlement's
+        /// name ({0}).</summary>
+        public const string RefusedRepairCityHex = "A housing repair is done on {0}'s own hex";
+
+        /// <summary>The city project at hex (q, r), being built or built, or null (Q-PROJ-2: one project or placement a hex). A
+        /// housing repair has no hex of its own (R-HOUSE-006), so it is never the project at a hex.</summary>
+        public static CityProject? CityProjectAt(GameState s, int q, int r) => s.CityProjects.Values.FirstOrDefault(p => p.Q == q && p.R == r && p.Kind != HousingRepair);
 
         /// <summary>R-PROJ-001: null when city project <paramref name="kind"/> may be started for <paramref name="city"/> on hex
         /// (q, r) now, else the reason. Refused for an unknown kind or city; a kind whose resource the city lacks (R-PROJ-005); a
         /// transit camp without the ma'abarot policy (Q-HOUSE-3, D-D3: the policy carries its sourced date); a hex that is not
         /// land, is further than map_action_max_distance from the city's settlement hex, or holds a placement or another city
-        /// project (Q-PROJ-2); and once map_actions_per_turn city projects were started this turn
-        /// (Q-PROJ-4). A short Treasury is not a reason: it borrows (Q-MONEY-3). The reference player asks this before it orders.</summary>
+        /// project (Q-PROJ-2), except that a gdd-0.3 housing repair must be on the city's own hex and may be ordered whatever it
+        /// holds (R-HOUSE-006); under gdd-0.3, once the city started <see cref="Gdd03CityStartsPerTurn"/> this turn; and once
+        /// map_actions_per_turn city projects were started this turn (Q-PROJ-4). A short Treasury is not a reason: it borrows
+        /// (Q-MONEY-3). The reference player asks this before it orders.</summary>
         public static string? CheckCity(Content c, GameState s, string kind, string city, int q, int r) => CheckCityReason(c, s, kind, city, q, r)?.Text;
 
         /// <summary><see cref="CheckCity"/>'s one validator (#1122, owner ruling 2): null when the project may be started, else a
         /// stable kind and invariant values for a UI to word in its language (the map actions' pattern), plus the English text.
         /// The kinds, in check order: unknown_kind, unknown_city, locked (kind), maabarot_policy, no_resource (city, resource, kind), not_land,
-        /// too_far (distance, city), occupied (the placement's action), occupied_project (the project's kind), turn_cap (cap).</summary>
+        /// depopulated, too_far (distance, city), repair_city_hex (city; a housing repair off its city's own hex), occupied (the placement's
+        /// action), occupied_project (the project's kind), city_cap (city;
+        /// gdd-0.3 only), turn_cap (cap).</summary>
         public static MapActionReason? CheckCityReason(Content c, GameState s, string kind, string city, int q, int r)
         {
             var k = c.ProjectKinds.FirstOrDefault(x => x.Id == kind);
@@ -304,10 +338,22 @@ namespace Statecraft.Sim
             if (!InReach(c, s, city, q, r))
                 return new MapActionReason("too_far", FormattableString.Invariant($"This hex is more than {max} {(max == 1 ? "hex" : "hexes")} from {name}"),
                     max.ToString(System.Globalization.CultureInfo.InvariantCulture), city);
-            if (MapActions.At(s, q, r) is Placement placed)
+            // R-HOUSE-006 (owner, 3 November 2026: "No hex needed (Recommended)"): a repair is done on the city itself, so it
+            // goes on the city's own hex whatever that hex holds, and takes none (Q-PROJ-2 is for the other kinds).
+            if (kind == HousingRepair)
+            {
+                if (Distance(c, city, q, r) != 0)
+                    return new MapActionReason("repair_city_hex", string.Format(System.Globalization.CultureInfo.InvariantCulture, RefusedRepairCityHex, name), city);
+            }
+            else if (MapActions.At(s, q, r) is Placement placed)
                 return new MapActionReason("occupied", $"This hex already has {PlayerText.MapAction(c, placed.Action)}", placed.Action);
-            if (CityProjectAt(s, q, r) is CityProject other)
+            else if (CityProjectAt(s, q, r) is CityProject other)
                 return new MapActionReason("occupied_project", $"This hex already has {c.ProjectKinds.First(x => x.Id == other.Kind).Name}", other.Kind);
+            // R-PROJ-001 under gdd-0.3 (owner, 3 November 2026: "One per city, plus 2 nationally"): the city's own limit,
+            // before the national one, so a player over both sees the city's reason.
+            if (c.Ruleset == SaveGame.Gdd03Ruleset && s.MapActionsTurnDate == s.Date
+                && s.CityStartsThisTurn.TryGetValue(city, out var started) && started >= Gdd03CityStartsPerTurn)
+                return new MapActionReason("city_cap", string.Format(System.Globalization.CultureInfo.InvariantCulture, RefusedCityCap, name), city);
             // Last, as for map actions, so a player over the cap still sees the specific reason an order is illegal. The count
             // is the map actions' own (one national limit, Q-PROJ-4).
             if ((s.MapActionsTurnDate == s.Date ? s.MapActionsThisTurn : 0) >= rules.MapActionsPerTurn)
@@ -345,8 +391,10 @@ namespace Statecraft.Sim
             var reason = CheckCity(c, s, kind, city, q, r);
             if (reason != null) return reason;
             var k = c.ProjectKinds.First(x => x.Id == kind);
-            if (s.MapActionsTurnDate != s.Date) { s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = 0; }
+            if (s.MapActionsTurnDate != s.Date) { s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = 0; s.CityStartsThisTurn.Clear(); }
             s.MapActionsThisTurn++;
+            if (c.Ruleset == SaveGame.Gdd03Ruleset)   // R-PROJ-001: the city's start, gdd-0.3 only, so no other ruleset's hash moves
+                s.CityStartsThisTurn[city] = s.CityStartsThisTurn.TryGetValue(city, out var n) ? n + 1 : 1;
             var name = PlayerText.Settlement(c, city);
             EconomySystem.PayOrBorrow(c, s, k.Cost, "to build " + k.Name, why, CauseKeys.Purpose.Project, k.Id);
             var id = s.NextId++;
@@ -363,13 +411,17 @@ namespace Statecraft.Sim
         /// exist or is built. Step has already refused it in the legacy loop.</summary>
         public static string? CancelCity(Content c, GameState s, int project, List<Cause> why)
         {
-            if (!s.CityProjects.TryGetValue(project, out var p)) return "There is no such city project";
+            if (!s.CityProjects.TryGetValue(project, out var p)) return RefusedNoCityProject;
             var k = c.ProjectKinds.First(x => x.Id == p.Kind);
             if (p.BuiltOn != null) return $"{PlayerText.Capitalised(k.Name)} is already built";
             s.CityProjects.Remove(project);
             why.Add(new Cause("city", p.City, -1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { k.Id }));
+            if (p.Builder) BuilderFreed(c, p, k, why);
             return null;
         }
+
+        // #2530: a count of 1 names the singular, as the UI's helper does.
+        static string Groups(int n) => n == 1 ? "1 group" : FormattableString.Invariant($"{n} groups");
 
         /// <summary>R-CITY-011 (#1700; owner, 3 November 2026: "Builders in the MVP (Recommended)", "One builder, today's times
         /// (Recommended)"): AssignWorkers(city, "build", count), gdd-0.3 only, sets how many of the city's projects being built
@@ -380,7 +432,7 @@ namespace Statecraft.Sim
         /// people. Cities.Assign has already refused an unknown city.</summary>
         internal static string? AssignBuilders(Content c, GameState s, string city, int count, List<Cause> why)
         {
-            if (count < 0) return "The number of workers cannot be negative";
+            if (count < 0) return Cities.RefusedNegativeWorkers;
             var x = s.Cities[city];
             var name = PlayerText.Settlement(c, city);
             var building = s.CityProjects.Values.Where(p => p.City == city && p.BuiltOn == null).OrderBy(p => p.Id).ToList();
@@ -396,7 +448,7 @@ namespace Statecraft.Sim
             if (employed != x.Employed)
             {
                 s.Cities[city] = x.WithCounts(x.Civilians, employed, x.Refugees);
-                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {employed} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
+                why.Add(new Cause("city", city, employed - x.Employed, FormattableString.Invariant($"{name}: {Groups(employed)} in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(employed) }));
             }
             if (count > builders)
                 foreach (var p in building.Where(p => !p.Builder).Take(count - builders))
@@ -406,14 +458,24 @@ namespace Statecraft.Sim
                     why.Add(new Cause("city", city, 1, $"{name}: a builder started on {k.Name}", key: CauseKeys.ProjectBuilder, args: new[] { k.Id }));
                 }
             else
-                foreach (var p in building.Where(p => p.Builder).Reverse().Take(builders - count)) s.CityProjects[p.Id] = p.WithBuilder(false);
+                foreach (var p in building.Where(p => p.Builder).Reverse().Take(builders - count))
+                {
+                    s.CityProjects[p.Id] = p.WithBuilder(false);
+                    BuilderFreed(c, p, c.ProjectKinds.First(y => y.Id == p.Kind), why);
+                }
             return null;
         }
+
+        /// <summary>R-CITY-011 (#1700 slice B, slice A's NIT-1): the Why line for a builder freed from project
+        /// <paramref name="p"/> of kind <paramref name="k"/>, as it is built or cancelled or the build count falls.</summary>
+        static void BuilderFreed(Content c, CityProject p, ProjectKind k, List<Cause> why) =>
+            why.Add(new Cause("city", p.City, -1, $"{PlayerText.Settlement(c, p.City)}: a builder left {k.Name} and is free again", key: CauseKeys.ProjectBuilderFreed, args: new[] { k.Id }));
 
         /// <summary>R-PROJ-003, step 5 of the turn (D-A6), after the pioneer work: in ascending id, each city project being built
         /// has one turn less to go. One that reaches 0 is built on <paramref name="next"/>, the turn's end date, and adds its
         /// kind's housing capacity, condition (kept from 0 to 1) and job slots to its city, once: a built project is never
-        /// advanced again. R-CITY-010: a project in a city the enemy holds keeps its record as it is. R-CITY-011 (gdd-0.3 only):
+        /// advanced again, except a gdd-0.3 housing repair, whose record then leaves the state (R-HOUSE-006: it has no hex to
+        /// keep). R-CITY-010: a project in a city the enemy holds keeps its record as it is. R-CITY-011 (gdd-0.3 only):
         /// a project gains the turn's progress only when it has a builder and its city still has that person without a job
         /// (each project with a builder takes one, in ascending id); otherwise it waits with its record as it is, and the turn
         /// report says why. Money is never an input to progress.</summary>
@@ -445,12 +507,14 @@ namespace Statecraft.Sim
                 var whole = (int)Math.Floor(acc);
                 acc -= whole;
                 if (p.TurnsLeft > whole) { s.CityProjects[p.Id] = p.WithProgress(p.TurnsLeft - whole, acc); continue; }
-                s.CityProjects[p.Id] = p.Built(next);
+                if (p.Kind == HousingRepair) s.CityProjects.Remove(p.Id);   // R-HOUSE-006: no hex, so nothing is left
+                else s.CityProjects[p.Id] = p.Built(next);
                 var k = c.ProjectKinds.First(x => x.Id == p.Kind);
                 var city = s.Cities[p.City];
                 var condition = city.Condition is double now ? Math.Min(1.0, Math.Max(0.0, now + k.Condition)) : (double?)null;
                 s.Cities[p.City] = new City(city.Id, city.HousingCapacity + k.Capacity, city.JobSlots + k.JobSlots, city.Civilians, city.Employed, city.Refugees, city.Recruits, condition, city.Craftsmen, city.JobsDefault, city.Qualified);
                 why.Add(new Cause("city", p.City, 1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was finished", key: CauseKeys.ProjectCompleted, args: new[] { k.Id }));
+                if (p.Builder) BuilderFreed(c, p, k, why);
             }
         }
     }

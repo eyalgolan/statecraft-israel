@@ -23,6 +23,9 @@ namespace Statecraft.Sim
             foreach (var e in c.Events)
             {
                 string F(string field) => $"events[{e.Id}].{field}";
+                ContentLoader.RequiredText(e.File, F("title"), e.Title);
+                ContentLoader.RequiredText(e.File, F("text"), e.Text);
+                ContentLoader.RequiredSources(e.File, F("sources"), e.Sources);
                 if (!Offices.OfficeId.IsMatch(e.Id)) throw new ContentException(e.File, F("id"), ContentLoader.IdRule);
                 if (!ids.Add(e.Id)) throw new ContentException(e.File, F("id"), "duplicate event id");
                 if (e.Anchor != "hard" && e.Anchor != "soft") throw new ContentException(e.File, F("anchor"), $"unknown anchor '{e.Anchor}' (must be hard or soft)");
@@ -37,9 +40,35 @@ namespace Statecraft.Sim
                 if (e.Office != "" && !offices.Contains(e.Office)) throw new ContentException(e.File, F("office"), $"unknown office '{e.Office}'");
                 if (c.Offices.Any(o => o.Id == e.Office && o.HistoricalOnly))
                     throw new ContentException(e.File, F("office"), "historical-only titles cannot be delegated events");
+                // R-ENEMY-007 (#2621): an objective, exchange or Deport card is answered with its single option even when it is
+                // delegated (EventSystem's delegation step resolves it at once), so R-ENEMY-007's placement check never runs for
+                // it. Such a card cannot also give unit orders. GDD loop only, as the order checks (CheckOrders): legacy content
+                // loads as before.
+                var single = !c.IsGdd ? null
+                    : e.Objective != "" ? "objective" : e.Prisoners != "" ? "prisoners" : e.Deported != "" ? "deported" : null;
+                if (single != null)
+                    foreach (var o in e.Options.Where(o => o.UnitOrders.Count != 0))
+                        throw new ContentException(e.File, F($"options[{o.Id}].unit_orders"), $"a card with {single} cannot give unit_orders (R-ENEMY-007)");
                 CheckPlaceholders(c, e, F("title"), e.Title, offices);
                 CheckPlaceholders(c, e, F("text"), e.Text, offices);
                 CheckHebrew(c, e, offices);
+                // R-ENEMY-007: late text, only on a card that can be shown after its window closes (a following card or an
+                // operation), with a window to close, and in Hebrew exactly when the card's text is.
+                if (e.LateText != "" || e.LateTextHe != "")
+                {
+                    if (!e.Follows && !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
+                        throw new ContentException(e.File, F("late_text"), "only a following card or an operation card, which can be shown after its window, has late text");
+                    if (!e.To.HasValue) throw new ContentException(e.File, F("late_text"), "a card with late text has a `to`");
+                    if (e.LateText.Trim() == "") throw new ContentException(e.File, F("late_text"), "required: late_text_he is set but late_text is not");
+                    CheckPlaceholders(c, e, F("late_text"), e.LateText, offices);
+                    if (e.TextHe == "" && e.LateTextHe != "") throw new ContentException(e.File, F("late_text_he"), "only a card with Hebrew text has late_text_he");
+                    if (e.TextHe != "")
+                    {
+                        if (e.LateTextHe == "") throw new ContentException(e.File, F("late_text_he"), "required: the card's text is in Hebrew too");
+                        if (!e.LateTextHe.Any(ch => ch >= '\u05D0' && ch <= '\u05EA')) throw new ContentException(e.File, F("late_text_he"), "must be Hebrew, in Hebrew letters");
+                        CheckPlaceholders(c, e, F("late_text_he"), e.LateTextHe, offices);
+                    }
+                }
                 // Chapters design 3.2: an event may only name model records that are active for its whole window.
                 void Active(string field, string id)
                 {
@@ -71,6 +100,7 @@ namespace Statecraft.Sim
                 var optionIds = new HashSet<string>();
                 foreach (var o in e.Options)
                 {
+                    ContentLoader.RequiredText(e.File, F($"options[{o.Id}].text"), o.Text);
                     if (!Offices.OfficeId.IsMatch(o.Id)) throw new ContentException(e.File, F($"options[{o.Id}].id"), ContentLoader.IdRule);
                     if (!optionIds.Add(o.Id)) throw new ContentException(e.File, F($"options[{o.Id}].id"), "duplicate option id");
                     CheckPlaceholders(c, e, F($"options[{o.Id}].text"), o.Text, offices);
@@ -80,8 +110,6 @@ namespace Statecraft.Sim
                         throw new ContentException(e.File, F($"options[{o.Id}].alternative"), "an option that did not happen says who proposed it, or basis: design");
                     foreach (var kv in o.SetPolicy)
                     {
-                        if (c.Ruleset == SaveGame.Gdd03Ruleset && (kv.Key == "rationing" || kv.Key == "maabarot"))
-                            throw new ContentException(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), "retired policy write under gdd-0.3 (R-EFX-001)");
                         if (c.Policies.All(p => p.Id != kv.Key)) throw new ContentException(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), "unknown policy");
                         ContentLoader.Unit(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), kv.Value);
                         Active(F($"options[{o.Id}].set_policy.{kv.Key}"), kv.Key);
@@ -95,12 +123,16 @@ namespace Statecraft.Sim
                         if (!indicators.Contains(fx.Target) && !SpecialTargets.Contains(fx.Target))
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), "unknown target");
                         Active(F($"options[{o.Id}].effects.{fx.Target}"), fx.Target);
+                        if (!fx.HasDelta) throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}.delta"), "required");
                         ContentLoader.Finite(e.File, F($"options[{o.Id}].effects.{fx.Target}.delta"), fx.Delta);
                         if ((fx.Target == Pools.FoodTarget || fx.Target == Pools.ArmsTarget) && Math.Abs(fx.Delta) > int.MaxValue)
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), $"{fx.Target} delta out of range");
                         if (sensitive && NoGainTargets.Contains(fx.Target) && fx.Delta > 0)
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), $"sensitive events cannot reward {fx.Target}");
                     }
+                    // R-EFX-009: checked in every ruleset, since every ruleset reads the same cards; only gdd-0.3 applies it.
+                    if (o.DebtDollars is double debt && !(double.IsFinite(debt) && debt > 0))
+                        throw new ContentException(e.File, F($"options[{o.Id}].debt_dollars"), "must be a finite number > 0 (US$ millions)");
                 }
             }
             CheckRequirementCycles(c);
@@ -110,8 +142,8 @@ namespace Statecraft.Sim
 
         // #1718 D1/Q1/Q2 (owner, 1 November 2026): the passive budget, the monthly Food refill and the foreign-currency
         // ledger stay, so their targets load as under gdd-0.1; of the economy's command targets only Attention retires.
+        // #2483 (owner, 4 November 2026): events write the food_supply and housing readouts again, as under gdd-0.1.
         static bool RetiredGdd03Target(string target) =>
-            target == "food_supply" || target == "housing" ||
             target == "attention" || target.StartsWith("attention_", StringComparison.Ordinal) ||
             target == "defeat" || target == "city_loss_defeat" || target == "any_city_loss";
 
@@ -122,7 +154,60 @@ namespace Statecraft.Sim
         {
             foreach (var e in c.Events)
                 foreach (var o in e.Options)
+                {
                     CheckStructured(c, e, o, e.Tags.Any(SensitiveTags.Contains), field => $"events[{e.Id}].{field}");
+                    CheckOrders(c, e, o, field => $"events[{e.Id}].{field}");
+                }
+        }
+
+        /// <summary>R-ENEMY-005 (Q-ENEMY-5): an option's go-to orders name a map/units_1948.yaml row and one of that row's own
+        /// anchor or order target hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026,
+        /// #749: sourced anchors only; 2 November 2026, #2087: order targets, option 1). They are checked and applied under
+        /// both GDD identities. R-ENEMY-007 also requires every operation option to author its allowed player regions. The legacy loop reads the
+        /// same real cards but no units file, so it has nothing to check them against and no unit to order.</summary>
+        static void CheckOrders(Content c, GameEvent e, EventOption o, Func<string, string> F)
+        {
+            for (int i = 0; i < o.UnitOrders.Count; i++)
+            {
+                var x = o.UnitOrders[i];
+                var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
+                if (x.Unit.Trim() == "") throw new ContentException(e.File, at + ".unit", "required");
+                if (!x.QGiven) throw new ContentException(e.File, at + ".q", "required");
+                if (!x.RGiven) throw new ContentException(e.File, at + ".r", "required");
+            }
+            if (!c.IsGdd) return;
+            var requirementField = F(FormattableString.Invariant($"options[{o.Id}].requires_unit_regions"));
+            if (o.UnitOrders.Count == 0)
+            {
+                if (o.RequiresUnitRegions.Count != 0)
+                    throw new ContentException(e.File, requirementField, "requires unit_orders on the same option");
+                return;
+            }
+            if (o.RequiresUnitRegions.Count == 0)
+                throw new ContentException(e.File, requirementField, "required for an option with unit_orders (R-ENEMY-007)");
+            var regions = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < o.RequiresUnitRegions.Count; i++)
+            {
+                var id = o.RequiresUnitRegions[i];
+                var at = requirementField + FormattableString.Invariant($"[{i}]");
+                if (!regions.Add(id)) throw new ContentException(e.File, at, "duplicate region id");
+                if (!c.PlayerRegions.Regions.ContainsKey(id)) throw new ContentException(e.File, at, $"unknown player region '{id}' ({PlayerRegionCatalogue.FileName})");
+            }
+            var rows = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < o.UnitOrders.Count; i++)
+            {
+                var x = o.UnitOrders[i];
+                var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
+                if (!rows.Add(x.Unit)) throw new ContentException(e.File, at + ".unit", "duplicate operation unit row");
+                if (!c.UnitAnchorHexes.Keys.Any(k => k.Row == x.Unit))
+                    throw new ContentException(e.File, at + ".unit", $"unknown unit row '{x.Unit}' ({StartingForces.FileName})");
+                if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R))
+                    && !c.UnitOrderTargets.Any(k => k.Key.Row == x.Unit && (k.Value.Q, k.Value.R) == (x.Q, x.R)))
+                    throw new ContentException(e.File, at, FormattableString.Invariant($"hex q={x.Q} r={x.R} is not an anchor or an order target of '{x.Unit}' in {StartingForces.HexesFileName}"));
+                // The order ends with its anchor's window (the owner's answer 1 on #2087), so the anchor needs an end.
+                if (EventSystem.OrderEnds(c, x) == null)
+                    throw new ContentException(e.File, at, FormattableString.Invariant($"the anchor of '{x.Unit}' on hex q={x.Q} r={x.R} has no 'to' date in {StartingForces.FileName}"));
+            }
         }
 
         static void CheckStructured(Content c, GameEvent e, EventOption o, bool sensitive, Func<string, string> F)
@@ -198,10 +283,11 @@ namespace Statecraft.Sim
                 if (!Offices.OfficeId.IsMatch(o.Id)) throw new ContentException(file, F("id"), ContentLoader.IdRule);
                 if (!seen.Add(o.Id)) throw new ContentException(file, F("id"), "duplicate id");
                 ContentLoader.Named(file, F("name"), o.Name);
-                // The Hebrew name (#1187): an agent translation of the English until a native speaker reads it (#564),
-                // so it needs no sources of its own; the flag is agent-checked or absent, and the name is Hebrew letters.
+                // The Hebrew name (#1187): an agent translation of the English until a native speaker, or an AI-assisted
+                // contributor who discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"), so
+                // it needs no sources of its own; the flag is agent-checked or absent, and the name is Hebrew letters.
                 if (o.NameHeReviewGiven && o.NameHeReview != HebrewReview.AgentChecked)
-                    throw new ContentException(file, F("name_he_review"), $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                    throw new ContentException(file, F("name_he_review"), $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the name, #564), or left out once it has been read");
                 if (o.NameHe == "")
                 {
                     if (o.NameHeReviewGiven) throw new ContentException(file, F("name_he"), "required: name_he_review is set but the name is empty");
@@ -322,7 +408,7 @@ namespace Statecraft.Sim
                     if (!v.When.Any(r => IsAlternativeRoad(c, r)))
                         throw new ContentException(e.File, F($"{at}.when"), "a variant follows a road not taken: at least one entry names an option that did not happen, or diverged: true");
                     if (v.Text.Trim() == "") throw new ContentException(e.File, F($"{at}.text"), "a variant has text");
-                    if (v.Sources.Count == 0) throw new ContentException(e.File, F($"{at}.sources"), "needs at least one source");
+                    ContentLoader.RequiredSources(e.File, F($"{at}.sources"), v.Sources);
                     if (v.Title != "") CheckPlaceholders(c, e, F($"{at}.title"), v.Title, offices);
                     CheckPlaceholders(c, e, F($"{at}.text"), v.Text, offices);
                 }
@@ -435,12 +521,13 @@ namespace Statecraft.Sim
 
         /// <summary>An event's Hebrew text (#1064): title_he, text_he and every option's text_he, all or none (a card half in
         /// Hebrew would mix the languages), in Hebrew letters, with placeholders that resolve as the English ones must.
-        /// text_he_review is agent-checked until a native speaker has read the text (#564), and needs the text.</summary>
+        /// text_he_review is agent-checked until a native speaker, or an AI-assisted contributor who discloses it, has read
+        /// it (#564; owner, 4 November 2026: "AI-assisted can clear it"), and needs the text.</summary>
         static void CheckHebrew(Content c, GameEvent e, HashSet<string> offices)
         {
             string F(string field) => $"events[{e.Id}].{field}";
             if (e.TextHeReviewGiven && e.TextHeReview != HebrewReview.AgentChecked)
-                throw new ContentException(e.File, F("text_he_review"), $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the text");
+                throw new ContentException(e.File, F("text_he_review"), $"must be {HebrewReview.AgentChecked} (until a native speaker, or an AI-assisted contributor who discloses it, has read the text, #564), or left out once it has been read");
             var fields = new List<(string Field, string Value)> { ("title_he", e.TitleHe), ("text_he", e.TextHe) };
             fields.AddRange(e.Options.Select(o => ($"options[{o.Id}].text_he", o.TextHe)));
             if (fields.All(x => x.Value == ""))

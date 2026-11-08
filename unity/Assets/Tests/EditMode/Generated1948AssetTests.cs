@@ -109,8 +109,9 @@ public class Generated1948AssetTests
         // #2085's generated whole towns are placed the same way (TownLandmarks), so the same checks hold for them.
         // #2083's weapons are made the same way too (held by the token figures, UnitWeapons).
         var props = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id)).ToList();
-        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.TiberiasTown,
-            CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown }, props);
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.EgyptianDakota,
+            CollectionCatalog.StoneWell, CollectionCatalog.Sandbags, CollectionCatalog.CrateStack, CollectionCatalog.StoneWall,
+            CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown }, props);
         foreach (string id in props)
         {
             string dir = $"{CollectionCatalog.Folder}/{id}", fbx = CollectionCatalog.SourceModelPath(id), map = $"{dir}/{id}_basecolor.jpg";

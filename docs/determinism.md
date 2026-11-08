@@ -9,8 +9,10 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
 - **Reference vectors:** `DeterminismTests.SplitMix64MatchesTheReferenceVectors` checks the first three outputs for
   seeds 0 and 1234567. The expected values come from Sebastiano Vigna's reference `splitmix64.c`
   (https://prng.di.unimi.it/splitmix64.c), compiled and run separately. They were not copied from this implementation.
-- **No trigonometry in the sim:** the sim calls only `Math.Abs`, `Math.Min` and `Math.Max`. Geometry that needs
-  cos/sin (which hex owns a settlement, which hex a starting force's anchor is on) is precomputed by
+- **No trigonometry in the sim:** paths that change state call only `Math.Abs`, `Math.Floor`, `Math.Max`, `Math.Min`
+  and `Math.Round`, and every such `Math.Round` passes `MidpointRounding.AwayFromZero`. `PlayerText` also rounds, for
+  display only, and `MapOverrides` uses `Math.Sqrt(3)` only to diagnose editor offsets; neither changes state. Geometry
+  that needs cos/sin (which hex owns a settlement, which hex a starting force's anchor is on) is precomputed by
   `tools/settlement_hexes.py` and `tools/unit_anchor_hexes.py` and read as content.
 - **Canonical hash:** `GameState.Hash()` is SHA-256 over a canonical text. Keys are sorted ordinally. Doubles are
   written as IEEE bit patterns, with -0.0 written as 0.0. Culture is invariant. Fractional site and city-project
@@ -33,12 +35,12 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   its hex, with no RNG draw (R-CTRL-011 to R-CTRL-013; `OccupyTests.TheTimerCountsDownInStepTen` and
   `OccupationDrawsNothing`). `mvp-occupy-cost` (#798) is the golden that occupies a place: it plays the real content, moves
   Golani's unit onto Nazareth, answers the capture with Occupy and runs to the end of the timer; `OccupyTests` plays the
-  same run on fixture content. `mvp-annex-nazareth` (#799) plays the same run and annexes Nazareth when the timer ends (R-CTRL-016): one new city from the row's count, with no RNG draw (`EndOccupationTests`). No other golden occupies a place, so none moves.
+  same run on fixture content. `mvp-annex-nazareth` (#799) plays the same run and annexes Nazareth when the timer ends (R-CTRL-016): one new city from the row's count, with no RNG draw (`EndOccupationTests`), and the same count joins `GameState.Population`'s `annexed` group (R-CITY-008, #2608), which moved this golden's population, debt, FX and Food lines. No other golden occupies a place, so none moves.
 - **Deport (resolver step 10, after the occupation timers):** the units leave as in Raid; the costs, the drag (each turn,
   per place in `DisplacedByPlayer`) and the International Support ceiling are plain arithmetic on the indicator's shift,
   with no RNG draw (R-CTRL-018; `DeportTests.DeportDrawsNothing`). `DisplacedByPlayer` is hashed as `displaced=` only when
   non-zero. The real content keeps Deport out of play (`mvp.deport_in_play: false`), and no golden Deports, so
-  none moves. The `mvp-deport-cost` golden, paired with `mvp-occupy-cost`, cannot play the real content, where Deport
+  none moves. The `mvp-deport-cost` fixture comparison (not a manifest golden), paired with `mvp-occupy-cost`, cannot play the real content, where Deport
   is refused (#800);
   `DeportNeverDominatesTests` plays both runs from the same fixture states.
 
@@ -54,16 +56,16 @@ with `GoldenRun.Seed = 1948` on the real `content/`, then steps with `GoldenRun.
 (or the game ends, or 1000 turns pass). Since the GDD cutover (Phase 2 PR 1) the orders are the reference player's
 (`Statecraft.Sim.Reference.ReferencePlayer`, decision D-A7): a stated test policy, not game AI and not history. It sends
 `HistoricalAI`'s orders and leaves the jobs to each city's default (R-CITY-009), then trains one halutz group when there is none and none in training,
-while the turn's Attention and the Treasury last. No game mode or UI reaches it (`ReferencePlayerTests`); every copy of the
+while the turn's Attention lasts (training borrows, so the Treasury does not hold it back). No game mode or UI reaches it (`ReferencePlayerTests`); every copy of the
 golden loop (the writer preview, the invariants, the era goldens) takes its orders from `GoldenRun.Orders`. The real game
 plays the GDD loop on monthly turns from 15 May 1948 and ends on 15 January 1952 after 44 turns (R-LOOP-004). Each run's
 final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `74fbe989d84a987728ba983a263714dcbe05abc2768033c15c3aed212cf34b63` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `d74296940a6a6c8346b38679d80ed25ef0b537d2e709048eb4989ad46a259a66` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `d74296940a6a6c8346b38679d80ed25ef0b537d2e709048eb4989ad46a259a66` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `832e8ccc38e3fb36228826816b452477fbbd6ab667ee30cdaef40e5b1b2fe869` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `841f05536a49b68cd10d3f1ca548e559098415119284d483620f14bb6a4bb44e` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `841f05536a49b68cd10d3f1ca548e559098415119284d483620f14bb6a4bb44e` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -71,8 +73,9 @@ later end date moves only `mvp-end`. `mvp-end` is pinned in the manifest and its
 player check enumerate the manifest, so it and every scenario are checked without another hand-written list.
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
-buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6`.
+buttons, answering each event with its first option while the turn's Attention pays for it and that option's operation
+units are in place in the state the card shows: the turn's start after its standing go-to routes have moved, the
+no-orders preview (R-ENEMY-007, `GoldenRun.SmokeOrders`; the smoke gives no unit orders), the rest left to their ministers): `SMOKE OK 5 turns 1948-10-15 12f088f62bd0694ae59b5f6472751579ad96c2198308d0869a8cf795f1aad051`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,14 +86,14 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6"
+  --expect "SMOKE OK 5 turns 1948-10-15 12f088f62bd0694ae59b5f6472751579ad96c2198308d0869a8cf795f1aad051"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
 `-smoke-orders`: the golden seed, one turn). It hides the turn's event card (the events go to their ministers), clicks the
 hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
-10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
-place (7,11; it skips Nazareth's 7,10, so the run captures nothing) and presses End Turn:
+11,11, its first anchor in `content/map/unit_anchor_hexes.yaml`), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
+place (8,12, no place, so the run captures nothing) and presses End Turn:
 `SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78`.
 `GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
 prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
@@ -129,9 +132,9 @@ them from a seed (default 1948) in Historical mode until `until:`, and `Scenario
 scripted command passes. A command the sim rejects fails the test with the date, the order and the reason, and a step that never runs
 fails too. To add one: write the file, run `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln --filter ScenarioTests` (it adds the
 manifest line and the snapshot), then run the tests plain. A scenario that moves is re-pinned with the hash goldens by the same
-command; its snapshot diff in the PR shows what moved, and the commit message says why. All four play the real content.
+command; its snapshot diff in the PR shows what moved, and the commit message says why. All six play the real content.
 `cautious` and `reckless` run through March 1949, setting rationing on the first turn after its office opens; `mvp-absorb-first` (GDD Phase 1
-PR 3) fills Tel Aviv's jobs on the first turn and completes the absorb objective on 15 January 1950; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
+PR 3) sets Tel Aviv's workers to 90 of its 106 job slots on the first turn (all are filled at the start), freeing 158 civilians for that turn's halutz training, and completes the absorb objective on 15 January 1950; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
 turns down every source of foreign currency until Money and Food run out, and ends in `defeat_economy` (R-END-002).
 
 **MVP goldens after the cutover.** The real game is the GDD game, so every golden above is an MVP golden. Each PR that
@@ -147,8 +150,9 @@ turn 35), `hash1952` `62f8ec61a14acff4eab503381994a7c94d7a2f786dcfde5c4c19439ac8
 R-LOOP-003) and `scenario-mvp-absorb-first` `59ea3181`. The owner tags the last pre-cutover commit `pre-gdd-v0.1`.
 
 `Scenario` lives in `Statecraft.Sim` next to `GoldenRun`, so Unity, which gets only `Statecraft.Sim.dll` and
-`YamlDotNet.dll` from `tools/build_sim_for_unity.sh`, can play the same runs (#394). The scenario files, the manifest and the
-snapshots stay with the tests and are not shipped to the player.
+`YamlDotNet.dll` from `tools/build_sim_for_unity.sh`, can play the same runs (#394). `ContentSync` copies the manifest and the scenario files into the
+player (`Assets/StreamingAssets/golden`) before every player build, for the player's own golden check (`?golden` on WebGL,
+`-golden` on desktop). Of these, only the snapshots (the `golden/*.txt` files other than the manifest) stay with the tests.
 
 **Invariants.** A hash says something changed; `sim/Statecraft.Sim.Tests/golden/invariants.yaml` says whether it is
 still plausible. Each entry names a golden run (`1950` or `1952`), a value (an indicator id, or `treasury`, `debt`,
@@ -161,10 +165,9 @@ current runs; the design document and the maintainers decide which ranges matter
 
 **Rules per era.** A system reads `Content.RulesAt(date)`, where `date` is the date of the state the turn starts from (`s.Date`
 before the step); `AttentionSystem.Refill` runs after the date moves, so it fills the next turn from that turn's era. Rules
-change only at era boundaries (chapters spec section 3.3). Spec section 4.1 will end the turn that reaches a boundary exactly
-on it, so every turn then lies in one era; until that lands, only the last era's end is a boundary turn, and a turn that
-starts in one era and ends in the next uses the starting era's rules for its whole length
-(`EraRulesSwitchTests.ARunPicksUpTheOverrideFromTheFirstTurnThatStartsInTheNewEra`). Start
+change only at era boundaries (chapters spec section 3.3). Spec section 4.1 ends the turn that reaches a boundary exactly
+on it: `Simulation.TurnEnd` cuts each turn at the next era's start or the game's end, whichever comes first, so every
+turn lies in one era (`sim/Statecraft.Sim/Simulation.cs`). Start
 values (`start`, `treasury_start`, `fx_start`, `start_rung`, `initial_population`, `budget_start`, `budget_owners`) are read once by `NewGame`
 from the base `rules.yaml`: an era override cannot set them. A map action's display name is also read from the base rules,
 because an override cannot remove an action. `EraRulesSwitchTests.OnlyStartValuesAndMapActionNamesReadTheBaseRulesDirectly`
@@ -461,3 +464,94 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-defeat | `9e2afc15` | unit positions on the 4.4 km grid; the run's late indicators differ (housing, morale, standing) with the different fights; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `b7d3848d`) |
 | #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-occupy-cost | `0bc59565` | Golani's unit is 5 movement points from Nazareth at 4.4 km, so the scenario moves it on 15 May to (9, 11) and onto Nazareth on 15 June, answers Occupy on 15 July and runs to 15 January 1949 (`since=1948-07-15`); as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `9fcc7bae`) |
 | #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-annex-nazareth | `b6df4284` | `mvp-occupy-cost`'s steps one turn later, then `end_occupation nazareth annex` on 15 January 1949, run to 15 February 1949; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `8fe6d129`) |
+| #749 part 2: the operation cards' unit orders (R-ENEMY-005; owner, 31 Oct 2026: "GDD 0.1 only", "Sourced anchors only"; owner's answer 1 on #2087: "Orders expire with the operation") | hash1950 | `01d5dea9` | the reference player answers `ten_days` `central_front` on 15 July 1948: Carmeli (unit 1) sets out from Haifa toward its Brosh anchor and reaches 8,8, in the Lower Galilee, that turn; its order ends with the anchor's window (19 July), so on 15 August it stops there. It answers `operation_horev` `launch` on 15 December 1948: Golani (unit 0) sets out from Yavne'el toward the Julis camp, goes round Nazareth (no capture), and on 15 March 1949, after its order ended with the Egypt armistice (24 February), stops at 3,14, between Zikhron Ya'akov and Hadera, short of Julis. No fighting and no capture; the final state differs from main's only in where the two brigades stand (was `8578966e`) |
+| #749 part 2: as above | hash1952 | `ece2105d` | same orders as hash1950; Golani stays at 3,14 and Carmeli at 8,8 to the end (was `385ba3b5`) |
+| #749 part 2: as above | mvp-end | `ece2105d` | same run as hash1952 (was `385ba3b5`) |
+| #749 part 2: as above | smoke5 | `6da1203f` | the smoke run's first option of `ten_days` sends Carmeli toward its Brosh anchor; it stops at 8,8 on 15 August 1948. No snapshot is kept for this run (was `7bdf646a`) |
+| #749 part 2: as above | scenario-reckless | `a6328f59` | Horev's delegated order takes Golani round Nazareth; it stops at 3,14 on 15 March 1949 (was `a2ca9626`) |
+| #749 part 2: as above | scenario-cautious | `725c9465` | as reckless, and the delegated `ten_days` sends Carmeli to 8,8, where it stops on 15 August 1948 (was `c06d89f0`) |
+| #749 part 2: as above | scenario-mvp-absorb-first | `e9b657e7` | both orders, as in cautious; no capture and no fighting (was `9c98ae51`) |
+| #749 part 2: as above | scenario-mvp-defeat | `6dc76d20` | both orders, as in cautious; no fighting, so no extra RNG draws, and the delegated cards and the defeat are as on main (was `b7d3848d`) |
+| #749 part 2: as above | scenario-mvp-occupy-cost | `2110fe92` | Carmeli stops at 8,8 as in cautious; Golani holds Nazareth for the scenario and the run ends on 15 December 1948, before Horev's order; Nazareth's capture and Occupy are unchanged (was `9fcc7bae`) |
+| #749 part 2: as above | scenario-mvp-annex-nazareth | `12110c4b` | both orders: Golani leaves the annexed Nazareth for Julis and is on its way at 5,12 when the run ends on 15 January 1949, its order standing to 24 February; the annexation is unchanged (was `8fe6d129`) |
+| #2087, the owner's rulings of 1 November 2026 ("military operations must have unit orders"; Dani: "Kiryati to Ramle"; Latrun: Harel toward the fort): Kiryati to Ramle replaces Yiftach to Lydda, and Yoav, Hiram and Latrun's `press_offensive` give orders to new sourced order targets (R-ENEMY-005; owner, 2 November 2026, option 1: `order_targets` in `map/units_1948.yaml`, not anchors) | hash1950 | `f4a7288f` | `ten_days` on 15 July 1948: Kiryati (unit 3) reaches Ramle's hex the same turn and takes Lydda and Ramle (their residents flee, as for every capture); no decision is taken, so on 15 August it withdraws to the next hex, -2,21, and both are under enemy control again. `operation_yoav` on 15 October: Givati (unit 4) reaches Huleiqat; the Egyptian unit next to it attacks twice, and on 15 November Givati, down to strength 1 of 3, falls back to -7,26; the Negev Brigade (unit 7) marches south and takes Beersheba on 15 December, then withdraws to -8,31 on 15 January 1949, and Beersheba is under enemy control again. `operation_hiram` on 15 November: Carmeli (unit 1) sets out from 8,8 for Manara; the ALA attacks it on 15 January 1949 (strength 2 to 1) and it reaches Manara on 15 February. The 7th Brigade's order (unit 13) is refused on 15 November, every run, because the ALA's unit holds al-Malikiyya; the turn's refusals say so. The combat draws shift the RNG, so the Arab Legion's attack on Harel on 15 October costs it nothing (strength 5, was 4). The reference player answers `latrun_proposal` with the vote, so Harel's order is never given (was `01d5dea9`) |
+| #2087, as above | hash1952 | `452562ce` | same as hash1950; nothing moves after 15 February 1949 (was `ece2105d`) |
+| #2087, as above | mvp-end | `452562ce` | same run as hash1952 (was `ece2105d`) |
+| #2087, as above | smoke5 | `54f201ca` | the smoke run's first option of `ten_days` sends Kiryati to Ramle, which it takes on 15 July 1948 (was `6da1203f`) |
+| #2087, as above | scenario-reckless | `ad599eb9` | no `ten_days` in this run. Givati is destroyed at Huleiqat by the Egyptian unit's second attack on 15 November 1948; the Negev Brigade takes Beersheba on 15 December and still holds it, awaiting a decision, when the run ends on 15 April 1949; Carmeli, sent from Haifa toward Manara, is destroyed by the ALA at 13,4 on 15 February 1949; the 7th Brigade's order is refused on 15 November (was `a6328f59`) |
+| #2087, as above | scenario-cautious | `d8724383` | Kiryati takes Lydda and Ramle on 15 July 1948 and holds them, awaiting a decision, to the run's end; Givati is destroyed at Huleiqat on 15 November; the Negev Brigade takes Beersheba on 15 December; Carmeli is destroyed by the ALA on 15 January 1949; the 7th Brigade's order is refused (was `725c9465`) |
+| #2087, as above | scenario-mvp-absorb-first | `a2b5fe92` | as cautious, to 15 January 1950 (was `e9b657e7`) |
+| #2087, as above | scenario-mvp-defeat | `918b56ff` | as cautious; the extra combat draws shift the RNG, so the delegated `iraqi_exodus` card draws `airlift` instead of `pace` (morale, international standing and housing differ from that card on), and on 15 December 1951 the last turn's withdrawal takes Kiryati out of Lydda and Ramle and the Negev Brigade out of Beersheba. The run still ends in defeat (was `6dc76d20`) |
+| #2087, as above | scenario-mvp-occupy-cost | `59cae466` | the run ends on 15 December 1948: Kiryati holds Lydda and Ramle, awaiting a decision; Givati was destroyed at Huleiqat on 15 November; the Negev Brigade is one hex short of Beersheba and Carmeli on its way at 10,7, both orders standing; Nazareth's capture and Occupy are unchanged (was `2110fe92`) |
+| #2087, as above | scenario-mvp-annex-nazareth | `3f92f80e` | the run ends on 15 January 1949: Kiryati holds Lydda and Ramle and the Negev Brigade Beersheba, all awaiting a decision; Givati was destroyed at Huleiqat; Carmeli is on its way at 11,6; the annexation is unchanged (was `12110c4b`) |
+| #2087 merged with main after #1183 (the 4.4 km grid): the order targets and the cards' order hexes re-derived with `tools/unit_anchor_hexes.py` (Kiryati's Ramle, since `e5e74883d` Ramla's capture hex (-3, 24), Carmeli's Manara (15, 3), the 7th Brigade's al-Malikiyya (14, 4), Givati's Huleiqat (-9, 29), the Negev Brigade's Beersheba (-10, 35), Harel's Latrun (-3, 25); Golani's Julis anchor (-8, 28) and Carmeli's Brosh anchor (14, 6) are main's), one re-pin on the merged tree | hash1950 | `48abe729` | only the unit positions and one capture move; the economy lines are main's. The delegated and answered card orders now run on the 4.4 km hexes: Golani's Horev order (to 24 February 1949) leaves it at 4,14; Carmeli ends at Manara (15,3); Kiryati stops on (-4,24) when the Dani order ends on 20 July 1948 (the next rows run it to 16 August, and it takes Ramla); Givati holds Huleiqat (-9,29); the Negev Brigade takes Beersheba on 15 January 1949 and ends next to it at -9,35. The 7th Brigade's Hiram order to (14,4) is refused on 15 November 1948 while the ALA holds that hex, as before (was `74fbe989`) |
+| #2087 merged with main after #1183, as above | hash1952 | `43061114` | same run as hash1950; nothing moves after 1950 (was `d7429694`) |
+| #2087 merged with main after #1183, as above | mvp-end | `43061114` | same run as hash1952 (was `d7429694`) |
+| #2087 merged with main after #1183, as above | smoke5 | `a968abbc` | the smoke run's first option of `ten_days` sends Kiryati toward Ramle and Carmeli to (14,6). No snapshot is kept for this run (was `9255f2bc`) |
+| #2087 merged with main after #1183, as above | scenario-reckless | `4f3ca893` | no `ten_days` in this run. Golani ends at 4,14 as in hash1950; Carmeli is on its way to Manara at 13,3, its order standing to 23 March 1949; Givati holds Huleiqat; the Negev Brigade takes Beersheba on 15 January 1949 and holds it, awaiting a decision (was `63cab812`) |
+| #2087 merged with main after #1183, as above | scenario-cautious | `be999e93` | as hash1950, with Beersheba awaiting a decision at the run's end (was `e7ad49bf`) |
+| #2087 merged with main after #1183, as above | scenario-mvp-absorb-first | `1e14658d` | as cautious (was `b589c9dc`) |
+| #2087 merged with main after #1183, as above | scenario-mvp-defeat | `8435fb3b` | the unit positions and Beersheba's capture as in hash1950; the defeat is unchanged (was `9e2afc15`) |
+| #2087 merged with main after #1183, as above | scenario-mvp-occupy-cost | `f3bab7ca` | the run now stops on 15 December 1948, one turn earlier: the 15 December turn delegates Operation Horev, whose order would take Golani off Nazareth and end the occupation this scenario measures. Nazareth still waits for EndOccupation since 15 July 1948; the one-turn-shorter run differs in the economy, the events and the arrivals, and on 15 December the 7th Brigade still holds (-4,25) at strength 1 under the Legion's attack (was `0bc59565`) |
+| #2087 merged with main after #1183, as above | scenario-mvp-annex-nazareth | `ca015736` | Nazareth is annexed on 15 December 1948, a turn earlier, in the turn that delegates Horev, before its order takes Golani away (a month later there would be no occupation to end); the upkeep stops a month earlier (debt IL 0.04m lower). Golani is on its way toward Julis at 4,14 and Carmeli toward Manara at 15,5 when the run ends on 15 February 1949; Beersheba is taken on 15 January 1949 and awaits a decision (was `b6df4284`) |
+| #2087, the owner's Dani ruling of 2 November 2026 ("Longer order: takes Ramla (Recommended)"): Kiryati's Ramle order target runs to 16 August 1948 instead of 20 July (`map/units_1948.yaml`), one re-pin on the tree merged with main `573b9d7ac` | hash1950 | `ac38d6c7` | the 15 July 1948 turn still leaves Kiryati on (-4,24), one hex short of Ramla's capture hex (-3,24) after going round Lod; the order now stands on 15 August, so Kiryati steps onto (-3,24) and takes Ramla that turn (`since=1948-09-15`, fled). Lod is not taken by the card. The reference player then raids Ramla (`HistoricalAI.cs:24-27`), so Kiryati withdraws to -2,24 and Ramla is under enemy control again at the run's end (an ownerless record, `fled`); the other units, Beersheba and the economy lines are unchanged (was `48abe729`) |
+| #2087, the longer Dani order, as above | hash1952 | `22f2c8da` | same run as hash1950: Ramla taken in the 15 August 1948 turn, then raided, so Kiryati is at -2,24 and Ramla is under enemy control at the end (was `43061114`) |
+| #2087, the longer Dani order, as above | mvp-end | `22f2c8da` | same run as hash1952 (was `43061114`) |
+| #2087, the longer Dani order, as above | smoke5 | `803f0f32` | the smoke run's first option of `ten_days` gives the longer Dani order, so its run to 15 October 1948 differs from the 15 August turn on. No snapshot is kept for this run (was `a968abbc`) |
+| #2087, the longer Dani order, as above | scenario-cautious | `0be86235` | Kiryati takes Ramla in the 15 August 1948 turn and holds it on (-3,24), Ramla awaiting a decision at the run's end (was `be999e93`) |
+| #2087, the longer Dani order, as above | scenario-mvp-absorb-first | `53c208c2` | as cautious (was `1e14658d`) |
+| #2087, the longer Dani order, as above | scenario-mvp-defeat | `6782cce4` | Ramla taken in the 15 August 1948 turn, then raided, so Kiryati is at -2,24 and Ramla is under enemy control at the end, as hash1950; the defeat is unchanged (was `8435fb3b`) |
+| #2087, the longer Dani order, as above | scenario-mvp-occupy-cost | `612e9feb` | as cautious: Kiryati holds Ramla on (-3,24), awaiting a decision; the run still stops on 15 December 1948 (was `f3bab7ca`) |
+| #2087, the longer Dani order, as above | scenario-mvp-annex-nazareth | `c8195c09` | as cautious: Kiryati holds Ramla on (-3,24), awaiting a decision; Nazareth's annexation is unchanged (was `ca015736`) |
+| #1270 (S1, the Syrian script past the first truce; Beri's choice (a) on #2180, 3 Nov 2026, under the owner's 22 October rule), re-pinned on main after #2087 | hash1950 | `a08ff850` | the Syrian unit's script runs past 8 July 1948 to the bridgehead's anchor S1 (to 20 July 1949). On the 4.4 km grid S1's point falls in Rosh Pinna's hex (14, 6), a player's locality, and (15, 6) is already Syrian anchor 1, so `tools/unit_anchor_hexes.py` puts S1 on the free neighbour (15, 5): on the 15 July 1948 turn the unit steps one hex from its June hex (15, 6) onto (15, 5) and holds it fortified (`10:syrian_army@15,5`). With #2087's operation-card orders, unit 1's card go-to toward (15, 3) now ends at (15, 4), one hex short of (15, 3) (`1:veteran_soldier@15,4`) (was `ac38d6c7`) |
+| #1270 (S1), re-pinned on main after #2087: as above | hash1952 | `5561fc51` | same run as hash1950: the Syrian unit on (15, 5), unit 1 on (15, 4) (was `22f2c8da`) |
+| #1270 (S1), re-pinned on main after #2087: as above | mvp-end | `5561fc51` | same run as hash1952 (was `22f2c8da`) |
+| #1270 (S1), re-pinned on main after #2087: as above | smoke5 | `d12c83ce` | the smoke run's five turns reach 15 October 1948, past the 15 July step; no snapshot is kept for this run (was `803f0f32`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-reckless | `bed7eb74` | the Syrian unit on (15, 5) is the only change (was `4f3ca893`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-cautious | `4f3a0556` | the Syrian unit on (15, 5); unit 1 is still on its card order at the run's end, on (15, 4) toward (15, 3), so the run keeps `cardorders{ 1=1949-03-23 }` (was `0be86235`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-absorb-first | `f289f897` | the Syrian unit on (15, 5), unit 1 on (15, 4) (was `53c208c2`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-defeat | `8c83f6e0` | as absorb-first (was `6782cce4`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-occupy-cost | `ad9af425` | the Syrian unit on (15, 5) is the only change (was `612e9feb`) |
+| #1270 (S1), re-pinned on main after #2087: as above | scenario-mvp-annex-nazareth | `e8a9dbf1` | the Syrian unit on (15, 5); unit 1, on its card order toward (15, 3), is on (13, 6) at the run's end instead of (15, 5) (was `c8195c09`). No other golden moves: smoke-orders does not reach 15 July 1948 |
+| #2608: the annexed residents join the population (R-CITY-008) | scenario-mvp-annex-nazareth | `d0372ca6` | `end_occupation nazareth annex` adds the row's count to `GameState.Population`'s `annexed` group, so the population gains the annexed residents, and the debt, FX and Food lines move with it; the annexation itself and every unit position are unchanged. No other golden occupies a place, so none moves (was `e8a9dbf1`) |
+| #2804 item 4: `GameState.TotalPopulation` sums the population groups in ordinal key order (R-FOOD-001; owner, 6 Nov 2026: "Do it just before the regen") | hash1950 | `7d8e158b` | floating-point rounding only: the same numbers added in a different order land one ulp apart, in `debt` (`...5F79` to `...5F7A`); no rule, value or event changes (was `a08ff850`) |
+| #2804 item 4: as above | hash1952 | `f5ebb830` | rounding only: `fx` moves by 16 ulp (`-12.990431328096559` to `-12.99043132809653`) and nothing else (was `5561fc51`) |
+| #2804 item 4: as above | mvp-end | `f5ebb830` | same run as hash1952 (was `5561fc51`) |
+| #2804 item 4: as above | smoke5 | `b93ad550` | rounding only; no snapshot is kept for this run (was `d12c83ce`) |
+| #2804 item 4: as above | scenario-reckless | `c0eeb7dd` | `debt` 2 ulp apart, nothing else (was `bed7eb74`) |
+| #2804 item 4: as above | scenario-cautious | `31ab04b0` | `debt` 2 ulp apart, nothing else (was `4f3a0556`) |
+| #2804 item 4: as above | scenario-mvp-absorb-first | `16c8a869` | `debt` 1 ulp apart, nothing else (was `f289f897`) |
+| #2804 item 4: as above | scenario-mvp-defeat | `572f71ab` | `debt` and `fx` 2 ulp apart each; the defeat is unchanged (was `8c83f6e0`) |
+| #2804 item 4: as above | scenario-mvp-occupy-cost | `eb3ae67b` | `debt` 1 ulp apart, nothing else (was `ad9af425`) |
+| #2804 item 4: as above | scenario-mvp-annex-nazareth | `3cab078b` | `debt` 2 ulp apart, nothing else (was `d0372ca6`). No other golden moves: smoke-orders keeps `08d9800e` |
+| #2551, #2833 (R-TURN-002: ten decision cards a turn earlier), re-pinned on main after #2804 item 4 | hash1950 | `d53edcd5` | `armistice_egypt` comes on 15 February 1949 and signing it sets rung 2 a turn earlier, so the war costs one turn less (debt IL 3.75m lower); `austerity_1949` is imposed on the 15 April 1949 turn, so rationing feeds one turn longer (food, morale and stability move). `israel_bonds` keeps its date (owner, 4 November 2026) (was `7d8e158b`) |
+| #2551, #2833: as above | hash1952 | `25fbfb8f` | the same IL 3.75m lower debt and the drift of the earlier austerity; #2833's two cards (`iraqi_exodus` on 15 February 1951, `forex_crisis_1951` on 15 October 1951) move `morale`, `homes_lift_morale`, `fx` (2 ulp) and part of `stab`: a run with only their two `from` lines reverted gives `4b7d3e79`, where those lines are as before (was `f5ebb830`) |
+| #2551, #2833: as above | mvp-end | `25fbfb8f` | the same run as hash1952 (was `f5ebb830`) |
+| #2551, #2833: as above | scenario-reckless | `ac5fbdd3` | the run ends on 15 April 1949: Lebanon and Jordan now come on 15 March and are signed (international standing +0.10), `austerity_1949` is pending at the end, and the debt is IL 3.75m lower (was `c0eeb7dd`) |
+| #2551, #2833: as above | scenario-cautious | `46655872` | as reckless (was `31ab04b0`) |
+| #2551, #2833: as above | scenario-mvp-absorb-first | `cf73bb07` | as hash1950 (was `16c8a869`) |
+| #2551, #2833: as above | scenario-mvp-defeat | `8096c41e` | its answers to `austerity_1949` and `reparations_claim` move with the cards (15 April 1949, 15 February 1951); the debt is IL 3.75m lower and the run still ends in defeat; as in hash1952, #2833's two cards move `morale`, `homes_lift_morale`, both `housing` lines (rounding only) and part of `stab` (`16ef2d5b` with their `from` lines reverted) (was `572f71ab`) |
+| #2551, #2833: as above | scenario-mvp-annex-nazareth | `dec2cad5` | the run ends on 15 February 1949, the turn `armistice_egypt` now comes, so the card is fired and pending at the end (was `3cab078b`). smoke5, smoke-orders and scenario-mvp-occupy-cost end before 15 February 1949 and do not move |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | hash1950 | `b2dd7387` | the reference player stages Kiryati, Carmeli, the 7th Brigade and Golani before their operation cards; all four operations still take their historical options and Rhodes and Sinai still fire; Ramla falls a month earlier (15 August), and one Golani-Egypt engagement replaces an old Legion one (same draw count) (was `d53edcd5`, main after #2551 and #2833; the same lines change as before them) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | hash1952 | `488d99fe` | carries hash1950's staged-operation state forward: same choices and follow-up cards, earlier Ramla capture, IL 0.1m less debt (was `25fbfb8f`, main after #2551 and #2833; the same lines change as before them) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | smoke5 | `3803636f` | the five-turn first-option run gives no unit orders and stops at a first option whose operation units are not in place in the no-orders preview (the card shows that state), so Ten Days goes to its minister; with #2620's annexed residents on main (was `b93ad550`, main after #2551 and #2833; #2551 and #2833 do not move it, so the value is the same as before them; no snapshot is kept for this run) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | mvp-end | `488d99fe` | the same 44-turn run as hash1952 (was `25fbfb8f`, main after #2551 and #2833; the same lines change as before them) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-reckless | `2217be01` | Hiram, Yoav and Horev still resolve historically; staging leaves Golani in the south and the 7th Brigade alive; one engagement instead of two (one draw fewer) (was `ac5fbdd3`, main after #2551 and #2833; the same lines change as before them) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-cautious | `d421ba64` | as scenario-reckless: one engagement instead of two; Carmeli reaches its Hiram target, the 7th Brigade survives, Ramla falls a turn earlier (was `46655872`, main after #2551 and #2833; the same lines change as before them) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-absorb-first | `5cded37c` | operations still historical; staging sends Golani to the Egyptian front (three engagements instead of two, one draw more) and the 7th Brigade survives (was `cf73bb07`, main after #2551 and #2833; the same lines change as before them) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-defeat | `7fc8c624` | as above, Ramla a turn earlier; one draw more, so the delegated iraqi_exodus card now takes pace instead of airlift (was `8096c41e`, main after #2551 and #2833; the same lines change as before them) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-occupy-cost | `90494f81` | Ramla a turn earlier and Acre taken, the 7th Brigade survives, no combat draw; Golani stays Nazareth's last garrison (was `eb3ae67b`, main after #2551 and #2833; #2551 and #2833 do not move it, so the value is the same as before them) |
+| #2543 operations need units in place (owner: "Player must move them"); the automated players stage the units like a player | scenario-mvp-annex-nazareth | `adafb60f` | Golani is Nazareth's last garrison, so it is not staged and Horev postpones and lapses (the owner's rule): Rhodes Talks and Sinai Withdrawal never fire, and no combat draw (was `dec2cad5`, main after #2551 and #2833; the same lines change as before them) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack) | hash1950 | `832e8ccc` | Carmeli (unit 1) was staged for Ten Days onto Acre (8, 7), a Galilee member place, and captured it on 15 June 1948. It is now staged to another Galilee hex, so Acre is not taken and Carmeli ends a hex west, on (14, 3); nothing else differs (was `b2dd7387`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | hash1952 | `841f0553` | the same: no Acre capture, Carmeli on (14, 3) (was `488d99fe`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | mvp-end | `841f0553` | the same run as hash1952 (was `488d99fe`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-reckless | `8bf27728` | Acre is no longer captured and awaiting a choice at the end; nothing else differs (was `2217be01`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-cautious | `024fa528` | no Acre capture; Carmeli is on (14, 3) at the end, still on its card's go-to toward (15, 3), so the run keeps `cardorders{ 1=1949-03-23 }` (was `d421ba64`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-mvp-absorb-first | `96f62541` | no Acre capture; Carmeli on (14, 3) (was `5cded37c`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-mvp-defeat | `2c98e244` | no Acre capture; Carmeli on (14, 3); the defeat is unchanged (was `7fc8c624`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-mvp-occupy-cost | `f9df2061` | no Acre capture; Carmeli a hex west on its march, (10, 6) (was `90494f81`) |
+| #2543 review: the automated players' staging never targets an enemy-held place (`Movement.NoEntry`; R-ENEMY-007: staging is a move, not an attack): as above | scenario-mvp-annex-nazareth | `cf8d2bdf` | no Acre capture; Carmeli a hex west on its march, (12, 4) (was `adafb60f`). smoke5 and smoke-orders do not move: the smoke runs stage nothing |
+| #2543, the owner's 7 November 2026 rulings ("Wait, with a limit", "6 turns", "Keep the option"): a postponed operation waits for its units, up to `mvp.operation_wait_turns` turns, keeping its option, and the state records it (`postponed{}`, written only when set) | smoke5 | `14066f39` | the smoke gives no unit orders, so Ten Days, postponed on the 15 July 1948 turn, no longer lapses at its window's end: it is still pending and postponed on 15 October 1948, and the first-option run stops at it each turn, so Bernadotte and Yoav are pending behind it. No snapshot is kept for this run; the end state was read from a probe run (was `3803636f`) |
+| #2543, the owner's 7 November 2026 rulings ("Wait, with a limit", "6 turns", "Keep the option"): a postponed operation waits for its units, up to `mvp.operation_wait_turns` turns, keeping its option, and the state records it (`postponed{}`, written only when set): as above | scenario-mvp-annex-nazareth | `4d4a35d7` | Golani is Nazareth's last garrison on 15 December 1948, so Horev is postponed rather than lapsing; once Nazareth is annexed the automated player stages Golani toward Horev's regions (read from HistoricalAI, which skips a last garrison), and on 15 February 1949, the run's end, Horev is still pending, postponed since turn 7, with Golani on (6, 12) on its go-to toward (-7, 26) (was `cf8d2bdf`). No other golden moves: in the other runs every operation is decided in its own window |
+| #2543, the owner's Q4 of 7 November 2026 ("Shift by the delay"): `postponed{}` also records the date of the first postponement, from which a late launch's orders are shifted | smoke5 | `12f088f6` | format only: Ten Days' entry gains the date of its first postponement, turn 2, 15 July 1948 on monthly turns from 15 May; no snapshot is kept for this run (was `14066f39`) |
+| #2543, the owner's Q4 of 7 November 2026 ("Shift by the delay"): `postponed{}` also records the date of the first postponement, from which a late launch's orders are shifted: as above | scenario-mvp-annex-nazareth | `c2aafd13` | format only: `operation_horev=launch@7` becomes `operation_horev=launch@7@1948-12-15`; nothing else differs (was `4d4a35d7`) |

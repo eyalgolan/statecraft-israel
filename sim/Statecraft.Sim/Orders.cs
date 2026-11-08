@@ -25,6 +25,15 @@ namespace Statecraft.Sim
         public const string RefusedNotYours = "That unit is not yours";
         public const string RefusedArtilleryHold = "Artillery does not hold ground";
         public const string RefusedAlready = "That unit already has that order";
+        /// <summary>R-ENEMY-005 (the owner's answer 1 on #2087): an operation card's go-to that Movement.GiveGoTo refused. The
+        /// turn's Rejected list carries it with the order, as it carries the player's refused orders (EventSystem).</summary>
+        public const string RefusedCardOrder = "The unit could not take the operation's order";
+        /// <summary>R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"): an
+        /// operation card's go-to not carried out because the unit is the last Israeli unit on an occupied place
+        /// (SettlementControl.LastGarrison), at the order or on a later turn of its march. Listed like <see cref="RefusedCardOrder"/>.</summary>
+        public const string RefusedLastGarrison = "The unit stays: it is the last Israeli unit holding an occupied place";
+        /// <summary>#2707: an order other than a go-to or an attack that carries a hex (Simulation.Execute); the UI maps it to its own string.</summary>
+        public const string RefusedNamesNoHex = "That order names no hex";
 
         /// <summary>The player's side (units_1948.yaml's id). Only the player's military units take orders.</summary>
         const string PlayerSide = "israel";

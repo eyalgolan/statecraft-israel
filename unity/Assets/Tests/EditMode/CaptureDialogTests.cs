@@ -99,6 +99,17 @@ public class CaptureDialogTests
         return g;
     }
 
+    /// <summary>#2542: a place whose control ended (Raid, Withdraw) keeps an ownerless record with its capture date, so a stayed
+    /// loss stays distinguishable from a place never taken (SettlementControl.Release, R-CTRL-004, R-CTRL-010).</summary>
+    static void AssertStayedLost(GameState s, string id, System.DateTime since, string why)
+    {
+        Assert.IsTrue(s.Settlements.TryGetValue(id, out var x), why + ": the record stays as the ownerless marker");
+        Assert.AreEqual("", x!.Owner, why + ": no owner");
+        Assert.AreEqual("", x.State, why + ": no control state");
+        Assert.AreEqual(since, x.Since, why + ": the capture date is kept");
+        Assert.IsFalse(x.Depopulated, why + ": not depopulated");
+    }
+
     /// <summary>The settlements' Hebrew names as GameRoot hands them over (the map's parse of settlements_1948.yaml).</summary>
     static IReadOnlyDictionary<string, string> NamesHe() =>
         Statecraft.Game.Map.SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", "settlements_1948.yaml"))).ToDictionary(s => s.Id, s => s.NameHe);
@@ -450,9 +461,11 @@ public class CaptureDialogTests
         Assert.IsNull(r.Dialog.Shown, "every capture answered");
         Assert.IsFalse(r.Shows("capture-card"));
         Assert.AreSame(r.Root.Q<Button>("end-turn"), r.Focused, "answered from the keyboard, the focus goes to End turn");
+        var lodSince = r.Bridge.State.Settlements["lod"].Since; var ramlaSince = r.Bridge.State.Settlements["ramla"].Since;
         var result = r.Bridge.EndTurn();
         Assert.IsEmpty(result.Rejected.Where(x => x.Command is ResolveCapture), "the sim takes both");
-        Assert.IsFalse(r.Bridge.State.Settlements.ContainsKey("lod") || r.Bridge.State.Settlements.ContainsKey("ramla"), "Raid ended both records");
+        AssertStayedLost(r.Bridge.State, "lod", lodSince, "Raid ended Lydda's control");
+        AssertStayedLost(r.Bridge.State, "ramla", ramlaSince, "Raid ended Ramle's control");
     }
 
     /// <summary>#2023: exactly one more decision waiting is the singular line in both languages (event.more_one, the pick
@@ -731,10 +744,11 @@ public class CaptureDialogTests
         yield return Frames(3);
         Assert.IsNull(r.Dialog.Shown);
         Assert.AreSame(r.Root.Q<Button>("end-turn"), r.Focused, "answered from the keyboard, the focus goes to End turn");
+        var since = r.Bridge.State.Settlements["ramla"].Since;
         var result = r.Bridge.EndTurn();
         Assert.IsEmpty(result.Rejected.Where(x => x.Command is EndOccupation), string.Join("; ", result.Rejected.Select(x => x.Reason)));
         Assert.AreEqual(SettlementControl.Annexed, r.Bridge.State.Settlements["lod"].State, "End turn annexed Lydda (R-CTRL-016)");
-        Assert.IsFalse(r.Bridge.State.Settlements.ContainsKey("ramla"), "and withdrew from Ramle (R-CTRL-010)");
+        AssertStayedLost(r.Bridge.State, "ramla", since, "and withdrew from Ramle (R-CTRL-010)");
     }
 
     /// <summary>Plan PR 10, AQueuedEndDecisionIsNotShownAgain: a place with an EndOccupation queued has had its choice; a new
@@ -995,5 +1009,45 @@ public class CaptureDialogTests
             "it grows and fades in over 0.5 s, like the decision card");
         CollectionAssert.AreEquivalent(new[] { "scale", "opacity" },
             card.resolvedStyle.transitionProperty.Select(x => x.ToString()), "a scale-up and a fade-in");
+    }
+
+    /// <summary>The smoke run (GameRoot.Smoke) fails on its first pass, naming the cause, when a dialog that End turn does not
+    /// hide keeps the unit card out of reach. The v0.3.5 WebGL smoke pressed the disabled Skip 200 times behind Ramla's dialog
+    /// before it failed (#2436). This rig's End turn selects no unit and hides nothing, as End turn did before #2436.</summary>
+    [UnityTest]
+    public IEnumerator TheSmokeFailsAtOnceWhenTheDialogKeepsTheUnitCardOutOfReach()
+    {
+        using (var r = new Rig(Awaiting(C, "lod")))
+        {
+            yield return Frames(4);
+            Assert.IsTrue(r.Hud.ClassListContains(CaptureDialogPresenter.OpenClass), "precondition: the dialog is open");
+            Assert.IsFalse(r.Root.Q<Button>("info-skip").enabledInHierarchy, "precondition: the dialog takes Skip out of reach");
+            Assert.Greater(r.Bridge.NeedsOrders.Count, 0, "precondition: units need orders");
+            var log = new List<string>();
+            var run = GameRoot.Smoke(r.Root, r.Bridge, r.Card, 1, log.Add);
+            while (run.MoveNext()) { }
+            Assert.AreEqual("SMOKE FAIL info-skip is not enabled", log.Last(), string.Join("\n", log));
+        }
+    }
+
+    /// <summary>A Skip that is in reach but skips nothing (the unit card shows no unit, InfoPanelPresenter.OrderUnit) fails the
+    /// smoke run on its first pass too, instead of after 200.</summary>
+    [UnityTest]
+    public IEnumerator TheSmokeFailsAtOnceWhenSkipSkipsNoUnit()
+    {
+        using (var r = new Rig(Awaiting(C, "lod")))
+        {
+            yield return Frames(4);
+            Press(r.Hide);
+            yield return Frames(2);
+            Assert.IsTrue(r.Dialog.Collapsed, "precondition: the dialog is hidden");
+            Assert.IsTrue(r.Root.Q<Button>("info-skip").enabledInHierarchy, "precondition: Skip is in reach");
+            Assert.Greater(r.Bridge.NeedsOrders.Count, 0, "precondition: units need orders");
+            var waiting = r.Bridge.NeedsOrders.ToList();
+            var log = new List<string>();
+            var run = GameRoot.Smoke(r.Root, r.Bridge, r.Card, 1, log.Add);
+            while (run.MoveNext()) { }
+            StringAssert.StartsWith("SMOKE FAIL info-skip skipped no unit: waiting " + string.Join(",", waiting) + ";", log.Last(), string.Join("\n", log));
+        }
     }
 }

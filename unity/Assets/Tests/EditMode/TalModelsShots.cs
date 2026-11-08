@@ -136,6 +136,32 @@ public class TalModelsShots
     IEnumerator Degania(bool hebrew, bool after)
     {
         yield return Boot(hebrew);
+        VisualElement card = null!;
+        yield return NextTurn(c => card = c);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        SpecialBuildingModels Layer(ICollection<string> withheld)
+        {
+            SpecialBuildingModels.Request = Answer(withheld);
+            Drop(map, SpecialBuildingModels.Name);
+            return CollectionGeometryFixture.Special(map, root.Bridge!.State.Date)!;
+        }
+        // The frame is where the tank stands on this date with the model answered, the same before and after.
+        var layer = Layer(Array.Empty<string>());
+        var tank = layer.Placed.First(p => p.Model == CollectionCatalog.SyrianR35);
+        if (!after) layer = Layer(new[] { CollectionCatalog.SyrianR35 });
+        var point = tank.At;
+        point.y = map.Terrain.SampleHeight(point) + map.Terrain.transform.position.y;
+        // The closest the player's camera comes (CameraController.MinDistance).
+        Look(point, CameraController.MinDistance);
+        for (int i = 0; i < 5; i++) yield return null;
+        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"degania-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT degania on {root.Bridge!.State.Date:yyyy-MM-dd} at {point} from {CameraController.MinDistance:F0} m, event card display {card.resolvedStyle.display}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
+    }
+
+    /// <summary>Ends the turn and puts the turn report and the new turn's decision card away, as a player would, so the map is
+    /// clear for the frame; hands back the card.</summary>
+    IEnumerator NextTurn(Action<VisualElement> cardOut)
+    {
         root.Bridge!.EndTurn();
         for (int i = 0; i < 3; i++) yield return null;
         var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
@@ -149,25 +175,184 @@ public class TalModelsShots
         if (card.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(ui.Q<Button>("event-hide"));
         for (int i = 0; i < 120 && card.resolvedStyle.display != DisplayStyle.None; i++) yield return null;
         Assert.AreEqual(DisplayStyle.None, card.resolvedStyle.display, "the decision card is hidden before the frame");
+        cardOut(card);
+    }
+
+    /// <summary>One of Tal Heuberger's four props (owner, 2 November 2026: "Place all four now") on a date in its window: the
+    /// opening turn (15 May 1948) for the well, the crates and the wall, the next turn (15 June 1948, the Altalena's) for the
+    /// sandbags. The camera at the closest zoom the player reaches (CameraController.MinDistance), yaw 0, aimed at the ground
+    /// where the prop stands with it answered, so the frame is the same before and after; "before" withholds only the prop.</summary>
+    IEnumerator Prop(bool hebrew, bool after, string key, bool nextTurn)
+    {
+        yield return Boot(hebrew);
+        if (nextTurn) yield return NextTurn(_ => { });
         var map = Object.FindFirstObjectByType<MapScene>();
+        var date = root.Bridge!.State.Date;
         SpecialBuildingModels Layer(ICollection<string> withheld)
         {
             SpecialBuildingModels.Request = Answer(withheld);
             Drop(map, SpecialBuildingModels.Name);
-            return CollectionGeometryFixture.Special(map, root.Bridge.State.Date)!;
+            return CollectionGeometryFixture.Special(map, date)!;
         }
-        // The frame is where the tank stands on this date with the model answered, the same before and after.
         var layer = Layer(Array.Empty<string>());
-        var tank = layer.Placed.First(p => p.Model == CollectionCatalog.SyrianR35);
-        if (!after) layer = Layer(new[] { CollectionCatalog.SyrianR35 });
-        var point = tank.At;
+        var prop = layer.Placed.Single(p => p.Key == key);
+        if (!after) layer = Layer(new[] { prop.Model });
+        var point = prop.At;
         point.y = map.Terrain.SampleHeight(point) + map.Terrain.transform.position.y;
-        // The closest the player's camera comes (CameraController.MinDistance).
         Look(point, CameraController.MinDistance);
         for (int i = 0; i < 5; i++) yield return null;
-        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"degania-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
-        Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd} at {point} from {CameraController.MinDistance:F0} m, event card display {card.resolvedStyle.display}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
+        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"prop-{key}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT prop {key} {(after ? "after" : "before")} on {date:yyyy-MM-dd} at {point} from {CameraController.MinDistance:F0} m: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
     }
+
+    [UnityTest] public IEnumerator WellBeforeEnglish() { yield return Prop(false, false, "beersheba_abrahams_well", false); }
+    [UnityTest] public IEnumerator WellBeforeHebrew() { yield return Prop(true, false, "beersheba_abrahams_well", false); }
+    [UnityTest] public IEnumerator WellAfterEnglish() { yield return Prop(false, true, "beersheba_abrahams_well", false); }
+    [UnityTest] public IEnumerator WellAfterHebrew() { yield return Prop(true, true, "beersheba_abrahams_well", false); }
+    [UnityTest] public IEnumerator CratesBeforeEnglish() { yield return Prop(false, false, "haifa_quay_crates", false); }
+    [UnityTest] public IEnumerator CratesBeforeHebrew() { yield return Prop(true, false, "haifa_quay_crates", false); }
+    [UnityTest] public IEnumerator CratesAfterEnglish() { yield return Prop(false, true, "haifa_quay_crates", false); }
+    [UnityTest] public IEnumerator CratesAfterHebrew() { yield return Prop(true, true, "haifa_quay_crates", false); }
+    [UnityTest] public IEnumerator WallBeforeEnglish() { yield return Prop(false, false, "abu_ghosh_road_wall", false); }
+    [UnityTest] public IEnumerator WallBeforeHebrew() { yield return Prop(true, false, "abu_ghosh_road_wall", false); }
+    [UnityTest] public IEnumerator WallAfterEnglish() { yield return Prop(false, true, "abu_ghosh_road_wall", false); }
+    [UnityTest] public IEnumerator WallAfterHebrew() { yield return Prop(true, true, "abu_ghosh_road_wall", false); }
+    [UnityTest] public IEnumerator SandbagsBeforeEnglish() { yield return Prop(false, false, "tel_aviv_altalena_sandbags", true); }
+    [UnityTest] public IEnumerator SandbagsBeforeHebrew() { yield return Prop(true, false, "tel_aviv_altalena_sandbags", true); }
+    [UnityTest] public IEnumerator SandbagsAfterEnglish() { yield return Prop(false, true, "tel_aviv_altalena_sandbags", true); }
+    [UnityTest] public IEnumerator SandbagsAfterHebrew() { yield return Prop(true, true, "tel_aviv_altalena_sandbags", true); }
+
+    /// <summary>The Egyptian Dakota on the opening turn (15 May 1948, in its window, 15 May to 11 June 1948), at the opening
+    /// distance (CameraRig.StartDistance, #2370) and at a gameplay zoom (40 km): the player's camera (yaw 0) aimed at the ground under the loop's centre
+    /// and held on the map as CameraController.Step holds it. "Before" withholds the Dakota. The loop holds its start (-shot).</summary>
+    IEnumerator Dakota(bool hebrew, bool after)
+    {
+        var savedCraft = SeaAirCollection.Request;
+        try
+        {
+            yield return Boot(hebrew);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            var state = root.Bridge!.State; var content = root.Bridge.Content;
+            SeaAirCollection.Request = Answer(Array.Empty<string>());
+            Drop(map, SeaAirCollection.Name);
+            var layer = CollectionGeometryFixture.Craft(map, state.Date, state.Placements, content)!;
+            // #2482: two Dakotas fly one loop, so both carry its centre; the lead's is the one to aim at.
+            var plane = layer.Placed.First(p => p.Model == SeaAirCollection.Dakota);
+            if (!after)
+            {
+                SeaAirCollection.Request = Answer(new[] { SeaAirCollection.Dakota });
+                Drop(map, SeaAirCollection.Name);
+                layer = CollectionGeometryFixture.Craft(map, state.Date, state.Placements, content)!;
+            }
+            Debug.Log($"SHOT dakota {(after ? "after" : "before")} on {state.Date:yyyy-MM-dd}: drawn {layer.Placed.Count(p => p.Model == SeaAirCollection.Dakota)}, loop centre {plane.At}, span {SeaAirCollection.SizeOf(SeaAirCollection.Dakota)} m");
+            var rig = Camera.main.GetComponent<CameraRig>(); var cc = rig.GetComponent<CameraController>();
+            foreach (var (what, distance) in new[] { ("gameplay", 40000f), ("opening", CameraRig.StartDistance) })
+            {
+                var under = new Vector3(plane.At.x, 0f, plane.At.z);
+                Look(under, distance);
+                CameraController.Step(rig, default, 0f, cc.Bounds, cc.Ground, cc.GroundTop, true);
+                for (int i = 0; i < 5; i++) yield return null;
+                UnitFlagFacing.FaceAll(Camera.main.transform.position);
+                CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"dakota-{what}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+                Debug.Log($"SHOT dakota {what} from {distance:F0} m, look-at {rig.LookAt}, camera {Camera.main.transform.position}, plane at viewport {Camera.main.WorldToViewportPoint(plane.At)}");
+            }
+        }
+        finally { SeaAirCollection.Request = savedCraft; }
+    }
+
+    [UnityTest] public IEnumerator DakotaBeforeEnglish() { yield return Dakota(false, false); }
+    [UnityTest] public IEnumerator DakotaBeforeHebrew() { yield return Dakota(true, false); }
+    [UnityTest] public IEnumerator DakotaAfterEnglish() { yield return Dakota(false, true); }
+    [UnityTest] public IEnumerator DakotaAfterHebrew() { yield return Dakota(true, true); }
+
+    /// <summary>#1701 slice F: a gdd-0.3 game (every era's ruleset set on fresh inputs, as FixedNorthGameRootTests does) with
+    /// one arms workshop built on Rehovot's own hex, or on Tel Aviv's or Jerusalem's among its houses (owner, 2 November 2026: "Among the
+    /// houses") (a fixture state: the project is put in the state, built on the game's date),
+    /// from the close zoom, framed on the workshop and the town. "Before" withholds b21 (main draws nothing there); the frame is
+    /// the one the answered model gives. The load lines count the special layer's instances, drawn renderers and their
+    /// triangles at the far, middle and close zooms.</summary>
+    IEnumerator ArmsWorkshop(bool hebrew, bool after, string city = "rehovot")
+    {
+        Directory.CreateDirectory(Path.Combine(CivMovementShots.ShotDir, "..", "b21-workshop-shots"));
+        // The town's houses as the player's stream answers them, so the frame shows the drawn buildings the workshop keeps clear of.
+        TownModelLayer.ModelAcquire = (model, detail, done) => { done(Prefab(model, detail)); return new NoLease(); };
+        var inputs = Statecraft.Game.Boot.GameInputs.FromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
+        foreach (var era in inputs.Content.Eras) { era.Systems.Ruleset = SaveGame.Gdd03Ruleset; era.Systems.Loop = EraSystems.Gdd; }
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        ShotCamera.Configure(Camera.main, CivMovementShots.Width, CivMovementShots.Height);
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        rt = new RenderTexture(CivMovementShots.Width, CivMovementShots.Height, 24, RenderTextureFormat.ARGB32);
+        ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.clear;
+        doc.panelSettings = ps;
+        var map = Object.FindFirstObjectByType<MapScene>();
+        map.Build(inputs.Map);
+        root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new Statecraft.Game.SaveStore(saveDir);
+        if (hebrew) root.Language = UiLanguage.Hebrew;
+        root.Begin(inputs, 0);
+        var ui = doc.rootVisualElement;
+        for (int i = 0; i < 30 && !(ui.Q("top-bar").worldBound.height > 0); i++) yield return null;
+        for (int i = 0; i < 5; i++) yield return null;
+        GameSceneTests.HideTheOpeningCard(ui);
+        if (root.Advisor != null && root.Advisor.IsOpen) UiTestKit.Press(ui.Q<Button>("advisor-close"));
+        for (int i = 0; i < 3; i++) yield return null;
+        var state = root.Bridge!.State; var content = root.Bridge.Content;
+        Assert.AreEqual(SaveGame.Gdd03Ruleset, content.Ruleset);
+        var home = content.SettlementHexes.Single(h => h.Id == city);
+        int id = state.NextId++;
+        state.CityProjects.Add(id, new CityProject(id, Workshops.ArmsWorkshop, city, home.Q, home.R, 0, state.Date));
+        SpecialBuildingModels Layer(ICollection<string> withheld)
+        {
+            SpecialBuildingModels.Request = Answer(withheld);
+            Drop(map, SpecialBuildingModels.Name);
+            return CollectionGeometryFixture.Special(map, state.Date, content, state.CityProjects.Values)!;
+        }
+        var layer = Layer(Array.Empty<string>());
+        var workshop = layer.Placed.Single(p => p.Key == SpecialBuildingModels.WorkshopKey(id));
+        if (!after) layer = Layer(new[] { SpecialBuildingModels.Workshop });
+        var town = map.KitFootprints.First(f => f.id == city);
+        bool among = Vector2.Distance(new Vector2(workshop.At.x, workshop.At.z), town.centre) < town.radius;
+        // Among a big town's houses (Tel Aviv, Jerusalem: "Among the houses") the frame is the workshop and its neighbours;
+        // beside a town, the workshop and the whole town.
+        var mid = among ? new Vector3(workshop.At.x, 0f, workshop.At.z)
+            : new Vector3(0.5f * (workshop.At.x + town.centre.x), 0f, 0.5f * (workshop.At.z + town.centre.y));
+        mid.y = map.Terrain.SampleHeight(mid) + map.Terrain.transform.position.y;
+        float span = Vector2.Distance(new Vector2(workshop.At.x, workshop.At.z), town.centre) + town.radius;
+        float close = among ? 1.5f * CameraController.MinDistance : Mathf.Clamp(2.5f * span, CameraController.MinDistance, 0.9f * TownModelLayer.CloseEnterM);
+        foreach (var (zoom, distance) in new[] { ("far", 150000f), ("middle", 60000f), ("close", close) })
+        {
+            Look(mid, distance);
+            layer.Choose(default, Camera.main);
+            var drawn = layer.GetComponentsInChildren<Renderer>(true).Where(r => !r.forceRenderingOff).ToList();
+            long tris = 0;
+            foreach (var r in drawn)
+            {
+                Mesh? mesh = r is SkinnedMeshRenderer skinned ? skinned.sharedMesh : r.TryGetComponent<MeshFilter>(out var filter) ? filter.sharedMesh : null;
+                if (mesh != null) tris += mesh.triangles.Length / 3;
+            }
+            Debug.Log($"LOAD b21 {(after ? "after" : "before")} {zoom} ({distance:F0} m): {layer.transform.childCount} instances, " +
+                      $"{drawn.Count} renderers drawn, {tris} triangles drawn; placed: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
+        }
+        Look(mid, close);
+        layer.Choose(default, Camera.main);
+        for (int i = 0; i < 5; i++) yield return null;
+        CivMovementShots.Shot(rt!, Path.Combine("..", "b21-workshop-shots", $"{city}-workshop-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT b21 {city} {(after ? "after" : "before")} {(hebrew ? "he" : "en")} on {state.Date:yyyy-MM-dd}: workshop at {workshop.At}, camera on {mid} from {close:F0} m");
+    }
+
+    [UnityTest] public IEnumerator ArmsWorkshopBeforeEnglish() { yield return ArmsWorkshop(false, false); }
+    [UnityTest] public IEnumerator ArmsWorkshopAfterEnglish() { yield return ArmsWorkshop(false, true); }
+    [UnityTest] public IEnumerator ArmsWorkshopBeforeHebrew() { yield return ArmsWorkshop(true, false); }
+    [UnityTest] public IEnumerator ArmsWorkshopAfterHebrew() { yield return ArmsWorkshop(true, true); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivBeforeEnglish() { yield return ArmsWorkshop(false, false, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivAfterEnglish() { yield return ArmsWorkshop(false, true, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivBeforeHebrew() { yield return ArmsWorkshop(true, false, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopTelAvivAfterHebrew() { yield return ArmsWorkshop(true, true, "tel_aviv"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemBeforeEnglish() { yield return ArmsWorkshop(false, false, "jerusalem"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemAfterEnglish() { yield return ArmsWorkshop(false, true, "jerusalem"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemBeforeHebrew() { yield return ArmsWorkshop(true, false, "jerusalem"); }
+    [UnityTest] public IEnumerator ArmsWorkshopJerusalemAfterHebrew() { yield return ArmsWorkshop(true, true, "jerusalem"); }
 
     sealed class NoLease : IDisposable { public void Dispose() { } }
 
@@ -228,8 +413,10 @@ public class TalModelsShots
         return ms[ms.Count / 2];
     }
 
-    /// <summary>Owner ruling, 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa from
-    /// the opening view (the game's own camera, 90 km), the widest zoom (diorama02, 250 km), and each city at 90 km and
+    /// <summary>Written for the owner's ruling of 2 November 2026, "Yes, small buildings at every zoom" (superseded on 6 November
+    /// 2026 by "Big blocks, every zoom": these four draw their kits from 40 km out, and since 7 November 2026, "Tal's models
+    /// close (Recommended)", their building models below it; MajorCityShots shows them): Tel Aviv, Jerusalem, Haifa and Jaffa from
+    /// the opening view (the game's own camera, CameraRig.StartDistance), the widest zoom (diorama02, 250 km), and each city at 90 km and
     /// 30 km, with the town layers' requests (whole towns and buildings) answered with the editor's prefabs, as the player's
     /// stream would answer them. Each frame logs its draw cost: the building models' instances, triangles and instanced
     /// draws (TownModelLayer), the whole-town models in view and their triangles (TownLandmarks), and the median render time.
@@ -374,8 +561,6 @@ public class TalModelsShots
     {
         UnitFigures.Source = (id, detail, done) => done(Prefab(id, detail));
         yield return Boot(hebrew);
-        // Keep the real rig's projection and the saved RenderTexture on the same aspect throughout these frames.
-        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
         root.Bridge!.EndTurn();
         for (int i = 0; i < 3; i++) yield return null;
         var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;

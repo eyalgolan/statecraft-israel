@@ -14,8 +14,14 @@ sensitivity-reviewed (docs/event-images.md).
 
 Build.Web names the files under Build/ by their content hash (issue #437), so their names change from build to build and
 index.html is what says which ones belong to this build. The zip carries exactly the Build/ files index.html names: it
-is refused when one is missing, and a file it does not name (an earlier build's, left in the folder) is left out with a
-"LEFT OUT Build/<name>" line.
+is refused when it names none or when one is missing, and a file it does not name (an earlier build's, left in the
+folder) is left out with a "LEFT OUT Build/<name>" line.
+
+The translations ship twice (#1618, step 2): as files in StreamingAssets/translations, which desktop players and the gate
+read, and as texts packed into StreamingAssets/content/bundle.json, which the web player reads. The zip is refused unless
+the repository's translations/, manifest.json, bundle.json and StreamingAssets/translations name exactly the same files,
+and each packed text is that file's text, so the gate checks the translations every player gets and a lost or changed
+file never falls back silently, even when every inventory of the build is empty (#2641).
 """
 import argparse
 import json
@@ -61,7 +67,44 @@ def photo_refusal(build: Path):
     return None
 
 
-BUILD_FILE = re.compile(r'"Build/([^"/]+)"')   # as the WebGL template writes them (src="Build/..", dataUrl: "Build/..")
+def _shipped_translations(folder: Path) -> list[str]:
+    """The language files under a translations folder (a build's, or the repository's) as "<lang>/<file>", ordinal order
+    (TranslationLoader.Collect and ContentManifest.Verify: top-level files and hidden names are not translations)."""
+    if not folder.is_dir():
+        return []
+    return sorted(p.relative_to(folder).as_posix() for p in folder.rglob("*")
+                  if p.is_file() and p.parent != folder and not any(part.startswith(".") for part in p.relative_to(folder).parts))
+
+
+def translation_refusal(build: Path):
+    """Why the build's translations do not match the repository's translations/ or what its web bundle carries, or None
+    (see the module docstring)."""
+    content, folder = build / "StreamingAssets" / "content", build / "StreamingAssets" / "translations"
+    try:
+        listed = json.loads((content / "manifest.json").read_text(encoding="utf-8")).get("translations") or []
+        bundle = json.loads((content / "bundle.json").read_text(encoding="utf-8"))
+        packed, texts = bundle.get("translations") or [], bundle.get("translationTexts") or []
+        if not all(isinstance(x, list) for x in (listed, packed, texts)):
+            raise TypeError("translations and translationTexts must be lists")
+    except (OSError, ValueError, AttributeError, TypeError) as e:
+        return f"{content} has no readable manifest.json and bundle.json ({e}): build it with Build.Web, which writes them"
+    expected = _shipped_translations(REPO / "translations")
+    found = _shipped_translations(folder)
+    if not expected == listed == packed == found:
+        return (f"the translations do not match: the repository's translations/ holds {expected}, "
+                f"manifest.json lists {listed}, bundle.json packs {packed}, StreamingAssets/translations holds {found}")
+    if len(texts) != len(packed):
+        return f"bundle.json packs {len(packed)} translation files but {len(texts)} texts"
+    try:
+        changed = [f for f, text in zip(packed, texts) if (folder / f).read_text(encoding="utf-8") != text]
+    except (OSError, UnicodeDecodeError) as e:
+        return f"a file in StreamingAssets/translations cannot be read as UTF-8 text ({e})"
+    if changed:
+        return "bundle.json's text differs from StreamingAssets/translations for " + ", ".join(changed)
+    return None
+
+
+BUILD_FILE = re.compile(r'"Build/([^"]+)"')   # as the WebGL template writes them (src="Build/..", dataUrl: "Build/..")
 
 
 def build_files(build: Path) -> list[str]:
@@ -77,13 +120,25 @@ def package(build: Path, zip_path: Path) -> int:
     if not content.is_dir():
         print(f"PACKAGE REFUSED: {build} has no StreamingAssets/content")
         return 1
-    named = build_files(build)
+    try:
+        named = build_files(build)
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"PACKAGE REFUSED: {build / 'index.html'} cannot be read as UTF-8 ({e})")
+        return 1
+    if not named:
+        print("PACKAGE REFUSED: index.html names no Build/ files (not a usable WebGL build)")
+        return 1
     if missing := [n for n in named if not (build / "Build" / n).is_file()]:
         print("PACKAGE REFUSED: index.html names files that are not in the build: " + ", ".join("Build/" + n for n in missing))
         return 1
-    stale = {p for p in (build / "Build").glob("*") if p.is_file() and p.name not in named}
+    build_dir = build / "Build"
+    stale = {p for p in build_dir.rglob("*")
+             if p.is_file() and p.relative_to(build_dir).as_posix() not in named}
     if (photos := photo_refusal(build)) is not None:
         print(f"PACKAGE REFUSED: {photos}")
+        return 1
+    if (translations := translation_refusal(build)) is not None:
+        print(f"PACKAGE REFUSED: {translations}")
         return 1
     ok, message = gate(content)
     print(message)
@@ -95,7 +150,8 @@ def package(build: Path, zip_path: Path) -> int:
         for f in sorted(p for p in build.rglob("*") if p.is_file() and p not in stale):
             z.write(f, f.relative_to(build).as_posix())
     for f in sorted(stale):
-        print(f"LEFT OUT Build/{f.name} (index.html does not name it: a file of an earlier build)")
+        print(f"LEFT OUT Build/{f.relative_to(build_dir).as_posix()} "
+              "(index.html does not name it: a file of an earlier build)")
     print(f"PACKAGED {zip_path} {zip_path.stat().st_size} bytes")
     return 0
 

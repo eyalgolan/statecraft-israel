@@ -405,6 +405,22 @@ public class CameraInputTests
         finally { Object.DestroyImmediate(rig.gameObject); }
     }
 
+    /// <summary>The owner, 3 November 2026: "Open at ~30 km, like the promo". The opening zoom is about 30 km, close enough
+    /// for the building models (TownModelLayer.CloseAt), clear of the 30 km edge where RoadVehicles and the collection
+    /// layers switch (so the first frame does not depend on rounding), and under the minimap's whole-map zoom
+    /// (CameraController.MaxDistance, where the view is wider than the map: AViewWiderThanTheMapIsCentredAndZoomingOutNeverJumps).</summary>
+    [Test]
+    public void TheGameOpensAtAbout30KmWithTheBuildingModels()
+    {
+        float start = CameraRig.StartDistance;
+        Assert.That(start, Is.InRange(25000f, 35000f), "about 30 km (owner, 3 November 2026)");
+        Assert.IsTrue(Statecraft.Game.Map.Kits.TownModelLayer.CloseAt(start, null), "the building models draw at the opening");
+        Assert.GreaterOrEqual(start, Statecraft.Game.Map.Routes.RoadVehicles.CloseEnterM + 1000f, "1 km beyond the road vehicles' enter edge");
+        Assert.GreaterOrEqual(start, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Units.ViewEnterM + 1000f,
+            "1 km beyond the collection layers' enter edge");
+        Assert.Less(start, CameraController.MaxDistance, "the whole-map zoom is farther out");
+    }
+
     /// <summary>Issue #174: over low ground the look-at point stays on y = 0 (the approved framing); over ground high enough
     /// to come within MinClearanceShare of the camera, it is lifted just enough, and dropped again on the way back down.</summary>
     [Test]
@@ -1240,5 +1256,57 @@ public class CameraPointerZoomThroughTheFrameTests : SharedCameraActionsFixture
         Assert.IsFalse(plugin.GetCompatibleWithEditor(), "the editor has no such symbol: CameraController asks only in the player");
         foreach (var other in new[] { BuildTarget.StandaloneWindows64, BuildTarget.StandaloneLinux64, BuildTarget.WebGL })
             Assert.IsFalse(plugin.GetCompatibleWithPlatform(other), other + " does not build AppKit code");
+    }
+}
+
+/// <summary>Accessibility audit L4 against B6, the camera half: while a screen is open (ScreenTakesUpDown) the Up and Down
+/// arrows move between the screen's rows and do not pan; Left, Right and W still pan; with no screen open Up pans as
+/// before. The owner's answer on #2340, Q27: "do the recommended for all"
+/// (https://github.com/eyalgolan/statecraft-israel/issues/2340#issuecomment-6623136558). The keys go through the Input
+/// System test fixture, the project-wide Camera actions and CameraController's frame, as in the zoom-keys test.</summary>
+public class CameraArrowsWithAScreenOpenTests : SharedCameraActionsFixture
+{
+    static void Send(CameraController c, string message) =>
+        typeof(CameraController).GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .Invoke(c, null);
+
+    [Test]
+    public void UpAndDownPanOnlyWithNoScreenOpenL4()
+    {
+        InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        var keyboard = InputSystem.AddDevice<Keyboard>();
+        var go = new GameObject("ArrowPanTest", typeof(Camera));
+        var rig = go.AddComponent<CameraRig>();
+        rig.Distance = 100000f;
+        var c = go.AddComponent<CameraController>();
+        c.Bounds = new Rect(0, 0, 1000000, 1000000);
+        var open = true;
+        c.ScreenTakesUpDown = () => open;
+        Send(c, "Awake"); Send(c, "OnEnable");
+        try
+        {
+            Vector3 Held(params UnityEngine.InputSystem.Controls.KeyControl[] keys)
+            {
+                rig.LookAt = new Vector3(500000, 0, 500000);
+                foreach (var k in keys) Press(k);
+                for (int i = 0; i < 5; i++) c.Tick(0.1f);
+                foreach (var k in keys) Release(k);
+                c.Tick(0.1f);
+                return rig.LookAt - new Vector3(500000, 0, 500000);
+            }
+            Assert.AreEqual(Vector3.zero, Held(keyboard.upArrowKey), "screen open: Up does not pan");
+            Assert.AreEqual(Vector3.zero, Held(keyboard.downArrowKey), "screen open: Down does not pan");
+            var right = Held(keyboard.rightArrowKey);
+            Assert.Greater(right.magnitude, 1f, "screen open: Right still pans");
+            Assert.AreEqual(right.x, Held(keyboard.upArrowKey, keyboard.rightArrowKey).x, 1f, "screen open: Up with Right pans as Right alone");
+            Assert.Greater(Held(keyboard.leftArrowKey).magnitude, 1f, "screen open: Left still pans");
+            var w = Held(keyboard.wKey);
+            Assert.Greater(w.magnitude, 1f, "screen open: W still pans");
+            Assert.AreEqual(w, Held(keyboard.wKey, keyboard.downArrowKey), "screen open: Down held with W leaves W's pan");
+            open = false;
+            Assert.Greater(Held(keyboard.upArrowKey).magnitude, 1f, "no screen open: Up pans (B6)");
+            Assert.Greater(Held(keyboard.downArrowKey).magnitude, 1f, "no screen open: Down pans (B6)");
+        }
+        finally { Send(c, "OnDisable"); Object.DestroyImmediate(go); }
     }
 }

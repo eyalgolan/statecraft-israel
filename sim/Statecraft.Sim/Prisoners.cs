@@ -47,9 +47,10 @@ namespace Statecraft.Sim
         static IEnumerable<string> Sides(string front) => FrontOf.Where(kv => kv.Value == front).Select(kv => kv.Key).OrderBy(x => x, StringComparer.Ordinal);
 
         /// <summary>True while <paramref name="front"/> holds the player's soldiers or the player holds its prisoners: its exchange
-        /// card waits for this (R-POW-004), so a game with no surrender fires no card.</summary>
+        /// card waits for this (R-POW-004), so a game with no surrender fires no card. A stored 0 (a zero-strength surrender)
+        /// holds nobody, so only a positive count counts; the entry itself stays, so saved state does not change.</summary>
         internal static bool Held(GameState s, string front) =>
-            Sides(front).Any(x => s.PrisonersHeld.ContainsKey(x) || s.SoldiersHeld.ContainsKey(x));
+            Sides(front).Any(x => s.PrisonersHeld.TryGetValue(x, out var n) && n > 0 || s.SoldiersHeld.TryGetValue(x, out var m) && m > 0);
 
         /// <summary>R-POW-002, R-POW-005, step 7 after the nation eats and the import: the prisoners eat food_per_prisoner_unit a
         /// unit from the stock, as far as it goes; each Food unit it cannot give costs prisoner_shortfall_cohesion of Social

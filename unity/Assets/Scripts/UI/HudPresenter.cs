@@ -139,11 +139,14 @@ namespace Statecraft.Game.UI
         /// plate grows.</summary>
         readonly List<Label> plateText;
         readonly VisualElement? dateRow, captionRow;
-        /// <summary>The exhausted-turn line under the date (Statecraft.uss #exhausted, 13 px, #812): floored like the date, but from
-        /// its own stylesheet size, since 13 px is already under the floor at the scales where 15 px is not (ExhaustedPx).</summary>
+        /// <summary>The exhausted-turn line under the date (Statecraft.uss #exhausted, #812): floored like the date, from its own
+        /// stylesheet size (ExhaustedPx). 15 px since #2522 (#2340 H4, the audit's 15 px floor); it was 13 px.</summary>
         readonly Label? exhaustedLine;
-        public const float ExhaustedPx = 13f;
+        public const float ExhaustedPx = 15f;
         float exhaustedSize = ExhaustedPx;
+        /// <summary>The room before a change that its up or down mark takes (Statecraft.uss .meter-delta.delta-up, 9 px).</summary>
+        public const float ChangeMarkPadPx = 9f;
+        readonly List<Label> deltas = new List<Label>();
         /// <summary>The plate's padding while the floor raises its text (the stylesheet's is 2 px top and bottom, 10-12 at the
         /// sides): PlateSidePx at both sides keeps every line at least 0 px from the 18 px corner zones (TopBarTests), each the
         /// corner scrolls' reach (about 14 px in) plus 4, and PlateEdgePx at the top and bottom keeps it inside the frame's
@@ -232,6 +235,7 @@ namespace Statecraft.Game.UI
                 var meter = root.Q<VisualElement>("meter-" + id); var caption = text["hud.caption." + id];
                 meter.Q<Label>(className: "meter-name").text = caption;   // the bar shows the words its tooltip says
                 said[id] = (meter, caption);
+                var delta = root.Q<Label>(id + "-delta"); delta.generateVisualContent += PaintChange; deltas.Add(delta);
             }
             if (root.Q(MeterTip.TipName) != null) meterTip = new MeterTip(root, bridge, text, said.Values.Select(x => x.element));
             // The text floor: checked now and twice a second, since a window resized at the same shape changes the panel's
@@ -270,10 +274,22 @@ namespace Statecraft.Game.UI
             foreach (var e in underBar) e.style.marginTop = StyleKeyword.Null;
             bar.style.height = StyleKeyword.Null;
             foreach (var l in plateText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; }
-            exhaustedSize = ExhaustedPx;   // so PadPlate below clears the plate's width
             if (exhaustedLine != null) { exhaustedLine.style.fontSize = StyleKeyword.Null; exhaustedLine.style.whiteSpace = StyleKeyword.Null; }
-            if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) PadPlate(dateRow.parent, false); }
+            // Cleared here, not by PadPlate: it keeps the plate's width and padding while the exhausted line shows (#2522), and
+            // the line may still show when the presenter goes (review of #2607).
+            if (dateRow != null)
+            {
+                dateRow.style.flexDirection = StyleKeyword.Null;
+                var plate = dateRow.parent;
+                if (plate != null)
+                {
+                    plate.style.width = StyleKeyword.Null; plate.style.minWidth = StyleKeyword.Null;
+                    plate.style.paddingTop = StyleKeyword.Null; plate.style.paddingBottom = StyleKeyword.Null;
+                    plate.style.paddingLeft = StyleKeyword.Null; plate.style.paddingRight = StyleKeyword.Null;
+                }
+            }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
+            foreach (var d in deltas) d.generateVisualContent -= PaintChange;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
             hudRoot.UnregisterCallback(onRootGeometry);
             root.Q(className: "hemicycle-box")?.UnregisterCallback<GeometryChangedEvent>(OnCabinetGeometry);
@@ -323,9 +339,11 @@ namespace Statecraft.Game.UI
             if (meters.Count == 0) return;
             var oneRow = !hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass);
             // Panel coordinates (logical px), so the meters and the screen buttons compare directly.
-            float first = meters[0].worldBound.xMin, last = meters[meters.Count - 1].worldBound.xMax, limit = nav.worldBound.xMin;
-            if (!oneRow || float.IsNaN(first) || float.IsNaN(limit)) { bar.RemoveFromClassList(RoomyClass); return; }
-            var used = last - first; var spare = limit - last;
+            float left = meters.Min(m => m.worldBound.xMin), right = meters.Max(m => m.worldBound.xMax);
+            var rtl = UiLanguage.Within(bar);
+            var limit = rtl ? nav.worldBound.xMax : nav.worldBound.xMin;
+            if (!oneRow || float.IsNaN(left) || float.IsNaN(right) || float.IsNaN(limit)) { bar.RemoveFromClassList(RoomyClass); return; }
+            var used = right - left; var spare = rtl ? left - limit : limit - right;
             if (bar.ClassListContains(RoomyClass))
             {
                 if (spare < SpareShare * used) bar.RemoveFromClassList(RoomyClass);
@@ -445,15 +463,16 @@ namespace Statecraft.Game.UI
         void PadPlate(VisualElement plate, bool raised)
         {
             // Raised, the plate sizes to its widest line (the turn and the date, a line each, never wrapped), at least 230 px.
-            // The raised exhausted line (#812) is never wrapped either, so it too lets the plate size to it, but only while it
-            // shows (Render): a hidden line leaves the plate as it was (review of #1961).
-            var lineUp = exhaustedSize > ExhaustedPx && exhaustedLine != null && exhaustedLine.style.display == DisplayStyle.Flex;
+            // The exhausted line (#812) is never wrapped either, so it too lets the plate size to it, but only while it shows
+            // (Render): a hidden line leaves the plate as it was (review of #1961). At 15 px (#2522) it is wider than the 196 px
+            // plate at every scale, not only when raised, so the plate sizes to it whenever it shows.
+            var lineUp = exhaustedLine != null && exhaustedLine.style.display == DisplayStyle.Flex;
             plate.style.width = raised || lineUp ? new StyleLength(StyleKeyword.Auto) : new StyleLength(StyleKeyword.Null);
             // At least the widest date line too, so the plate keeps its width when the month changes (PromoHudTests): at 25 px
             // (a phone upright, #642) the Hebrew 31 October 1956 is about 196 px, wider than 230 px less the padding.
             plate.style.minWidth = raised ? new StyleLength(UnityEngine.Mathf.Max(PlateWidthPx, DateLinePerPx * smallTextSize + 2f * PlateSidePx + 2f))
                                           : lineUp ? new StyleLength(PlateWidthPx + 2f * PlateSidePx - StylesheetPlatePadPx) : new StyleLength(StyleKeyword.Null);
-            // The frame clearance holds when either the 15 px text or the 13 px exhausted line is raised (they floor at different scales).
+            // The frame clearance holds when the 15 px text is raised or the exhausted line shows (#2522: it widens the plate at any scale).
             StyleLength Px(float v) => raised || lineUp ? new StyleLength(v) : new StyleLength(StyleKeyword.Null);
             plate.style.paddingTop = Px(PlateEdgePx); plate.style.paddingBottom = Px(PlateEdgePx);
             plate.style.paddingLeft = Px(PlateSidePx); plate.style.paddingRight = Px(PlateSidePx);
@@ -572,8 +591,9 @@ namespace Statecraft.Game.UI
         /// <summary>The tight three-row bar's values and changes (#40). Statecraft.uss gives them the narrow bar's 22 px and
         /// 15 px, for a phone held upright at 100%, where 22 px is 9 to 11 screen px. At 125% and 150% the same phone's
         /// quarter-width meter is narrower in panel px, and the Hebrew "IL -123.4m" no longer fit it at 360x800 (TopBarTests).
-        /// So each takes the size that keeps it at the 12 px screen floor (FlooredTextSize of the tight bar's 16 px and 12 px),
-        /// no larger than the stylesheet's: 22 px and 15 px on every phone at 100%, 17 to 21 px at 125% and 150%.</summary>
+        /// So each takes the size that keeps it at the 12 px screen floor (FlooredTextSize of the tight bar's 16 px and 15 px),
+        /// no larger than the stylesheet's: 22 px and 15 px on every phone at 100%, values 17 to 21 px at 125% and 150%. The
+        /// changes stay 15 px at every scale since the tight bar's own changes went from 12 to 15 px (#2522, the 15 px floor).</summary>
         void SizeTightValues()
         {
             var p = root.panel;
@@ -589,7 +609,7 @@ namespace Statecraft.Game.UI
             }
         }
         // Statecraft.uss .hud-tight .meter-value / .meter-delta, and the .hud-tight.hud-three-row sizes.
-        const float TightValuePx = 16f, TightDeltaPx = 12f, TightThreeRowValuePx = 22f, TightThreeRowDeltaPx = 15f;
+        const float TightValuePx = 16f, TightDeltaPx = 15f, TightThreeRowValuePx = 22f, TightThreeRowDeltaPx = 15f;
 
         /// <summary>The info panel's caps on a tight window (#40). They are set here from laid-out bounds because the USS
         /// importer of the pinned Unity 6000.3 has no calc() ("Unknown function calc"). The panel's top stays
@@ -706,6 +726,25 @@ namespace Statecraft.Game.UI
             if (!m.visualElement.enabledInHierarchy) return;   // no bright sign on a disabled End Turn (game over)
             UiIcon.Paint(m, "hourglass", new UnityEngine.Rect(UiLanguage.Within(m.visualElement) ? m.visualElement.layout.width - 32f : 10f,
                 (m.visualElement.layout.height - 22f) / 2f, 22f, 22f), UiIcon.IsFocused(m.visualElement));   // the right side in Hebrew (#193)
+        }
+
+        /// <summary>L1 (#2340): a change's direction is not told by green and red alone, which deuteranopia cannot tell apart. A
+        /// small triangle in the change's own colour points up for a rise and down for a fall, in the room the stylesheet keeps
+        /// before the change (ChangeMarkPadPx; the right side in the mirrored Hebrew bar). Painted, as the hourglass is, because
+        /// the Hebrew face (Frank Ruhl Libre) has no arrow glyph. Owner ruling Q27, 4 Nov 2026:
+        /// https://github.com/eyalgolan/statecraft-israel/issues/2340#issuecomment-6623136558</summary>
+        static void PaintChange(MeshGenerationContext m)
+        {
+            var e = m.visualElement; bool up = e.ClassListContains("delta-up");
+            if (!up && !e.ClassListContains("delta-down")) return;
+            float w = UnityEngine.Mathf.Min(ChangeMarkPadPx - 2f, e.resolvedStyle.fontSize * 0.55f), h = w * 0.9f;
+            float cx = UiLanguage.Within(e) ? e.layout.width - 1f - w / 2f : 1f + w / 2f, cy = e.layout.height / 2f, tip = up ? -h / 2f : h / 2f;
+            var p = m.painter2D;   // tip: the point's offset from the middle line, up (negative) for a rise; the base is opposite
+            p.fillColor = e.resolvedStyle.color;
+            p.BeginPath();
+            p.MoveTo(new UnityEngine.Vector2(cx - w / 2f, cy - tip)); p.LineTo(new UnityEngine.Vector2(cx + w / 2f, cy - tip)); p.LineTo(new UnityEngine.Vector2(cx, cy + tip));
+            p.ClosePath();
+            p.Fill();
         }
 
         void Set(string name, string value) => root.Q<Label>(name).text = value;

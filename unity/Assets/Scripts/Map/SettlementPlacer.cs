@@ -16,7 +16,8 @@ namespace Statecraft.Game.Map
         public string Id { get; set; } = ""; public string Name { get; set; } = ""; public string Type { get; set; } = "";
         /// <summary>The 1948 Hebrew name (#558), with its own sources; empty when the file gives none (the UI keeps the English).</summary>
         public string NameHe { get; set; } = ""; public List<SourceRef> NameHeSources { get; set; } = new List<SourceRef>();
-        /// <summary>"agent-checked" while the Hebrew name waits for a native speaker's review (#564); empty once reviewed.</summary>
+        /// <summary>"agent-checked" until a native speaker, or an AI-assisted contributor who discloses it, has read the
+        /// Hebrew name; empty once reviewed (#564; owner, 4 November 2026: "AI-assisted can clear it").</summary>
         public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
         /// <summary>True when the row has the name_he_review key at all, even blank: a blank flag is an error, not a review.</summary>
         [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
@@ -104,7 +105,7 @@ namespace Statecraft.Game.Map
             if (!named && sources.Count > 0) throw new InvalidDataException($"{at} name_he is empty but name_he_sources is set");
             // Absent (a person has reviewed the name) or exactly agent-checked: a blank or null value is neither.
             if (s.NameHeReviewGiven && s.NameHeReview != "agent-checked")
-                throw new InvalidDataException($"{at} name_he_review '{s.NameHeReview}' is not agent-checked (delete the line once a person has reviewed the name)");
+                throw new InvalidDataException($"{at} name_he_review '{s.NameHeReview}' is not agent-checked (delete the line once a native speaker, or an AI-assisted contributor who discloses it, has reviewed the name, #564)");
             if (!named && s.NameHeReviewGiven) throw new InvalidDataException($"{at} name_he is empty but name_he_review is set");
             for (int i = 0; i < sources.Count; i++)
             {

@@ -24,13 +24,26 @@ namespace Statecraft.Sim
         /// <summary>The command kind that buys Arms with Money (R-ARMS-002).</summary>
         public const string BuyArmsKind = "buy_arms";
 
-        /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level.</summary>
+        /// <summary>R-FOOD-001: the loader's ceiling on cover_months, ten years of need, longer than the about 104 months the game can
+        /// run (eras.yaml, 15 May 1948 to 1 January 1957). The stock is an int, so a ceiling keeps cover_months times the need
+        /// from wrapping: it would take a need of 17.9 million population units (#2804 item 5).</summary>
+        public const int MaxCoverMonths = 120;
+
+        /// <summary>R-FIELD-002: the loader's ceiling on field_food_per_turn. Even at the top farmer tier's 5 times it
+        /// (R-VET-002) and SaveGame.MaxTurns turns, that is 10 million Food a field, so an int stock holds 214 such fields
+        /// (#2804 item 5).</summary>
+        public const int MaxFieldFoodPerTurn = 1000;
+
+        /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level. With an
+        /// initialized gdd-0.3 ledger (the dark start, #1725 PR 5) the need is the ledger's, one ration for each living own
+        /// population id (<see cref="Rations"/>, #2470), after the ledger reconciles; otherwise the aggregate head count. Any other
+        /// initialized ledger (synthetic or Open) is refused with the state unchanged (R-POP-002).</summary>
         public static void Init(Content c, GameState s)
         {
-            PopulationLedger.RefuseAggregate(s);
-            if (!c.IsGdd) return;
+            if (!c.IsGdd) { PopulationLedger.RefuseAggregate(s); return; }
+            PopulationLedger.RefuseUnlessHistorical(s);   // S5-3: a synthetic or Open ledger stays held
             var r = c.RulesAt(s.Date).Mvp!;
-            s.FoodNeed = Need(s, r);
+            s.FoodNeed = s.PopulationLedger.IsInitialized ? LedgerNeed(s) : Need(s, r);
             s.Food = r.CoverMonths!.Value * s.FoodNeed;
             s.FoodUnmet = 0;
             s.Arms = r.ArmsStart!.Value;   // R-ARMS-001; the loader requires it in the GDD loop
@@ -39,17 +52,25 @@ namespace Statecraft.Sim
         /// <summary>R-ARMS-002's refusal at the debt ceiling (#2198); SimBridge.ReasonKeys gives it the UI's words.</summary>
         public const string RefusedDebtCeiling = "Buying that many Arms would take the debt past its ceiling";
 
+        /// <summary>R-ARMS-002's refusal for fewer than one Arms (#2707: a constant, for the UI's string).</summary>
+        public const string RefusedCount = "Buy at least 1 Arms";
+
+        /// <summary>R-ARMS-002's refusal when a purchase would overflow the Arms stock.</summary>
+        public const string RefusedStockCapacity = "That is more Arms than the stock can hold";
+
         /// <summary>R-ARMS-002 (D-G6): <paramref name="count"/> Arms join the stock at once, and the Treasury pays
         /// count * arms_price, borrowing what it lacks (R-MONEY-003). Refused, state untouched, for fewer than one unit, a
         /// stock that would pass a whole number's range, or borrowing that would take the debt past mvp.debt_ceiling (#2198,
         /// owner 2 Nov 2026: "Refuse buys over ceiling (Recommended)"; the debt after is PayOrBorrow's, the debt plus what the
         /// Treasury lacks, and exactly at the ceiling is allowed). A purchase the Treasury pays in full borrows nothing and is
-        /// never refused at the ceiling. Step has already refused it in the legacy loop.</summary>
+        /// never refused at the ceiling. Step has already refused it in the legacy loop. It reads no population, so it runs
+        /// on an initialized Historical ledger (the dark start, #1725 PR 7): a bought Arms joins the national stock, not a
+        /// record's issued items. A synthetic or Open ledger stays refused (R-POP-002).</summary>
         public static string? BuyArms(Content c, GameState s, int count, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
-            if (count < 1) return "Buy at least 1 Arms";
-            if ((long)s.Arms + count > int.MaxValue) return "That is more Arms than the stock can hold";
+            PopulationLedger.RefuseUnlessHistorical(s);
+            if (count < 1) return RefusedCount;
+            if ((long)s.Arms + count > int.MaxValue) return RefusedStockCapacity;
             if (BorrowsPastDebtCeiling(c, s, count)) return RefusedDebtCeiling;
             var cost = count * c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value;
             EconomySystem.PayOrBorrow(c, s, cost, "for Arms", why, CauseKeys.Purpose.Arms);
@@ -68,22 +89,37 @@ namespace Statecraft.Sim
             return left < 0 && s.Debt - left > r.DebtCeiling!.Value;   // the loader requires both in the GDD loop
         }
 
-        /// <summary>#2206: whether End turn would refuse <paramref name="count"/> Arms for the ceiling (BuyArms, the check above)
-        /// if it ran <paramref name="orders"/>, the turn's orders, from <paramref name="turnStart"/>, after Buy queued them: the
-        /// purchase takes a queued purchase's slot, else goes last (SimBridge.Queue). The orders run on a copy through
-        /// Simulation.Preview, End turn's own order phase (RunOrders: conversions before the purchase, Attention, refusals),
-        /// so everything queued before the purchase counts as End turn counts it. The Defence screen's warning.</summary>
-        public static bool BorrowsPastDebtCeiling(Content c, GameState turnStart, IReadOnlyList<Command> orders, int count)
+        /// <summary>Returns the reason End turn would refuse <paramref name="count"/> Arms if it ran
+        /// <paramref name="orders"/>, the turn's orders, from <paramref name="turnStart"/>, after Buy queued them. The purchase
+        /// takes a queued purchase's slot, else goes last (SimBridge.Queue). The orders run on a copy through Simulation.Preview,
+        /// End turn's own order phase (RunOrders: conversions before the purchase, Attention, refusals), so everything queued
+        /// before the purchase counts as End turn counts it. The Defence screen's warning and press guard.</summary>
+        public static string? BuyArmsRefusal(Content c, GameState turnStart, IReadOnlyList<Command> orders, int count)
         {
             var buy = new BuyArms(count);
             var batch = orders.ToList();
             var slot = batch.FindIndex(x => x is BuyArms);
             if (slot >= 0) batch[slot] = buy; else batch.Add(buy);
-            return Simulation.Preview(c, turnStart, batch).Rejected.Any(r => ReferenceEquals(r.Command, buy) && r.Reason == RefusedDebtCeiling);
+            return Simulation.Preview(c, turnStart, batch).Rejected.FirstOrDefault(r => ReferenceEquals(r.Command, buy))?.Reason;
+        }
+
+        /// <summary>#2206: whether End turn would refuse the replacement Arms purchase for the debt ceiling.</summary>
+        public static bool BorrowsPastDebtCeiling(Content c, GameState turnStart, IReadOnlyList<Command> orders, int count)
+            => BuyArmsRefusal(c, turnStart, orders, count) == RefusedDebtCeiling;
+
+        /// <summary>R-FOOD-001 under gdd-0.3 (#2470): an initialized ledger's need, its living own population ids, after it
+        /// reconciles, so an invalid ledger sets no Food.</summary>
+        static int LedgerNeed(GameState s)
+        {
+            s.PopulationLedger.Reconcile();
+            return Rations(s.PopulationLedger.Units);
         }
 
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>
         static int Need(GameState s, MvpRules r) => (int)Math.Round(s.TotalPopulation / r.PeoplePerUnit, MidpointRounding.AwayFromZero);
+
+        // #2530: a count of 1 names the singular, as the UI's helper does.
+        static string Units(int n) => n == 1 ? "1 unit" : FormattableString.Invariant($"{n} units");
 
         /// <summary>R-FIELD-002, step 6 after the cities' production (D-A6): in ordinal site id order, every plowed field (a built
         /// field site, R-FIELD-001) adds field_food_per_turn to the stock, with no workers (Q-FIELD-2). It comes before the
@@ -97,30 +133,61 @@ namespace Statecraft.Sim
             {
                 if (!(s.Sites.TryGetValue(f.Id, out var w) && w.BuiltOn != null)) continue;
                 s.Food += yield;
-                why.Add(new Cause("economy", "food", yield, FormattableString.Invariant($"{f.Name}: the plowed land yielded {yield} units of Food"), key: CauseKeys.FoodHarvest, args: new[] { f.Id }));
+                why.Add(new Cause("economy", "food", yield, FormattableString.Invariant($"{f.Name}: the plowed land yielded {Units(yield)} of Food"), key: CauseKeys.FoodHarvest, args: new[] { f.Id }));
             }
+        }
+
+        /// <summary>R-FOOD-001 under gdd-0.3 (#2470): the month's need of a population ledger, one ration (one population
+        /// unit's food) for each living own population id in <paramref name="snapshot"/>, whatever its status or
+        /// assignment. The order of the snapshot does not matter; a repeated id or a missing record is refused.</summary>
+        internal static int Rations(IEnumerable<PopulationUnit> snapshot)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            var ids = new HashSet<int>();
+            foreach (var p in snapshot)
+                if (p == null || !ids.Add(p.Id)) throw new ArgumentException("A Food snapshot holds each population id once.", nameof(snapshot));
+            return ids.Count;
         }
 
         /// <summary>R-FOOD-002, step 7: the nation eats the turn's need from the stock, as far as the stock goes (it stops at
         /// 0, and the rest is unmet), then the import brings the stock back to cover_months of the need, unless foreign
-        /// currency is exhausted (the fx_crisis situation at the turn's start), when no Food is imported.</summary>
-        public static void Consume(Content c, GameState s, MvpRules r, List<Cause> why)
+        /// currency is exhausted (the fx_crisis situation at the turn's start), when no Food is imported. The need is the
+        /// aggregate head count; a state with an initialized population ledger is refused here (R-POP-002).</summary>
+        public static void Consume(Content c, GameState s, MvpRules r, List<Cause> why) => Consume(c, s, r, null, why);
+
+        /// <summary>R-FOOD-002 under gdd-0.3 (#2470): with a <paramref name="month"/> context the need is <see cref="Rations"/>
+        /// of the month's frozen opening snapshot (<see cref="Gdd03SyntheticMonthContext.OpeningPeople"/>), not the live
+        /// ledger, so a ledger change before step 7 does not move the month's need. The live ledger is checked first
+        /// (<see cref="PopulationLedger.Reconcile"/>) so a bad ledger moves no Food. Without a month it is the aggregate need.</summary>
+        internal static void Consume(Content c, GameState s, MvpRules r, Gdd03SyntheticMonthContext? month, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
-            var need = Need(s, r);
+            if (month == null) PopulationLedger.RefuseAggregate(s);
+            else if (!c.UsesPopulationLedger || !s.PopulationLedger.IsInitialized)
+                throw new NotSupportedException("A monthly Food snapshot needs an initialized gdd-0.3 population ledger.");
+            else s.PopulationLedger.Reconcile();
+            var need = month != null ? Rations(month.OpeningPeople) : Need(s, r);
             var eaten = Math.Min(need, s.Food);
             s.Food -= eaten;
             s.FoodNeed = need;
             s.FoodUnmet = need - eaten;
             if (s.FoodUnmet > 0)
-                why.Add(new Cause("economy", "food", -s.FoodUnmet, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet"), key: CauseKeys.FoodShortage, args: new[] { CauseKeys.Number(need) }));
+                // #2527 review: informational - the unmet count lives in the line and its args, not the delta, so the Food
+                // row's lines add up to the stock's change on a turn that starts below the need.
+                why.Add(new Cause("economy", "food", 0, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet"), key: CauseKeys.FoodShortage, args: new[] { CauseKeys.Number(s.FoodUnmet), CauseKeys.Number(need) }));
             if (s.ActiveSituations.Contains(EconomySystem.FxCrisis))
             {
                 why.Add(new Cause("economy", "food", -eaten, FormattableString.Invariant($"No Food imported (foreign currency crisis): the stock fell to {s.Food} units"), key: CauseKeys.FoodWithoutImports, args: new[] { CauseKeys.Number(s.Food) }));
                 return;
             }
             var target = (long)r.CoverMonths!.Value * need;
-            if (s.Food < target) s.Food = (int)target;
+            if (s.Food < target)
+            {
+                var before = s.Food + eaten;    // the stock on entry: the line nets the eating and the import, so the Food row's lines add up to its change (#2527)
+                s.Food = (int)target;
+                var net = s.Food - before;
+                if (net != 0)
+                    why.Add(new Cause("economy", "food", net, FormattableString.Invariant($"The month's eating and Food imports brought the stock to {s.Food} units"), key: CauseKeys.FoodImported, args: new[] { CauseKeys.Number(s.Food) }));
+            }
         }
 
         /// <summary>R-FOOD-003: food_supply's stock term, k_food * (stock - full) / full - unmet / need, where full is

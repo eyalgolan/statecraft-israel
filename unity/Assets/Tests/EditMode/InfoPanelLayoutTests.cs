@@ -40,7 +40,8 @@ public class InfoPanelLayoutTests
     static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check,
                                 UiText? text = null, bool hebrew = false, System.Action<VisualElement>? settled = null,
                                 System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null,
-                                System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null, int uiScale = 100)
+                                System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null, int uiScale = 100,
+                                MapRegions? regions = null)
     {
         var t = text ?? Text;
         var rt = new RenderTexture(w, h, 0);
@@ -59,7 +60,7 @@ public class InfoPanelLayoutTests
         var bridge = new SimBridge(g, t);
         var hud = new HudPresenter(root, bridge, t);
         var card = new EventCardPresenter(root, bridge, t, null);
-        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit, unitName: unitName, showReachable: showReachable);
+        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: regions ?? Regions(), selectedUnit: unit, unitName: unitName, showReachable: showReachable);
         try
         {
             act(root, info);
@@ -156,6 +157,34 @@ public class InfoPanelLayoutTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    /// <summary>#2039, owner ruling of 2 Nov 2026 ("Keep hexes, fix the panel"): the hex the game names Jerusalem also holds
+    /// the Old City, so the control data puts it on the Arab side from 11 June 1948 and the map colours it so; its panel line
+    /// names West Jerusalem as Israeli-held instead, in English and Hebrew. From the start, 15 May 1948, too: the opening period's
+    /// no-man's land (data code m, to 10 June) names it so as well (owner, 3 November 2026: "Israeli-held from 15 May (Recommended)", #2039 issuecomment-6610644690).</summary>
+    [UnityTest]
+    public IEnumerator TheJerusalemPanelNamesWestJerusalemAsIsraeliHeld([Values(false, true)] bool hebrew)
+    {
+        var t = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var regions = new MapRegions(Subdistricts1948.Parse(MapFile(Subdistricts1948.FileName)), Armistice1949.Parse(MapFile(Armistice1949.FileName)),
+            Control1948.Parse(MapFile(Control1948.FileName)));
+        var jerusalem = C.SettlementHexes.Single(s => s.Id == "jerusalem");
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var expected = new[]
+        {
+            (new System.DateTime(1948, 5, 15), hebrew ? "בשליטת ישראל (מערב ירושלים)" : "Held by Israel (West Jerusalem)"),
+            (new System.DateTime(1948, 6, 10), hebrew ? "בשליטת ישראל (מערב ירושלים)" : "Held by Israel (West Jerusalem)"),
+            (new System.DateTime(1948, 8, 1), hebrew ? "בשליטת ישראל (מערב ירושלים)" : "Held by Israel (West Jerusalem)"),
+            (new System.DateTime(1949, 9, 1), hebrew ? "הצד הישראלי של קו שביתת הנשק (מערב ירושלים)" : "Israeli side of the armistice line (West Jerusalem)"),
+        };
+        foreach (var (date, line) in expected)
+        {
+            g.State.Date = date;
+            yield return Rendered(1920, 1080, g, (root, info) => info.Show(jerusalem.Q, jerusalem.R),
+                root => Assert.AreEqual(line, root.Q<Label>("info-region").text.Split('\n')[0], $"{date:yyyy-MM-dd}"),
+                text: t, hebrew: hebrew, regions: regions);
+        }
+    }
+
     /// <summary>#40, owner decision of 22 Oct 2026 (a condition on #1135): the info panel is a ScrollView, whose rows the scroll
     /// content container lays out, and in Hebrew they still mirror: the hex's terrain sign sits right of its facts, as on
     /// the row-reversed panel before (#550). In English it sits left of them. At every window size and scale, Lydda's hex.</summary>
@@ -241,6 +270,43 @@ public class InfoPanelLayoutTests
                         }
                     }, hebrew ? he : Text, hebrew, uiScale: uiScale);
                 }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>R-CITY-011 (#2477 review): a housing repair being built shows on its city's own hex, outside the folded
+    /// project list (GddHexPanel.Repairs), with its line, its builder line and the city's stepper. Under gdd-0.3, at every
+    /// window size (the stacked bars and the short windows included) in English and Hebrew, the panel lies in the window, clear
+    /// of the minimap, the left column and the top bar, and every shown label lies inside the panel (or the panel scrolls to
+    /// it) with its text fitting its box, as TheGddCityAndSitePanelsFitEveryWindow asks of the city's own hex.</summary>
+    [UnityTest]
+    public IEnumerator ACityHexWithARepairBeingBuiltFitsEveryWindow_RCity011([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
+    {
+        var c = WorkshopPanelTests.Load03();
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var city = c.SettlementHexes.Single(s => s.Id == "haifa");
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in Windows)
+            {
+                var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+                var id = g.State.NextId++;
+                g.State.CityProjects.Add(id, new CityProject(id, Projects.HousingRepair, city.Id, city.Q, city.R, 2));
+                var at = $"{(hebrew ? "he" : "en")} {w}x{h} at {uiScale}%";
+                yield return Rendered(w, h, g, (root, info) => info.Show(city.Q, city.R), root =>
+                {
+                    var panel = root.Q("info-panel"); var window = root.worldBound;
+                    foreach (var name in new[] { "city-repair-state", "city-repair-builder", "city-builders" })
+                        if (root.Q(name) is not { } e || !Shown(e)) { problems.Add($"{at}: precondition: {name} shows"); return; }
+                    if (!Inside(panel.worldBound, window)) problems.Add($"{at}: the panel {panel.worldBound} leaves the window {window}");
+                    foreach (var other in new[] { "minimap", "left-column", "top-bar" })
+                        if (panel.worldBound.Overlaps(root.Q(other).worldBound)) problems.Add($"{at}: the panel {panel.worldBound} overlaps the {other} {root.Q(other).worldBound}");
+                    foreach (var l in panel.Query<TextElement>().ToList().Where(l => !string.IsNullOrEmpty(l.text) && Shown(l)))
+                    {
+                        if (!InsideOrScrollsTo(l.worldBound, root.Q<ScrollView>("info-panel"))) problems.Add($"{at}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");
+                        if (!TextFits(l)) problems.Add($"{at}: '{l.text}' does not fit its box {l.contentRect} ({l.name})");
+                    }
+                }, hebrew ? he : Text, hebrew, uiScale: uiScale);
+            }
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
@@ -544,6 +610,39 @@ public class InfoPanelLayoutTests
                 $"{text["ui.lang"]}: the Settlements line");
             info.Dispose();
         }
+    }
+
+    [Test]
+    public void ASelectedSettlementShowsTheLiveHolderThenEveryStateDetailInEnglishAndHebrew()
+    {
+        var names = Names();
+        var namesHe = SettlementPlacer.Parse(MapFile(SettlementPlacer.DefaultFileName)).ToDictionary(t => t.Id, t => t.NameHe);
+        var acre = C.SettlementHexes.Single(s => s.Id == "acre");
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var states = new[]
+        {
+            new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, new System.DateTime(1948, 5, 20)),
+            new SettlementControl(Movement.PlayerSide, SettlementControl.Occupied, new System.DateTime(1948, 5, 20), turns: 2),
+            new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingEnd, new System.DateTime(1948, 5, 20)),
+            new SettlementControl(Movement.PlayerSide, SettlementControl.Annexed, new System.DateTime(1948, 5, 20)),
+            new SettlementControl(since: new System.DateTime(1948, 5, 20), depopulated: true),
+            new SettlementControl(since: new System.DateTime(1948, 5, 20)),
+        };
+        foreach (var text in new[] { Text, he })
+            foreach (var record in states)
+            {
+                using var ui = new UiTestKit();
+                var game = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+                game.State.Settlements["acre"] = record;
+                var info = new InfoPanelPresenter(ui.Root, new SimBridge(game, text), text, names, regions: Regions(), townNamesHe: namesHe);
+                info.Show(acre.Q, acre.R);
+                var holder = SettlementControlView.PlayerHolds(record) == true ? text["info.control_israel"] : text["info.control.enemy_held"];
+                Assert.AreEqual(holder, ui.Q<Label>("info-region").text.Split('\n')[0], text["ui.lang"] + ": live holder first");
+                var place = text["ui.lang"] == UiLanguage.Hebrew ? namesHe["acre"]! : names["acre"];
+                StringAssert.Contains(SettlementControlView.PanelText(text, place, record)!, ui.Q<Label>("info-settlements").text,
+                    text["ui.lang"] + ": state detail");
+                info.Dispose();
+            }
     }
 
     /// <summary>#204 drift guard: the note says "water hex" because a town's own hex (TownHex) differs from its drawn hex

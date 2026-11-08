@@ -148,6 +148,21 @@ public class Gdd03MovementFortTests
         Assert.NotNull(Movement.Full(c, s, s.Units[1], 3, 1));
     }
 
+    // R-MOVE-003, R-COMBAT-003: a retreat reads the catalogue's limit too. 6 against 2 sends the defender back; its first
+    // neighbour (4, 1) holds one Egyptian unit, full at a catalogue limit of 1 (the fixture's mvp.stack_limit, 2, would let it
+    // in), so it goes to the next neighbour in the fixed order, (4, 0).
+    [Fact]
+    public void ARetreatReadsTheCatalogueStackLimit()
+    {
+        var c = Load(); c.Gdd03Balance!.Values["military.stack_limit"].Values[0] = 1;
+        var s = With(c, Of("recruit"), new Unit(2, "enemy", 3, 1, side: "egypt", strength: 2), Of("enemy", 3, 4, side: "egypt"));
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 3, 1) });
+        Assert.Empty(now.Rejected);
+        Assert.Contains(now.Why, w => w.Message == "Unit 2 retreated to hex 4,0");
+        Assert.Equal((4, 0), (now.State.Units[2].Q, now.State.Units[2].R));
+        Assert.Equal((4, 1), (now.State.Units[3].Q, now.State.Units[3].R));
+    }
+
     // R-MOVE-001, R-MOVE-008, R-MOVE-010, R-COMBAT-001, R-COMBAT-007: Q12 (owner, 1 November 2026) gives artillery main's 2
     // points on the infantry terrain column. Mountains are made infantry 1 / armour 3 here so the two columns differ.
     [Fact]
@@ -164,7 +179,7 @@ public class Gdd03MovementFortTests
         Assert.Null(Movement.Move(c, s, 1, 3, 1, spent, why));
         Assert.Equal((3, 1), (s.Units[1].Q, s.Units[1].R));
         Assert.Equal(1, Movement.PointsLeft(c, s, 1, spent));
-        Assert.Null(Combat.Strike(c, s, 1, 5, 1, spent, new Dictionary<int, (int Q, int R)>(), why)); // range 2, shared budget
+        Assert.Null(Combat.Strike(c, s, 1, 5, 1, spent, new Dictionary<int, AttackRecord>(), why)); // range 2, shared budget
         Assert.Equal(0, Movement.PointsLeft(c, s, 1, spent));
         Assert.Equal("That unit has no movement points left this turn", Combat.Check(c, s, 1, 5, 1, spent: spent));
         Assert.Empty(Movement.Reachable(c, s, 1, spent));
@@ -244,6 +259,40 @@ public class Gdd03MovementFortTests
         // Catalogue structural validation still applies, but none of these valid catalogue rows is a consumed old-rule requirement.
         Assert.NotNull(ContentLoader.Load(Fixture.Write(f)));
     }
+
+    [Theory]
+    [InlineData("military.move_armoured", "basis: Default, values: [1.5], note: fixture")]
+    [InlineData("military.fort_bonus", "basis: Default, values: [-1], note: fixture")]
+    public void Gdd03NumberRulesRejectInvalidConsumedScalars(string key, string row)
+    {
+        var f = Files();
+        f[Gdd03BalanceCatalogue.FileName] = System.Text.RegularExpressions.Regex.Replace(f[Gdd03BalanceCatalogue.FileName],
+            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { " + row + " }\n");
+        var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(f)));
+        Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
+        Assert.Equal("values." + key, error.Field);
+        Assert.Contains("must be a whole number >= 0", error.Message);
+    }
+    // R-ORDER-002 (#2601): fortify_turns is Agreed; a Default row with the same value is refused, naming the exact file and field.
+    [Fact]
+    public void LoaderRejectsNonAgreedFortifyTurns()
+    {
+        const string key = "military.fortify_turns";
+        var f = Files();
+        f[Gdd03BalanceCatalogue.FileName] = System.Text.RegularExpressions.Regex.Replace(f[Gdd03BalanceCatalogue.FileName],
+            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { basis: Default, values: [1], note: fixture }\n");
+        var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(f)));
+        Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
+        Assert.Equal("values." + key, error.Field);
+        Assert.Contains("must be Agreed", error.Message);
+        // The same row loads under the gdd-0.1 ruleset: only gdd-0.3 refuses it.
+        f["rules.yaml"] = f["rules.yaml"].Replace("move_cost: { coastal_plain: 1, hills: 2, desert: 3 }",
+            "move_cost: { coastal_plain: 1, lowland: 1, valley: 1, hills: 2, mountains: 3, desert: 3 }")
+            .Replace("combat_terrain_percent: { coastal_plain: 100, hills: 150, desert: 100 }",
+            "combat_terrain_percent: { coastal_plain: 100, lowland: 100, valley: 100, hills: 150, mountains: 150, desert: 100 }");
+        f["eras.yaml"] = f["eras.yaml"].Replace("gdd-0.3", "gdd-0.1");
+        Assert.NotNull(ContentLoader.Load(Fixture.Write(f)));
+    }
     // R-MOVE-007: both endpoints must belong to the same built segment for either corridor kind.
     [Theory]
     [InlineData("road")]
@@ -299,7 +348,7 @@ public class Gdd03MovementFortTests
         var before = s.RngState; var rng = new Rng(before); rng.NextDouble();
         Assert.Equal(25, Combat.Preview(c, s, 1, 3, 1)!.Value.RatioPercent);
         var why = new List<Cause>();
-        Assert.Null(Combat.Strike(c, s, 1, 3, 1, new Dictionary<int, int>(), new Dictionary<int, (int Q, int R)>(), why));
+        Assert.Null(Combat.Strike(c, s, 1, 3, 1, new Dictionary<int, int>(), new Dictionary<int, AttackRecord>(), why));
         Assert.Equal(rng.State, s.RngState);
         Assert.Contains(why, line => line.Key == WhyKeys.Engagement && line.Args[1] == "25");
         Assert.True(c.HasPermanentFort(3, 1));
@@ -395,7 +444,7 @@ public class Gdd03MovementFortTests
         var state = With(c, Of("recruit"), Of("enemy", 2, 3, side: "egypt"));
         Assert.Equal(100, Combat.Preview(c, state, 1, 3, 1)!.Value.RatioPercent);
         var before = state.Hash();
-        Assert.NotNull(Combat.Strike(c, state, 1, 5, 1, new Dictionary<int,int>(),new Dictionary<int,(int Q,int R)>(),new List<Cause>()));
+        Assert.NotNull(Combat.Strike(c, state, 1, 5, 1, new Dictionary<int,int>(),new Dictionary<int,AttackRecord>(),new List<Cause>()));
         Assert.Equal(before,state.Hash()); Assert.True(c.HasPermanentFort(2,1));
     }
 

@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GDD 0.3 start facilities",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ruleset",
+    "military_camps",
+    "formation_combat_xp"
+  ],
+  "properties": {
+    "ruleset": {
+      "type": "string",
+      "enum": [
+        "gdd-0.3"
+      ]
+    },
+    "military_camps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "city",
+          "location"
+        ],
+        "properties": {
+          "city": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "location": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        }
+      }
+    },
+    "formation_combat_xp": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "row",
+          "combat_xp"
+        ],
+        "properties": {
+          "row": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "combat_xp": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

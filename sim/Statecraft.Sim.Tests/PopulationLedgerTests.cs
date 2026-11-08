@@ -131,7 +131,8 @@ public class PopulationLedgerTests
         Assert.NotEqual(a.Hash(),b.Hash());
     }
 
-    // R-POP-001, R-POP-003, R-LOOP-002, R-CITY-001, R-CITY-008: old identities neither gain state nor accept helpers.
+    // R-POP-001, R-POP-003, R-LOOP-002, R-CITY-001, R-CITY-008: old identities neither gain state nor accept helpers. Their
+    // saves differ from gdd-0.3's only by the ruleset line (every ruleset writes schema 5 since #2605).
     [Theory] [InlineData("legacy")] [InlineData("gdd-0.1")]
     public void OldIdentitiesKeepCanonicalTextAndSaveBytes(string identity)
     {
@@ -140,7 +141,7 @@ public class PopulationLedgerTests
         Assert.Throws<InvalidOperationException>(()=>s.PopulationLedger.RegisterArrival("ship",0,Person()));
         Assert.Equal(before,s.Describe()); Assert.Equal(before,s.Clone().Describe());
         var save = new SaveGame(new string('a',64),1,Mode.Historical,identity,new string('b',64));
-        Assert.Equal($"statecraft-save 3\ncontent {new string('a',64)}\nseed 1\nmode Historical\nruleset {identity}\nend {new string('b',64)}\n",save.Write());
+        Assert.Equal($"statecraft-save 5\ncontent {new string('a',64)}\nseed 1\nmode Historical\nruleset {identity}\nend {new string('b',64)}\n",save.Write());
     }
 
     // R-POP-001, R-LOOP-005: no numeric fallback from the old common scale or Deferred start.army.
@@ -220,5 +221,42 @@ public class PopulationLedgerTests
         Assert.Throws<NotSupportedException>(()=>Simulation.Preview(c,s,Array.Empty<Command>()));
         Assert.Throws<NotSupportedException>(()=>Simulation.DelegatedTo(c,s,Array.Empty<Command>(),"missing"));
         Assert.Equal(hash,s.Hash());
+    }
+
+    static PopulationUnit WithTier(CivilianProfession profession, CivilianTier tier, int workXp = 0) => new PopulationUnit(0,
+        PopulationStatus.FreeCivilian, 1, new PopulationLocation("north", 0, 0, "camp"), PopulationAssignment.Unassigned,
+        profession, tier, workXp, "basic", 9, new PopulationEquipment("tools", true, "arms", true));
+
+    // R-POP-002, R-CRAFT-003 (#1698 follow-up, the 1 November 2026 answers the owner approved: the novice craftsman label
+    // starts with the craftsman course): a craftsman may be a novice. Accepted outside a course too, a maintainer reading
+    // of Q55 ("workshop work by a novice craftsman"), not an owner ruling.
+    [Fact] public void NoviceCraftsmanIsAValidLedgerTier()
+    {
+        var s = State(Row("start", 0, WithTier(CivilianProfession.Craftsman, CivilianTier.Novice))); var l = s.PopulationLedger;
+        l.Reconcile(); Assert.Equal(CivilianTier.Novice, l.Get(0).Tier);
+        l.Transition(0, PopulationStatus.Trainee, l.Get(0).Location, new PopulationAssignment(PopulationAssignmentKind.Course, "course", 2));
+        l.Reconcile(); Assert.Equal(CivilianProfession.Craftsman, l.Get(0).Profession);
+        var farmer = State(Row()); farmer.PopulationLedger.Replace(WithTier(CivilianProfession.Craftsman, CivilianTier.Novice));
+        Assert.Equal(CivilianTier.Novice, farmer.PopulationLedger.Get(0).Tier);
+    }
+
+    // R-POP-002: tiers of other professions stay refused, at creation and on replacement, with the state unchanged.
+    [Theory]
+    [InlineData(CivilianProfession.Craftsman, CivilianTier.None)]
+    [InlineData(CivilianProfession.Craftsman, CivilianTier.Trained)]
+    [InlineData(CivilianProfession.Craftsman, CivilianTier.Veteran)]
+    [InlineData(CivilianProfession.Farmer, CivilianTier.None)]
+    [InlineData(CivilianProfession.Farmer, CivilianTier.Apprentice)]
+    [InlineData(CivilianProfession.Farmer, CivilianTier.Expert)]
+    [InlineData(CivilianProfession.Pioneer, CivilianTier.Apprentice)]
+    [InlineData(CivilianProfession.Pioneer, CivilianTier.Expert)]
+    [InlineData(CivilianProfession.None, CivilianTier.Novice)]
+    [InlineData(CivilianProfession.None, CivilianTier.Apprentice)]
+    public void TiersOfOtherProfessionsAreStillRefused(CivilianProfession profession, CivilianTier tier)
+    {
+        Assert.Throws<ArgumentException>(() => State(Row("start", 0, WithTier(profession, tier))));
+        var s = State(Row()); var before = s.Describe();
+        Assert.Throws<ArgumentException>(() => s.PopulationLedger.Replace(WithTier(profession, tier)));
+        Assert.Equal(before, s.Describe());
     }
 }

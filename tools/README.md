@@ -68,7 +68,8 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   `translations/<lang>/{events,ui,content}.yaml`, which the game does not read yet, and leaves out the advisors
   (`advisor.*`) and their encyclopedia (`encyclopedia.*`, which replaced How to play), which stay English or Hebrew only for now (owner, #1604). Every language keeps the Hebrew
   rules (all or none per event, placeholders as in the English, one line, no direction marks; `agent-checked` until a
-  native speaker has read it, #564), and nothing is written while any edited string is refused. It never commits or
+  native speaker, or an AI-assisted contributor who discloses it, has read it, #564; owner, 4 November 2026:
+  "AI-assisted can clear it"), and nothing is written while any edited string is refused. It never commits or
   touches `status` / `reviewed_by`; a saved Hebrew edit is a `content/` or `unity/` change, so it needs a changelog
   fragment.
 - `terrain_bake.py` writes `unity/Assets/Textures/Map/terrain_bake.png` (AO, curvature, sky-view), `ao.png` (the AO
@@ -219,7 +220,8 @@ and what is public are in `docs/RELEASING.md`, "Nightly builds". It runs on the 
   `Assets/Settings`, the prickly pear material) is gone before the next night. A missing clone is a REFUSED line in
   `LOG.md` (`gate=clone`); the launcher never clones. While a run is in progress it exits 0 and touches nothing.
 - The job folder holds `config.json` (optional; its keys are the fields of `Config` in `nightly_state.py`, and a wrong
-  one refuses the night), `state.json`, `LOG.md`, `runs/` (one folder per night with every step's log), `run.lock`,
+  one refuses the night), `state.json`, `LOG.md`, `runs/` (one folder per night; a refused `LOG.md` line points
+  directly to its evidence file), `run.lock`,
   `launchd.log` and `no-mcp-server`. A corrupt `config.json` or `state.json` refuses the night; it never counts as a
   first night.
 - itch.io pushes stay off (`itch_enabled` is false) until the save test passes: set `itch_page_url` in `config.json`
@@ -261,8 +263,9 @@ cd "$clone" && uv run tools/nightly.py run --manual --no-publish
 
 It runs every gate and build, writes nothing to `LOG.md` or `state.json` and touches no store, and must end with
 `NO-PUBLISH: all gates passed for v<version>`. A run that ends `REFUSED` prints no reason (a by-hand run writes no
-`LOG.md` line); the step that stopped it has its log in the newest folder under `$job/runs/` (a refusal before the first step, such as disk,
-licence or the clone, leaves none). Fix that step first
+`LOG.md` line). For a scheduled night, the refused line's `gate=` names the step or web/package variant and `log=`
+names the evidence file containing its cause; preflight and captured-command refusals receive a
+`refused-<gate>.log`. Fix that step first
 (`gh` and `butler` must be logged in, and the Unity licence and `unity_slots.py` must be where `Config` says), then
 run it again. Then:
 

@@ -23,7 +23,7 @@ using Object = UnityEngine.Object;
 /// plays the attack as the game does (UnitTokenMotion.PlayAttack; the layer adds the motion only in play mode, so the still
 /// adds it the same way) and advances it to half its length; an Animator does not run in edit mode, so every figure's
 /// Animator is advanced by hand by the same time. Explicit.</summary>
-[Explicit("writes stills for a pull request, not a check")]
+[Explicit("writes pull-request stills or logs weapon load; not a check")]
 public class TalWeaponsShots
 {
     string saveDir = "";
@@ -57,7 +57,6 @@ public class TalWeaponsShots
         var weapons = TalModelsShots.Answer(after ? Array.Empty<string>() : New);
         UnitWeapons.Source = (id, done) => weapons(id, CollectionDetail.Far, done);
         yield return CivMovementShots.Boot(hebrew, saveDir, (t, p, u, g) => { rt = t; ps = p; root = g; });
-        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
         var map = Object.FindFirstObjectByType<MapScene>();
         // The subject: Harel's token for the Sten (its third figure is the Palmach scout), else the first token with a sim
         // unit whose figures include C06 (the steel helmet), by id.

@@ -35,6 +35,25 @@ namespace Statecraft.Sim
             return null;
         }
 
+        /// <summary>Why this corridor segment cannot be started, or null when it can. The caller supplies a loaded corridor
+        /// and a valid zero-based segment index.</summary>
+        public static string? CheckStart(Content c, GameState s, string action, CorridorDef def, int index)
+        {
+            var wantRail = action == BuildRail;
+            if ((def.Kind == Rail) != wantRail)
+                return wantRail ? $"{def.Name} is not a railway" : $"{def.Name} is not a road";
+            var name = SegmentName(def, index);
+            if (def.Segments[index].Hexes.Any(h => SettlementControl.DepopulatedAt(c, s, h[0], h[1])))
+                return $"{name} crosses a depopulated place, where nothing can be built";
+            if (s.Corridors.TryGetValue(def.Id, out var work) && work.Segments[index] is SegmentWork segment)
+                return segment.BuiltOn == null ? $"{name} is already being built" : $"{name} is already built";
+            return null;
+        }
+
+        /// <summary>The refusal of a corridor segment that does not exist (#2707); the UI maps it to its own string (SimBridge.ReasonText).
+        /// The English is what a Rejected list and a save carry, so it does not change.</summary>
+        public const string RefusedNoSegment = "There is no such corridor segment";
+
         /// <summary>R-COR-001: an idle halutz unit (Projects.Start has checked the unit) starts an unbuilt, unclaimed segment
         /// <paramref name="target"/> ("corridor:N", N from 1) of a corridor whose kind <paramref name="action"/> builds. The
         /// Treasury pays the kind's cost now and borrows what it lacks. Refused, state untouched, for an unknown corridor or
@@ -45,16 +64,12 @@ namespace Statecraft.Sim
             var def = colon < 0 ? null : c.Corridors.FirstOrDefault(x => x.Id == target.Substring(0, colon));
             if (def == null || !int.TryParse(target.Substring(colon + 1), NumberStyles.None, CultureInfo.InvariantCulture, out var n)
                 || n < 1 || n > def.Segments.Count)
-                return "There is no such corridor segment";
-            var wantRail = action == BuildRail;
-            if ((def.Kind == Rail) != wantRail) return wantRail ? $"{def.Name} is not a railway" : $"{def.Name} is not a road";
+                return RefusedNoSegment;
             var index = n - 1;
             var name = SegmentName(def, index);
-            if (def.Segments[index].Hexes.Any(h => SettlementControl.DepopulatedAt(c, s, h[0], h[1])))   // R-CTRL-020 (Q-DEP-7 (c))
-                return $"{name} crosses a depopulated place, where nothing can be built";
+            var refusal = CheckStart(c, s, action, def, index);   // R-CTRL-020 (Q-DEP-7 (c))
+            if (refusal != null) return refusal;
             s.Corridors.TryGetValue(def.Id, out var work);
-            if (work?.Segments[index] is SegmentWork seg)
-                return seg.BuiltOn == null ? $"{name} is already being built" : $"{name} is already built";
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
             var (cost, _) = Projects.Terms(r, action);
             EconomySystem.PayOrBorrow(c, s, cost, "to build a corridor segment", why, CauseKeys.Purpose.Corridor);

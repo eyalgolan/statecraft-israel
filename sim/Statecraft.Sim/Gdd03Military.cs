@@ -73,7 +73,7 @@ namespace Statecraft.Sim
             if (c.Gdd03Balance == null || c.Gdd03Balance.Ruleset != SaveGame.Gdd03Ruleset || c.Gdd03Balance.Values == null)
                 throw Invalid("combat.draw_count", "requires the separate gdd-0.3 catalogue");
             var sources = new Dictionary<string, Gdd03CombatSource>(StringComparer.Ordinal);
-            // content/gdd03-balance.yaml:447-475; GDD 605277df docs/gdd/balance.md:172,180-185.
+            // content/gdd03-balance.yaml `combat.draw_count`; GDD 605277df docs/gdd/balance.md:172,180-185.
             // The parent is Agreed (retained one draw); its thresholds, band and rows remain Default.
             Gdd03DesignValue Required(string key, string basis, string? part = null)
             {
@@ -131,7 +131,7 @@ namespace Statecraft.Sim
                 if (next != 100) throw Invalid("combat.draw_count.parts." + name, "bands must cover every draw through 99");
                 rows[row] = result.AsReadOnly();
             }
-            // content/gdd03-balance.yaml:484-495; GDD docs/gdd/balance.md:175-177 at 605277df.
+            // content/gdd03-balance.yaml `combat.armoured_factor`, `combat.artillery_range` and `combat.artillery_factor`; GDD docs/gdd/balance.md:175-177 at 605277df.
             decimal Role(string key)
             {
                 var n = List(Required(key, "Default"), key, 1)[0];
@@ -153,6 +153,8 @@ namespace Statecraft.Sim
             Scalar(c, "military.fortify_bonus", false);
             Scalar(c, "military.combat_xp_gain"); Scalar(c, "military.combat_xp_full");   // R-UNIT-011
             if (Scalar(c, "military.fortify_turns") != 1) throw Invalid("military.fortify_turns", "only the existing one-turn settlement is implemented");
+            // R-ORDER-002 (#2601): the rule names this value Agreed; Entry alone would also accept a Default row.
+            if (Entry(c, "military.fortify_turns").Basis != "Agreed") throw Invalid("military.fortify_turns", "must be Agreed (R-ORDER-002)");
             foreach (var biome in new[] { "coastal_plain", "lowland", "valley", "hills", "mountains", "desert" })
             {
                 Terrain(c, biome, "infantry"); Terrain(c, biome, "armour"); Defence(c, biome);

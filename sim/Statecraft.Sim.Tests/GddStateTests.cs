@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Statecraft.Sim;
 
 /// <summary>The GDD v0.1 state (spec 2026-10-12 section 2.2): written into the hash only when set, so the legacy loop's
@@ -16,6 +17,35 @@ public class GddStateTests
         var s = GoldenRun.Play(c, new DateTime(1949, 5, 15));
         Assert.True(s.Turn > 1);
         foreach (var label in new[] { "city{", "coh=", "units[", "train[", "next=", "obj{", "score=" }) Assert.DoesNotContain(label, s.Describe());
+    }
+
+    // R-LOOP-002
+    [Fact]
+    public void ALegacyStateHashesItsExactCanonicalText()
+    {
+        // The whole legacy text, byte for byte: a reordered, renamed or reformatted legacy section moves every golden, so it must
+        // fail here first with the text in view. Doubles are IEEE bits (1.0 = 3FF0..., 0.5 = 3FE0..., 2.0 = 4000..., 0.25 = 3FD0...,
+        // 1.5 = 3FF8..., 3.0 = 4008..., 4.0 = 4010...). No section the GDD loop adds appears.
+        var d = new DateTime(1949, 3, 15);
+        var s = new GameState
+        {
+            Date = d, RngState = 42, Mode = Mode.Open, Turn = 7,
+            Indicators = { ["b"] = 0.5, ["a"] = 1.0 }, Policies = { ["p"] = 2.0 }, EffectContributions = { ["e"] = 0.25 },
+            IndicatorShifts = { ["s"] = 1.5 }, Budget = { ["defence"] = 3.0 }, Population = { ["jews"] = 4.0 },
+            ActiveSituations = { "war", "boom" }, Treasury = 1.0, Debt = 0.5, FxReserves = 2.0, Rung = 3, CeasefireWeeksLeft = 2,
+            Mobilization = 0.25, CoalitionStability = 0.5, Attention = 3.0, FiredEvents = { "e2", "e1" },
+            PendingEvents = { "e3" }, ChosenOptions = { ["e1"] = "a" }, Appointments = { ["pm"] = new Appointment("beni", new DateTime(1948, 5, 14)) },
+            AppointedUnder = "gov1", Placements = { new Placement("camp", 3, -2, new DateTime(1949, 2, 15)) },
+            MapActionsTurnDate = d, MapActionsThisTurn = 1, GameOver = "mvp_ended",
+        };
+        const string text = "1949-03-15;42;Open;7;ind{a=3FF0000000000000;b=3FE0000000000000;}pol{p=4000000000000000;}eff{e=3FD0000000000000;}"
+            + "shift{s=3FF8000000000000;}bud{defence=4008000000000000;}pop{jews=4010000000000000;}sit[boom,war]"
+            + "treasury=3FF0000000000000;debt=3FE0000000000000;fx=4000000000000000;rung=3;cf=2;mob=3FD0000000000000;stab=3FE0000000000000;"
+            + "att=4008000000000000;fired[e1,e2]pending[e3]chosen{e1=a;}appt{pm=beni@1948-05-14;}under=gov1;map[camp@3,-2@1949-02-15;]"
+            + "mapturn=1949-03-15:1;over=mvp_ended";
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var expected = string.Concat(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(text)).Select(b => b.ToString("x2")));
+        Assert.Equal(expected, s.Hash());
     }
 
     // R-LOOP-002
@@ -84,6 +114,14 @@ public class GddStateTests
     {
         Assert.Equal("mefalsim=b,4,5", new SiteWork("mefalsim", 4, 5, null).Canonical());
         Assert.Equal("mefalsim=done,1949-06-15", SiteWork.Built("mefalsim", new DateTime(1949, 6, 15)).Canonical());
+    }
+
+    // R-SITE-003, R-MIN-002 (#2733 item 21): a fractional progress is hashed as the double's IEEE bits, 16 uppercase hex
+    // digits, so a change to decimal or culture-dependent formatting moves the hash and fails here.
+    [Fact]
+    public void ASitesFractionalProgressIsHashedAsItsBits()
+    {
+        Assert.Equal("mefalsim=b,4,5,3FD0000000000000", new SiteWork("mefalsim", 4, 5, null).WithProgress(5, 0.25).Canonical());
     }
 
     // R-LOOP-002, R-VET-001: a unit's service reaches the hash, and a unit with none hashes as it did before Phase 4 PR 6.
