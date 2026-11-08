@@ -71,7 +71,6 @@ public class TurnProbeTests
     {
         TurnProbe.On = false;
         Action handler = Named;
-        TurnProbe.Handler("Changed", handler, 0); TurnProbe.Lap("warm", 0);   // any first-call cost outside the count
         void Hooks()
         {
             for (int i = 0; i < 200; i++)
@@ -82,6 +81,7 @@ public class TurnProbeTests
                 TurnProbe.Step(t);
             }
         }
+        Hooks();   // warm up outside the recorder: the first call of each hook (and of Hooks) JIT-compiles and allocates
         // Unity's GC.Alloc recorder, as MenuMusicTests uses: GC.GetAllocatedBytesForCurrentThread read 0 even for the
         // probed turn's handler keys in the Editor, so it could not show an allocation either way.
         Assert.That(Hooks, Is.Not.AllocatingGCMemory(), "off: no allocation in the hooks");
