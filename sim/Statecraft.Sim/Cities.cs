@@ -151,10 +151,12 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-MONEY-002: annual Money upkeep for the civilian places that exist at the start of step 7. Only completed
-        /// projects and camp sites count. The six rates are explicit content design values; all are 0 in the MVP.</summary>
+        /// projects and camp sites count. The six rates are explicit content design values; all are 0 in the MVP. It counts
+        /// places, not people, so it runs on an initialized Historical ledger (the dark start, #1725 PR 7) and reads no
+        /// record; a synthetic or Open ledger stays refused (R-POP-002).</summary>
         public static double AnnualUpkeep(Content c, GameState s, MvpRules r)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
             var total = s.Cities.Count * r.CityUpkeepPerYear!.Value;
             foreach (var p in s.CityProjects.Values)
             {
