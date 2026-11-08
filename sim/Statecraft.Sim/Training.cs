@@ -371,7 +371,7 @@ namespace Statecraft.Sim
 
         /// <summary>The ActiveService target of map unit <paramref name="unit"/>: a starting force's own (unit id i is
         /// <c>c.StartingForces[i]</c>, StartingForces.Init; R-POP-004), else the one bound at its graduation.</summary>
-        static string FormationTarget(Content c, int unit) => unit >= 0 && unit < c.StartingForces.Count
+        internal static string FormationTarget(Content c, int unit) => unit >= 0 && unit < c.StartingForces.Count
             ? HistoricalPopulation.FormationPrefix + c.StartingForces[unit].Row
             : FormationPrefix + unit.ToString(CultureInfo.InvariantCulture);
 
