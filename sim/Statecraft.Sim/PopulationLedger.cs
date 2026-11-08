@@ -127,6 +127,12 @@ namespace Statecraft.Sim
         int peoplePerUnit;
         /// <summary>People one record stands for in this ledger (CreateFixture's scale).</summary>
         internal int PeoplePerUnit { get { RequireInitialized(); return peoplePerUnit; } }
+        /// <summary>#1725 PR 7, natural increase (R-CITY-008; owner, 8 November 2026: "Carry the fraction (Recommended)"): the
+        /// records' worth of natural increase owed but not yet a whole record, carried from turn to turn. Decimal, as
+        /// Cities.Apportion is, so exact on every runtime.</summary>
+        internal decimal NaturalIncreaseCarry { get; private set; }
+        /// <summary>The natural-increase records added so far: their split over the cities is Cities.Apportion of this count.</summary>
+        internal int NaturalIncreaseRecords { get; private set; }
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }
         public double TotalPeople => (double)units.Count * peoplePerUnit;
@@ -245,6 +251,17 @@ namespace Statecraft.Sim
             units = candidate; sources = registered; NextPopulationId = next;
             return ids.AsReadOnly();
         }
+        /// <summary>#1725 PR 7, natural increase: registers <paramref name="rows"/> as <see cref="RegisterArrivals"/> does, all or
+        /// nothing, then counts them in <see cref="NaturalIncreaseRecords"/> and keeps <paramref name="carry"/>, the fraction of a
+        /// record still owed (0 up to 1).</summary>
+        internal void RegisterNaturalIncrease(IReadOnlyList<PopulationInventoryRow> rows, decimal carry)
+        {
+            RequireInitialized();
+            if (carry < 0 || carry >= 1) throw new ArgumentOutOfRangeException(nameof(carry), "The carried natural increase is a fraction of one record.");
+            var records = checked(NaturalIncreaseRecords + rows.Count);
+            RegisterArrivals(rows);
+            NaturalIncreaseCarry = carry; NaturalIncreaseRecords = records;
+        }
         public void RegisterCombatLoss(int id, string source)
         {
             RequireInitialized(); Get(id);
@@ -358,6 +375,9 @@ namespace Statecraft.Sim
         {
             yield return PopulationText.Fields("initialized", IsInitialized, "next", NextPopulationId,
                 "people-per-unit", peoplePerUnit, "reception-limit", receptionLimit);
+            // #1725 PR 7: written only once natural increase has run, so every ledger before it hashes as before.
+            if (NaturalIncreaseRecords != 0 || NaturalIncreaseCarry != 0)
+                yield return PopulationText.Fields("natural-increase", "carry", NaturalIncreaseCarry, "records", NaturalIncreaseRecords);
             if (bindings != null) foreach (var b in bindings.Canonical()) yield return b;
             foreach (var p in units.Values) yield return PopulationText.Fields("unit", p.Canonical());
             foreach (var source in sources) yield return PopulationText.Fields("source", source.Key, source.Value);

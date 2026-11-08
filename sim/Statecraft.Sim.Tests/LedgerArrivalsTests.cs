@@ -4,26 +4,25 @@ using Statecraft.Sim;
 /// initialized Historical ledger, each whole unit <c>Cities.Arrive</c> brings from the CBS series (R-CITY-003) is one
 /// refugee record, located in its city by <c>Cities.Apportion</c>'s split, reception 0, with a stable source key and
 /// ordinal, so a replay of the turn adds nobody twice. <c>PopulationSystem.Apply</c> adds no second count of the same
-/// people (R-CITY-008: the ledger is authoritative, "never extra people"); its natural increase stays refused: the rounding is
-/// ruled (owner, 8 November 2026: "Carry the fraction (Recommended)"), but who the new people are and where they live is
-/// not (docs/GDD.md, Q11: natural increase "stays the national rate, 0.0169 a year").</summary>
+/// people (R-CITY-008: the ledger is authoritative, "never extra people"). Natural increase on the ledger is
+/// <see cref="LedgerNaturalIncreaseTests"/>.</summary>
 public class LedgerArrivalsTests
 {
     static Content Gdd03() => HistoricalPopulationTests.Real(true);
 
     // A turn after the census day (city_arrivals_from, 8 November 1948) that brings CBS arrivals to the cities.
-    static readonly DateTime From = new DateTime(1949, 1, 1);
-    static readonly DateTime To = new DateTime(1949, 2, 1);
+    internal static readonly DateTime From = new DateTime(1949, 1, 1);
+    internal static readonly DateTime To = new DateTime(1949, 2, 1);
 
     // The dark start (#1725 PR 5): an initialized Historical ledger beside the game's city records, moved to the turn.
-    static GameState Fixture(Content c)
+    internal static GameState Fixture(Content c)
     {
         var s = Simulation.NewGame(c, 1, Mode.Historical, darkStart: true);
         s.Date = From;
         return s;
     }
 
-    static List<PopulationUnit> Arrived(GameState s) =>
+    internal static List<PopulationUnit> Arrived(GameState s) =>
         s.PopulationLedger.Units.Where(u => u.Status == PopulationStatus.Refugee).ToList();
 
     static Content NoNaturalIncrease()
@@ -106,21 +105,6 @@ public class LedgerArrivalsTests
         var had = Cities.Apportion(c, Cities.ArrivedUnits(c, c.RulesAt(From).Mvp!.CityArrivalsFrom, From, r.PeoplePerUnit));
         var byCity = Arrived(s).GroupBy(u => u.Location!.City!).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
         foreach (var kv in split) Assert.Equal(kv.Value - had[kv.Key], byCity.GetValueOrDefault(kv.Key));
-    }
-
-    // R-CITY-008 (placement pending): natural increase on the ledger is not built. A Historical ledger turn whose natural
-    // increase is above 0 (the real content's 0.0169 a year) is refused with this message, the state unchanged.
-    [Fact]
-    public void ApplyRefusesNaturalIncreaseOnTheLedger()
-    {
-        var c = Gdd03();
-        Assert.True(c.RulesAt(From).NaturalIncreasePerYear > 0);
-        var s = Fixture(c);
-        var why = new List<Cause>();
-        var before = s.Describe(); var hash = s.Hash();
-        var e = Assert.Throws<NotSupportedException>(() => PopulationSystem.Apply(c, s, To, 31 / 365.0, why));
-        Assert.Equal("natural increase on the ledger awaits the owner's placement ruling", e.Message);
-        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
     }
 
     // R-CITY-008 on the ledger: with no natural increase, Apply adds no second count of the turn's CBS arrivals. They are
