@@ -210,12 +210,37 @@ namespace Statecraft.Sim
         /// in it. Under gdd-0.1 Israeli formations retain their home city's housing after graduation, including when they move
         /// or become veterans. Under gdd-0.3 they do not (#1703; 27M-18, owner-approved 1 November 2026: "Housed = civilians,
         /// craftsmen, recruits and groups in training. Refugees and pioneer units are not housed."). Summed as integers, so the
-        /// order of the training groups and formations cannot change it.</summary>
+        /// order of the training groups and formations cannot change it.
+        /// With an initialized Historical ledger (the dark start, #1725 PR 7) it counts the ledger's records instead of these
+        /// fields: <see cref="LedgerHoused"/>.</summary>
         public static int Housed(GameState s, City x)
         {
+            if (s.PopulationLedger.IsHistorical) return LedgerHoused(s, x.Id);
             var n = x.Civilians + x.Craftsmen + x.Recruits;
             foreach (var k in s.Cohorts.Values) if (k.City == x.Id) n += k.Count;
             return s.Ruleset == SaveGame.Gdd03Ruleset ? n : n + Soldiers(s, x);
+        }
+
+        /// <summary>R-HOUSE-003 on an initialized Historical ledger (#1725 PR 7): the city's housed records, one population unit
+        /// each, located in the city: its free civilians (census people, craftsmen, the opening field farmers in their host and
+        /// the training centre's teacher) and its trainees, the groups in training. Refugees wait for housing and soldiers are
+        /// not housed under gdd-0.3 (27M-18). A record with no city, such as a farmer at Nir Am or Nirim, which have no city
+        /// record, is housed in no city.</summary>
+        static int LedgerHoused(GameState s, string city)
+        {
+            var n = 0;
+            foreach (var u in s.PopulationLedger.Units)
+                if ((u.Status == PopulationStatus.FreeCivilian || u.Status == PopulationStatus.Trainee) && u.Location?.City == city) n++;
+            return n;
+        }
+
+        /// <summary>R-HOUSE-005 on an initialized Historical ledger: the city's refugee records.</summary>
+        static int LedgerRefugees(GameState s, string city)
+        {
+            var n = 0;
+            foreach (var u in s.PopulationLedger.Units)
+                if (u.Status == PopulationStatus.Refugee && u.Location?.City == city) n++;
+            return n;
         }
 
         /// <summary>R-HOUSE-003, R-UNIT-004 (Q-HOUSE-5): the Israeli formations the city houses, their strength summed:
@@ -260,7 +285,7 @@ namespace Statecraft.Sim
         /// rules instead (#1703: the surcharge, 5 pp overflow and the cohesion term).</summary>
         public static void UpdateCondition(Content c, GameState s, MvpRules r, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: R and P are then the ledger's (Housed, OwnPopulation)
             var gdd03 = c.Ruleset == SaveGame.Gdd03Ruleset ? Gdd03HousingFormula.FromCatalogue(c.Gdd03Balance!) : null;
             var people = gdd03 == null ? 0 : OwnPopulation(s);
             double surcharge = 0.0, cohesion = 0.0;
@@ -321,10 +346,19 @@ namespace Statecraft.Sim
         /// strength of every player unit, wherever it stands: the Israeli formations and the halutz units, which have no side
         /// (R-UNIT-001). Summed as integers. The owner was asked: "Should P be the 12 cities' people plus units (the PR today),
         /// or the national population (649,400 at start, which cuts the loss by ~20%)?" and answered, 2 November 2026: "The 12
-        /// cities' people (Recommended)"; the option read: "As built: only the cities whose housing is tracked."</summary>
+        /// cities' people (Recommended)"; the option read: "As built: only the cities whose housing is tracked."
+        /// With an initialized Historical ledger (#1725 PR 7) it is the ledger's: every city's housed and refugee records plus
+        /// the active soldiers, so a record in no tracked city (a farmer at Nir Am or Nirim) is not in it. Halutz units are
+        /// not handled yet on a ledger game: no record is one at the dark start (R-HOUSE-003, R-HOUSE-005).</summary>
         public static int OwnPopulation(GameState s)
         {
             var n = 0;
+            if (s.PopulationLedger.IsHistorical)
+            {
+                foreach (var x in s.Cities.Values) n += LedgerHoused(s, x.Id) + LedgerRefugees(s, x.Id);
+                foreach (var u in s.PopulationLedger.Units) if (u.Status == PopulationStatus.ActiveSoldier) n++;
+                return n;
+            }
             foreach (var x in s.Cities.Values) n += Housed(s, x) + x.Refugees;
             foreach (var u in s.Units.Values) if (u.Side == "" || u.Side == Movement.PlayerSide) n += u.Strength;
             return n;
