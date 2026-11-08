@@ -31,10 +31,20 @@ namespace Statecraft.Sim
             return result;
         }
 
+        /// <summary>Natural increase, then the turn's CBS arrivals, by origin group. With an initialized Historical ledger
+        /// (#1725 PR 7) the ledger's records are the people (R-CITY-008: "never extra people"), so this adds none: the
+        /// arrivals are Cities.Arrive's refugee records (R-CITY-003), counted once there, and GameState.Population and the
+        /// causes are left alone. Natural increase on the ledger is refused: its rounding is ruled (owner, 8 November 2026:
+        /// "Carry the fraction (Recommended)"), but who the new people are and where they live is not.</summary>
         public static void Apply(Content c, GameState s, DateTime to, double yearFraction, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
             var rate = c.RulesAt(s.Date).NaturalIncreasePerYear * yearFraction;
+            if (s.PopulationLedger.IsHistorical)
+            {
+                if (rate != 0) throw new NotSupportedException("natural increase on the ledger awaits the owner's placement ruling");
+                return;
+            }
             foreach (var k in s.Population.Keys.ToList()) s.Population[k] *= 1 + rate;
             foreach (var kv in Arrivals(c, s.Date, to).OrderBy(k => k.Key, StringComparer.Ordinal))
             {

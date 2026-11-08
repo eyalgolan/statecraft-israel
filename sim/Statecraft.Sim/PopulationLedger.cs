@@ -221,6 +221,30 @@ namespace Statecraft.Sim
             units = candidate; sources.Add(key, id); NextPopulationId = next;
             return id;
         }
+        /// <summary>Whether the manifest item <paramref name="source"/>, <paramref name="ordinal"/> has arrived, even if its
+        /// population id was lost since.</summary>
+        internal bool HasArrived(string source, int ordinal) => sources.ContainsKey(PopulationText.Fields(source, ordinal));
+        /// <summary><see cref="RegisterArrival"/> for several items, in order, all or nothing (#1725 PR 7, Cities.Arrive): every
+        /// record is validated in one candidate before any is committed, so a refused item adds none of the others.</summary>
+        internal IReadOnlyList<int> RegisterArrivals(IReadOnlyList<PopulationInventoryRow> rows)
+        {
+            RequireInitialized();
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var registered = new SortedDictionary<string, int>(sources, StringComparer.Ordinal);
+            var next = NextPopulationId;
+            var ids = new List<int>();
+            foreach (var row in rows)
+            {
+                var key = PopulationText.Fields(row.Source, row.Ordinal);
+                if (registered.ContainsKey(key)) throw new ArgumentException("Source item already registered.");
+                // int.MaxValue is the exhausted next-id sentinel; never overflow after partially inserting a record.
+                var id = next; next = checked(next + 1);
+                candidate[id] = row.Template.WithId(id); registered.Add(key, id); ids.Add(id);
+            }
+            Validate(candidate);
+            units = candidate; sources = registered; NextPopulationId = next;
+            return ids.AsReadOnly();
+        }
         public void RegisterCombatLoss(int id, string source)
         {
             RequireInitialized(); Get(id);
