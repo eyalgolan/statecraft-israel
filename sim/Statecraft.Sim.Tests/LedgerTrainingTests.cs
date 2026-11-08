@@ -316,6 +316,45 @@ public class LedgerTrainingTests
         Assert.Equal(hash, s.Hash());
     }
 
+    // Owner, 8 November 2026, Q3, "Refuse, with reason (Recommended)": a military trainee who already carries a military item
+    // is refused with a plain reason before any write, the state and the ledger unchanged. It was an error before the ruling.
+    [Fact]
+    public void ATraineeWhoCarriesAnItemIsRefusedWithAReason()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var first = Idle(s, TelAviv).First();
+        s.PopulationLedger.Replace(new PopulationUnit(first.Id, first.Status, first.ReceptionTicks, first.Location, first.Assignment,
+            first.Profession, first.Tier, first.WorkXp, first.Qualification, first.CombatXp, new PopulationEquipment(null, false, "carried", true),
+            first.Captor, first.Home));
+        var ledger = s.PopulationLedger.Canonical().ToList(); var hash = s.Hash(); var cities = Cities(s); var why = new List<Cause>();
+        Assert.Equal("A civilian without work in Tel Aviv already carries a military item", Training.Start(c, s, TelAviv, "recruit", 1, why));
+        Assert.Empty(why);
+        Assert.Empty(s.Cohorts);
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal(hash, s.Hash()); Assert.Equal(cities, Cities(s));
+    }
+
+    // Owner, 8 November 2026, Q3, "Refuse, with reason (Recommended)": a farmer or craftsman on the halutz track is refused
+    // with a plain reason before any write, the state and the ledger unchanged. It was an error before the ruling.
+    [Theory]
+    [InlineData(CivilianProfession.Farmer)] [InlineData(CivilianProfession.Craftsman)]
+    public void AFarmerOrCraftsmanOnTheHalutzTrackIsRefusedWithAReason(CivilianProfession profession)
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var first = Idle(s, TelAviv).First();
+        s.PopulationLedger.Replace(new PopulationUnit(first.Id, first.Status, first.ReceptionTicks, first.Location, first.Assignment,
+            profession, CivilianTier.Novice, 0, first.Qualification, first.CombatXp, first.Equipment, first.Captor, first.Home));
+        var count = Idle(s, TelAviv).Count;
+        var ledger = s.PopulationLedger.Canonical().ToList(); var hash = s.Hash(); var cities = Cities(s); var why = new List<Cause>();
+        Assert.Equal("A farmer or craftsman in Tel Aviv cannot train as a halutz", Training.Start(c, s, TelAviv, "halutz", count, why));
+        Assert.Empty(why);
+        Assert.Empty(s.Cohorts);
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal(hash, s.Hash()); Assert.Equal(cities, Cities(s));
+    }
+
     // Ruling 8, "Enforce it here (Rec.)": 50 records per camp city, over all military tracks; the 51st is refused, a crew
     // counting as a recruit, with the state unchanged. The Hakhshara is not a camp.
     [Fact]

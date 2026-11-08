@@ -52,6 +52,10 @@ namespace Statecraft.Sim
         internal const string LedgerRefusedCampFull = "{0}'s military camp has room for {1} more trainees (capacity {2})";
         /// <summary>Owner, 8 November 2026, "Full minus strength (Rec.)": "refuse when Strength != the serving records".</summary>
         internal const string LedgerRefusedStrength = "Unit {0} has {1} soldiers on record but strength {2}";
+        /// <summary>Owner, 8 November 2026, Q3, "Refuse, with reason (Recommended)": a military trainee who already carries a military item.</summary>
+        internal const string LedgerRefusedCarried = "A civilian without work in {0} already carries a military item";
+        /// <summary>Owner, 8 November 2026, Q3, "Refuse, with reason (Recommended)": a farmer or craftsman on the halutz track.</summary>
+        internal const string LedgerRefusedHalutzTrade = "A farmer or craftsman in {0} cannot train as a halutz";
 
         static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
 
@@ -414,12 +418,11 @@ namespace Statecraft.Sim
             var arms = (long)count * per;
             if (arms > s.Arms) return Refused(RefusedArms, name, Course(type), arms, s.Arms);
             var taken = idle.Take(count).ToList();
-            // No ruling covers a trainee who already carries a military item, or a farmer or craftsman who trains as a
-            // halutz; neither is idle on the dark start. Refused before any write rather than guessed.
-            if (per > 0 && taken.Any(p => p.Equipment.MilitaryId != null))
-                throw new InvalidOperationException("No ruling yet for a military trainee who already carries an item (#1725 PR 7).");
+            // Owner, 8 November 2026, Q3, "Refuse, with reason (Recommended)": a military trainee who already carries a
+            // military item, and a farmer or craftsman on the halutz track, are refused with a plain reason before any write.
+            if (per > 0 && taken.Any(p => p.Equipment.MilitaryId != null)) return Refused(LedgerRefusedCarried, name);
             if (type.Side == "" && taken.Any(p => p.Profession == CivilianProfession.Farmer || p.Profession == CivilianProfession.Craftsman))
-                throw new InvalidOperationException("No ruling yet for a farmer's or craftsman's halutz training (#1725 PR 7).");
+                return Refused(LedgerRefusedHalutzTrade, name);
             var id = s.NextId;
             var course = new PopulationAssignment(PopulationAssignmentKind.Course, target);
             var bind = ledger.Target(target) == null
@@ -464,7 +467,8 @@ namespace Statecraft.Sim
 
         /// <summary>A graduate soldier of formation <paramref name="target"/>: an active soldier serving it, with the course's
         /// class as its military qualification and its item kept, its profession dormant (owner, 8 November 2026, "Unskilled
-        /// first, keep (Rec.)"). Like an opening soldier (R-POP-004) it has the region-only location of its formation's region.</summary>
+        /// first, keep (Rec.)"). Like an opening soldier (R-POP-004) it has the region-only location of its formation's region
+        /// (owner, 8 November 2026, Q2: "Formation region (Recommended)").</summary>
         static PopulationUnit Soldier(PopulationUnit p, string target, string region, string qualification) =>
             new PopulationUnit(p.Id, PopulationStatus.ActiveSoldier, p.ReceptionTicks, new PopulationLocation(region),
                 new PopulationAssignment(PopulationAssignmentKind.ActiveService, target), p.Profession, p.Tier, p.WorkXp, qualification,
@@ -472,7 +476,7 @@ namespace Statecraft.Sim
 
         /// <summary>Owner, 8 November 2026, "Free pioneer, not housed (Rec.)": "a halutz graduate is FreeCivilian Pioneer Novice,
         /// Unassigned, in the city's region with no city". A record that is a pioneer already keeps its tier and work XP
-        /// (its profession kept, "Unskilled first, keep (Rec.)").</summary>
+        /// (its profession kept, "Unskilled first, keep (Rec.)"; owner, 8 November 2026, Q1: "Keeps tier and XP (Recommended)").</summary>
         static PopulationUnit Pioneer(PopulationUnit p, string region) =>
             new PopulationUnit(p.Id, PopulationStatus.FreeCivilian, p.ReceptionTicks, new PopulationLocation(region), PopulationAssignment.Unassigned,
                 CivilianProfession.Pioneer, p.Profession == CivilianProfession.Pioneer ? p.Tier : CivilianTier.Novice,
