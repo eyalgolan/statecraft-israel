@@ -293,7 +293,8 @@ public class LedgerArmsWorkshopTests
         var line = Assert.Single(why);
         Assert.Equal((CauseKeys.WorkshopPaused, Workshops.NoWorker, project.ToString()), (line.Key, line.Args![0], line.Args![1]));
         Assert.Equal($"{project}:on,Ordinary", s.Workshops[project].Canonical());
-        Assert.Equal((treasury, ledger), (s.Treasury, s.PopulationLedger.Canonical().ToList()));
+        Assert.Equal(treasury, s.Treasury);
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
     }
 
     // Q4 "Only craftsmen discount (Rec.)" and Q8 "Keep tier field (Rec.)" (owner, 8 November 2026): the worker record's tier
