@@ -73,8 +73,8 @@ public class BuildGateTests
         Assert.That(SettlementReviewRefusal(missing, en, he), Does.Contain("missing"));
         var missingHebrew = ParseSettlementReview(
             "status: sensitivity-reviewed\nstrings:\n  - { key: a, en: English, he: עברית }\n", "fixture");
-        Assert.That(SettlementReviewRefusal(missingHebrew, en, UiText.Parse("b: אחר\n", "strings.he.yaml")),
-            Does.Contain("strings.he.yaml"));
+        Assert.That(SettlementReviewRefusal(missingHebrew, en, UiText.Parse("b: אחר\n", "translations/he/ui.yaml")),
+            Does.Contain("translations/he/ui.yaml"));
         var unreadable = Assert.Throws<TargetInvocationException>(() => ParseSettlementReview("not: [readable", "fixture"));
         Assert.IsInstanceOf<InvalidOperationException>(unreadable!.InnerException);
     }

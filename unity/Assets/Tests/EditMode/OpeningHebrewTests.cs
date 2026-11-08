@@ -23,7 +23,7 @@ public class OpeningHebrewTests
     static readonly Regex HebrewLetter = new Regex("[א-ת]", RegexOptions.CultureInvariant);
     static OpeningContent Asset => AssetDatabase.LoadAssetAtPath<OpeningContent>("Assets/Resources/OpeningContent.asset");
     static string Yaml => Asset.source.text;
-    static UiText Text(string lang) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/UI/strings." + lang + ".yaml").text);
+    static UiText Text(string lang) => UiText.Parse(UiPaths.StringsText(lang == "he"));
 
     /// <summary>The shipped YAML with every Hebrew field of the prose taken out: the file as it was before the Hebrew. Only
     /// the panels' (4 spaces) and the closing's (2 spaces) own fields: a clip's caption (6 spaces) keeps its text_he and

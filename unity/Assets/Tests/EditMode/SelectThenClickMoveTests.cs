@@ -443,7 +443,7 @@ public class SelectThenClickMoveTests
         try
         {
             System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo(culture);
-            var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/UI/strings." + language + ".yaml").text);
+            var text = UiText.Parse(UiPaths.StringsText(language == "he"));
             using var rig = new Rig(text);
             var mover = rig.Token("golani");
             var city = C.SettlementHexes.First(x => x.Id == "tel_aviv" && rig.Layer.UnitToSelectAt(x.Q, x.R) == null);
