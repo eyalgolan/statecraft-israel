@@ -3547,7 +3547,7 @@ rules:
   - glob: "unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.mat"
     licence: CC-BY-4.0
     ai_generated: false
-    source: "URP Lit material for the model (the Egyptian Spitfire's material settings with this colour map, smoothness 0.5, metallic 0, back faces culled), written by hand. SHA-256 739b60772288946cdbfe8b5b871f450bc66fdda87ce224600bcc2cf05f600dee."
+    source: "URP Lit material for the model (the Egyptian Spitfire's material settings with this colour map, smoothness 0.5, metallic 0, back faces culled), written by hand and committed in the form Unity reserializes it to. SHA-256 5ec732c95ddab1bee14375f68ae8c77c4ae0dcb2d6ebe09bbf06a967cf54af3b."
     status: verified
     note: "Original; CC BY 4.0 (LICENSING.md)."
 removed: []
