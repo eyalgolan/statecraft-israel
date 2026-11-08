@@ -198,9 +198,9 @@ namespace Statecraft.Sim
                 .Select(x => new PopulationTarget(x.Key, PopulationAssignmentKind.ActiveService, x.Value))
                 // A field is its farmer's Work target in the field's region (Gdd03FieldFixture.Targets' ids, field/q,r).
                 .Concat(farmer.Select(x => new PopulationTarget(x.Value.Field, PopulationAssignmentKind.Work, regions[x.Key])))
-                // #1725 PR 7, producer 12. Owner, 8 November 2026, "Start + runtime bind (Rec.)": "the start facilities' Course
-                // targets are bound at Initialize"; "Cohorts stay main (Rec.)": "a per-facility Course target
-                // (military_camp/<city>, hakhshara/<city>)", in the city's region (27M-7, no travel).
+                // #1725 PR 7, producer 12. Owner, 8 November 2026 (#1725 issuecomment-6724941867), "Start + runtime bind (Rec.)": the start
+                // facilities' Course targets are bound at the start; and "Cohorts stay main (Rec.)": each trainee's Course
+                // target is per facility (military_camp/<city>, hakhshara/<city>), in the city's region (27M-7, no travel).
                 .Concat(c.Cities.Where(x => regions.ContainsKey(CensusPrefix + x.Id))
                     .SelectMany(x => Training.LedgerFacilities(c, x.Facilities).Select(f => Training.CourseTargetOf(c, f, x.Id, regions[CensusPrefix + x.Id]))));
             // #1689 rows 5 to 8. Owner, 7 November 2026 (comment 6704389240): "Veteran for all 8 (Recommended)" and "1 each,

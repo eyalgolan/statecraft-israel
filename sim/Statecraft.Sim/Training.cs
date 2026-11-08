@@ -46,11 +46,11 @@ namespace Statecraft.Sim
         // #1725 PR 7, producer 12: the refusals only a Historical ledger game gives. Internal, not Refused* constants: no
         // player reaches them yet (Simulation.Step still refuses a ledger game, R-POP-002), and the UI strings follow when it
         // does.
-        /// <summary>Owner, 8 November 2026, "Recruit+crews+halutz (Rec.)": "craftsman is refused with a plain reason until #2476".</summary>
+        /// <summary>Owner, 8 November 2026, "Recruit+crews+halutz (Rec.)" (#1725 issuecomment-6724941867): the craftsman track is refused with a plain reason until #2476.</summary>
         internal const string LedgerRefusedCraftsman = "Craft training does not run on the population ledger yet (#2476)";
-        /// <summary>Owner, 8 November 2026, "Enforce it here (Rec.)": "camp capacity, 50 records per camp city, over all military tracks".</summary>
+        /// <summary>Owner, 8 November 2026, "Enforce it here (Rec.)" (#1725 issuecomment-6724941867): the camp capacity, 50 records per camp city, over all military tracks.</summary>
         internal const string LedgerRefusedCampFull = "{0}'s military camp has room for {1} more trainees (capacity {2})";
-        /// <summary>Owner, 8 November 2026, "Full minus strength (Rec.)": "refuse when Strength != the serving records".</summary>
+        /// <summary>Owner, 8 November 2026, "Full minus strength (Rec.)" (#1725 issuecomment-6724941867): a formation whose strength differs from its serving records is refused.</summary>
         internal const string LedgerRefusedStrength = "Unit {0} has {1} soldiers on record but strength {2}";
         /// <summary>Owner, 8 November 2026, Q3, "Refuse, with reason (Recommended)": a military trainee who already carries a military item.</summary>
         internal const string LedgerRefusedCarried = "A civilian without work in {0} already carries a military item";
@@ -150,8 +150,8 @@ namespace Statecraft.Sim
             if (course == null) return Refused(RefusedNoCourse, unit);
             if (s.PopulationLedger.IsHistorical)
             {
-                // Owner, 8 November 2026, "Full minus strength (Rec.)": "Reinforce room is Unit.Full - Strength - training;
-                // refuse when Strength != the serving records".
+                // Owner, 8 November 2026, "Full minus strength (Rec.)" (#1725 issuecomment-6724941867): the Reinforce room is Unit.Full minus
+                // Strength minus training, and a formation whose strength differs from its serving records is refused.
                 var serving = Serving(s, FormationTarget(c, u.Id));
                 if (serving != u.Strength) return Refused(LedgerRefusedStrength, unit, serving, u.Strength);
             }
@@ -338,22 +338,23 @@ namespace Statecraft.Sim
         internal const string IssuedPrefix = "training/";
 
         /// <summary>The ActiveService target of a formation a cohort becomes at graduation: this prefix and the map unit id
-        /// (owner, 8 November 2026, "New unit at graduation (Rec.)": "bind a new formation target at graduation, one formation
-        /// per cohort (R-UNIT-003)").</summary>
+        /// (owner, 8 November 2026, "New unit at graduation (Rec.)" (#1725 issuecomment-6724941867): a new formation target is bound at
+        /// graduation, one new formation per cohort, R-UNIT-003).</summary>
         internal const string FormationPrefix = "formation/";
 
         static string IssuedId(int cohort, int id) => IssuedPrefix + cohort.ToString(CultureInfo.InvariantCulture) + "/" + id.ToString(CultureInfo.InvariantCulture);
 
         /// <summary>A track that runs on the ledger: every trained type but the craftsman (owner, 8 November 2026,
-        /// "Recruit+crews+halutz (Rec.)": "recruit, crews and halutz run; craftsman is refused with a plain reason until #2476").</summary>
+        /// "Recruit+crews+halutz (Rec.)" (#1725 issuecomment-6724941867): the recruit, crew and halutz tracks run, and the craftsman track is
+        /// refused with a plain reason until #2476).</summary>
         static bool RunsOnLedger(UnitType t) => t.Facility != "" && t.Id != Craftsman;
 
         /// <summary>The facilities of <paramref name="facilities"/> some ledger track trains at, in ordinal order, each once.</summary>
         internal static IEnumerable<string> LedgerFacilities(Content c, IEnumerable<string> facilities) => facilities
             .Where(f => c.UnitTypes.Any(t => RunsOnLedger(t) && t.Facility == f)).Distinct(StringComparer.Ordinal).OrderBy(f => f, StringComparer.Ordinal);
 
-        /// <summary>Owner, 8 November 2026, "Cohorts stay main (Rec.)": "a per-facility Course target (military_camp/&lt;city&gt;,
-        /// hakhshara/&lt;city&gt;)".</summary>
+        /// <summary>Owner, 8 November 2026, "Cohorts stay main (Rec.)" (#1725 issuecomment-6724941867): each trainee's Course target is per
+        /// facility (military_camp/&lt;city&gt;, hakhshara/&lt;city&gt;).</summary>
         internal static string CourseTarget(string facility, string city) => facility + "/" + city;
 
         /// <summary><see cref="CourseTarget"/> as a ledger binding in <paramref name="region"/>, the city's. Its progress limit
@@ -381,8 +382,8 @@ namespace Statecraft.Sim
             ?? throw new InvalidOperationException("No region in regions.yaml for " + city + " (R-POP-004).");
 
         /// <summary>R-TRAIN-001 and R-QUAL-006 on the ledger: the city's free-civilian records without an assignment, located in
-        /// the city. Owner, 8 November 2026, "Unskilled first, keep (Rec.)": "Profession None first, then the qualified, each
-        /// ascending id". A refugee, a worker, a farmer on a field and a teaching teacher are not idle.</summary>
+        /// the city. Owner, 8 November 2026, "Unskilled first, keep (Rec.)" (#1725 issuecomment-6724941867): civilians with no profession first, then
+        /// the qualified, each in ascending id. A refugee, a worker, a farmer on a field and a teaching teacher are not idle.</summary>
         static List<PopulationUnit> LedgerIdle(GameState s, string city) => s.PopulationLedger.Units
             .Where(p => p.Status == PopulationStatus.FreeCivilian && p.Assignment.Kind == PopulationAssignmentKind.Unassigned
                 && string.Equals(p.Location?.City, city, StringComparison.Ordinal))
@@ -403,8 +404,8 @@ namespace Statecraft.Sim
             var target = CourseTarget(type.Facility, city);
             if (type.Facility == "military_camp")
             {
-                // Owner, 8 November 2026, "Enforce it here (Rec.)": "camp capacity, 50 records per camp city, over all military
-                // tracks". military.camp_capacity counts population units at D2's 1,000 people (#2739, option 1), which is a
+                // Owner, 8 November 2026, "Enforce it here (Rec.)" (#1725 issuecomment-6724941867): the camp capacity, 50 records per camp city,
+                // over all military tracks, is enforced here. military.camp_capacity counts population units at D2's 1,000 people (#2739, option 1), which is a
                 // Historical ledger's own scale, so the capacity is in records.
                 var capacity = Gdd03MilitaryCatalogue.ReadCampCapacity(c.Gdd03Balance
                     ?? throw new InvalidOperationException("The camp capacity needs gdd03-balance.yaml (R-POP-002)."));
@@ -412,8 +413,8 @@ namespace Statecraft.Sim
                     && string.Equals(p.Assignment.Target, target, StringComparison.Ordinal));
                 if (count > room) return Refused(LedgerRefusedCampFull, name, Math.Max(0, room), capacity);
             }
-            // R-ARMS-003 as in Start. Owner, 8 November 2026, "Keep costs, pool rest (Rec.)": "one issued item per record;
-            // training_arms - 1 more from stock, kept in Cohort.Arms for refund".
+            // R-ARMS-003 as in Start. Owner, 8 November 2026, "Keep costs, pool rest (Rec.)" (#1725 issuecomment-6724941867): one item is issued
+            // per record, and the rest of training_arms is taken from the stock and kept in Cohort.Arms, so a cancel returns it.
             var per = type.Id == "recruit" ? c.RulesAt(s.Date).Mvp!.ArmsPerRecruitGroup!.Value : type.TrainingArms ?? 0;
             var arms = (long)count * per;
             if (arms > s.Arms) return Refused(RefusedArms, name, Course(type), arms, s.Arms);
@@ -474,8 +475,8 @@ namespace Statecraft.Sim
                 new PopulationAssignment(PopulationAssignmentKind.ActiveService, target), p.Profession, p.Tier, p.WorkXp, qualification,
                 p.CombatXp, p.Equipment, p.Captor, p.Home);
 
-        /// <summary>Owner, 8 November 2026, "Free pioneer, not housed (Rec.)": "a halutz graduate is FreeCivilian Pioneer Novice,
-        /// Unassigned, in the city's region with no city". A record that is a pioneer already keeps its tier and work XP
+        /// <summary>Owner, 8 November 2026, "Free pioneer, not housed (Rec.)" (#1725 issuecomment-6724941867): a halutz graduate is a free
+        /// civilian, Pioneer, Novice and unassigned, in the city's region with no city, so not housed. A record that is a pioneer already keeps its tier and work XP
         /// (its profession kept, "Unskilled first, keep (Rec.)"; owner, 8 November 2026, Q1: "Keeps tier and XP (Recommended)").</summary>
         static PopulationUnit Pioneer(PopulationUnit p, string region) =>
             new PopulationUnit(p.Id, PopulationStatus.FreeCivilian, p.ReceptionTicks, new PopulationLocation(region), PopulationAssignment.Unassigned,

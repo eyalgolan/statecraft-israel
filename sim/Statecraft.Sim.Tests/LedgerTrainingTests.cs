@@ -487,4 +487,89 @@ public class LedgerTrainingTests
         Assert.NotEqual(b.Hash(), a.Hash());
         a.PopulationLedger.Reconcile();
     }
+
+    // Ruling 6 for a crew, and ruling 5 at graduation (#1725 issuecomment-6724941867): an artillery or armoured car cohort
+    // ends as one new formation of its own type (R-UNIT-008), its records active soldiers serving formation/<unit id> with
+    // the type's class as their qualification and their issued item kept. The pooled rest of training_arms is used up, so
+    // the stock ends at the aggregate cost, as on the twin aggregate game.
+    [Theory]
+    [InlineData("artillery")] [InlineData("armoured_car")]
+    public void ACrewCohortGraduatesIntoOneNewFormationOfItsType(string track)
+    {
+        var c = Gdd03();
+        var s = Dark(c); var twin = Aggregate(c);
+        var type = c.UnitTypes.First(t => t.Id == track);
+        var per = type.TrainingArms!.Value;
+        var picked = Idle(s, TelAviv).Take(2).Select(p => p.Id).ToList();
+        Assert.Null(Training.Start(c, s, TelAviv, track, 2, new List<Cause>()));
+        Assert.Null(Training.Start(c, twin, TelAviv, track, 2, new List<Cause>()));
+        var cohort = OnlyCohort(s);
+        Assert.Equal(2 * (per - 1), s.Cohorts[cohort].Arms);
+        var unitId = s.NextId;
+        var why = new List<Cause>(); var twinWhy = new List<Cause>();
+        for (int i = 0; i < type.TrainingTurns; i++) { Training.Progress(c, s, why); Training.Progress(c, twin, twinWhy); }
+
+        Assert.Equal(Lines(twinWhy), Lines(why));
+        Assert.Empty(s.Cohorts);
+        var unit = Assert.Single(s.Units.Values, u => u.Id >= unitId);
+        Assert.Equal((unitId, track, 2), (unit.Id, unit.Type, unit.Strength));
+        Assert.Equal(twin.Units[unitId].Canonical(), unit.Canonical());
+        Assert.Equal(unitId + 1, s.NextId);
+        var target = "formation/" + unitId;
+        Assert.True(Bound(s, target));
+        foreach (var id in picked)
+        {
+            var p = s.PopulationLedger.Get(id);
+            Assert.Equal((PopulationStatus.ActiveSoldier, PopulationAssignmentKind.ActiveService, target, type.Class),
+                (p.Status, p.Assignment.Kind, p.Assignment.Target, p.Qualification));
+            Assert.Equal(("training/" + cohort + "/" + id, true), (p.Equipment.MilitaryId, p.Equipment.MilitaryPaid));
+            Assert.Equal((Region(c, TelAviv), (string?)null), (p.Location!.Region, p.Location.City));
+        }
+        Assert.Equal(2, s.PopulationLedger.Units.Count(p => p.Status == PopulationStatus.ActiveSoldier && p.Assignment.Target == target));
+        Assert.Equal(200 - 2 * per, s.Arms);
+        Assert.Equal(twin.Arms, s.Arms);
+        s.PopulationLedger.Reconcile();
+    }
+
+    // Ruling 9, "Start + runtime bind (Rec.)" (#1725 issuecomment-6724941867): the runtime bind is all or nothing. A target
+    // id already bound is refused, and a Commit with one invalid record and one new target changes neither; the ledger's
+    // canonical text, the state and its hash are unchanged.
+    [Fact]
+    public void ARefusedBindTargetLeavesTheLedgerUnchanged()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var ledger = s.PopulationLedger.Canonical().ToList(); var before = s.Describe(); var hash = s.Hash();
+        var bound = "military_camp/" + TelAviv;
+        Assert.True(Bound(s, bound));
+
+        Assert.ThrowsAny<ArgumentException>(() => s.PopulationLedger.BindTarget(
+            new PopulationTarget(bound, PopulationAssignmentKind.Course, Region(c, TelAviv), 0)));
+
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash());
+        s.PopulationLedger.Reconcile();
+    }
+
+    [Fact]
+    public void ARefusedCommitLeavesTheRecordsAndBindingsUnchanged()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var ledger = s.PopulationLedger.Canonical().ToList(); var before = s.Describe(); var hash = s.Hash();
+        var p = Idle(s, TelAviv).First();
+        var invalid = new PopulationUnit(p.Id, p.Status, p.ReceptionTicks, p.Location, p.Assignment, p.Profession, p.Tier, p.WorkXp,
+            "no_such_class", p.CombatXp, p.Equipment, p.Captor, p.Home);
+        var fresh = "formation/999999";
+        Assert.False(Bound(s, fresh));
+
+        Assert.ThrowsAny<ArgumentException>(() => s.PopulationLedger.Commit(new[] { invalid },
+            new[] { new PopulationTarget(fresh, PopulationAssignmentKind.ActiveService, Region(c, TelAviv)) }));
+
+        Assert.False(Bound(s, fresh));
+        Assert.Equal(p.Qualification, s.PopulationLedger.Get(p.Id).Qualification);
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash());
+        s.PopulationLedger.Reconcile();
+    }
 }
