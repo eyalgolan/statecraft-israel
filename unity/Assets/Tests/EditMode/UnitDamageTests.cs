@@ -123,26 +123,44 @@ public class UnitDamageTests
     }
 
     /// <summary>The card states the strength for every military unit, from the live state (not the token's copy): the plain
-    /// line at full strength, "of" its full strength once damaged, in English and Hebrew.</summary>
+    /// text at full strength, "of" its full strength once damaged, in English and Hebrew. A row with a Formed date takes it
+    /// at the end of that line, so the card gets no new line (a new one covered the advisor's move-step unit on a phone,
+    /// AdvisorOpeningParityTests); a row without one has it as its first line. Each side's rows of each kind are checked.</summary>
     [Test]
     public void TheCardStatesTheStrengthOnBothSides()
     {
+        var kinds = new HashSet<(bool side, bool formed)>();
         foreach (var t in new[] { Text, He })
         {
             var s = NewGame();
+            var formedPrefix = t.Format("unit.formed", "");
             foreach (var side in new[] { true, false })
-            {
-                var token = UnitRoster.FromState(Units, C, s, _ => true, (row, a, q, r) => a)
-                    .First(x => x.StateUnit is Unit d && (d.Side == Movement.PlayerSide) == side && d.Strength >= 2);
-                var u = s.Units[token.SimId!.Value];
-                string Lines() => UnitCard.For(new PlacedToken(token, default), s, t, true, C).Body;
-                Assert.AreEqual(t.Format("unit.strength", u.Strength), Lines().Split('\n')[0], $"{u.Side} at full strength");
-                s.Units[u.Id] = WithStrength(u, u.Strength - 1, side ? u.Strength : 0);
-                Assert.AreEqual(t.Format("unit.strength_of", u.Strength - 1, UnitDamage.FullStrength(C, u)), Lines().Split('\n')[0],
-                    $"{u.Side} damaged: the card reads the state, the token is the one drawn before the loss");
-                s.Units[u.Id] = u;
-            }
+                foreach (var formed in new[] { true, false })
+                {
+                    var token = UnitRoster.FromState(Units, C, s, _ => true, (row, a, q, r) => a)
+                        .FirstOrDefault(x => !x.Raised && x.StateUnit is Unit d && (d.Side == Movement.PlayerSide) == side && d.Strength >= 2
+                            && !string.IsNullOrEmpty(x.Unit.Formed) == formed);
+                    if (token == null) continue;   // no row of this kind on this side
+                    kinds.Add((side, formed));
+                    var u = s.Units[token.SimId!.Value];
+                    string[] Lines() => UnitCard.For(new PlacedToken(token, default), s, t, true, C).Body.Split('\n');
+                    void States(string strength, string what)
+                    {
+                        var lines = Lines();
+                        if (!formed) { Assert.AreEqual(strength, lines[0], what); return; }
+                        CollectionAssert.DoesNotContain(lines, strength, what + ": no strength line of its own");
+                        var line = lines.Single(l => l.StartsWith(formedPrefix, System.StringComparison.Ordinal));
+                        StringAssert.EndsWith(" · " + strength, line, what + ": on the Formed line");
+                    }
+                    States(t.Format("unit.strength", u.Strength), $"{u.Side} at full strength (formed: {formed})");
+                    s.Units[u.Id] = WithStrength(u, u.Strength - 1, side ? u.Strength : 0);
+                    States(t.Format("unit.strength_of", u.Strength - 1, UnitDamage.FullStrength(C, u)),
+                        $"{u.Side} damaged (formed: {formed}): the card reads the state, the token is the one drawn before the loss");
+                    s.Units[u.Id] = u;
+                }
         }
+        Assert.IsTrue(kinds.Contains((true, true)), "precondition: a player's row with a Formed date was checked");
+        Assert.IsTrue(kinds.Contains((false, true)) || kinds.Contains((false, false)), "precondition: an enemy's row was checked");
     }
 
     /// <summary>The squadron and the ships are tokens only (Q-UNIT-5): no sim unit, so no strength line.</summary>

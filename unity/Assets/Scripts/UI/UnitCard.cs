@@ -11,7 +11,7 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The info panel's text for a selected unit (its orders so far, Move, Fortify, Hold and Attack, are the panel's: InfoPanelPresenter; the panel also links to the Defence screen):
     /// its name, number (Hebrew where the row has a sourced one, #1219) and service; a military sim unit's strength, "of" its
-    /// full strength once it has lost some (#2432, UnitDamage); where it stands, and since when only from a sourced start (the anchor's `since`,
+    /// full strength once it has lost some (#2432, UnitDamage), on the Formed line where the row has one; where it stands, and since when only from a sourced start (the anchor's `since`,
     /// never the game's first day: review I1); its formation and first commander where sourced; the sector in the
     /// source's words; on Israel's units, the national values its token reflects (legacy loop: the reserve call-up sets an
     /// army token's figures, the security level whether the aircraft fly; GDD loop: the unit's strength sets the figures,
@@ -76,12 +76,16 @@ namespace Statecraft.Game.UI
                 && settlementNamesHe.TryGetValue(t.StateUnit.HomeCity, out var cityHe) && !string.IsNullOrWhiteSpace(cityHe)) home = cityHe;
             // Every military sim unit, on both sides, states its strength, read from the live state rather than the token's
             // copy (a token is redrawn only when the map rebuilds); once it has lost strength, against its full strength
-            // (#2432), so the keyboard path and a screen reader get the number the map's look shows.
+            // (#2432), so the keyboard path and a screen reader get the number the map's look shows. A row with a Formed
+            // date takes it on that line, not a line of its own: a new line made the panel one line taller, and on a phone
+            // upright it covered the advisor's move-step unit (AdvisorOpeningParityTests.TheMoveStepShowsTheUnitAndAReachableHexOnTheMap).
             var live = t.SimId is int sid && state.Units.TryGetValue(sid, out var now) ? now : t.StateUnit;
-            if (live != null && live.Side != "")
-                lines.Add(UnitDamage.Damaged(content, live)
+            string strength = live == null || live.Side == "" ? ""
+                : UnitDamage.Damaged(content, live)
                     ? text.Format("unit.strength_of", live.Strength, UnitDamage.FullStrength(content, live))
-                    : text.Format("unit.strength", live.Strength));
+                    : text.Format("unit.strength", live.Strength);
+            bool formed = !string.IsNullOrEmpty(u.Formed);
+            if (strength != "" && (raisedType != null || !formed)) lines.Add(strength);
             if (raisedType != null && home != "") lines.Add(text.Format("unit.home_city", home));
             if (u.Service == UnitData.Air)
             {
@@ -95,7 +99,11 @@ namespace Statecraft.Game.UI
                 var place = Local(a.Place, a.PlaceHe);
                 lines.Add(string.IsNullOrWhiteSpace(a.Since) ? text.Format("unit.position_plain", place) : text.Format("unit.position", place, Local(When(a.Since!), a.SinceHe)));
             }
-            if (!string.IsNullOrEmpty(u.Formed)) lines.Add(text.Format("unit.formed", Local(When(u.Formed!), u.FormedHe)));
+            if (formed)
+            {
+                var when = text.Format("unit.formed", Local(When(u.Formed!), u.FormedHe));
+                lines.Add(strength != "" && raisedType == null ? text.Format("unit.formed_strength", when, strength) : when);
+            }
             // The English decides whether the line exists: a Hebrew commander never adds one (owner, #558).
             if (!string.IsNullOrEmpty(u.FirstCommander)) lines.Add(text.Format("unit.commander", Local(u.FirstCommander!, u.FirstCommanderHe)));
             // A raised unit has no sourced sector. A Hebrew sector can name a ship or an agency in Latin ("HMCS Norsyd",

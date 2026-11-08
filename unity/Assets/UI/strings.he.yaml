@@ -858,6 +858,8 @@ unit.home_city: "עיר הבית: {0}"
 unit.position: "מיקום: {0}, מאז {1}"
 unit.position_plain: "מיקום: {0}"
 unit.formed: "הוקמה: {0}"
+# For the native reviewer (#564): agent-drafted (#2432), as unit.subtitle's "{0} · {1}".
+unit.formed_strength: "{0} · {1}"
 unit.commander: "מפקד ראשון: {0}"
 unit.aircraft.s199: "אוויה S-199"
 unit.aircraft.spitfire: "ספיטפייר LF Mk IXe"
