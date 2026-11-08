@@ -1308,21 +1308,12 @@ opening.return: "Return to the start screen"
 opening.count: "Step {0} of {1}"
 opening.preview: "Editor preview: draft text; human source checks pending."
 
-# The opening film's skip control and its live captions, one line per cue in Assets/Resources/Film/film.yaml (script v7).
-# The lines are the film's fictional game dialogue and captions, labelled on screen; they are never quotes.
+# The opening film's skip control and its live captions, one line per cue in Assets/Resources/Film/film.yaml. The two
+# captions are placeholders, not the film's words: the new film's agreed script (#2953) replaces them and the cues
+# together.
 film.skip: "Skip the film"
-film.cue.1: "In two days British rule ends. The country is at a critical moment."
-film.cue.2: "Six million murdered in Europe. Tens of thousands of survivors held by the British on Cyprus."
-film.cue.3: "Since the UN vote, the Arabs have attacked our roads. Jerusalem is under siege. A hundred thousand Jews without food."
-film.cue.4: "And now five Arab armies are about to invade."
-film.cue.5: "Too few rifles. No field guns. No fighter planes."
-film.cue.6: "Washington says wait. Yadin gives us a fifty-fifty chance at best. My own colleagues are divided."
-film.cue.7: "We do not wait."
-film.cue.8: "14 May 1948, Tel Aviv. The People's Council declares the State of Israel."
-film.cue.9: "15 May 1948. Egyptian planes bomb Tel Aviv."
-film.cue.10: "One army? Which front gets the guns? Do you accept the truce?"
-film.cue.11: "Not enough money, not enough arms, not enough bread."
-film.cue.12: "Where do we start?"
+film.cue.1: "Placeholder caption one. The opening film's script is not agreed yet."
+film.cue.2: "Placeholder caption two. The agreed script will replace these lines."
 
 # #813 (R-MONEY-004; owner, 2 November 2026: "Spend the dollars (Recommended)"): the Defence screen's dollar conversion.
 # The refusals are EconomySystem's own words, shown in the end-of-turn toast.

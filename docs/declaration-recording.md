@@ -80,11 +80,6 @@ ceremony of 14 May 1948. The owner asked for it; the rights basis and its open q
   - Stopping releases the clip.
 - **When it plays:**
   - It never plays by itself, and never on Continue or New Game.
-  - One exception, for the opening film only: the film that plays after New game and on Replay the opening
-    (`docs/event-videos.md`) has the real recording in its own soundtrack (`real_recording: true` in
-    `unity/Assets/Resources/Film/film.yaml`, which plays `audio_with_recording`), and its label line carries the same
-    credit, `start.recording_credit`. The owner accepted that recommendation on 6 November 2026: "all your picks".
-    Nothing else changes: this button keeps every rule on this page, and no other screen plays the recording.
   - It stops when the start screen closes.
   - It plays over the still painting only. Replay Opening and Report cover the painting while the start screen stays
     open under them (Replay Opening hides it with `.opening-open .start-screen`), so pressing either of them stops it

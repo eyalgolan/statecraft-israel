@@ -146,10 +146,10 @@ loop, and Yemen has one new shot made for it. All three follow the same rules as
 
 ## The opening film
 
-An ~80 s film before the three stills, with sound. The player is in the game; the film's files are not yet. `FilmPresenter`
-plays it, and `Assets/Resources/Film/film.yaml` holds its data, with the owner's open decisions at the top, one value
-each: whether it plays by itself after New game, whether the real 1948 recording may play in it, the on-screen AI label,
-and whether the picture is bundled under the 10 MiB file limit or hosted.
+A film before the three stills, with sound. The player is in the game; the film's files and script are not yet (#2953).
+`FilmPresenter` plays it, and `Assets/Resources/Film/film.yaml` holds its data, with the owner's open decisions at the
+top, one value each: whether it plays by itself after New game, whether the real 1948 recording may play in it, the
+on-screen AI label, and whether the picture is bundled under the 10 MiB file limit or hosted.
 
 - **Silent picture, separate sound.** An H.264 picture through `CardVideo`, drawn at 960x540, and one OGG sound file,
   played by `AdvisorMedia` as the advisors' clips are: neither starts until both are ready, the sound's clock drives the
@@ -164,9 +164,10 @@ and whether the picture is bundled under the 10 MiB file limit or hosted.
 - **Skip.** The Skip button shows and takes the focus from the first frame, before anything has loaded. Skip and Esc
   close the film only, one layer (#2609).
 - **Volume.** The louder of the Settings rows Sound effects and Music, so it is silent only when both are off. The
-  captions run either way. On a replay the menu theme ducks under it, as under the recording.
+  captions run either way. The menu theme ducks under it, as under the recording.
 - **Captions.** Live text under the picture, never burned in: `film.cue.<n>` in both strings files, one per cue in
-  `film.yaml`. The Hebrew shows once `he_review: approved`; until then the Hebrew UI shows the English captions.
+  `film.yaml`. Until the new film's script is agreed, the two cues and their lines are placeholders. The Hebrew shows
+  once `he_review: approved`; until then the Hebrew UI shows the English captions.
 
 ## Where things are
 

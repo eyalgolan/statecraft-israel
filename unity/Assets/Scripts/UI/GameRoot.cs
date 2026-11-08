@@ -699,7 +699,7 @@ namespace Statecraft.Game.UI
             {
                 var cam = cameraController;
                 var recording = Own(new DeclarationRecording(root, text, toast.RecordingFailed, retry: toast.RecordingRetried));   // never built in automated runs (Skipped)
-                if (music != null) music.Duck = () => recording.Playing || film?.IsOpen == true;   // the theme drops low under Ben-Gurion's voice and under a replayed film
+                if (music != null) music.Duck = () => recording.Playing || film?.IsOpen == true;   // the theme drops low under Ben-Gurion's voice and under the opening film, on New game and on a replay
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;

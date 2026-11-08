@@ -6,10 +6,10 @@
 # OWNER DECISIONS, still open. Each is this one value (FilmContent reads it; the PR lists them).
 # 1. Does the film play by itself after New game? False: only Replay the opening plays it.
 auto_play_on_new_game: true
-# 2. May the real 1948 recording play in the film? Yes, in this opening film only: the owner accepted that recommendation
-#    on 6 November 2026 ("all your picks"); docs/declaration-recording.md records the exception to D-R. True picks
-#    audio_with_recording and adds its credit to the label line.
-real_recording: true
+# 2. May the real 1948 recording play in the film? Not decided for the next film. The owner's 6 November 2026 yes
+#    ("all your picks") was for the film the owner then rejected, so it is not carried over: false until the owner rules
+#    for the new film (#2953). True picks audio_with_recording and adds its credit to the label line.
+real_recording: false
 # 3. The on-screen AI label: a key of the strings files. This one is the advisors' existing line, in both languages.
 ai_label: advisor.media_label
 # 4. The 10 MiB per-file limit (scripts/oss/oss_policy.py) against hosted video. Empty: the picture is bundled in
@@ -27,22 +27,13 @@ ai_generated: true
 sensitive: true
 # The owner's review of the final file: until then no player build plays it (FilmContent.MayPlay). Only the Editor does.
 sensitivity_reviewed: false
-# The Hebrew captions (film.cue.* in strings.he.yaml), script v7's lines: pending shows the English captions in the Hebrew
-# UI; the owner's or a native reader's approval makes them show.
+# The Hebrew captions (film.cue.* in strings.he.yaml), placeholders for now: pending shows the English captions in the
+# Hebrew UI; the owner's or a native reader's approval makes them show.
 he_review: pending
 
-# Script v7's shot times, in seconds of the sound file, one cue per film.cue.<n> key in order. The real sound file sets the
-# final times; shot 10 holds two lines (cues 10 and 11), split here by estimate.
+# Placeholder cues, one per film.cue.<n> key in order, in seconds of the sound file. They and the placeholder lines in
+# both strings files stay until the script of the new film (#2953) is agreed; that script's sound file sets the real
+# cues, and the strings change with them.
 cues:
-  - { start: 0.0, end: 6.0 }
-  - { start: 6.0, end: 13.0 }
-  - { start: 13.0, end: 21.0 }
-  - { start: 21.0, end: 28.0 }
-  - { start: 28.0, end: 34.0 }
-  - { start: 34.0, end: 43.0 }
-  - { start: 43.0, end: 50.0 }
-  - { start: 50.0, end: 60.0 }
-  - { start: 60.0, end: 67.0 }
-  - { start: 67.0, end: 71.0 }
-  - { start: 71.0, end: 74.0 }
-  - { start: 74.0, end: 80.0 }
+  - { start: 0.0, end: 4.0 }
+  - { start: 4.0, end: 8.0 }
