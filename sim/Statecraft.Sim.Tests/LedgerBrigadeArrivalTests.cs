@@ -137,6 +137,28 @@ public class LedgerBrigadeArrivalTests
         Assert.DoesNotContain(HistoricalPopulation.Inventory(c), r => r.Source == Target);
     }
 
+    // R-UNIT-009: a dated brigade whose unit id is already in the game is refused before its records are registered, so
+    // the records and the unit arrive all or nothing: the ledger, the units and the state are unchanged.
+    [Fact]
+    public void ADatedBrigadeWhoseUnitIdIsTakenIsRefusedWithTheLedgerUnchanged()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var i = Index(c);
+        var f = c.StartingForces[i];
+        s.Units[i] = new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength);
+        var ledger = s.PopulationLedger.Canonical().ToList();
+        var next = s.PopulationLedger.NextPopulationId;
+        var hash = s.Hash();
+        var e = Assert.Throws<InvalidOperationException>(() => StartingForces.Arrive(c, s, Next));
+        Assert.Equal($"Unit {i} of starting force '{Row}' is already in the game (R-UNIT-009)", e.Message);
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal(next, s.PopulationLedger.NextPopulationId);
+        Assert.Equal(hash, s.Hash());
+        Assert.Empty(Serving(s));
+        Assert.False(s.PopulationLedger.HasArrived(Target, 0));
+    }
+
     // R-ENEMY-004: an enemy force that bypassed the loader is still refused before anything is added, ledger included.
     [Fact]
     public void AnEnemyArrivalIsStillRefusedWithTheLedgerUnchanged()
