@@ -387,9 +387,9 @@ namespace Statecraft.Sim
                 {
                     // The only way a unit is captured (impact plan section 4.3 item 1; R-POW-001). Its captor is the engagement's
                     // lowest-id attacker (not attackers[0]: the guns are listed last, R-COMBAT-007), whose side holds the
-                    // player's soldiers (R-POW-005).
+                    // player's soldiers (R-POW-005). Take runs first: on a ledger game it may refuse, and then the unit stays (#1710).
+                    var held = Prisoners.Take(c, s, u, attackers.OrderBy(x => x.Id).First());
                     s.Units.Remove(u.Id);
-                    var held = Prisoners.Take(s, u, attackers.OrderBy(x => x.Id).First());
                     why.Add(UnitLines.Line(u.Side == Movement.PlayerSide ? WhyKeys.SurrenderedHeld : WhyKeys.SurrenderedPrisoners,   // Prisoners.Take's two cases
                         FormattableString.Invariant($"Unit {u.Id} surrendered with {u.Strength * ppu:N0} people: it had no hex to retreat to. {held}"),
                         new[] { u }, (u.Strength * ppu).ToString(CultureInfo.InvariantCulture)));

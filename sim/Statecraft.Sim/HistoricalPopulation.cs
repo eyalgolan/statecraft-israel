@@ -215,9 +215,14 @@ namespace Statecraft.Sim
                     throw new InvalidOperationException("No gdd03-start.yaml formation_combat_xp for formation " + f.Row + "; no fallback (#1689).");
                 soldier[FormationPrefix + f.Row] = (cls!, combatXp);
             }
+            // #1710 (#1725 PR 7). Owner, 8 November 2026, "Winning side, set at start (Recommended)": every enemy side with
+            // military units (a unit_types.yaml side other than israel and "") is a captor from the start, so a surrender's
+            // records can be Captured under the side of the engagement's lowest-id attacker (R-POW-005).
+            var captors = c.UnitTypes.Select(t => t.Side).Where(x => !string.IsNullOrEmpty(x) && x != Movement.PlayerSide)
+                .Distinct(StringComparer.Ordinal);
             var bindings = new PopulationBindings(locations.Values.Concat(placed.Values.Where(l => l.City != null)
                 .GroupBy(l => l.Canonical(), StringComparer.Ordinal).Select(g => g.First())), targets,
-                Array.Empty<string>(), soldier.Values.Select(x => x.Qualification).Distinct(StringComparer.Ordinal));
+                captors, soldier.Values.Select(x => x.Qualification).Distinct(StringComparer.Ordinal));
             // reception.turns is the reception before free-civilian status (docs/gdd/balance.md:91), so a census free civilian
             // starts with it done: R-VET-001 gives work XP only to a received free civilian. Soldiers keep 0 (not ruled).
             var received = c.RequirePopulationInteger("reception.turns");

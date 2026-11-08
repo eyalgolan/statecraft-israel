@@ -1,0 +1,241 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Statecraft.Sim;
+
+/// <summary>#1725 PR 7, #1710: Prisoners.Take and Prisoners.Upkeep on a game with an initialized Historical ledger, the
+/// dark start. A surrendering opening formation's serving soldier records become Captured records under the captor's side
+/// (R-POW-005, R-POP-002), and SoldiersHeld keeps its count next to them, with an invariant that the count per captor is the
+/// Captured records with that captor. The prisoners eat and the held soldiers cost Money as today (R-POW-002, R-POW-005).
+/// Owner rulings, 8 November 2026 (#1725): "Yes, as today (Recommended)", "Winning side, set at start (Recommended)",
+/// "Formation's region (Recommended)", "Stays on record (Recommended)", "Keep count + check (Recommended)", "No, keep
+/// count (Recommended)" and "Prisoners #1710 first (Recommended)".</summary>
+public class LedgerPrisonersTests
+{
+    static Content Gdd03() => HistoricalPopulationTests.Real(true);
+
+    static GameState Dark(Content c) => Simulation.NewGame(c, 1, Mode.Historical, darkStart: true);
+
+    static string Take(Content c, GameState s, Unit u, Unit captor) => Prisoners.Take(c, s, u, captor);
+
+    // The own opening formations on the board, lowest id first: unit id i is c.StartingForces[i] (StartingForces.Init).
+    static List<Unit> Own(Content c, GameState s) => s.Units.Values
+        .Where(u => u.Side == Movement.PlayerSide && u.Id < c.StartingForces.Count && u.Strength > 0).OrderBy(u => u.Id).ToList();
+
+    static Unit Enemy(GameState s, string side) => s.Units.Values.Where(u => u.Side == side).OrderBy(u => u.Id).First();
+
+    static string Key(Content c, Unit u) => HistoricalPopulation.FormationPrefix + c.StartingForces[u.Id].Row;
+
+    static List<PopulationUnit> Serving(Content c, GameState s, Unit u) => s.PopulationLedger.Units
+        .Where(p => p.Status == PopulationStatus.ActiveSoldier && p.Assignment.Target == Key(c, u)).OrderBy(p => p.Id).ToList();
+
+    // "Keep count + check (Recommended)": per captor, SoldiersHeld equals the Captured records with that captor.
+    static void AssertHeldMatchesRecords(GameState s)
+    {
+        var records = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.Captured)
+            .GroupBy(p => p.Captor!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+        foreach (var side in records.Keys.Union(s.SoldiersHeld.Keys, StringComparer.Ordinal))
+            Assert.Equal(records.TryGetValue(side, out var n) ? n : 0, s.SoldiersHeld.TryGetValue(side, out var m) ? m : 0);
+    }
+
+    // R-POW-005, R-POP-002: each serving record of the surrendering opening formation becomes Captured, captor the side of
+    // the lowest-id attacker passed in ("Winning side, set at start (Recommended)"), Home the formation's region, region
+    // only ("Formation's region (Recommended)"), no location and no assignment, its issued military item kept unchanged
+    // ("Stays on record (Recommended)"), and its id, qualification, combat XP and reception kept. Nobody dies.
+    [Fact]
+    public void AnOwnSurrenderMakesItsRecordsCapturedWithTheirCaptor()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var u = Own(c, s)[0]; var captor = Enemy(s, "egypt");
+        var before = Serving(c, s, u);
+        Assert.Equal(u.Strength, before.Count);
+        var next = s.PopulationLedger.NextPopulationId; var people = s.PopulationLedger.TotalPeople;
+        var others = s.PopulationLedger.Units.Where(p => !before.Any(b => b.Id == p.Id)).Select(p => p.Canonical()).ToList();
+        Assert.Equal("They are held by the enemy", Take(c, s, u, captor));
+        foreach (var b in before)
+        {
+            var p = s.PopulationLedger.Get(b.Id);
+            Assert.Equal(PopulationStatus.Captured, p.Status);
+            Assert.Equal("egypt", p.Captor);
+            Assert.Null(p.Location);
+            Assert.Equal(b.Location!.Canonical(), p.Home!.Canonical());
+            Assert.Null(p.Home!.City); Assert.Null(p.Home.Q);
+            Assert.Equal(PopulationAssignmentKind.Unassigned, p.Assignment.Kind);
+            Assert.Equal(b.Equipment.Canonical(), p.Equipment.Canonical());
+            Assert.NotNull(p.Equipment.MilitaryId);
+            Assert.Equal((b.Qualification, b.CombatXp, b.ReceptionTicks, b.Profession, b.Tier, b.WorkXp),
+                (p.Qualification, p.CombatXp, p.ReceptionTicks, p.Profession, p.Tier, p.WorkXp));
+        }
+        Assert.Empty(Serving(c, s, u));
+        Assert.Equal(others, s.PopulationLedger.Units.Where(p => !before.Any(b => b.Id == p.Id)).Select(p => p.Canonical()));
+        Assert.Equal((next, people), (s.PopulationLedger.NextPopulationId, s.PopulationLedger.TotalPeople));
+        Assert.DoesNotContain(s.PopulationLedger.Canonical(), l => l.StartsWith("4:loss|", StringComparison.Ordinal));
+        s.PopulationLedger.Reconcile();
+    }
+
+    // "Winning side, set at start (Recommended)": every enemy side with a military unit type in unit_types.yaml (sides other
+    // than israel and "") is bound as a captor when the Historical ledger is initialized.
+    [Fact]
+    public void EveryEnemySideIsBoundAsACaptorAtTheStart()
+    {
+        var c = Gdd03();
+        var sides = c.UnitTypes.Select(t => t.Side).Where(x => x != "" && x != Movement.PlayerSide).Distinct(StringComparer.Ordinal)
+            .OrderBy(x => x, StringComparer.Ordinal).ToList();
+        Assert.Contains("egypt", sides); Assert.Contains("ala", sides);
+        // The canonical text writes each field as its length, a colon and its value (PopulationText.Fields).
+        var lines = Dark(c).PopulationLedger.Canonical().Where(l => l.StartsWith("6:captor|", StringComparison.Ordinal)).ToList();
+        Assert.Equal(sides.Select(x => $"6:captor|{x.Length}:{x}"), lines);
+    }
+
+    // "Keep count + check (Recommended)": SoldiersHeld rises by the formation's strength under the captor's side, as in the
+    // aggregate game, and the count per captor equals the Captured records with that captor, over two captors.
+    [Fact]
+    public void SoldiersHeldRisesByTheSameCountAndMatchesTheRecords()
+    {
+        var c = Gdd03();
+        var s = Dark(c); var pub = Simulation.NewGame(c, 1, Mode.Historical);
+        var own = Own(c, s);
+        Assert.True(own.Count >= 3);
+        foreach (var (i, side) in new[] { (0, "egypt"), (1, "jordan"), (2, "egypt") })
+        {
+            Take(c, s, own[i], Enemy(s, side));
+            Take(c, pub, pub.Units[own[i].Id], Enemy(pub, side));
+            AssertHeldMatchesRecords(s);
+        }
+        Assert.Equal(own[0].Strength + own[2].Strength, s.SoldiersHeld["egypt"]);
+        Assert.Equal(own[1].Strength, s.SoldiersHeld["jordan"]);
+        Assert.Equal(pub.SoldiersHeld, s.SoldiersHeld);
+        s.PopulationLedger.Reconcile();
+    }
+
+    // R-POW-001, "No, keep count (Recommended)": an enemy surrender adds its strength to PrisonersHeld under its side, as
+    // today, and writes no ledger record (R-POP-004: enemy formations are not own population).
+    [Fact]
+    public void AnEnemySurrenderAddsPrisonersAndNoRecord()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var e = Enemy(s, "egypt");
+        var ledger = s.PopulationLedger.Canonical().ToList();
+        Assert.Equal("They are held as prisoners", Take(c, s, e, Own(c, s)[0]));
+        Assert.Equal(e.Strength, s.PrisonersHeld["egypt"]);
+        Assert.Empty(s.SoldiersHeld);
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        s.PopulationLedger.Reconcile();
+    }
+
+    // R-POW-002, R-POW-005, "Yes, as today (Recommended)": on the dark start Upkeep feeds the prisoners from Food, a
+    // shortfall costs cohesion, and the Treasury pays held_soldier_cost_per_turn a held unit, borrowing what it lacks, all
+    // exactly as on the aggregate start with the same counts and stocks. Upkeep changes no ledger record; the captured own
+    // records are not fed here (they eat the national ration, mvp.md R-FOOD-001/002 ledger paragraph).
+    [Theory]
+    [InlineData(1_000_000, 50.0)] [InlineData(3, 0.0)]
+    public void UpkeepChargesAsTodayOnALedgerGame(int food, double treasury)
+    {
+        var c = Gdd03();
+        var dark = Dark(c); var pub = Simulation.NewGame(c, 1, Mode.Historical);
+        var own = Own(c, dark)[0]; var e = Enemy(dark, "egypt");
+        foreach (var s in new[] { dark, pub })
+        {
+            Take(c, s, s.Units[e.Id], s.Units[own.Id]);
+            Take(c, s, s.Units[own.Id], s.Units[e.Id]);
+            s.Food = food; s.Treasury = treasury; s.Debt = 0;
+        }
+        var r = c.RulesAt(dark.Date).Mvp!;
+        var ledger = dark.PopulationLedger.Canonical().ToList();
+        var moraleDark = dark.Indicators.GetValueOrDefault("morale"); var moralePub = pub.Indicators.GetValueOrDefault("morale");
+        var darkWhy = new List<Cause>(); var pubWhy = new List<Cause>();
+        Prisoners.Upkeep(c, dark, r, darkWhy);
+        Prisoners.Upkeep(c, pub, r, pubWhy);
+        Assert.Equal(pubWhy.Select(x => x.Message), darkWhy.Select(x => x.Message));
+        Assert.Equal(pubWhy.Select(x => x.Delta), darkWhy.Select(x => x.Delta));
+        Assert.Equal((pub.Food, pub.Treasury, pub.Debt), (dark.Food, dark.Treasury, dark.Debt));
+        Assert.Equal(pub.Indicators.GetValueOrDefault("morale") - moralePub, dark.Indicators.GetValueOrDefault("morale") - moraleDark, 12);
+        var need = (long)e.Strength * r.FoodPerPrisonerUnit!.Value;
+        Assert.Equal(Math.Max(0, food - need), dark.Food);
+        var cost = own.Strength * r.HeldSoldierCostPerTurn!.Value;
+        Assert.True(cost > 0);
+        Assert.Equal(treasury - cost + dark.Debt, dark.Treasury, 12);
+        Assert.Equal(ledger, dark.PopulationLedger.Canonical());
+        dark.PopulationLedger.Reconcile();
+    }
+
+    // R-POP-002 "refused before mutation": each refusal leaves the state, the ledger and the hash unchanged. A formation whose
+    // serving records do not match its strength; a trained formation (not an opening one: its records are #2964's
+    // formation/<id> target, not on main); a captor side the ledger does not bind; and a count that already disagrees with
+    // the Captured records ("Keep count + check (Recommended)").
+    [Theory]
+    [InlineData("mismatch", "serves it with")] [InlineData("trained", "no ledger records to capture")]
+    [InlineData("unbound", "is not a bound captor")] [InlineData("count", "captured records with that captor")]
+    public void ARefusedCaptureLeavesStateLedgerAndHashUnchanged(string why, string reason)
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var u = Own(c, s)[0]; var captor = Enemy(s, "egypt");
+        switch (why)
+        {
+            case "mismatch": s.PopulationLedger.RegisterCombatLoss(Serving(c, s, u)[0].Id, "fixture"); break;
+            case "trained": u = new Unit(s.NextId, "recruit", u.Q, u.R, side: Movement.PlayerSide, strength: 1); s.Units.Add(u.Id, u); s.NextId++; break;
+            case "unbound": captor = new Unit(captor.Id, captor.Type, captor.Q, captor.R, side: "local", strength: captor.Strength); break;
+            case "count": s.SoldiersHeld["egypt"] = 1; break;
+        }
+        var before = s.Describe(); var hash = s.Hash(); var ledger = s.PopulationLedger.Canonical().ToList();
+        var units = s.Units.Values.Select(x => x.Canonical()).ToList();
+        Assert.Contains(reason, Assert.ThrowsAny<Exception>(() => Take(c, s, u, captor)).Message);
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash());
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal(units, s.Units.Values.Select(x => x.Canonical()));
+    }
+
+    // "Keep count + check (Recommended)": Upkeep refuses a count that disagrees with the records, with nothing paid or eaten.
+    [Fact]
+    public void UpkeepRefusesACountThatDisagreesWithTheRecords()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        s.SoldiersHeld["egypt"] = 1;
+        var before = s.Describe(); var hash = s.Hash(); var why = new List<Cause>();
+        Assert.Contains("captured records with that captor",
+            Assert.Throws<InvalidOperationException>(() => Prisoners.Upkeep(c, s, c.RulesAt(s.Date).Mvp!, why)).Message);
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
+    }
+
+    // R-POP-002: only a ledger initialized with mode Historical is let through; an Open or synthetic one is still refused
+    // before any write, by Take and by Upkeep.
+    [Theory]
+    [InlineData(true, false)] [InlineData(false, false)] [InlineData(true, true)] [InlineData(false, true)]
+    public void AnOpenOrSyntheticLedgerIsStillRefused(bool open, bool upkeep)
+    {
+        var c = PopulationLedgerTests.Content();
+        var s = PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(),
+            new[] { new PopulationInventoryRow("fixture", 0, PopulationLedgerTests.Person()) }, mode: open ? Mode.Open : null);
+        Assert.Equal((true, false), (s.PopulationLedger.IsInitialized, s.PopulationLedger.IsHistorical));
+        var before = s.Describe(); var hash = s.Hash(); var why = new List<Cause>();
+        Action call = upkeep ? () => Prisoners.Upkeep(c, s, new MvpRules(), why)
+            : () => Take(c, s, new Unit(0, "missing", 0, 0, side: Movement.PlayerSide, strength: 1), new Unit(1, "missing", 0, 0, side: "egypt"));
+        Assert.Contains("integration is held", Assert.Throws<NotSupportedException>(call).Message);
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
+    }
+
+    // Determinism: Take and Upkeep draw no RNG; two dark games given the same captures and upkeep end with the same hash and
+    // ledger text, and a capture changes the hash.
+    [Fact]
+    public void TheSameCapturesGiveTheSameHash()
+    {
+        var c = Gdd03();
+        string Run(out string start)
+        {
+            var s = Dark(c); start = s.Hash();
+            var own = Own(c, s); var rng = s.RngState;
+            Take(c, s, own[1], Enemy(s, "syria")); Take(c, s, own[0], Enemy(s, "egypt")); Take(c, s, Enemy(s, "iraq"), own[2]);
+            Prisoners.Upkeep(c, s, c.RulesAt(s.Date).Mvp!, new List<Cause>());
+            Assert.Equal(rng, s.RngState);
+            return s.Hash() + "\n" + string.Join("\n", s.PopulationLedger.Canonical());
+        }
+        var a = Run(out var startA); var b = Run(out var startB);
+        Assert.Equal(startA, startB);
+        Assert.Equal(a, b);
+        Assert.NotEqual(startA, a.Split('\n')[0]);
+    }
+}
