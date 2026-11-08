@@ -224,24 +224,31 @@ public class EnemyTurnPlaybackTests
     [Test]
     public void ThePlaybackChangesNoState()
     {
-        using var k = new Kit();
+        // The real turns, with one more enemy move each, so that every turn has a playback whatever the sim did.
+        var extra = Move(911, 0, 0, 1, 0);
+        using var k = new Kit((s, o) => { var r = s.EndTurn(o); return new StepResult(r.State, r.Why.Append(extra).ToArray(), r.Rejected); });
         k.Bridge.EndTurn();
+        Assert.IsTrue(k.Playback.Active || k.Playback.Pending, "fixture: a playback runs");
         string hash = k.Bridge.State.Hash(), save = k.Bridge.Session.Save.Write();
         var last = k.Bridge.Session.Last;
+        var queued = k.Bridge.Queued.ToList();
         void Same(string when)
         {
             Assert.AreEqual(hash, k.Bridge.State.Hash(), when);
             Assert.AreEqual(save, k.Bridge.Session.Save.Write(), when);
             Assert.AreSame(last, k.Bridge.Session.Last, when);
+            CollectionAssert.AreEqual(queued, k.Bridge.Queued, when + ": no order queued for the next End turn");
         }
         for (int i = 0; i < 20; i++) k.Playback.Tick(0.05f);
+        Assert.IsTrue(k.Playback.Active, "fixture: still playing after 20 ticks");
         Same("during");
         k.RunOut();
         Same("after");
         k.Bridge.EndTurn();
-        hash = k.Bridge.State.Hash(); save = k.Bridge.Session.Save.Write(); last = k.Bridge.Session.Last;
+        hash = k.Bridge.State.Hash(); save = k.Bridge.Session.Save.Write(); last = k.Bridge.Session.Last; queued = k.Bridge.Queued.ToList();
         k.Playback.Tick(0.05f);
-        k.Playback.Skip();
+        Assert.IsTrue(k.Playback.Active || k.Playback.Pending, "fixture: the second turn's playback runs");
+        Assert.IsTrue(k.Playback.Skip(), "Skip ended a playback");
         Same("after Skip");
     }
 

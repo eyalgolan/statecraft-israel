@@ -867,6 +867,9 @@ namespace Statecraft.Game.UI
             // #2340: the card or capture dialog the player hid; the rebuilt presenters would open it again.
             var hiddenCard = card?.Collapsed == true ? card.Shown!.Id : null;
             var hiddenCapture = capture?.Collapsed == true ? capture.Shown : null;
+            // #2202: a turn report waiting for the enemy's moves (or for the screen opened over them). The rebuild ends the
+            // moves, and the rebuilt report would never hear of the turn (#2967 review, S2).
+            bool reportWaiting = report?.Waiting == true;
             // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
             try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
             finally { keptBudgetDraft = null; }
@@ -887,6 +890,7 @@ namespace Statecraft.Game.UI
                 }
             }
             if (!fromStart) nav?.Open("settings");
+            if (reportWaiting) report?.Wait();   // after Settings is open again: the report opens when it closes
             // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
             // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
             if (document.rootVisualElement.Q<Button>((fromStart ? "start-language-" : "settings-language-") + language) is Button choice)
@@ -1281,7 +1285,6 @@ namespace Statecraft.Game.UI
                 && opening?.ClosedThisFrame != true && opening?.Escape() != true)
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
-                if (!done) done = playback?.Skip() == true;   // #2202: the Arab forces' moves end; nothing else closes
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;
                 // One press closes one layer, the topmost (#2609): each step below runs only while nothing above took it. The
                 // start screen covers an ended save's end screen and everything else under it: open, it takes the press,
@@ -1292,6 +1295,9 @@ namespace Statecraft.Game.UI
                 // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2). A screen the
                 // focused element's Cancel already closed this frame took the press too (ClosedThisFrame), as for end and report.
                 if (!done) done = cabinet?.Escape() == true || nav?.Close() == true || nav?.ClosedThisFrame == true;
+                // #2202: the Arab forces' moves play on the map, under every screen and overlay: with nothing above them left
+                // to close, Escape ends them, and nothing else (#2967 review, S1).
+                if (!done) done = playback?.Skip() == true;
                 // With nothing above it to close, Escape withdraws a New Game request armed from the top bar too, the start
                 // screen closed (#2340 L2, #2521), and is used up there, so it does not also clear the map selection. A
                 // decision card or capture dialog open over it is above it (the top bar stays usable under them): that

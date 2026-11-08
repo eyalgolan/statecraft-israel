@@ -44,6 +44,7 @@ namespace Statecraft.Game.UI
         readonly ScreenNav nav; readonly Button close, all;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly Action onChanged;
+        readonly Action<string?> onScreen;
         GameSession session;   // the session the open report belongs to
         readonly EventCallback<NavigationCancelEvent> onCancel;
         /// <summary>The turn last reported (or the session's last turn when this was made: a loaded game reports nothing).</summary>
@@ -82,6 +83,7 @@ namespace Statecraft.Game.UI
                     if (last == null || ReferenceEquals(last, seen)) return;
                     seen = last;
                     if (held) { wantsShow = true; return; }   // #2202: it opens when the enemy playback ends (Held)
+                    wantsShow = false;   // this turn's report replaces one that waited for a screen
                     Show();
                 }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
@@ -92,6 +94,8 @@ namespace Statecraft.Game.UI
             session = bridge.Session;
             onChanged = () => { if (ReferenceEquals(bridge.Session, session)) return; session = bridge.Session; wantsShow = false; Hide(); };
             bridge.Changed += onChanged;
+            onScreen = screen => { if (screen == null) ShowWhenFree(); };
+            nav.Changed += onScreen;
             Hide();
         }
 
@@ -109,11 +113,31 @@ namespace Statecraft.Game.UI
             {
                 if (held == value) return;
                 held = value;
-                if (held || !wantsShow) return;
-                wantsShow = false;
-                try { Show(); }
-                catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
+                ShowWhenFree();
             }
+        }
+
+        /// <summary>#2202: true while a turn's report waits to open: for the enemy playback (<see cref="Held"/>), or for a
+        /// screen the player opened while it played, which the report does not close under them (#2967 review, S3).</summary>
+        public bool Waiting => wantsShow;
+
+        /// <summary>#2202: the session's last turn is reported once nothing holds it (GameRoot's language switch: the rebuilt
+        /// report takes over a wait the old one had, #2967 review, S2).</summary>
+        public void Wait()
+        {
+            var last = bridge.Session.Last;
+            if (last == null) return;
+            seen = last;
+            wantsShow = true;
+            ShowWhenFree();
+        }
+
+        void ShowWhenFree()
+        {
+            if (held || !wantsShow || nav.Current != null) return;
+            wantsShow = false;
+            try { Show(); }
+            catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
         }
 
         /// <summary>True while the report shows.</summary>
@@ -318,6 +342,7 @@ namespace Statecraft.Game.UI
         {
             bridge.Changed -= onChanged;
             bridge.TurnEnded -= onTurn;
+            nav.Changed -= onScreen;
             close.clicked -= OnClose;
             all.clicked -= SeeAll;
             report.UnregisterCallback(onCancel);

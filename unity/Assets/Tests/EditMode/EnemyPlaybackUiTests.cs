@@ -39,6 +39,7 @@ public class EnemyPlaybackUiTests
         public readonly TurnReportPresenter Report;
         public readonly EnemyTurnPlayback Playback;
         public readonly EnemyPlaybackBar Bar;
+        public readonly ScreenNav Nav;
         public readonly Fakes.FakeMap Map = new Fakes.FakeMap();
         public bool On = true;
         readonly List<IDisposable> owned = new List<IDisposable>();
@@ -46,7 +47,7 @@ public class EnemyPlaybackUiTests
         public Kit(UiText text, Func<GameSession, IReadOnlyList<Command>, StepResult>? step = null, GameSession? session = null)
         {
             Bridge = new SimBridge(session ?? GameSession.New(C, GoldenRun.Seed, Mode.Historical), text, step);
-            var nav = new ScreenNav(Ui.Root);
+            var nav = Nav = new ScreenNav(Ui.Root);
             owned.Add(new HudPresenter(Ui.Root, Bridge, text));
             owned.Add(nav);
             owned.Add(Card = new EventCardPresenter(Ui.Root, Bridge, text, null));
@@ -251,6 +252,79 @@ public class EnemyPlaybackUiTests
         Assert.IsFalse(k.Report.IsOpen);
         Assert.IsTrue(k.Playback.Skip());
         Assert.IsTrue(k.Report.IsOpen);
+    }
+
+    /// <summary>End turn pressed again while the moves play (End turn is never blocked): the old playback ends, the new
+    /// turn's plays, and the report goes on waiting. It opens once, when the new playback ends, for the new turn: the turn
+    /// whose moves were just shown. It never opens in between, over the new playback, with the new turn's lines (#2967
+    /// review, M1: the old playback's release opened it at once).</summary>
+    [Test]
+    public void EndTurnMidPlaybackKeepsTheReportWaitingForTheNewTurnsMoves()
+    {
+        var extra = Fakes.Move(911, 0, 0, 1, 0, side: "egypt");   // every turn has a move to play, whatever the sim did
+        using var k = new Kit(En, (s, o) => { var r = s.EndTurn(o); return new StepResult(r.State, r.Why.Append(extra).ToArray(), r.Rejected); });
+        var shown = new List<StepResult?>();
+        k.Report.Showing += r => shown.Add(r);
+        var held = new List<bool>();
+        k.Playback.Holding += h => held.Add(h);
+        k.Bridge.EndTurn();
+        var first = k.Bridge.Session.Last;
+        k.Playback.Tick(0.05f);
+        Assert.IsTrue(k.Playback.Active, "fixture: the first turn's moves play");
+        k.Bridge.EndTurn();
+        var latest = k.Bridge.Session.Last;
+        Assert.AreNotSame(first, latest, "fixture: a second turn ran");
+        Assert.IsTrue(k.Playback.Active || k.Playback.Pending, "the new turn's moves play");
+        Assert.IsEmpty(shown, "the report never opened over the new playback");
+        Assert.IsFalse(k.Report.IsOpen, "it still waits");
+        Assert.IsTrue(k.Report.Held);
+        Assert.IsFalse(held.Contains(false), "the hold carried over from one playback to the next");
+        k.RunOut();
+        Assert.IsTrue(k.Report.IsOpen, "it opens when the new playback ends");
+        Assert.AreEqual(1, shown.Count, "once");
+        Assert.AreSame(latest, shown[0], "for the turn whose moves were just shown");
+        Assert.AreEqual(false, held.Last(), "and the hold is let go once, at the end");
+        Assert.AreEqual(1, held.Count(h => !h));
+    }
+
+    /// <summary>The moves are not modal: the player may open a screen while they play (Settings, to turn them off; the
+    /// Cabinet). When they end, the report does not close that screen under the player's hand; it opens once the player
+    /// closes it, as long as nothing else holds it (#2967 review, S3).</summary>
+    [Test]
+    public void AScreenOpenedDuringThePlaybackStaysAndTheReportWaitsForItsClose([Values("settings", "cabinet")] string screen,
+        [Values(false, true)] bool skipped)
+    {
+        using var k = new Kit(En);
+        k.Bridge.EndTurn();
+        k.Playback.Tick(0.05f);
+        Assert.IsTrue(k.Playback.Active, "fixture: the opening turn has enemy moves");
+        k.Nav.Open(screen);
+        if (skipped) Assert.IsTrue(k.Playback.Skip());   // the Settings switch turned off, or Skip
+        else k.RunOut();
+        Assert.IsFalse(k.Playback.Active || k.Playback.Pending);
+        Assert.AreEqual(screen, k.Nav.Current, "the screen stays open");
+        Assert.IsFalse(k.Report.IsOpen, "the report waits for it");
+        Assert.IsTrue(k.Report.Waiting);
+        k.Nav.Open(screen == "settings" ? "cabinet" : "settings");
+        Assert.IsFalse(k.Report.IsOpen, "another screen opened from it: still waiting");
+        k.Nav.Close();
+        Assert.IsTrue(k.Report.IsOpen, "the screens closed: the report opens");
+        Assert.IsFalse(k.Report.Waiting);
+        Assert.AreEqual(null, k.Nav.Current);
+    }
+
+    [Test]
+    public void ANewGameDropsAReportWaitingForAScreen()
+    {
+        using var k = new Kit(En);
+        k.Bridge.EndTurn();
+        k.Nav.Open("settings");
+        k.RunOut();
+        Assert.IsTrue(k.Report.Waiting, "fixture: the report waits for Settings");
+        k.Bridge.Replace(GameSession.New(C, GoldenRun.Seed, Mode.Historical));
+        Assert.IsFalse(k.Report.Waiting, "another game: its report is not this one");
+        k.Nav.Close();
+        Assert.IsFalse(k.Report.IsOpen);
     }
 
     [Test]

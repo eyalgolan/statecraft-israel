@@ -301,6 +301,42 @@ public class HebrewUiTests
         TheDeclarationStaysRightToLeft("an English restart");
     }
 
+    /// <summary>#2202: the turn report waits while the Arab forces' moves play, and the player may switch the language in
+    /// Settings meanwhile. The rebuild ends the moves; the rebuilt report takes over the wait, and opens in the new language
+    /// once Settings (open again on the new choice) closes (#2967 review, S2). GameRoot plays no moves in EditMode
+    /// (Application.isPlaying), so the test holds the report as the playback does (EnemyTurnPlayback.Holding).</summary>
+    [Test]
+    public void AReportWaitingForTheEnemyMovesOpensAfterTheLanguageSwitch()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        game.Begin(Inputs, 0);
+        var field = typeof(GameRoot).GetField("report", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        TurnReportPresenter Report() => (TurnReportPresenter)field.GetValue(game)!;
+        Report().Held = true;
+        game.Bridge!.EndTurn();
+        var turn = game.Bridge.Session.Last;
+        Assert.IsTrue(Report().Waiting, "precondition: the report waits for the moves");
+        Assert.IsFalse(Report().IsOpen);
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        var old = Report();
+
+        UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "precondition: the UI was rebuilt in Hebrew");
+        Assert.AreNotSame(old, Report(), "precondition: a new report");
+        Assert.AreSame(turn, game.Bridge!.Session.Last, "the same turn");
+        Assert.IsTrue(ScreenNav.IsOpen(Ui.Q("screen-settings")), "Settings stays open");
+        Assert.IsTrue(Report().Waiting, "the rebuilt report waits for the turn");
+        Assert.IsFalse(Report().IsOpen, "and does not close Settings under the player");
+        var nav = (ScreenNav)typeof(GameRoot).GetField("nav", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(game)!;
+        Assert.IsTrue(nav.Close(), "the player closes Settings");
+        Assert.IsTrue(Report().IsOpen, "the turn's report opens");
+        Assert.AreEqual(He["report.title"], Ui.Q<Label>("turn-report-title").text, "in Hebrew");
+    }
+
     /// <summary>The language switch in Settings (#1036): a press rebuilds the UI in the other language at once, over the same
     /// game (this turn's orders kept), with Settings still open on the new choice; the choice is kept in settings.txt, so
     /// the next start (Language unset, as a reload leaves it) comes up in it.</summary>

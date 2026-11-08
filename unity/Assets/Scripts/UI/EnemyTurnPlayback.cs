@@ -120,9 +120,12 @@ namespace Statecraft.Game.UI
 
         void Stepped(StepResult r)
         {
-            Finish();   // End turn again while one plays: the old one ends at once, and only the new turn's moves play
-            if (!enabled() || !map.UnitsShown || r.State.GameOver != null) return;   // the end screen is over the map
-            var made = UnitBeats.From(r.Why, source);
+            // End turn again while one plays: the old one ends at once, and only the new turn's moves play. When the new turn
+            // has moves, the hold goes on from the old playback to the new one (no Holding false in between): the waiting
+            // report opens once, for the new turn, when its moves end, never over them (#2967 review, M1).
+            var made = enabled() && map.UnitsShown && r.State.GameOver == null   // the end screen is over the map
+                ? UnitBeats.From(r.Why, source) : Array.Empty<UnitBeat>();
+            End(release: made.Count == 0);
             if (made.Count == 0) return;
             beats = made; session = bridge.Session; pending = true; acted = -1;
             map.Hold(made.SelectMany(b => b.Units).Distinct().ToList());   // before the map is rebuilt (Changed)
@@ -175,12 +178,15 @@ namespace Statecraft.Game.UI
 
         /// <summary>Ends the playback now (the Skip button, Esc, the switch turned off): every held token stands on its
         /// place, and the camera is back on the player's view at once unless the player moved it. True when one was on.</summary>
-        public bool Skip()
+        public bool Skip() => End(release: true);
+
+        /// <param name="release">False when another playback follows at once (End turn again): the report and the card stay
+        /// held.</param>
+        bool End(bool release)
         {
             if (!Active && !pending) return false;
-            map.ReleaseAll(snap: true);
             if (Active && wrote && !tookOver) { camera.LookAt = saved; camera.Settle(); }
-            Stop();
+            Stop(release);   // every held token stands on its place
             return true;
         }
 
@@ -188,12 +194,7 @@ namespace Statecraft.Game.UI
         public void Finish() => Skip();
 
         /// <summary>Another game (New Game, a load): its tokens are drawn where they stand, and its camera is its own.</summary>
-        void Drop()
-        {
-            if (!Active && !pending) return;
-            map.ReleaseAll(snap: true);
-            Stop();
-        }
+        void Drop() => Stop();
 
         void Next()
         {
@@ -245,14 +246,14 @@ namespace Statecraft.Game.UI
             lastLookAt = camera.LookAt; lastDistance = camera.Distance; wrote = true;
         }
 
-        void Stop()
+        void Stop(bool release = true)
         {
             bool was = Active || pending;
             Active = false; pending = false; Index = -1; acted = -1; session = null;
             beats = Array.Empty<UnitBeat>();
             if (!was) return;
             map.ReleaseAll(snap: true);   // anything still held (a beat left out) stands on its place
-            Holding?.Invoke(false);
+            if (release) Holding?.Invoke(false);
             Finished?.Invoke();
         }
 
