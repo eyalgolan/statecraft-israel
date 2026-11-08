@@ -204,7 +204,7 @@ public class AdvisorSignalsTests
     /// <summary>#2933's six new course steps, approved by the owner word for word (8 November 2026: "Approve all six"; step 10
     /// ends on the report screen's own title, "Use the screen title"; step 2 keeps its date, "Keep date, add exception
     /// (Recommended)", HE-08). A different text needs a new approval, so it must also set he_review back to pending.</summary>
-    [TestCase("opening.invasion", "ב-15 במאי 1948 שלחו מצרים, סוריה ועיראק צבאות אל הארץ. הלגיון הערבי של עבר הירדן, המסומן במפה ״ירדן״, עמד ברמאללה וליד שער הגיא. החטיבות שלכם צריכות לעצור אותם.")]
+    [TestCase("opening.invasion", "ב־15 במאי 1948 שלחו מצרים, סוריה ועיראק צבאות אל הארץ. הלגיון הערבי של עבר הירדן, המסומן במפה ״ירדן״, עמד ברמאללה וליד שער הגיא. החטיבות שלכם צריכות לעצור אותם.")]
     [TestCase("opening.units", "צבא לבנון עמד על הגבול, ומתנדבי הליגה הערבית כבר היו כאן. בחרו יחידה כלשהי במפה כדי לראות של מי היא.")]
     [TestCase("opening.cities", "בערים שלכם נמצאים האנשים, המשרות וההכשרה, והעבודה בהן מכניסה כסף. בחרו עיר כדי לראות אותם.")]
     [TestCase("opening.move_how", "כדי לנוע, בחרו חטיבה, לחצו על ״תנועה״ ואז על משבצת מוארת. לחיצה על משבצת רחוקה יותר שולחת אליה את החטיבה במשך כמה תורות.")]
