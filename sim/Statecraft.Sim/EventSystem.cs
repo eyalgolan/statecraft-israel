@@ -350,7 +350,7 @@ namespace Statecraft.Sim
                 if (reason != null)
                     rejected?.Add(new Rejection(new UnitOrder(id, x.Order, x.Q, x.R), reason == Orders.RefusedLastGarrison ? reason : Orders.RefusedCardOrder));
                 actions?.Add(new OperationAction(eventId, o.Id, i, x.Unit, id, x.Order, x.Q, x.R,
-                    reason == null ? OperationAction.CarriedOut : OperationAction.Refused, reason));
+                    reason == null ? OperationAction.CarriedOut : OperationAction.Refusal, reason));
             }
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {

@@ -224,12 +224,14 @@ namespace Statecraft.Sim
 
     /// <summary>#2544, R-ENEMY-008, R-ENEMY-009: one action of a military operation card, in the order the sim took it, for
     /// the UI to show: the option's unit_orders row <see cref="Index"/> (map/units_1948.yaml row <see cref="Row"/>, the unit
-    /// <see cref="Unit"/>), its order (go_to or attack) and hex, and what came of it: <see cref="CarriedOut"/>, <see cref="Refused"/>
+    /// <see cref="Unit"/>), its order (go_to or attack) and hex, and what came of it: <see cref="CarriedOut"/>, <see cref="Refusal"/>
     /// with the player's refusal <see cref="Reason"/>, or <see cref="Withdrawn"/> when a player's order to a unit in the
     /// operation cancelled the order before it was done.</summary>
     public sealed class OperationAction
     {
-        public const string CarriedOut = "carried_out", Refused = "refused", Withdrawn = "withdrawn";
+        // Not named Refused*: that prefix marks a player-facing refusal reason, which must have a Hebrew string (#2707,
+        // HebrewUiTests.EveryNamedSimRefusalHasAHebrewString); an outcome is not one.
+        public const string CarriedOut = "carried_out", Refusal = "refused", Withdrawn = "withdrawn";
         public string EventId { get; } public string OptionId { get; } public int Index { get; } public string Row { get; }
         public int? Unit { get; } public string Order { get; } public int Q { get; } public int R { get; }
         public string Outcome { get; } public string? Reason { get; }

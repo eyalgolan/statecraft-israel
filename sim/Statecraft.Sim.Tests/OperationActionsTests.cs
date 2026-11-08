@@ -147,7 +147,7 @@ public class OperationActionsTests
         Assert.Equal(s.RngState, r.State.RngState);
         Assert.Equal(s.Units[9].Strength, r.State.Units[9].Strength);
         Assert.Equal((Movement.GoTo, "5,2"), (r.State.Units[b].Order, r.State.Units[b].OrderTarget));
-        Assert.Equal(new[] { (a, OperationAction.Refused, Combat.RefusedNotAdjacent), (b, OperationAction.CarriedOut, (string?)null) },
+        Assert.Equal(new[] { (a, OperationAction.Refusal, Combat.RefusedNotAdjacent), (b, OperationAction.CarriedOut, (string?)null) },
             r.OperationActions.Select(x => (x.Unit!.Value, x.Outcome, x.Reason)));
     }
 
