@@ -142,6 +142,10 @@ public class SettlementControlShots
         bridge.State.DisplacedByPlayer = 1;
         bridge.Replace(bridge.Session);   // Changed, as after a turn
         yield return Frames(3);
+        // Acre's decision dialog opens over the map; Hide puts it behind "Decision waiting", as a player would.
+        var hideDecision = ui.Q<Button>("capture-hide");
+        if (hideDecision != null && hideDecision.resolvedStyle.display != DisplayStyle.None) UiTestKit.Press(hideDecision);
+        yield return Frames(3);
 
         Aim(c, "lod", 45000f); yield return Frames(6);
         Shot(w, h, "centre-" + at);
