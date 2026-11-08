@@ -72,8 +72,8 @@ namespace Statecraft.Sim
         }
 
         /// <summary>#1725 PR 7: runs on an initialized Historical ledger (the dark start), reading its head count from
-        /// GameState.TotalPopulation; a synthetic or Open ledger stays refused (R-POP-002). Which ledger records count per
-        /// head is not yet ruled.</summary>
+        /// GameState.TotalPopulation, that is every living record (R-MONEY-001; owner, 8 November 2026: "Everyone alive
+        /// (Recommended)"); a synthetic or Open ledger stays refused (R-POP-002).</summary>
         public static TreasuryFlows Flows(Content c, GameState s, double yearFraction)
         {
             PopulationLedger.RefuseUnlessHistorical(s);
