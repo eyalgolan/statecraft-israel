@@ -495,6 +495,34 @@ public class CollectionImportTests
         CollectionAssert.Contains(closure, ColourMap(id));
     }
 
+    /// <summary>#2734 review: the real imported prefab is the aircraft's real size in metres, so a later import change (file
+    /// scale, global scale, a unit mix-up) cannot ship a 100x or 0.01x Spitfire. The PR body ("Against the coordinator's
+    /// requirements", 2. Size and frame) gives "real metres, span 10.16 m, length 9.47 m (spinner tip to rudder trailing
+    /// edge)" and "Nose +Z, Y up, wings along X". Its Sources give the length from en.wikipedia "Supermarine Spitfire variants:
+    /// specifications, performance and armament" (LF Mk IXe, 9.47 m) and the span from en.wikipedia "Supermarine Spitfire"
+    /// (11.23 m less the 1.07 m clip). The span is an open owner question (10.16 m or the variants page's 9.9 m); plus or minus
+    /// 5 percent of 10.16 m holds either. Both a lower and an upper bound, so a 100x or 0.01x import fails.</summary>
+    [Test]
+    public void TheIsraeliSpitfirePrefabIsItsRealSizeWingsAlongXNoseAlongZ()
+    {
+        const float span = 10.16f, length = 9.47f, tolerance = 0.05f;   // metres; plus or minus 5 percent
+        var path = CollectionCatalog.PrefabPath(CollectionCatalog.IsraeliSpitfire, CollectionDetail.Far);
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        Assert.IsNotNull(prefab, path + " (made by CollectionImport.MakeAuthoredUnitPrefabs)");
+        var go = UnityEngine.Object.Instantiate(prefab!, Vector3.zero, Quaternion.identity);
+        try
+        {
+            var renderers = go.GetComponentsInChildren<Renderer>(true);
+            Assert.IsNotEmpty(renderers, "the body and the propeller");
+            var b = renderers.Select(r => r.bounds).Aggregate((a, c) => { a.Encapsulate(c); return a; });
+            Assert.GreaterOrEqual(b.size.x, span * (1f - tolerance), $"span along X {b.size.x} m");
+            Assert.LessOrEqual(b.size.x, span * (1f + tolerance), $"span along X {b.size.x} m");
+            Assert.GreaterOrEqual(b.size.z, length * (1f - tolerance), $"length along Z {b.size.z} m");
+            Assert.LessOrEqual(b.size.z, length * (1f + tolerance), $"length along Z {b.size.z} m");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
+
     /// <summary>What every asset under any Resources folder (nested ones too) depends on: all of it ships in every build.</summary>
     static string[] ResourcesClosure() => AssetDatabase.GetDependencies(AssetDatabase.GetAllAssetPaths()
         .Where(p => p.Contains("/Resources/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)).ToArray(), true);
