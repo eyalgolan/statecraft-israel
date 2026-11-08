@@ -34,7 +34,8 @@ namespace Statecraft.Sim
         /// Combat's surrender, the one way a unit is captured. With an initialized Historical ledger (the dark start, #1710,
         /// #1725 PR 7) the player's surrendering formation's serving soldier records also become Captured under the captor's
         /// side (<see cref="CaptureRecords"/>), checked in full before anything is written; enemy prisoners stay a count per
-        /// side (owner, 8 November 2026: "No, keep count (Recommended)"). A synthetic or Open ledger is still refused.</summary>
+        /// side (owner, 8 November 2026: "No, keep count (Recommended)"). A synthetic or Open ledger is still refused. A refusal
+        /// throws before Take writes anything; what the throw leaves in combat is set out at Combat.Fight's call.</summary>
         internal static string Take(Content c, GameState s, Unit u, Unit captor)
         {
             PopulationLedger.RefuseUnlessHistorical(s);

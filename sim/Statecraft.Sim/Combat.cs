@@ -387,7 +387,13 @@ namespace Statecraft.Sim
                 {
                     // The only way a unit is captured (impact plan section 4.3 item 1; R-POW-001). Its captor is the engagement's
                     // lowest-id attacker (not attackers[0]: the guns are listed last, R-COMBAT-007), whose side holds the
-                    // player's soldiers (R-POW-005). Take runs first: on a ledger game it may refuse, and then the unit stays (#1710).
+                    // player's soldiers (R-POW-005). Take runs before the unit is removed (#1710). On a Historical ledger game
+                    // it may refuse: it throws InvalidOperationException before it writes anything, but this engagement's draw
+                    // and losses, and any earlier write to s (an earlier engagement, or the Strike's own), stay on s. In the
+                    // game s is always a clone: Strike's caller (Simulation.cs:268) and Resolve's (TurnResolver.cs:20) run
+                    // inside Simulation.Step on its clone (Simulation.cs:51; Preview and DelegatedTo clone too), so the whole
+                    // command's or turn's result is discarded and the caller's state is unchanged. Today Step refuses a ledger
+                    // game (Simulation.cs:48), and Resolve refuses one at its entry.
                     var held = Prisoners.Take(c, s, u, attackers.OrderBy(x => x.Id).First());
                     s.Units.Remove(u.Id);
                     why.Add(UnitLines.Line(u.Side == Movement.PlayerSide ? WhyKeys.SurrenderedHeld : WhyKeys.SurrenderedPrisoners,   // Prisoners.Take's two cases

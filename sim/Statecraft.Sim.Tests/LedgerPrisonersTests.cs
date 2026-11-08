@@ -218,6 +218,72 @@ public class LedgerPrisonersTests
         Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
     }
 
+    // Where Take's refusal can be reached from combat, and what it leaves. Combat.Resolve (step 2, TurnResolver.cs:20) refuses
+    // any initialized ledger at its entry (Combat.cs:267), before any engagement, so on this branch only the player's instant
+    // attack, Combat.Strike (its one caller is Step, Simulation.cs:268), can reach Prisoners.Take on a dark start. Here an
+    // enemy unit boxed in by own units surrenders to a Strike while SoldiersHeld disagrees with the Captured records, so Take
+    // throws InvalidOperationException before it writes anything. The throw comes after the Strike's own writes (the
+    // attacker's order and the engagement's draw and losses), and those stay on the state object a direct call is given. In
+    // the game that object is never the caller's: Step works on a clone (Simulation.cs:51), so the throw discards the whole
+    // command's result and Step's caller is unchanged. A Clone() taken before the call pins that isolation. Step itself
+    // cannot be driven there: the refusal needs an initialized Historical ledger, and Step refuses any initialized ledger
+    // at Simulation.cs:48, while a game without a ledger skips every ledger check in Take.
+    [Fact]
+    public void ARefusedCaptureInCombatThrowsAndAPriorCloneIsUnchanged()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var resolve = s.Clone();
+        Assert.Contains("integration is held",
+            Assert.Throws<NotSupportedException>(() => Combat.Resolve(c, resolve, new List<Cause>())).Message);
+        Assert.Equal(s.Hash(), resolve.Hash());
+
+        // The weakest enemy unit (lowest id on a tie), attacked by the strongest own formation (lowest id on a tie).
+        var e = s.Units.Values.Where(u => Prisoners.FrontOf.ContainsKey(u.Side) && u.Strength > 0)
+            .OrderBy(u => u.Strength).ThenBy(u => u.Id).First();
+        var own = Own(c, s).OrderByDescending(u => u.Strength).ThenBy(u => u.Id).ToList();
+        var ring = Movement.Neighbours.Select(d => (Q: e.Q + d.Q, R: e.R + d.R))
+            .Where(h => c.HexAt(h.Q, h.R) is MapHex hex && hex.Land).ToList();
+        Assert.NotEmpty(ring);
+        Assert.True(own.Count >= ring.Count);
+        for (int i = 0; i < ring.Count; i++)
+        {
+            var u = own[i];
+            s.Units[u.Id] = new Unit(u.Id, u.Type, ring[i].Q, ring[i].R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
+        }
+        var attacker = own[0].Id;
+        // A seed whose one draw makes the defender retreat with no hex to go to: with the counts in order, it surrenders.
+        string? Strike(GameState g, List<Cause> why) => Combat.Strike(c, g, attacker, e.Q, e.R, new Dictionary<int, int>(),
+            new Dictionary<int, AttackRecord>(), why);
+        ulong seed = 1;
+        for (; seed < 500; seed++)
+        {
+            var trial = s.Clone(); trial.RngState = seed; var why = new List<Cause>();
+            Assert.Null(Strike(trial, why));
+            if (why.Any(x => x.Key == WhyKeys.SurrenderedPrisoners && x.Units.Any(u => u.Id == e.Id))) break;
+        }
+        Assert.True(seed < 500, "no seed gave a surrender");
+        s.RngState = seed;
+        s.SoldiersHeld["egypt"] = 1;   // the count disagrees with the records: Take refuses (R-POW-005)
+
+        var prior = s.Clone();
+        var hash = prior.Hash(); var ledger = prior.PopulationLedger.Canonical().ToList();
+        var lines = new List<Cause>();
+        Assert.Contains("captured records with that captor",
+            Assert.Throws<InvalidOperationException>(() => Strike(s, lines)).Message);
+        Assert.Equal(hash, prior.Hash());
+        Assert.Equal(ledger, prior.PopulationLedger.Canonical());
+        // Take wrote nothing: the ledger and the counts are as they were, and the defender is still on the board.
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal(1, s.SoldiersHeld["egypt"]);
+        Assert.Equal(prior.PrisonersHeld.TryGetValue(e.Side, out var was) ? was : 0, s.PrisonersHeld.TryGetValue(e.Side, out var held) ? held : 0);
+        Assert.True(s.Units.ContainsKey(e.Id));
+        // The Strike's own writes before the throw remain on the object passed in: the draw, and the engagement's line.
+        Assert.NotEqual(prior.RngState, s.RngState);
+        Assert.NotEqual(hash, s.Hash());
+        Assert.Contains(lines, x => x.Key == WhyKeys.Engagement);
+    }
+
     // Determinism: Take and Upkeep draw no RNG; two dark games given the same captures and upkeep end with the same hash and
     // ledger text, and a capture changes the hash.
     [Fact]
