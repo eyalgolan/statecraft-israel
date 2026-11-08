@@ -114,7 +114,7 @@ public class KitAtlasShots
     IEnumerator Boot()
     {
         yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
-        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
+        ShotCamera.Configure(Camera.main, CivMovementShots.Width, CivMovementShots.Height);
     }
 
     [UnityTest]

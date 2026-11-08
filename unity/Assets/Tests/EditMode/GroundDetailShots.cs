@@ -95,7 +95,7 @@ public class GroundDetailShots
         yield return Frames(5);
         // CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3: every still
         // would come out 1.33 times too wide (as UnitScaleShots). The opening's look-at follows the aspect, so it is set again.
-        Camera.main.aspect = 16f / 9f;
+        ShotCamera.Configure(Camera.main, 1920, 1080);   // the size Shot renders (UiShot's 1280 x 720 is the same 16:9)
         var rig = Camera.main.GetComponent<CameraRig>();
         var opening = Object.FindFirstObjectByType<MapScene>();
         rig.LookAt = CameraRig.OpeningLookAt(opening.Frame, Camera.main.aspect, opening.Settlements.First(s => s.Id == "tel_aviv"), opening.Settlements.First(s => s.Id == "jaffa"));
