@@ -37,7 +37,7 @@ public class RaidCardRoutingTests
         return dir;
     }
 
-    GameRoot Open(bool saved, bool opening = false, string language = "en", int width = 1280, int height = 720)
+    GameRoot Open(bool saved, bool opening = false, string language = "en", int width = 1280, int height = 720, bool settings = true)
     {
         var store = new SaveStore(NewDirectory());
         if (saved) store.WriteAutosave(GameSession.New(Inputs.Content, 23UL, Mode.Historical).Save.Write());
@@ -50,7 +50,7 @@ public class RaidCardRoutingTests
         doc.panelSettings = panel;   // real layout/focus in EditMode; never mutate the shared PanelSettings asset
         Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
         var root = Object.FindFirstObjectByType<GameRoot>();
-        root.Store = store; root.Settings = new SettingsStore(NewDirectory()); root.Language = language;
+        root.Store = store; root.Settings = settings ? new SettingsStore(NewDirectory()) : null; root.Language = language;
         root.OpeningInEditMode = opening; root.RaidCardInEditMode = true;
         root.Begin(Inputs, 0, startScreen: true);
         return root;
@@ -149,7 +149,9 @@ public class RaidCardRoutingTests
     [Test]
     public void FirstCardInstrumentPressesOkBeforeAwaitingTheCard()
     {
-        var root = Open(saved: false);
+        // No settings file, as under ?firstcard: there the advisors never show by themselves (GameRoot's autoShow), so the
+        // turn 1 chain does not collapse the card the instrument waits for.
+        var root = Open(saved: false, settings: false);
         var lines = new List<string>();
         double clock = 0;
         var check = GameRoot.FirstCardCheck(Ui, root.Card!, lines.Add, () => clock++);
