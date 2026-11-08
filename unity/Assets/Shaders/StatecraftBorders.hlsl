@@ -26,6 +26,11 @@ float4 _ScBorderRim;      // the dark outer rim (variant B): x width (m), y leas
 float4 _ScBorderColour1, _ScBorderLight1, _ScBorderShape1;
 float4 _ScBorderColour2, _ScBorderLight2, _ScBorderShape2;
 float4 _ScBorderColour3, _ScBorderLight3, _ScBorderShape3;
+// The glow (#2431), per style: rgb its colour (linear), w its opacity at the light stripe (0: none). A soft bright halo along the
+// inside of the band, drawn in the wash's room so it needs no fetch, no pass and no wider reach (bloom would be a full-screen pass).
+float4 _ScBorderGlow1, _ScBorderGlow2, _ScBorderGlow3;
+float4 _ScBorderStripe1, _ScBorderStripe2, _ScBorderStripe3;   // the edge stripe's colour (linear); Colour stays the wash's and the tint's
+float4 _ScBorderGlowWidth;   // x the halo's width (m), y its least width (px); never wider than the wash
 
 // The outward unit normals of a hex's edges (p space: x east, y south), in tools/hexgrid.py's NEIGHBOURS order (axial
 // steps (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1): MapBorders.NeighbourSteps). Bit i of a hex's edge mask is edge i.
@@ -189,8 +194,9 @@ void ScBorderCiv(float4 own, float2 v, float2 p, float2 px, float2 py, float siz
         // shrinks (the overview reads as coloured territory with a firm edge, not a hairline).
         float tint = lerp(_ScBorderTint.x, _ScBorderTint.y,
                           saturate((_ScBorderTint.z - inradius / footprint) / max(_ScBorderTint.z - _ScBorderTint.w, 1e-3)));
-        float bandA = 0.0, washA = 0.0;
+        float bandA = 0.0, washA = 0.0, halo = 0.0;
         float3 stripe = colour.rgb;
+        float3 edgeColour = (primary ? _ScBorderStripe1 : (neutral ? _ScBorderStripe3 : _ScBorderStripe2)).rgb;
         // A hex with no border edge, or a pixel beyond every band's reach, gets the tint alone.
         [branch] if (edges != 0 && edge < reach)
         {
@@ -199,7 +205,7 @@ void ScBorderCiv(float4 own, float2 v, float2 p, float2 px, float2 py, float siz
             // width. Only an edge whose rim, band or wash reaches the pixel competes: under the camera's tilt an edge's pixels
             // can be wider than another's, so otherwise a farther edge with nothing to draw here could win the pixel, and the
             // early-out would not be exact (TheEarlyOutIsExact).
-            float bestPx = 1e9, bestHalf = 1.0, bestAlong = 0.0;
+            float bestPx = 1e9, bestHalf = 1.0, bestAlong = 0.0, bestAa = 1.0;
             float4 bestW = float4(0.0, 0.0, 0.0, 0.0);
             [unroll] for (int i = 0; i < 6; i++)
             {
@@ -222,7 +228,7 @@ void ScBorderCiv(float4 own, float2 v, float2 p, float2 px, float2 py, float siz
                     {
                         // The dash phase runs along the edge in one direction for both hexes (edges i and i + 3 are
                         // opposite: their tangents are flipped back), so the two halves of a shared neutral edge line up.
-                        bestPx = d / aa; bestHalf = share; bestAlong = dot(p, i < 3 ? t : -t); bestW = w;
+                        bestPx = d / aa; bestHalf = share; bestAlong = dot(p, i < 3 ? t : -t); bestW = w; bestAa = aa;
                     }
                 }
             }
@@ -232,11 +238,16 @@ void ScBorderCiv(float4 own, float2 v, float2 p, float2 px, float2 py, float siz
             float cColour = saturate(colourEnd - bestPx + 0.5), cBand = saturate(bandEnd - bestPx + 0.5);
             float rimA = cRim * _ScBorderRim.z;
             bandA = cBand - cRim + rimA;
-            stripe = bandA > 0.0 ? (colour.rgb * (cColour - cRim) + light.rgb * (cBand - cColour) + colour.rgb * _ScBorderRim.w * rimA) / bandA : colour.rgb;
+            stripe = bandA > 0.0 ? (edgeColour * (cColour - cRim) + light.rgb * (cBand - cColour) + edgeColour * _ScBorderRim.w * rimA) / bandA : colour.rgb;
             // How far through the wash (0 at the band, 1 at its reach; max(): no division by zero for a style with no
             // wash, review M3). It falls as a smoothstep, or (the stronger tier) as x^2, holding its strength farther in.
             float x = saturate((bestPx - bandEnd) / max(bestW.w, 1e-3));
             washA = shape.w * (1.0 - lerp(x * x * (3.0 - 2.0 * x), x * x, _ScBorderMin.z));
+            // The glow: from the light stripe inwards, full at the stripe and gone by its width, inside the wash (the wash gives
+            // way first at the far zooms, so the glow goes with it and the early-out's reach stays exact).
+            float glowPx = min(max(_ScBorderGlowWidth.x / bestAa, _ScBorderGlowWidth.y) * bestHalf, bestW.w);
+            float g = 1.0 - saturate((bestPx - bandEnd) / max(glowPx, 1e-3));
+            halo = glowPx > 0.0 ? g * g * (1.0 - cBand) : 0.0;   // never under the stripes or a rim
             if (neutral)
             {
                 // box-filtered dash: the share of this pixel's footprint along the edge that falls on a drawn dash. The
@@ -245,13 +256,15 @@ void ScBorderCiv(float4 own, float2 v, float2 p, float2 px, float2 py, float siz
                 float period = _ScBorderDash.x * exp2(max(0.0, ceil(log2(max(_ScBorderDash.z / _ScBorderDash.y * footprint / _ScBorderDash.x, 1e-6)))));
                 float ph = frac(bestAlong / period), fw = max(footprint / period, 1e-4);
                 float on = saturate((_ScBorderDash.y - ph) / fw + 0.5) * saturate(ph / fw + 0.5);
-                bandA *= on; washA *= on;
+                bandA *= on; washA *= on; halo *= on;
             }
         }
         // The wash and the tint are the region's colour under the band: the stronger of the two.
-        float fill = max(washA, tint) * (1.0 - bandA);
+        float4 glow = primary ? _ScBorderGlow1 : (neutral ? _ScBorderGlow3 : _ScBorderGlow2);
+        float fill = max(max(washA, tint), halo * glow.w) * (1.0 - bandA);
         float cover = bandA + fill;
-        float3 c = cover > 0.0 ? (stripe * bandA + colour.rgb * fill) / cover : colour.rgb;
+        float3 under = lerp(colour.rgb, glow.rgb, glow.w > 0.0 ? halo : 0.0);
+        float3 c = cover > 0.0 ? (stripe * bandA + under * fill) / cover : colour.rgb;
         float a = cover * (1.0 - water);
         baseColor *= 1.0 - a;
         emission = lerp(emission, c, a);

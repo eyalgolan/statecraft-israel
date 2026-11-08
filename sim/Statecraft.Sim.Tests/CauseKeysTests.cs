@@ -217,6 +217,19 @@ public class CauseKeysTests
                 foreach (var option in Real.Events.Single(e => e.Id == id).Options)
                 {
                     var chosen = s.Clone();
+                    if (option.RequiresUnitRegions.Count != 0)
+                    {
+                        var at = Real.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+                        foreach (var unitOrder in option.UnitOrders)
+                        {
+                            int unitId = Real.StartingForces.FindIndex(f => f.Row == unitOrder.Unit);
+                            var force = Real.StartingForces[unitId];
+                            var unit = chosen.Units.TryGetValue(unitId, out var present) ? present
+                                : new Unit(unitId, force.Type, force.Q, force.R, side: force.Side, strength: force.Strength);
+                            chosen.Units[unitId] = new Unit(unit.Id, unit.Type, at.Q, at.R, unit.Service, unit.Side, unit.Strength,
+                                unit.Order, unit.OrderTarget, unit.HomeCity, unit.Full, unit.CombatXp);
+                        }
+                    }
                     Assert.Null(EventSystem.Choose(Real, chosen, id, option.Id, eventLines));
                     foreach (var row in EventSystem.OptionEffects(Real, s, option))
                     {

@@ -18,8 +18,10 @@ namespace Statecraft.Game.Map.Units
     {
         public const string PlinthName = "Plinth", LipName = "PlinthLip", RimName = "PlinthRim", FlagName = "Flag";
         /// <summary>The ring's outer edge over the trio's width (the outer figures' outer edges), T29's measure: 1.41, 1.62
-        /// and 1.71 on three of its tokens (4x crops of the 1:12 frame).</summary>
-        public const float BaseToTrio = 1.45f;
+        /// and 1.71 on three of its tokens (4x crops of the 1:12 frame). #2430 tightens it from 1.45 to the bottom of the band
+        /// pinned to T29 (1.3, TheBaseHugsTheTrioAsInT29, measured on the drawn meshes): a DESIGN VALUE that leaves room for the
+        /// figures at <see cref="UnitShowcase.ZoomScaleMax"/>.</summary>
+        public const float BaseToTrio = 1.34f;
         /// <summary>Half a figure's width (m, real size: the Ready pose's rifle across the body is the widest).</summary>
         public const float FigureHalfWidthM = 0.35f;
         /// <summary>The base's top over the ground under it, as a share of its radius (about 100 m): T29's base is a slab

@@ -4,9 +4,32 @@ using System.Linq;
 
 namespace Statecraft.Sim
 {
+    /// <summary>One R-ENEMY-007 operation-start row: the starting-force row and the allowed player regions, in ordinal order.</summary>
+    public sealed class OperationRequirementRow
+    {
+        public string Unit { get; }
+        public IReadOnlyList<string> Regions { get; }
+        internal OperationRequirementRow(string unit, IReadOnlyList<string> regions) { Unit = unit; Regions = regions; }
+    }
+
+    /// <summary>A pure snapshot of an operation option's authored requirements in the current state.</summary>
+    public sealed class OperationRequirementStatus
+    {
+        public IReadOnlyList<OperationRequirementRow> Required { get; }
+        public IReadOnlyList<OperationRequirementRow> Missing { get; }
+        public bool Met => Missing.Count == 0;
+        internal OperationRequirementStatus(IReadOnlyList<OperationRequirementRow> required, IReadOnlyList<OperationRequirementRow> missing)
+        { Required = required; Missing = missing; }
+    }
+
     public static class EventSystem
     {
         public const int MaxSoftEventsPerTurn = 3;
+        public const string RefusedOperationUnitsNotInPlace = "The operation's required units are not in place";
+        /// <summary>Q3 (owner, 7 November 2026: "Decide armistice first (Recommended)"): an operation whose front's armistice card
+        /// is pending waits for it; once that armistice is signed, the operation cannot be chosen (it lapses at the turn's end).</summary>
+        public const string RefusedOperationArmisticeFirst = "The armistice on this operation's front must be decided first";
+        public const string RefusedOperationArmisticeSigned = "The armistice on this operation's front is signed";
         /// <summary>The facility a grant with no `at` stands at (Q-HFX-2) and the city fields an option may change (R-EFX-004).</summary>
         public const string MilitaryCamp = "military_camp", HousingField = "housing_capacity", JobsField = "job_slots", ConditionField = "condition";
 
@@ -35,8 +58,13 @@ namespace Statecraft.Sim
             // R-WAR-008 (#2813): a quiet armistice card has no end date, so its `to` (1950-01-01 on the real cards) does not end it.
             var eligible = c.Events
                 .Where(e => (quiet.Contains(e.Id) || !s.FiredEvents.Contains(e.Id) && e.From <= s.Date)
-                            && (quiet.Contains(e.Id) || s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value))
+                            && (quiet.Contains(e.Id) || s.CappedEvents.Contains(e.Id) || e.To == null || start < e.To.Value || c.IsGdd && e.Follows))
                 .Where(e => !endingTurn || EndingCard(s, e))
+                // R-ENEMY-007 (owner, 7 November 2026: "They drop (Recommended)", "Signing wins (Recommended)"): a card whose front's
+                // armistice is signed never first fires after it. Only the GDD loop has such cards.
+                .Where(e => e.ArmisticeFront == "" || !Demobilization.Signed(s, e.ArmisticeFront))
+                // R-ENEMY-007: unlike an ordinary late-fired card, an operation cannot first appear after it is no longer relevant.
+                .Where(e => !c.IsGdd || e.To == null || s.Date < e.To.Value || !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
                 .Where(e => Timeline.AllMet(c, s, e))
                 // R-OBJ-003: an objective's card waits for the objective. Only the GDD loop records one, so in the legacy loop it never fires.
                 .Where(e => e.Objective == "" || s.Objectives.ContainsKey(e.Objective))
@@ -104,6 +132,27 @@ namespace Statecraft.Sim
                 .Concat(c.UnitOrderTargets.Where(k => k.Key.Row == x.Unit && (k.Value.Q, k.Value.R) == (x.Q, x.R)).Select(k => (DateTime?)k.Value.To))
                 .Max();
 
+        /// <summary>R-ENEMY-007: every distinct unit_orders row must have its starting unit in any one of the option's
+        /// authored regions. Missing, destroyed or replaced starting units are not in place. Pure: no state or RNG change.</summary>
+        public static OperationRequirementStatus OperationStatus(Content c, GameState s, EventOption option)
+        {
+            if (!c.IsGdd)
+                return new OperationRequirementStatus(Array.Empty<OperationRequirementRow>(), Array.Empty<OperationRequirementRow>());
+            var regions = option.RequiresUnitRegions.OrderBy(x => x, StringComparer.Ordinal).ToArray();
+            var required = option.UnitOrders.Select(x => x.Unit).Distinct(StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal).Select(x => new OperationRequirementRow(x, regions)).ToArray();
+            var missing = required.Where(row =>
+            {
+                int id = c.StartingForces.FindIndex(f => f.Row == row.Unit);
+                if (id < 0 || !s.Units.TryGetValue(id, out var unit)) return true;
+                var force = c.StartingForces[id];
+                if (unit.Side != force.Side || unit.Type != force.Type) return true;
+                var region = c.PlayerRegions.AtHex(unit.Q, unit.R);
+                return region == null || !row.Regions.Contains(region.Id, StringComparer.Ordinal);
+            }).ToArray();
+            return new OperationRequirementStatus(required, missing);
+        }
+
         /// <summary>Returns null on success, or the reason the choice was rejected. <paramref name="spent"/> is the movement
         /// points the turn's orders have spent so far, which an option's unit orders share (R-ENEMY-005).
         /// A refused unit order goes into <paramref name="rejected"/>, as the player's refused orders do.</summary>
@@ -113,6 +162,8 @@ namespace Statecraft.Sim
             if (!s.PendingEvents.Contains(eventId)) return "That event is not waiting for a decision";
             var option = Get(c, eventId).Options.FirstOrDefault(o => o.Id == optionId);
             if (option == null) return "That event has no such option";
+            if (ArmisticeBlock(c, s, Get(c, eventId), option) is string block) return block;
+            if (!OperationStatus(c, s, option).Met) return RefusedOperationUnitsNotInPlace;
             Resolve(c, s, eventId, option, "chosen", why, spent: spent, rejected: rejected);
             return null;
         }
@@ -121,6 +172,10 @@ namespace Statecraft.Sim
         static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0, bool delegated = false, Person? minister = null, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
         {
             s.PendingEvents.Remove(eventId);
+            // R-ENEMY-007: a decided card waits no more. Q4 (owner, 7 November 2026: "Shift by the delay (Recommended)"): a card
+            // that waited launches its orders to end later by the time it waited, from its first postponement to now.
+            var delay = s.PostponedOperations.TryGetValue(eventId, out var waited) ? s.Date - waited.Date : TimeSpan.Zero;
+            s.PostponedOperations.Remove(eventId);
             s.ChosenOptions[eventId] = o.Id;
             var fillDate = FillDate(Get(c, eventId), s.Date);
             var title = Title(c, s, Get(c, eventId));
@@ -166,6 +221,16 @@ namespace Statecraft.Sim
                 else change = EffectsSystem.Shift(c, s, fx.Target, delta);
                 why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})",
                     key: fx.Target == Pools.FoodTarget || fx.Target == Pools.ArmsTarget ? CauseKeys.EventStock : CauseKeys.EventAmount, args: Context(title, localizedTitle)));
+            }
+            // R-ENEMY-007 (owner, 7 November 2026, on a late Ten Days during the truce: "Same as Latrun, -0.10 (Recommended)"): an
+            // operation that waited and launches while a truce the player accepted is in force breaks it, and costs International
+            // Support as Latrun's offensive does; an option whose own effects already cost it (that offensive) is not charged again.
+            if (c.IsGdd && delay > TimeSpan.Zero && o.RequiresUnitRegions.Count != 0 && Combat.TruceInForce(s) && Reaches(s, "intl_standing")
+                && !o.Effects.Any(fx => fx.Target == "intl_standing" && fx.Delta < 0))
+            {
+                var broke = EffectsSystem.Shift(c, s, "intl_standing", c.RulesAt(s.Date).Mvp!.OperationTruceBreakStanding!.Value);
+                why.Add(new Cause("events", "intl_standing", broke, $"{PlayerText.Change(c, "intl_standing", broke)} ({title})",
+                    key: CauseKeys.EventAmount, args: Context(title, localizedTitle)));
             }
             // R-EFX-009 (#2457): the bond's dollars also go onto Debt, at the event's date's rate, scaled like the numeric effects.
             if (DebtFor(c, Get(c, eventId), o, s.Date) is double debt)
@@ -216,21 +281,20 @@ namespace Statecraft.Sim
                 if (s.UnlockedProjects.Add(kind)) why.Add(new Cause("events", kind, 1, $"{Unlocked(c, kind)} ({title})", key: CauseKeys.EventUnlock, args: Context(title, localizedTitle)));
             // R-ENEMY-005 (Q-ENEMY-5): the option's go-to orders, through the player's own go-to and its checks, in list order.
             // A refused order changes nothing, as the player's does, and is reported as the player's are (Rejected); a row with
-            // no unit on the board orders nobody. gdd-0.1 only: under gdd-0.3 the operation cards stay effect-free for units
-            // (owner, 31 October 2026, #749). The owner's answer 1 on #2087: the order ends with the operation (OrderEnds), and
+            // no unit on the board orders nobody. R-ENEMY-007 applies the orders under both GDD identities once every required
+            // unit is in place. The owner's answer 1 on #2087: the order ends with the operation (OrderEnds), and
             // its march goes round every enemy-held place but the one it was sent to (Movement.Search). The owner's ruling of
             // 2 November 2026 on #2087 ("Keep a garrison in Nazareth (Recommended)"): the order never takes the last Israeli unit
             // off an occupied place (R-CTRL-013), so it is not given to that unit, and the refusal says why.
-            if (c.Ruleset != SaveGame.Gdd03Ruleset)
-                foreach (var x in o.UnitOrders)
-                {
-                    int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);   // the unit with id i is the i-th force (R-UNIT-006)
-                    if (id < 0 || !s.Units.TryGetValue(id, out var u) || u.Side != c.StartingForces[id].Side || u.Type != c.StartingForces[id].Type) continue;
-                    var refused = SettlementControl.LastGarrison(c, s, u) ? Orders.RefusedLastGarrison
-                        : Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x)) != null ? Orders.RefusedCardOrder
-                        : null;
-                    if (refused != null) rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), refused));
-                }
+            foreach (var x in o.UnitOrders)
+            {
+                int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);   // the unit with id i is the i-th force (R-UNIT-006)
+                if (id < 0 || !s.Units.TryGetValue(id, out var u) || u.Side != c.StartingForces[id].Side || u.Type != c.StartingForces[id].Type) continue;
+                var refused = SettlementControl.LastGarrison(c, s, u) ? Orders.RefusedLastGarrison
+                    : Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x) + delay) != null ? Orders.RefusedCardOrder
+                    : null;
+                if (refused != null) rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), refused));
+            }
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
                 s.Policies[kv.Key] = kv.Value;
@@ -401,24 +465,173 @@ namespace Statecraft.Sim
             foreach (var id in s.PendingEvents.ToList())
             {
                 var e = Get(c, id);
+                if (LapseKey(c, s, e) is string lapse) { Lapse(c, s, e, why, lapse); continue; }
                 var minister = DelegatedTo(c, s, e);
                 if (e.Objective != "" || e.Prisoners != "" || e.Deported != "")   // R-POW-004, R-EVT-007: an exchange card or a Deport card, like an objective's, has one option and draws nothing
                 {
                     Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister, spent: spent, rejected: rejected);
                     continue;
                 }
+                var beforeDraw = rng.State;
                 var competence = (minister?.Competence ?? 5) / 10.0;
                 var anchored = s.Mode == Mode.Historical && e.Anchor == "hard" ? e.Options.FirstOrDefault(o => o.Historical) : null;
-                var option = anchored ?? (rng.NextDouble() < competence
+                // R-ENEMY-007 (owner, 7 November 2026: "Keep the option (Recommended)"): a postponed card keeps the option it was
+                // postponed with and draws nothing. Latrun's ruling ("Takes the vote, wait ends (Recommended)"): when the card's
+                // historical option needs no units, its minister takes that one instead, and the wait ends.
+                s.PostponedOperations.TryGetValue(id, out var postponed);
+                var free = postponed == null ? null : e.Options.FirstOrDefault(o => o.Historical && o.RequiresUnitRegions.Count == 0);
+                var kept = postponed == null ? null : e.Options.FirstOrDefault(o => o.Id == postponed.Option);
+                var option = free ?? kept ?? anchored ?? (rng.NextDouble() < competence
                     ? e.Options.FirstOrDefault(o => o.Recommended) ?? e.Options[0]
                     : e.Options[(int)(rng.NextDouble() * e.Options.Count)]);
                 var share = anchored == null && mvp != null && minister != null && minister.Loyalty < mvp.DelegationLoyaltyFloor
                     ? mvp.DisloyalEffectShare!.Value : 1.0;
                 var how = $"delegated to {minister?.Name ?? "the cabinet"}" + (share < 1 ? ", carried out half-heartedly" : "");
+                // Q3 ("Decide armistice first (Recommended)"): an operation waits while its front's armistice card is pending,
+                // whichever comes first in the pending list; a signature then lapses it at the turn's end ("Signing wins").
+                if (ArmisticeBlock(c, s, e, option) == RefusedOperationArmisticeFirst)
+                {
+                    rng.State = beforeDraw;
+                    if (postponed == null) s.PostponedOperations[id] = new PostponedOperation(option.Id, s.Turn, s.Date);
+                    why.Add(OperationCause(c, s, e, Array.Empty<OperationRequirementRow>(), CauseKeys.OperationWaitsForArmistice));
+                    continue;
+                }
+                var status = OperationStatus(c, s, option);
+                if (!status.Met)
+                {
+                    rng.State = beforeDraw;   // Q2: postponement consumes no draw
+                    // R-ENEMY-007 (owner, 7 November 2026: "Lapse at once (Recommended)"): a required unit that is no longer on the
+                    // board can never arrive, so the card lapses now rather than waiting out its turns.
+                    if (Lost(c, s, option).Count > 0) { Lapse(c, s, e, why, CauseKeys.OperationLapsedUnitLost, option); continue; }
+                    if (postponed == null) s.PostponedOperations[id] = new PostponedOperation(option.Id, s.Turn, s.Date);
+                    why.Add(OperationCause(c, s, e, status.Missing, CauseKeys.OperationPostponed));
+                    continue;
+                }
                 Resolve(c, s, id, option, how, why, share, delegated: true, minister: minister, spent: spent, rejected: rejected);
             }
             s.RngState = rng.State;
         }
+
+        /// <summary>R-ENEMY-007: at the turn's end, each pending operation card whose wait is over lapses without a choice or
+        /// effects (<see cref="LapseKey"/>). Stable pending-list order; no RNG draw.</summary>
+        public static void LapseExpiredOperations(Content c, GameState s, List<Cause> why)
+        {
+            foreach (var id in s.PendingEvents.ToList())
+            {
+                var e = Get(c, id);
+                if (LapseKey(c, s, e) is string key) Lapse(c, s, e, why, key);
+            }
+        }
+
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026): why a pending operation card lapses now, or null while it may still
+        /// come. Its front's signed armistice ends it ("Signing wins (Recommended)"); a postponed card lapses once a unit its
+        /// kept option needs is no longer on the board ("Lapse at once (Recommended)"), or once it has been shown again on
+        /// mvp.operation_wait_turns turns after its first postponement ("6 turns (Recommended)"); a card never postponed lapses
+        /// at its window's end, as before. GDD only.</summary>
+        internal static string? LapseKey(Content c, GameState s, GameEvent e)
+        {
+            if (!c.IsGdd || !e.Options.Any(o => o.RequiresUnitRegions.Count != 0)) return null;
+            if (e.ArmisticeFront != "" && Demobilization.Signed(s, e.ArmisticeFront)) return CauseKeys.OperationLapsedSigned;
+            if (s.PostponedOperations.TryGetValue(e.Id, out var p))
+            {
+                var kept = e.Options.FirstOrDefault(o => o.Id == p.Option);
+                if (kept != null && Lost(c, s, kept).Count > 0) return CauseKeys.OperationLapsedUnitLost;
+                return s.Turn - p.Turn > c.RulesAt(s.Date).Mvp!.OperationWaitTurns!.Value ? CauseKeys.OperationLapsed : null;
+            }
+            return e.To.HasValue && e.To.Value <= s.Date ? CauseKeys.OperationLapsed : null;
+        }
+
+        /// <summary>Q3 (owner, 7 November 2026: "Decide armistice first (Recommended)"): why the operation option <paramref name="o"/>
+        /// of <paramref name="e"/> cannot go now because of its front's armistice (pending, or signed), or null. GDD only.</summary>
+        public static string? ArmisticeBlock(Content c, GameState s, GameEvent e, EventOption o)
+        {
+            if (!c.IsGdd || o.RequiresUnitRegions.Count == 0 || e.ArmisticeFront == "") return null;
+            if (Demobilization.Signed(s, e.ArmisticeFront)) return RefusedOperationArmisticeSigned;
+            var card = "armistice_" + e.ArmisticeFront;
+            return card != e.Id && s.PendingEvents.Contains(card) ? RefusedOperationArmisticeFirst : null;
+        }
+
+        /// <summary>R-ENEMY-007: the rows <paramref name="o"/> requires that are no longer on the board: their unit has arrived
+        /// (a dated row is only waited for until its day, R-UNIT-009) and is gone, or its id now holds another unit.</summary>
+        public static IReadOnlyList<string> Lost(Content c, GameState s, EventOption o) =>
+            o.RequiresUnitRegions.Count == 0 ? Array.Empty<string>() : o.UnitOrders.Select(x => x.Unit).Distinct(StringComparer.Ordinal)
+                .Where(row =>
+                {
+                    int id = c.StartingForces.FindIndex(f => f.Row == row);
+                    if (id < 0) return false;
+                    var force = c.StartingForces[id];
+                    if (force.Arrives is DateTime day && s.Date < day) return false;
+                    return !s.Units.TryGetValue(id, out var u) || u.Side != force.Side || u.Type != force.Type;
+                })
+                .OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+        static void Lapse(Content c, GameState s, GameEvent e, List<Cause> why, string key, EventOption? option = null)
+        {
+            s.PostponedOperations.TryGetValue(e.Id, out var p);
+            option ??= p == null ? null : e.Options.FirstOrDefault(o => o.Id == p.Option);
+            var operations = option != null ? new[] { option } : e.Options.Where(o => o.RequiresUnitRegions.Count != 0).ToArray();
+            var rows = key == CauseKeys.OperationLapsedSigned ? Array.Empty<OperationRequirementRow>()
+                : operations.SelectMany(o => key == CauseKeys.OperationLapsedUnitLost
+                        ? OperationStatus(c, s, o).Required.Where(r => Lost(c, s, o).Contains(r.Unit))
+                        : OperationStatus(c, s, o).Missing)
+                    .GroupBy(x => x.Unit, StringComparer.Ordinal).Select(g => g.First()).OrderBy(x => x.Unit, StringComparer.Ordinal).ToArray();
+            s.PendingEvents.Remove(e.Id);
+            s.PostponedOperations.Remove(e.Id);
+            why.Add(OperationCause(c, s, e, rows, key));
+            // Q8 (owner, 7 November 2026: "All five -0.01 (Recommended)"): every lapse costs Horev's Hold in Security, where the
+            // content has a Security indicator (as an event's effect reaches only indicators the state has).
+            if (!Reaches(s, "security")) return;
+            var title = Title(c, s, e);
+            var change = EffectsSystem.Shift(c, s, "security", c.RulesAt(s.Date).Mvp!.OperationLapseSecurity!.Value);
+            why.Add(new Cause("events", "security", change, $"{PlayerText.Change(c, "security", change)} ({title})",
+                key: CauseKeys.EventAmount, args: Context(title, HebrewTitle(c, s, e))));
+        }
+
+        static Cause OperationCause(Content c, GameState s, GameEvent e, IReadOnlyList<OperationRequirementRow> rows, string key)
+        {
+            var title = Title(c, s, e); var titleHe = HebrewTitle(c, s, e);
+            var args = new List<string> { title, titleHe };
+            foreach (var row in rows.OrderBy(x => x.Unit, StringComparer.Ordinal))
+            {
+                args.Add(row.Unit);
+                args.Add(string.Join("|", row.Regions.OrderBy(x => x, StringComparer.Ordinal)));
+            }
+            var moves = string.Join("; ", rows.OrderBy(x => x.Unit, StringComparer.Ordinal)
+                .Select(x => OperationUnitName(c, x.Unit) + " to " + string.Join(" or ", x.Regions.OrderBy(r => r, StringComparer.Ordinal).Select(OperationRegionName))));
+            var lost = string.Join(", ", rows.OrderBy(x => x.Unit, StringComparer.Ordinal).Select(x => OperationUnitName(c, x.Unit)));
+            if (key == CauseKeys.OperationLapsedSigned || key == CauseKeys.OperationWaitsForArmistice) args.Add(e.ArmisticeFront);
+            var message = key == CauseKeys.OperationLapsed
+                ? $"{title} lapsed because the required units never reached the operation regions" + (moves == "" ? "" : $": {moves}")
+                : key == CauseKeys.OperationLapsedSigned
+                ? $"{title} lapsed because the armistice with {FrontName(e.ArmisticeFront)} was signed"
+                : key == CauseKeys.OperationWaitsForArmistice
+                ? $"{title} postponed until the armistice with {FrontName(e.ArmisticeFront)} is decided"
+                : key == CauseKeys.OperationLapsedUnitLost
+                ? $"{title} lapsed because a required unit is no longer on the board: {lost}"
+                : $"{title} postponed; move {moves}";
+            return new Cause("events", e.Id, 0, message, key: key, args: args);
+        }
+
+        static string OperationUnitName(Content c, string row)
+        {
+            var force = c.StartingForces.FirstOrDefault(x => x.Row == row);
+            return force != null && force.Name != "" ? force.Name : row;
+        }
+
+        /// <summary>The sim's English name of a front (Prisoners.Fronts), as Unity's map.front_* strings give it.</summary>
+        static string FrontName(string front) => front.Length == 0 ? front : char.ToUpperInvariant(front[0]) + front.Substring(1);
+
+        /// <summary>English display names paired with Unity's operation.region.* catalogue. These five authored regions
+        /// are the complete R-ENEMY-007 vocabulary; structured cause args retain the ids for EN/HE presentation lookup.</summary>
+        internal static string OperationRegionName(string id) => id switch
+        {
+            "central_plain" => "Central Plain",
+            "jerusalem_hills" => "Jerusalem Hills",
+            "galilee" => "Galilee",
+            "southern_coast" => "Southern Coast",
+            "negev" => "Negev",
+            _ => id,
+        };
 
         public static string Render(Content c, GameEvent e, DateTime date) => Offices.Fill(c, e.Text, FillDate(e, date));
 
@@ -431,6 +644,10 @@ namespace Statecraft.Sim
 
         /// <summary>Event text as the player sees it now: a matching variant's, with names following the player's appointments.</summary>
         public static string Render(Content c, GameState s, GameEvent e) =>
-            Cabinet.Fill(c, s, Timeline.Variant(c, s, e)?.Text ?? e.Text, FillDate(e, s.Date));
+            Cabinet.Fill(c, s, Timeline.Variant(c, s, e)?.Text ?? (ShowsLate(e, s.Date) ? e.LateText : e.Text), FillDate(e, s.Date));
+
+        /// <summary>R-ENEMY-007 ("Dateless variants (Recommended)"): whether <paramref name="e"/>, shown on <paramref name="date"/>,
+        /// shows its late text: it has one, and its own window has closed. A road variant (R-ALT-010) still comes first.</summary>
+        public static bool ShowsLate(GameEvent e, DateTime date) => e.LateText != "" && e.To.HasValue && date >= e.To.Value;
     }
 }

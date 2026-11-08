@@ -489,10 +489,14 @@ public class ControlTests
     }
 
     /// <summary>Rendered: on a coastal-plain proof edge at gameplay03's zoom, the Primary band measures about the owner's
-    /// deeper blue (promo 03's Israeli side, about 89,119,156 on screen), against main's lighter 120,142,192.</summary>
+    /// deeper blue (promo 03's Israeli side, about 89,119,156 on screen), against main's lighter 120,142,192. Drawn in the
+    /// default variant, the stronger tier (A2), so its glow (#2431) is on: the bound is the owner's #519 ruling's
+    /// (docs/visual-v1.md, "Less pink, then merge", 2026-10-15).</summary>
     [UnityTest]
     public IEnumerator ThePrimaryStripeIsTheDeeperBlueOfTheRuling()
     {
+        MapBorders.Variant = MapBorders.DefaultVariant;
+        Assert.IsTrue(MapBorders.Strong(MapBorders.Variant), "the default is the stronger tier, which glows");
         var (map, cam, rig) = BorderTests.Open();
         yield return null;
         RenderSample.TiltShift(false);
@@ -510,6 +514,9 @@ public class ControlTests
         float md = d.OrderBy(x => x).ElementAt(d.Count / 2), mm = dMain.OrderBy(x => x).ElementAt(dMain.Count / 2);
         TestContext.WriteLine($"median deltaE76 to the ruling's blue {md:0.0}, to main's {mm:0.0}");
         Assert.Less(md, 10f, "about the ruling's deeper blue");
+        // #519 (2026-10-15, "Less pink, then merge"): "bring the stripe back to about 3 deltaE76 of the ruled blue or less";
+        // the stronger tier's glow (#2431) is carried by the halo, not by moving this stripe off the ruled blue.
+        Assert.LessOrEqual(md, 3f, "the stronger tier's stripe: \"bring the stripe back to about 3 deltaE76 of the ruled blue or less\" (#519)");
         Assert.Less(md, mm, "nearer the deeper blue than main's lighter one");
     }
     /// <summary>Not a check: the contact sheet's raw renders (run on demand: -testFilter ControlTests.ContactSheetRenders, the

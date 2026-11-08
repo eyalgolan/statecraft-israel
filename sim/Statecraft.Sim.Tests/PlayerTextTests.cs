@@ -23,8 +23,7 @@ public class PlayerTextTests
             s = r.State;
         }
         return messages;
-    }
-
+}
     [Fact]
     public void NoCauseInTheHistoricalRunShowsAContentIdOrAnIsoDate()
     {
@@ -151,6 +150,25 @@ public class PlayerTextTests
                 g.Date = e.From;
                 ContentWindows.Update(c, g, start);
                 g.PendingEvents.Clear(); g.PendingEvents.Add(e.Id);
+                if (o.RequiresUnitRegions.Count != 0)
+                {
+                    var at = c.PlayerRegions.Regions[o.RequiresUnitRegions[0]].MemberHexes[0];
+                    foreach (var unitOrder in o.UnitOrders)
+                    {
+                        int unitId = c.StartingForces.FindIndex(f => f.Row == unitOrder.Unit);
+                        var force = c.StartingForces[unitId];
+                        var unit = g.Units.TryGetValue(unitId, out var present) ? present
+                            : new Unit(unitId, force.Type, force.Q, force.R, side: force.Side, strength: force.Strength);
+                        g.Units[unitId] = new Unit(unit.Id, unit.Type, at.Q, at.R, unit.Service, unit.Side, unit.Strength,
+                            unit.Order, unit.OrderTarget, unit.HomeCity, unit.Full, unit.CombatXp);
+                    }
+                    // This fixture exercises each option's cause text, not the separate refused-card-order contract.
+                    // Give every staged operation a legal card order by clearing enemy holders from its authored targets.
+                    foreach (var target in o.UnitOrders)
+                        foreach (var held in g.Units.Values.Where(u => u.Side != Movement.PlayerSide
+                            && (u.Q, u.R) == (target.Q, target.R)).Select(u => u.Id).ToList())
+                            g.Units.Remove(held);
+                }
                 var r = Simulation.Step(c, g, new Command[] { new ChooseEventOption(e.Id, o.Id) });
                 Assert.Empty(r.Rejected);
                 causes.AddRange(r.Why);

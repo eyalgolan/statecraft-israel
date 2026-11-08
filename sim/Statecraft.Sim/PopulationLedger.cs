@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -71,6 +72,23 @@ namespace Statecraft.Sim
                 throw new ArgumentException("Unknown or incompatible assignment target.");
             return t;
         }
+        /// <summary>R-POP-002: a location's city must be a member location of its region in regions.yaml (AtLocation), and a
+        /// place where own people live by R-POP-004's rulings: a census city (cities.yaml, R-CITY-006) or a field host of that
+        /// region (field_hexes host; owner, 7 November 2026, #1689: "These two only (Recommended)"). Any other member, a
+        /// locality, a sites.yaml id or a map location, is refused (review of #2936, S1-1).</summary>
+        internal void ValidateCities(Content c)
+        {
+            foreach (var l in locations)
+            {
+                if (l.City == null) continue;
+                var region = c.PlayerRegions.AtLocation(l.City);
+                if (region?.Id != l.Region)
+                    throw new ArgumentException("City " + l.City + " is not in region " + l.Region + " in regions.yaml (R-POP-002).");
+                if (!c.Cities.Any(x => x.Id == l.City) && !region.FieldHosts.Any(h => h.Host == l.City))
+                    throw new ArgumentException("City " + l.City + " of region " + l.Region
+                        + " is neither a census city of cities.yaml nor a field host in regions.yaml (R-POP-002).");
+            }
+        }
         internal bool HasCaptor(string captor) => captors.Contains(captor);
         internal bool HasQualification(string qualification) => qualification == "" || qualifications.Contains(qualification);
         internal IEnumerable<string> Canonical()
@@ -108,6 +126,14 @@ namespace Statecraft.Sim
         int receptionLimit;
         internal int ReceptionLimit { get { RequireInitialized(); return receptionLimit; } }
         int peoplePerUnit;
+        /// <summary>People one record stands for in this ledger (CreateFixture's scale).</summary>
+        internal int PeoplePerUnit { get { RequireInitialized(); return peoplePerUnit; } }
+        /// <summary>#1725 PR 7, natural increase (R-CITY-008; owner, 8 November 2026: "Carry the fraction (Recommended)"): the
+        /// records' worth of natural increase owed but not yet a whole record, carried from turn to turn: a double, as the
+        /// aggregate natural increase is, written as its IEEE bits (docs/determinism.md's carry rule).</summary>
+        internal double NaturalIncreaseCarry { get; private set; }
+        /// <summary>The natural-increase records added so far: their split over the cities is Cities.Apportion of this count.</summary>
+        internal int NaturalIncreaseRecords { get; private set; }
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }
         public double TotalPeople => (double)units.Count * peoplePerUnit;
@@ -124,6 +150,9 @@ namespace Statecraft.Sim
         }
         // A snapshot wrapper prevents casts back to the writable container; records are immutable.
         public IReadOnlyList<PopulationUnit> Units => new ReadOnlyCollection<PopulationUnit>(units.Values.ToList());
+        /// <summary>Initialized with mode Historical (the R-POP-004 start's scale). Not written to the canonical text: the
+        /// scale it implies already is.</summary>
+        internal bool IsHistorical { get; private set; }
         internal PopulationLedger(bool enabled) { this.enabled = enabled; }
         internal PopulationLedger Clone()
         {
@@ -138,6 +167,12 @@ namespace Statecraft.Sim
         {
             if (state.PopulationLedger.IsInitialized)
                 throw new NotSupportedException("Population-ledger fixtures cannot run aggregate systems; gdd-0.3 integration is held.");
+        }
+        /// <summary>#1725 PR 5 (review S5-3): Pools.Init and StartingForces.Init read an initialized ledger only in the dark
+        /// start's shape, a Historical one (R-POP-004); a synthetic or Open ledger is refused as by <see cref="RefuseAggregate"/>.</summary>
+        internal static void RefuseUnlessHistorical(GameState state)
+        {
+            if (!state.PopulationLedger.IsHistorical) RefuseAggregate(state);
         }
         void RequireInitialized()
         {
@@ -192,6 +227,41 @@ namespace Statecraft.Sim
             Validate(candidate);
             units = candidate; sources.Add(key, id); NextPopulationId = next;
             return id;
+        }
+        /// <summary>Whether the manifest item <paramref name="source"/>, <paramref name="ordinal"/> has arrived, even if its
+        /// population id was lost since.</summary>
+        internal bool HasArrived(string source, int ordinal) => sources.ContainsKey(PopulationText.Fields(source, ordinal));
+        /// <summary><see cref="RegisterArrival"/> for several items, in order, all or nothing (#1725 PR 7, Cities.Arrive): every
+        /// record is validated in one candidate before any is committed, so a refused item adds none of the others.</summary>
+        internal IReadOnlyList<int> RegisterArrivals(IReadOnlyList<PopulationInventoryRow> rows)
+        {
+            RequireInitialized();
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var registered = new SortedDictionary<string, int>(sources, StringComparer.Ordinal);
+            var next = NextPopulationId;
+            var ids = new List<int>();
+            foreach (var row in rows)
+            {
+                var key = PopulationText.Fields(row.Source, row.Ordinal);
+                if (registered.ContainsKey(key)) throw new ArgumentException("Source item already registered.");
+                // int.MaxValue is the exhausted next-id sentinel; never overflow after partially inserting a record.
+                var id = next; next = checked(next + 1);
+                candidate[id] = row.Template.WithId(id); registered.Add(key, id); ids.Add(id);
+            }
+            Validate(candidate);
+            units = candidate; sources = registered; NextPopulationId = next;
+            return ids.AsReadOnly();
+        }
+        /// <summary>#1725 PR 7, natural increase: registers <paramref name="rows"/> as <see cref="RegisterArrivals"/> does, all or
+        /// nothing, then counts them in <see cref="NaturalIncreaseRecords"/> and keeps <paramref name="carry"/>, the fraction of a
+        /// record still owed (0 up to 1).</summary>
+        internal void RegisterNaturalIncrease(IReadOnlyList<PopulationInventoryRow> rows, double carry)
+        {
+            RequireInitialized();
+            if (!(carry >= 0 && carry < 1)) throw new ArgumentOutOfRangeException(nameof(carry), "The carried natural increase is a fraction of one record.");
+            var records = checked(NaturalIncreaseRecords + rows.Count);
+            RegisterArrivals(rows);
+            NaturalIncreaseCarry = carry; NaturalIncreaseRecords = records;
         }
         public void RegisterCombatLoss(int id, string source)
         {
@@ -260,13 +330,29 @@ namespace Statecraft.Sim
         {
             if (!c.UsesPopulationLedger) throw new InvalidOperationException("Population fixtures require gdd-0.3 identity.");
             if (nextPopulationId < 0) throw new ArgumentOutOfRangeException(nameof(nextPopulationId));
-            var s = new GameState(c); var l = s.PopulationLedger;
+            var s = new GameState(c);
             if (mode is Mode m) s.Mode = m;
+            s.PopulationLedger.Initialize(c, bindings, rows, nextPopulationId, mode);
+            return s;
+        }
+
+        /// <summary>#1725 PR 5: <see cref="CreateFixture"/>'s initialization, in place on a state's own ledger, so the dark
+        /// start (Simulation.NewGame's internal overload) can initialize the ledger of the game it is building. Same
+        /// checks and scale rule as CreateFixture. All or nothing: it builds and validates a candidate ledger and copies it
+        /// in only when valid. Refuses a ledger that is not gdd-0.3's or is already initialized.</summary>
+        internal void Initialize(Content c, PopulationBindings bindings, IEnumerable<PopulationInventoryRow> rows, int nextPopulationId, Mode? mode)
+        {
+            if (!c.UsesPopulationLedger || !enabled) throw new InvalidOperationException("Population fixtures require gdd-0.3 identity.");
+            if (IsInitialized || units.Count != 0) throw new InvalidOperationException("The population ledger is already initialized.");
+            if (nextPopulationId < 0) throw new ArgumentOutOfRangeException(nameof(nextPopulationId));
+            var l = new PopulationLedger(true);
             l.bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
+            bindings.ValidateCities(c);
             var ordered = rows.OrderBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Ordinal).ToList();
             if (mode != Mode.Historical && ordered.Any(x => x.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
-                || x.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)))
-                throw new ArgumentException("Census and units_1948 rows are the Historical start's; their fixture needs mode Historical (R-POP-004).");
+                || x.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)
+                || x.Source.StartsWith(HistoricalPopulation.FarmerPrefix, StringComparison.Ordinal)))
+                throw new ArgumentException("Census, units_1948 and field rows are the Historical start's; their fixture needs mode Historical (R-POP-004).");
             l.peoplePerUnit = mode == Mode.Historical ? HistoricalPeoplePerUnit(c) : c.PopulationPeoplePerUnit;
             l.receptionLimit = c.RequirePopulationInteger("reception.turns");
             l.NextPopulationId = nextPopulationId;
@@ -277,16 +363,27 @@ namespace Statecraft.Sim
                 l.sources.Add(PopulationText.Fields(row.Source, row.Ordinal), l.NextPopulationId);
                 l.units.Add(l.NextPopulationId, row.Template.WithId(l.NextPopulationId)); l.NextPopulationId = next;
             }
-            l.Validate(l.units); l.IsInitialized = true;
-            return s;
+            l.Validate(l.units);
+            this.bindings = l.bindings; units = l.units; sources = l.sources; losses = l.losses;
+            peoplePerUnit = l.peoplePerUnit; receptionLimit = l.receptionLimit; NextPopulationId = l.NextPopulationId;
+            IsHistorical = mode == Mode.Historical;
+            IsInitialized = true;
         }
         // R-POP-001's no-fallback rule, as for the catalogue value: a missing or nonpositive value is refused, never replaced.
-        static int HistoricalPeoplePerUnit(Content c) => c.RulesAt(c.Rules.Start).Mvp?.PeoplePerUnit is int ppu && ppu > 0 ? ppu
+        internal static int HistoricalPeoplePerUnit(Content c) => c.RulesAt(c.Rules.Start).Mvp?.PeoplePerUnit is int ppu && ppu > 0 ? ppu
             : throw new InvalidOperationException("The Historical scale needs a positive mvp.people_per_unit in rules.yaml for the start day; no fallback.");
         internal IEnumerable<string> Canonical()
         {
             yield return PopulationText.Fields("initialized", IsInitialized, "next", NextPopulationId,
                 "people-per-unit", peoplePerUnit, "reception-limit", receptionLimit);
+            // #1725 PR 7: written only once natural increase has run, so every ledger before it hashes as before. The carry
+            // follows docs/determinism.md's carry rule: a nonzero carry is the 16 hex digits of its IEEE bits, -0.0 as 0.0
+            // (as GameState's Num and GddState's segment carry write theirs), and a zero carry is omitted.
+            if (NaturalIncreaseRecords != 0 || NaturalIncreaseCarry != 0)
+                yield return NaturalIncreaseCarry == 0
+                    ? PopulationText.Fields("natural-increase", "records", NaturalIncreaseRecords)
+                    : PopulationText.Fields("natural-increase", "records", NaturalIncreaseRecords, "carry",
+                        BitConverter.DoubleToInt64Bits(NaturalIncreaseCarry).ToString("X16", CultureInfo.InvariantCulture));
             if (bindings != null) foreach (var b in bindings.Canonical()) yield return b;
             foreach (var p in units.Values) yield return PopulationText.Fields("unit", p.Canonical());
             foreach (var source in sources) yield return PopulationText.Fields("source", source.Key, source.Value);

@@ -465,10 +465,15 @@ and a unit the sim moves is placed without the control layer.
   camera before the names are placed, and each token's keep-clear boxes follow (`UnitLayer.KeepClear`). A fixed box round
   every place the camera's yaw could take the badge, about 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03
   (`MapLabelTests.PillsKeepClearOfTheUnitTokens`; test `TheKeepClearBoxesFollowTheBadgeAndTheFlagAsTheCameraTurns`).
-  Up close the badge is capped on the screen (owner, 31 October 2026: "Shrink up close (Recommended)"): from about 30 km
-  out it keeps its 1.4 km width, and a nearer camera draws it no taller than `UnitBadge.MaxScreenShare` of the screen's
+  Up close the badge is capped on the screen (owner, 31 October 2026: "Shrink up close (Recommended)"): from about 60 km
+  out it keeps its 1.4 km width (#2430: about 30 km until then, where the plate was nearly as wide as the figures are tall), and a
+  nearer camera draws it no taller than `UnitBadge.MaxScreenShare` of the screen's
   height, shrinking about its lower edge, which stays clear of the flag (test `UnitBadgeScreenCapTests`).
 - **Ring:** the white ring appears only on selection.
+- **Far zoom (#2430):** a token's figures and flag keep `UnitShowcase.FigureScale` up to 45 km (`TownModelLayer.CloseExitM`,
+  where the close building models have gone), grow to 1.3 times it at 60 km and stay there (`UnitShowcase.ZoomScale`), so a
+  figure stays near promo 03's size on the screen. The constant does not change, the figures keep their spots and the base
+  keeps its size. Only the game camera sets it (`UnitLayer.FaceCamera`). The showcase trio does not grow.
 - **Base and flag (demo2 T29, refs #197).** An army token's figures stand shoulder to shoulder on one round earth base
   ringed by a bright white rim (`UnitPlinth`), and the side's flag flies on a pole at the base's back edge (`UnitFlags`).
   See "The base and the flag".
@@ -635,8 +640,10 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
 - **Figures:** drawn at `UnitShowcase.DrawSpread` (0.19 of a hex's circumradius between neighbours), shoulder to
   shoulder, the trio about 1.15 figure heights wide. The placer still checks a spot at `TrioSpread`, so no spot moved.
   The showcase trio stands the same way.
-- **Base:** one draped earth disc per army token (see "Slopes"), its ring 1.45 times the full trio's width across
-  (`UnitPlinth.BaseToTrio`; 1.42–1.44 measured on the built tokens, pinned to 1.3–1.7 by `TheBaseHugsTheTrioAsInT29`).
+- **Base:** one draped earth disc per army token (see "Slopes"), its ring 1.34 times the full trio's width across
+  (`UnitPlinth.BaseToTrio`, 1.45 until #2430; pinned to 1.3–1.7 by `TheBaseHugsTheTrioAsInT29`). A compact token's figures
+  stand at 0.6 of the spacing (`UnitShowcase.CompactSpread`; half until #2430 merged them into one shape), and its ring
+  still fits its town's clearing (#588).
   The earth is the palette's `Earth`, dark and warm as T29's, mottled by smooth value noise over the world in its shade
   rows (no texture). Owner, 2026-10-15: this base (earth 0.45, 0.33, 0.22), the lighter of the two rendered, over a
   darker one (0.38, 0.28, 0.18) that brought the ring nearer T29's contrast but left the figures lighter than their base.

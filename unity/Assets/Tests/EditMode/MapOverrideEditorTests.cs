@@ -38,7 +38,8 @@ public sealed class MapOverrideEditorTests
             var hex = document.Hexes.First(x => x.Land);
             var terrain = document.LandBiomes.First(x => x != hex.Biome);
             var location = document.Locations.OrderBy(x => x.Id, StringComparer.Ordinal).First();
-            var target = document.Hexes.First(x => x.Land && (x.Q != location.BaseQ || x.R != location.BaseR));
+            var content = LoadSavedContent();
+            var target = document.Hexes.First(x => x.Land && (x.Q != location.BaseQ || x.R != location.BaseR) && InItsRegion(content, location.Id, x.Q, x.R));
             var controlHex = Control1948.Parse(File.ReadAllText(Path.Combine(temporary, "map", Control1948.FileName))).EditorHexes.First();
             var period = document.Periods[0].Id;
             var control = document.ControlValues.First(x => x != document.ControlAt(controlHex.q, controlHex.r, period));
@@ -175,7 +176,7 @@ public sealed class MapOverrideEditorTests
         try
         {
             var location = document.Locations.OrderBy(x => x.Id, StringComparer.Ordinal).First(x => x.BaseQ == end[0] && x.BaseR == end[1]);
-            var target = document.Hexes.First(x => x.Land && !occupied.Contains((x.Q, x.R)));
+            var target = document.Hexes.First(x => x.Land && !occupied.Contains((x.Q, x.R)) && InItsRegion(content, location.Id, x.Q, x.R));
             StringAssert.Contains("tlv_netanya_road", string.Join("\n", document.Dependencies(location.Id).Corridors),
                 "the corridor that ends on the location is reported before saving");
             document.SetLocation(location.Id, target.Q, target.R);
@@ -248,7 +249,8 @@ public sealed class MapOverrideEditorTests
             var terrain = document.LandBiomes.First(x => x != hex.Biome);
             var location = document.Locations.OrderBy(x => x.Id, StringComparer.Ordinal).First();
             var before = document.LocationAt(location.Id);
-            var target = document.Hexes.First(x => x.Land && (x.Q != before.q || x.R != before.r));
+            var content = LoadSavedContent();
+            var target = document.Hexes.First(x => x.Land && (x.Q != before.q || x.R != before.r) && InItsRegion(content, location.Id, x.Q, x.R));
             var controlHex = Control1948.Parse(File.ReadAllText(Path.Combine(temporary, "map", Control1948.FileName))).EditorHexes.First();
             var period = document.Periods[0].Id;
             var controlBefore = document.ControlAt(controlHex.q, controlHex.r, period);
@@ -368,6 +370,38 @@ public sealed class MapOverrideEditorTests
             Undo.ClearUndo(document);
             UnityEngine.Object.DestroyImmediate(document);
         }
+    }
+
+    /// <summary>R-ENEMY-007 (#2543) reads regions.yaml under both GDD identities, so a place that is a region's member must
+    /// stay on one of that region's member hexes (PlayerRegions: "effective location lies outside member_hexes"). A move
+    /// within the region is a plain edit; a place in no region can go anywhere.</summary>
+    static bool InItsRegion(Content c, string id, int q, int r)
+    {
+        var region = c.PlayerRegions.AtLocation(id);
+        return region == null || region.MemberHexes.Contains((q, r));
+    }
+
+    // R-ENEMY-007 (#2543): the editor validates through the game's loader, which reads the regions under both GDD
+    // identities, so moving a region's member place off the region's hexes is refused, and the saved map stays intact.
+    [Test]
+    public void MovingARegionsPlaceOutsideTheRegionIsRefused()
+    {
+        var content = LoadSavedContent();
+        var path = Path.Combine(temporary, MapOverrides.FileName);
+        var before = File.ReadAllBytes(path);
+        var document = MapOverrideEditorDocument.Load(temporary);
+        try
+        {
+            var location = document.Locations.OrderBy(x => x.Id, StringComparer.Ordinal).First(x => content.PlayerRegions.AtLocation(x.Id) != null);
+            var target = document.Hexes.First(x => x.Land && !InItsRegion(content, location.Id, x.Q, x.R));
+            document.SetLocation(location.Id, target.Q, target.R);
+            Assert.IsFalse(document.Save(out var error), "a region's place cannot leave the region's hexes");
+            StringAssert.Contains("effective location lies outside member_hexes", error);
+            StringAssert.Contains("regions.yaml", error, "the failure names the file to edit as well");
+            CollectionAssert.AreEqual(before, File.ReadAllBytes(path), "the last valid saved map stays intact");
+            Assert.DoesNotThrow(() => { LoadSavedContent(); }, "the saved map still loads in the game");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(document); }
     }
 
     Content LoadSavedContent() => ContentLoader.Load(relative =>

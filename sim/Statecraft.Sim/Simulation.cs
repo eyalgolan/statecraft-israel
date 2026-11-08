@@ -7,21 +7,31 @@ namespace Statecraft.Sim
     /// <summary>The public entry point the Unity layer calls: start a game, then step it one turn at a time.</summary>
     public static class Simulation
     {
-        public static GameState NewGame(Content c, ulong seed, Mode mode)
+        public static GameState NewGame(Content c, ulong seed, Mode mode) => NewGame(c, seed, mode, darkStart: false);
+
+        /// <summary>#1689, #1725 PR 5: with <paramref name="darkStart"/>, the dark start of an exact gdd-0.3 Historical game,
+        /// internal and fixture-only (the public NewGame passes false): the Historical ledger (R-POP-004) is initialized in
+        /// place before Pools.Init, so the Food stock starts at cover_months of the ledger's need (R-FOOD-001, #2470), and
+        /// the starting forces are placed against its soldiers. EventSystem.Trigger still refuses a ledger (R-POP-002) until
+        /// its producer is integrated, so a dark start fires no opening event. Legacy and gdd-0.1 content refuse it.</summary>
+        internal static GameState NewGame(Content c, ulong seed, Mode mode, bool darkStart)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (mode == Mode.Open) throw new NotSupportedException("Open mode arrives with milestone M4.");
+            if (darkStart && !c.UsesPopulationLedger) throw new InvalidOperationException("A dark start needs exact gdd-0.3 (R-POP-001).");
             var s = new GameState(c) { Date = c.Rules.Start, RngState = seed, Mode = mode };
             var why = new List<Cause>();
             EffectsSystem.Init(c, s);
             EconomySystem.Init(c, s);
             PopulationSystem.Init(c, s);
             Cities.Init(c, s);
+            if (darkStart) HistoricalPopulation.Initialize(c, s);   // before Pools.Init, which reads the ledger's need
+            if (darkStart) HistoricalPopulation.AddFarmerHousing(c, s);   // #1725 PR 4: one housing place per farmer in a census host
             Pools.Init(c, s);
             StartingForces.Init(c, s);   // R-UNIT-006: before any event can grant a unit, so the forces take ids 0 to n-1
             SecuritySystem.Init(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
-            EventSystem.Trigger(c, s, why);
+            if (!darkStart) EventSystem.Trigger(c, s, why);   // R-POP-002: refuses an initialized ledger
             return s;
         }
 
@@ -78,6 +88,7 @@ namespace Statecraft.Sim
                 why.Add(new Cause("era", s.GameOver, 0, PlayerText.GameOver(s.GameOver), key: CauseKeys.EraEnded));
             }
             ContentWindows.Update(c, s, turnStart);
+            EventSystem.LapseExpiredOperations(c, s, why);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
             // A game that just ended raises no new events, but the unfired cards of recorded objectives (R-LOOP-004, R-OBJ-003;
