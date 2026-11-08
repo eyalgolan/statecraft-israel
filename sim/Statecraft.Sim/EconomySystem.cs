@@ -71,9 +71,12 @@ namespace Statecraft.Sim
             return new Cause("economy", "treasury", rest, $"{PlayerText.Change(c, "treasury", rest)} (other causes)", key: CauseKeys.MoneyOther);
         }
 
+        /// <summary>#1725 PR 7: runs on an initialized Historical ledger (the dark start), reading its head count from
+        /// GameState.TotalPopulation; a synthetic or Open ledger stays refused (R-POP-002). Which ledger records count per
+        /// head is not yet ruled.</summary>
         public static TreasuryFlows Flows(Content c, GameState s, double yearFraction)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
             var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;
             return new TreasuryFlows(r.TaxPerCapitaPerYear * pop * yearFraction, r.SpendingPerCapitaPerYear * pop * yearFraction,
                 MobilizationCost(c, s.Date, s.Mobilization, yearFraction));
@@ -165,9 +168,11 @@ namespace Statecraft.Sim
             PayNamedOrBorrow(c, s, cost, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
         }
 
+        /// <summary>R-MONEY-001, R-MONEY-003: the turn's tax, spending, reserve call-up and foreign-currency flows. Runs on an
+        /// initialized Historical ledger as <see cref="Flows"/> does, and changes no ledger record.</summary>
         public static void Apply(Content c, GameState s, double yearFraction, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
             var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;
             var flows = Flows(c, s, yearFraction);
             var revenue = flows.Tax; var spending = flows.Spending; var mobilization = flows.Mobilization;
