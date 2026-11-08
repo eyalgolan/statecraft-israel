@@ -16,6 +16,8 @@ using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools.Constraints;
+using Is = UnityEngine.TestTools.Constraints.Is;
 using Object = UnityEngine.Object;
 
 /// <summary>#2905's End turn probe (?turnlog, TurnProbe): off, it records and writes nothing and allocates nothing; on, every
@@ -70,22 +72,24 @@ public class TurnProbeTests
         TurnProbe.On = false;
         Action handler = Named;
         TurnProbe.Handler("Changed", handler, 0); TurnProbe.Lap("warm", 0);   // any first-call cost outside the count
-        long before = GC.GetAllocatedBytesForCurrentThread();
-        for (int i = 0; i < 1000; i++)
+        void Hooks()
         {
-            var t = TurnProbe.Start();
-            t = TurnProbe.Lap("UnitLayer.Rebuild", t);
-            TurnProbe.Handler("Changed", handler, t);
-            TurnProbe.Step(t);
+            for (int i = 0; i < 200; i++)
+            {
+                var t = TurnProbe.Start();
+                t = TurnProbe.Lap("UnitLayer.Rebuild", t);
+                TurnProbe.Handler("Changed", handler, t);
+                TurnProbe.Step(t);
+            }
         }
-        Assert.AreEqual(0, GC.GetAllocatedBytesForCurrentThread() - before, "off: no allocation in the hooks");
+        // Unity's GC.Alloc recorder, as MenuMusicTests uses: GC.GetAllocatedBytesForCurrentThread read 0 even for the
+        // probed turn's handler keys in the Editor, so it could not show an allocation either way.
+        Assert.That(Hooks, Is.Not.AllocatingGCMemory(), "off: no allocation in the hooks");
 
-        // The control: the same hooks in a probed turn allocate (the handler keys), so the count above can see allocation.
+        // The control: the same hooks in a probed turn allocate (the handler keys), so the check above can see allocation.
         TurnProbe.On = true;
         TurnProbe.BeginTurn(1, new DateTime(1948, 6, 15));
-        before = GC.GetAllocatedBytesForCurrentThread();
-        TurnProbe.Handler("Changed", handler, TurnProbe.Start());
-        Assert.Greater(GC.GetAllocatedBytesForCurrentThread() - before, 0, "on: the counter sees the handler key");
+        Assert.That(Hooks, Is.AllocatingGCMemory(), "on: the recorder sees the handler keys");
         TurnProbe.EndTurn(_ => { });
     }
 
