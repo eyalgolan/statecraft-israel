@@ -1130,11 +1130,13 @@ namespace Statecraft.Sim
         public string At { get; set; } = "";
     }
 
-    /// <summary>An option's go-to order (R-ENEMY-005) for the unit of the map/units_1948.yaml row <see cref="Unit"/>, toward
-    /// hex (<see cref="Q"/>, <see cref="R"/>), which must be one of that row's anchor or order target hexes (map/unit_anchor_hexes.yaml).</summary>
+    /// <summary>An option's order for the unit of the map/units_1948.yaml row <see cref="Unit"/>: a go-to (R-ENEMY-005) toward,
+    /// or an attack (R-ENEMY-008) on, hex (<see cref="Q"/>, <see cref="R"/>), which must be one of that row's anchor or order
+    /// target hexes (map/unit_anchor_hexes.yaml). <see cref="Order"/> is go_to unless the card says attack.</summary>
     public sealed class UnitOrderEffect
     {
         public string Unit { get; set; } = "";
+        public string Order { get; set; } = Movement.GoTo;
         public int Q { get => q ?? 0; set => q = value; }
         public int R { get => r ?? 0; set => r = value; }
         [YamlIgnore] public bool QGiven => q.HasValue;

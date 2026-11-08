@@ -11,10 +11,10 @@ using Statecraft.Sim;
 /// coastal plain, 10 people a population unit, two units of a side per hex and an attack ratio of 200.</summary>
 public class EnemyAITests
 {
-    const string Types = Fixture.GddUnitTypes
+    internal const string Types = Fixture.GddUnitTypes
         + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
         + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n";
-    const string OperationRegions = "player_regions:\n"
+    internal const string OperationRegions = "player_regions:\n"
         + "  - id: fixture_region\n    capital_location: town_a\n    member_hexes: [{ q: 0, r: 0 }, { q: 1, r: 0 }]\n"
         + "    member_locations: [town_a]\n    design_note: 'Operation requirement test region'\n"
         + "    sources: ['test fixture: no historical claim']\n    capital_approval: NEEDS-RESEARCH\n"
@@ -1672,7 +1672,7 @@ public class EnemyAITests
     // combat.enemy_attack_ratio, 1.5:1 (150%); gdd-0.1 keeps mvp.enemy_attack_ratio_percent (the fixture's 200).
     static Content Gdd03() => ContentLoader.Load(Fixture.Write(Gdd03Files()));
 
-    static Dictionary<string, string> Gdd03Files()
+    internal static Dictionary<string, string> Gdd03Files()
     {
         var f = Fixture.Gdd(new Dictionary<string, string>
         {

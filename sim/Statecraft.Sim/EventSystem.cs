@@ -153,10 +153,56 @@ namespace Statecraft.Sim
             return new OperationRequirementStatus(required, missing);
         }
 
+        /// <summary>R-ENEMY-009: the decided operation card whose go-to order unit <paramref name="unitId"/> is carrying out, or
+        /// null. The operation binds the unit while the card's go-to stands (Movement.GiveGoTo's card order): the card is the one
+        /// whose decided option sends the unit's map/units_1948.yaml row to the hex the unit is going to, which the loader keeps
+        /// unique (EventRules.CheckOperationHexes). Pure: no state or RNG change.</summary>
+        public static string? OperationOf(Content c, GameState s, int unitId)
+        {
+            if (!c.IsGdd || !s.CardOrders.ContainsKey(unitId) || !s.Units.TryGetValue(unitId, out var u) || u.Order != Movement.GoTo
+                || unitId < 0 || unitId >= c.StartingForces.Count)   // the unit with id i is the i-th force (R-UNIT-006)
+                return null;
+            var force = c.StartingForces[unitId];
+            if (u.Side != force.Side || u.Type != force.Type) return null;
+            foreach (var e in c.Events)
+                if (s.ChosenOptions.TryGetValue(e.Id, out var chosen) && e.Options.FirstOrDefault(o => o.Id == chosen) is EventOption option
+                    && option.UnitOrders.Any(x => x.Order == Movement.GoTo && x.Unit == force.Row && Hex(x.Q, x.R) == u.OrderTarget))
+                    return e.Id;
+            return null;
+        }
+
+        /// <summary>R-ENEMY-009: the units, in ascending id, still carrying out operation card <paramref name="eventId"/>'s
+        /// orders (<see cref="OperationOf"/>): the units a player's order to any one of them would stop. Pure.</summary>
+        public static IReadOnlyList<int> OperationUnits(Content c, GameState s, string eventId) =>
+            s.CardOrders.Keys.Where(id => OperationOf(c, s, id) == eventId).ToList();
+
+        /// <summary>R-ENEMY-009 (owner, 4 November 2026; on #2544, "Only remaining orders (Recommended)"): a player's order took a
+        /// unit of operation <paramref name="eventId"/> off its order, so the operation's remaining orders are cancelled. Each
+        /// unit of <paramref name="bound"/> (the operation's units before that order) still carrying the card's go-to stops where
+        /// it stands, with the line of an ended card order; the moves made and the fights fought stay. Every one of them,
+        /// the ordered unit too, is listed as withdrawn. No RNG.</summary>
+        internal static void CancelOperation(Content c, GameState s, string eventId, IReadOnlyList<int> bound, List<Cause> why, List<OperationAction>? actions)
+        {
+            var option = Get(c, eventId).Options.First(o => o.Id == s.ChosenOptions[eventId]);
+            foreach (var id in bound)
+            {
+                var row = c.StartingForces[id].Row;
+                var i = option.UnitOrders.FindIndex(x => x.Order == Movement.GoTo && x.Unit == row);
+                var x = option.UnitOrders[i];
+                if (OperationOf(c, s, id) == eventId) Movement.Withdraw(s, id, why);
+                actions?.Add(new OperationAction(eventId, option.Id, i, row, id, Movement.GoTo, x.Q, x.R, OperationAction.Withdrawn));
+            }
+        }
+
+        static string Hex(int q, int r) => FormattableString.Invariant($"{q},{r}");
+
         /// <summary>Returns null on success, or the reason the choice was rejected. <paramref name="spent"/> is the movement
         /// points the turn's orders have spent so far, which an option's unit orders share (R-ENEMY-005).
-        /// A refused unit order goes into <paramref name="rejected"/>, as the player's refused orders do.</summary>
-        public static string? Choose(Content c, GameState s, string eventId, string optionId, List<Cause> why, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
+        /// A refused unit order goes into <paramref name="rejected"/>, as the player's refused orders do, and each of the option's
+        /// unit orders into <paramref name="actions"/> (R-ENEMY-008). An attack is recorded in <paramref name="attacked"/>, as
+        /// the player's is.</summary>
+        public static string? Choose(Content c, GameState s, string eventId, string optionId, List<Cause> why, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null,
+                                     List<OperationAction>? actions = null, Dictionary<int, AttackRecord>? attacked = null)
         {
             PopulationLedger.RefuseAggregate(s);
             if (!s.PendingEvents.Contains(eventId)) return "That event is not waiting for a decision";
@@ -164,12 +210,13 @@ namespace Statecraft.Sim
             if (option == null) return "That event has no such option";
             if (ArmisticeBlock(c, s, Get(c, eventId), option) is string block) return block;
             if (!OperationStatus(c, s, option).Met) return RefusedOperationUnitsNotInPlace;
-            Resolve(c, s, eventId, option, "chosen", why, spent: spent, rejected: rejected);
+            Resolve(c, s, eventId, option, "chosen", why, spent: spent, rejected: rejected, actions: actions, attacked: attacked);
             return null;
         }
 
         /// <param name="share">The share of each numeric effect that applies: 1, except for a disloyal minister's delegation (R-EVT-003).</param>
-        static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0, bool delegated = false, Person? minister = null, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
+        static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0, bool delegated = false, Person? minister = null, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null,
+                            List<OperationAction>? actions = null, Dictionary<int, AttackRecord>? attacked = null)
         {
             s.PendingEvents.Remove(eventId);
             // R-ENEMY-007: a decided card waits no more. Q4 (owner, 7 November 2026: "Shift by the delay (Recommended)"): a card
@@ -279,21 +326,31 @@ namespace Statecraft.Sim
             // R-EFX-008: after the city effects. A kind already unlocked stays so, with no second cause.
             foreach (var kind in o.UnlockProjects)
                 if (s.UnlockedProjects.Add(kind)) why.Add(new Cause("events", kind, 1, $"{Unlocked(c, kind)} ({title})", key: CauseKeys.EventUnlock, args: Context(title, localizedTitle)));
-            // R-ENEMY-005 (Q-ENEMY-5): the option's go-to orders, through the player's own go-to and its checks, in list order.
-            // A refused order changes nothing, as the player's does, and is reported as the player's are (Rejected); a row with
-            // no unit on the board orders nobody. R-ENEMY-007 applies the orders under both GDD identities once every required
-            // unit is in place. The owner's answer 1 on #2087: the order ends with the operation (OrderEnds), and
+            // R-ENEMY-005 (Q-ENEMY-5), R-ENEMY-008: the option's go-to and attack orders, through the player's own go-to and
+            // attack (Combat.Strike: the turn's movement points, one engagement, one draw) and their checks, in list order (the
+            // owner, 4 November 2026: "deciding on a military operation makes the units do what the operation describes").
+            // A refused order changes nothing, as the player's does, and is reported as the player's are (Rejected), with the
+            // card's reason; the orders after it still run (on #2544: "Continue the rest (Recommended)"). Each order is listed
+            // in `actions` with the player's own reason. A row with no unit on the board orders nobody. R-ENEMY-007 applies the
+            // orders under both GDD identities once every required unit is in place. The owner's answer 1 on #2087: a go-to
+            // ends with the operation (OrderEnds), and
             // its march goes round every enemy-held place but the one it was sent to (Movement.Search). The owner's ruling of
             // 2 November 2026 on #2087 ("Keep a garrison in Nazareth (Recommended)"): the order never takes the last Israeli unit
             // off an occupied place (R-CTRL-013), so it is not given to that unit, and the refusal says why.
-            foreach (var x in o.UnitOrders)
+            var points = spent ?? new Dictionary<int, int>();
+            for (int i = 0; i < o.UnitOrders.Count; i++)
             {
+                var x = o.UnitOrders[i];
                 int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);   // the unit with id i is the i-th force (R-UNIT-006)
                 if (id < 0 || !s.Units.TryGetValue(id, out var u) || u.Side != c.StartingForces[id].Side || u.Type != c.StartingForces[id].Type) continue;
-                var refused = SettlementControl.LastGarrison(c, s, u) ? Orders.RefusedLastGarrison
-                    : Movement.GiveGoTo(c, s, id, x.Q, x.R, spent ?? new Dictionary<int, int>(), why, OrderEnds(c, x) + delay) != null ? Orders.RefusedCardOrder
-                    : null;
-                if (refused != null) rejected?.Add(new Rejection(new UnitOrder(id, Movement.GoTo, x.Q, x.R), refused));
+                // An attacker never leaves its hex (R-COMBAT-001), so the last-garrison rule is a go-to's alone.
+                var reason = x.Order == Combat.Attack ? Combat.Strike(c, s, id, x.Q, x.R, points, attacked ?? new Dictionary<int, AttackRecord>(), why)
+                    : SettlementControl.LastGarrison(c, s, u) ? Orders.RefusedLastGarrison
+                    : Movement.GiveGoTo(c, s, id, x.Q, x.R, points, why, OrderEnds(c, x) + delay);
+                if (reason != null)
+                    rejected?.Add(new Rejection(new UnitOrder(id, x.Order, x.Q, x.R), reason == Orders.RefusedLastGarrison ? reason : Orders.RefusedCardOrder));
+                actions?.Add(new OperationAction(eventId, o.Id, i, x.Unit, id, x.Order, x.Q, x.R,
+                    reason == null ? OperationAction.CarriedOut : OperationAction.Refused, reason));
             }
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
@@ -457,7 +514,8 @@ namespace Statecraft.Sim
         /// In the GDD loop a drawn option of a minister whose loyalty is below the floor applies only disloyal_effect_share of
         /// each numeric effect (R-EVT-003; #107, owner, 18 October 2026). Why: loyalty decides how hard a minister works for a
         /// decision he was left to make, competence which decision he makes; anchors and objective cards stay whole.</summary>
-        public static void Delegate(Content c, GameState s, List<Cause> why, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null)
+        public static void Delegate(Content c, GameState s, List<Cause> why, Dictionary<int, int>? spent = null, List<Rejection>? rejected = null,
+                                    List<OperationAction>? actions = null, Dictionary<int, AttackRecord>? attacked = null)
         {
             PopulationLedger.RefuseAggregate(s);
             var rng = new Rng(s.RngState);
@@ -469,7 +527,9 @@ namespace Statecraft.Sim
                 var minister = DelegatedTo(c, s, e);
                 if (e.Objective != "" || e.Prisoners != "" || e.Deported != "")   // R-POW-004, R-EVT-007: an exchange card or a Deport card, like an objective's, has one option and draws nothing
                 {
-                    Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister, spent: spent, rejected: rejected);
+                    s.RngState = rng.State;   // an operation's attack draws from the state (R-ENEMY-008), so hand it the stream and take it back
+                    Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister, spent: spent, rejected: rejected, actions: actions, attacked: attacked);
+                    rng.State = s.RngState;
                     continue;
                 }
                 var beforeDraw = rng.State;
@@ -507,7 +567,9 @@ namespace Statecraft.Sim
                     why.Add(OperationCause(c, s, e, status.Missing, CauseKeys.OperationPostponed));
                     continue;
                 }
-                Resolve(c, s, id, option, how, why, share, delegated: true, minister: minister, spent: spent, rejected: rejected);
+                s.RngState = rng.State;   // as above: the attack's draw follows the minister's and is kept
+                Resolve(c, s, id, option, how, why, share, delegated: true, minister: minister, spent: spent, rejected: rejected, actions: actions, attacked: attacked);
+                rng.State = s.RngState;
             }
             s.RngState = rng.State;
         }

@@ -222,12 +222,35 @@ namespace Statecraft.Sim
         public Rejection(Command command, string reason) { Command = command; Reason = reason; }
     }
 
+    /// <summary>#2544, R-ENEMY-008, R-ENEMY-009: one action of a military operation card, in the order the sim took it, for
+    /// the UI to show: the option's unit_orders row <see cref="Index"/> (map/units_1948.yaml row <see cref="Row"/>, the unit
+    /// <see cref="Unit"/>), its order (go_to or attack) and hex, and what came of it: <see cref="CarriedOut"/>, <see cref="Refused"/>
+    /// with the player's refusal <see cref="Reason"/>, or <see cref="Withdrawn"/> when a player's order to a unit in the
+    /// operation cancelled the order before it was done.</summary>
+    public sealed class OperationAction
+    {
+        public const string CarriedOut = "carried_out", Refused = "refused", Withdrawn = "withdrawn";
+        public string EventId { get; } public string OptionId { get; } public int Index { get; } public string Row { get; }
+        public int? Unit { get; } public string Order { get; } public int Q { get; } public int R { get; }
+        public string Outcome { get; } public string? Reason { get; }
+        public OperationAction(string eventId, string optionId, int index, string row, int? unit, string order, int q, int r,
+                               string outcome, string? reason = null)
+        {
+            EventId = eventId; OptionId = optionId; Index = index; Row = row; Unit = unit; Order = order; Q = q; R = r;
+            Outcome = outcome; Reason = reason;
+        }
+    }
+
     public sealed class StepResult
     {
         public GameState State { get; }
         public IReadOnlyList<Cause> Why { get; }
         public IReadOnlyList<Rejection> Rejected { get; }
-        public StepResult(GameState state, IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected) { State = state; Why = why; Rejected = rejected; }
+        /// <summary>The operation cards' actions this turn (R-ENEMY-008, R-ENEMY-009), in the order they ran.</summary>
+        public IReadOnlyList<OperationAction> OperationActions { get; }
+        public StepResult(GameState state, IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected,
+                          IReadOnlyList<OperationAction>? operationActions = null)
+        { State = state; Why = why; Rejected = rejected; OperationActions = operationActions ?? Array.Empty<OperationAction>(); }
     }
 
     /// <summary>A player's accepted attack this turn, captured before combat changes or removes its front-bearing target.</summary>
@@ -253,9 +276,14 @@ namespace Statecraft.Sim
         public IReadOnlyDictionary<int, AttackRecord> Attacked { get; }
         public IReadOnlyList<Cause> Why { get; }
         public IReadOnlyList<Rejection> Rejected { get; }
+        /// <summary>The operation cards' actions the orders took (R-ENEMY-008, R-ENEMY-009), in the order they ran.</summary>
+        public IReadOnlyList<OperationAction> OperationActions { get; }
         public PreviewResult(GameState state, IReadOnlyDictionary<int, int> spent, IReadOnlyDictionary<int, AttackRecord> attacked,
-                             IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected)
-        { State = state; Spent = spent; Attacked = attacked; Why = why; Rejected = rejected; }
+                             IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected, IReadOnlyList<OperationAction>? operationActions = null)
+        {
+            State = state; Spent = spent; Attacked = attacked; Why = why; Rejected = rejected;
+            OperationActions = operationActions ?? Array.Empty<OperationAction>();
+        }
     }
 
     /// <summary>Checks that every text an order carries can be saved: a null id or a lone surrogate would make the save

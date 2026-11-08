@@ -194,13 +194,14 @@
           },
           "unit_orders": {
             "type": "array",
-            "description": "R-ENEMY-005 (GDD loop, both gdd-0.1 and gdd-0.3): go-to orders for the unit of a map/units_1948.yaml row, toward one of that row's anchor hexes in map/unit_anchor_hexes.yaml, through the player's own go-to.",
+            "description": "R-ENEMY-005, R-ENEMY-008 (GDD loop, both gdd-0.1 and gdd-0.3): go-to or attack orders for the unit of a map/units_1948.yaml row, toward or on one of that row's anchor or order target hexes in map/unit_anchor_hexes.yaml, through the player's own go-to or attack.",
             "items": {
               "type": "object",
               "additionalProperties": false,
               "required": ["unit", "q", "r"],
               "properties": {
                 "unit": { "type": "string", "minLength": 1 },
+                "order": { "enum": ["go_to", "attack"], "description": "go_to when left out (R-ENEMY-008)." },
                 "q": { "type": "integer" },
                 "r": { "type": "integer" }
               }
