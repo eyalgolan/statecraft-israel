@@ -691,4 +691,63 @@ public class SettingsScreenTests
 
     static bool Inside(Rect inner, Rect outer) =>
         inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
+
+    /// <summary>#2202 (plan docs/superpowers/plans/2026-11-02-enemy-move-playback.md, Task 7; owner, 2 November 2026: "Q1-Q7
+    /// recommended, Q8 yes"): the enemy's moves on the map can be turned off; on by default, kept across a reload.</summary>
+    [Test]
+    public void TheEnemyMovesSwitchDefaultsOnAndIsRemembered([Values(false, true)] bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        var seen = new List<bool>();
+        Assert.IsTrue(SettingsPresenter.EnemyMovesOn(new SettingsStore(dir)), "on with no file");
+        Assert.IsTrue(SettingsPresenter.EnemyMovesOn(null), "on with no store");
+        using (var ui = new UiTestKit())
+        using (new SettingsPresenter(ui.Root, text, new SettingsStore(dir), enemyMoves: seen.Add))
+        {
+            var button = ui.Q<Button>("settings-enemymoves");
+            Assert.AreEqual(text["settings.enemymoves"], ui.Q<Label>("settings-enemymoves-label").text);
+            Assert.AreEqual(text["settings.on"], button.text);
+            UiTestKit.Press(button);
+            Assert.AreEqual(text["settings.off"], button.text);
+            CollectionAssert.AreEqual(new[] { false }, seen);
+        }
+        Assert.IsFalse(SettingsPresenter.EnemyMovesOn(new SettingsStore(dir)), "off survives a reload");
+        using (var ui = new UiTestKit())
+        using (new SettingsPresenter(ui.Root, text, new SettingsStore(dir), enemyMoves: seen.Add))
+        {
+            var button = ui.Q<Button>("settings-enemymoves");
+            Assert.AreEqual(text["settings.off"], button.text);
+            UiTestKit.Press(button);
+            Assert.AreEqual(text["settings.on"], button.text);
+        }
+        Assert.IsTrue(SettingsPresenter.EnemyMovesOn(new SettingsStore(dir)));
+        CollectionAssert.AreEqual(new[] { false, true }, seen);
+    }
+
+    [Test]
+    public void TurningItOffMidPlaybackSkips()
+    {
+        using var ui = new UiTestKit();
+        var bridge = new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content), GoldenRun.Seed, Mode.Historical), En,
+            EnemyTurnPlaybackTests.Step(EnemyTurnPlaybackTests.Move(901, 0, 0, 1, 0), EnemyTurnPlaybackTests.Move(902, 30, 0, 31, 0)));
+        var map = new EnemyTurnPlaybackTests.FakeMap();
+        var store = new SettingsStore(dir);
+        using var playback = new EnemyTurnPlayback(bridge, map, new EnemyTurnPlaybackTests.FakeCamera(),
+            () => SettingsPresenter.EnemyMovesOn(store), () => false);
+        var released = new List<bool>();
+        playback.Holding += held => released.Add(held);
+        // As GameRoot wires it: turning it off skips the playback at once.
+        using var settings = new SettingsPresenter(ui.Root, En, store, enemyMoves: on => { if (!on) playback.Skip(); });
+        bridge.EndTurn();
+        playback.Tick(0.05f);
+        Assert.IsTrue(playback.Active);
+        UiTestKit.Press(ui.Q<Button>("settings-enemymoves"));
+        Assert.IsFalse(playback.Active, "it ends at once");
+        Assert.IsEmpty(map.Held, "every token on its place");
+        CollectionAssert.AreEqual(new[] { true, false }, released, "the report and the card are let go");
+        map.Log.Clear();
+        bridge.EndTurn();
+        Assert.IsFalse(playback.Active || playback.Pending, "and the next End turn plays nothing");
+        Assert.IsEmpty(map.Log);
+    }
 }

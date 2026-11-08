@@ -81,6 +81,7 @@ namespace Statecraft.Game.UI
                     var last = bridge.Session.Last;
                     if (last == null || ReferenceEquals(last, seen)) return;
                     seen = last;
+                    if (held) { wantsShow = true; return; }   // #2202: it opens when the enemy playback ends (Held)
                     Show();
                 }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
@@ -89,7 +90,7 @@ namespace Statecraft.Game.UI
             // Only a replaced session (New Game, a load: SimBridge.Replace) makes the report stale. Other changes keep it:
             // answering the ending turn's card (SimBridge.SeeEndingCard) changes nothing and leaves it under the end screen.
             session = bridge.Session;
-            onChanged = () => { if (ReferenceEquals(bridge.Session, session)) return; session = bridge.Session; Hide(); };
+            onChanged = () => { if (ReferenceEquals(bridge.Session, session)) return; session = bridge.Session; wantsShow = false; Hide(); };
             bridge.Changed += onChanged;
             Hide();
         }
@@ -97,6 +98,23 @@ namespace Statecraft.Game.UI
         /// <summary>Raised with the turn being reported when the report opens, and with null when it closes (#1878: the map
         /// shows the under-attack look on the hexes the turn attacked for as long as the report is up).</summary>
         public event Action<StepResult?>? Showing;
+
+        bool held, wantsShow;
+        /// <summary>#2202: true while End turn's enemy playback runs (EnemyTurnPlayback.Holding; owner, Q1 a: the report waits
+        /// for it). A turn that ends meanwhile is reported when it turns false; another game drops the wait.</summary>
+        public bool Held
+        {
+            get => held;
+            set
+            {
+                if (held == value) return;
+                held = value;
+                if (held || !wantsShow) return;
+                wantsShow = false;
+                try { Show(); }
+                catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
+            }
+        }
 
         /// <summary>True while the report shows.</summary>
         public bool IsOpen => hudRoot.ClassListContains(OpenClass);

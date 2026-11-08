@@ -53,6 +53,10 @@ namespace Statecraft.Game.UI
         /// End Turn only the turn's new ones, not the open turn's attack orders, which the turn runs again first. Never on a
         /// load or a refused turn.</summary>
         public event Action<IReadOnlyList<Cause>>? CombatResolved;
+        /// <summary>#2202: raised at End Turn with the step's result, after the step and before <see cref="Changed"/> redraws the
+        /// map, so the enemy's playback (EnemyTurnPlayback) holds the tokens where they stood. Only on a turn the simulation ran:
+        /// never on a refused turn, a load or a New Game. Its Why lines start with the open turn's own (the player's orders).</summary>
+        public event Action<StepResult>? Stepped;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
         /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
@@ -512,6 +516,7 @@ namespace Statecraft.Game.UI
             }
             LastBatch = batch; LastBatchDate = date;
             deferred.Clear(); skipped.Clear();
+            Notify(Stepped, r);
             Notify(Changed);
             Notify(CombatResolved, Engagements(r.Why.Skip(replayed)));
             Notify(TurnEnded, r.Rejected);

@@ -88,6 +88,7 @@ namespace Statecraft.Game.UI
         string? hoveredCity;   // the city HoverCity lit (#1063)
         readonly Dictionary<(int q, int r), List<string>> citiesByHex = new Dictionary<(int, int), List<string>>();
         OutcomePresenter? outcomes;
+        EnemyTurnPlayback? playback;
         TurnReportPresenter? report;
         EndScreenPresenter? end;
         /// <summary>Set by SwitchLanguage for its Begin: the player had closed the end screen, so the rebuilt one stays closed.</summary>
@@ -413,7 +414,7 @@ namespace Statecraft.Game.UI
                 music = new MenuMusic(root, Application.platform == RuntimePlatform.WebGLPlayer);
             if (music != null) music.Duck = null;
             Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings,
-                companion: companionSwitch, music: music));
+                companion: companionSwitch, music: music, enemyMoves: on => { if (!on) playback?.Skip(); }));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -493,8 +494,9 @@ namespace Statecraft.Game.UI
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
-            owned.Add(new UnitAttackPresenter(bridge, unitLayer.PlayAttack, unitLayer.PlayHit, unitLayer.PlayDestroyed,
-                unitLayer.PlayDefenderHit, unitLayer.PlayAttack));   // after showUnits: the map is redrawn first
+            var attacks = new UnitAttackPresenter(bridge, unitLayer.PlayAttack, unitLayer.PlayHit, unitLayer.PlayDestroyed,
+                unitLayer.PlayDefenderHit, unitLayer.PlayAttack);   // after showUnits: the map is redrawn first
+            owned.Add(attacks);
             DiagLog.BootPhase("units layer built");
             // #1878: the turn report is up, the hexes the turn attacked show the under-attack look; closing it clears them.
             var underAttack = new Statecraft.Game.Map.UnderAttackLayer(map);
@@ -590,6 +592,18 @@ namespace Statecraft.Game.UI
             };
             pointer.PillHex = pillHex;
             var camRig = rig = cameraController.GetComponent<CameraRig>();
+            // #2202: after End turn the map plays the Arab forces' moves, the camera going to each, and the footer names the side
+            // (EnemyTurnPlayback, EnemyPlaybackBar). Never in a smoke run or EditMode; the Settings switch is read at each End
+            // turn. It starts once an outcome clip (or the opening) has gone, and the report and the card wait for it (Q1 a).
+            var play = playback = Own(new EnemyTurnPlayback(bridge, new UnitLayerPlaybackMap(unitLayer, attacks, map, bridge),
+                new RigPlaybackCamera(camRig, cameraController, () => labels?.Refresh()),
+                enabled: () => Application.isPlaying && !smokeRun && SettingsPresenter.EnemyMovesOn(SettingsFile()),
+                waiting: () => outcomes?.Showing != null || opening?.HoldsThePointer == true));
+            attacks.Claimed = play.Claims;
+            Action<bool> holding = held => { if (report != null) report.Held = held; if (card != null) card.HeldForPlayback = held; };
+            play.Holding += holding;
+            owned.Add(new Undo(() => play.Holding -= holding));   // disposed before the playback: its last release touches neither
+            Own(new EnemyPlaybackBar(root, text, play, bridge)).Units = unitData;
             Own(new TopBarInset(root, camRig));                            // the map is framed below the top bar
             Own(new SafeAreaFit(root));                                    // the HUD keeps clear of the phone's notch
             // the map's keyboard stop (#41 B1b): Enter or Space picks the hex under the look-at point, as a click there would
@@ -1074,7 +1088,7 @@ namespace Statecraft.Game.UI
             owned.Clear();
             savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; playback = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1267,6 +1281,7 @@ namespace Statecraft.Game.UI
                 && opening?.ClosedThisFrame != true && opening?.Escape() != true)
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
+                if (!done) done = playback?.Skip() == true;   // #2202: the Arab forces' moves end; nothing else closes
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;
                 // One press closes one layer, the topmost (#2609): each step below runs only while nothing above took it. The
                 // start screen covers an ended save's end screen and everything else under it: open, it takes the press,
@@ -1306,6 +1321,7 @@ namespace Statecraft.Game.UI
                 if (report?.IsOpen != true && end?.IsOpen != true && (keys.upArrowKey.wasPressedThisFrame || keys.downArrowKey.wasPressedThisFrame))
                     navGuard?.Step(keys.upArrowKey.wasPressedThisFrame);
             }
+            playback?.Tick(Time.deltaTime);   // #2202
             SyncMinimap();
             if (!logCamera || rig == null || (rig.Distance == loggedDistance && rig.Yaw == loggedYaw)) return;
             loggedDistance = rig.Distance; loggedYaw = rig.Yaw;

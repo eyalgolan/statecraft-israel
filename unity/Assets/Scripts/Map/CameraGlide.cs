@@ -43,10 +43,14 @@ namespace Statecraft.Game.Map
         /// <summary>Whether someone other than the glide moved the camera since it last set <paramref name="lastLookAt"/> and
         /// <paramref name="lastDistance"/> (as Settle left them): the look-at point moved more than <see cref="StillM"/> in x or
         /// z, or the distance changed. The height is Step's own (the lift over the ground), so it is not compared.</summary>
-        public static bool TookOver(CameraRig rig, Vector3 lastLookAt, float lastDistance)
+        public static bool TookOver(CameraRig rig, Vector3 lastLookAt, float lastDistance) =>
+            TookOver(rig.LookAt, rig.Distance, lastLookAt, lastDistance);
+
+        /// <summary><see cref="TookOver(CameraRig, Vector3, float)"/> on the rig's look-at point and distance as read now.</summary>
+        public static bool TookOver(Vector3 lookAt, float distance, Vector3 lastLookAt, float lastDistance)
         {
-            float dx = rig.LookAt.x - lastLookAt.x, dz = rig.LookAt.z - lastLookAt.z;
-            return dx * dx + dz * dz > StillM * StillM || rig.Distance != lastDistance;
+            float dx = lookAt.x - lastLookAt.x, dz = lookAt.z - lastLookAt.z;
+            return dx * dx + dz * dz > StillM * StillM || distance != lastDistance;
         }
     }
 }

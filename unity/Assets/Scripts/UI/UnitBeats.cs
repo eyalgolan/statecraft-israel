@@ -51,6 +51,10 @@ namespace Statecraft.Game.UI
         internal readonly List<Cause> causes = new List<Cause>();
 
         public BeatKind Kind { get; internal set; }
+        /// <summary>The side whose beat it is (UnitRef.Side): a move's unit's, an engagement's first-named attacker's (Combat.Fight
+        /// names the attackers first, by id). A beat never holds two sides' actions (owner, 8 November 2026: "One side at a time
+        /// (Recommended)").</summary>
+        public string Side { get; internal set; } = "";
         public IReadOnlyList<UnitStep> Moves => moves;
         /// <summary>The engagements' attackers (UnitAttackPresenter.Attackers), whose fire take plays on this beat.</summary>
         public IReadOnlyList<int> Attackers => attackers;
@@ -61,7 +65,8 @@ namespace Statecraft.Game.UI
         /// <summary>The hex the camera goes to: the cube-rounded middle of a move beat's destinations, an engagement's hex.</summary>
         public int FocusQ { get; internal set; }
         public int FocusR { get; internal set; }
-        /// <summary>Every action past the first <see cref="UnitBeats.Timing.MaxBeats"/> - 1 beats, played together, with no pan.</summary>
+        /// <summary>One side's actions past the beats a long turn keeps (at most <see cref="UnitBeats.Timing.MaxBeats"/> - 1),
+        /// played together, with no pan.</summary>
         public bool Folded { get; internal set; }
         /// <summary>The Why lines the beat plays, in the sim's order: its moves, or its engagements and their results.</summary>
         public IReadOnlyList<Cause> Causes => causes;
@@ -81,7 +86,9 @@ namespace Statecraft.Game.UI
     /// sim already resolved and decides nothing. One pass over the lines with no allocation per frame (#2905: a caller builds
     /// them on the replay's first frame, not inside End turn). The owner's answers (2 November 2026, "Q1-Q7 recommended, Q8
     /// yes"): every move plays, on screen or off (Q2 a); the pacing below (Q3); nearby moves share a beat, beats past the
-    /// eighth fold into one (Q4).</summary>
+    /// eighth fold into one (Q4). The owner's answer of 8 November 2026, "One side at a time (Recommended)": the beats play side
+    /// by side, the sides in the order they first act in the step's lines, each side's beats in the sim's order; beats group
+    /// and fold within a side only. Only the playback's order changes: the sim, its lines and every number stay as they are.</summary>
     public static class UnitBeats
     {
         /// <summary>The pacing (Q3) and grouping (Q4), in seconds and hexes. The slide itself is #2176's
@@ -109,7 +116,8 @@ namespace Statecraft.Game.UI
             if (why == null) throw new ArgumentNullException(nameof(why));
             if (source == null) throw new ArgumentNullException(nameof(source));
             var beats = new List<UnitBeat>();
-            UnitBeat? moving = null, attack = null;   // the beat a next move may join; the engagement whose results follow
+            var moving = new Dictionary<string, UnitBeat>(StringComparer.Ordinal);   // per side, the beat its next move may join
+            UnitBeat? attack = null;   // the engagement whose results follow
             foreach (var c in why)
             {
                 if (source.IsMove(c))
@@ -117,20 +125,22 @@ namespace Statecraft.Game.UI
                     attack = null;
                     if (c.Units.Count == 0 || c.Args.Count == 0 || !TryHex(c.Args[0], out int q, out int r)) continue;
                     var step = new UnitStep(c.Units[0].Id, c.Units[0].Q, c.Units[0].R, q, r);
-                    if (moving == null || moving.moves.Count >= Timing.MaxUnitsPerBeat
-                        || MapActions.Distance(moving.moves[0].ToQ, moving.moves[0].ToR, q, r) > Timing.BatchRadiusHexes)
+                    var side = c.Units[0].Side ?? "";
+                    if (!moving.TryGetValue(side, out var beat) || beat.moves.Count >= Timing.MaxUnitsPerBeat
+                        || MapActions.Distance(beat.moves[0].ToQ, beat.moves[0].ToR, q, r) > Timing.BatchRadiusHexes)
                     {
-                        moving = new UnitBeat { Kind = BeatKind.Move };
-                        beats.Add(moving);
+                        moving[side] = beat = new UnitBeat { Kind = BeatKind.Move, Side = side };
+                        beats.Add(beat);
                     }
-                    moving.moves.Add(step);
-                    moving.causes.Add(c);
+                    beat.moves.Add(step);
+                    beat.causes.Add(c);
                 }
                 else if (c.Key == WhyKeys.Engagement)
                 {
-                    moving = null; attack = null;
+                    moving.Clear(); attack = null;
                     if (!source.IsAttack(c) || c.Args.Count == 0 || !TryHex(c.Args[0], out int q, out int r)) continue;
-                    attack = new UnitBeat { Kind = BeatKind.Attack, FocusQ = q, FocusR = r, Engagements = 1 };
+                    attack = new UnitBeat { Kind = BeatKind.Attack, FocusQ = q, FocusR = r, Engagements = 1,
+                        Side = c.Units.Count > 0 ? c.Units[0].Side ?? "" : "" };
                     attack.attackers.AddRange(UnitAttackPresenter.Attackers(c));
                     attack.causes.Add(c);
                     beats.Add(attack);
@@ -143,9 +153,12 @@ namespace Statecraft.Game.UI
                 }
             }
             foreach (var b in beats) if (b.Kind == BeatKind.Move) Focus(b);
-            Fold(beats);
-            Pace(beats);
-            return beats;
+            var sides = new List<string>();
+            foreach (var b in beats) if (!sides.Contains(b.Side)) sides.Add(b.Side);
+            var ordered = beats.OrderBy(b => sides.IndexOf(b.Side)).ToList();   // OrderBy is stable: the sim's order within a side
+            ordered = Fold(ordered);
+            Pace(ordered);
+            return ordered;
         }
 
         /// <summary>The replay's length: every beat's pan, slide and dwell.</summary>
@@ -181,23 +194,39 @@ namespace Statecraft.Game.UI
             b.FocusQ = (int)rq; b.FocusR = (int)rr;
         }
 
-        /// <summary>Past MaxBeats, the first MaxBeats - 1 stay and every later one is played as one last beat, where the
-        /// camera stays (Q4). Its focus is the beat before it, so a later beat's pan is measured from where the camera is.</summary>
-        static void Fold(List<UnitBeat> beats)
+        /// <summary>Past MaxBeats, the first beats stay and every later one is played at once, where the camera stays (Q4):
+        /// one folded beat per side among them, so a fold never mixes sides. As many beats stay as leave room for those folded
+        /// ones within MaxBeats (MaxBeats - 1 on a one-side turn), so the cap below always holds. A folded beat's focus is the
+        /// beat before it, so a later beat's pan is measured from where the camera is.</summary>
+        static List<UnitBeat> Fold(List<UnitBeat> beats)
         {
-            if (beats.Count <= Timing.MaxBeats) return;
-            var folded = new UnitBeat { Folded = true };
-            foreach (var b in beats.Skip(Timing.MaxBeats - 1))
+            if (beats.Count <= Timing.MaxBeats) return beats;
+            int keep = Timing.MaxBeats - 1;
+            while (keep > 1 && keep + SidesFrom(beats, keep) > Timing.MaxBeats) keep--;
+            var kept = beats.Take(keep).ToList();
+            UnitBeat? folded = null;
+            foreach (var b in beats.Skip(keep))
             {
+                if (folded == null || folded.Side != b.Side)
+                {
+                    var before = kept[kept.Count - 1];
+                    folded = new UnitBeat { Folded = true, Side = b.Side, FocusQ = before.FocusQ, FocusR = before.FocusR };
+                    kept.Add(folded);
+                }
                 folded.moves.AddRange(b.moves); folded.retreats.AddRange(b.retreats);
                 folded.attackers.AddRange(b.attackers); folded.causes.AddRange(b.causes);
                 folded.Engagements += b.Engagements;
             }
-            folded.Kind = folded.moves.Count > 0 ? BeatKind.Move : BeatKind.Attack;
-            var before = beats[Timing.MaxBeats - 2];
-            folded.FocusQ = before.FocusQ; folded.FocusR = before.FocusR;
-            beats.RemoveRange(Timing.MaxBeats - 1, beats.Count - (Timing.MaxBeats - 1));
-            beats.Add(folded);
+            foreach (var f in kept) if (f.Folded) f.Kind = f.moves.Count > 0 ? BeatKind.Move : BeatKind.Attack;
+            return kept;
+        }
+
+        /// <summary>How many sides the beats from <paramref name="from"/> on belong to (they come side by side).</summary>
+        static int SidesFrom(List<UnitBeat> beats, int from)
+        {
+            int n = 0;
+            for (int i = from; i < beats.Count; i++) if (i == from || beats[i].Side != beats[i - 1].Side) n++;
+            return n;
         }
 
         /// <summary>The pans and dwells at full pace (Q3), then, if the whole passes Cap, each pan and dwell shrunk by the

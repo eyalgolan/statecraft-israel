@@ -19,15 +19,15 @@ public class UnitBeatsTests
     static string Hex(int q, int r) => string.Format(CultureInfo.InvariantCulture, "{0},{1}", q, r);
 
     /// <summary>An enemy move line as Movement.Move writes it: the unit before the move, the destination in Args[0].</summary>
-    static Cause Move(int id, int fromQ, int fromR, int toQ, int toR, string enemyOrder = Movement.Kind) =>
+    static Cause Move(int id, int fromQ, int fromR, int toQ, int toR, string enemyOrder = Movement.Kind, string side = "egypt") =>
         new Cause("map", id.ToString(CultureInfo.InvariantCulture), 0, "Report text is never read", enemyOrder,
-            key: WhyKeys.UnitMoved, units: new[] { new UnitRef(new Unit(id, "infantry", fromQ, fromR, side: "egypt")) },
+            key: WhyKeys.UnitMoved, units: new[] { new UnitRef(new Unit(id, "infantry", fromQ, fromR, side: side)) },
             args: new[] { Hex(toQ, toR), "1" });
 
     /// <summary>An engagement as Combat.Engage writes it: attackers then defenders, the hex first, the attacker count fifth.</summary>
-    static Cause Engagement(int q, int r, int[] attackers, int[] defenders, string enemyOrder = Combat.Attack)
+    static Cause Engagement(int q, int r, int[] attackers, int[] defenders, string enemyOrder = Combat.Attack, string side = "egypt")
     {
-        var units = attackers.Select(a => new UnitRef(new Unit(a, "infantry", q + 1, r, side: "egypt")))
+        var units = attackers.Select(a => new UnitRef(new Unit(a, "infantry", q + 1, r, side: side)))
             .Concat(defenders.Select(d => new UnitRef(new Unit(d, "infantry", q, r, side: Movement.PlayerSide)))).ToList();
         return new Cause("map", Hex(q, r), 0, "Report text is never read", enemyOrder,
             enemyAttackers: enemyOrder == Combat.Attack ? attackers : null, key: WhyKeys.Engagement, units: units,
@@ -228,10 +228,66 @@ public class UnitBeatsTests
         var expected = r.Why.Where(w => w.Key == WhyKeys.UnitMoved && w.EnemyOrder == Movement.Kind).Select(w => w.Units[0].Id).ToArray();
         Assert.IsNotEmpty(expected, "fixture: the first 1948 turn has enemy moves");
         var beats = UnitBeats.From(r.Why, BeatSource.Enemy);
-        CollectionAssert.AreEqual(expected, Movers(beats).ToArray(), "every enemy move once, in the sim's order");
+        CollectionAssert.AreEquivalent(expected, Movers(beats).ToArray(), "every enemy move once");
+        var sides = r.Why.Where(w => w.Key == WhyKeys.UnitMoved && w.EnemyOrder == Movement.Kind).Select(w => w.Units[0].Side).Distinct().ToList();
+        CollectionAssert.AreEqual(sides.SelectMany(side => r.Why
+                .Where(w => w.Key == WhyKeys.UnitMoved && w.EnemyOrder == Movement.Kind && w.Units[0].Side == side).Select(w => w.Units[0].Id)).ToArray(),
+            Movers(beats).ToArray(), "side by side, each in the sim's order");
+        Assert.IsTrue(beats.All(b => b.Moves.All(m => r.Why.First(w => w.Key == WhyKeys.UnitMoved && w.Units[0].Id == m.Unit).Units[0].Side == b.Side)),
+            "no beat mixes sides");
         Assert.LessOrEqual(UnitBeats.Total(beats), UnitBeats.Timing.Cap + 1e-4f);
         var attacks = r.Why.Count(w => w.Key == WhyKeys.Engagement && w.EnemyOrder == Combat.Attack);
         Assert.AreEqual(attacks, beats.Count(b => b.Kind == BeatKind.Attack && !b.Folded) + beats.Where(b => b.Folded).Sum(b => b.Engagements),
             "every enemy engagement once");
+    }
+    // Owner, 8 November 2026, on the playback's footer: "One side at a time (Recommended)". The beats are ordered by side, in the
+    // order the sides first act in the sim's lines this turn, each side keeping the sim's order; beats group within a side only.
+
+    [Test]
+    public void SidesPlayOneAtATimeInTheOrderTheyFirstAct()
+    {
+        var why = new[]
+        {
+            Move(1, 0, 0, 1, 0, side: "jordan"), Move(2, 0, 0, 1, 1, side: "egypt"), Move(3, 0, 0, 2, 0, side: "jordan"),
+            Engagement(20, 0, new[] { 4 }, new[] { 9 }, side: "egypt"), Move(5, 30, 0, 31, 0, side: "iraq"),
+            Engagement(40, 0, new[] { 6 }, new[] { 10 }, side: "jordan"),
+        };
+        var beats = UnitBeats.From(why, BeatSource.Enemy);
+        CollectionAssert.AreEqual(new[] { "jordan", "jordan", "egypt", "egypt", "iraq" }, beats.Select(b => b.Side).ToArray(),
+            "Jordan acts first, then Egypt, then Iraq; each side's beats together");
+        CollectionAssert.AreEqual(new[] { 1, 3 }, beats[0].Moves.Select(m => m.Unit).ToArray(), "a side's nearby moves share a beat");
+        CollectionAssert.AreEqual(new[] { why[5] }, beats[1].Causes, "Jordan's attack after its moves");
+        CollectionAssert.AreEqual(new[] { 2 }, beats[2].Moves.Select(m => m.Unit).ToArray());
+        CollectionAssert.AreEqual(new[] { why[3] }, beats[3].Causes);
+    }
+
+    [Test]
+    public void NearbyMovesOfTwoSidesNeverShareABeat()
+    {
+        var beats = UnitBeats.From(new[] { Move(1, 0, 0, 1, 0, side: "syria"), Move(2, 0, 0, 1, 0, side: "lebanon") }, BeatSource.Enemy);
+        CollectionAssert.AreEqual(new[] { "syria", "lebanon" }, beats.Select(b => b.Side).ToArray());
+    }
+
+    [Test]
+    public void AnEngagementIsItsFirstAttackersSide()
+    {
+        var beat = UnitBeats.From(new[] { Engagement(4, 4, new[] { 1 }, new[] { 9 }, side: "ala") }, BeatSource.Enemy).Single();
+        Assert.AreEqual("ala", beat.Side);
+    }
+
+    [Test]
+    public void AFoldNeverMixesSidesAndTheTurnStaysWithinItsBeats()
+    {
+        var why = Enumerable.Range(1, 12).Select(i => Move(i, i * 10, 0, i * 10 + 1, 0, side: "egypt"))
+            .Concat(Enumerable.Range(13, 6).Select(i => Move(i, i * 10, 0, i * 10 + 1, 0, side: "syria")))
+            .Concat(Enumerable.Range(19, 4).Select(i => Move(i, i * 10, 0, i * 10 + 1, 0, side: "iraq"))).ToArray();
+        var beats = UnitBeats.From(why, BeatSource.Enemy);
+        Assert.LessOrEqual(beats.Count, UnitBeats.Timing.MaxBeats, "the cap's guarantee needs at most MaxBeats beats");
+        foreach (var b in beats)
+            Assert.IsTrue(b.Moves.All(m => why.First(w => w.Units[0].Id == m.Unit).Units[0].Side == b.Side), "beat of " + b.Side);
+        CollectionAssert.AreEqual(Enumerable.Range(1, 22).ToArray(), Movers(beats).ToArray(), "each unit once, side by side");
+        var folded = beats.Where(b => b.Folded).Select(b => b.Side).ToArray();
+        CollectionAssert.AreEqual(new[] { "egypt", "syria", "iraq" }, folded, "one folded beat per side past the cut");
+        Assert.LessOrEqual(UnitBeats.Total(beats), UnitBeats.Timing.Cap + 1e-4f);
     }
 }
