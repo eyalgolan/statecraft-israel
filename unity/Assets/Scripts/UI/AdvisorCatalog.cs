@@ -62,12 +62,19 @@ namespace Statecraft.Game.UI
             public string DisagreesWith { get; set; } = "";
             public string HeReview { get; set; } = Pending;
             public Media? Media { get; set; }
+            /// <summary>A second signal that also queues it, for a chain step that must survive a closed chain; its requires
+            /// then only orders the chain (AdvisorQueue.Eligible).</summary>
+            public string Fallback { get; set; } = "";
+            /// <summary>A teaching message's last game turn, the first being 1, as turn_at_least; 0 never lapses.</summary>
+            public int LapseAfter { get; set; }
 
             /// <summary>Teaching (help levels new and experienced) as against advice and warnings (spec 7.1's button sets).</summary>
             public bool Teaching => Level == "new" || Level == "experienced";
             public bool Critical => Level == "critical";
             /// <summary>Its text may show in this language: English always, Hebrew once approved (OQ-4).</summary>
             public bool ApprovedIn(bool hebrew) => !hebrew || HeReview == Approved;
+            /// <summary>Its signal or its fallback holds.</summary>
+            public bool Holds(IReadOnlyCollection<string> holding) => holding.Contains(Signal) || holding.Contains(Fallback);
         }
 
         public sealed class Page
@@ -162,6 +169,8 @@ namespace Statecraft.Game.UI
                 if (!IdPattern.IsMatch(m.Id)) p.Add($"{at}: an id is lower-case letters, digits, '_' and '.'");
                 if (!AdvisorIds.Contains(m.Advisor)) p.Add($"{at}: unknown advisor '{m.Advisor}'");
                 if (!known.Signals.Contains(m.Signal)) p.Add($"{at}: unknown signal '{m.Signal}'");
+                if (m.Fallback != "" && !known.Signals.Contains(m.Fallback)) p.Add($"{at}: unknown fallback signal '{m.Fallback}'");
+                if (m.LapseAfter != 0 && (m.LapseAfter < 1 || !m.Teaching)) p.Add($"{at}: lapse_after is a game turn, on teaching messages only");
                 foreach (var k in m.When.Keys) if (!known.Conditions.Contains(k)) p.Add($"{at}: unknown condition '{k}'");
                 foreach (var r in m.Requires) if (!byId.ContainsKey(r)) p.Add($"{at}: requires unknown message '{r}'");
                 if (!Levels.Contains(m.Level)) p.Add($"{at}: level must be one of {string.Join(", ", Levels)}");

@@ -11,9 +11,12 @@ namespace Statecraft.Game.Map.Kits
     /// standing on the plot's ground level with a stone plinth below it where the ground falls away. Far off the kit's
     /// own buildings draw, exactly as before; up close (TownModelLayer.CloseEnterM) the models draw instead, with each
     /// town's close mesh (KitMesh.ToCloseMesh: its palms without the kit buildings, plus the plinths and, issue #1032, its
-    /// landmarks at the world scale, KitMesh.CloseCopy). Tel Aviv, Jerusalem, Haifa and Jaffa draw their models at every
-    /// zoom (owner, 2 November 2026, "Yes, small buildings at every zoom": TownModels.AtEveryZoom). The
-    /// layout, the lots and the census do not change.</summary>
+    /// landmarks at the world scale, KitMesh.CloseCopy). Tel Aviv, Jerusalem, Haifa and Jaffa, the major cities
+    /// (TownModels.IsMajorCity), draw their models up close as every town (owner, 7 November 2026, "Tal's models close
+    /// (Recommended)") and their kits from 40 km out, with no far-off copies (owner, 6 November 2026, "Big blocks, every
+    /// zoom", which "Tal's models close (Recommended)" supersedes below 40 km; it superseded the 2 November 2026 ruling, "Yes,
+    /// small buildings at every zoom", that drew their models at every zoom). The layout, the lots and the census do not
+    /// change.</summary>
     public static partial class SettlementKits
     {
         /// <summary>One placed model: its town (or locality) id, the model, its world matrix (the model's mesh space to the
@@ -170,7 +173,7 @@ namespace Statecraft.Game.Map.Kits
                 }
             if (top - bottom > PlinthRiseM * m)
                 km.Plinths.Box(p.x, p.y, yaw, Mathf.Max(w, nu * pu - gap), Mathf.Max(d, nv * pv - gap), bottom, top,   // #1032: models may stand out to the plot edge
-                    0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
+                    0f, TerraceStone, TerraceStone, Facade.Rubble, m, roofed: true);
         }
 
         static void AddModel(string id, TownModel model, Vector2 p, float yaw, float w, float d, float h, float bottom, float top, KitMesh km,
@@ -180,7 +183,7 @@ namespace Statecraft.Game.Map.Kits
             var mi = Fit(id, model, p, yaw, w, d, h, top, exactHeight, flip, m);
             models.Add(mi);
             // The plinth under the model itself, not the whole plot.
-            if (top - bottom > PlinthRiseM * m) km.Plinths.Box(p.x, p.y, yaw, mi.W, mi.D, bottom, top, 0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
+            if (top - bottom > PlinthRiseM * m) km.Plinths.Box(p.x, p.y, yaw, mi.W, mi.D, bottom, top, 0f, TerraceStone, TerraceStone, Facade.Rubble, m, roofed: true);
         }
 
         /// <summary>A town plot's models by its style and its place (issue #659's table).</summary>

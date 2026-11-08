@@ -23,22 +23,29 @@ namespace Statecraft.Sim.Reference
         {
             if (!c.UsesAttention) throw new NotSupportedException("The reference policy is not defined for gdd-0.3.");
             var list = new List<Command>(HistoricalAI.Commands(c, s));
+            IReadOnlyList<Command> Finish()
+            {
+                HistoricalAI.RemoveOperationChoicesWithoutStaging(c, s, list);
+                return list;
+            }
             var left = s.Attention - list.Sum(x => AttentionSystem.Cost(c, s, x.Kind));
             Attack(c, s, list, ref left);
             House(c, s, list, ref left);
             var halutz = c.UnitTypes.FirstOrDefault(t => t.Id == "halutz");
-            if (halutz == null) return list;
+            if (halutz == null) return Finish();
             Build(c, s, list, ref left);
-            if (s.Units.Values.Any(u => Projects.IsPioneer(u.Type)) || s.Cohorts.Values.Any(k => k.Type == halutz.Id)) return list;
+            if (s.Units.Values.Any(u => Projects.IsPioneer(u.Type)) || s.Cohorts.Values.Any(k => k.Type == halutz.Id)) return Finish();
             var trainCost = AttentionSystem.Cost(c, s, Training.TrainKind);
-            if (trainCost > left + 1e-9) return list;   // training borrows, so the Treasury does not hold it back
-            foreach (var city in s.Cities.Values)
+            if (trainCost <= left + 1e-9)   // training borrows, so the Treasury does not hold it back
             {
-                if (Training.Idle(city) < 1 || !Training.HasFacility(c, s, city.Id, halutz.Facility)) continue;
-                list.Add(new Train(city.Id, halutz.Id, 1));
-                break;
+                foreach (var city in s.Cities.Values)
+                {
+                    if (Training.Idle(city) < 1 || !Training.HasFacility(c, s, city.Id, halutz.Facility)) continue;
+                    list.Add(new Train(city.Id, halutz.Id, 1));
+                    break;
+                }
             }
-            return list;
+            return Finish();
         }
 
         /// <summary>The attack policy in the class comment. Unit orders are free (D-A6), but the cost is still checked.</summary>
@@ -55,6 +62,9 @@ namespace Statecraft.Sim.Reference
                 {
                     var preview = Combat.Preview(c, s, u.Id, u.Q + dq, u.R + dr);
                     if (preview == null || preview.Value.RatioPercent < AttackRatioPercent) continue;
+                    // Keep the stated attack policy identical: a free operation-staging go-to waits for the next turn
+                    // rather than moving the unit before an attack this policy would already have ordered.
+                    list.RemoveAll(x => x is UnitOrder o && o.Unit == u.Id && o.Order == Movement.GoTo);
                     list.Add(new UnitOrder(u.Id, Combat.Attack, u.Q + dq, u.R + dr));
                     left -= cost;
                     attacking++;

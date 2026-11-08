@@ -59,7 +59,6 @@ public class TalSoldierRigShots
         UnitFigures.Source = (id, detail, done) => done(Prefab(!after && id == UnitFigures.Soldier1948 ? UnitFigures.VeteranFighter : id, detail));
         UnitWeapons.Source = (id, done) => done(Prefab(id, CollectionDetail.Far));
         yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; root = g; });
-        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
         var map = Object.FindFirstObjectByType<MapScene>();
         var subject = root.Units!.Tokens.First(t => t.Token.Unit.Id == "negev");
         var token = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/" + subject.Token.Unit.Id);

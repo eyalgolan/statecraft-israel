@@ -243,6 +243,21 @@ event.ai_label: "AI-generated illustration"
 event.no_attention: "You don't have enough Attention left to answer this turn. End the turn and the decision goes to {0}."
 event.cabinet: "the cabinet"
 event.option_cost: "{0} (costs {1:0.0} Attention)"
+# R-ENEMY-007 operation placement. {0} unit name; {1} the allowed region names.
+event.operation_requirement: "{0} must be in {1}."
+event.operation_missing: "Move {0} to {1} before this operation can begin."
+event.operation_move: "Move {0} to {1}"
+event.operation_refused: "The operation's required units are not in place"
+event.operation_lost: "{0} is no longer on the board."
+event.operation_armistice_first: "Decide the armistice with {0} first."
+event.operation_armistice_signed: "The armistice with {0} is signed: this operation will not take place."
+event.operation_refused_armistice_first: "The armistice on this operation's front must be decided first"
+event.operation_refused_armistice_signed: "The armistice on this operation's front is signed"
+operation.region.galilee: "Galilee"
+operation.region.central_plain: "Central Plain"
+operation.region.jerusalem_hills: "Jerusalem Hills"
+operation.region.southern_coast: "Southern Coast"
+operation.region.negev: "Negev"
 # An objective card's line under its text (#380), from Objectives.MonthsFromHistory: early, in the same month as history,
 # or later. The owner's wording (#379, 14 October 2026). {0} the completion date, {1} the historical date, {2} months.
 event.objective_early: "Completed on {0}; historically {1}; {2} months early."
@@ -539,6 +554,7 @@ report.workshop_arms_n: "Workshops in {0} ({1}): +{1} Arms"
 report.workshop_paused_debt_n: "Workshops in {0} ({1}) paused: debt ceiling"
 # The held cities' row (R-CITY-010, #1711): one line a city, why.cause.city_held.
 report.held: "Cities held by the enemy"
+report.operations: "Military operations"
 # The end screen (#812; D-H4): the sim's end report (EndReport.For, #810), formatted only. {0} the card's title, {1} the
 # player's date, {2} the historical date; the population's {1} is the date of its CBS anchor and {2} the anchor's count.
 end.title: "The game has ended"
@@ -846,6 +862,9 @@ city.workshops_staffed: "Arms workshops staffed: {0} of {1}"
 city.workshops_ordered: "Arms workshops staffed at End turn: {0} of {1}"
 city.workshop_staffed: "This workshop: staffed"
 city.workshop_unstaffed: "This workshop: not staffed, paused"
+# #2711 item 1: with a staffing order queued, what the order makes this workshop (R-ARMS-005: the first n by id).
+city.workshop_ordered_staffed: "This workshop: staffed at End turn"
+city.workshop_ordered_unstaffed: "This workshop: not staffed at End turn, paused"
 city.workshop_cycle: "Cycle: {0} of {1} staffed months · paid {2}"
 city.workshop_next: "No cycle under way · next cycle: {0}"
 city.workshop_held: "Paused: the enemy holds {0}"
@@ -854,6 +873,16 @@ workshop.refused_built_one: "{0} has 1 arms workshop"
 workshop.refused_built: "{0} has {1} arms workshops"
 workshop.refused_people: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
 workshop.refused_people_no_job: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
+# R-CITY-011 (#1700, #2477), gdd-0.3 only: a city project being built, whether it has a builder, and its city's builder
+# stepper: {0} the city's projects with a builder (or the ordered count), {1} its projects being built. The refusals are
+# the sim's own English (Projects.RefusedBeingBuilt*), {0} the city, {1} a count; past its free people the build order
+# reads as workshop.refused_people*.
+city.project_builder: "This project: has a builder"
+city.project_no_builder: "This project: no builder, waiting"
+city.builders: "Projects with a builder: {0} of {1}"
+city.builders_ordered: "Projects with a builder at End turn: {0} of {1}"
+builder.refused_being_built_one: "{0} has 1 city project being built"
+builder.refused_being_built: "{0} has {1} city projects being built"
 site.available: "A designated site for a new yishuv"
 site.group: "halutz group {0}"
 site.build: "Build a yishuv with {0}: {1}, {2}"
@@ -1019,6 +1048,11 @@ why.cause.event_new: "New: {0}"
 why.cause.event_chosen: "Chosen: {0}"
 why.cause.event_delegated: "Delegated to {0}: {1}"
 why.cause.event_delegated_partial: "Delegated to {0}, carried out half-heartedly: {1}"
+why.cause.operation_postponed: "{0} was postponed. {1}."
+why.cause.operation_lapsed: "{0} lapsed because the required units did not reach the operation regions. {1}."
+why.cause.operation_lapsed_signed: "{0} lapsed because the armistice with {1} was signed."
+why.cause.operation_lapsed_unit_lost: "{0} lapsed because a required unit is no longer on the board: {1}."
+why.cause.operation_waits_for_armistice: "{0} was postponed until the armistice with {1} is decided."
 why.cause.cabinet: "the cabinet"
 why.cause.event_amount: "{0} {1}"
 why.cause.event_stock: "{0} {1} units"
@@ -1063,6 +1097,8 @@ arms.no_attention: "Not enough Attention for this purchase. Withdraw another ord
 # end-of-turn toast.
 arms.refused_debt_ceiling: "Buying that many Arms would take the debt past its ceiling"
 arms.refused_stock_capacity: "That is more Arms than the stock can hold"
+# #2707: Pools.BuyArms's refusal below one Arms, word for word.
+arms.refused_count: "Buy at least 1 Arms"
 
 # #731 stock summaries in the report and Why.
 report.stock_line: "{0}: {1}"
@@ -1080,6 +1116,44 @@ unit.order_refused.card_order: "The unit could not take the operation's order"
 # An operation card's go-to held back from the last Israeli unit on an occupied place (R-ENEMY-005, R-CTRL-013; owner,
 # 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)").
 unit.order_refused.last_garrison: "The unit stays: it is the last Israeli unit holding an occupied place"
+
+# #2707: the move's and the go-to's refusals (Movement), Send home's with no armistice (Demobilization) and the reserve
+# call-up's range (SecuritySystem), shown in the toast. Each English line is the sim's own text; {0} is the number of
+# units the hex already holds.
+unit.move_refused.no_hex: "A route names a hex"
+unit.move_refused.cannot_move: "That unit cannot move"
+unit.move_refused.already_there: "That unit is already there"
+unit.move_refused.off_land: "Units cannot enter water or leave the map"
+unit.move_refused.enemy_hex: "An enemy unit holds that hex"
+unit.move_refused.closed: "Units may not enter an enemy-held locality before its capture is possible"
+unit.move_refused.no_route: "No route reaches that hex"
+unit.move_refused.out_of_reach: "That hex is out of reach this turn"
+unit.move_refused.full: "That hex already holds {0} units of that side, the most one hex can hold"
+unit.send_home_refused.no_armistice: "No armistice is signed"
+defence.refused_mobilization: "Mobilization must be between 0 and 1"
+
+# #2707, batch 2: the sim's own text, word for word.
+city.assign_refused.no_role: "There is no such role"
+city.assign_refused.negative: "The number of workers cannot be negative"
+city.qualification_refused.return_count: "Return at least one group"
+city.qualification_refused.reassign_count: "Reassign at least one group"
+city.qualification_refused.no_qualification: "There is no such qualification"
+unit.order_refused.not_pioneer: "Only a pioneer unit takes that order"
+unit.order_refused.pioneer_busy: "That unit is at work; stop the work first"
+training.cancel_refused.no_group: "There is no such training group"
+site.refused.not_halutz: "Only halutzim do pioneer work"
+site.refused.no_work: "There is no such pioneer work"
+site.refused.no_site: "There is no such site"
+site.refused.not_building: "That group of halutzim is not building anything"
+city.project_reason.no_project: "There is no such city project"
+corridor.refused.no_segment: "There is no such corridor segment"
+budget.refused.required: "Budget shares are required"
+budget.refused.ministry: "The budget names a ministry that does not exist in this game"
+budget.refused.finite: "Budget shares must be finite numbers"
+budget.refused.every_ministry: "The budget must give a share to every ministry, and only to them"
+budget.refused.sum: "Budget shares must sum to 1"
+budget.refused.negative: "Budget shares cannot be negative"
+unit.order_refused.names_no_hex: "That order names no hex"
 
 # #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. Each
 # English line is the sim's own text; {0}, {1}... are the values it fills in.

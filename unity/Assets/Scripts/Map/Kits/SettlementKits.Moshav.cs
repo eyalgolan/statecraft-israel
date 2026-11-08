@@ -39,8 +39,8 @@ namespace Statecraft.Game.Map.Kits
             // building, its gable included; far off, the kit's.
             AddModel(owner, TownModel.B09aCommunal, p, yaw, w, d, h + d * 0.42f, bottom, top, km, m, exactHeight: false, flip: false);
             var cut = km.CutStart();
-            km.Box(p.x, p.y, yaw, w, d, bottom, top, h, wall, roof, Facade.Village, m, roofed: true);
-            km.Gable(p.x, p.y, yaw, w, d, top + h, d * 0.42f, roof, wall);
+            km.Box(p.x, p.y, yaw, w, d, bottom, top, h, wall, roof, Facade.Moshava, m, roofed: true);
+            km.Gable(p.x, p.y, yaw, w, d, top + h, d * 0.42f, roof, wall, m);
             km.CutEnd(cut);
             Record(owner, "public_building", p, yaw, w, d, h, wall);
             return 1;

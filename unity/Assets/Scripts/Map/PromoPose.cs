@@ -34,7 +34,9 @@ namespace Statecraft.Game.Map
         };
 
         /// <summary>Issue #659 (owner ruling on #700: "Models up close only"): the close views where Tal Heuberger's building models
-        /// draw instead of the kits (TownModelLayer.CloseEnterM): Tel Aviv at 30 km and Jaffa's old town at 12 km. Not promo
+        /// draw instead of the kits (TownModelLayer.CloseEnterM): Tel Aviv at 30 km and Jaffa's old town at 12 km, below the
+        /// switch, where Tel Aviv and Jaffa draw them too (owner, 7 November 2026, "Tal's models close (Recommended)", which
+        /// supersedes "Big blocks, every zoom", 6 November 2026, below 40 km: TownModels.IsMajorCity). Not promo
         /// matches: VisualShots shoots them after All (everything on), and FrameProfile prices them under "vclose".</summary>
         public static IReadOnlyList<PromoPose> CloseUps { get; } = new[]
         {

@@ -228,6 +228,11 @@ namespace Statecraft.Game.UI
                 && !hudRoot.ClassListContains(StartScreenPresenter.OpenClass) && chain.Any(InTour))
             {
                 session.Settings.MarkOpeningSeen();
+                // Owner ruling on #2942, "Off silences it": above the new level the chain does not open by itself and
+                // still counts as seen, so it never comes later; no course opens either. The encyclopedia can reopen it.
+                if (session.Settings.LevelRank > 0) return;
+                session.Settings.MarkCourseOpen();
+                Evaluate();                                 // course_open holds from here: its rows wait behind the chain
                 OpenChain();
             }
         }
@@ -392,7 +397,7 @@ namespace Statecraft.Game.UI
                 var ctx = Context();
                 var holding = AdvisorSignals.Holding(ctx, session);
                 if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);   // as in Evaluate's Prune
-                if (!(holding.Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
+                if (!(m.Holds(holding) && AdvisorSignals.When(ctx, m.When)))
                     session.Queue.Drop(m, Turn, bridge.State.Date);
             }
             Render();
@@ -693,6 +698,8 @@ namespace Statecraft.Game.UI
             hudRoot.EnableInClassList(OverlayOpenClass, !inline);
             if (!inline)
             {
+                // The popup too: it stays on screen behind the overlay, and Tab would leave the overlay for its buttons (#2340).
+                overlayCoveredScreens.Add((popup, popup.enabledSelf)); popup.SetEnabled(false);
                 foreach (var name in ScreenNav.Screens)
                     if (hudRoot.Q("screen-" + name) is VisualElement screen) { overlayCoveredScreens.Add((screen, screen.enabledSelf)); screen.SetEnabled(false); }
                 ScreenNav.DisableCovered(hudRoot); FocusReturn.To(overlayClose);

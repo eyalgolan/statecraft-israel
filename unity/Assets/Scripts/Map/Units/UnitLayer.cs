@@ -130,6 +130,9 @@ namespace Statecraft.Game.Map.Units
             new List<(Vector3, float, float, (Transform, Vector3, float)[], MeshFilter[])>();
         /// <summary>The camera yaw the trios were last turned to: a pan or a zoom keeps the yaw, so it moves no figure.</summary>
         float? turnedFor;
+        /// <summary>The figures' and flags' share of their scale now (<see cref="UnitShowcase.ZoomScale"/>, #2430): only the game
+        /// camera sets it, as it turns them, and only a new value touches them.</summary>
+        float zoomShown = 1f;
         /// <summary>A badge sits this share of its token's base radius behind the trio, seen from the camera, and
         /// <see cref="BadgeAsideM"/> to the side away from its flag's pole on screen (a compact token's pole cannot stand
         /// further out than its base's edge).</summary>
@@ -320,6 +323,9 @@ namespace Statecraft.Game.Map.Units
             bool turn = cam == Camera.main && turnedFor != yaw;
             if (turn) turnedFor = yaw;
             var turning = Quaternion.Euler(0f, turnedFor ?? 0f, 0f);   // as the figures stand now (yaw 0 until first turned)
+            float zoom = cam == Camera.main ? UnitShowcase.ZoomScale(Kits.TownModelLayer.ViewDistance(cam)) : zoomShown;
+            bool rescale = zoom != zoomShown;
+            zoomShown = zoom;
             for (int i = 0; i < badges.Count; i++)
             {
                 var b = badges[i]; if (b == null) continue;
@@ -328,6 +334,11 @@ namespace Statecraft.Game.Map.Units
                 var slide = b.parent.position;
                 var (home, back, pole, flag, standing, parkedAircraft) = badgeHomes[i];
                 var (centre, radius, lift, figures, meshes) = trios[i];
+                if (rescale && figures.Length > 0)
+                {
+                    foreach (var (figure, _, _) in figures) figure.localScale = Vector3.one * (UnitShowcase.FigureScale * zoom);
+                    if (flag != null) flag.transform.localScale = Vector3.one * (UnitBadge.FigureHeightM * UnitShowcase.FigureScale * zoom);
+                }
                 if (turn && figures.Length > 0)
                 {
                     float highest = float.MinValue;
@@ -350,6 +361,8 @@ namespace Statecraft.Game.Map.Units
                 if (figures.Length > 0) pole = turning * pole;   // where the pole stands now, for the badge's side
                 var aside = pole == Vector3.zero ? Vector3.zero : (Vector3.Dot(pole, right) > 0f ? -right : right) * BadgeAsideM;
                 var at = home + away * back + aside + slide;
+                if (figures.Length > 0 && flag != null)   // the badge stays over the flag's top as the flag grows
+                    at += Vector3.up * ((zoomShown - 1f) * UnitFlags.PoleHeight * UnitBadge.FigureHeightM * UnitShowcase.FigureScale);
                 // Owner, 31 October 2026 ("Shrink up close"): a near camera draws the plate no taller than a 30 km view does.
                 // It shrinks about its lower edge (the plate faces the camera, so its edges run along the camera's up), which
                 // stays where the full plate's is, clear of the flag and the figures; that move keeps the plate's depth.
@@ -449,7 +462,7 @@ namespace Statecraft.Game.Map.Units
 
         float DisplayReach(AnchorSpot spot) => Mathf.Max(ground.RingRadius(spot.Compact),
             UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3),
-                UnitShowcase.DrawSpread * ground.HexSizeM * Scale(spot))) * UnitPlinth.RimOuter);
+                UnitShowcase.DrawSpread * ground.HexSizeM * Spread(spot))) * UnitPlinth.RimOuter);
 
         bool DisplayOverlap(AnchorSpot a, AnchorSpot b)
         {
@@ -652,6 +665,9 @@ namespace Statecraft.Game.Map.Units
 
         static float Scale(AnchorSpot s) => s.Compact ? UnitGround.CompactScale : 1f;
 
+        /// <summary>The share of <see cref="UnitShowcase.DrawSpread"/> a token's figures stand at.</summary>
+        static float Spread(AnchorSpot s) => s.Compact ? UnitShowcase.CompactSpread : 1f;
+
         Vector3 Centre(AnchorSpot s) => UnitShowcase.Ground(map, new Vector3((float)s.X, 0f, (float)s.Z));
 
         /// <summary>The ground the units are placed on (footprints, routes, land) for a built map.</summary>
@@ -757,7 +773,7 @@ namespace Statecraft.Game.Map.Units
             drawnSims.Clear();
             foreach (var p in placed) drawnSims.Add(p.Token.StateUnit?.Id ?? -1);
             badges.Clear(); badgeHomes.Clear(); facedFor = null;
-            trios.Clear(); turnedFor = null;   // the new figures stand as at yaw 0
+            trios.Clear(); turnedFor = null; zoomShown = 1f;   // the new figures stand as at yaw 0, at their own scale
             treeHoles.Clear();
             keepClear = new List<Bounds[]>();   // a new list, so the labels see the change
             keepClearSpare = new List<Bounds[]>(); slid = false;   // and a spare no label pass has seen
@@ -776,7 +792,7 @@ namespace Statecraft.Game.Map.Units
                     case UnitData.Army:
                         // Demo2 T29's token: the figures stand shoulder to shoulder on one earth base with a bright white
                         // rim, under the side's flag (refs #197). The base fits the full trio, whatever the call-up.
-                        float k = UnitShowcase.DrawSpread * hex * Scale(p.Spot);
+                        float k = UnitShowcase.DrawSpread * hex * Spread(p.Spot);
                         plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), k));
                         foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, TokenMesh, MeshFor, paint, rim, FlagCloth);
                         treeHoles.Add((new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter));
@@ -855,7 +871,7 @@ namespace Statecraft.Game.Map.Units
                 if (t.Unit.Service == UnitData.Army && go.transform.Find(UnitPlinth.FlagName) != null)
                     lift = Mathf.Max(lift, UnitFlags.PoleHeight * UnitBadge.FigureHeightM * UnitShowcase.FigureScale + UnitBadge.SizeM / 2f + BadgeOverFlagM);
                 var home = foot + Vector3.up * lift;
-                float back = t.Unit.Service == UnitData.Army ? BadgeBackShare * UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), UnitShowcase.DrawSpread * hex * Scale(p.Spot))) : 0f;
+                float back = t.Unit.Service == UnitData.Army ? BadgeBackShare * UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), UnitShowcase.DrawSpread * hex * Spread(p.Spot))) : 0f;
                 badge.transform.position = home + Vector3.forward * back;
                 badge.transform.localScale = Vector3.one * UnitBadge.SizeM;
                 badge.AddComponent<UnitBadge>();

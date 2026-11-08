@@ -66,6 +66,12 @@ namespace Statecraft.Sim
         {
             public string Ruleset { get; set; } = "";
             public List<StartCampBinding>? MilitaryCamps { get; set; }
+            public List<StartFormationCombatXp>? FormationCombatXp { get; set; }
+        }
+        sealed class StartFormationCombatXp
+        {
+            public string Row { get; set; } = "";
+            public int? CombatXp { get; set; }
         }
         sealed class StartCampBinding
         {
@@ -204,7 +210,7 @@ namespace Statecraft.Sim
         internal const string ObjectivesFileName = "objectives.yaml";
 
         /// <summary>R-CITY-006: the locality placements, with the settlement_hexes.yaml checks (unique ids, land hexes) and
-        /// q and r required. Only the exact gdd-0.3 regions path calls this.</summary>
+        /// q and r required. Both GDD identities' immutable geography path calls this.</summary>
         static List<SettlementHex>? LocalityHexes(Content c, LocalityHexesFile file)
         {
             const string f = PlayerRegionCatalogue.LocalityHexesFileName;
@@ -452,6 +458,11 @@ namespace Statecraft.Sim
             //                              has exactly one option (R-EVT-007)
             //   front_quiet                the front (Prisoners.Fronts) of an armistice_<front> card: under gdd-0.3 it may also
             //                              come early, and again after a refusal, once that front is quiet (R-WAR-008)
+            //   armistice_front            a front (Prisoners.Fronts) whose signed armistice ends the card: a pending
+            //                              operation lapses once it is signed, and a card with it never first fires after
+            //                              it (R-ENEMY-007); on an operation card or a following card only
+            //   follows                    true: under the GDD loop the card fires on the turn after its `requires` are met
+            //                              even when its window has closed (R-ENEMY-007); needs a `requires`
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -488,15 +499,17 @@ namespace Statecraft.Sim
                 c.ProjectKinds = kinds.Where(k => k.Rulesets.Count == 0 || k.Rulesets.Contains(c.Ruleset)).ToList();
                 c.ProjectKindsOfOtherRulesets = kinds.Except(c.ProjectKinds).ToList();
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
-                if (c.Ruleset == SaveGame.Gdd03Ruleset) ApplyGdd03Start(readFile, c);
+                var formationXp = c.Ruleset == SaveGame.Gdd03Ruleset ? ApplyGdd03Start(readFile, c) : null;
                 ValidateGdd(c, settlementIds, settlements.Where(x => x.type is "city" or "town").Select(x => x.id).ToList());
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
+                if (formationXp != null) ApplyGdd03FormationCombatXp(formationXp, c);
             }
-            // R-CITY-006: no read or hash input in either old identity. Absence leaves the capability inactive. After the
-            // sites (a site id may be a member) and the effective map overrides; the locality hexes are read only with regions, and are required then (#2298).
-            if (c.Ruleset == SaveGame.Gdd03Ruleset)
+            // R-CITY-006 and R-ENEMY-007: authored geography is immutable lookup data in both GDD identities. Only exact
+            // gdd-0.3 initializes regional population/control state. After sites (a site id may be a member) and the effective
+            // map overrides; locality hexes are read only with regions, and are required then (#2298).
+            if (c.IsGdd)
             {
                 var regions = ReadOptional<PlayerRegionsFile>(readFile, PlayerRegionCatalogue.FileName);
                 if (regions != null)
@@ -512,11 +525,11 @@ namespace Statecraft.Sim
 
         // R-CAMP-003: exact-gdd-0.3 start bindings add facilities to the shared city catalogue without changing gdd-0.1.
         // The optional file keeps synthetic gdd-0.3 fixtures independent of the shipped map and city ids.
-        static void ApplyGdd03Start(Func<string, string?> readFile, Content c)
+        static List<StartFormationCombatXp>? ApplyGdd03Start(Func<string, string?> readFile, Content c)
         {
             const string file = "gdd03-start.yaml";
             var start = ReadOptional<Gdd03StartFile>(readFile, file);
-            if (start == null) return;
+            if (start == null) return null;
             if (start.Ruleset != SaveGame.Gdd03Ruleset)
                 throw new ContentException(file, "ruleset", "must be gdd-0.3");
             if (start.MilitaryCamps == null)
@@ -544,6 +557,33 @@ namespace Statecraft.Sim
             if (actual != expected)
                 throw new ContentException(file, "military_camps",
                     FormattableString.Invariant($"effective military-camp city count {actual} must equal start.military_camps {expected}"));
+            return start.FormationCombatXp;
+        }
+
+        /// <summary>#1689 rows 7 and 8 (owner, 7 November 2026, comment 6704389240: "1 each, Negev 0 (Recommended)"): each own
+        /// opening formation's combat XP in the Historical ledger fixture, once each, from 0 to military.combat_xp_full. Read
+        /// after the starting forces. An absent list leaves the value unset; the ledger fixture then refuses (no fallback).
+        /// Ledger fixture only (maintainer call, eyalgolan-30's coordinator, 7 November 2026): NewGame's units keep 0.</summary>
+        static void ApplyGdd03FormationCombatXp(List<StartFormationCombatXp> rows, Content c)
+        {
+            const string file = "gdd03-start.yaml";
+            var full = Gdd03Military.Scalar(c, "military.combat_xp_full");
+            var opening = new HashSet<string>(HistoricalPopulation.OpeningFormationRows(c), StringComparer.Ordinal);
+            var xp = new SortedDictionary<string, int>(StringComparer.Ordinal);
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                var at = FormattableString.Invariant($"formation_combat_xp[{i}]");
+                if (row == null || !opening.Contains(row.Row))
+                    throw new ContentException(file, at + ".row", "must name an own opening formation of map/units_1948.yaml");
+                if (xp.ContainsKey(row.Row)) throw new ContentException(file, at + ".row", "duplicate formation");
+                if (!(row.CombatXp is int value) || value < 0 || value > full)
+                    throw new ContentException(file, at + ".combat_xp", FormattableString.Invariant($"required: an integer from 0 to military.combat_xp_full {full}"));
+                xp.Add(row.Row, value);
+            }
+            var missing = opening.Where(r => !xp.ContainsKey(r)).OrderBy(r => r, StringComparer.Ordinal).ToList();
+            if (missing.Count > 0) throw new ContentException(file, "formation_combat_xp", "missing opening formation " + string.Join(", ", missing));
+            c.Gdd03FormationCombatXp = xp;
         }
 
         // R-EFX-001: this file is deliberately never read by legacy/gdd-0.1, including for hashing.
@@ -1466,6 +1506,7 @@ namespace Statecraft.Sim
                 if (!(m.DrySwampCost >= 0 && IsFinite(m.DrySwampCost.Value))) throw new ContentException(file, "mvp.dry_swamp_cost", "must be a finite number >= 0");
                 if (m.FieldFoodPerTurn == null) throw new ContentException(file, "mvp.field_food_per_turn", "required when eras.yaml systems.loop is gdd");
                 if (m.FieldFoodPerTurn < 0) throw new ContentException(file, "mvp.field_food_per_turn", "must be >= 0");
+                if (m.FieldFoodPerTurn > Pools.MaxFieldFoodPerTurn) throw new ContentException(file, "mvp.field_food_per_turn", FormattableString.Invariant($"must be <= {Pools.MaxFieldFoodPerTurn}"));
                 if (m.RoadSegmentTurns < 1) throw new ContentException(file, "mvp.road_segment_turns", "must be >= 1");
                 if (!(m.RoadSegmentCost >= 0 && IsFinite(m.RoadSegmentCost))) throw new ContentException(file, "mvp.road_segment_cost", "must be a finite number >= 0");
                 if (m.RailSegmentTurns < 1) throw new ContentException(file, "mvp.rail_segment_turns", "must be >= 1");
@@ -1475,6 +1516,7 @@ namespace Statecraft.Sim
                 if (!(m.KFood >= 0 && m.KFood <= 1)) throw new ContentException(file, "mvp.k_food", "must be between 0 and 1");
                 if (m.CoverMonths == null) throw new ContentException(file, "mvp.cover_months", "required when eras.yaml systems.loop is gdd");
                 if (m.CoverMonths < 1) throw new ContentException(file, "mvp.cover_months", "must be >= 1");
+                if (m.CoverMonths > Pools.MaxCoverMonths) throw new ContentException(file, "mvp.cover_months", FormattableString.Invariant($"must be <= {Pools.MaxCoverMonths}"));
                 // R-ARMS-001 to R-ARMS-003: required, so a missing key is never read as 0 (no stock, free Arms, or training without them).
                 if (m.ArmsStart == null) throw new ContentException(file, "mvp.arms_start", "required when eras.yaml systems.loop is gdd");
                 if (m.ArmsStart < 0) throw new ContentException(file, "mvp.arms_start", "must be >= 0");
@@ -1524,6 +1566,13 @@ namespace Statecraft.Sim
                 // R-EVT-003 (#107): required, so a missing key is never read as 0 (no floor, or a disloyal minister who does nothing).
                 if (m.DelegationLoyaltyFloor == null) throw new ContentException(file, "mvp.delegation_loyalty_floor", "required when eras.yaml systems.loop is gdd");
                 if (m.DelegationLoyaltyFloor < 0 || m.DelegationLoyaltyFloor > 10) throw new ContentException(file, "mvp.delegation_loyalty_floor", "must be 0-10");
+                // R-ENEMY-007 (owner, 7 November 2026: "6 turns (Recommended)"): required, so no wait is read as 0.
+                if (m.OperationWaitTurns == null) throw new ContentException(file, "mvp.operation_wait_turns", "required when eras.yaml systems.loop is gdd");
+                if (m.OperationWaitTurns < 1) throw new ContentException(file, "mvp.operation_wait_turns", "must be >= 1");
+                if (m.OperationLapseSecurity == null) throw new ContentException(file, "mvp.operation_lapse_security", "required when eras.yaml systems.loop is gdd");
+                if (!(m.OperationLapseSecurity <= 0 && IsFinite(m.OperationLapseSecurity.Value))) throw new ContentException(file, "mvp.operation_lapse_security", "must be a finite number <= 0");
+                if (m.OperationTruceBreakStanding == null) throw new ContentException(file, "mvp.operation_truce_break_standing", "required when eras.yaml systems.loop is gdd");
+                if (!(m.OperationTruceBreakStanding <= 0 && IsFinite(m.OperationTruceBreakStanding.Value))) throw new ContentException(file, "mvp.operation_truce_break_standing", "must be a finite number <= 0");
                 if (m.DisloyalEffectShare == null) throw new ContentException(file, "mvp.disloyal_effect_share", "required when eras.yaml systems.loop is gdd");
                 Unit(file, "mvp.disloyal_effect_share", m.DisloyalEffectShare.Value);
                 // R-MOVE-001 (Q-MOVE-1): a cost for every land biome of the map, so no hex is read as free, and none for a water
@@ -1623,6 +1672,7 @@ namespace Statecraft.Sim
             ValidateEventSites(c);
             ValidateEventPrisoners(c);
             ValidateEventFrontQuiet(c);
+            ValidateEventArmisticeFront(c);
             ValidateEventDeported(c);
             ValidateProjects(c);
             ValidateCorridors(c);
@@ -1653,6 +1703,21 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>R-ENEMY-007: an operation card's armistice front is a known front, on a card with an operation option
+        /// (one with requires_unit_regions), so that front's signed armistice can end it.</summary>
+        static void ValidateEventArmisticeFront(Content c)
+        {
+            foreach (var e in c.Events.Where(e => e.ArmisticeFront != ""))
+            {
+                if (!Prisoners.Fronts.Contains(e.ArmisticeFront))
+                    throw new ContentException(e.File, $"events[{e.Id}].armistice_front", $"unknown front '{e.ArmisticeFront}' (one of {string.Join(", ", Prisoners.Fronts)})");
+                if (!e.Follows && !e.Options.Any(o => o.RequiresUnitRegions.Count != 0))
+                    throw new ContentException(e.File, $"events[{e.Id}].armistice_front", "only an operation card (an option with requires_unit_regions) or a following card has an armistice front");
+            }
+            foreach (var e in c.Events.Where(e => e.Follows && e.Requires.Count == 0))
+                throw new ContentException(e.File, $"events[{e.Id}].follows", "a following card follows its requires: it needs one");
+        }
+
         /// <summary>A Deport follow-up card (R-EVT-007; GDD Phase 6 PR 9, #801): a settlement target whose residents stayed,
         /// since Deport is refused where they fled (R-CTRL-018) and the card could never fire; the displacement tag, so the
         /// release gate holds it until the owner's review (R-GATE-001); one option, which Delegate resolves without a draw; no `to`,
@@ -1681,7 +1746,7 @@ namespace Statecraft.Sim
                     throw new ContentException(e.File, $"events[{e.Id}].from", FormattableString.Invariant($"a Deport card opens at the game's start ({c.Rules.Start:yyyy-MM-dd}), so a Deport on any turn fires it"));
                 foreach (var (key, set) in new[] { ("conditions", e.Conditions.Count > 0), ("requires", e.Requires.Count > 0), ("site", e.Site != ""),
                              ("objective", e.Objective != ""), ("kind", e.Kind != EventKinds.Historical), ("variants", e.Variants.Count > 0),
-                             ("front_quiet", e.FrontQuiet != "") })
+                             ("front_quiet", e.FrontQuiet != ""), ("armistice_front", e.ArmisticeFront != ""), ("follows", e.Follows) })
                     if (set) throw new ContentException(e.File, $"events[{e.Id}].{key}", "a Deport card waits for nothing but its Deport");
                 if (cardOf.TryGetValue(e.Deported, out var first))
                     throw new ContentException(e.File, $"events[{e.Id}].deported", $"'{e.Deported}' already has a card, '{first}': one Deport raises one card");

@@ -12,7 +12,7 @@ namespace Statecraft.Sim
         public string CapitalLocation { get; set; } = "";
         public List<PlayerRegionHex> MemberHexes { get; set; } = new List<PlayerRegionHex>();
         public List<string> MemberLocations { get; set; } = new List<string>();
-        public List<PlayerRegionHex> FieldHexes { get; set; } = new List<PlayerRegionHex>();
+        public List<PlayerRegionFieldHex> FieldHexes { get; set; } = new List<PlayerRegionFieldHex>();
         public string DesignNote { get; set; } = "";
         public List<string> Sources { get; set; } = new List<string>();
         public string CapitalApproval { get; set; } = "";
@@ -24,6 +24,32 @@ namespace Statecraft.Sim
     {
         public int? Q { get; set; }
         public int? R { get; set; }
+    }
+
+    /// <summary>A `field_hexes` row: the hex and, optionally, the place that hosts its farmer (R-POP-004, #1717).</summary>
+    public sealed class PlayerRegionFieldHex
+    {
+        public int? Q { get; set; }
+        public int? R { get; set; }
+        public string Field { get; set; } = "";
+        public string Host { get; set; } = "";
+        public string HostBasis { get; set; } = "";
+        public string HostSource { get; set; } = "";
+    }
+
+    /// <summary>A field's approved host. Data only: no farmer record exists and NewGame does not read it.</summary>
+    public sealed class PlayerRegionFieldHost
+    {
+        public string Field { get; }
+        public int Q { get; }
+        public int R { get; }
+        public string Host { get; }
+        public string Basis { get; }
+        public string Source { get; }
+        internal PlayerRegionFieldHost(PlayerRegionFieldHex row)
+        {
+            Field = row.Field; Q = row.Q!.Value; R = row.R!.Value; Host = row.Host; Basis = row.HostBasis; Source = row.HostSource;
+        }
     }
 
     /// <summary>Evidence metadata, never an operational permission or inherited member control.</summary>
@@ -42,13 +68,14 @@ namespace Statecraft.Sim
         public IReadOnlyList<(int Q, int R)> MemberHexes { get; }
         public IReadOnlyList<string> MemberLocations { get; }
         public IReadOnlyList<(int Q, int R)> FieldHexes { get; }
+        public IReadOnlyList<PlayerRegionFieldHost> FieldHosts { get; }
         public string DesignNote { get; }
         public IReadOnlyList<string> Sources { get; }
         public string CapitalApproval { get; }
         public string BindingStatus { get; }
         public string ControlStatus { get; }
         public string? OpeningController { get; }
-        internal PlayerRegionGeography(PlayerRegionDefinition row)
+        internal PlayerRegionGeography(PlayerRegionDefinition row, bool hosts)
         {
             Id = row.Id; CapitalLocation = row.CapitalLocation;
             MemberHexes = Array.AsReadOnly(row.MemberHexes.Select(h => (h.Q!.Value, h.R!.Value))
@@ -56,6 +83,8 @@ namespace Statecraft.Sim
             MemberLocations = Array.AsReadOnly(row.MemberLocations.OrderBy(x => x, StringComparer.Ordinal).ToArray());
             FieldHexes = Array.AsReadOnly(row.FieldHexes.Select(h => (h.Q!.Value, h.R!.Value))
                 .OrderBy(h => h.Item1).ThenBy(h => h.Item2).ToArray());
+            FieldHosts = Array.AsReadOnly(row.FieldHexes.Where(h => hosts && h.Field.Length > 0).Select(h => new PlayerRegionFieldHost(h))
+                .OrderBy(h => h.Field, StringComparer.Ordinal).ToArray());
             DesignNote = row.DesignNote; Sources = Array.AsReadOnly(row.Sources.OrderBy(x => x, StringComparer.Ordinal).ToArray());
             CapitalApproval = row.CapitalApproval; BindingStatus = row.BindingStatus;
             ControlStatus = row.OpeningControl.Status;
@@ -69,7 +98,7 @@ namespace Statecraft.Sim
         }
     }
 
-    /// <summary>R-CITY-006. One validator and one immutable exact-identity geography index for all consumers.
+    /// <summary>R-CITY-006, R-ENEMY-007. One validator and one immutable GDD geography index for all consumers.
     /// A member place is a settlement, a named map location, a designated site (sites.yaml) or a locality placed by
     /// <see cref="LocalityHexesFileName"/> (owner, 2 November 2026: Q1 "Accept localities"; "Fix all, then ship
     /// (Recommended)": "Accept site ids too"). capital_location is the region's label place (Q3 "All nine drafts as
@@ -79,8 +108,11 @@ namespace Statecraft.Sim
     {
         public const string FileName = "regions.yaml";
         /// <summary>Each locality's hex, written by tools/locality_hexes.py with the map's projection and rounding, so the
-        /// sim needs no trigonometry (docs/determinism.md). Read only under exact gdd-0.3, with regions.yaml.</summary>
+        /// sim needs no trigonometry (docs/determinism.md). Read under either GDD identity, with regions.yaml.</summary>
         public const string LocalityHexesFileName = "map/locality_hexes.yaml";
+        /// <summary>Owner, 7 November 2026, #1689: "These two only (Recommended)". The only fields a settlement may host.</summary>
+        static readonly string[] SettlementHostFields = { "F19", "F20" };
+        static readonly string[] HostBases = { "sourced", "administrative", "forced", "inference", "design_choice", "decision_a" };
         readonly SortedDictionary<string, PlayerRegionGeography> regions = new SortedDictionary<string, PlayerRegionGeography>(StringComparer.Ordinal);
         readonly Dictionary<string, string> places = new Dictionary<string, string>(StringComparer.Ordinal);
         readonly Dictionary<string, string> capitals = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -107,7 +139,8 @@ namespace Statecraft.Sim
             foreach (var p in c.MapLocations) Place(p.Id, p.Q, p.R);
             foreach (var p in c.Sites) Place(p.Id, p.Q, p.R);
             foreach (var p in localities ?? Enumerable.Empty<SettlementHex>()) Place(p.Id, p.Q, p.R);
-            int index = 0;
+            var census = new HashSet<string>(c.Cities.Select(city => city.Id), StringComparer.Ordinal);
+            int index = 0, fieldNumber = 0;
             foreach (var row in rows)
             {
                 var at = FormattableString.Invariant($"player_regions[{index++}]");
@@ -164,8 +197,28 @@ namespace Statecraft.Sim
                     if (result.places.ContainsKey(id)) Fail(field, "location already belongs to another region");
                     if (!ownHexes.Contains(hex)) Fail(field, "effective location lies outside member_hexes");
                 }
+                // R-POP-004 (#1717): a field's host is data only, under exact gdd-0.3: since R-ENEMY-007 (#2543, "Both rulesets
+                // (Recommended)") gdd-0.1 reads this file for its geography, but it reads no host (mvp.md: "the legacy and
+                // gdd-0.1 identities read none of this"). F01 to F20 are the fields' places in the file's order, so a typed label
+                // cannot move the permission below. A row with no host keys has no host (synthetic regions).
+                var readsHosts = c.Ruleset == SaveGame.Gdd03Ruleset;
+                for (int i = 0; i < row.FieldHexes.Count && readsHosts; i++)
+                {
+                    var h = row.FieldHexes[i]; var field = FormattableString.Invariant($"field_hexes[{i}]");
+                    var label = FormattableString.Invariant($"F{++fieldNumber:00}");
+                    if (h.Field.Length + h.Host.Length + h.HostBasis.Length + h.HostSource.Length == 0) continue;
+                    if (h.Field != label) Fail(field + ".field", $"must be {label}, this field's place in the file's order");
+                    if (!HostBases.Contains(h.HostBasis)) Fail(field + ".host_basis", $"{label}: unknown basis {h.HostBasis}");
+                    if (string.IsNullOrWhiteSpace(h.HostSource)) Fail(field + ".host_source", $"{label}: explicit provenance required");
+                    if (census.Contains(h.Host))
+                    {
+                        if (!ownPlaces.Contains(h.Host)) Fail(field + ".host", $"{label}: census city {h.Host} is outside this field's region {row.Id}");
+                    }
+                    else if (!SettlementHostFields.Contains(label)) Fail(field + ".host", $"{label}: a settlement may host only for F19 and F20, not {h.Host}");
+                    else if (!ownPlaces.Contains(h.Host)) Fail(field + ".host", $"{label}: {h.Host} is not a member location of {row.Id}");
+                }
                 if (string.IsNullOrWhiteSpace(row.CapitalLocation) || !ownPlaces.Contains(row.CapitalLocation)) Fail("capital_location", "must name a member location on a member hex");
-                var frozen = new PlayerRegionGeography(row);
+                var frozen = new PlayerRegionGeography(row, readsHosts);
                 result.regions.Add(row.Id, frozen); result.capitals.Add(row.CapitalLocation, row.Id);
                 foreach (var h in ownHexes) result.hexes.Add(h, row.Id);
                 foreach (var p in ownPlaces) result.places.Add(p, row.Id);

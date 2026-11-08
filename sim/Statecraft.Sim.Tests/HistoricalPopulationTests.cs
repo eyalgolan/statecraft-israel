@@ -20,7 +20,9 @@ public class HistoricalPopulationTests
     static int Count(IReadOnlyList<HistoricalPopulationRow> rows, string source) => rows.Count(r => r.Source == source);
 
     // R-POP-004, R-CITY-007, R-UNIT-006, R-CITY-008: one record per census population unit in each city and per population
-    // unit of each Israeli starting formation, no more and no less, checked against the aggregate start of the same content.
+    // unit of each Israeli starting formation, checked against the aggregate start of the same content, plus the 20 opening
+    // field farmers on top of the census (#1725 PR 4; owner, 7 November 2026, #1689: "On top, change the rule
+    // (Recommended)"), no more and no less.
     [Fact]
     public void RealInventoryHoldsTheCensusCitiesAndTheStartingFormationsNoMoreNoLess()
     {
@@ -40,14 +42,19 @@ public class HistoricalPopulationTests
         foreach (var u in own)
             Assert.Equal(u.Strength, Count(rows, HistoricalPopulation.FormationPrefix + c.StartingForces[u.Id].Row));
 
-        var expected = start.Cities.Values.Sum(x => x.Civilians) + own.Sum(u => u.Strength);
+        var farmers = HistoricalPopulation.FieldFarmerHosts(c).Sum(h => h.Farmers);
+        Assert.Equal(20, farmers);
+        var expected = start.Cities.Values.Sum(x => x.Civilians) + own.Sum(u => u.Strength) + farmers;
         Assert.Equal(expected, rows.Count);
         Assert.All(rows.Where(r => r.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)),
             r => Assert.Equal(PopulationStatus.FreeCivilian, r.Status));
         Assert.All(rows.Where(r => r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)),
             r => Assert.Equal(PopulationStatus.ActiveSoldier, r.Status));
+        Assert.All(rows.Where(r => r.Source.StartsWith(HistoricalPopulation.FarmerPrefix, StringComparison.Ordinal)),
+            r => Assert.Equal(PopulationStatus.FreeCivilian, r.Status));
         Assert.All(rows, r => Assert.True(r.Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
-            || r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)));
+            || r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)
+            || r.Source.StartsWith(HistoricalPopulation.FarmerPrefix, StringComparison.Ordinal)));
     }
 
     // R-POP-004, R-CITY-006, R-CITY-007: an anchor independent of the loader. The census sources are exactly the twelve
@@ -78,6 +85,24 @@ public class HistoricalPopulationTests
             .Distinct(StringComparer.Ordinal).OrderBy(s => s, StringComparer.Ordinal);
         Assert.Equal(c.StartingForces.Where(f => f.Side == Movement.PlayerSide && f.Arrives == null)
             .Select(f => HistoricalPopulation.FormationPrefix + f.Row).OrderBy(s => s, StringComparer.Ordinal), formations);
+    }
+
+    // S2-2 (review of #2937): one predicate says what an own opening formation is (Israeli, no dated arrival, with a
+    // strength): the inventory's formation sources, the loader's formation_combat_xp rows and the formations
+    // StartingForces.Init checks against the ledger all read HistoricalPopulation.OpeningFormations.
+    [Fact]
+    public void OneHelperNamesTheOwnOpeningFormations()
+    {
+        var c = Real(true);
+        var opening = HistoricalPopulation.OpeningFormations(c).Select(f => f.Row).OrderBy(r => r, StringComparer.Ordinal).ToList();
+        Assert.NotEmpty(opening);
+        Assert.All(HistoricalPopulation.OpeningFormations(c), f => Assert.True(f.Side == Movement.PlayerSide && f.Arrives == null && f.Strength > 0));
+        var sources = HistoricalPopulation.Inventory(c).Select(r => r.Source)
+            .Where(x => x.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal))
+            .Select(x => x.Substring(HistoricalPopulation.FormationPrefix.Length)).Distinct(StringComparer.Ordinal).OrderBy(r => r, StringComparer.Ordinal);
+        Assert.Equal(opening, sources);
+        Assert.Equal(opening, c.Gdd03FormationCombatXp!.Keys);
+        Assert.Equal(opening, HistoricalPopulation.OpeningFormationRows(c).OrderBy(r => r, StringComparer.Ordinal));
     }
 
     // R-POP-004, R-UNIT-006, R-UNIT-009: enemy formations are not own population, and a dated arrival is not in the start
@@ -168,7 +193,7 @@ public class HistoricalPopulationTests
             var rows = LedgerRows(inventory.Where(r => r.Source.StartsWith(prefix, StringComparison.Ordinal)).Take(1).ToList());
             Assert.Single(rows);
             var e = Assert.Throws<ArgumentException>(() => PopulationLedger.CreateFixture(c, PopulationLedgerTests.Bindings(), rows, mode: mode));
-            Assert.Equal("Census and units_1948 rows are the Historical start's; their fixture needs mode Historical (R-POP-004).", e.Message);
+            Assert.Equal("Census, units_1948 and field rows are the Historical start's; their fixture needs mode Historical (R-POP-004).", e.Message);
         }
     }
 
@@ -293,6 +318,27 @@ public class HistoricalPopulationTests
         Assert.DoesNotContain(inventory, r => r.Source == HistoricalPopulation.CensusPrefix + "jaffa");
     }
 
+    // R-POP-004, #1689 PR 1 city binding: each census record's location names its city, in that city's region; a formation
+    // record's location names no city. A farmer's names its host (HistoricalFieldFarmerRecordsTests).
+    [Fact]
+    public void EveryCensusRecordIsBoundToItsCity()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            var source = inventory[i].Source;
+            if (source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal))
+            {
+                var city = source.Substring(HistoricalPopulation.CensusPrefix.Length);
+                Assert.Equal(city, units[i].Location!.City);
+                Assert.Equal(c.PlayerRegions.AtLocation(city)!.Id, units[i].Location!.Region);
+            }
+            else if (source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)) Assert.Null(units[i].Location!.City);
+        }
+    }
+
     // R-POP-001, R-POP-004, Q10: ids run from 0 with no gaps in the inventory's order (source key by ordinal string compare,
     // then ordinal), and two builds are identical.
     [Fact]
@@ -313,6 +359,38 @@ public class HistoricalPopulationTests
         var l = HistoricalPopulation.LedgerFixture(Real(true)).PopulationLedger;
         Assert.True(l.IsInitialized);
         l.Reconcile();
+    }
+
+    // R-POP-004, R-VET-001 (#1689 PR 1): reception.turns is the "actual reception turns before free-civilian status"
+    // (docs/gdd/balance.md:91; content/gdd03-balance.yaml "reception.turns"), and the census gives its units as free
+    // civilians (R-POP-004), so each census record starts with its reception done: the catalogue requirement, the
+    // ledger's own cap (R-POP-002). R-VET-001 gives work XP only to a "received free civilian"; with 0 ticks an opening
+    // civilian could never earn it.
+    [Fact]
+    public void CensusRecordsStartWithTheirReceptionDone()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var ledger = HistoricalPopulation.LedgerFixture(c).PopulationLedger;
+        var turns = c.RequirePopulationInteger("reception.turns");
+        Assert.True(turns > 0);
+        Assert.Equal(turns, ledger.ReceptionLimit);
+        var census = ledger.Units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(census);
+        Assert.All(census, u => Assert.Equal(turns, u.ReceptionTicks));
+    }
+
+    // R-POP-004, mvp.md R-CITY-004 fixture paragraph ("the standalone eligibility predicate requires completed reception,
+    // free-civilian status and no assignment"): every opening census civilian may start a civilian activity at once.
+    [Fact]
+    public void EveryCensusCivilianCanStartCivilianActivity()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var ledger = HistoricalPopulation.LedgerFixture(c).PopulationLedger;
+        var census = ledger.Units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(census);
+        Assert.All(census, u => Assert.True(Gdd03ReceptionFixture.CanStartCivilianActivity(c, ledger, u)));
     }
 
     // R-POP-004: a record whose city or formation has no region in regions.yaml is refused; no region is invented.
@@ -350,6 +428,114 @@ public class HistoricalPopulationTests
             else
                 Assert.Null(units[i].Equipment.MilitaryId);
         }
+    }
+
+    // R-CITY-007, R-CITY-006, R-POP-004 (owner, 7 November 2026, opening-ledger rows 1 and 2): each city's employed units are
+    // people x employed_share over rules.yaml's people_per_unit, nearest unit with a half up, written out here rather than
+    // read from Cities.NearestUnit. Five cities have their printed share; the seven others have the national 43.9%, a
+    // labelled stand-in (status design). Rosh Pinna's 153.65 people round to 0: the "at least 1" floor is for civilians only.
+    [Fact]
+    public void EachCitysEmployedIsItsPeopleTimesItsShare()
+    {
+        var expected = new (string City, decimal Share, string Status, int Employed)[]
+        {
+            ("jerusalem", 0.342m, "sourced", 29),
+            ("tel_aviv", 0.426m, "sourced", 106),
+            ("haifa", 0.429m, "sourced", 42),
+            ("tiberias", 0.334m, "sourced", 2),
+            ("safed", 0.345m, "sourced", 1),
+            ("petah_tikva", 0.439m, "design", 10),
+            ("rishon_lezion", 0.439m, "design", 5),
+            ("rehovot", 0.439m, "design", 5),
+            ("hadera", 0.439m, "design", 5),
+            ("netanya", 0.439m, "design", 5),
+            ("zikhron_yaakov", 0.439m, "design", 1),
+            ("rosh_pinna", 0.439m, "design", 0),
+        };
+        var c = Real(true);
+        var perUnit = c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit;
+        var start = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal(expected.Select(e => e.City).OrderBy(s => s, StringComparer.Ordinal),
+            c.Cities.Select(x => x.Id).OrderBy(s => s, StringComparer.Ordinal));
+        foreach (var (id, share, status, employed) in expected)
+        {
+            var city = c.Cities.Single(x => x.Id == id);
+            Assert.Equal((id, share, status), (id, city.EmployedShare!.Value, city.EmployedShare.Status));
+            var formula = (int)Math.Round(city.People!.Value * city.EmployedShare.Value / perUnit, MidpointRounding.AwayFromZero);
+            Assert.Equal((id, employed), (id, formula));
+            Assert.Equal((id, employed), (id, city.Employed));
+            Assert.Equal((id, employed), (id, start.Cities[id].Employed));
+        }
+    }
+
+    // R-POP-004 (owner, 7 November 2026): row 4 approved no farmer identities, the farmers come on top of the census, and
+    // row 3's Industry start is not wired in, so a census record stays a plain free civilian: no profession, no tier and no
+    // Work assignment. The one exception is the training centre's veteran pioneer teacher, the last census/haifa ordinal
+    // (owner, 7 November 2026, #1689 comment 6704565066; HistoricalPioneerTeacherTests), left out here by its row.
+    [Fact]
+    public void CensusRecordsButTheTeacherHaveNoProfessionTierOrWork()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        var lastHaifa = inventory.Where(r => r.Source == "census/haifa").Max(r => r.Ordinal);
+        var census = units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)
+            && !(inventory[i].Source == "census/haifa" && inventory[i].Ordinal == lastHaifa)).ToList();
+        Assert.Equal(c.Cities.Sum(city => city.Civilians) - 1, census.Count);
+        Assert.All(census, u =>
+        {
+            Assert.Equal(CivilianProfession.None, u.Profession);
+            Assert.Equal(CivilianTier.None, u.Tier);
+            Assert.NotEqual(PopulationAssignmentKind.Work, u.Assignment.Kind);
+        });
+    }
+
+    // R-POP-004, #1689 rows 5 to 8. Owner, 7 November 2026 (comment 6704389240): "Veteran for all 8 (Recommended)" and
+    // "1 each, Negev 0 (Recommended)", Negev's 0 a labelled stand-in. Maintainer call, eyalgolan-30's coordinator,
+    // 7 November 2026: the veteran level lives on the formation (each is a veteran_soldier, R-UNIT-006, and each soldier's
+    // ActiveService target is its formation), so a soldier's qualification is its formation type's unit_types.yaml class
+    // (infantry), as Gdd03BasicTrainingFixture's graduates are; combat XP comes from gdd03-start.yaml. No work XP.
+    [Fact]
+    public void StartingSoldiersHaveTheirClassAndTheirFormationsCombatXp()
+    {
+        var c = Real(true);
+        var inventory = HistoricalPopulation.Inventory(c);
+        var units = HistoricalPopulation.LedgerFixture(c).PopulationLedger.Units;
+        var expected = new Dictionary<string, int> { ["golani"] = 1, ["carmeli"] = 1, ["alexandroni"] = 1, ["kiryati"] = 1,
+            ["givati"] = 1, ["etzioni"] = 1, ["harel"] = 1, ["negev"] = 0 };
+        var rows = inventory.Where(r => r.Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal))
+            .Select(r => r.Source.Substring(HistoricalPopulation.FormationPrefix.Length)).Distinct().OrderBy(x => x, StringComparer.Ordinal);
+        Assert.Equal(expected.Keys.OrderBy(x => x, StringComparer.Ordinal), rows);
+        for (int i = 0; i < inventory.Count; i++)
+        {
+            if (!inventory[i].Source.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal)) continue;
+            var row = inventory[i].Source.Substring(HistoricalPopulation.FormationPrefix.Length);
+            var type = c.StartingForces.Single(f => f.Row == row).Type;
+            Assert.Equal("veteran_soldier", type);
+            Assert.Equal(c.UnitTypes.Single(t => t.Id == type).Class, units[i].Qualification);
+            Assert.Equal("infantry", units[i].Qualification);
+            Assert.Equal(expected[row], units[i].CombatXp);
+            Assert.Equal(0, units[i].WorkXp);
+        }
+    }
+
+    // #1689 PR 2 scope (maintainer call, eyalgolan-30's coordinator, 7 November 2026): the opening combat XP is the ledger
+    // fixture's only; the aggregate units a gdd-0.3 NewGame starts with keep 0.
+    [Fact]
+    public void NewGameUnitsKeepNoCombatXp()
+    {
+        var s = Simulation.NewGame(Real(true), 1, Mode.Historical);
+        Assert.NotEmpty(s.Units);
+        Assert.All(s.Units.Values, u => Assert.Equal(0, u.CombatXp));
+    }
+
+    // The shipped gdd03-start.yaml names each own opening formation once, with the owner's values.
+    [Fact]
+    public void ShippedStartGivesEachOpeningFormationItsCombatXp()
+    {
+        var c = Real(true);
+        Assert.Equal(new[] { ("alexandroni", 1), ("carmeli", 1), ("etzioni", 1), ("givati", 1), ("golani", 1), ("harel", 1),
+            ("kiryati", 1), ("negev", 0) }, c.Gdd03FormationCombatXp!.Select(x => (x.Key, x.Value)));
     }
 
     // R-POP-004, 27M-24: the issued items are distinct, one per population unit of each own starting formation, so their

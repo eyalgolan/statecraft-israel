@@ -279,6 +279,7 @@ public class TalModelsShots
         var inputs = Statecraft.Game.Boot.GameInputs.FromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
         foreach (var era in inputs.Content.Eras) { era.Systems.Ruleset = SaveGame.Gdd03Ruleset; era.Systems.Loop = EraSystems.Gdd; }
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        ShotCamera.Configure(Camera.main, CivMovementShots.Width, CivMovementShots.Height);
         var doc = Object.FindFirstObjectByType<UIDocument>();
         rt = new RenderTexture(CivMovementShots.Width, CivMovementShots.Height, 24, RenderTextureFormat.ARGB32);
         ps = Object.Instantiate(doc.panelSettings);
@@ -412,7 +413,9 @@ public class TalModelsShots
         return ms[ms.Count / 2];
     }
 
-    /// <summary>Owner ruling, 2 November 2026, "Yes, small buildings at every zoom": Tel Aviv, Jerusalem, Haifa and Jaffa from
+    /// <summary>Written for the owner's ruling of 2 November 2026, "Yes, small buildings at every zoom" (superseded on 6 November
+    /// 2026 by "Big blocks, every zoom": these four draw their kits from 40 km out, and since 7 November 2026, "Tal's models
+    /// close (Recommended)", their building models below it; MajorCityShots shows them): Tel Aviv, Jerusalem, Haifa and Jaffa from
     /// the opening view (the game's own camera, CameraRig.StartDistance), the widest zoom (diorama02, 250 km), and each city at 90 km and
     /// 30 km, with the town layers' requests (whole towns and buildings) answered with the editor's prefabs, as the player's
     /// stream would answer them. Each frame logs its draw cost: the building models' instances, triangles and instanced
@@ -558,8 +561,6 @@ public class TalModelsShots
     {
         UnitFigures.Source = (id, detail, done) => done(Prefab(id, detail));
         yield return Boot(hebrew);
-        // Keep the real rig's projection and the saved RenderTexture on the same aspect throughout these frames.
-        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
         root.Bridge!.EndTurn();
         for (int i = 0; i < 3; i++) yield return null;
         var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;

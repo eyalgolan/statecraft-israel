@@ -276,6 +276,49 @@ namespace Statecraft.Game.UI
             [Pools.RefusedStockCapacity] = "arms.refused_stock_capacity",
             [Orders.RefusedCardOrder] = "unit.order_refused.card_order",   // R-ENEMY-005: an operation card's refused go-to
             [Orders.RefusedLastGarrison] = "unit.order_refused.last_garrison",   // R-CTRL-013: a card's go-to held back
+            // #2707: the move's and the go-to's refusals, Arms bought below one, the call-up's range and Send home's.
+            [Movement.RefusedNoHex] = "unit.move_refused.no_hex",
+            [Movement.RefusedCannotMove] = "unit.move_refused.cannot_move",
+            [Movement.RefusedAlreadyThere] = "unit.move_refused.already_there",
+            [Movement.RefusedOffLand] = "unit.move_refused.off_land",
+            [Movement.RefusedEnemyHex] = "unit.move_refused.enemy_hex",
+            [Movement.RefusedClosed] = "unit.move_refused.closed",
+            [Movement.RefusedNoRoute] = "unit.move_refused.no_route",
+            [Movement.RefusedOutOfReach] = "unit.move_refused.out_of_reach",
+            [Pools.RefusedCount] = "arms.refused_count",
+            [SecuritySystem.RefusedMobilization] = "defence.refused_mobilization",
+            [Demobilization.RefusedNoArmistice] = "unit.send_home_refused.no_armistice",
+            // #2707, batch 2: the workers, craftsmen and pioneers orders, pioneer work, a city project cancel and a training cancel.
+            [Cities.RefusedNoRole] = "city.assign_refused.no_role",
+            [Cities.RefusedNegativeWorkers] = "city.assign_refused.negative",
+            [Qualification.RefusedReturnCount] = "city.qualification_refused.return_count",
+            [Qualification.RefusedReassignCount] = "city.qualification_refused.reassign_count",
+            [Qualification.RefusedNoQualification] = "city.qualification_refused.no_qualification",
+            [Qualification.RefusedNotPioneer] = "unit.order_refused.not_pioneer",
+            [Qualification.RefusedPioneerBusy] = "unit.order_refused.pioneer_busy",
+            [Training.RefusedNoCohort] = "training.cancel_refused.no_group",
+            [Projects.RefusedNotHalutz] = "site.refused.not_halutz",
+            [Projects.RefusedNoWork] = "site.refused.no_work",
+            [Projects.RefusedNoSite] = "site.refused.no_site",
+            [Projects.RefusedNotBuilding] = "site.refused.not_building",
+            [Projects.RefusedNoCityProject] = "city.project_reason.no_project",
+            [Corridors.RefusedNoSegment] = "corridor.refused.no_segment",
+            [EconomySystem.RefusedBudgetRequired] = "budget.refused.required",
+            [EconomySystem.RefusedBudgetMinistry] = "budget.refused.ministry",
+            [EconomySystem.RefusedBudgetFinite] = "budget.refused.finite",
+            [EconomySystem.RefusedBudgetEveryMinistry] = "budget.refused.every_ministry",
+            [EconomySystem.RefusedBudgetSum] = "budget.refused.sum",
+            [EconomySystem.RefusedBudgetNegative] = "budget.refused.negative",
+            [Orders.RefusedNamesNoHex] = "unit.order_refused.names_no_hex",
+            // #2707, batch 3 (the owner's option (b)): a capture answer the end of turn refuses reads as the capture dialog's
+            // reviewed capture.refusal.* line. "Deport is not built yet" and the two "not awaiting" answers have no reviewed line
+            // that fits (capture.refusal.not_awaiting names the place, these do not), so they stay the sim's English.
+            [SettlementControl.RefusedNoOneToDeport] = "capture.refusal.no_one_to_deport",
+            [SettlementControl.RefusedUnknownOutcome] = "capture.refusal.unknown_outcome",
+            // R-ENEMY-007 (#2543): an operation whose units are not in place, or whose front's armistice comes first or is signed.
+            [EventSystem.RefusedOperationUnitsNotInPlace] = "event.operation_refused",
+            [EventSystem.RefusedOperationArmisticeFirst] = "event.operation_refused_armistice_first",
+            [EventSystem.RefusedOperationArmisticeSigned] = "event.operation_refused_armistice_signed",
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -299,9 +342,23 @@ namespace Statecraft.Game.UI
             (Workshops.RefusedBuilt, "workshop.refused_built"),
             (Workshops.RefusedPeople, "workshop.refused_people"),
             (Workshops.RefusedPeopleNoJob, "workshop.refused_people_no_job"),
+            // R-CITY-011 (#2477): a builder order past the city's projects being built (Projects.AssignBuilders).
+            (Projects.RefusedBeingBuiltOne, "builder.refused_being_built_one"),
+            (Projects.RefusedBeingBuilt, "builder.refused_being_built"),
             // R-PROJ-001 under gdd-0.3 (#1700 slice B): a second city project start in one city in one turn.
             (Projects.RefusedCityCap, "city.project_reason.city_cap"),
-        }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
+            // #2707: a hex at the stack limit, an instant order short of Attention (the queue's own line), a housing repair off its city.
+            (Movement.RefusedFull, "unit.move_refused.full"),
+            (AttentionSystem.RefusedAttention, "order.no_attention"),
+            (Projects.RefusedRepairCityHex, "city.project_reason.repair_city_hex"),
+            // #2707, batch 3 (option (b)): the capture and end-of-occupation answers that need a unit or a free hex, and an
+            // annexed place that is already a city, as the capture dialog's reviewed lines; {0} is the place.
+            (SettlementControl.RefusedOccupyNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedAnnexNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedWithdrawNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedNoFreeHex, "capture.refusal.no_free_hex"),
+            (Cities.RefusedAlreadyCity, "capture.refusal.already_city"),
+        }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+(?::[^}]*)?\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
         /// else the sim's English as given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's
@@ -386,6 +443,7 @@ namespace Statecraft.Game.UI
                 var before = Session.Now.Why.Count;
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
+                WithdrawUnmetOperations();
                 Notify(Changed);
                 var added = Session.Now.Why.Skip(before).ToList();
                 Notify(Committed, added);
@@ -406,6 +464,20 @@ namespace Statecraft.Game.UI
             if (old != null) deferred[deferred.IndexOf(old)] = c; else deferred.Add(c);
             Notify(Changed);
             return null;
+        }
+
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Re-show the card (Recommended)"): after an instant order, a queued
+        /// operation choice whose required units are no longer in place in the state the card shows (<see cref="State"/>) is
+        /// withdrawn, which refunds its Attention, so its card shows again with the missing unit's "Move ... before" line
+        /// instead of End Turn refusing the choice and handing the card to its minister. The caller notifies.</summary>
+        void WithdrawUnmetOperations()
+        {
+            foreach (var q in deferred.OfType<ChooseEventOption>().ToList())
+            {
+                var option = Content.Events.FirstOrDefault(e => e.Id == q.EventId)?.Options.FirstOrDefault(o => o.Id == q.OptionId);
+                if (option != null && option.RequiresUnitRegions.Count != 0 && !EventSystem.OperationStatus(Content, State, option).Met)
+                    deferred.Remove(q);
+            }
         }
 
         public void Withdraw(Command c)

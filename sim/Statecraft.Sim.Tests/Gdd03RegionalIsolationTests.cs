@@ -43,7 +43,7 @@ public class Gdd03RegionalIsolationTests
         {
             var path = Path.Combine(root, rel);
             var text = File.Exists(path) ? File.ReadAllText(path) : null;
-            if (rel == PlayerRegionCatalogue.FileName && regions != null) return regions;
+            if (rel == PlayerRegionCatalogue.FileName && regions != null) return PlayerRegionsContentTests.CompleteOperationRegions(regions);
             if (rel == "eras.yaml") return text!.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
             if (marker && rel == "map/locations_1948.yaml") return text!.TrimEnd() + "\n" + RuralMarker;
             return text;
@@ -53,7 +53,7 @@ public class Gdd03RegionalIsolationTests
     static PlayerRegionPool Pool() => new PlayerRegionPool(A, 7, .4m, 3, 2,
         new[] { new PlayerRegionFacility("fixture-workshop", "rehovot", PlayerRegionFacilityKind.Workshop, 11) });
 
-    static GameState Fixture(Content c) => PlayerRegions.CreateFixture(c, new[] { Pool() },
+    static GameState Fixture(Content c) => PlayerRegions.CreateFixture(c, PlayerRegionsContentTests.CompletePools(c, Pool()),
         new[] { new PopulationInventoryRow("fixture", 0, new PopulationUnit(0, PopulationStatus.FreeCivilian, 0,
             new PopulationLocation(A, -4, 24), PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None,
             0, "", 0, PopulationEquipment.None)) },
@@ -161,6 +161,6 @@ public class Gdd03RegionalIsolationTests
         foreach (var id in new[] { "fixture", A, "fixture-a-job", "fixture-workshop" })
             Assert.DoesNotContain(id, production.Describe(), StringComparison.Ordinal);
         Assert.Empty(production.PlayerRegions); Assert.False(production.PopulationLedger.IsInitialized);
-        Assert.Equal(production.Population.Values.Sum(), production.TotalPopulation);
+        Assert.Equal(production.Population.OrderBy(kv => kv.Key, StringComparer.Ordinal).Sum(kv => kv.Value), production.TotalPopulation);
     }
 }

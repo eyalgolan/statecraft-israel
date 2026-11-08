@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["websockets==15.0.1"]
+# dependencies = ["websockets==15.0.1", "pillow==12.3.0"]
 # ///
 """Headed browser checks over the Chrome DevTools Protocol (CDP): real GPU (ANGLE Metal), real mouse events.
 
@@ -379,6 +379,21 @@ async def navpairs(args):
     return results
 
 
+def shot_error(path, blank_is_error: bool) -> str | None:
+    """Why the PNG at `path` is no capture: it does not decode, or (blank_is_error) it is one colour throughout. #2697: a
+    loadshot run used to print whatever Chrome wrote. The loading screenshot is only decoded: a plain loading screen is
+    legitimate, the one after GAME OK is not."""
+    from PIL import Image
+    try:
+        with Image.open(path) as im:
+            extrema = im.convert("RGBA").getextrema()
+    except Exception as e:
+        return f"{path} is not a PNG that decodes ({e})"
+    if blank_is_error and all(lo == hi for lo, hi in extrema):
+        return f"{path} is blank (one colour throughout)"
+    return None
+
+
 async def loadshot(args):
     async with Browser(args.build) as b:
         sid = await b.open("bootlog", args.cpu)
@@ -389,14 +404,22 @@ async def loadshot(args):
         if "BOOT FAIL" in line:
             print(f"FAIL: {line}")
             return 1
-        print(await b.shot(sid, args.out + "-loading.png"))
+        path = await b.shot(sid, args.out + "-loading.png")
+        if error := shot_error(path, blank_is_error=False):
+            print(f"FAIL: {error}")
+            return 1
+        print(path)
         line = await b.wait_for(sid, r"^GAME OK|BOOT FAIL")
         if "BOOT FAIL" in line:
             print(f"FAIL: {line}")
             return 1
         await asyncio.sleep(2)
         print(line)
-        print(await b.shot(sid, args.out + "-after.png"))
+        path = await b.shot(sid, args.out + "-after.png")
+        if error := shot_error(path, blank_is_error=True):
+            print(f"FAIL: {error}")
+            return 1
+        print(path)
         return 0
 
 

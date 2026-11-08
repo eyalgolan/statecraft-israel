@@ -1675,6 +1675,13 @@ rules:
     status: verified
     note: "Provenance of this project's own compilation; not human historical or Hebrew sign-off. 61 fields are supplied: 59 are native-review-pending and 2 carry the owner's approved wording (27 October 2026). Eleven compound geographic captions remain NEEDS-RESEARCH with per-field English fallback, following the ruling not to invent unsourced historical forms. Geometry, dates and simulation inputs are unchanged."
   # --- Baked map textures (derived from the heightmap) ---
+  # #2428: the town kits' one shared atlas.
+  - glob: "unity/Assets/Art/Kits/kit_atlas.png"
+    licence: CC-BY-4.0
+    ai_generated: true
+    status: verified
+    source: "Painted entirely by code: uv run asset-sources/kit-atlas/make_kit_atlas.py (numpy, Pillow; fixed seeds, no input files, no photographs and no image model). Regenerating gives the same bytes."
+    note: "ai_generated is true because Claude Code wrote the generator; no generative image model or paid service made any pixel. Albedo only, no lighting painted in (KitAtlasTests)."
   - glob: "unity/Assets/Textures/Map/landuse.png"
     licence: CC-BY-SA-4.0
     source: "tools/land_bake.py (issue #33): the land-use colour and weight (procedural field parcels with farm tracks, garrigue, terraces and scrub) placed by: slope and water from the Copernicus DEM-derived heightmap (Copernicus-DEM); rainfall from CHELSA V2.1 bio12 (CC0-1.0) bias-corrected by the IMS station normals of content/map/precip_stations.json (data.gov.il dataset 481, IMS-data.gov.il, decision D6); content/map/hexes.json biomes (this project's own content, CC-BY-SA-4.0); and the town coordinates of content/map/settlements_1948.yaml (Wikipedia API, CC-BY-SA-4.0) for the citrus belt. Procedural, not AI-generated; attribution in NOTICE"

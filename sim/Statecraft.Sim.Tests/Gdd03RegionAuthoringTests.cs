@@ -140,8 +140,9 @@ public class Gdd03RegionAuthoringTests
                 Assert.Same(region, c.PlayerRegions.AtLocation(m));
             }
         }
-        // 326 approved members, less rosh_haayin_camp (deferred: no sourced position), each in exactly one region.
-        Assert.Equal(325, c.PlayerRegions.Regions.Values.Sum(r => r.MemberLocations.Count));
+        // 326 approved members, less rosh_haayin_camp (deferred: no sourced position), plus nirim (owner, 7 November 2026:
+        // "Add Nirim to Negev (Recommended)"), each in exactly one region.
+        Assert.Equal(326, c.PlayerRegions.Regions.Values.Sum(r => r.MemberLocations.Count));
         Assert.Null(c.PlayerRegions.AtLocation("rosh_haayin_camp"));
         foreach (var (member, from, to) in Moved)
         {
@@ -332,7 +333,7 @@ public class Gdd03RegionAuthoringTests
         while (true)
         {
             ContentException? error = null;
-            try { Assert.Single(PlayerRegionsContentTests.Load(SingleRow(row)).PlayerRegions.Regions); }
+            try { Assert.Contains(id, PlayerRegionsContentTests.Load(SingleRow(row)).PlayerRegions.Regions.Keys); }
             catch (ContentException e) { error = e; }
             if (error == null) break;
             Assert.Equal("regions.yaml", error.File);
@@ -356,16 +357,18 @@ public class Gdd03RegionAuthoringTests
     public void ApprovedNamedPlaceProjectionsLoadWithoutClaimingFullExtents()
     {
         var c = PlayerRegionsContentTests.Load(Projections);
-        Assert.Equal(3, c.PlayerRegions.Regions.Count);
+        var projectionIds = Rows(Parse(Projections), "player_regions").Select(r => Text(r, "id")!).ToArray();
+        Assert.Equal(3, projectionIds.Length);
         var evidence = Rows(Parse(Evidence), "regions");
-        foreach (var region in c.PlayerRegions.Regions.Values)
+        foreach (var region in projectionIds.Select(id => c.PlayerRegions.Regions[id]))
         {
             var original = evidence.Single(r => Text(r, "id") == region.Id);
             Assert.Equal(Text(original, "capital_place_id"), region.CapitalLocation);
             Assert.Equal("APPROVED", region.CapitalApproval);
             Assert.Equal(Text(original, "binding_status"), region.BindingStatus);
             Assert.Null(region.OpeningController);
-            foreach (var member in region.MemberLocations)
+            // nirim joined after these evidence rows (owner, 7 November 2026: "Add Nirim to Negev (Recommended)").
+            foreach (var member in region.MemberLocations.Where(m => m != "nirim"))
             {
                 var source = Rows(original, "members").Single(r => Text(r, "id") == member);
                 var hex = Map(source, "hex");
@@ -503,25 +506,15 @@ public class Gdd03RegionAuthoringTests
     }
 
     [Fact]
-    public void OlderIdentityIgnoresAuthoredAndInvalidRegionContentAndKeepsManifestGoldens()
+    public void Gdd01ConsumesAuthoredRegionsWhileLegacyStillIgnoresThem()
     {
         var reads = new List<string>();
         var authored = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), "regions.yaml"));
         var old = LoadShipped(authored, reads.Add);
-        Assert.DoesNotContain("regions.yaml", reads);
-        Assert.DoesNotContain("map/locality_hexes.yaml", reads);
-        var absent = LoadShipped(null);
-        var incomplete = LoadShipped(Staged);
-        Assert.Equal(absent.Hash, old.Hash);
-        Assert.Equal(absent.Hash, incomplete.Hash);
-        Assert.Equal(Simulation.NewGame(absent, 1, Mode.Historical).Describe(),
-            Simulation.NewGame(old, 1, Mode.Historical).Describe());
-        var run1950 = GoldenRun.Play(old, GoldenRun.Until1950);
-        var run1952 = GoldenRun.Play(old, GoldenRun.Until1952);
-        Assert.Equal(GoldenManifest.Expected("hash1950"), run1950.Hash());
-        Assert.Equal(GoldenManifest.Expected("hash1952"), run1952.Hash());
-        Assert.Equal(GoldenSnapshot.Read("hash1950"), run1950.Describe());
-        Assert.Equal(GoldenSnapshot.Read("hash1952"), run1952.Describe());
+        Assert.Contains("regions.yaml", reads);
+        Assert.Contains("map/locality_hexes.yaml", reads);
+        Assert.NotEmpty(old.PlayerRegions.Regions);
+        Assert.Throws<ContentException>(() => LoadShipped(null));
         var files = new Dictionary<string, string>(Fixture.Files) { ["regions.yaml"] = Staged };
         Content Legacy() => ContentLoader.Load(rel => files.TryGetValue(rel, out var text) ? text : null, Array.Empty<string>());
         var legacy = Legacy();
