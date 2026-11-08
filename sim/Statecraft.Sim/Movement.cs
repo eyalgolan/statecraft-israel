@@ -327,7 +327,9 @@ namespace Statecraft.Sim
             var ids = Held(c, s);
             // The enemy's set is built from the player's localities, not as all hexes minus the enemy-held ones: at 4.4 km (#1183)
             // Rehovot shares Ramla's hex (-4, 24), which must stay closed to the enemy while Ramla is enemy-held (owner review, #1796).
-            if (enemy) return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => !ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
+            // An annexed target closes its target's hex too (Ramla's (-3, 24), #1796), where R-CTRL-006 checks it (#2955).
+            if (enemy) return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => !ids.Contains(h.Id)).Select(h => (h.Q, h.R))
+                .Concat(c.SettlementTargets.Where(t => HeldAnnexed(s, t.Id)).Select(t => (t.Q, t.R))));
             // A target's hex, not its settlement's, as in Closed: for Ramla (ContentLoader.TargetOnANeighbour, #1796) that is
             // (-3, 24), so a retreat or a Raid's withdrawal never ends where it would capture the place, while Rehovot's shared
             // settlement hex (-4, 24) stays open (owner review, #1796).
@@ -335,23 +337,30 @@ namespace Statecraft.Sim
                 .Select(h => (h.Q, h.R)).Concat(c.SettlementTargets.Where(t => ids.Contains(t.Id)).Select(t => (t.Q, t.R))));
         }
 
-        /// <summary>mvp.enemy_held_localities less the annexed targets: an annexed target is Israeli for good (R-CTRL-016,
-        /// OWNER QUESTION 3 (a) on #799), not enemy-held.</summary>
+        /// <summary>mvp.enemy_held_localities less the annexed targets Israel holds: an annexed target is Israeli (R-CTRL-016,
+        /// OWNER QUESTION 3 (a) on #799), not enemy-held, until enemy units take it (R-CTRL-006; the owner on #2955, "Can be
+        /// taken"); then it is enemy-held again.</summary>
         static List<string> Held(Content c, GameState s) => c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities
-            .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.State == SettlementControl.Annexed)).ToList();
+            .Where(id => !HeldAnnexed(s, id)).ToList();
+
+        /// <summary>An annexed target Israel holds: its record is annexed and Israeli, not taken by enemy units (R-CTRL-006).</summary>
+        static bool HeldAnnexed(GameState s, string id) =>
+            s.Settlements.TryGetValue(id, out var x) && x.State == SettlementControl.Annexed && x.Owner == PlayerSide;
 
         /// <summary>R-MOVE-005 in Phase 6 (#1304): the hexes a move and its path may not enter. For the player, those of
         /// mvp.enemy_held_localities that are not curated targets (settlement_targets.yaml), so a target can be captured in play
         /// (the owner's #793 ruling) while the rest, Gaza today, stay closed, and so does a depopulated target's hex (R-CTRL-020);
         /// for the enemy, <see cref="NoEntry"/>'s mirror less the player's localities, which an enemy move may now end on
-        /// when it is sent there (R-CTRL-006; <see cref="Search"/> keeps every other one off its path), so only an arab_town
-        /// that is not enemy-held (Jaffa) and an annexed target stay closed to them. A hex one of those shares stays closed. Raid's withdrawal and combat retreat still read <see cref="NoEntry"/>, so neither
+        /// when it is sent there (R-CTRL-006; <see cref="Search"/> keeps every other one off its path), and so may it on an
+        /// annexed target Israel holds (the owner on #2955, "Can be taken"), so only an arab_town that is not enemy-held (Jaffa)
+        /// stays closed to them. A hex one of those shares stays closed. Raid's withdrawal and combat retreat still read <see cref="NoEntry"/>, so neither
         /// ends on an enemy-held place, nor an enemy retreat on a player's locality.</summary>
         static HashSet<(int Q, int R)> Closed(Content c, GameState s, bool enemy)
         {
             if (enemy)
             {
-                var open = new HashSet<string>(SettlementControl.PlayerLocalities(c, s).Select(h => h.Id), StringComparer.Ordinal);
+                var open = new HashSet<string>(SettlementControl.PlayerLocalities(c, s).Select(h => h.Id)
+                    .Concat(c.SettlementTargets.Where(t => HeldAnnexed(s, t.Id)).Select(t => t.Id)), StringComparer.Ordinal);
                 var held = Held(c, s);
                 return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => !held.Contains(h.Id) && !open.Contains(h.Id)).Select(h => (h.Q, h.R)));
             }
@@ -405,8 +414,9 @@ namespace Statecraft.Sim
         /// (R-MOVE-001, OQ-3). Stacking limits only where a move ends, so it is not checked here. With <paramref name="card"/>, an
         /// operation card's go-to to that hex (R-ENEMY-005; the owner's answer 1 on #2087, 31 October 2026), every enemy-held
         /// locality (<see cref="NoEntry"/>) but that hex is closed too, open target or not: the march never ends on, and so
-        /// never captures, a place it was not sent to. An enemy unit's path, the same way, enters no player's locality but
-        /// <paramref name="to"/>, the hex it is sent to (R-CTRL-006).</summary>
+        /// never captures, a place it was not sent to. An enemy unit's path, the same way, enters no player's locality and no
+        /// annexed target Israel holds but <paramref name="to"/>, the hex it is sent to (R-CTRL-006; the owner on #2955,
+        /// "Destination only (Recommended)").</summary>
         static (Dictionary<(int Q, int R), int> Dist, Dictionary<(int Q, int R), (int Q, int R)> Prev) Search(
             Content c, GameState s, Unit u, int budget, bool fresh = false, (int Q, int R)? card = null, (int Q, int R)? to = null)
         {

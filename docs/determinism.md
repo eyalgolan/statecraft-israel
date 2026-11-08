@@ -27,10 +27,12 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   enter the five enemy-held ones since #1304 (R-MOVE-005), but the reference player sends no Move, so none of its units stands on one, and its unit on
   Jaffa's hex (shared with Tel Aviv) captures nothing, since Jaffa is not enemy-held at the start. The smoke-orders
   move skips the lit hexes of enemy-held places on purpose (`GoldenRun.SmokeMove`), so it stays a plain move.
-  The enemy's check (R-CTRL-006, #1305) runs in the same step after it, visits the player's localities in ordinal id
-  order and draws nothing (`CaptureTests.PlayersLocalitiesResolveInOrdinalOrder`, `ALossAndARetakeDrawNothing`). An
-  enemy move ends on a player's locality only where it is sent, and no scripted anchor is on one, so no golden records
-  a loss and no hash moved (`CaptureTests.RealContentLosesNoPlayersLocalityOnTheFirstTurn`).
+  The enemy's check (R-CTRL-006, #1305) runs in the same step after it, visits the player's localities and the annexed
+  targets (the owner on #2955, "Can be taken") in one ordinal id order and draws nothing
+  (`CaptureTests.PlayersLocalitiesResolveInOrdinalOrder`, `ALossAndARetakeDrawNothing`,
+  `AnEnemyUnitAloneOnAnAnnexedTargetTakesIt`). An enemy move ends on a player's locality or an annexed target only where it
+  is sent, and no scripted anchor is on one, so no golden records a loss and no hash moved, `mvp-annex-nazareth`'s
+  annexed Nazareth included (`CaptureTests.RealContentLosesNoPlayersLocalityOnTheFirstTurn`).
 - **Answering a capture (Raid and withdraw):** the units on the place leave in ascending id, each to the first free hex in
   the fixed neighbour order, and the captures still waiting at the game's end resolve in ordinal id order, with no RNG
   draw (R-CTRL-008, R-CTRL-010; `RaidTests.RaidDrawsNothing`). Only `mvp-occupy-cost` captures a place, and it answers with Occupy, so no golden Raids one.

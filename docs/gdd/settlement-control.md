@@ -54,7 +54,7 @@ The retained `R-CTRL-011` rule requires an Israeli military unit on the place's 
 
 The retained ruling has no puppet-regime outcome [S6]. **Amir's proposal, declined by the owner on 30 October 2026 (Annexation conflict, option A) [S1]:** town/city regime taxes would be added; that addition is non-operative. For an annexation cost, the 30 October 2026 conflict review did not rule; `R-CTRL-016` (`docs/rules/mvp.md`) stays operative. Puppet regimes and regime taxes are post-MVP design (owner, 1 November 2026, Q28 to Q33): an annexed town that stayed earns ordinary city income, and a fled place pays nothing [S16].
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** enemy recapture would clear annexation. The retained ruling says an annexed town stays Israeli for good [S11].
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** enemy recapture would clear annexation. The ruling of 24 October 2026 said an annexed town stays Israeli for good [S11]. **Then decided (owner, 8 November 2026, answering the questions on #2955):** "Can be taken", the option "Enemy units can take an annexed town like any Israeli town, and Israeli units retaking it make it annexed again" (`R-CTRL-006`), so a recapture does not clear the annexation for good; and "Destination only (Recommended)": an enemy march takes only the place it is sent to.
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** residents would remain outside the player's civilian systems and produce regime taxes. The retained rule adds residents of stayed towns under the starting-city rule [S11].
 
@@ -82,7 +82,7 @@ Old references to Raid, Occupy and Deport do not approve every sensitive outcome
 - `uv run scripts/oss/rule_ids.py` passes without defining any planned Phase six ID in this docs-only change.
 - `uv run scripts/oss/check_repo.py` passes.
 - **Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S13]:** capital capture would disable a region. That criterion is non-operative. Route-blocked evacuation is post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)") [S16]. While an enemy unit holds an Israeli city's hex, its jobs, Food production and projects pause, and they resume on retaking with nothing deleted (D6) [S16].
-- Pre-annexation withdrawal becomes a Raid; after annexation the town stays Israeli for good, with no unit that has to stay [S11].
+- Pre-annexation withdrawal becomes a Raid; after annexation no unit has to stay [S11]. Enemy units can take an annexed town like any Israeli town, and Israeli units retaking it make it annexed again (owner, 8 November 2026, on #2955: "Can be taken"; `R-CTRL-006`).
 - The proposal's resident treatment is not implemented unless the owner supersedes R-CTRL-016.
 - Unreviewed outcomes remain unavailable and shared-hex identities stay distinct.
 

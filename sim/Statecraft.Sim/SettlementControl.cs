@@ -25,9 +25,10 @@ namespace Statecraft.Sim
             var enemyHeld = new HashSet<string>(c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities, StringComparer.Ordinal);
             foreach (var t in c.SettlementTargets.Where(x => enemyHeld.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal))
             {
-                // An ownerless, non-depopulated record marks a place returned to enemy control and can be taken again.
+                // An ownerless, non-depopulated record marks a place returned to enemy control and can be taken again. An
+                // ownerless annexed record is an annexed target enemy units took (R-CTRL-006): retaking it is no new capture.
                 if (Holder(s, t.Q, t.R) != Movement.PlayerSide
-                    || (s.Settlements.TryGetValue(t.Id, out var old) && !(old.Owner == "" && !old.Depopulated))) continue;
+                    || (s.Settlements.TryGetValue(t.Id, out var old) && !(old.Owner == "" && !old.Depopulated && old.State != Annexed))) continue;
                 var fled = t.Residents == ContentLoader.Fled;
                 s.Settlements[t.Id] = new SettlementControl(Movement.PlayerSide, AwaitingChoice, fled: fled);
                 why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is captured: Israeli units hold it and no enemy unit is there. "
@@ -63,32 +64,41 @@ namespace Statecraft.Sim
             }
             // R-CTRL-006 (Q-TGT-2 (c); #796 default 3): enemy military units alone on a player's locality take it, with no
             // choice, as an ownerless record dated the turn's end (the lost marker); Israeli military units alone on it again
-            // give it back by removing that record. In ordinal id; a record of any other shape is left alone.
-            foreach (var h in PlayerLocalities(c, s).OrderBy(x => x.Id, StringComparer.Ordinal))
+            // give it back by removing that record. An annexed target is taken the same way, on its target's hex (the owner on
+            // #2955, "Can be taken"): its record loses only its owner, and a retake gives the owner back, so it is annexed again
+            // with nothing added a second time. In ordinal id; a record of any other shape is left alone.
+            var annexed = c.SettlementTargets.Where(t => s.Settlements.TryGetValue(t.Id, out var a) && a.State == Annexed).Select(t => (t.Id, t.Q, t.R));
+            foreach (var (id, q, r) in PlayerLocalities(c, s).Select(h => (h.Id, h.Q, h.R)).Concat(annexed).OrderBy(x => x.Id, StringComparer.Ordinal).ToList())
             {
-                var holder = Holder(s, h.Q, h.R);
-                var has = s.Settlements.TryGetValue(h.Id, out var x);
-                if (holder == Enemy && !has)
+                var holder = Holder(s, q, r);
+                var has = s.Settlements.TryGetValue(id, out var x);
+                var isAnnexed = has && x!.State == Annexed;
+                if (holder == Enemy && (isAnnexed ? x!.Owner == Movement.PlayerSide : !has))
                 {
-                    s.Settlements[h.Id] = new SettlementControl(since: next);
-                    why.Add(new Cause("map", h.Id, 0, $"{c.SettlementNames[h.Id]} is lost: enemy units hold it and no Israeli unit is there", key: CauseKeys.PlaceLost));
+                    s.Settlements[id] = isAnnexed ? WithOwner(x!, "") : new SettlementControl(since: next);
+                    why.Add(new Cause("map", id, 0, $"{c.SettlementNames[id]} is lost: enemy units hold it and no Israeli unit is there", key: CauseKeys.PlaceLost));
                 }
-                else if (holder == Movement.PlayerSide && has && IsLost(x))
+                else if (holder == Movement.PlayerSide && has && (isAnnexed ? x!.Owner == "" : IsLost(x!)))
                 {
-                    s.Settlements.Remove(h.Id);
-                    why.Add(new Cause("map", h.Id, 0, $"{c.SettlementNames[h.Id]} is retaken: Israeli units hold it again and no enemy unit is there", key: CauseKeys.PlaceRetaken));
+                    if (isAnnexed) s.Settlements[id] = WithOwner(x!, Movement.PlayerSide);
+                    else s.Settlements.Remove(id);
+                    why.Add(new Cause("map", id, 0, $"{c.SettlementNames[id]} is retaken: Israeli units hold it again and no enemy unit is there", key: CauseKeys.PlaceRetaken));
                 }
             }
         }
 
         /// <summary>R-CTRL-006 (#796 default 3, owner, 21 October 2026): the player's localities, every map/settlements_1948.yaml
         /// row that is not an arab_town and not on mvp.enemy_held_localities, in file order. An annexed target is an arab_town,
-        /// so it is not one of them.</summary>
+        /// so it is not one of them; <see cref="Capture"/> adds the annexed targets itself (#2955).</summary>
         internal static IEnumerable<SettlementHex> PlayerLocalities(Content c, GameState s)
         {
             var enemyHeld = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities;
             return c.SettlementHexes.Where(h => !c.ArabTowns.Contains(h.Id) && !enemyHeld.Contains(h.Id));
         }
+
+        /// <summary>R-CTRL-006 for an annexed target: the same record with <paramref name="owner"/>.</summary>
+        static SettlementControl WithOwner(SettlementControl x, string owner) =>
+            new SettlementControl(owner, x.State, x.Since, x.Depopulated, x.Combatants, x.Buildings, x.Turns, x.Fled);
 
         /// <summary>R-CTRL-006: the lost marker of a player's locality, an ownerless, inhabited record with no state.</summary>
         static bool IsLost(SettlementControl x) => x.Owner == "" && x.State == "" && !x.Depopulated;
@@ -175,7 +185,8 @@ namespace Statecraft.Sim
         /// <summary>The outcomes of EndOccupation (R-CTRL-015; Q-PUP-1 (c): no puppet regime).</summary>
         public const string Annex = "annex";
         public const string WithdrawOutcome = "withdraw";
-        /// <summary>The <see cref="State"/> of an annexed place: Israeli for good, no timer, upkeep or garrison (R-CTRL-016).</summary>
+        /// <summary>The <see cref="State"/> of an annexed place: no timer, upkeep or garrison (R-CTRL-016). Israeli while its owner
+        /// is; enemy units can take it, which clears only the owner, and a retake gives it back (R-CTRL-006; the owner on #2955).</summary>
         public const string Annexed = "annexed";
 
         /// <summary>R-CTRL-015: the end outcomes in their one fixed order, the ruling's words "annex or withdraw".</summary>

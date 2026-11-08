@@ -483,9 +483,9 @@ public class CaptureTests
         Assert.Equal(before.Describe(), s.Describe());
     }
 
-    // R-ENEMY-001 with R-CTRL-006: an enemy unit may now end a move on a player's locality (town_h) and its path may pass
-    // through one, but not on an arab_town that is not enemy-held (town_d, Jaffa's case) nor on an annexed target, which
-    // R-CTRL-006 does not cover. A retreat still never ends on any of them (#2932: NoEntry is unchanged).
+    // R-ENEMY-001 with R-CTRL-006: an enemy unit may now end a move on a player's locality (town_h) it is sent to, but not
+    // on an arab_town that is not enemy-held (town_d, Jaffa's case). A retreat still never ends on either (#2932: NoEntry is
+    // unchanged). An annexed target is covered by AnEnemyUnitMayBeSentOntoAnAnnexedTarget.
     [Fact]
     public void AnEnemyUnitMayMoveOntoAPlayersLocality()
     {
@@ -500,9 +500,6 @@ public class CaptureTests
         var t = With(c, Enemy(1, 1, 1));
         Assert.Equal("Units may not enter an enemy-held locality before its capture is possible",
             Movement.Move(c, t, 1, 1, 2, new Dictionary<int, int>(), new List<Cause>(), enemy: true));
-        t.Settlements["town_a"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Annexed, t.Date);
-        Assert.Equal("Units may not enter an enemy-held locality before its capture is possible",
-            Movement.Move(c, t, 1, 1, 0, new Dictionary<int, int>(), new List<Cause>(), enemy: true));
     }
 
     // R-CTRL-006 only as far as the rule needs (R-ENEMY-001): an enemy path goes round a player's locality it is not sent
@@ -520,6 +517,113 @@ public class CaptureTests
         var sent = new Dictionary<int, int>();
         Assert.Null(Movement.Move(c, t, 1, 3, 1, sent, new List<Cause>(), enemy: true));
         Assert.Equal(((3, 1), 1), ((t.Units[1].Q, t.Units[1].R), sent[1]));
+    }
+
+    // R-CTRL-006 and R-CTRL-016 for an annexed target, the owner's answer on #2955 (8 November 2026): "Can be taken". Option
+    // (a): enemy units can take an annexed town like any Israeli town, and Israeli units retaking it make it annexed again.
+    // Fixture values, not history: town_a is annexed on 1948-06-01, and its people are not added by this fixture.
+    static GameState Annexed(Content c, params Unit[] units)
+    {
+        var s = With(c, units);
+        s.Settlements["town_a"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Annexed, new DateTime(1948, 6, 1), fled: true);
+        return s;
+    }
+
+    // R-CTRL-006 for an annexed target ("Can be taken", #2955): an enemy military unit alone on it takes it, with no choice
+    // and the same Why line as any Israeli town. The record loses only its owner, so the place is enemy-held again; no other
+    // field, resource, city or the RNG changes.
+    [Fact]
+    public void AnEnemyUnitAloneOnAnAnnexedTargetTakesIt()
+    {
+        var c = Load(AllTargets);
+        var s = Annexed(c, Enemy(1, 1, 0));
+        var before = s.Clone();
+        var why = Capture(c, s);
+        var x = s.Settlements["town_a"];
+        Assert.Equal(("", SettlementControl.Annexed, new DateTime(1948, 6, 1), false, true, 0, "", 0),
+            (x.Owner, x.State, x.Since, x.Depopulated, x.Fled, x.Combatants, x.Buildings, x.Turns));
+        var line = Assert.Single(why);
+        Assert.Equal(("town_a", "place_lost"), (line.Target, line.Key));
+        Assert.Equal("TOWN A is lost: enemy units hold it and no Israeli unit is there", line.Message);
+        Assert.Equal(before.RngState, s.RngState);
+        s.Settlements["town_a"] = before.Settlements["town_a"];
+        Assert.Equal(before.Describe(), s.Describe());
+        var both = Annexed(c, Enemy(1, 1, 0), Soldier(2, 1, 0));
+        Assert.Empty(Capture(c, both));
+        Assert.Equal(Movement.PlayerSide, both.Settlements["town_a"].Owner);
+    }
+
+    // R-CTRL-006 for an annexed target, retaking (#2955 option (a)): Israeli military units alone on a lost annexed target
+    // make it annexed again, the same record as before the loss. It is no new capture: no awaiting_choice, no second
+    // annexation (no city or people added again). Nobody on it, or both sides, leaves it lost.
+    [Fact]
+    public void IsraeliUnitsRetakingAnAnnexedTargetMakeItAnnexedAgain()
+    {
+        var c = Load(AllTargets);
+        var s = Annexed(c, Enemy(1, 1, 0));
+        var annexed = s.Settlements["town_a"];
+        Capture(c, s);
+        s.Units.Clear();
+        Assert.Empty(Capture(c, s));
+        Assert.Equal("", s.Settlements["town_a"].Owner);
+        s.Units[1] = Enemy(1, 1, 0);
+        s.Units[2] = Soldier(2, 1, 0);
+        Assert.Empty(Capture(c, s));
+        Assert.Equal("", s.Settlements["town_a"].Owner);
+        s.Units.Remove(1);
+        var before = s.Clone();
+        var why = Capture(c, s);
+        Assert.Equal(annexed.Canonical(), s.Settlements["town_a"].Canonical());
+        var line = Assert.Single(why);
+        Assert.Equal(("town_a", "place_retaken"), (line.Target, line.Key));
+        Assert.Equal("TOWN A is retaken: Israeli units hold it again and no enemy unit is there", line.Message);
+        s.Settlements["town_a"] = before.Settlements["town_a"];
+        Assert.Equal(before.Describe(), s.Describe());
+    }
+
+    // R-ENEMY-001 for an annexed target, with the owner's pass-through answer on #2955 (8 November 2026): "Destination only
+    // (Recommended)". An enemy move may end on an annexed target it is sent to, and its path goes round one it is not sent
+    // to: from (0, 0) to (2, 0) the way through town_a on (1, 0) costs 2; the way round costs 3. A retreat never ends there
+    // (NoEntry). A lost annexed target is enemy-held again, so it is open to enemy paths and closed to the player's retreats.
+    [Fact]
+    public void AnEnemyUnitMayBeSentOntoAnAnnexedTarget()
+    {
+        var c = Load(AllTargets);
+        var s = Annexed(c, Enemy(1, 0, 0));
+        Assert.Contains((1, 0), Movement.NoEntry(c, s, true));
+        Assert.DoesNotContain((1, 0), Movement.NoEntry(c, s));
+        var spent = new Dictionary<int, int>();
+        Assert.Null(Movement.Move(c, s, 1, 2, 0, spent, new List<Cause>(), enemy: true));
+        Assert.Equal(3, spent[1]);
+        var t = Annexed(c, Enemy(1, 0, 0));
+        var sent = new Dictionary<int, int>();
+        Assert.Null(Movement.Move(c, t, 1, 1, 0, sent, new List<Cause>(), enemy: true));
+        Assert.Equal(((1, 0), 1), ((t.Units[1].Q, t.Units[1].R), sent[1]));
+        Capture(c, t);
+        Assert.Equal("", t.Settlements["town_a"].Owner);
+        Assert.DoesNotContain((1, 0), Movement.NoEntry(c, t, true));
+        Assert.Contains((1, 0), Movement.NoEntry(c, t));
+    }
+
+    // R-CTRL-004 with a lost annexed target: an Israeli unit moving onto it in the turn is no new capture (the instant check
+    // leaves it lost); step 3 makes it annexed again.
+    [Fact]
+    public void ALostAnnexedTargetIsNotCapturedAgainAsANewCapture()
+    {
+        var c = Load(AllTargets);
+        var s = Annexed(c, Enemy(1, 1, 0));
+        Capture(c, s);
+        s.Units.Clear();
+        s.Units[2] = Soldier(2, 0, 0);
+        Assert.Null(Movement.Move(c, s, 2, 1, 0, new Dictionary<int, int>(), new List<Cause>()));
+        var instant = new List<Cause>();
+        SettlementControl.CaptureHeld(c, s, instant);
+        Assert.Empty(instant);
+        Assert.Equal(("", SettlementControl.Annexed), (s.Settlements["town_a"].Owner, s.Settlements["town_a"].State));
+        var next = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.Equal((Movement.PlayerSide, SettlementControl.Annexed), (next.State.Settlements["town_a"].Owner, next.State.Settlements["town_a"].State));
+        Assert.Contains(next.Why, x => x.Key == "place_retaken" && x.Target == "town_a");
+        Assert.DoesNotContain(next.Why, x => x.Key == "place_captured");
     }
 
     // R-CTRL-006 through the whole resolver: an enemy unit alone on a player's locality at End turn takes it in step 3.
