@@ -239,9 +239,8 @@ namespace Statecraft.Game.UI
         static void ProjectList(VisualElement host, SimBridge bridge, UiText text, string id)
         {
             var c = bridge.Content; var s = bridge.State;
-            if (c.Ruleset != SaveGame.Gdd03Ruleset) return;
+            if (!Listed(c, s, id)) return;
             var mine = s.CityProjects.Values.Where(p => p.City == id).OrderBy(p => p.Id).ToList();
-            if (mine.Count == 0) return;
             Line(host, "city-list-header", text.Format("city.list_header", mine.Count));
             foreach (var p in mine)
             {
@@ -257,6 +256,9 @@ namespace Statecraft.Game.UI
                     !cancelled, () => bridge.Queue(new CancelProject(p.Id)));
             }
         }
+
+        /// <summary>Whether the city's block lists its projects (ProjectList): gdd-0.3, and the city has one.</summary>
+        static bool Listed(Content c, GameState s, string city) => c.Ruleset == SaveGame.Gdd03Ruleset && s.CityProjects.Values.Any(p => p.City == city);
 
         /// <summary>A pioneer group's Return (R-QUAL-003; #1511): the sim's unit order return_civilian, offered where
         /// Qualification.CheckReturn takes the group (not one at work). It sits beside the places that list the group; the
@@ -558,13 +560,14 @@ namespace Statecraft.Game.UI
         /// (Simulation.Preview, as Train does) whether n + 1 in the order's slot would be refused, or would make it refuse an
         /// order of the queue it accepts now, so the queue's job, training, workshop, start and builder orders all count
         /// whichever runs first. While a project is left without one, that refusal shows in the UI's language. A repair's line
-        /// is <paramref name="line"/>; <paramref name="stepper"/> off leaves the stepper to another project of the hex (Repairs).</summary>
-        static void BuilderPart(VisualElement host, SimBridge bridge, UiText text, CityProject project, string line = "city-project-builder", bool stepper = true)
+        /// is <paramref name="line"/>, and none when it is null (its row in the city's list says it, Repairs); <paramref name="stepper"/>
+        /// off leaves the stepper to another project of the hex (Repairs).</summary>
+        static void BuilderPart(VisualElement host, SimBridge bridge, UiText text, CityProject project, string? line = "city-project-builder", bool stepper = true)
         {
             var c = bridge.Content; var s = bridge.State;
             if (c.Ruleset != SaveGame.Gdd03Ruleset) return;
             var city = project.City;
-            Line(host, line, text[project.Builder ? "city.project_builder" : "city.project_no_builder"]);
+            if (line != null) Line(host, line, text[project.Builder ? "city.project_builder" : "city.project_no_builder"]);
             if (!stepper) return;
             var building = s.CityProjects.Values.Count(p => p.City == city && p.BuiltOn == null);
             var builders = Projects.Builders(s, city);
@@ -600,7 +603,9 @@ namespace Statecraft.Game.UI
         /// (Projects.CityProjectAt skips it), so it shows on its city's own hex, where it is offered: its line and whether it
         /// has a builder. Its city's builder stepper shows once on the hex: under the hex's own project being built when that
         /// is the same city's, else under the city's first repair, so a city whose only project being built is a repair has
-        /// one too.</summary>
+        /// one too. Where the repair's city has its block on this hex and so its project list (ProjectList, #1722), the list's
+        /// row is the repair's line and its builder, so only the stepper shows here (owner, 8 November 2026: "Drop the old lines
+        /// here (Recommended)": each repair shows once).</summary>
         static void Repairs(VisualElement host, SimBridge bridge, UiText text, int q, int r, Func<string, string> townName)
         {
             var c = bridge.Content; var s = bridge.State;
@@ -608,6 +613,11 @@ namespace Statecraft.Game.UI
             if (Projects.CityProjectAt(s, q, r) is CityProject { BuiltOn: null } here) stepped.Add(here.City);
             foreach (var repair in s.CityProjects.Values.Where(p => p.Kind == Projects.HousingRepair && p.Q == q && p.R == r && p.BuiltOn == null).OrderBy(p => p.Id))
             {
+                if (Listed(c, s, repair.City) && c.SettlementHexes.Any(x => x.Id == repair.City && x.Q == q && x.R == r))
+                {
+                    BuilderPart(host, bridge, text, repair, null, stepped.Add(repair.City));
+                    continue;
+                }
                 var kind = PlayerText.Capitalised(ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == repair.Kind)));
                 Line(host, "city-repair-state", text.Format("city.project_building", kind, townName(repair.City),
                     Turns(text, Projects.CityTurnsToBuild(c, s, repair.Kind, repair.TurnsLeft, repair.Progress))));
