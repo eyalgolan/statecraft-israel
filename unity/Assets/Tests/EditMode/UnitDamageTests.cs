@@ -85,6 +85,43 @@ public class UnitDamageTests
         Assert.IsFalse(UnitDamage.Damaged(C, s.Units[u.Id]));
     }
 
+    /// <summary>The guards in <see cref="UnitDamage.FullStrength"/>: a Full of 0 or below is unset; a player's unit with no
+    /// Full reads its own strength (Training.Room's reading), never its starting force's; an enemy's unit reads its starting
+    /// force's strength only for a known content, an id inside StartingForces and a row of its own side, and never below its
+    /// strength now (the Max). Each assert goes red if its guard is removed.</summary>
+    [Test]
+    public void TheFullStrengthGuardsHold()
+    {
+        var s = NewGame();
+        var own = s.Units.Values.First(u => u.Side == Movement.PlayerSide && u.Strength >= 2);
+        Assert.AreEqual(own.Strength - 1, UnitDamage.FullStrength(C, WithStrength(own, own.Strength - 1, 0)),
+            "a player's unit with Full unset reads its strength, not its starting force's");
+        Assert.AreEqual(own.Strength - 1, UnitDamage.FullStrength(C, WithStrength(own, own.Strength - 1, -1)),
+            "a negative Full is unset");
+        Assert.IsFalse(UnitDamage.Damaged(C, WithStrength(own, own.Strength - 1, 0)));
+
+        var enemy = s.Units.Values.First(u => u.Side != "" && u.Side != Movement.PlayerSide && u.Strength >= 2);
+        int start = C.StartingForces[enemy.Id].Strength;
+        var over = WithStrength(enemy, start + 1, 0);
+        Assert.AreEqual(start + 1, UnitDamage.FullStrength(C, over), "an enemy above its start reads its strength (the Max)");
+        Assert.IsFalse(UnitDamage.Damaged(C, over));
+
+        var hit = WithStrength(enemy, enemy.Strength - 1, 0);
+        Assert.AreEqual(enemy.Strength - 1, UnitDamage.FullStrength(null, hit), "no content: an enemy reads as full");
+        Assert.IsFalse(UnitDamage.Damaged(null, hit));
+
+        var past = new Unit(C.StartingForces.Count, enemy.Type, 0, 0, side: enemy.Side, strength: 1);
+        Assert.AreEqual(1, UnitDamage.FullStrength(C, past), "an id past StartingForces reads its strength");
+        var negative = new Unit(-1, enemy.Type, 0, 0, side: enemy.Side, strength: 1);
+        Assert.AreEqual(1, UnitDamage.FullStrength(C, negative), "a negative id reads its strength");
+
+        int ownRow = Enumerable.Range(0, C.StartingForces.Count)
+            .First(i => C.StartingForces[i].Side == Movement.PlayerSide && C.StartingForces[i].Strength >= 2);
+        var mismatch = new Unit(ownRow, enemy.Type, 0, 0, side: enemy.Side, strength: 1);
+        Assert.AreEqual(1, UnitDamage.FullStrength(C, mismatch), "an enemy unit on a player's row reads its own strength");
+        Assert.IsFalse(UnitDamage.Damaged(C, mismatch));
+    }
+
     /// <summary>The card states the strength for every military unit, from the live state (not the token's copy): the plain
     /// line at full strength, "of" its full strength once damaged, in English and Hebrew.</summary>
     [Test]
