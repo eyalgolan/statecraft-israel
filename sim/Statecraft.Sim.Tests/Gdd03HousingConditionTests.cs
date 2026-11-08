@@ -258,4 +258,46 @@ public class Gdd03HousingConditionTests
         Assert.Empty(UpdateCondition(Real01, low));
         Assert.Equal((t, m), (low.Treasury, low.Indicators["morale"]));
     }
+
+    // R-HOUSE-005, #1722 (the city panel's housing readout): Cities.HousingOutlook reads, without changing the state, what
+    // UpdateCondition would settle for one city on the same state: the surcharge priced before deterioration, the condition
+    // after the 5 pp overflow and the cohesion shift on morale. 10 housed in no housing at 0.27: 0.23 Money, 0.22, -0.0024.
+    [Fact]
+    public void HousingOutlookReadsWhatUpdateConditionSettles()
+    {
+        var s = OneCity(Real03, civilians: 10, capacity: 0, condition: 0.27);
+        s.Treasury = 100;
+        var id = s.Cities.Keys.Single();
+        var hash = s.Hash();
+        var o = Cities.HousingOutlook(Real03, s, id)!.Value;
+        Assert.Equal(hash, s.Hash());   // a read: no state change
+        var why = UpdateCondition(Real03, s);
+        Assert.Equal(-Assert.Single(why, w => w.Key == CauseKeys.HousingSurcharge).Delta, o.Surcharge, 12);
+        Assert.Equal(s.Cities[id].Condition!.Value, o.ConditionAfter, 12);
+        Assert.Equal(Assert.Single(why, w => w.Key == CauseKeys.HousingCohesion).Delta, o.CohesionShift, 12);
+        Assert.Equal((0.50, 0.25), (o.MoneyThreshold, o.CohesionThreshold));   // content/gdd03-balance.yaml housing.*
+    }
+
+    // R-HOUSE-005: at or above both thresholds with no overflow there is nothing to read but the condition itself.
+    [Fact]
+    public void HousingOutlookIsZeroForAWellHousedCity()
+    {
+        var s = OneCity(Real03, civilians: 10, capacity: 10, condition: 0.60);
+        var o = Cities.HousingOutlook(Real03, s, s.Cities.Keys.Single())!.Value;
+        Assert.Equal((0.0, 0.60, 0.0), (o.Surcharge, o.ConditionAfter, o.CohesionShift));
+    }
+
+    // gdd-0.1 has no surcharge or cohesion term (R-HOUSE-005 is gdd-0.3 only), and an unknown city or one with no condition
+    // has no readout.
+    [Fact]
+    public void HousingOutlookIsNullOutsideGdd03AndForACityWithNoCondition()
+    {
+        var legacy = OneCity(Real01, civilians: 10, capacity: 10, condition: 0.10);
+        Assert.Null(Cities.HousingOutlook(Real01, legacy, legacy.Cities.Keys.Single()));
+        var s = OneCity(Real03, civilians: 10, capacity: 10, condition: 0.10);
+        Assert.Null(Cities.HousingOutlook(Real03, s, "no_such_city"));
+        var id = s.Cities.Keys.Single();
+        s.Cities[id] = new City(id, 10, 0, 10, 0, 0);
+        Assert.Null(Cities.HousingOutlook(Real03, s, id));
+    }
 }

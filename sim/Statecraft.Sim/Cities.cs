@@ -339,6 +339,39 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>#1722 (the city panel's housing readout): what <see cref="UpdateCondition"/> would settle for
+        /// <paramref name="city"/> on the state as it is now, under gdd-0.3 (R-HOUSE-005): the surcharge priced from the
+        /// current condition, the condition after the overflow deterioration and the cohesion shift on <c>morale</c>
+        /// (<c>-points / 100</c>, before the indicator's bounds), with the catalogue's two thresholds. It changes no state. The
+        /// turn's own housing step may differ: arrivals and finished repairs change R and the condition before it runs (step
+        /// order, R-HOUSE-005), and the cohesion term is settled once for all cities. Null outside gdd-0.3, for a city not in
+        /// the state or with no condition, and on a population-ledger state that is not Historical (UpdateCondition refuses
+        /// those).</summary>
+        public static HousingReadout? HousingOutlook(Content c, GameState s, string city)
+        {
+            if (c.Ruleset != SaveGame.Gdd03Ruleset || !s.Cities.TryGetValue(city, out var x) || !(x.Condition is double was)) return null;
+            if (s.PopulationLedger.IsInitialized && !s.PopulationLedger.IsHistorical) return null;
+            var gdd03 = Gdd03HousingFormula.FromCatalogue(c.Gdd03Balance!);
+            var h = gdd03.EvaluateTurn(Housed(s, x), OwnPopulation(s), x.HousingCapacity, was);
+            return new HousingReadout(h.Surcharge, h.ConditionAfter, -h.Cohesion / 100.0, gdd03.MoneyThreshold, gdd03.CohesionThreshold);
+        }
+
+        /// <summary><see cref="HousingOutlook"/>'s values: Surcharge in Money (Target treasury), ConditionAfter on the 0 to 1
+        /// scale, CohesionShift as a change of the <c>morale</c> indicator, and the two thresholds on the condition's scale.</summary>
+        public readonly struct HousingReadout
+        {
+            public double Surcharge { get; }
+            public double ConditionAfter { get; }
+            public double CohesionShift { get; }
+            public double MoneyThreshold { get; }
+            public double CohesionThreshold { get; }
+            public HousingReadout(double surcharge, double conditionAfter, double cohesionShift, double moneyThreshold, double cohesionThreshold)
+            {
+                Surcharge = surcharge; ConditionAfter = conditionAfter; CohesionShift = cohesionShift;
+                MoneyThreshold = moneyThreshold; CohesionThreshold = cohesionThreshold;
+            }
+        }
+
         /// <summary>Social cohesion's indicator id (R-NAT-001), which the gdd-0.3 housing cohesion term moves (R-HOUSE-005).</summary>
         public const string CohesionIndicator = "morale";
 
