@@ -35,12 +35,16 @@ public class OperationActionsTests
     static Content Load(bool gdd03, params (string Id, string Text)[] cards) => LoadIn(gdd03, "{ q: 0, r: 0 }, { q: 0, r: 1 }, { q: 1, r: 0 }", cards);
 
     /// <summary>The fixture with the card's region made of <paramref name="hexes"/>.</summary>
-    static Content LoadIn(bool gdd03, string hexes, params (string Id, string Text)[] cards)
+    static Content LoadIn(bool gdd03, string hexes, params (string Id, string Text)[] cards) => LoadOn(gdd03, MovementTests.Board(), hexes, cards);
+
+    /// <summary>The fixture on <paramref name="board"/>, with the card's region made of <paramref name="hexes"/>.</summary>
+    static Content LoadOn(bool gdd03, string board, string hexes, params (string Id, string Text)[] cards)
     {
         var files = gdd03 ? EnemyAITests.Gdd03Files() : Fixture.Gdd(new Dictionary<string, string>
         {
-            ["unit_types.yaml"] = EnemyAITests.Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
+            ["unit_types.yaml"] = EnemyAITests.Types, ["corridors.yaml"] = "corridors: []\n",
         });
+        files["map/hexes.json"] = board;
         files["map/units_1948.yaml"] = Rows;
         files["map/unit_anchor_hexes.yaml"] = Hexes;
         files["regions.yaml"] = EnemyAITests.OperationRegions.Replace("{ q: 0, r: 0 }, { q: 1, r: 0 }]", hexes + "]");
@@ -207,7 +211,7 @@ public class OperationActionsTests
         Assert.DoesNotContain(r.Why, x => x.Key == WhyKeys.CardOrderEnded && x.Args.SequenceEqual(new[] { "5,0" }));   // the player's order is brig_a's line
         Assert.Equal(chosen.Units[a].Q, r.State.Units[a].Q);   // the moves made stay
     }
-    // R-ENEMY-009 (owner, 8 November 2026, on #2956: "1 + it can effect the success of the first op as it has less forces"):
+    // R-ENEMY-009 (owner, 8 November 2026, answering the maintainer while #2956 was in review: "1 + it can effect the success of the first op as it has less forces"):
     // another card's order that takes a unit of an operation moves the unit to that card's operation and cancels nothing; the
     // first operation goes on with one unit fewer. Not red first: this pins the behaviour PR 1 already had when the owner ruled.
     [Theory]
@@ -235,5 +239,39 @@ public class OperationActionsTests
         Assert.Equal((first.State.Units[a].Q, first.State.Units[a].R), (r.State.Units[a].Q, r.State.Units[a].R));
         Assert.DoesNotContain(r.OperationActions, x => x.Outcome == OperationAction.Withdrawn);
         Assert.DoesNotContain(r.Why, x => x.Key == WhyKeys.CardOrderEnded);
+    }
+
+    // R-ENEMY-008: an operation's attack is the player's own attack (Combat.Strike, R-COMBAT-001), so it ends the attacker's
+    // order, as the player's attack does. A row that goes to a hex and then attacks marches as far as its points allow, attacks
+    // with the point left, and its march ends there; a row that attacks first and then goes to a hex keeps the go-to and
+    // marches from the next turn. The list order is the order of the actions. A brigade has 3 points under gdd-0.1 and 2
+    // under gdd-0.3 (military.move_infantry), so the hills (cost 2) are put on q = 3 or q = 2: either way brig_a's go-to east
+    // stops next to the enemy on (1, 1), on (2, 0) or (1, 0), with 1 point left.
+    [Theory]
+    [InlineData(false, 3)]
+    [InlineData(true, 2)]
+    public void AnAttackEndsTheAttackersGoToAndAGoToAfterItStands(bool gdd03, int hills)
+    {
+        var board = MovementTests.Board((hills, 0, "hills"), (hills, 1, "hills"), (hills, 2, "hills"));
+        const string region = "{ q: 0, r: 0 }, { q: 0, r: 1 }, { q: 1, r: 0 }";
+        var c = LoadOn(gdd03, board, region, ("probe", Card("probe",
+            "{ unit: brig_a, q: 5, r: 0 }, { unit: brig_a, order: attack, q: 1, r: 1 }, "
+            + "{ unit: brig_b, order: attack, q: 1, r: 1 }, { unit: brig_b, q: 5, r: 2 }")));
+        int a = Id(c, "brig_a"), b = Id(c, "brig_b");
+        var s = Game(c);
+
+        var marched = Simulation.Preview(c, s, new Command[] { new UnitOrder(a, Movement.GoTo, 5, 0) });
+        Assert.Equal((hills - 1, 0, Movement.GoTo), (marched.State.Units[a].Q, marched.State.Units[a].R, marched.State.Units[a].Order));
+        Assert.Equal(1, Movement.PointsLeft(c, marched.State, a, marched.Spent));
+
+        var r = Simulation.Preview(c, s, new Command[] { new ChooseEventOption("probe", "ok") });
+        Assert.Empty(r.Rejected);
+        Assert.All(r.OperationActions, x => Assert.Equal(OperationAction.CarriedOut, x.Outcome));
+        Assert.Equal(4, r.OperationActions.Count);
+        Assert.Equal((hills - 1, 0, "", ""), (r.State.Units[a].Q, r.State.Units[a].R, r.State.Units[a].Order, r.State.Units[a].OrderTarget));
+        Assert.Equal((0, 1, Movement.GoTo, "5,2"), (r.State.Units[b].Q, r.State.Units[b].R, r.State.Units[b].Order, r.State.Units[b].OrderTarget));
+        Assert.True(r.Attacked.ContainsKey(a));
+        Assert.True(r.Attacked.ContainsKey(b));
+        Assert.Equal(new[] { b }, EventSystem.OperationUnits(c, r.State, "probe"));
     }
 }
