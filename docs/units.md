@@ -69,12 +69,22 @@ The Blender-built model follows the owner's rulings of 8 November 2026 on #2734 
   colors", and the Spitfire captions on pp. 12 and 14 name no band; it is drawn by the owner's ruling. No source gives its
   width or place, so both are a DESIGN VALUE in `tools/spitfire_101_model.py` (`BAND_Z`, centred 3.75 m behind the centre
   of gravity; `BAND_STRIPE`, 0.10 m a stripe).
-- **101 Squadron insignia: "Paint it, left side".** Not painted yet. Efrati p. 12 gives the place: from the early October
-  1948 cease-fire the squadron added "their famous flying 'angel of death' insignia to the left side of their airplanes",
-  and the caption of Spitfire 17 on the same page puts it on "the engine cowling". But p. 12 shows no insignia that can be
-  read: Spitfire 17 has none, and in the photograph of Spitfire 14 the cowling is not legible. Its shape is shown only on
-  p. 11, on an S-199 (a red, white and black "angel of death" sticker, a winged skull wearing a flying cap, on the left
-  nose section), so it waits for a ruling on that source. It is never drawn from a guess.
+- **101 Squadron insignia: "Paint it, left side"**, and, for its shape's source, **"Yes, paint from p. 11"**. Painted on
+  the left engine cowling only.
+  - Shape and colours: Efrati p. 11, on the S-199. The caption: Stan Andrews "drew-up a winged skull wearing a flying
+    cap", and "silk screen stickers of the red, white and black 'angel of death' insignia were printed up and applied to
+    the left nose section". The page's two photographs (Ezer Weizman beside an Avia's nose; the IAF Museum's restored Avia
+    120 in colour) show a round red badge with a dark rim, two tall black wings rising behind the head, a dark flying cap
+    with light goggles, and a white skull.
+  - Use on the Spitfires: Efrati p. 12, "to the left side of their airplanes"; the caption of Spitfire 17 places it on
+    "the engine cowling".
+  - Drawn by `tools/spitfire_101_model.py` (`insignia_layers`) from discs and ellipses, like the roundel: no scan, no
+    traced or copied image, no AI.
+  - DESIGN VALUE: its size (`INSIGNIA`, radius 0.17 m), its place (centred at z 1.75, y -0.10, below the exhaust stubs as
+    on the S-199), the cowling's limits it must sit within (`COWLING_Z`, the panel lines at z 1.05 and 2.75), every
+    shape's proportions, the cap's black (the colour photograph does not resolve it), and the exact shades (the palette's
+    red, white and black). Details the photographs do not resolve, such as the feathers and what is under the jaw, are
+    left out.
 - **Fuselage number: "No number (Recommended)".** A stated choice: the model carries no fuselage number.
 - The rudder stripe angle, the wing-star orientation and the camouflage were not asked about and are unchanged.
 
@@ -812,8 +822,9 @@ Aircraft:
 - Yoav Efrati, *Colors & Markings of the Israeli Air Force* (IAF, 2005), http://files.iaflibrary.org.il/DigitalLibrary/English/ColorsMarkings.pdf: the IAF's own library publishes this reference, which these marking corrections rest on (pages are the
   book's own numbers).
   Read again on 8 November 2026 for the Blender-built Spitfire (book page N is PDF page N + 1): p. 4, the order of 31 May
-  1948 (the white-blue-white band ahead of the fin); p. 11, the squadron insignia's origin and shape on an S-199; p. 12,
-  its place on the Spitfires, the left side.
+  1948 (the white-blue-white band ahead of the fin); p. 11, the squadron insignia's origin and shape on an S-199, which
+  the model's insignia is drawn from (owner, 8 November 2026: "Yes, paint from p. 11"); p. 12, its place on the
+  Spitfires, the left side.
 
 Navy:
 - INS Haganah (K-20), ex-HMCS Norsyd, a modified Flower-class corvette, 208 ft (63.4 m) overall, with an upright

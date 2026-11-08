@@ -45,9 +45,14 @@ Sources (each number below carries its own tag):
        2026 in the IAF library's copy, http://files.iaflibrary.org.il/DigitalLibrary/English/ColorsMarkings.pdf (book
        page N is PDF page N + 1).
   [O]  The owner's rulings of 8 November 2026 on #2734 (option labels verbatim): span "9.9 m (Recommended)"; rear-fuselage
-       band "Add the band"; 101 Sqn insignia "Paint it, left side" (NOT painted yet: Efrati p. 12 gives its place, the
-       left side, but no shape the model can be painted from; see docs/units.md); fuselage number "No number
-       (Recommended)".
+       band "Add the band"; 101 Sqn insignia "Paint it, left side", then, its shape's source, "Yes, paint from p. 11";
+       fuselage number "No number (Recommended)".
+  [I]  The 101 Squadron insignia, from [E] p. 11: Stan Andrews' "winged skull wearing a flying cap", "silk screen stickers
+       of the red, white and black 'angel of death' insignia ... applied to the left nose section" (caption), seen on the
+       S-199's left cowling in the photograph with Ezer Weizman and in the IAF Museum's colour photograph of Avia 120 on the
+       same page: a round red badge with a dark rim, two tall black wings rising behind a white skull in a dark flying cap
+       with light goggles. [E] p. 12: on the Spitfires, "to the left side of their airplanes" ("the engine cowling", the
+       caption of Spitfire 17). Drawn here from primitives (discs and ellipses), not traced from the photographs.
   [U]  docs/units.md: a four-blade propeller (the IAF Museum Mk IX at Hatzerim, Commons, CC BY 2.5).
   [P]  unity/Assets/Scripts/Map/Units/UnitPalette.cs: the colours (the same sRGB values the code-built model paints).
   DESIGN VALUE marks every number no source above gives (sections, positions, roundel sizes, stripe width ...).
@@ -132,6 +137,11 @@ BAND_Z = -3.75
 BAND_STRIPE = 0.10
 # Owner, 8 November 2026: "No number (Recommended)". A stated choice: no fuselage number is painted.
 FUSELAGE_NUMBER = None
+# The 101 Squadron insignia on the LEFT engine cowling only ([I]; owner, 8 November 2026: "Paint it, left side", "Yes,
+# paint from p. 11"). DESIGN VALUES: its centre (z, y), its radius, and the cowling's fore and aft limits (the panel lines
+# at z 1.05 and 2.75). Below the exhaust stubs, as the S-199's sits below its exhausts in [E] p. 11's photographs.
+INSIGNIA = (1.75, -0.10, 0.17)              # z, y, radius
+COWLING_Z = (1.05, 2.75)
 
 # Colours: UnitPalette.Base, sRGB [P].
 COL = {
@@ -462,6 +472,36 @@ def star_sd(u, v, radius, point_up=True):
     return np.minimum(tri(270.0), tri(90.0))   # edge normals of the up- and the down-pointing triangle
 
 
+def ellipse_sd(u, v, cu, cv, a, b, tilt_deg=0.0):
+    """Approximate signed distance (<0 inside) to an ellipse centred (cu, cv), semi-axes a (u) and b (v), turned tilt_deg."""
+    import numpy as np
+    t = math.radians(tilt_deg)
+    du, dv = u - cu, v - cv
+    ru, rv = du * math.cos(t) + dv * math.sin(t), -du * math.sin(t) + dv * math.cos(t)
+    return (np.sqrt((ru / a) ** 2 + (rv / b) ** 2) - 1.0) * min(a, b)
+
+
+def insignia_layers(u, v, radius):
+    """The 101 Squadron badge ([I], [E] p. 11) as layers [(signed distance in metres, colour key)], painted in order, for
+    points (u, v) on the badge (v up, u fore and aft; the badge is symmetric). Every shape's size and place below, in
+    units of the radius, is a DESIGN VALUE read off p. 11's photographs; the colours are p. 11's "red, white and black".
+    Details the photographs do not resolve (the wings' feathers, whatever is under the jaw) are left out."""
+    import numpy as np
+    R = radius
+    p, q = u / R, v / R
+    disc = (np.sqrt(p * p + q * q) - 1.0) * R
+    rim_inner = (np.sqrt(p * p + q * q) - 0.91) * R
+    wings = np.minimum(ellipse_sd(p, q, 0.30, 0.20, 0.22, 0.56, -10.0), ellipse_sd(p, q, -0.30, 0.20, 0.22, 0.56, 10.0)) * R
+    wings = np.maximum(wings, rim_inner)                   # inside the rim
+    cap = ellipse_sd(p, q, 0.0, -0.30, 0.25, 0.22) * R
+    goggles = np.minimum(ellipse_sd(p, q, 0.11, -0.25, 0.075, 0.055), ellipse_sd(p, q, -0.11, -0.25, 0.075, 0.055)) * R
+    skull = np.minimum(ellipse_sd(p, q, 0.0, -0.56, 0.17, 0.17), ellipse_sd(p, q, 0.0, -0.74, 0.10, 0.08)) * R
+    eyes = np.minimum(ellipse_sd(p, q, 0.07, -0.55, 0.05, 0.045), ellipse_sd(p, q, -0.07, -0.55, 0.05, 0.045)) * R
+    nose = ellipse_sd(p, q, 0.0, -0.65, 0.025, 0.03) * R
+    return [(disc, "PropBlack"), (rim_inner, "MarkingRed"), (wings, "PropBlack"), (cap, "PropBlack"),
+            (goggles, "RoundelWhite"), (skull, "RoundelWhite"), (eyes, "PropBlack"), (nose, "PropBlack")]
+
+
 def paint(pos, nrm, part, texel_m):
     """sRGB colours (N x 3) for texels at game points `pos` with face normals `nrm` and part indices `part`."""
     import numpy as np
@@ -544,6 +584,13 @@ def paint(pos, nrm, part, texel_m):
         cz = WING_ZREF + (WING_LE_SHARE - 0.5) * wing_chord(WING_ROUNDEL_X)
         m = P["wing"] & (side * x > 0)
         roundel(m, side * x - WING_ROUNDEL_X, z - cz, WING_ROUNDEL_R)
+
+    # The 101 Squadron insignia on the left engine cowling only ([I]; place and size DESIGN VALUES).
+    iz, iy, ir = INSIGNIA
+    m = P["fuselage"] & (nx < -0.25) & (x < 0)
+    for sd, key in insignia_layers(z - iz, y - iy, ir):
+        w = (smooth(sd, aa) * m)[:, None]
+        out = out * (1 - w) + w * c(key)
 
     # Canopy glass with its frames (camouflage green) at the windscreen, the hood's rear and along the bottom rail.
     can = P["canopy"]
@@ -957,6 +1004,7 @@ def write_provenance(repo: Path, inspected: dict) -> None:
             "planform_11.23_m_ellipse": "en.wikipedia 'Supermarine Spitfire', read 2026-11-05 (the full wing's span, the ellipse clipped at 9.9 m; dihedral 6 deg, NACA 2213/2209.4, incidence +2/-0.5 deg)",
             "markings": "Yoav Efrati, Colors & Markings of the Israeli Air Force (IAF, 2005) pp. 6, 12, 14, as cited in UnitModels.Spitfire and docs/units.md",
             "band_white_blue_white_ahead_of_fin": "Efrati p. 4 (the IAF command's order of 31 May 1948), read 2026-11-08 at http://files.iaflibrary.org.il/DigitalLibrary/English/ColorsMarkings.pdf (PDF page 5)",
+            "insignia_101_sqn": "Efrati p. 11 (PDF page 12): Stan Andrews' winged skull wearing a flying cap, red, white and black, on the S-199's left nose section (caption and two photographs); p. 12 (PDF page 13): on the Spitfires 'to the left side of their airplanes'. Drawn from primitives, not traced",
             "span_9.9_m": "en.wikipedia 'Supermarine Spitfire variants: specifications, performance and armament', clipped LF Mk IXe 32 ft 6 in (9.9 m), read 2026-11-05",
             "colours": "UnitPalette.Base (sRGB), the code-built model's",
             "four_blades": "docs/units.md (IAF Museum Mk IX, Hatzerim, Commons CC BY 2.5)",
@@ -964,12 +1012,13 @@ def write_provenance(repo: Path, inspected: dict) -> None:
         "owner_rulings_2026_11_08": {
             "span": "9.9 m (Recommended)",
             "rear_fuselage_band": "Add the band",
-            "101_sqn_insignia": "Paint it, left side (not painted yet: Efrati p. 12 gives the place, the left side, but no paintable shape; see docs/units.md)",
+            "101_sqn_insignia": "Paint it, left side",
+            "101_sqn_insignia_source": "Yes, paint from p. 11",
             "fuselage_number": "No number (Recommended)",
         },
         "design_values": "fuselage sections, canopy, radiators, intake, exhausts, tailplane and fin sizes, hub position, "
                          "propeller diameter and blade shape, roundel sizes and places, wing-roundel star orientation, "
-                         "rudder stripe angle and width, the rear-fuselage band's place and stripe width, camouflage pattern, demarcation line, panel lines",
+                         "rudder stripe angle and width, the rear-fuselage band's place and stripe width, the insignia's size, place and shape proportions, camouflage pattern, demarcation line, panel lines",
         "files": meta_record(repo),
         "triangles": inspected["triangles"], "triangles_by_object": inspected["triangles_by_object"],
         "span_m": inspected["span_m"], "length_m": inspected["length_m"], "hub_game_m": inspected["hub_game_m"],

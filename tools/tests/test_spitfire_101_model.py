@@ -154,3 +154,33 @@ def test_no_fuselage_number():
         hw, ym, _, _ = mod.fuselage_at(z)
         got = mod.paint(np.array([(side * hw, 0.10, z)]), np.array([(side * 1.0, 0, 0)]), np.array([P("fuselage")]), 0.01)[0]
         assert min(np.abs(got - np.array(mod.COL[k])).max() for k in ("CamoGreen", "CamoGrey")) < 0.06, got
+
+
+def test_the_squadron_insignia_is_on_the_left_cowling_only():
+    """Owner, 8 November 2026: "Paint it, left side", then "Yes, paint from p. 11". Efrati p. 11 (the S-199): Stan Andrews'
+    winged skull wearing a flying cap, red, white and black, on the left nose section; p. 12: on the Spitfires "to the left
+    side of their airplanes". Size and place are DESIGN VALUES, inside the cowling's panel lines."""
+    mod = tool()
+    P = mod.PARTS.index
+    zc, yc, R = mod.INSIGNIA
+    z0, z1 = mod.COWLING_Z
+    assert z0 < zc - R and zc + R < z1, "within the cowling, between its panel lines, fore and aft"
+    for z in (zc - R, zc, zc + R):
+        _, _, top, bot = mod.fuselage_at(z)
+        assert bot < yc - R and yc + R < top, "within the cowling, top to bottom"
+    pts = {  # (u, v) in units of R on the badge: what Efrati p. 11 shows there
+        "field": ((0.0, 0.70), "MarkingRed"),        # the red field between the wings' tips
+        "wing": ((0.30, 0.25), "PropBlack"),         # a black wing
+        "wing2": ((-0.30, 0.25), "PropBlack"),
+        "skull": ((0.0, -0.46), "RoundelWhite"),     # the white skull's brow, under the cap
+        "goggle": ((0.11, -0.25), "RoundelWhite"),   # the goggles on the cap
+        "cap": ((0.0, -0.15), "PropBlack"),          # the flying cap
+    }
+    for name, ((u, v), colour) in pts.items():
+        z, y = zc + u * R, yc + v * R
+        hw, _, _, _ = mod.fuselage_at(z)
+        left = mod.paint(np.array([(-hw, y, z)]), np.array([(-1.0, 0, 0)]), np.array([P("fuselage")]), 0.01)[0]
+        assert np.abs(left - np.array(mod.COL[colour])).max() < 0.05, f"left {name}: {left} is not {colour}"
+        right = mod.paint(np.array([(hw, y, z)]), np.array([(1.0, 0, 0)]), np.array([P("fuselage")]), 0.01)[0]
+        assert min(np.abs(right - np.array(mod.COL[k])).max() for k in ("CamoGreen", "CamoGrey", "Underside")) < 0.12, \
+            f"right {name}: {right} is the insignia's, not the camouflage"

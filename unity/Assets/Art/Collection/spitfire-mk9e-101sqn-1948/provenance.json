@@ -9,6 +9,7 @@
     "planform_11.23_m_ellipse": "en.wikipedia 'Supermarine Spitfire', read 2026-11-05 (the full wing's span, the ellipse clipped at 9.9 m; dihedral 6 deg, NACA 2213/2209.4, incidence +2/-0.5 deg)",
     "markings": "Yoav Efrati, Colors & Markings of the Israeli Air Force (IAF, 2005) pp. 6, 12, 14, as cited in UnitModels.Spitfire and docs/units.md",
     "band_white_blue_white_ahead_of_fin": "Efrati p. 4 (the IAF command's order of 31 May 1948), read 2026-11-08 at http://files.iaflibrary.org.il/DigitalLibrary/English/ColorsMarkings.pdf (PDF page 5)",
+    "insignia_101_sqn": "Efrati p. 11 (PDF page 12): Stan Andrews' winged skull wearing a flying cap, red, white and black, on the S-199's left nose section (caption and two photographs); p. 12 (PDF page 13): on the Spitfires 'to the left side of their airplanes'. Drawn from primitives, not traced",
     "span_9.9_m": "en.wikipedia 'Supermarine Spitfire variants: specifications, performance and armament', clipped LF Mk IXe 32 ft 6 in (9.9 m), read 2026-11-05",
     "colours": "UnitPalette.Base (sRGB), the code-built model's",
     "four_blades": "docs/units.md (IAF Museum Mk IX, Hatzerim, Commons CC BY 2.5)"
@@ -16,13 +17,14 @@
   "owner_rulings_2026_11_08": {
     "span": "9.9 m (Recommended)",
     "rear_fuselage_band": "Add the band",
-    "101_sqn_insignia": "Paint it, left side (not painted yet: Efrati p. 12 gives the place, the left side, but no paintable shape; see docs/units.md)",
+    "101_sqn_insignia": "Paint it, left side",
+    "101_sqn_insignia_source": "Yes, paint from p. 11",
     "fuselage_number": "No number (Recommended)"
   },
-  "design_values": "fuselage sections, canopy, radiators, intake, exhausts, tailplane and fin sizes, hub position, propeller diameter and blade shape, roundel sizes and places, wing-roundel star orientation, rudder stripe angle and width, the rear-fuselage band's place and stripe width, camouflage pattern, demarcation line, panel lines",
+  "design_values": "fuselage sections, canopy, radiators, intake, exhausts, tailplane and fin sizes, hub position, propeller diameter and blade shape, roundel sizes and places, wing-roundel star orientation, rudder stripe angle and width, the rear-fuselage band's place and stripe width, the insignia's size, place and shape proportions, camouflage pattern, demarcation line, panel lines",
   "files": {
     "unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.fbx": "9bedce14a5731f23334d775c1259469f50f7790c9a96c2bdb10b570ffb0ff789",
-    "unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948_basecolor.png": "44f239266490d05a617a9d21fd2151c753193dd47f92359de52415985b4b8f4d",
+    "unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948_basecolor.png": "90e6b259abbf5f3b76267d94e2a10de9007b89b2c4b5f32e11865c6d97848997",
     "unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/spitfire-mk9e-101sqn-1948.mat": "5ec732c95ddab1bee14375f68ae8c77c4ae0dcb2d6ebe09bbf06a967cf54af3b"
   },
   "triangles": 7696,
