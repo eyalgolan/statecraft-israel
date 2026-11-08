@@ -8,3 +8,20 @@ ruleset: gdd-0.3
 military_camps:
   - { city: tel_aviv, location: military_tel_litvinsky } # Existing cities.yaml camp; the ruling names it Tel HaShomer.
   - { city: jerusalem, location: military_schneller }
+# #1689 rows 5 to 8: the own opening formations of map/units_1948.yaml in the Historical population ledger fixture
+# (R-POP-004), each one's combat XP in R-UNIT-011 ticks of military.combat_xp_full (5).
+# Owner, 7 November 2026 (#1689, issuecomment-6704389240): rows 5 and 6 "Veteran for all 8 (Recommended)", rows 7 and 8
+# "1 each, Negev 0 (Recommended)", Negev's 0 a labelled stand-in. The veteran level needs no value here: the eight are
+# veteran_soldier rows, and a soldier's qualification is its type's unit_types.yaml class (maintainer call, eyalgolan-30's
+# coordinator, 7 November 2026). Ledger fixture only: the units NewGame starts with keep 0 (same maintainer call).
+# Evidence: research_notes/GDD phase 4/opening-ledger-values-1689.md, sections 3b and 3c: dated fights before
+# 15 May 1948 for seven formations, none found for Negev; no source gives a count, so these are not historical figures.
+formation_combat_xp:
+  - { row: golani, combat_xp: 1 }        # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
+  - { row: carmeli, combat_xp: 1 }       # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
+  - { row: alexandroni, combat_xp: 1 }   # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
+  - { row: kiryati, combat_xp: 1 }       # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
+  - { row: givati, combat_xp: 1 }        # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
+  - { row: etzioni, combat_xp: 1 }       # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
+  - { row: harel, combat_xp: 1 }         # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
+  - { row: negev, combat_xp: 0 }         # DESIGN VALUE: owner's labelled stand-in, no dated fight found (#1689 row 8)

@@ -45,7 +45,7 @@ sit[
   fx_crisis
   housing_crisis
 treasury=0 [0000000000000000]
-debt=220.29012071283807 [406B8948AB3BB104]
+debt=220.19012071283805 [406B861578087DD0]
 fx=-12.990431328096534 [C029FB19D0A63788]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
@@ -139,8 +139,8 @@ city{
   tiberias=6,2,13,2,0,c0 [0000000000000000]
   zikhron_yaakov=2,1,4,1,0,c0 [0000000000000000]
 units[
-  0:veteran_soldier@4,14|side=israel|strength=4
-  1:veteran_soldier@15,4|side=israel|strength=2
+  0:veteran_soldier@-7,28|side=israel|strength=2|full=4
+  1:veteran_soldier@14,3|side=israel|strength=2
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-2,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
@@ -149,9 +149,9 @@ units[
   8:egyptian_army@-8,27|side=egypt|strength=10|order=fortify|target=-8,27
   9:arab_legion@-3,25|side=jordan|strength=4|order=fortify|target=-3,25
   10:syrian_army@15,5|side=syria|strength=3|order=fortify|target=15,5
-  11:iraqi_army@6,14|side=iraq|strength=3|order=fortify|target=6,14
+  11:iraqi_army@7,14|side=iraq|strength=3|order=fortify|target=7,14
   12:arab_liberation_army@14,4|side=ala|strength=4|order=fortify|target=14,4
-  13:veteran_soldier@-4,24|side=israel|strength=1|full=2
+  13:veteran_soldier@8,8|side=israel|strength=2
   15:veteran_halutz@-3,21/6
 site{
   beit_kama=done,1949-08-15
@@ -173,6 +173,6 @@ obj{
   yishuvim=1951-09-15
 ctrl{
   beersheba=since=1949-01-15,fled=1
-  ramla=since=1948-09-15,fled=1
+  ramla=since=1948-08-15,fled=1
 food=2733,1390,0
 arms=12

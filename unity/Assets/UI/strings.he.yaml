@@ -291,6 +291,21 @@ event.no_attention: "לא נשארה לך מספיק תשומת לב לענות 
 # Native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564, issuecomment-6610635087).
 event.cabinet: "הממשלה"
 event.option_cost: "{0} (עולה {1:0.0} תשומת לב)"
+# Agent-drafted Hebrew; native review pending (#564). R-ENEMY-007 operation placement.
+event.operation_requirement: "נדרשת הצבת {0} באזור {1}."
+event.operation_missing: "יש להעביר את {0} אל {1} לפני שאפשר לפתוח במבצע."
+event.operation_move: "להעביר את {0} אל {1}"
+event.operation_refused: "היחידות הנדרשות למבצע אינן במקומן"
+event.operation_lost: "{0} כבר לא על הלוח."
+event.operation_armistice_first: "יש להכריע קודם בשביתת הנשק עם {0}."
+event.operation_armistice_signed: "שביתת הנשק עם {0} נחתמה: המבצע לא יתקיים."
+event.operation_refused_armistice_first: "יש להכריע קודם בשביתת הנשק בחזית של המבצע"
+event.operation_refused_armistice_signed: "שביתת הנשק בחזית של המבצע נחתמה"
+operation.region.galilee: "הגליל"
+operation.region.central_plain: "מישור החוף המרכזי"
+operation.region.jerusalem_hills: "הרי ירושלים"
+operation.region.southern_coast: "מישור החוף הדרומי"
+operation.region.negev: "הנגב"
 # The objective card's line (#380; the owner's wording, #379): early, on time, later.
 event.objective_early: "הושלם ב־{0}; בהיסטוריה ב־{1}; מוקדם ב־{2} חודשים."
 event.objective_early_one: "הושלם ב־{0}; בהיסטוריה ב־{1}; מוקדם בחודש אחד."
@@ -629,6 +644,7 @@ report.workshop_arms_n: "סדנאות נשק ({0}) ({1}): תוספת נשק: {1}
 report.workshop_paused_debt_n: "סדנאות נשק ({0}) ({1}) בהמתנה: תקרת החוב"
 # The held cities' row (R-CITY-010, #1711). Agent-drafted Hebrew; native review pending (#564).
 report.held: "ערים בשליטת האויב"
+report.operations: "מבצעים צבאיים"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
 # The nine end.* keys below: native review: owner, 3 Nov 2026 (HE batch 3: "Approve all as they are"), except
 # end.population_history, reworded for #2608 (#2620: the CBS figure is the Jewish population), which waits for the
@@ -1242,6 +1258,12 @@ why.cause.event_chosen: "נבחרה אפשרות: {0}"
 why.cause.event_delegated: "ההכרעה הועברה אל {0}: {1}"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.event_delegated_partial: "ההכרעה הועברה אל {0}, עם ביצוע חלקי: {1}"
+# Agent-drafted Hebrew; native review pending (#564).
+why.cause.operation_postponed: "ההחלטה על {0} נדחתה. {1}."
+why.cause.operation_lapsed: "ההחלטה על {0} ירדה מן הפרק משום שהיחידות הנדרשות לא הגיעו לאזורי המבצע. {1}."
+why.cause.operation_lapsed_signed: "ההחלטה על {0} ירדה מן הפרק משום שנחתם הסכם שביתת הנשק עם {1}."
+why.cause.operation_lapsed_unit_lost: "ההחלטה על {0} ירדה מן הפרק משום שיחידה נדרשת כבר לא על הלוח: {1}."
+why.cause.operation_waits_for_armistice: "ההחלטה על {0} נדחתה עד שתוכרע שביתת הנשק עם {1}."
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
 why.cause.cabinet: "הממשלה"
 # agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).

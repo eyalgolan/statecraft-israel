@@ -49,6 +49,8 @@ namespace Statecraft.Sim
         public string Id { get; set; } = "";
         public string Title { get; set; } = "";
         public string Text { get; set; } = "";
+        /// <summary>The card's late text (R-ENEMY-007, the event's late_text_he), or "" for none.</summary>
+        public string LateText { get; set; } = "";
         /// <summary>Option id and text, in the event file's order.</summary>
         public List<KeyValuePair<string, string>> Options { get; set; } = new List<KeyValuePair<string, string>>();
         /// <summary><see cref="HebrewReview.AgentChecked"/> until a native speaker, or an AI-assisted contributor who
@@ -143,7 +145,7 @@ namespace Statecraft.Sim
             {
                 if (!Id.IsMatch(id)) throw new ContentException(Where(EventsFile), id, "not an event id");
                 var map = Mapping(node, Where(EventsFile), id);
-                Only(map, Where(EventsFile), id, "title", "text", "options", "review");
+                Only(map, Where(EventsFile), id, "title", "text", "late_text", "options", "review");
                 var e = new EventTranslation
                 {
                     Id = id,
@@ -151,6 +153,7 @@ namespace Statecraft.Sim
                     Text = Text(Get(map, "text", Where(EventsFile), id), Where(EventsFile), id + ".text"),
                     Review = Review(map, Where(EventsFile), id),
                 };
+                if (map.Children.TryGetValue(new YamlScalarNode("late_text"), out var late)) e.LateText = Text(late, Where(EventsFile), id + ".late_text");
                 foreach (var (oid, text) in Entries(Mapping(Get(map, "options", Where(EventsFile), id), Where(EventsFile), id + ".options"),
                              Where(EventsFile)))
                 {
@@ -302,6 +305,7 @@ namespace Statecraft.Sim
                 events.Append(Key(e.Id)).Append(":\n");
                 events.Append("  title: ").Append(Json(e.Title)).Append('\n');
                 events.Append("  text: ").Append(Json(e.Text)).Append('\n');
+                if (e.LateText != "") events.Append("  late_text: ").Append(Json(e.LateText)).Append('\n');
                 events.Append("  options:\n");
                 foreach (var o in e.Options) events.Append("    ").Append(Key(o.Key)).Append(": ").Append(Json(o.Value)).Append('\n');
                 if (e.Review != "") events.Append("  review: ").Append(Json(e.Review)).Append('\n');
@@ -410,6 +414,7 @@ namespace Statecraft.Sim
                 if (string.IsNullOrEmpty(StringOf(e, "title_he"))) continue;
                 var t = new EventTranslation { Id = id, Title = StringOf(e, "title_he")!, Text = StringOf(e, "text_he") ?? "" };
                 if (!string.IsNullOrEmpty(StringOf(e, "text_he_review"))) t.Review = StringOf(e, "text_he_review")!;
+                if (!string.IsNullOrEmpty(StringOf(e, "late_text_he"))) t.LateText = StringOf(e, "late_text_he")!;
                 if (Value(e, "options") is YamlSequenceNode options)
                     foreach (var o in options.Children.OfType<YamlMappingNode>())
                         if (StringOf(o, "id") is string oid && !string.IsNullOrEmpty(StringOf(o, "text_he")))
