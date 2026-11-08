@@ -607,7 +607,15 @@ namespace Statecraft.Game.UI
                 // Issue #710: the static 1948 tier from cities.yaml's people, not the sim's live count (owner, 15 October 2026).
                 bridge.Content.Cities.Where(c => c.People != null).ToDictionary(c => c.Id, c => c.People!.Value),
                 (tier, people) => text.Format("map.tier", tier, MapLabelsPresenter.TierCount, people.ToString("N0", CultureInfo.InvariantCulture)),
-                hebrew, bridge.Content.MapLocations));   // #1008: the GDD v0.2 map locations are named too
+                hebrew, bridge.Content.MapLocations,   // #1008: the GDD v0.2 map locations are named too
+                r => SettlementControlView.MapText(text, r)));   // #803: each place's control state as a tag under its name
+            // #803 Task 5: the tags follow the state the map shows (the order preview, U1) on every change, apart from the
+            // placements' own redraw (RenderPlacementsIfChanged); they never rebuild the names.
+            var shownLabels = labels;
+            Action showSettlementControl = () => shownLabels.SetSettlementControl(bridge.State.Settlements);
+            bridge.Changed += showSettlementControl;
+            owned.Add(new Undo(() => bridge.Changed -= showSettlementControl));
+            showSettlementControl();
             mini.Clicked += (lon, lat) => { camRig.LookAt = map.Frame.ToWorld(lon, lat, 0); cameraController.Settle(); SyncMinimap(); labels?.Refresh(); };   // the click may come after LateUpdate (review M6)
             // The minimap's whole-map button: the camera's own farthest zoom, over the middle of the map (no new rule).
             mini.Overview += () =>
