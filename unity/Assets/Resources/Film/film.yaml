@@ -6,9 +6,9 @@
 # OWNER DECISIONS, still open. Each is this one value (FilmContent reads it; the PR lists them).
 # 1. Does the film play by itself after New game? False: only Replay the opening plays it.
 auto_play_on_new_game: true
-# 2. May the real 1948 recording play in the film? Not decided for the next film. The owner's 6 November 2026 yes
-#    ("all your picks") was for the film the owner then rejected, so it is not carried over: false until the owner rules
-#    for the new film (#2953). True picks audio_with_recording and adds its credit to the label line.
+# 2. May the real 1948 recording play in the film? The owner's 6 November 2026 yes ("all your picks") was for the film
+#    the owner then rejected. Owner ruling, 8 November 2026: "Keep false for now (Recommended)": false until the new
+#    film's script is agreed on #2953. True picks audio_with_recording and adds its credit to the label line.
 real_recording: false
 # 3. The on-screen AI label: a key of the strings files. This one is the advisors' existing line, in both languages.
 ai_label: advisor.media_label
