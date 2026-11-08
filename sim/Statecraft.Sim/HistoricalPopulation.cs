@@ -72,6 +72,12 @@ namespace Statecraft.Sim
         internal static IEnumerable<StartingForce> OpeningFormations(Content c) => c.StartingForces
             .Where(f => f.Side == Movement.PlayerSide && f.Arrives == null && f.Strength > 0);
 
+        /// <summary>#1725 PR 7, producer 08: the own brigades dated after the start (R-UNIT-009), Israeli, with a strength, in
+        /// <c>Content.StartingForces</c>' order (today the 7th Brigade). Not in the start inventory (R-POP-004): each arrives
+        /// on its day as new soldier records (owner, 8 November 2026: "Soldiers of brigade (Recommended)").</summary>
+        internal static IEnumerable<StartingForce> DatedFormations(Content c) => c.StartingForces
+            .Where(f => f.Side == Movement.PlayerSide && f.Arrives != null && f.Strength > 0);
+
         /// <summary>The row ids of <see cref="OpeningFormations"/>.</summary>
         internal static IEnumerable<string> OpeningFormationRows(Content c) => OpeningFormations(c).Select(f => f.Row);
 
