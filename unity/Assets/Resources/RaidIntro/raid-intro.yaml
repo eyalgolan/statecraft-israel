@@ -3,7 +3,8 @@
 # the opening film's clip of people running from the bombing, and only an OK button. The owner chose the options
 # labelled "15 May dawn raid (Recommended)" and "Film, raid, card, advisors (Recommended)"; for the clip, owner, 8 Nov
 # 2026: "only use the first video and dont cut it after 0.4 seconds", then "Yes, V19c whole (Recommended)", which
-# replace the earlier "V19c 0.45 s, then A1+B1 (Recommended)". Presentation only: it reads no sim state, changes no
+# replace the earlier "V19c 0.45 s, then A1+B1 (Recommended)". For the toll, owner, 8 Nov 2026: "show the total number
+# of killed accross all the egyptian raids on tel aviv", so the card gives the war's total, not 15 May's. Presentation only: it reads no sim state, changes no
 # number and is not game content (RaidCardContent; docs/event-videos.md, "On New game").
 # A player build shows it only once status is sensitivity-reviewed, every source is checked, the Hebrew is approved by
 # a native read and the clip has the owner's sensitivity review (RaidCardContent.MayPresent); the Editor shows the
@@ -15,20 +16,31 @@
 status: draft
 title: "Egyptian planes bomb Tel Aviv"
 title_he: "מטוסים מצריים מפציצים את תל אביב"
-text: "Early on the morning of 15 May 1948, the day after independence was declared, Egyptian Spitfires attacked Tel Aviv. They bombed the Sde Dov airfield in the north of the city and damaged aircraft and buildings there. Five people were killed and nine wounded. Anti-aircraft fire brought down one of the attackers, and its pilot was taken prisoner. Bombs also hit the old Central Bus Station, and more raids followed that day."
-text_he: "בשעות הבוקר המוקדמות של 15 במאי 1948, יום לאחר הכרזת העצמאות, תקפו מטוסי ספיטפייר מצריים את תל אביב. הם הפציצו את שדה התעופה שדה דב בצפון העיר וגרמו שם נזק למטוסים ולמבנים. חמישה אנשים נהרגו ותשעה נפצעו. אש נ״מ הפילה את אחד המטוסים התוקפים, וטייסו נלקח בשבי. פצצות פגעו גם בתחנה המרכזית הישנה, ובמהלך היום באו פשיטות נוספות."
+text: "Early on the morning of 15 May 1948, the day after independence was declared, Egyptian Spitfires attacked Tel Aviv. They bombed the Sde Dov airfield in the north of the city and damaged aircraft and buildings there. Anti-aircraft fire brought down one of the attackers, and its pilot was taken prisoner. Bombs also hit the old Central Bus Station, and more raids followed that day. Across all the Egyptian air raids on Tel Aviv in the war, 172 people were killed, most of them civilians."
+text_he: "בשעות הבוקר המוקדמות של 15 במאי 1948, יום לאחר הכרזת העצמאות, תקפו מטוסי ספיטפייר מצריים את תל אביב. הם הפציצו את שדה התעופה שדה דב בצפון העיר וגרמו שם נזק למטוסים ולמבנים. אש נ״מ הפילה את אחד המטוסים התוקפים, וטייסו נלקח בשבי. פצצות פגעו גם בתחנה המרכזית הישנה, ובמהלך היום באו פשיטות נוספות. בכל הפשיטות האוויריות המצריות על תל אביב במהלך המלחמה נהרגו 172 בני אדם, רובם אזרחים."
 he_review: pending
-# The toll: both he.wiki articles give 5 killed and 9 wounded; the Dov Hoz paragraph has no footnote, and no primary or
-# contemporary source read so far gives a figure for 15 May. The UPI dispatch of the day reports no casualties ("Little
-# damage resulted."). The NYT of 17 May 1948 (Currivan, dated Tel Aviv, May 16; read 2026-11-08) gives "five persons"
-# killed, but for the raid of 16 May ("today's attack", "For the second day in succession"). The card's number waits on
-# the owner (PR question 3); it is not changed here (CONTENT_POLICY section 1).
+# The toll (owner: the total across all the Egyptian raids on Tel Aviv): 172 killed, from Naor (2008), the one read
+# source with a footnote, which cites the Civil Guard's comprehensive summary of the bombings in Tel Aviv (Tel Aviv
+# Municipality Archive 4/408). It covers both waves of raids: 15 May to the First Truce on 11 June, and the Ten Days
+# from 9 July, so it includes the 18 May bus-station raid. he.wiki gives "150 ויותר" with no footnote, en.wiki 150
+# citing the NLI blog (403 to a reader on 2026-11-08), and Walla "כ-150" with no source. 172 is within he.wiki's "150
+# and more". The 15 May raid's own toll is left off: he.wiki's 5 killed and 9 wounded has no footnote, UPI that day
+# reports no casualties, and the NYT's five killed (17 May 1948) are for 16 May.
 sources:
   - url: "https://he.wikipedia.org/wiki/נמל_התעופה_דב_הוז"
     supports: "'ב-15 במאי 1948, מיד לאחר הכרזת המדינה וראשית הפלישה המצרית, תקפו ארבעה מטוסי ספיטפייר מצריים את השדה וגרמו נזק למטוסים ולמבנים'; 'אחד מהמטוסים התוקפים הופל באש נ\"מ וטייסו נלקח בשבי'; 'בהתקפה נהרגו חמישה אנשים ונפצעו תשעה.' (no footnote on the paragraph)"
     checked: 2026-11-08
   - url: "https://he.wikipedia.org/wiki/תל_אביב_במלחמת_העצמאות"
-    supports: "'ב-15 במאי 1948, ביום שלאחר הכרזת העצמאות', Egyptian Spitfires attacked the Sde Dov airfield 'במספר גיחות שהחלו בשעות הבוקר המוקדמות'; 'בהתקפה נהרגו חמישה אנשים ונפצעו תשעה'"
+    supports: "'ב-15 במאי 1948, ביום שלאחר הכרזת העצמאות', Egyptian Spitfires attacked the Sde Dov airfield 'במספר גיחות שהחלו בשעות הבוקר המוקדמות'; 'בהתקפה נהרגו חמישה אנשים ונפצעו תשעה'; for all the raids, 'סה\"כ גרמו ההפצצות למותם של 150 איש ויותר', 'כ-130 מתוכם היו אזרחים' (no footnote on that paragraph); the 18 May raid on the central bus station 'גרמו ל-42 הרוגים'"
+    checked: 2026-11-08
+  - url: "https://ismi.emory.edu/documents/Readings/Naor_Moshe.pdf"
+    supports: "Moshe Naor, 'Israel's 1948 War of Independence as a Total War', Journal of Contemporary History 43(2), 2008, p. 254 (doi 10.1177/0022009408089031): 'In Tel Aviv, 172 people, most of them civilians, were killed as a result of the air raids, and 321 were injured.' (dash replaced by commas), footnote 58: 'The Civil Guard, Account of the Bombings in Tel Aviv, Comprehensive Summary, Tel Aviv Municipality Archive 4/408'; the raids are those of the Egyptian air force from 15 May to the First Truce on 11 June and in the Ten Days from 9 July"
+    checked: 2026-11-08
+  - url: "https://en.wikipedia.org/wiki/Egyptian_airstrike_on_the_Old_Tel_Aviv_central_bus_station"
+    supports: "'a bombing campaign by Egyptian forces in Tel Aviv that killed 150 people in total', citing the NLI blog 'When the Egyptians Bombed Tel Aviv' (2020), which answered 403 when read on 2026-11-08; 42 killed in the 18 May raid"
+    checked: 2026-11-08
+  - url: "https://www.walla.co.il/news/military/3821651"
+    supports: "Eli Ashkenazi, Walla: 'כ-150 תושבי תל אביב נהרגו בהפצצות חסרות האבחנה של המצרים', over 'קרוב לחודשיים'; it names no source"
     checked: 2026-11-08
   - url: "https://www.upi.com/Archives/1948/05/15/Arab-nations-Attack-Israel/6118818754330"
     supports: "UPI, 15 May 1948: 'The first Egyptian air raid on Tel Aviv came early today.'; a second attack 'within two hours' bombed 'the airport just north of this new Jewish capital'; a third raid before noon; 'one Egyptian pilot was taken prisoner'. It reports no casualties ('Little damage resulted.')"

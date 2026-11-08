@@ -151,7 +151,9 @@ egypt and bombing tel aviv, and then flying back. then show an event card with a
 many were killed, with the video we have of people running from the bombing from what we did for the opening video. the
 player only has an option of clicking ok". The owner chose "15 May dawn raid (Recommended)" and "Film, raid, card,
 advisors (Recommended)". For the clip, owner, 8 Nov 2026: "only use the first video and dont cut it after 0.4 seconds",
-then "Yes, V19c whole (Recommended)"; these replace the earlier "V19c 0.45 s, then A1+B1 (Recommended)".
+then "Yes, V19c whole (Recommended)"; these replace the earlier "V19c 0.45 s, then A1+B1 (Recommended)". For the toll,
+owner, 8 Nov 2026: "show the total number of killed accross all the egyptian raids on tel aviv", so the card gives the
+war's total for all the Egyptian air raids on Tel Aviv, with every figure found on its source list.
 
 - **When.** Only on New game (the start screen's or the top bar's): after the opening, before the turn 1 advisor chain.
   Continue, a loaded game, the tools' `Begin` and the automated runs never show it (`GameRoot.PlayNewGameIntro`).
