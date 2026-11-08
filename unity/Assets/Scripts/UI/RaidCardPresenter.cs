@@ -14,7 +14,7 @@ namespace Statecraft.Game.UI
     {
         public const string OpenClass = "raid-open";
         readonly VisualElement root, layer, media;
-        readonly Label title, body, credit, ai, preview;
+        readonly Label title, body, ai, preview;
         readonly Button ok;
         readonly ScrollView scroll;
         readonly RaidCardContent.Document data;
@@ -41,7 +41,7 @@ namespace Statecraft.Game.UI
             hebrew = text["ui.lang"] == UiLanguage.Hebrew;
             layer = root.Q("raid-layer"); media = layer.Q("raid-media");
             title = layer.Q<Label>("raid-title"); body = layer.Q<Label>("raid-text");
-            credit = layer.Q<Label>("raid-credit"); ai = layer.Q<Label>("raid-ai"); preview = layer.Q<Label>("raid-preview");
+            ai = layer.Q<Label>("raid-ai"); preview = layer.Q<Label>("raid-preview");
             scroll = layer.Q<ScrollView>("raid-scroll");
             ok = layer.Q<Button>("raid-ok");
             ok.text = text["raid.ok"];
@@ -51,8 +51,7 @@ namespace Statecraft.Game.UI
             bool he = hebrew && data.HasHebrew;
             Say(title, he ? data.TitleHe! : data.Title, he);
             Say(body, he ? data.TextHe! : data.Text, he);
-            // The photographs' credit stays the English credit line in both UIs; the AI label is in the UI's language.
-            credit.text = data.Clip.Credit; credit.languageDirection = LanguageDirection.LTR;
+            // The AI label is in the UI's language. The clip is AI-only (CC0, ASSETS.yaml), so it has no credit line.
             ai.text = text["event.ai_label"]; ai.languageDirection = hebrew ? LanguageDirection.RTL : LanguageDirection.LTR;
             media.tooltip = hebrew && !string.IsNullOrWhiteSpace(data.Clip.AltHe) ? data.Clip.AltHe : data.Clip.Alt;
             onOk = () => Close(finish: true);
@@ -90,7 +89,7 @@ namespace Statecraft.Game.UI
         void ShowMedia(bool on)
         {
             var display = on ? DisplayStyle.Flex : DisplayStyle.None;
-            media.style.display = display; ai.style.display = display; credit.style.display = display;
+            media.style.display = display; ai.style.display = display;
             if (!on) media.style.backgroundImage = StyleKeyword.None;
         }
 

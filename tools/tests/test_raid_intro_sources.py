@@ -1,7 +1,8 @@
 """The New game raid card's sources and clip record (owner, 8 Nov 2026, "15 May dawn raid (Recommended)"): every source
 has its url, the claim it supports and the date a person checked it; the Hebrew is complete or absent; the clip names a
-file in StreamingAssets/video whose ASSETS.yaml row marks it ai_generated, carries the photographs' licence and credit, is
-verified and is listed in docs/ai-disclosure.md; NOTICE credits the photographs. The draft is not shareable: RaidCardContent
+file in StreamingAssets/video whose ASSETS.yaml row marks it ai_generated, CC0 (an AI-only clip, decision D1; owner, 8 Nov
+2026: "Yes, V19c whole (Recommended)"), verified and listed in docs/ai-disclosure.md; the card carries no credit line for
+it. The draft is not shareable: RaidCardContent
 (unity/Assets/Scripts/UI/RaidCardContent.cs) shows it only in the Editor until every review below is done.
 """
 import copy
@@ -54,7 +55,7 @@ def shareable_problems(doc):
     return result
 
 
-def clip_problems(doc, rules, disclosure, notice):
+def clip_problems(doc, rules, disclosure):
     clip = doc.get("clip", {})
     name = clip.get("file", "")
     path = f"unity/Assets/StreamingAssets/video/{name}"
@@ -64,20 +65,17 @@ def clip_problems(doc, rules, disclosure, notice):
     if row is None:
         return [f"{path} has no ASSETS.yaml row"]
     result = []
-    if row.get("ai_generated") is not True or row.get("status") != "verified" or row.get("licence") != "CC-BY-4.0":
-        result.append(f"{path}: its row needs ai_generated: true, licence: CC-BY-4.0 (the photographs') and status: verified")
-    if row.get("credit") != clip.get("credit"):
-        result.append(f"{path}: the card's credit line differs from the ASSETS.yaml row's")
+    if row.get("ai_generated") is not True or row.get("status") != "verified" or row.get("licence") != "CC0-1.0":
+        result.append(f"{path}: its row needs ai_generated: true, licence: CC0-1.0 (AI-only, decision D1) and status: verified")
+    if "credit" in clip:
+        result.append(f"{path}: the AI-only clip takes no credit line on the card")
     if f"| {path} | ASSETS.yaml |" not in disclosure:
         result.append(f"docs/ai-disclosure.md does not list {path}")
-    if f"- {name}:" not in notice:
-        result.append(f"NOTICE does not credit {name}")
     return result
 
 
 def clip_inputs():
-    return (assets_rules(), (REPO / "docs/ai-disclosure.md").read_text(encoding="utf-8"),
-            (REPO / "NOTICE").read_text(encoding="utf-8"))
+    return assets_rules(), (REPO / "docs/ai-disclosure.md").read_text(encoding="utf-8")
 
 
 def test_the_real_card_has_its_sources_and_hebrew():
@@ -122,15 +120,19 @@ def test_the_real_clip_has_its_provenance():
     assert clip_problems(actual(), *clip_inputs()) == []
 
 
-def test_a_clip_without_its_row_disclosure_or_notice_fails():
-    rules, disclosure, notice = clip_inputs()
+def test_a_clip_without_its_row_or_disclosure_or_with_a_credit_fails():
+    rules, disclosure = clip_inputs()
     path = "unity/Assets/StreamingAssets/video/tlv_raid_intro.mp4"
-    assert clip_problems(actual(), [r for r in rules if r.get("glob") != path], disclosure, notice) == \
+    assert clip_problems(actual(), [r for r in rules if r.get("glob") != path], disclosure) == \
         [f"{path} has no ASSETS.yaml row"]
-    assert clip_problems(actual(), rules, disclosure.replace(f"| {path} | ASSETS.yaml |", ""), notice) == \
+    assert clip_problems(actual(), rules, disclosure.replace(f"| {path} | ASSETS.yaml |", "")) == \
         [f"docs/ai-disclosure.md does not list {path}"]
-    assert clip_problems(actual(), rules, disclosure, notice.replace("- tlv_raid_intro.mp4:", "")) == \
-        ["NOTICE does not credit tlv_raid_intro.mp4"]
+    cc_by = [dict(r, licence="CC-BY-4.0") if r.get("glob") == path else r for r in rules]
+    assert clip_problems(actual(), cc_by, disclosure) == \
+        [f"{path}: its row needs ai_generated: true, licence: CC0-1.0 (AI-only, decision D1) and status: verified"]
+    doc = copy.deepcopy(actual())
+    doc["clip"]["credit"] = "anything"
+    assert clip_problems(doc, rules, disclosure) == [f"{path}: the AI-only clip takes no credit line on the card"]
     doc = copy.deepcopy(actual())
     doc["clip"]["file"] = "no_such_clip.mp4"
-    assert clip_problems(doc, rules, disclosure, notice) == ["no_such_clip.mp4 is not in StreamingAssets/video"]
+    assert clip_problems(doc, rules, disclosure) == ["no_such_clip.mp4 is not in StreamingAssets/video"]

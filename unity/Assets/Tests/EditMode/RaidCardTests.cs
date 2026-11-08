@@ -68,7 +68,7 @@ public class RaidCardTests
     [TestCase("  sensitive: true", "  sensitive: false", TestName = "a clip of the raid's aftermath not marked sensitive")]
     [TestCase("  alt: \"Illustration: ", "  alt: \"", TestName = "a clip alt that does not say it is an illustration")]
     [TestCase("  file: tlv_raid_intro.mp4", "  file: ../tlv_raid_intro.mp4", TestName = "a clip that is not a bare mp4 name")]
-    [TestCase("  credit: \"", "  # credit: \"", TestName = "a clip without its credit line")]
+    [TestCase("  ai_generated: true", "  credit: \"x\"\n  ai_generated: true", TestName = "a credit line on the AI-only clip")]
     [TestCase("  alt_he_review: agent-checked", "  alt_he_review: approved", TestName = "an alt_he_review other than agent-checked")]
     public void TheReaderFailsClosed(string from, string to)
     {
@@ -119,8 +119,7 @@ public class RaidCardTests
         Assert.AreEqual(he ? data.TitleHe : data.Title, ui.Q<Label>("raid-title").text);
         Assert.AreEqual(he ? data.TextHe : data.Text, ui.Q<Label>("raid-text").text);
         Assert.AreEqual(he ? LanguageDirection.RTL : LanguageDirection.LTR, ui.Q<Label>("raid-text").languageDirection);
-        Assert.AreEqual(data.Clip.Credit, ui.Q<Label>("raid-credit").text, "the photographs' credit line, in English in both UIs");
-        Assert.AreEqual(LanguageDirection.LTR, ui.Q<Label>("raid-credit").languageDirection);
+        Assert.IsNull(ui.Q<Label>("raid-credit"), "the clip is AI-only (CC0, ASSETS.yaml): no credit line");
         Assert.AreEqual(Text(lang)["event.ai_label"], ui.Q<Label>("raid-ai").text, "labelled as the cards label AI media");
         Assert.AreEqual(he ? data.Clip.AltHe : data.Clip.Alt, ui.Q<VisualElement>("raid-media").tooltip);
         Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("raid-media").style.display.value,

@@ -24,7 +24,6 @@ namespace Statecraft.Game.UI
             public string Alt { get; set; } = "";
             public string AltHe { get; set; } = "";
             public string AltHeReview { get; set; } = "";
-            public string Credit { get; set; } = "";
             public bool AiGenerated { get; set; }
             public bool Sensitive { get; set; }
             public bool SensitivityReviewed { get; set; }
@@ -75,7 +74,7 @@ namespace Statecraft.Game.UI
 
         /// <summary>Why the clip row is malformed, or null (the event-videos.yaml and opening.yaml clip rules): a bare .mp4
         /// name in StreamingAssets/video, an alt text that says it is an illustration, Hebrew alt text marked agent-checked
-        /// where present, the photographs' credit line, ai_generated, and sensitive (the aftermath of a raid that killed
+        /// where present, ai_generated, and sensitive (the aftermath of a raid that killed
         /// people).</summary>
         static string? ClipProblem(Clip clip)
         {
@@ -85,7 +84,6 @@ namespace Statecraft.Game.UI
                 return "alt text must start 'Illustration: ' and say what it shows";
             if (!string.IsNullOrWhiteSpace(clip.AltHeReview) && (string.IsNullOrWhiteSpace(clip.AltHe) || clip.AltHeReview != "agent-checked"))
                 return "alt_he_review must be agent-checked, with alt_he";
-            if (string.IsNullOrWhiteSpace(clip.Credit)) return "the photographs' credit line is missing";
             if (!clip.AiGenerated) return "ai_generated must be true";
             if (!clip.Sensitive) return "sensitive must be true";
             return null;

@@ -1,9 +1,10 @@
 # The Tel Aviv raid card on New game (owner, 8 Nov 2026): after the opening and before the turn 1 advisor chain, a
 # card that explains the Egyptian air raid on Tel Aviv on the morning the game starts and how many were killed, with
-# the animated photographs of the old Central Bus Station after the raid, and only an OK button. The owner chose the
-# options labelled "15 May dawn raid (Recommended)", "V19c 0.45 s, then A1+B1 (Recommended)" and "Film, raid, card,
-# advisors (Recommended)"; the clip ships A1 and B1 only (the PR asks the owner about V19c). Presentation only: it reads
-# no sim state, changes no number and is not game content (RaidCardContent; docs/event-videos.md, "On New game").
+# the opening film's clip of people running from the bombing, and only an OK button. The owner chose the options
+# labelled "15 May dawn raid (Recommended)" and "Film, raid, card, advisors (Recommended)"; for the clip, owner, 8 Nov
+# 2026: "only use the first video and dont cut it after 0.4 seconds", then "Yes, V19c whole (Recommended)", which
+# replace the earlier "V19c 0.45 s, then A1+B1 (Recommended)". Presentation only: it reads no sim state, changes no
+# number and is not game content (RaidCardContent; docs/event-videos.md, "On New game").
 # A player build shows it only once status is sensitivity-reviewed, every source is checked, the Hebrew is approved by
 # a native read and the clip has the owner's sensitivity review (RaidCardContent.MayPresent); the Editor shows the
 # draft with the opening's preview label.
@@ -18,8 +19,10 @@ text: "Early on the morning of 15 May 1948, the day after independence was decla
 text_he: "בשעות הבוקר המוקדמות של 15 במאי 1948, יום לאחר הכרזת העצמאות, תקפו מטוסי ספיטפייר מצריים את תל אביב. הם הפציצו את שדה התעופה שדה דב בצפון העיר וגרמו שם נזק למטוסים ולמבנים. חמישה אנשים נהרגו ותשעה נפצעו. אש נ״מ הפילה את אחד המטוסים התוקפים, וטייסו נלקח בשבי. פצצות פגעו גם בתחנה המרכזית הישנה, ובמהלך היום באו פשיטות נוספות."
 he_review: pending
 # The toll: both he.wiki articles give 5 killed and 9 wounded; the Dov Hoz paragraph has no footnote, and no primary or
-# contemporary source read so far confirms it. The UPI dispatch of the day reports no casualties ("Little damage
-# resulted."); that is a silence, not another figure, so the card keeps the one value (CONTENT_POLICY section 1).
+# contemporary source read so far gives a figure for 15 May. The UPI dispatch of the day reports no casualties ("Little
+# damage resulted."). The NYT of 17 May 1948 (Currivan, dated Tel Aviv, May 16; read 2026-11-08) gives "five persons"
+# killed, but for the raid of 16 May ("today's attack", "For the second day in succession"). The card's number waits on
+# the owner (PR question 3); it is not changed here (CONTENT_POLICY section 1).
 sources:
   - url: "https://he.wikipedia.org/wiki/נמל_התעופה_דב_הוז"
     supports: "'ב-15 במאי 1948, מיד לאחר הכרזת המדינה וראשית הפלישה המצרית, תקפו ארבעה מטוסי ספיטפייר מצריים את השדה וגרמו נזק למטוסים ולמבנים'; 'אחד מהמטוסים התוקפים הופל באש נ\"מ וטייסו נלקח בשבי'; 'בהתקפה נהרגו חמישה אנשים ונפצעו תשעה.' (no footnote on the paragraph)"
@@ -36,15 +39,14 @@ sources:
   - url: "https://commons.wikimedia.org/wiki/File:Tel_Aviv-Yafo_(997008136796105171).jpg"
     supports: "NLI record 997008136796105171, taken on 15 May 1948 (Benno Rothenberg): 'עשן מיתמר מהתחנה המרכזית הישנה בת\"א לאחר שהופגזה ע\"י מטוסים מצריים בעקבות הכרזת העצמאות'"
     checked: 2026-11-08
-# The clip: A1 then B1 of the opening film, Seedance 2.5 animations of the two NLI photographs above, composited over
-# the photographs (ASSETS.yaml has the recipe). It loops silently in the card's frame, labelled with the cards' "AI-generated
-# illustration" string, with the photographs' credit line beside it.
+# The clip: the opening film's shot V19c, whole (0 to 4.0 s), an AI-only clip (CC0; ASSETS.yaml has the recipe). It
+# loops silently in the card's frame, labelled with the cards' "AI-generated illustration" string; with no photograph
+# in it, it has no credit line. CLIP-REVIEW-v8.md records the soldier's camouflage trousers from about 0.5 s.
 clip:
   file: tlv_raid_intro.mp4
-  alt: "Illustration: the old Central Bus Station in Tel Aviv after the Egyptian air raid, smoke rising behind a sooty double-decker bus and a burnt bus under the platform canopies."
-  alt_he: "המחשה: התחנה המרכזית הישנה בתל אביב אחרי ההפצצה המצרית, עשן מיתמר מאחורי אוטובוס קומתיים מפויח ואוטובוס שרוף מתחת לגגוני הרציפים."
+  alt: "Illustration: people run down a street from a bomb-damaged white building as smoke rises, a man carrying a child, a woman and a soldier, past rubble, an old car and a palm."
+  alt_he: "המחשה: אנשים רצים ברחוב מבניין לבן שנפגע בהפצצה ועשן מיתמר, גבר נושא ילד, אישה וחייל, על פני הריסות, מכונית ישנה ועץ דקל."
   alt_he_review: agent-checked
-  credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · animated"
   ai_generated: true
   sensitive: true
   sensitivity_reviewed: false
