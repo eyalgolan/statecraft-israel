@@ -7,7 +7,7 @@ using Statecraft.Sim;
 /// Q1 "Work assignment (Rec.)": the worker holds a Work assignment on a target workshop/&lt;project id&gt;, bound at
 ///    runtime, all or nothing (PopulationLedger.Commit, #2964).
 /// Q2 "Keep existing order (Rec.)": AssignWorkers(city, "workshop", n) staffs on a ledger game; the order picks the records.
-/// Q3 "Wait for Industry records (Rec.)": "people without a job" as a count waits for PR 3's Industry records, so no such
+/// Q3 "Wait for Industry records (Rec.)": a count of the people without a job waits for PR 3's Industry records, so no such
 ///    count is read here: a workshop works when its own bound worker is there (Q6), and staffing takes only records with no
 ///    assignment (Q7).
 /// Q4 "Only craftsmen discount (Rec.)": only a craftsman apprentice or expert lowers the price; every other worker pays the

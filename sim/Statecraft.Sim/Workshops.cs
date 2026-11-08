@@ -130,10 +130,14 @@ namespace Statecraft.Sim
                 if (s.Workshops.TryGetValue(built[i].Id, out var w)) { if (w.Staffed != on) s.Workshops[w.Project] = w.WithStaffed(on); }
                 else if (on) s.Workshops.Add(built[i].Id, new Workshop(built[i].Id, true, AggregateTier));
             }
-            why.Add(new Cause("city", city, count - staffed, FormattableString.Invariant($"{name}: arms workshops staffed: {count}"),
-                key: CauseKeys.WorkshopWorkers, args: new[] { CauseKeys.Number(count) }));
+            why.Add(StaffedLine(city, name, count - staffed, count));
             return null;
         }
+
+        /// <summary>R-ARMS-005: a staffing order's Why line, the same for the aggregate cities and a Historical ledger game.</summary>
+        static Cause StaffedLine(string city, string name, int delta, int count) =>
+            new Cause("city", city, delta, FormattableString.Invariant($"{name}: arms workshops staffed: {count}"),
+                key: CauseKeys.WorkshopWorkers, args: new[] { CauseKeys.Number(count) });
 
         // #1725 PR 7, producer 07: the refusal only a Historical ledger game gives. Internal, not a Refused* constant: no
         // player reaches it yet (Simulation.Step still refuses a ledger game, R-POP-002), and the UI string follows when it does.
@@ -231,8 +235,7 @@ namespace Statecraft.Sim
                 s.Workshops[project] = s.Workshops.TryGetValue(project, out var w)
                     ? new Workshop(project, true, tiers[project], w.PaidCost, w.Progress)
                     : new Workshop(project, true, tiers[project]);
-            why.Add(new Cause("city", city, count - staffed, FormattableString.Invariant($"{name}: arms workshops staffed: {count}"),
-                key: CauseKeys.WorkshopWorkers, args: new[] { CauseKeys.Number(count) }));
+            why.Add(StaffedLine(city, name, count - staffed, count));
             return null;
         }
 
