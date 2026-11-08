@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -413,22 +414,65 @@ namespace Statecraft.Sim
         /// <summary>R-CITY-003 (D-A5, Q-ARRV-1): the turn's immigrants (the CBS series, aliyah.yaml) arrive as refugees, in whole
         /// units, spread over the cities by <see cref="Apportion"/>. The cities count them from mvp.city_arrivals_from, the
         /// census day their start values already include (Q-ARRV-3); PopulationSystem adds every arrival to the national head
-        /// count from the game's start, and the cities are the part of it placed in towns (R-CITY-008, Q-ARRV-2).</summary>
+        /// count from the game's start, and the cities are the part of it placed in towns (R-CITY-008, Q-ARRV-2).
+        /// With an initialized Historical ledger (#1725 PR 7) each arrived unit is one refugee record instead, see
+        /// <see cref="LedgerArrive"/>; the aggregate city fields are not written.</summary>
         public static void Arrive(Content c, GameState s, MvpRules r, DateTime next, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: the ledger's records are then the arrivals
             var units = ArrivedUnits(c, s.Date, next, r.PeoplePerUnit);
             if (units == 0) return;
             var before = UnitsBy(c, s.Date, r.PeoplePerUnit);
             var had = Apportion(c, before);
-            foreach (var kv in Apportion(c, before + units))
+            var share = Apportion(c, before + units);
+            var ledger = s.PopulationLedger.IsHistorical ? LedgerArrive(c, s, r, had, share) : null;
+            foreach (var kv in share)
             {
-                var added = kv.Value - had[kv.Key];
+                var added = ledger == null ? kv.Value - had[kv.Key] : ledger.GetValueOrDefault(kv.Key);
                 if (added == 0) continue;
                 var x = s.Cities[kv.Key];
-                s.Cities[x.Id] = x.WithCounts(x.Civilians, x.Employed, x.Refugees + added);
+                if (ledger == null) s.Cities[x.Id] = x.WithCounts(x.Civilians, x.Employed, x.Refugees + added);
                 why.Add(new Cause("city", x.Id, added, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {Groups(added)} of immigrants arrived and wait for homes"), key: CauseKeys.ImmigrantsWaiting, args: new[] { CauseKeys.Number(added) }));
             }
+        }
+
+        /// <summary>The source key prefix of a CBS arrival record (#1725 PR 7): this prefix plus the city id. Its ordinal is
+        /// the unit's place in the city's cumulative <see cref="Apportion"/> share from mvp.city_arrivals_from, so a unit's key
+        /// depends only on the dates, never on the turn that brings it.</summary>
+        internal const string ArrivalPrefix = "cbs/";
+
+        /// <summary>R-CITY-003 on an initialized Historical ledger (#1725 PR 7; GDD Q11: "arrivals take new ids as refugees in a
+        /// city"): each of the turn's arrived units in <see cref="Apportion"/>'s split is one refugee record located in its city
+        /// (the region that lists it, R-POP-004), reception 0, no assignment, profession or tier. Keys are
+        /// <see cref="ArrivalPrefix"/> plus the city id, ordinals the city's units from <paramref name="had"/> to
+        /// <paramref name="share"/>, in city id order, so a replay of the turn adds nobody twice: an already registered key is
+        /// skipped (R-POP-001: a source stays registered after its id is lost). R-CITY-008: the records are the people, so
+        /// no aggregate city field is written. All or nothing: a refused record, or a city with no city record in the game,
+        /// adds none. Returns the records added per city.</summary>
+        static Dictionary<string, int> LedgerArrive(Content c, GameState s, MvpRules r, SortedDictionary<string, int> had, SortedDictionary<string, int> share)
+        {
+            var ledger = s.PopulationLedger;
+            if (ledger.PeoplePerUnit != r.PeoplePerUnit)
+                throw new InvalidOperationException("A ledger record is " + ledger.PeoplePerUnit.ToString(CultureInfo.InvariantCulture)
+                    + " people but an arrived unit is " + r.PeoplePerUnit.ToString(CultureInfo.InvariantCulture) + " (R-CITY-003, R-POP-001).");
+            var rows = new List<PopulationInventoryRow>();
+            var added = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var kv in share)
+            {
+                for (var ordinal = had[kv.Key]; ordinal < kv.Value; ordinal++)
+                {
+                    if (ledger.HasArrived(ArrivalPrefix + kv.Key, ordinal)) continue;
+                    if (!s.Cities.ContainsKey(kv.Key)) throw new InvalidOperationException("No city record for " + kv.Key + " (R-CITY-003).");
+                    var region = c.PlayerRegions.AtLocation(kv.Key)?.Id
+                        ?? throw new InvalidOperationException("No region in regions.yaml for city " + kv.Key + " (R-POP-004).");
+                    rows.Add(new PopulationInventoryRow(ArrivalPrefix + kv.Key, ordinal, new PopulationUnit(0, PopulationStatus.Refugee, 0,
+                        new PopulationLocation(region, city: kv.Key), PopulationAssignment.Unassigned, CivilianProfession.None,
+                        CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
+                    added[kv.Key] = added.GetValueOrDefault(kv.Key) + 1;
+                }
+            }
+            ledger.RegisterArrivals(rows);
+            return added;
         }
 
         /// <summary>R-CITY-003 (Q-ARRV-1): the cities' shares of their first <paramref name="units"/> arrived units, by id. The
