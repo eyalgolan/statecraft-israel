@@ -5,7 +5,8 @@ using System.Linq;
 
 namespace Statecraft.Sim
 {
-    /// <summary>Synthetic #1716 contract, test fixtures only. Not a live-state adapter.
+    /// <summary>Synthetic #1716 contract, built by test fixtures (<see cref="CreateSynthetic"/>) and, for a game with an
+    /// initialized Historical ledger, by <see cref="CreateLive"/> (#1725 PR 7), which no turn calls yet.
     /// GDD 605277df docs/gdd/loop-switch.md:17-39, except its pre-arrival residents: housing effects count residents after
     /// the step's arrivals (27M-15, owner, 1 November 2026), which an opening snapshot cannot hold, so it holds none.
     /// Frozen eligibility is only an upper bound: future consumers must recheck survival,
@@ -83,6 +84,35 @@ namespace Statecraft.Sim
                 capacity.OrderBy(f => f.Id, StringComparer.Ordinal).ToArray(),
                 conditions.OrderBy(h => h.Id, StringComparer.Ordinal).ToArray(),
                 pending.OrderBy(e => e.Key, StringComparer.Ordinal).ToArray());
+        }
+
+        /// <summary>#1725 PR 7 (#1716): the month's frozen opening snapshot of a game with an initialized Historical ledger.
+        /// Owner, 8 November 2026, "One snapshot per turn (Recommended)": one month snapshot is taken at the start of the
+        /// turn, after the player's orders, and harvest, Industry income and Food all read it. The opening people are the
+        /// ledger's living own records (<see cref="PopulationLedger.Units"/>), in id order; the facility entries are the
+        /// ledger's bound Work targets that are authored fields (Gdd03FieldFixture ids,
+        /// field/q,r), in ordinal order, each available at the freeze with `field.slots`
+        /// capacity. Owner, 8 November 2026, "Yes, recheck (Recommended)": that availability is only an upper bound, and a
+        /// consumer rechecks an entry (its id and opening record are kept) against the live state before using it. The
+        /// month ordinal is the turn (<see cref="GameState.Turn"/>). Every check comes before anything is built, and it
+        /// writes nothing: the state, its hash and the ledger are unchanged. A synthetic or Open ledger, an aggregate game
+        /// and any other content are refused (R-POP-002); so is a ledger with a Work, Course, Reception or Teaching target
+        /// that is not a field, whose entry no ruling defines yet (<see cref="CreateSynthetic"/>'s inventory check).</summary>
+        internal static Gdd03SyntheticMonthContext CreateLive(Content content, GameState state)
+        {
+            if (content == null) throw new ArgumentNullException(nameof(content));
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            var ledger = state.PopulationLedger;
+            if (!content.UsesPopulationLedger || !ledger.IsInitialized || !ledger.IsHistorical)
+                throw new NotSupportedException("A live month snapshot needs an initialized Historical gdd-0.3 population ledger (R-POP-002).");
+            ledger.Reconcile();
+            var slots = Gdd03FieldRates.FromCatalogue(content.Gdd03Balance
+                ?? throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.field.slots", "required under gdd-0.3")).SlotsPerField;
+            var authored = new HashSet<string>(Gdd03FieldFixture.Fields(content).Select(f => f.Id), StringComparer.Ordinal);
+            var fields = ledger.Bindings.Targets.Where(t => t.Kind == PopulationAssignmentKind.Work && authored.Contains(t.Id))
+                .Select(t => new Gdd03SyntheticFacilitySnapshot(t.Id, true, slots)).ToArray();
+            return CreateSynthetic(SaveGame.Gdd03Ruleset, state.Turn, ledger.Units, fields,
+                Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
         }
 
         static T[] Materialize<T>(IEnumerable<T> source) where T : class

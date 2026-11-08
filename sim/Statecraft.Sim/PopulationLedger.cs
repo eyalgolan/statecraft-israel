@@ -89,6 +89,8 @@ namespace Statecraft.Sim
                         + " is neither a census city of cities.yaml nor a field host in regions.yaml (R-POP-002).");
             }
         }
+        /// <summary>The bound assignment targets, in ordinal id order (#1725 PR 7, the live month snapshot reads them).</summary>
+        internal IEnumerable<PopulationTarget> Targets => targets.Values;
         internal bool HasCaptor(string captor) => captors.Contains(captor);
         internal bool HasQualification(string qualification) => qualification == "" || qualifications.Contains(qualification);
         internal IEnumerable<string> Canonical()
@@ -153,6 +155,8 @@ namespace Statecraft.Sim
         /// <summary>Initialized with mode Historical (the R-POP-004 start's scale). Not written to the canonical text: the
         /// scale it implies already is.</summary>
         internal bool IsHistorical { get; private set; }
+        /// <summary>The ledger's frozen bindings; an uninitialized ledger is refused.</summary>
+        internal PopulationBindings Bindings { get { RequireInitialized(); return bindings!; } }
         internal PopulationLedger(bool enabled) { this.enabled = enabled; }
         internal PopulationLedger Clone()
         {
