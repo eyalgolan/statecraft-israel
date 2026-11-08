@@ -197,7 +197,12 @@ namespace Statecraft.Sim
             var targets = regions.Where(x => x.Key.StartsWith(FormationPrefix, StringComparison.Ordinal))
                 .Select(x => new PopulationTarget(x.Key, PopulationAssignmentKind.ActiveService, x.Value))
                 // A field is its farmer's Work target in the field's region (Gdd03FieldFixture.Targets' ids, field/q,r).
-                .Concat(farmer.Select(x => new PopulationTarget(x.Value.Field, PopulationAssignmentKind.Work, regions[x.Key])));
+                .Concat(farmer.Select(x => new PopulationTarget(x.Value.Field, PopulationAssignmentKind.Work, regions[x.Key])))
+                // #1725 PR 7, producer 12. Owner, 8 November 2026, "Start + runtime bind (Rec.)": "the start facilities' Course
+                // targets are bound at Initialize"; "Cohorts stay main (Rec.)": "a per-facility Course target
+                // (military_camp/<city>, hakhshara/<city>)", in the city's region (27M-7, no travel).
+                .Concat(c.Cities.Where(x => regions.ContainsKey(CensusPrefix + x.Id))
+                    .SelectMany(x => Training.LedgerFacilities(c, x.Facilities).Select(f => Training.CourseTargetOf(c, f, x.Id, regions[CensusPrefix + x.Id]))));
             // #1689 rows 5 to 8. Owner, 7 November 2026 (comment 6704389240): "Veteran for all 8 (Recommended)" and "1 each,
             // Negev 0 (Recommended)", Negev's 0 a labelled stand-in. Maintainer call, eyalgolan-30's coordinator, 7 November
             // 2026: the veteran level lives on the formation (a veteran_soldier, R-UNIT-006, each soldier's ActiveService
@@ -217,7 +222,7 @@ namespace Statecraft.Sim
             }
             var bindings = new PopulationBindings(locations.Values.Concat(placed.Values.Where(l => l.City != null)
                 .GroupBy(l => l.Canonical(), StringComparer.Ordinal).Select(g => g.First())), targets,
-                Array.Empty<string>(), soldier.Values.Select(x => x.Qualification).Distinct(StringComparer.Ordinal));
+                Array.Empty<string>(), soldier.Values.Select(x => x.Qualification).Concat(Training.TrainedClasses(c)).Distinct(StringComparer.Ordinal));
             // reception.turns is the reception before free-civilian status (docs/gdd/balance.md:91), so a census free civilian
             // starts with it done: R-VET-001 gives work XP only to a received free civilian. Soldiers keep 0 (not ruled).
             var received = c.RequirePopulationInteger("reception.turns");
