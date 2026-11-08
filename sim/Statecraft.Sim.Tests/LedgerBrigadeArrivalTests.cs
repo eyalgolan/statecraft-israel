@@ -132,7 +132,7 @@ public class LedgerBrigadeArrivalTests
         var c = Gdd03();
         var s = Dark(c);
         Assert.Empty(Serving(s));
-        Assert.Contains(s.PopulationLedger.Canonical(), line => line.StartsWith("target", StringComparison.Ordinal)
+        Assert.Contains(s.PopulationLedger.Canonical(), line => line.StartsWith(PopulationText.Fields("target") + "|", StringComparison.Ordinal)
             && line.Contains(Target, StringComparison.Ordinal) && line.Contains("central_plain", StringComparison.Ordinal));
         Assert.DoesNotContain(HistoricalPopulation.Inventory(c), r => r.Source == Target);
     }
