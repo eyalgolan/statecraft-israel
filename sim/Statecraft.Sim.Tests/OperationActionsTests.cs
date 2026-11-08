@@ -32,7 +32,10 @@ public class OperationActionsTests
         + "    unit_orders: [" + orders + "]\n"
         + "sources: [{ url: \"https://example.org/event\", checked: 2026-10-18 }]\n";
 
-    static Content Load(bool gdd03, params (string Id, string Text)[] cards)
+    static Content Load(bool gdd03, params (string Id, string Text)[] cards) => LoadIn(gdd03, "{ q: 0, r: 0 }, { q: 0, r: 1 }, { q: 1, r: 0 }", cards);
+
+    /// <summary>The fixture with the card's region made of <paramref name="hexes"/>.</summary>
+    static Content LoadIn(bool gdd03, string hexes, params (string Id, string Text)[] cards)
     {
         var files = gdd03 ? EnemyAITests.Gdd03Files() : Fixture.Gdd(new Dictionary<string, string>
         {
@@ -40,7 +43,7 @@ public class OperationActionsTests
         });
         files["map/units_1948.yaml"] = Rows;
         files["map/unit_anchor_hexes.yaml"] = Hexes;
-        files["regions.yaml"] = EnemyAITests.OperationRegions.Replace("{ q: 0, r: 0 }, { q: 1, r: 0 }]", "{ q: 0, r: 0 }, { q: 0, r: 1 }, { q: 1, r: 0 }]");
+        files["regions.yaml"] = EnemyAITests.OperationRegions.Replace("{ q: 0, r: 0 }, { q: 1, r: 0 }]", hexes + "]");
         files["map/locality_hexes.yaml"] = "localities: []\n";
         return ContentLoader.Load(Fixture.Write(files, cards.ToDictionary(x => x.Id + ".yaml", x => x.Text)));
     }
@@ -203,5 +206,34 @@ public class OperationActionsTests
             r.OperationActions.Where(x => x.Outcome == OperationAction.Withdrawn).Select(x => (x.EventId, x.Index, x.Unit!.Value, x.Order, x.Q, x.R)));
         Assert.DoesNotContain(r.Why, x => x.Key == WhyKeys.CardOrderEnded && x.Args.SequenceEqual(new[] { "5,0" }));   // the player's order is brig_a's line
         Assert.Equal(chosen.Units[a].Q, r.State.Units[a].Q);   // the moves made stay
+    }
+    // R-ENEMY-009 (owner, 8 November 2026, on #2956: "1 + it can effect the success of the first op as it has less forces"):
+    // another card's order that takes a unit of an operation moves the unit to that card's operation and cancels nothing; the
+    // first operation goes on with one unit fewer. Not red first: this pins the behaviour PR 1 already had when the owner ruled.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AnotherCardTakesAUnitAndTheFirstOperationGoesOnWithoutIt(bool gdd03)
+    {
+        // The region is the whole board, so brig_b, already on its way, is still in place for the second card (R-ENEMY-007).
+        var board = string.Join(", ", Enumerable.Range(0, 6).SelectMany(q => Enumerable.Range(0, 3).Select(r => $"{{ q: {q}, r: {r} }}")));
+        var c = LoadIn(gdd03, board, ("probe", Card("probe", "{ unit: brig_a, q: 5, r: 0 }, { unit: brig_b, q: 5, r: 2 }")),
+            ("other", Card("other", "{ unit: brig_b, q: 0, r: 1 }")));
+        int a = Id(c, "brig_a"), b = Id(c, "brig_b");
+        var s = Game(c);
+        if (!s.PendingEvents.Contains("other")) s.PendingEvents.Add("other");
+        s.Attention = 99;   // two cards decided in one turn; the Attention price is not under test
+        var first = Simulation.Preview(c, s, new Command[] { new ChooseEventOption("probe", "ok") });
+        Assert.Equal(new[] { a, b }, EventSystem.OperationUnits(c, first.State, "probe"));
+
+        var r = Simulation.Preview(c, s, new Command[] { new ChooseEventOption("probe", "ok"), new ChooseEventOption("other", "ok") });
+        Assert.Empty(r.Rejected.Select(x => x.Reason));
+        Assert.Equal(new[] { a }, EventSystem.OperationUnits(c, r.State, "probe"));
+        Assert.NotEqual("5,2", r.State.Units[b].OrderTarget);
+        Assert.Contains(r.OperationActions, x => (x.EventId, x.Unit, x.Outcome) == ("other", (int?)b, OperationAction.CarriedOut));
+        Assert.Equal(first.State.Units[a].OrderTarget, r.State.Units[a].OrderTarget);   // brig_a still carries the first card's go-to
+        Assert.Equal((first.State.Units[a].Q, first.State.Units[a].R), (r.State.Units[a].Q, r.State.Units[a].R));
+        Assert.DoesNotContain(r.OperationActions, x => x.Outcome == OperationAction.Withdrawn);
+        Assert.DoesNotContain(r.Why, x => x.Key == WhyKeys.CardOrderEnded);
     }
 }
