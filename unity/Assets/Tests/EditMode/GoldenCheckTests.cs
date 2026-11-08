@@ -1,8 +1,10 @@
+using System.Collections;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Boot;
 using Statecraft.Sim;
 using System.Linq;
+using UnityEngine.TestTools;
 
 public class GoldenCheckTests
 {
@@ -36,6 +38,25 @@ public class GoldenCheckTests
         var (emptyOk, emptyLines) = GoldenCheck.Run(c, new GoldenData { Manifest = "# nothing pinned\n" });
         Assert.IsFalse(emptyOk);
         StringAssert.StartsWith("GOLDEN FAIL", emptyLines.Single());
+    }
+
+    /// <summary>The WebGL player's RunAsync, a frame between goldens (the 8 Nov 2026 nightly OOM), reports Run's lines and
+    /// verdict, a FAIL included, and yields at least once per golden.</summary>
+    [UnityTest]
+    public IEnumerator RunAsyncGivesRunsLinesWithAFrameBetweenGoldens()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        var data = new GoldenData { Manifest = "hash1950 " + GoldenRun.Hash1950 + "\nmade-up-golden " + GoldenRun.Hash1950 + "\n" };
+        var expected = GoldenCheck.Run(c, data);
+        var run = GoldenCheck.RunAsync(c, data);
+        int frames = 0;
+        while (!run.IsCompleted && frames < 600) { frames++; yield return null; }
+        Assert.IsTrue(run.IsCompleted, "RunAsync did not finish in 600 frames");
+        var (ok, lines) = run.GetAwaiter().GetResult();
+        Assert.AreEqual(expected.ok, ok);
+        Assert.IsFalse(ok);
+        CollectionAssert.AreEqual(expected.lines, lines);
+        Assert.GreaterOrEqual(frames, 2, "one frame before each of the two goldens");
     }
 
     /// <summary>The editor reads the repository's manifest and every scenario file it names (the players read the copies
