@@ -12,6 +12,8 @@ using Statecraft.Sim;
 /// - "Settled in (Recommended)": the records' reception ticks are reception.turns.
 /// - "Keep both (Recommended)": the military qualification and combat XP stay on the record.
 /// - "No, records only (Recommended)": no aggregate city field is written.
+/// The owner's ruling, 8 November 2026, "Yes, one Why line (Recommended)": Send home writes one Why line naming the Arms
+/// returned to the stock, as training's Cancel does (R-TRAIN-002).
 /// The tests call Demobilization.Give directly: Simulation.Step and TurnResolver.Resolve still refuse a ledger game.</summary>
 public class LedgerSendHomeTests
 {
@@ -46,8 +48,8 @@ public class LedgerSendHomeTests
 
     // "Every soldier in it", "Nearest city, unemployed", "Settled in", "Keep both": each serving record keeps its id,
     // qualification, combat XP, profession, tier and work XP, and becomes a settled-in free civilian without an assignment in
-    // the nearest city (region plus city). The unit leaves the map, no id is made or lost, and the Why line is the aggregate
-    // game's.
+    // the nearest city (region plus city). The unit leaves the map, no id is made or lost, and the first Why line is the
+    // aggregate game's.
     [Fact]
     public void SendHomeTurnsTheFormationsSoldiersIntoSettledCiviliansOfTheNearestCity()
     {
@@ -67,7 +69,7 @@ public class LedgerSendHomeTests
         Assert.Null(Demobilization.Give(c, twin, unit, null, twinWhy));
 
         Assert.False(s.Units.ContainsKey(unit));
-        Assert.Equal(Lines(twinWhy), Lines(why));
+        Assert.Equal(Lines(twinWhy), Lines(why.Take(twinWhy.Count)));
         Assert.Equal((next, count), (s.PopulationLedger.NextPopulationId, s.PopulationLedger.Units.Count));
         Assert.Empty(Serving(s, Target(c, unit)));
         var received = c.RequirePopulationInteger("reception.turns");
@@ -99,9 +101,11 @@ public class LedgerSendHomeTests
         var items = serving.Count(p => p.Equipment.MilitaryId != null);
         Assert.Equal(serving.Count, items);
         var arms = s.Arms; var issued = Issued(s); var twinArms = twin.Arms;
+        var city = Demobilization.Nearest(c, s.Units[unit].Q, s.Units[unit].R);
+        var why = new List<Cause>(); var twinWhy = new List<Cause>();
 
-        Assert.Null(Demobilization.Give(c, s, unit, null, new List<Cause>()));
-        Assert.Null(Demobilization.Give(c, twin, unit, null, new List<Cause>()));
+        Assert.Null(Demobilization.Give(c, s, unit, null, why));
+        Assert.Null(Demobilization.Give(c, twin, unit, null, twinWhy));
 
         Assert.Equal(arms + items, s.Arms);
         Assert.Equal(issued - items, Issued(s));
@@ -109,6 +113,39 @@ public class LedgerSendHomeTests
         Assert.All(serving, was => Assert.Null(s.PopulationLedger.Get(was.Id).Equipment.MilitaryId));
         Assert.All(serving, was => Assert.False(s.PopulationLedger.Get(was.Id).Equipment.MilitaryPaid));
         Assert.Equal(twinArms, twin.Arms);
+
+        // "Yes, one Why line (Recommended)": one line, after the aggregate game's, names the Arms returned to the stock,
+        // its delta the Arms added, as Cancel's training_arms_returned line does. The aggregate game writes none.
+        Assert.Equal(twinWhy.Count + 1, why.Count);
+        var line = why.Last();
+        Assert.Equal(("city", "arms", (double)items, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: unit {unit} returned {items} Arms"), "sent_home_arms_returned"),
+            (line.System, line.Target, line.Delta, line.Message, line.Key));
+        Assert.Equal(new[] { city, unit.ToString(System.Globalization.CultureInfo.InvariantCulture) }, line.Args);
+        Assert.Single(why, x => x.Key == "sent_home_arms_returned");
+        Assert.DoesNotContain(twinWhy, x => x.Key == "sent_home_arms_returned");
+    }
+
+    // "Yes, one Why line": a formation whose records hold no issued military item returns no Arms, so no Arms line is
+    // written and the Why lines are the aggregate game's.
+    [Fact]
+    public void SendHomeWithNoIssuedItemWritesNoArmsLine()
+    {
+        var c = Gdd03();
+        var s = Dark(c); var twin = Aggregate(c);
+        var unit = Opening(c, s);
+        var bare = Serving(s, Target(c, unit)).Select(p => new PopulationUnit(p.Id, p.Status, p.ReceptionTicks, p.Location,
+            p.Assignment, p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp,
+            new PopulationEquipment(p.Equipment.ToolsId, p.Equipment.ToolsPaid), p.Captor, p.Home)).ToList();
+        s.PopulationLedger.Commit(bare, Array.Empty<PopulationTarget>());
+        var arms = s.Arms;
+        var why = new List<Cause>(); var twinWhy = new List<Cause>();
+
+        Assert.Null(Demobilization.Give(c, s, unit, null, why));
+        Assert.Null(Demobilization.Give(c, twin, unit, null, twinWhy));
+
+        Assert.Equal(arms, s.Arms);
+        Assert.Equal(Lines(twinWhy), Lines(why));
+        Assert.DoesNotContain(why, x => x.Key == "sent_home_arms_returned");
     }
 
     // "No, records only": the aggregate city fields are not written on a ledger game (the aggregate game adds the strength).

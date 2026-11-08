@@ -70,9 +70,10 @@ namespace Statecraft.Sim
             if (refused != null) return refused;
             var u = s.Units[unitId];
             var city = Nearest(c, u.Q, u.R);
+            var back = 0;
             if (s.PopulationLedger.IsHistorical)
             {
-                refused = LedgerSendHome(c, s, u, city);
+                refused = LedgerSendHome(c, s, u, city, out back);
                 if (refused != null) return refused;
             }
             else
@@ -86,6 +87,8 @@ namespace Statecraft.Sim
                 $"Unit {unitId} is sent home: its {u.Strength * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now"),
                 key: WhyKeys.SentHome, units: new[] { new UnitRef(u) },
                 args: new[] { (u.Strength * ppu).ToString(CultureInfo.InvariantCulture), city }));
+            if (back > 0)   // the ledger path only (owner, 8 November 2026: "Yes, one Why line (Recommended)"), as Training's Cancel writes it
+                why.Add(new Cause("city", "arms", back, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: unit {unitId} returned {back} Arms"), key: CauseKeys.SentHomeArmsReturned, args: new[] { city, CauseKeys.Number(unitId) }));
             return null;
         }
 
@@ -98,9 +101,11 @@ namespace Statecraft.Sim
         /// "Settled in (Recommended)": its reception ticks are reception.turns. "Keep both (Recommended)": its military
         /// qualification and combat XP stay. "Back to Arms stock (Recommended)": its issued military item leaves the record and
         /// goes back to the stock once. "No, records only (Recommended)": no aggregate city field is written. The records are
-        /// written in one validated commit; the caller removes the unit after it. Null when done, else the reason.</summary>
-        static string? LedgerSendHome(Content c, GameState s, Unit u, string city)
+        /// written in one validated commit; the caller removes the unit after it and, for "Yes, one Why line (Recommended)",
+        /// writes one Why line naming the <paramref name="back"/> Arms returned. Null when done, else the reason.</summary>
+        static string? LedgerSendHome(Content c, GameState s, Unit u, string city, out int back)
         {
+            back = 0;
             var target = Training.FormationTarget(c, u.Id);
             var serving = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier
                 && string.Equals(p.Assignment.Target, target, StringComparison.Ordinal)).ToList();
@@ -120,7 +125,8 @@ namespace Statecraft.Sim
                     p.Captor, p.Home);
             }).ToList();
             s.PopulationLedger.Commit(civilians, Array.Empty<PopulationTarget>());
-            s.Arms += (int)Math.Min(items, (long)int.MaxValue - s.Arms);   // the stock stops at int.MaxValue, as Training's cancel leaves it
+            back = (int)Math.Min(items, (long)int.MaxValue - s.Arms);   // the stock stops at int.MaxValue, as Training's cancel leaves it
+            s.Arms += back;
             return null;
         }
 
