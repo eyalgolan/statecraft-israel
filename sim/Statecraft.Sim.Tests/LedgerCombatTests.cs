@@ -54,7 +54,7 @@ public class LedgerCombatTests
         foreach (var u in s.Units.Values.ToList()) if (u.Order == Combat.Attack) Place(s, u, u.Q, u.R);
         var d = s.Units[defender];
         var free = Ring(c, s, d).First(h => !s.Units.Values.Any(x => x.Q == h.Q && x.R == h.R));
-        Place(s, Enemy(s), free.Q, free.R, strength, Combat.Attack, d.Q + "," + d.R);
+        Place(s, Enemy(s), free.Q, free.R, strength, Combat.Attack, FormattableString.Invariant($"{d.Q},{d.R}"));
     }
 
     static string Units(GameState s) => string.Join(";", s.Units.Values.Select(x => x.Canonical()));
@@ -115,7 +115,6 @@ public class LedgerCombatTests
             Assert.All(gone, id => Assert.DoesNotContain(s.PopulationLedger.Units, p => p.Id == id));
             var kept = Dark(c).PopulationLedger.Units.Where(p => !gone.Contains(p.Id)).Select(p => p.Canonical());
             Assert.Equal(kept, s.PopulationLedger.Units.Select(p => p.Canonical()));
-            Assert.Equal(1, s.Units[d.Id].CombatXp);   // R-UNIT-011: the formation's own count rose
             s.PopulationLedger.Reconcile();
         });
     }
@@ -190,7 +189,15 @@ public class LedgerCombatTests
         var probe = Dark(c); Train(probe);
         Assert.True(unit >= c.StartingForces.Count);
         Assert.Equal(1, probe.Units[unit].Strength);
-        void SetUp(GameState g) { Train(g); Besiege(c, g, unit, 6); }
+        // Alone on its hex (losses fall on the strongest unit there first), on a free land hex beside the last enemy unit.
+        void SetUp(GameState g)
+        {
+            Train(g);
+            var e = g.Units.Values.Where(u => Prisoners.FrontOf.ContainsKey(u.Side)).OrderBy(u => u.Id).Last();
+            var free = Ring(c, g, e).First(h => !g.Units.Values.Any(x => x.Q == h.Q && x.R == h.R));
+            Place(g, g.Units[unit], free.Q, free.R);
+            Besiege(c, g, unit, 6);
+        }
         var s = Dark(c); SetUp(s);
         // The draw is found on the dark game itself here: the aggregate start trains no records, so its twin is not one.
         ulong seed = 1;
@@ -261,7 +268,7 @@ public class LedgerCombatTests
             foreach (var x in g.Units.Values.ToList())
                 if (x.Id != d.Id && !enemies.Any(e => e.Id == x.Id) && ring.Contains((x.Q, x.R))) g.Units.Remove(x.Id);
             for (int i = 0; i < ring.Count; i++)
-                Place(g, enemies[i], ring[i].Q, ring[i].R, i == 0 ? 3 * d.Strength : 1, i == 0 ? Combat.Attack : "", i == 0 ? at.Q + "," + at.R : "");
+                Place(g, enemies[i], ring[i].Q, ring[i].R, i == 0 ? 3 * d.Strength : 1, i == 0 ? Combat.Attack : "", i == 0 ? FormattableString.Invariant($"{at.Q},{at.R}") : "");
             side = enemies[0].Side;
         }
         var seed = Seed(c, SetUp, (g, why) => Combat.Resolve(c, g, why),

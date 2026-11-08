@@ -218,9 +218,9 @@ public class LedgerPrisonersTests
         Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
     }
 
-    // Where Take's refusal can be reached from combat, and what it leaves. Combat.Resolve (step 2, called by TurnResolver) refuses
-    // any initialized ledger at its entry, before any engagement, so on this branch only the player's instant
-    // attack, Combat.Strike (its one caller is Step, through Simulation.RunOrders), can reach Prisoners.Take on a dark start. Here an
+    // Where Take's refusal can be reached from combat, and what it leaves. Since #1706 both Combat.Resolve (step 2,
+    // TurnResolver.cs:20) and the player's instant attack, Combat.Strike (its one caller is Step, Simulation.cs:268), fight
+    // on a dark start and can reach Prisoners.Take (LedgerCombatTests covers Resolve's surrender). Here an
     // enemy unit boxed in by own units surrenders to a Strike while SoldiersHeld disagrees with the Captured records, so Take
     // throws InvalidOperationException before it writes anything. The throw comes after the Strike's own writes (the
     // attacker's order and the engagement's draw and losses), and those stay on the state object a direct call is given. In
@@ -233,10 +233,6 @@ public class LedgerPrisonersTests
     {
         var c = Gdd03();
         var s = Dark(c);
-        var resolve = s.Clone();
-        Assert.Contains("integration is held",
-            Assert.Throws<NotSupportedException>(() => Combat.Resolve(c, resolve, new List<Cause>())).Message);
-        Assert.Equal(s.Hash(), resolve.Hash());
 
         // The weakest enemy unit (lowest id on a tie), attacked by the strongest own formation (lowest id on a tie).
         var e = s.Units.Values.Where(u => Prisoners.FrontOf.ContainsKey(u.Side) && u.Strength > 0)
