@@ -66,6 +66,8 @@ namespace Statecraft.Game.UI
         /// left out, summed by the sim (EconomySystem.OtherMoney, #2212), so its lines add up to the change; none when
         /// nothing is left over or the rest shows as IL 0.0m. An event's Debt line is worded there as its Money effect
         /// (EconomySystem.MoneyLine, #2558). <paramref name="c"/> is the game's content (its currency).</summary>
+        public static IReadOnlyList<string> PersistentCauses(UiText text, GameState state, string meter) => Array.Empty<string>();   // RED stub
+
         public static IReadOnlyList<string> Causes(StepResult? turn, string meter, Content c, Func<Cause, string> line)
         {
             if (turn == null) return Array.Empty<string>();

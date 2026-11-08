@@ -89,6 +89,8 @@ namespace Statecraft.Game.UI
         public const float MaxKitCover = 0.1f;
         /// <summary>The population-tier badge (issue #710) inside a city's or town's pill, and the class that makes room for it.</summary>
         public const string TierClass = "map-label-tier", WithTierClass = "map-label-with-tier";
+        /// <summary>#803: a game settlement's control tag, a short word under its name (owner, 24 October 2026, "1521: 1. a 2.a").</summary>
+        public const string ControlBadgeClass = "map-label-control";
         /// <summary>OWNER-APPROVED DESIGN VALUES (#710, 18 October 2026, "Accept as shipped"): tiers 1 to 9, doubling
         /// from 1,000 people (under 1,000 is tier 1, 1,000-1,999 tier 2, ..., 128,000 and over tier 9). The badge is at
         /// the start of the name, mirrored in Hebrew, and remains part of the pill at every zoom where the pill is shown.</summary>
@@ -209,7 +211,8 @@ namespace Statecraft.Game.UI
 
         public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null, Func<Statecraft.Game.Map.Kits.Localities.Place, string?>? tipText = null,
             Func<IReadOnlyList<Bounds[]>?>? keepClear = null, IReadOnlyDictionary<string, decimal>? population = null,
-            Func<int, decimal, string>? tierTip = null, bool hebrew = false, IReadOnlyList<Statecraft.Sim.MapLocation>? locations = null)
+            Func<int, decimal, string>? tierTip = null, bool hebrew = false, IReadOnlyList<Statecraft.Sim.MapLocation>? locations = null,
+            Func<Statecraft.Sim.SettlementControl, string?>? controlText = null)
         {
             var tip = tipText ?? DefaultTip;
             onLabelGeometry = _ => geometryDirty = true;
@@ -474,6 +477,8 @@ namespace Statecraft.Game.UI
             }
             return mask;
         }
+
+        public void SetSettlementControl(IReadOnlyDictionary<string, Statecraft.Sim.SettlementControl> control) { }   // RED stub
 
         public void Refresh(bool force = false)
         {
