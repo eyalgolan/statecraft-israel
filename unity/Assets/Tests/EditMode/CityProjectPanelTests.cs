@@ -1098,7 +1098,8 @@ public class WorkshopPanelTests
     }
 
     // R-CITY-011 with R-HOUSE-006 (#2477 review): a housing repair being built has no hex of its own, so it shows on its city's
-    // own hex, where it is offered: its line, whether it has a builder, and its city's stepper, also when it is the city's only
+    // own hex, where it is offered: its line and whether it has a builder (since #1722, the city's project list's row: owner,
+    // 8 November 2026, "Drop the old lines here (Recommended)"), and its city's stepper, also when it is the city's only
     // project being built. + there queues the build order and End turn gives the repair its builder.
     [Test]
     public void ARepairBeingBuiltShowsItsBuilderOnItsCitysOwnHex_RCity011([Values] bool hebrew)
@@ -1115,10 +1116,10 @@ public class WorkshopPanelTests
         });
         using var panel = Panel(ui, bridge, t);
         panel.Show(home.Q, home.R);
-        var kind = PlayerText.Capitalised(ContentNames.Of(t, C03.ProjectKinds.First(k => k.Id == Projects.HousingRepair)));
-        Assert.AreEqual(t.Format("city.project_building", kind, (hebrew ? TownsHe : Towns)[City],
-            GddHexPanel.Turns(t, Projects.CityTurnsToBuild(C03, bridge.State, Projects.HousingRepair, 2, 0))), ui.Q<Label>("city-repair-state").text);
-        Assert.AreEqual(t["city.project_no_builder"], ui.Q<Label>("city-repair-builder").text);
+        var k = C03.ProjectKinds.First(x => x.Id == Projects.HousingRepair);
+        var kind = PlayerText.Capitalised(ContentNames.Of(t, k));
+        string Row(bool builder) => t.Format("city.list_building", kind, k.Turns - 2, k.Turns, PlayerText.Money(C03, "treasury", k.Cost), t[builder ? "city.list_builder" : "city.list_no_builder"]);
+        Assert.AreEqual(Row(false), ui.Q<Label>($"city-list-project-{repair}").text);
         Assert.AreEqual(t.Format("city.builders", 0, 1), ui.Q<Label>("city-builders").text, "the repair is the one project the count counts");
         Assert.IsTrue(ui.Q<Button>("city-builders-more").enabledSelf, "4 people without a job, 1 project");
         ui.Press("city-builders-more");
@@ -1126,26 +1127,75 @@ public class WorkshopPanelTests
         Assert.IsEmpty(turn.Rejected, "the sim accepts the order the panel queued");
         Assert.IsTrue(turn.State.CityProjects[repair].Builder);
         panel.Show(home.Q, home.R);
-        Assert.AreEqual(t["city.project_builder"], ui.Q<Label>("city-repair-builder").text);
+        var left = turn.State.CityProjects[repair].TurnsLeft;
+        Assert.AreEqual(t.Format("city.list_building", kind, k.Turns - left, k.Turns, PlayerText.Money(C03, "treasury", k.Cost), t["city.list_builder"]),
+            ui.Q<Label>($"city-list-project-{repair}").text);
+    }
+
+    // R-HOUSE-006 with #1722 (owner, 8 November 2026: "Drop the old lines here (Recommended)", on the repair that showed
+    // twice): on its city's own hex a repair being built shows once, as its row in the city's project list. The old repair
+    // line and its builder line (the projects part's Repairs) are gone there; the city's one builder stepper stays. On a hex
+    // that is not a city's, a project being built keeps its state line, its builder line and the stepper, as before.
+    [Test]
+    public void ARepairBeingBuiltShowsOnceOnItsCitysOwnHex_RHouse006([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var (hq, hr) = Home(C03);
+        var repair = 0;
+        using var ui = new UiTestKit();
+        var (bridge, project) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) =>
+        {
+            repair = s.NextId++;
+            s.CityProjects.Add(repair, new CityProject(repair, Projects.HousingRepair, City, hq, hr, 1));
+        });
+        using var panel = Panel(ui, bridge, t);
+        panel.Show(hq, hr);
+        var k = C03.ProjectKinds.First(x => x.Id == Projects.HousingRepair);
+        var kind = PlayerText.Capitalised(ContentNames.Of(t, k));
+        var oldLine = t.Format("city.project_building", kind, (hebrew ? TownsHe : Towns)[City],
+            GddHexPanel.Turns(t, Projects.CityTurnsToBuild(C03, bridge.State, Projects.HousingRepair, 1, 0)));
+        var row = t.Format("city.list_building", kind, k.Turns - 1, k.Turns, PlayerText.Money(C03, "treasury", k.Cost), t["city.list_no_builder"]);
+        var labels = ui.Root.Query<Label>().ToList();
+        Assert.AreEqual(1, labels.Count(l => string.Equals(l.text, row, StringComparison.Ordinal)), "the list's row, once");
+        Assert.AreEqual(0, labels.Count(l => string.Equals(l.text, oldLine, StringComparison.Ordinal)), "no old repair line");
+        Assert.IsNull(ui.Root.Q("city-repair-state"));
+        Assert.IsNull(ui.Root.Q("city-repair-builder"));
+        Assert.AreEqual(1, ui.Root.Query("city-builders-row").ToList().Count, "the city's builder stepper stays, once");
+        Assert.AreEqual(t.Format("city.builders", 0, 2), ui.Q<Label>("city-builders").text);
+
+        // Not a city's hex: the housing project being built there shows as it did (city-project-state, its builder line, the stepper).
+        var (q, r) = Hex(C03);
+        panel.Show(q, r);
+        var housing = C03.ProjectKinds.First(x => x.Id == "housing");
+        Assert.AreEqual(t.Format("city.project_building", PlayerText.Capitalised(ContentNames.Of(t, housing)), (hebrew ? TownsHe : Towns)[City],
+            GddHexPanel.Turns(t, Projects.CityTurnsToBuild(C03, bridge.State, "housing", 2, 0))), ui.Q<Label>("city-project-state").text);
+        Assert.AreEqual(t["city.project_no_builder"], ui.Q<Label>("city-project-builder").text);
+        Assert.AreEqual(1, ui.Root.Query("city-builders-row").ToList().Count);
+        Assert.IsNull(ui.Root.Q("city-list-header"), "no city block, so no list, on a hex that is not a city's");
+        Assert.IsNull(ui.Root.Q("city-repair-state"));
+        Assert.AreEqual(project, Projects.CityProjectAt(bridge.State, q, r)?.Id, "precondition: the project is this hex's");
     }
 
     // R-CITY-011 (#2477 review): a city's own hex with its project being built and a repair being built shows both builder
-    // lines and one stepper for the city, whose count is the two projects on screen.
+    // lines and one stepper for the city, whose count is the two projects on screen. Since #1722 the repair's builder is
+    // said in its row of the city's project list (owner, 8 November 2026: "Drop the old lines here (Recommended)").
     [Test]
     public void ACitysOwnHexWithAProjectAndARepairShowsOneStepper_RCity011()
     {
         var home = C03.SettlementHexes.First(x => x.Id == City);
+        var repair = 0;
         using var ui = new UiTestKit();
         var (bridge, _) = Game(C03, En, "housing", turnsLeft: 2, edit: (s, id) =>
         {
             s.CityProjects[id] = new CityProject(id, "housing", City, home.Q, home.R, 2);
-            var repair = s.NextId++;
+            repair = s.NextId++;
             s.CityProjects.Add(repair, new CityProject(repair, Projects.HousingRepair, City, home.Q, home.R, 2).WithBuilder(true));
         });
         using var panel = Panel(ui, bridge, En);
         panel.Show(home.Q, home.R);
         Assert.AreEqual(En["city.project_no_builder"], ui.Q<Label>("city-project-builder").text);
-        Assert.AreEqual(En["city.project_builder"], ui.Q<Label>("city-repair-builder").text);
+        StringAssert.EndsWith(En["city.list_builder"], ui.Q<Label>($"city-list-project-{repair}").text);
+        Assert.IsNull(ui.Root.Q("city-repair-builder"), "the repair's builder is said once, in the list");
         Assert.AreEqual(1, ui.Root.Query("city-builders-row").ToList().Count, "one stepper for the city");
         Assert.AreEqual(En.Format("city.builders", 1, 2), ui.Q<Label>("city-builders").text);
     }
