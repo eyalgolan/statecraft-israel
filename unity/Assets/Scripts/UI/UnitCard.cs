@@ -10,7 +10,8 @@ using Statecraft.Sim;
 namespace Statecraft.Game.UI
 {
     /// <summary>The info panel's text for a selected unit (its orders so far, Move, Fortify, Hold and Attack, are the panel's: InfoPanelPresenter; the panel also links to the Defence screen):
-    /// its name, number (Hebrew where the row has a sourced one, #1219) and service; where it stands, and since when only from a sourced start (the anchor's `since`,
+    /// its name, number (Hebrew where the row has a sourced one, #1219) and service; a military sim unit's strength, "of" its
+    /// full strength once it has lost some (#2432, UnitDamage); where it stands, and since when only from a sourced start (the anchor's `since`,
     /// never the game's first day: review I1); its formation and first commander where sourced; the sector in the
     /// source's words; on Israel's units, the national values its token reflects (legacy loop: the reserve call-up sets an
     /// army token's figures, the security level whether the aircraft fly; GDD loop: the unit's strength sets the figures,
@@ -73,11 +74,15 @@ namespace Statecraft.Game.UI
                 && content.SettlementNames.TryGetValue(t.StateUnit.HomeCity, out var city) ? city : "";
             if (hebrew && t.StateUnit != null && settlementNamesHe != null
                 && settlementNamesHe.TryGetValue(t.StateUnit.HomeCity, out var cityHe) && !string.IsNullOrWhiteSpace(cityHe)) home = cityHe;
-            if (raisedType != null && t.StateUnit != null)
-            {
-                lines.Add(text.Format("unit.strength", t.StateUnit.Strength));
-                if (home != "") lines.Add(text.Format("unit.home_city", home));
-            }
+            // Every military sim unit, on both sides, states its strength, read from the live state rather than the token's
+            // copy (a token is redrawn only when the map rebuilds); once it has lost strength, against its full strength
+            // (#2432), so the keyboard path and a screen reader get the number the map's look shows.
+            var live = t.SimId is int sid && state.Units.TryGetValue(sid, out var now) ? now : t.StateUnit;
+            if (live != null && live.Side != "")
+                lines.Add(UnitDamage.Damaged(content, live)
+                    ? text.Format("unit.strength_of", live.Strength, UnitDamage.FullStrength(content, live))
+                    : text.Format("unit.strength", live.Strength));
+            if (raisedType != null && home != "") lines.Add(text.Format("unit.home_city", home));
             if (u.Service == UnitData.Air)
             {
                 var aircraft = text[t.ArtType == UnitShowcase.SpitfireType ? "unit.aircraft.spitfire" : "unit.aircraft.s199"];
