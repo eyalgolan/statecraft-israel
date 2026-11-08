@@ -1,4 +1,5 @@
 ### Fixed
 
-- End turn is lighter again: the automated player's staging for operation cards searched the whole map once for every
-  candidate hex (over 1,000 searches a game) and now searches once per unit. The moves it picks are the same.
+- Behind the scenes: the automated player that plays the test games searched the whole map once for every hex it
+  considered when moving a brigade into place for an operation card. It now searches once per brigade and picks the same
+  moves. A full test game had used about 300 MB more memory since #2621. The game you play does not use this player.
