@@ -1,0 +1,6 @@
+### Added
+
+- New game now shows a card about the Egyptian air raid on Tel Aviv on the morning of 15 May 1948, after the opening and
+  before the turn 1 advisors, with an AI-animated clip of two National Library of Israel photographs of the old Central
+  Bus Station and only an OK button. Continue and loaded games skip it. It is a draft: only the Editor shows it until the
+  owner's sensitivity review and a native Hebrew read.

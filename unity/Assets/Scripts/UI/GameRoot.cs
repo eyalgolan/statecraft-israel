@@ -61,6 +61,7 @@ namespace Statecraft.Game.UI
         NavigationGuard? navGuard;
         StartScreenPresenter? start;
         OpeningPresenter? opening;
+        RaidCardPresenter? raid;
         EventCardPresenter? card;
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
@@ -142,6 +143,9 @@ namespace Statecraft.Game.UI
         /// <summary>The opening (#530) outside Play mode: off by default, so EditMode tests that press New Game meet the advisors
         /// as a player's first game does; the opening's own tests set it.</summary>
         internal bool OpeningInEditMode { get; set; }
+        /// <summary>The Tel Aviv raid card on New game outside Play mode: off by default, as OpeningInEditMode; its own tests
+        /// set it.</summary>
+        internal bool RaidCardInEditMode { get; set; }
         /// <summary>The start menu's music (#39) outside Play mode: off by default, so EditMode tests stay silent and fetch
         /// nothing; its wiring test sets it.</summary>
         internal bool MenuMusicInEditMode { get; set; }
@@ -286,6 +290,9 @@ namespace Statecraft.Game.UI
             // where a test asks for it with the start screen (OpeningInEditMode).
             bool enableOpening = smoke == 0 && !StartScreenPresenter.Skipped()
                 && (Application.isPlaying || startScreen && OpeningInEditMode);
+            // The raid card on New game, likewise (RaidCardInEditMode).
+            bool enableRaid = smoke == 0 && !StartScreenPresenter.Skipped()
+                && (Application.isPlaying || startScreen && RaidCardInEditMode);
             // A companion this Begin runs again keeps the page's panel until its replacement publishes (WebCompanion.Dispose).
             Shutdown(keepCompanionPage: companion != null && CompanionWanted());
             smokeRun = smoke > 0;
@@ -533,7 +540,7 @@ namespace Statecraft.Game.UI
             if (smoke == 0) Own(new AchievementReporter(bridge, () => PlatformServices.Current));
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
-            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
+            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || raid?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
             var terrain = map.Terrain;
             var size = terrain.terrainData.size;
             var oldBounds = cameraController.Bounds;
@@ -666,7 +673,7 @@ namespace Statecraft.Game.UI
                     // the start screen. Closing the scene disposes it after the camera is gone, hence the null check.
                     opening = Own(new OpeningPresenter(root, openingSource, openingData, text,
                         shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
-                        replay => { if (!replay) advisor?.NewGame(); },
+                        replay => { if (!replay) PlayNewGameIntro(); },
                         video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
                     replayOpening.text = text["opening.replay"];
                     replayOpening.style.display = DisplayStyle.Flex;
@@ -674,6 +681,22 @@ namespace Statecraft.Game.UI
                     replayOpening.clicked += replayClick;
                     owned.Add(new Undo(() => replayOpening.clicked -= replayClick));
                 }
+            }
+            // The Tel Aviv raid card (owner, 8 Nov 2026, "Film, raid, card, advisors (Recommended)"): on New game only, after
+            // the opening and before the turn 1 advisor chain, which its OK starts (PlayNewGameIntro). It reads no sim state.
+            // A player build shows it only once it is reviewed (RaidCardContent.MayPresent); the Editor shows the labelled draft.
+            if (enableRaid && RaidCardContent.Load() is RaidCardContent.Document raidData)
+            {
+#if UNITY_EDITOR
+                const bool raidPreview = true;
+#else
+                const bool raidPreview = false;
+#endif
+                if (RaidCardContent.MayPresent(raidData, raidPreview))
+                    raid = Own(new RaidCardPresenter(root, raidData, text,
+                        shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
+                        () => advisor?.NewGame(),
+                        video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
             }
             // The start screen goes up in the same frame the loading state ends, so the HUD never flashes before it. While it
             // shows, the camera keys are off (keyboard pan would otherwise move the hidden map; plan amendment A4).
@@ -686,7 +709,7 @@ namespace Statecraft.Game.UI
                 {
                     if (cam != null) cam.enabled = !shown;
                     music?.Show(shown);                                            // loops on the menu, fades out as a game starts
-                    if (!shown) { if (start?.Resumed != false) advisor?.Resume(); else if (opening == null) advisor?.NewGame(); }
+                    if (!shown) { if (start?.Resumed != false) advisor?.Resume(); else if (opening == null) PlayNewGameIntro(); }
                 }, recording, text, SettingsFile(), switchLanguage));
                 start.Show();
             }
@@ -779,7 +802,7 @@ namespace Statecraft.Game.UI
             {
                 // The start screen's no-save New Game has no Started; its closing already starts the advisors when there
                 // is no opening, so that route only plays the opening.
-                Action freshGame = () => { if (opening != null) opening.Show(replay: false); else advisor?.NewGame(); };
+                Action freshGame = () => { if (opening != null) opening.Show(replay: false); else PlayNewGameIntro(); };
                 Action freshOpened = () => opening?.Show(replay: false);
                 // #2712: a New Game keeps the map, so the camera goes back to the opening view here, as MapScene.Build sets it
                 // at boot: Tel Aviv and Jaffa in frame at the start zoom.
@@ -1056,6 +1079,16 @@ namespace Statecraft.Game.UI
         internal static void ConfigureCameraHeading(CameraController controller, string ruleset) =>
             controller.SetFixedNorth(CameraHeadingPolicy.IsFixedNorth(ruleset));
 
+        /// <summary>What a new game plays after its opening, or at once without one (owner, 8 Nov 2026, "Film, raid, card,
+        /// advisors (Recommended)"): the raid card, whose OK starts the turn 1 advisor chain; the chain at once when there is no
+        /// card. Never on Continue or a load (the start screen's close calls Resume then). New game can report one game twice
+        /// (the start screen's close and Started); RaidCardPresenter.Show and AdvisorPresenter.NewGame both ignore the second.</summary>
+        void PlayNewGameIntro()
+        {
+            if (raid != null) raid.Show();
+            else advisor?.NewGame();
+        }
+
         /// <summary>Disposes every presenter, the autosave and the camera/pointer hooks (newest first). Safe to call twice.</summary>
         /// <param name="keepCompanionPage">A rebuild whose next companion replaces the page's panel: the old one goes without
         /// clearing it, so the panel does not blink, the canvas is not resized twice and the status is not read again.</param>
@@ -1074,7 +1107,7 @@ namespace Statecraft.Game.UI
             owned.Clear();
             savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; raid = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1220,6 +1253,9 @@ namespace Statecraft.Game.UI
             // A reviewed opening is part of the normal media path: the instrument uses its actual Skip control.
             if (hud.ClassListContains(OpeningPresenter.OpenClass)
                 && !Press(root.Q<Button>("opening-skip"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
+            // So is the raid card after it (RaidCardPresenter): its only control, OK.
+            if (hud.ClassListContains(RaidCardPresenter.OpenClass)
+                && !Press(root.Q<Button>("raid-ok"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
             while (now() - began <= FirstCardBudgetSeconds)
             {
                 var option = root.Q<VisualElement>("event-options")?.Q<Button>();
@@ -1260,11 +1296,12 @@ namespace Statecraft.Game.UI
             // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
-            // Nor does the opening's (#530), over all but those two, in the frame it closes too.
+            // Nor does the opening's (#530), over all but those two, in the frame it closes too; nor the raid card's after it (its OK).
             // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
             if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true
                 && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true
-                && opening?.ClosedThisFrame != true && opening?.Escape() != true)
+                && opening?.ClosedThisFrame != true && opening?.Escape() != true
+                && raid?.ClosedThisFrame != true && raid?.Escape() != true)
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;

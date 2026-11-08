@@ -1,0 +1,50 @@
+# The Tel Aviv raid card on New game (owner, 8 Nov 2026): after the opening and before the turn 1 advisor chain, a
+# card that explains the Egyptian air raid on Tel Aviv on the morning the game starts and how many were killed, with
+# the animated photographs of the old Central Bus Station after the raid, and only an OK button. The owner chose the
+# options labelled "15 May dawn raid (Recommended)", "V19c 0.45 s, then A1+B1 (Recommended)" and "Film, raid, card,
+# advisors (Recommended)"; the clip ships A1 and B1 only (the PR asks the owner about V19c). Presentation only: it reads
+# no sim state, changes no number and is not game content (RaidCardContent; docs/event-videos.md, "On New game").
+# A player build shows it only once status is sensitivity-reviewed, every source is checked, the Hebrew is approved by
+# a native read and the clip has the owner's sensitivity review (RaidCardContent.MayPresent); the Editor shows the
+# draft with the opening's preview label.
+# For the native reviewer (#564): agent-drafted Hebrew. Names as the game and he.wiki write them: שדה דב (he.wiki
+# "נמל התעופה דב הוז"), ספיטפייר and נ״מ (he.wiki, with the typographic gershayim of HE-06), התחנה המרכזית הישנה (the
+# NLI records' own title), dates as date.day_month_year ("15 במאי 1948"); no parentheses or quotation marks, and no
+# Latin letters (HE-09).
+status: draft
+title: "Egyptian planes bomb Tel Aviv"
+title_he: "מטוסים מצריים מפציצים את תל אביב"
+text: "Early on the morning of 15 May 1948, the day after independence was declared, Egyptian Spitfires attacked Tel Aviv. They bombed the Sde Dov airfield in the north of the city and damaged aircraft and buildings there. Five people were killed and nine wounded. Anti-aircraft fire brought down one of the attackers, and its pilot was taken prisoner. Bombs also hit the old Central Bus Station, and more raids followed that day."
+text_he: "בשעות הבוקר המוקדמות של 15 במאי 1948, יום לאחר הכרזת העצמאות, תקפו מטוסי ספיטפייר מצריים את תל אביב. הם הפציצו את שדה התעופה שדה דב בצפון העיר וגרמו שם נזק למטוסים ולמבנים. חמישה אנשים נהרגו ותשעה נפצעו. אש נ״מ הפילה את אחד המטוסים התוקפים, וטייסו נלקח בשבי. פצצות פגעו גם בתחנה המרכזית הישנה, ובמהלך היום באו פשיטות נוספות."
+he_review: pending
+# The toll: both he.wiki articles give 5 killed and 9 wounded; the Dov Hoz paragraph has no footnote, and no primary or
+# contemporary source read so far confirms it. The UPI dispatch of the day reports no casualties ("Little damage
+# resulted."); that is a silence, not another figure, so the card keeps the one value (CONTENT_POLICY section 1).
+sources:
+  - url: "https://he.wikipedia.org/wiki/נמל_התעופה_דב_הוז"
+    supports: "'ב-15 במאי 1948, מיד לאחר הכרזת המדינה וראשית הפלישה המצרית, תקפו ארבעה מטוסי ספיטפייר מצריים את השדה וגרמו נזק למטוסים ולמבנים'; 'אחד מהמטוסים התוקפים הופל באש נ\"מ וטייסו נלקח בשבי'; 'בהתקפה נהרגו חמישה אנשים ונפצעו תשעה.' (no footnote on the paragraph)"
+    checked: 2026-11-08
+  - url: "https://he.wikipedia.org/wiki/תל_אביב_במלחמת_העצמאות"
+    supports: "'ב-15 במאי 1948, ביום שלאחר הכרזת העצמאות', Egyptian Spitfires attacked the Sde Dov airfield 'במספר גיחות שהחלו בשעות הבוקר המוקדמות'; 'בהתקפה נהרגו חמישה אנשים ונפצעו תשעה'"
+    checked: 2026-11-08
+  - url: "https://www.upi.com/Archives/1948/05/15/Arab-nations-Attack-Israel/6118818754330"
+    supports: "UPI, 15 May 1948: 'The first Egyptian air raid on Tel Aviv came early today.'; a second attack 'within two hours' bombed 'the airport just north of this new Jewish capital'; a third raid before noon; 'one Egyptian pilot was taken prisoner'. It reports no casualties ('Little damage resulted.')"
+    checked: 2026-11-08
+  - url: "https://commons.wikimedia.org/wiki/File:Tel_Aviv-Yafo_(997008136796305171).jpg"
+    supports: "NLI record 997008136796305171, taken on 15 May 1948 (Benno Rothenberg): 'אוטובוס מפויח של חברת דן בתחנה המרכזית הישנה בת\"א לאחר שהופגזה ע\"י מטוסים מצריים בעקבות הכרזת העצמאות'. The NLI blog and en.wiki put the bus-station raid on 18 May; owner, 7 Nov 2026: keep, go by the record"
+    checked: 2026-11-08
+  - url: "https://commons.wikimedia.org/wiki/File:Tel_Aviv-Yafo_(997008136796105171).jpg"
+    supports: "NLI record 997008136796105171, taken on 15 May 1948 (Benno Rothenberg): 'עשן מיתמר מהתחנה המרכזית הישנה בת\"א לאחר שהופגזה ע\"י מטוסים מצריים בעקבות הכרזת העצמאות'"
+    checked: 2026-11-08
+# The clip: A1 then B1 of the opening film, Seedance 2.5 animations of the two NLI photographs above, composited over
+# the photographs (ASSETS.yaml has the recipe). It loops silently in the card's frame, labelled with the cards' "AI-generated
+# illustration" string, with the photographs' credit line beside it.
+clip:
+  file: tlv_raid_intro.mp4
+  alt: "Illustration: the old Central Bus Station in Tel Aviv after the Egyptian air raid, smoke rising behind a sooty double-decker bus and a burnt bus under the platform canopies."
+  alt_he: "המחשה: התחנה המרכזית הישנה בתל אביב אחרי ההפצצה המצרית, עשן מיתמר מאחורי אוטובוס קומתיים מפויח ואוטובוס שרוף מתחת לגגוני הרציפים."
+  alt_he_review: agent-checked
+  credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · animated"
+  ai_generated: true
+  sensitive: true
+  sensitivity_reviewed: false

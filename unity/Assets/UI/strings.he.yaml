@@ -1554,6 +1554,10 @@ opening.return: "חזרה למסך הפתיחה"
 opening.count: "שלב {0} מתוך {1}"
 opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת המקורות בידי אדם ממתינה."
 
+# The Tel Aviv raid card on New game. For the native reviewer (#564): agent-drafted; "אישור" as the Hebrew UI's OK
+# buttons commonly say it. The card's text is in Resources/RaidIntro/raid-intro.yaml, with its own he_review.
+raid.ok: "אישור"
+
 # #813 (R-MONEY-004): the Defence screen's dollar conversion. Agent-drafted Hebrew; every line below is
 # native-review-pending (#564).
 dollars.title: "המרת דולרים"
