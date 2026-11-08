@@ -73,7 +73,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 flowchart RL
   V["Visual v1"]:::done --> P0["0 · החלטות"]:::now
   P0 --> P1["1 · פרוסה ראשונה"]:::done
-  P1 --> P2["2 · תורות חודשיים"]:::now
+  P1 --> P2["2 · תורות חודשיים"]:::done
   P2 --> P3["3 · ערים"]:::done
   P3 --> P4["4 · חלוצים"]:::now
   P4 --> P5["5 · יחידות וקרב"]:::now
@@ -88,7 +88,7 @@ flowchart RL
 |---|---|---|---|
 | 0 | החלטות הבעלים בסעיפים הפתוחים ב־GDD | בתהליך: ההחלטות העיקריות של כל השלבים התקבלו | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
 | 1 | פרוסה ראשונה מאחורי מתג: עיר אחת (תל אביב), אימון, יישוב חדש אחד וכרטיס יעד אחד | הושלם: 8 מתוך 8 PRs מוזגו | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
-| 2 | תורות חודשיים במשחק האמיתי, וחמשת המשאבים | בתהליך: הכול מלבד הסרגל העליון של חמשת המשאבים | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
+| 2 | תורות חודשיים במשחק האמיתי, וחמשת המשאבים | הושלם | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
 | 3 | כל הערים, עם דיור, תעסוקה וקליטת עלייה | הושלם: 8 מתוך 8 PRs מוזגו | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | חלוצים, אתרי בנייה, כבישים ומסילות ברזל | בתהליך: 6 מתוך 8 PRs מוזגו | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
 | 5 | יחידות צבאיות, תנועה וקרב | בתהליך: 13 מתוך 18 PRs מוזגו | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
