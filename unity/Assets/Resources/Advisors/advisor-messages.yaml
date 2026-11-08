@@ -18,7 +18,7 @@ messages:
 # 25 Oct 2026 (recommendations page, item 3).
   - { id: opening.greeting, advisor: ben_gurion, signal: opening, level: new, he_review: approved, media: { picture: opening.greeting.mp4, narration: { en: opening.greeting.en.wav }, cues: { en: [0.00, 4.31, 6.64] }, label: advisor.media_label, credit: advisor.credit.ben_gurion } }
 # #2933: the war and its armies, then the first turn's moves on a real unit. The order is the requires links, not the file's.
-# Each new row's Hebrew is pending the owner's review. A fallback row is what a player who quit or pressed X still gets.
+# The six new rows' Hebrew was approved by the owner, 8 Nov 2026 ("Approve all six"). A fallback row is what a player who quit or pressed X still gets.
   - { id: opening.invasion, advisor: dayan, signal: opening, level: new, he_review: approved, requires: [opening.greeting], fallback: course_open, lapse_after: 3 }
   - { id: opening.units, advisor: dayan, signal: opening, level: new, he_review: approved, requires: [opening.invasion] }
   - { id: opening.cities, advisor: meyerson, signal: opening, level: new, he_review: approved, requires: [opening.units], actions: [{ encyclopedia: cities }] }
