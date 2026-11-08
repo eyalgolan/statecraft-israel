@@ -76,8 +76,9 @@ The Blender-built model follows the owner's rulings of 8 November 2026 on #2734 
     the left nose section". The page's two photographs (Ezer Weizman beside an Avia's nose; the IAF Museum's restored Avia
     120 in colour) show a round red badge with a dark rim, two tall black wings rising behind the head, a dark flying cap
     with light goggles, and a white skull.
-  - Use on the Spitfires: Efrati p. 12, "to the left side of their airplanes"; the caption of Spitfire 17 places it on
-    "the engine cowling".
+  - Use on the Spitfires: Efrati p. 12, "to the left side of their airplanes". The place on the cowling: Efrati p. 11,
+    the caption of Avia D-120, "applied only to the left side of the engine cowling". (Spitfire 17 on p. 12, delivered in
+    December 1948, carried none: "no First Fighter squadron insignia applied to the engine cowling".)
   - Drawn by `tools/spitfire_101_model.py` (`insignia_layers`) from discs and ellipses, like the roundel: no scan, no
     traced or copied image, no AI.
   - DESIGN VALUE: its size (`INSIGNIA`, radius 0.17 m), its place (centred at z 1.75, y -0.10, below the exhaust stubs as

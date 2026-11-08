@@ -51,8 +51,9 @@ Sources (each number below carries its own tag):
        of the red, white and black 'angel of death' insignia ... applied to the left nose section" (caption), seen on the
        S-199's left cowling in the photograph with Ezer Weizman and in the IAF Museum's colour photograph of Avia 120 on the
        same page: a round red badge with a dark rim, two tall black wings rising behind a white skull in a dark flying cap
-       with light goggles. [E] p. 12: on the Spitfires, "to the left side of their airplanes" ("the engine cowling", the
-       caption of Spitfire 17). Drawn here from primitives (discs and ellipses), not traced from the photographs.
+       with light goggles. [E] p. 12: on the Spitfires, "to the left side of their airplanes". [E] p. 11, the caption of
+       Avia D-120, for the place: "applied only to the left side of the engine cowling". (Spitfire 17 on p. 12 carried
+       none.) Drawn here from primitives (discs and ellipses), not traced from the photographs.
   [U]  docs/units.md: a four-blade propeller (the IAF Museum Mk IX at Hatzerim, Commons, CC BY 2.5).
   [P]  unity/Assets/Scripts/Map/Units/UnitPalette.cs: the colours (the same sRGB values the code-built model paints).
   DESIGN VALUE marks every number no source above gives (sections, positions, roundel sizes, stripe width ...).
