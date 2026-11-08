@@ -1,10 +1,11 @@
 using Statecraft.Sim;
 
 /// <summary>#1725 PR 7, producer draft 01: the money flows (EconomySystem.Flows and Apply, R-MONEY-001, R-MONEY-003) run on
-/// a game with an initialized Historical ledger, the dark start. Which ledger records count per head for the tax, the
-/// spending and the foreign-currency imports is an open owner question, so these tests assert no per-head total: they
-/// read whatever GameState.TotalPopulation returns and check that the ledger game does what an aggregate game with that
-/// same head count does, bit for bit, and changes no ledger record (R-POP-002).</summary>
+/// a game with an initialized Historical ledger, the dark start. The ledger game does what an aggregate game with the same
+/// head count does, bit for bit, and changes no ledger record (R-POP-002). The head count is every living record times
+/// people_per_unit, for the tax, the spending and the foreign-currency imports (owner, 8 November 2026: "Everyone alive
+/// (Recommended)", "Same as tax (Recommended)", "Everyone alive (Recommended)"), and the start's 552 records are accepted
+/// as they are, with no rate retuned ("Accept ledger count (Recommended)").</summary>
 public class LedgerEconomyTests
 {
     const double Month = 1 / 12.0;
@@ -126,6 +127,65 @@ public class LedgerEconomyTests
         var eased = ApplyBoth(c, dark, Aggregate(c, dark));
         Assert.DoesNotContain(EconomySystem.FxCrisis, dark.ActiveSituations);
         Assert.Contains(eased, x => x.Key == CauseKeys.FxCrisisEased);
+    }
+
+
+    // Step's own year fraction for the turn starting on s's date (Simulation.Step: the turn length, or the real days of a
+    // turn cut at an era start or the game's end).
+    static double FirstTurn(Content c, GameState s)
+    {
+        var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
+        var next = Simulation.TurnEnd(c, s);
+        return next != SimTime.Advance(s.Date, len) ? (next - s.Date).Days / 365.0 : SimTime.YearFraction(len);
+    }
+
+    // R-MONEY-001 (owner, 8 November 2026: tax "Everyone alive (Recommended)", spending "Same as tax (Recommended)",
+    // imports "Everyone alive (Recommended)"): each per-head line is its rate times every living record times
+    // people_per_unit times the year fraction, whatever the records' statuses. The dark start has active soldiers; one
+    // census record is made a waiting refugee here too (the Historical start has no captor binding, so no record can be
+    // captured in it). GameState.TotalPopulation already returns that count (PopulationLedger.TotalPeople), so the
+    // economy needs no base of its own.
+    [Fact]
+    public void TaxSpendingAndImportsCountEveryLivingRecord()
+    {
+        var c = Gdd03();
+        var dark = Dark(c); var ledger = dark.PopulationLedger;
+        var civilian = ledger.Units.First(p => p.Status == PopulationStatus.FreeCivilian && p.Assignment.Kind == PopulationAssignmentKind.Unassigned);
+        ledger.Transition(civilian.Id, PopulationStatus.Refugee, civilian.Location, PopulationAssignment.Unassigned);
+        Assert.True(ledger.Count(PopulationStatus.ActiveSoldier) > 0);
+        Assert.Equal(1, ledger.Count(PopulationStatus.Refugee));
+        Assert.Equal(ledger.Units.Count, Enum.GetValues<PopulationStatus>().Sum(x => ledger.Count(x)));
+        var people = (double)ledger.Units.Count * ledger.PeoplePerUnit;
+        Assert.Equal(people, dark.TotalPopulation);
+
+        var r = c.RulesAt(dark.Date);
+        var flows = EconomySystem.Flows(c, dark, Month);
+        Assert.Equal(r.TaxPerCapitaPerYear * people * Month, flows.Tax);
+        Assert.Equal(r.SpendingPerCapitaPerYear * people * Month, flows.Spending);
+        var fx = dark.FxReserves; var why = new List<Cause>();
+        EconomySystem.Apply(c, dark, Month, why);
+        Assert.Equal(fx + (r.ExportsPerYear * Month + r.CapitalInflowPerYear * Month - r.ImportsPerCapitaPerYear * people * Month), dark.FxReserves);
+        Assert.Equal(CauseKeys.Number(r.ImportsPerCapitaPerYear * people * Month), why.Single(x => x.Key == CauseKeys.FxFlows).Args[2]);
+        ledger.Reconcile();
+    }
+
+    // The start (owner, 8 November 2026: "Accept ledger count (Recommended)"): the dark start's first turn taxes, spends
+    // and imports for its 552 records of 1,000 people, 552,000, not the aggregate start's 649,400, at the unchanged rates.
+    [Fact]
+    public void TheDarkStartsFirstTurnCounts552000People()
+    {
+        var c = Gdd03();
+        var dark = Dark(c);
+        Assert.Equal((552, 1000), (dark.PopulationLedger.Units.Count, dark.PopulationLedger.PeoplePerUnit));
+        Assert.Equal(552000d, dark.TotalPopulation);
+        Assert.Equal(649400d, dark.Population.Values.Sum());   // the aggregate head count, which the ledger game no longer reads
+        Assert.Equal((0.0000545, 0.0001036, 0.00025), (c.RulesAt(dark.Date).TaxPerCapitaPerYear, c.RulesAt(dark.Date).SpendingPerCapitaPerYear,
+            c.RulesAt(dark.Date).ImportsPerCapitaPerYear));
+        var yf = FirstTurn(c, dark);
+        var flows = EconomySystem.Flows(c, dark, yf);
+        Assert.Equal(0.0000545 * 552000d * yf, flows.Tax);
+        Assert.Equal(0.0001036 * 552000d * yf, flows.Spending);
+        Assert.NotEqual(0.0000545 * 649400d * yf, flows.Tax);
     }
 
     // Parity: a legacy and a gdd-0.1 game have no ledger and keep main's flows. Apply moves only the Treasury, the Debt
