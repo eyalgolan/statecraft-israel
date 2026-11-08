@@ -148,6 +148,73 @@ public class LedgerSendHomeTests
         Assert.DoesNotContain(why, x => x.Key == "sent_home_arms_returned");
     }
 
+    // A trained formation (#2964, R-TRAIN-003, "New unit at graduation (Rec.)"): a recruit cohort trained to graduation on
+    // the dark start serves formation/<unit id>, not units_1948/<row>. Sending it home turns each of its records into a
+    // settled-in free civilian of the nearest city, keeping its qualification and combat XP; each record's training item
+    // (training/<cohort>/<id>) goes back to the stock once, with the one "Yes, one Why line (Recommended)" line; the unit
+    // leaves the map.
+    [Fact]
+    public void SendHomeOfATrainedFormationSettlesItsRecordsAndReturnsTheirItems()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        s.Arms = 200; s.Treasury = 100; s.Debt = 0;
+        const string telAviv = "tel_aviv";
+        Assert.Null(Training.Start(c, s, telAviv, "recruit", 2, new List<Cause>()));
+        var cohort = Assert.Single(s.Cohorts).Key;
+        var unit = s.NextId;
+        for (int i = 0; i < c.UnitTypes.First(t => t.Id == "recruit").TrainingTurns; i++) Training.Progress(c, s, new List<Cause>());
+        Assert.Empty(s.Cohorts);
+        var u = s.Units[unit];
+        Assert.True(unit >= c.StartingForces.Count);
+        var target = "formation/" + unit;
+        Assert.Equal(target, Training.FormationTarget(c, unit));
+        // Combat XP the records earned in service, so "Keep both" is seen on a value other than the default.
+        s.PopulationLedger.Commit(Serving(s, target).Select(p => new PopulationUnit(p.Id, p.Status, p.ReceptionTicks, p.Location,
+            p.Assignment, p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp + 3, p.Equipment, p.Captor, p.Home)).ToList(),
+            Array.Empty<PopulationTarget>());
+        var serving = Serving(s, target);
+        Assert.Equal(2, serving.Count);
+        Assert.Equal(u.Strength, serving.Count);
+        Assert.All(serving, p => Assert.Equal(("training/" + cohort + "/" + p.Id, "infantry"), (p.Equipment.MilitaryId, p.Qualification)));
+        var city = Demobilization.Nearest(c, u.Q, u.R);
+        var region = c.PlayerRegions.AtLocation(city)!.Id;
+        var arms = s.Arms; var issued = Issued(s);
+        var next = s.PopulationLedger.NextPopulationId; var count = s.PopulationLedger.Units.Count;
+        var housed = Statecraft.Sim.Cities.Housed(s, s.Cities[city]);
+        var cities = Cities(s);
+        var why = new List<Cause>();
+
+        Assert.Null(Demobilization.Give(c, s, unit, null, why));
+
+        Assert.False(s.Units.ContainsKey(unit));
+        Assert.Empty(Serving(s, target));
+        Assert.Equal((next, count), (s.PopulationLedger.NextPopulationId, s.PopulationLedger.Units.Count));
+        var received = c.RequirePopulationInteger("reception.turns");
+        foreach (var was in serving)
+        {
+            var p = s.PopulationLedger.Get(was.Id);
+            Assert.Equal((PopulationStatus.FreeCivilian, PopulationAssignmentKind.Unassigned, received),
+                (p.Status, p.Assignment.Kind, p.ReceptionTicks));
+            Assert.Equal((region, city), (p.Location!.Region, p.Location.City));
+            Assert.Equal((was.Qualification, was.CombatXp), (p.Qualification, p.CombatXp));
+            Assert.Equal(("infantry", true), (p.Qualification, p.CombatXp > 0));
+            Assert.Equal((was.Profession, was.Tier, was.WorkXp, was.Equipment.ToolsId), (p.Profession, p.Tier, p.WorkXp, p.Equipment.ToolsId));
+            Assert.Equal(((string?)null, false), (p.Equipment.MilitaryId, p.Equipment.MilitaryPaid));
+        }
+        Assert.Equal(housed + serving.Count, Statecraft.Sim.Cities.Housed(s, s.Cities[city]));
+        Assert.Equal(cities, Cities(s));
+        Assert.Equal(arms + serving.Count, s.Arms);
+        Assert.Equal(issued - serving.Count, Issued(s));
+        Assert.Equal(2, why.Count);
+        Assert.Equal(WhyKeys.SentHome, why[0].Key);
+        var line = Assert.Single(why, x => x.Key == "sent_home_arms_returned");
+        Assert.Equal(("city", "arms", (double)serving.Count, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: unit {unit} returned {serving.Count} Arms")),
+            (line.System, line.Target, line.Delta, line.Message));
+        Assert.Equal(new[] { city, unit.ToString(System.Globalization.CultureInfo.InvariantCulture) }, line.Args);
+        s.PopulationLedger.Reconcile();
+    }
+
     // "No, records only": the aggregate city fields are not written on a ledger game (the aggregate game adds the strength).
     [Fact]
     public void SendHomeWritesNoAggregateCityField()
