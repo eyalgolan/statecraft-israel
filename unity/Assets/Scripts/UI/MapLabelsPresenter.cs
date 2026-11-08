@@ -270,7 +270,7 @@ namespace Statecraft.Game.UI
                 {
                     control = new Label { name = "control-" + s.Id, pickingMode = PickingMode.Ignore };
                     control.AddToClassList(ControlBadgeClass);
-                    control.style.translate = new Translate(new Length(anchorClass == Left ? 0f : anchorClass == Right ? -100f : -50f, LengthUnit.Percent), 0);
+                    control.AddToClassList(ControlBadgeClass + (anchorClass == Left ? "-left" : anchorClass == Right ? "-right" : "-centre"));
                     control.style.display = DisplayStyle.None;
                     control.RegisterCallback(onLabelGeometry);
                     slot.Add(control);
