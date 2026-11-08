@@ -652,7 +652,7 @@ public class GameSceneTests
             root.Bridge.Skip(state.Units.Keys.First());
             var layer = Object.FindFirstObjectByType<MapScene>().Terrain.transform.Find(SpecialBuildingModels.Name);
             Assert.IsNotNull(layer?.Find(SpecialBuildingModels.WorkshopKey(id)),
-                "the real Changed hookup redraws a newly built workshop");
+                "the real Changed hookup redraws a newly built workshop (tel_aviv's b21; #2876: none may also mean tel_aviv lost its spot)");
         }
         finally { SpecialBuildingModels.Request = saved; }
     }
@@ -738,6 +738,40 @@ public class GameSceneTests
         StringAssert.StartsWith("Not done: ", lines[0]);
         Assert.AreEqual(Text["save.write_failed"], lines[1]);
         Assert.AreEqual(DisplayStyle.Flex, Ui.Q("toast").style.display.value);
+    }
+
+    // #2707 item 1: a failed autosave stays in the toast through the next order (a deferred order raises Changed, which
+    // clears routine lines) and goes with the next save that succeeds.
+    [Test]
+    public void ASaveFailureStaysThroughTheNextOrderUntilASaveSucceeds()
+    {
+        File.WriteAllText(saveDir, "a file where the save folder should be");
+        var root = Boot(new SaveStore(saveDir));
+        var toast = Ui.Q<Label>("toast");
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("^Autosave could not be written"));
+        root.Bridge!.EndTurn();
+        Assert.AreEqual(Text["save.write_failed"], toast.text);
+        Assert.IsNull(root.Bridge.Queue(new SecurityOrder(-1)), "a deferred order");
+        Assert.AreEqual(Text["save.write_failed"], toast.text, "the next order leaves the save failure");
+        Assert.AreEqual(DisplayStyle.Flex, toast.style.display.value);
+        File.Delete(saveDir);                                          // the save folder can be written again
+        root.Bridge.EndTurn();
+        Assert.IsTrue(File.Exists(Path.Combine(saveDir, SaveStore.AutosaveName)), "the turn was autosaved");
+        StringAssert.DoesNotContain(Text["save.write_failed"], toast.text, "a successful save takes the failure away");
+    }
+
+    // #2707 item 1 on WebGL: the IndexedDB result decides; a failure stays through the next order, an "ok" takes it away.
+    [Test]
+    public void AWebSaveFailureStaysUntilAWebSaveSucceeds()
+    {
+        var root = Boot();
+        var toast = Ui.Q<Label>("toast");
+        root.OnSavePersistenceResult("fail save 1 1948-06-15 turn 1 hash aa");
+        Assert.IsNull(root.Bridge!.Queue(new SecurityOrder(-1)), "a deferred order");
+        Assert.AreEqual(Text["save.write_failed"], toast.text, "the next order leaves the save failure");
+        root.OnSavePersistenceResult("ok save 2 1948-06-15 turn 1 hash aa");
+        Assert.AreEqual("", toast.text);
+        Assert.AreEqual(DisplayStyle.None, toast.style.display.value);
     }
 
     [TestCase(false)]
@@ -983,7 +1017,10 @@ public class GameSceneTests
     }
 
     /// <summary>Since the GDD cutover, 15 July 1948 brings three cards at full war, where an answer costs 2 of the 4
-    /// Attention: the smoke answers the two it can pay for and leaves the third to its minister, and the run still passes.</summary>
+    /// Attention: the smoke answers the two it can pay for and leaves the third to its minister, and the run still passes.
+    /// R-ENEMY-007 (#2543): the smoke also stops at a first option whose operation units are not in place, and this run
+    /// gives no unit orders, so the test first stands each pending operation's units in its first required region, as a
+    /// player would have moved them; then only the Attention decides.</summary>
     [Test]
     public void TheSmokeRunLeavesACardItCannotPayForToItsMinister()
     {
@@ -992,6 +1029,17 @@ public class GameSceneTests
         var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new System.DateTime(1948, 7, 15)) g.Step(new Command[0]);
         Assert.AreEqual(3, g.State.PendingEvents.Count, string.Join(", ", g.State.PendingEvents));
+        foreach (var option in g.State.PendingEvents.Select(id => c.Events.First(e => e.Id == id).Options[0]).Where(o => o.RequiresUnitRegions.Count != 0))
+        {
+            var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+            foreach (var row in option.UnitOrders.Select(x => x.Unit).Distinct(StringComparer.Ordinal))
+            {
+                int id = c.StartingForces.FindIndex(x => x.Row == row);
+                Assert.IsTrue(g.State.Units.TryGetValue(id, out var u), $"{row} is on the board");
+                g.State.Units[id] = new Unit(u.Id, u.Type, at.Q, at.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);   // no standing order to carry it off
+            }
+            Assert.IsTrue(EventSystem.OperationStatus(c, g.State, option).Met, "the operation's units stand in place");
+        }
         var text = Text;
         var bridge = new SimBridge(g, text);
         using var toast = new ToastPresenter(ui.Root, bridge, text);

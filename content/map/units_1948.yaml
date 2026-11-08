@@ -179,9 +179,9 @@ units:
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%99%D7%A4%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%94%D7%92%D7%9C%D7%99%D7%9C_%D7%94%D7%9E%D7%A2%D7%A8%D7%91%D7%99', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9C%D7%91%D7%A0%D7%95%D7%A0%D7%99', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A2%D7%9B%D7%95', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%9F_%D7%A2%D7%9E%D7%99', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%A8%D7%95%D7%A9', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%A9%D7%9E%D7%A8_%D7%94%D7%99%D7%A8%D7%93%D7%9F', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%97%D7%99%D7%A8%D7%9D', checked: '2026-10-22'}]
   wikipedia_only: false
-  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  # The owner person-checked this row on 6 November 2026 (#2757, the fields sourced since the earlier check on 21 October 2026 (#1240: https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250)): "all approved". https://github.com/eyalgolan/statecraft-israel/issues/2757
   status: fact-checked
-  checked_on: '2026-10-21'
+  checked_on: '2026-11-06'
   strength:
     value: 2289
     as_of: '1948-05-15'
@@ -265,9 +265,9 @@ units:
     front: lebanon
     note: "Operation Hiram: he.wiki has Carmeli's main task to block a possible Syrian attack in the Manara and Misgav Am area; the Haganah Heritage lexicon (Brigade 2 Carmeli) has the brigade operate in the Galilee in Hiram at the end of October and take the border road. The lexicon names the border road, not Manara. No source read gives the brigade's departure, so the window ends on the Lebanon armistice."
     sources:
-    # he.wiki, מבצע חירם, section חטיבת כרמלי: "חטיבת כרמלי שתפקידה המרכזי היה לבלום מתקפה סורית אפשרית באזור מנרה ומשגב עם" (agent read 2026-11-01; a person's check pending).
+    # he.wiki, מבצע חירם, section חטיבת כרמלי: "חטיבת כרמלי שתפקידה המרכזי היה לבלום מתקפה סורית אפשרית באזור מנרה ומשגב עם" (agent read 2026-11-01; checked by the owner on 2026-11-06, #2757).
     - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%97%D7%99%D7%A8%D7%9D', checked: '2026-11-01'}
-    # Organisation of Haganah Heritage, Lexicon, "Brigade 2 Carmeli": "במבצע חירם בשלהי אוקטובר פעלה החטיבה בגליל, ותפסה את כביש הגבול ורצועת כפרים בלבנון" (agent read 2026-11-01; a person's check pending).
+    # Organisation of Haganah Heritage, Lexicon, "Brigade 2 Carmeli": "במבצע חירם בשלהי אוקטובר פעלה החטיבה בגליל, ותפסה את כביש הגבול ורצועת כפרים בלבנון" (agent read 2026-11-01; checked by the owner on 2026-11-06, #2757).
     - {url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47620', checked: '2026-11-01'}
     - {url: 'https://en.wikipedia.org/wiki/Manara,_Israel', checked: '2026-11-01'}
   sources:
@@ -353,9 +353,9 @@ units:
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%AA%D7%9C_%D7%90%D7%91%D7%99%D7%91-%D7%99%D7%A4%D7%95', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A0%D7%97%D7%9C_%D7%94%D7%99%D7%A8%D7%A7%D7%95%D7%9F', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%91%D7%AA_%D7%99%D7%9D', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%99%D7%90%D7%96%D7%95%D7%A8', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%A7%D7%A8%D7%99%D7%99%D7%AA%D7%99', checked: '2026-10-22'}]
   wikipedia_only: false
-  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  # The owner person-checked this row on 6 November 2026 (#2757, the fields sourced since the earlier check on 21 October 2026 (#1240: https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250)): "all approved". https://github.com/eyalgolan/statecraft-israel/issues/2757
   status: fact-checked
-  checked_on: '2026-10-21'
+  checked_on: '2026-11-06'
   strength:
     value: 2504
     as_of: '1948-05-15'
@@ -397,13 +397,13 @@ units:
     end_note: "Operation Dani ended on 19 July 1948 (as Yiftach's Lydda window). The game runs this order one turn longer, to 16 August 1948, under the owner's ruling (2 November 2026, #2087): \"Longer order: takes Ramla (Recommended)\". 16 August is the end set under that ruling, not a sourced date: it is the earliest end that lets Kiryati reach Ramla's capture hex on the 15 August turn."
     note: "Operation Dani (owner, 1 November 2026, #2087: \"Kiryati to Ramle\"): the IDF account (Jewish Virtual Library) has Kiryati units take Ramle on 12 July 1948, which surrendered after a brief engagement; Ben-Gurion's diary of that day has Ramle announce it would sign a surrender. A detachment of the brigade, which the brigade token stands for: he.wiki names the 42nd Battalion, on Wikipedia only. No source read gives the units' departure, so the window ends with the operation, as Yiftach's Lydda window. An order target: the token stays at Tel Aviv."
     sources:
-    # IDF account of Operation Danny, republished by the Jewish Virtual Library: "On July 12, Kiryati units took Ramle, which surrendered after a brief engagement." (agent read 2026-11-01; a person's check pending; research_notes/M4 war mode/kiryati-ramle-july-1948.md).
+    # IDF account of Operation Danny, republished by the Jewish Virtual Library: "On July 12, Kiryati units took Ramle, which surrendered after a brief engagement." (agent read 2026-11-01; checked by the owner on 2026-11-06, #2757; research_notes/M4 war mode/kiryati-ramle-july-1948.md).
     - {url: 'https://jewishvirtuallibrary.org/jsource/History/Danny.html', checked: '2026-11-01'}
-    # Ben-Gurion's diary, 12 July 1948: "Ramle (the population) also announced that at ten they would sign a surrender" (agent read 2026-11-01; a person's check pending). It names no unit.
+    # Ben-Gurion's diary, 12 July 1948: "Ramle (the population) also announced that at ten they would sign a surrender" (agent read 2026-11-01; checked by the owner on 2026-11-06, #2757). It names no unit.
     - {url: 'https://web.archive.org/web/20260118233403/https://bengurionarchive.bgu.ac.il/en/node/9409', checked: '2026-11-01'}
-    # en.wiki, Operation Dani, the table of communities captured: "Ramle / 12 July 1948 / Arab Legion withdrew / Kiryati Brigade" (agent read 2026-11-01; a person's check pending).
+    # en.wiki, Operation Dani, the table of communities captured: "Ramle / 12 July 1948 / Arab Legion withdrew / Kiryati Brigade" (agent read 2026-11-01; checked by the owner on 2026-11-06, #2757).
     - {url: 'https://en.wikipedia.org/wiki/Operation_Dani', checked: '2026-11-01'}
-    # he.wiki, מבצע דני: "ב-12 ביולי בבוקר תפס כוח של גדוד 42 את סכנת פאנוס, ובהמשך אותו יום חתמו נכבדי רמלה על הסכם כניעה מול מפקדי 'קרייתי'" (agent read 2026-11-01; a person's check pending).
+    # he.wiki, מבצע דני: "ב-12 ביולי בבוקר תפס כוח של גדוד 42 את סכנת פאנוס, ובהמשך אותו יום חתמו נכבדי רמלה על הסכם כניעה מול מפקדי 'קרייתי'" (agent read 2026-11-01; checked by the owner on 2026-11-06, #2757).
     - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%93%D7%A0%D7%99', checked: '2026-11-01'}
     - {url: 'https://en.wikipedia.org/wiki/Ramla', checked: '2026-11-01'}
 - id: givati
@@ -428,9 +428,10 @@ units:
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%92%D7%93%D7%A8%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%92%D7%9F_%D7%99%D7%91%D7%A0%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%91%D7%90%D7%A8_%D7%98%D7%95%D7%91%D7%99%D7%94', checked: '2026-10-22'}]
   wikipedia_only: false
-  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  # The owner person-checked this row on 7 November 2026 (#2621, the Bayt Jibrin stint): https://github.com/eyalgolan/statecraft-israel/pull/2621#issuecomment-6711002336
+  # The owner person-checked this row on 6 November 2026 (#2757, the fields sourced since the earlier check on 21 October 2026 (#1240: https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250)): "all approved". https://github.com/eyalgolan/statecraft-israel/issues/2757
   status: fact-checked
-  checked_on: '2026-10-21'
+  checked_on: '2026-11-07'
   strength:
     value: 3229
     as_of: '1948-05-15'
@@ -486,10 +487,29 @@ units:
     end_note: "As the Gedera window: the Haganah Heritage lexicon (Brigade 5 Givati) has the brigade moved to the centre of the country in November 1948; he.wiki Alexandroni: in November 1948 the Alexandroni Brigade replaced it at the Faluja pocket."
     note: "Operation Yoav: the IDF account (Jewish Virtual Library) has Givati attack the Huleiqat defence system on 19-20 October 1948 and take it, opening the road to the Negev. An order target: the token stays at Gedera."
     sources:
-    # IDF account of Operation Yoav, republished by the Jewish Virtual Library: "He tasked the 'Givati' Brigade to attack the formidable Huleiqat defense system south on 19-20 October which was successful in capturing the complex" (agent read 2026-11-01; a person's check pending).
+    # IDF account of Operation Yoav, republished by the Jewish Virtual Library: "He tasked the 'Givati' Brigade to attack the formidable Huleiqat defense system south on 19-20 October which was successful in capturing the complex" (agent read 2026-11-01; checked by the owner on 2026-11-06, #2757).
     - {url: 'https://jewishvirtuallibrary.org/jsource/History/Yoav.html', checked: '2026-11-01'}
     - {url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47227', checked: '2026-10-15'}
     - {url: 'https://en.wikipedia.org/wiki/Hulayqat', checked: '2026-11-01'}
+  - place: Bayt Jibrin
+    place_he: "בית ג'יברין"
+    place_he_review: agent-checked
+    place_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%91%D7%99%D7%AA_%D7%92%27%D7%99%D7%91%D7%A8%D7%99%D7%9F', checked: '2026-11-07'}]
+    lon: 34.89833
+    lat: 31.60528
+    from: '1948-10-27'
+    since: 27 October 1948
+    to: '1949-02-24'
+    end_basis: front_armistice
+    front: egypt
+    note: "Operation Yoav, push_to_hebron (owner, 7 November 2026: \"Add real orders\"; the date, \"Second read, then later date (Recommended)\"; the end, \"24 Feb 1949 (Recommended)\"). Zochrot and en.wiki Bayt Jibrin have Givati occupy it on 27 October 1948; en.wiki Operation Yoav gives 23 October in its text and 24 October in its table, so the later, village-level date is used; he.wiki בית ג'יברין has Brigade 8 take the police fort on 27 October. The end is the Egyptian armistice, though the Huleiqat target above ends on 1 November 1948, when the lexicon has Givati moved to the centre. An order target: the token stays at Gedera."
+    sources:
+    # Zochrot, Bayt Jibrin: "Occupation date: 27/10/1948", "Occupying unit: Giva'ati"; "Benny Morris writes that an initial attack took place during the night of 24 October 1948, and later occupied on the 27" (agent read 2026-11-07).
+    - {url: 'https://www.zochrot.org/villages/village_details/49055/en', checked: '2026-11-07'}
+    # en.wiki Bayt Jibrin: "Israeli troops from the Giv'ati Brigade then occupied Bayt Jibrin and its police fort on October 27"; coordinates 31.60528, 34.89833 (agent read 2026-11-07).
+    - {url: 'https://en.wikipedia.org/wiki/Bayt_Jibrin', checked: '2026-11-07'}
+    # en.wiki Operation Yoav: "Beit Jibrin was captured by the 52 Battalion of Givati and the 8th Brigade on October 23"; its table gives 24 October (agent read 2026-11-07).
+    - {url: 'https://en.wikipedia.org/wiki/Operation_Yoav', checked: '2026-11-07'}
 - id: etzioni
   name: Etzioni Brigade
   name_he: "חטיבת עציוני"
@@ -579,9 +599,9 @@ units:
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%A7%D7%A8%D7%91%D7%95%D7%AA_%D7%9C%D7%98%D7%A8%D7%95%D7%9F', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%9F_%D7%A0%D7%95%D7%9F', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%95%D7%9C%D7%93%D7%94_%28%D7%A7%D7%99%D7%91%D7%95%D7%A5%29', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A2%D7%99%D7%9F_%D7%A9%D7%9E%D7%A8', checked: '2026-10-22'}]
   wikipedia_only: false
-  # The owner person-checked this row (#1241): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+  # The owner person-checked this row on 6 November 2026 (#2757, the fields sourced since the earlier check (#1241: https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840)): "all approved". https://github.com/eyalgolan/statecraft-israel/issues/2757
   status: fact-checked
-  checked_on: '2026-10-22'
+  checked_on: '2026-11-06'
   to_verify:
   - "The strength is a secondary-source figure (en.wiki, citing Morris, 1948, pp. 221-224, which was not opened), allowed until a primary source turns up (owner, 20 October 2026, on #743). Replace it from a primary source."
   # R-UNIT-009 (#1241, owner, 21 October 2026, answer 1(a)): the brigade has no sourced place or single strength on 15 May, so it arrives on its first anchor's day with its first sourced strength.
@@ -656,7 +676,7 @@ units:
     front: lebanon
     note: "Operation Hiram: Dupuy, Elusive Victory (1978), p. 104: \"Carmel himself, with his 7th Brigade column, moved northeastward from Sasa, capturing first the village of Saliha and then Malkiya\", and \"at about dawn on the 31st, Operation Hiram drew to a close\" (research_notes/Map/lebanese-army-15-may-1948-1871.md)."
     sources:
-    # Dupuy, Elusive Victory (1978), p. 104 (agent read 2026-10-28; a person's check pending).
+    # Dupuy, Elusive Victory (1978), p. 104 (agent read 2026-10-28; checked by the owner on 2026-11-06, #2757).
     - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-28'}
     - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%97%D7%99%D7%A8%D7%9D', checked: '2026-11-01'}
 - id: brigade_8
@@ -752,9 +772,9 @@ units:
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%94%D7%A8%D7%90%D7%9C', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A9%D7%A2%D7%A8_%D7%94%D7%92%D7%99%D7%90', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%97%D7%95%D7%A8%D7%91', checked: '2026-10-22'}]
   wikipedia_only: false
-  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  # The owner person-checked this row on 6 November 2026 (#2757, the fields sourced since the earlier check on 21 October 2026 (#1240: https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250)): "all approved". https://github.com/eyalgolan/statecraft-israel/issues/2757
   status: fact-checked
-  checked_on: '2026-10-21'
+  checked_on: '2026-11-06'
   strength:
     value: 1300
     as_of: '1948-05-15'
@@ -821,7 +841,7 @@ units:
     end_note: "As the Sha'ar HaGai window: Operation Horev, from 22 December 1948, in the south; no place is given for the brigade there."
     note: "Not a position the brigade held: the objective of Ben-Gurion's proposal of 26 September 1948 \"to attack and conquer Latrun\", which the cabinet rejected (his diary), the latrun_proposal card's press_offensive option. Owner, 1 November 2026, #2087: Harel, from its Sha'ar HaGai anchor, to the Latrun fort's hex. The coordinates are the latrun_fort location's (map/locations_1948.yaml). An order target: the token stays at Sha'ar HaGai."
     sources:
-    # Ben-Gurion's diary, 26 September 1948 (Ben-Gurion Archive): "my proposal to attack and conquer Latrun [...] the proposal was rejected" (agent read 2026-11-01; a person's check pending).
+    # Ben-Gurion's diary, 26 September 1948 (Ben-Gurion Archive): "my proposal to attack and conquer Latrun [...] the proposal was rejected" (agent read 2026-11-01; checked by the owner on 2026-11-06, #2757).
     - {url: 'https://bengurionarchive.bgu.ac.il/en/node/6251', checked: '2026-11-01'}
 - id: yiftach
   name: Yiftach Brigade
@@ -900,9 +920,9 @@ units:
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%94%D7%A0%D7%92%D7%91', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%91%D7%90%D7%A8_%D7%A9%D7%91%D7%A2', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A2%D7%96%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A0%D7%99%D7%A8_%D7%A2%D7%9D', checked: '2026-10-22'}]
   wikipedia_only: false
-  # The owner person-checked this row on 21 October 2026 (#1240): https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250
+  # The owner person-checked this row on 6 November 2026 (#2757, the fields sourced since the earlier check on 21 October 2026 (#1240: https://github.com/eyalgolan/statecraft-israel/issues/1240#issuecomment-6323448250)): "all approved". https://github.com/eyalgolan/statecraft-israel/issues/2757
   status: fact-checked
-  checked_on: '2026-10-21'
+  checked_on: '2026-11-06'
   strength:
     value: 1300
     as_of: '1948-05-15'
@@ -959,7 +979,7 @@ units:
     front: egypt
     note: "Operation Yoav: the IDF account (Jewish Virtual Library) has two Negev Brigade battalions with major elements of the 8th Brigade take Beersheba on 21 October 1948; it \"had surrendered to Israeli forces\" by 09:00. No source read gives the brigade's departure, so the window ends on the Egypt armistice, as Golani's Julis window. An order target: the token stays at Nir Am."
     sources:
-    # IDF account of Operation Yoav, republished by the Jewish Virtual Library (agent read 2026-11-01; a person's check pending).
+    # IDF account of Operation Yoav, republished by the Jewish Virtual Library (agent read 2026-11-01; checked by the owner on 2026-11-06, #2757).
     - {url: 'https://jewishvirtuallibrary.org/jsource/History/Yoav.html', checked: '2026-11-01'}
     # The Knesset's summary of the War of Independence: Beersheba taken on 21 October 1948.
     - {url: 'https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf', checked: '2026-10-14'}

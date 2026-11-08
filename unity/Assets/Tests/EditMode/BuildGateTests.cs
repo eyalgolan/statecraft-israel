@@ -157,9 +157,8 @@ public class BuildGateTests
     public void AShareableBuildWaitsForTheStartingForcesRows()
     {
         var c = ContentLoader.Load(Paths.Content);
-        CollectionAssert.AreEqual(new[] { "brigade_7", "carmeli", "givati", "harel", "kiryati", "negev" },
-            ReleaseGate.StartingForcesUnchecked(c).Select(x => x.Split(':')[0]),
-            "the owner person-checked the real rows (21 October 2026, #1240), and Etzioni and the 7th after them (#1241, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840); these six got an order target sourced after that check (#2722)");
+        CollectionAssert.IsEmpty(ReleaseGate.StartingForcesUnchecked(c).Select(x => x.Split(':')[0]),
+            "the owner person-checked the real rows (21 October 2026, #1240), and Etzioni and the 7th after them (#1241, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840); six got an order target sourced after that check (#2722), and the owner checked those on 6 November 2026 (#2757, \"all approved\"), and Givati's Bayt Jibrin target on 7 November 2026 (#2621)");
         foreach (var f in c.StartingForces) f.Status = "to_verify";   // in memory only: the rows as they were before that check
         var refusal = Refusal(c);
         Assert.IsNotNull(refusal, "a row that is not fact-checked blocks a shareable build");

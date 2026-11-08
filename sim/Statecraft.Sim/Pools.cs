@@ -24,13 +24,26 @@ namespace Statecraft.Sim
         /// <summary>The command kind that buys Arms with Money (R-ARMS-002).</summary>
         public const string BuyArmsKind = "buy_arms";
 
-        /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level.</summary>
+        /// <summary>R-FOOD-001: the loader's ceiling on cover_months, ten years of need, longer than the about 104 months the game can
+        /// run (eras.yaml, 15 May 1948 to 1 January 1957). The stock is an int, so a ceiling keeps cover_months times the need
+        /// from wrapping: it would take a need of 17.9 million population units (#2804 item 5).</summary>
+        public const int MaxCoverMonths = 120;
+
+        /// <summary>R-FIELD-002: the loader's ceiling on field_food_per_turn. Even at the top farmer tier's 5 times it
+        /// (R-VET-002) and SaveGame.MaxTurns turns, that is 10 million Food a field, so an int stock holds 214 such fields
+        /// (#2804 item 5).</summary>
+        public const int MaxFieldFoodPerTurn = 1000;
+
+        /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level. With an
+        /// initialized gdd-0.3 ledger (the dark start, #1725 PR 5) the need is the ledger's, one ration for each living own
+        /// population id (<see cref="Rations"/>, #2470), after the ledger reconciles; otherwise the aggregate head count. Any other
+        /// initialized ledger (synthetic or Open) is refused with the state unchanged (R-POP-002).</summary>
         public static void Init(Content c, GameState s)
         {
-            PopulationLedger.RefuseAggregate(s);
-            if (!c.IsGdd) return;
+            if (!c.IsGdd) { PopulationLedger.RefuseAggregate(s); return; }
+            PopulationLedger.RefuseUnlessHistorical(s);   // S5-3: a synthetic or Open ledger stays held
             var r = c.RulesAt(s.Date).Mvp!;
-            s.FoodNeed = Need(s, r);
+            s.FoodNeed = s.PopulationLedger.IsInitialized ? LedgerNeed(s) : Need(s, r);
             s.Food = r.CoverMonths!.Value * s.FoodNeed;
             s.FoodUnmet = 0;
             s.Arms = r.ArmsStart!.Value;   // R-ARMS-001; the loader requires it in the GDD loop
@@ -38,6 +51,9 @@ namespace Statecraft.Sim
 
         /// <summary>R-ARMS-002's refusal at the debt ceiling (#2198); SimBridge.ReasonKeys gives it the UI's words.</summary>
         public const string RefusedDebtCeiling = "Buying that many Arms would take the debt past its ceiling";
+
+        /// <summary>R-ARMS-002's refusal for fewer than one Arms (#2707: a constant, for the UI's string).</summary>
+        public const string RefusedCount = "Buy at least 1 Arms";
 
         /// <summary>R-ARMS-002's refusal when a purchase would overflow the Arms stock.</summary>
         public const string RefusedStockCapacity = "That is more Arms than the stock can hold";
@@ -47,11 +63,13 @@ namespace Statecraft.Sim
         /// stock that would pass a whole number's range, or borrowing that would take the debt past mvp.debt_ceiling (#2198,
         /// owner 2 Nov 2026: "Refuse buys over ceiling (Recommended)"; the debt after is PayOrBorrow's, the debt plus what the
         /// Treasury lacks, and exactly at the ceiling is allowed). A purchase the Treasury pays in full borrows nothing and is
-        /// never refused at the ceiling. Step has already refused it in the legacy loop.</summary>
+        /// never refused at the ceiling. Step has already refused it in the legacy loop. It reads no population, so it runs
+        /// on an initialized Historical ledger (the dark start, #1725 PR 7): a bought Arms joins the national stock, not a
+        /// record's issued items. A synthetic or Open ledger stays refused (R-POP-002).</summary>
         public static string? BuyArms(Content c, GameState s, int count, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
-            if (count < 1) return "Buy at least 1 Arms";
+            PopulationLedger.RefuseUnlessHistorical(s);
+            if (count < 1) return RefusedCount;
             if ((long)s.Arms + count > int.MaxValue) return RefusedStockCapacity;
             if (BorrowsPastDebtCeiling(c, s, count)) return RefusedDebtCeiling;
             var cost = count * c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value;
@@ -88,6 +106,14 @@ namespace Statecraft.Sim
         /// <summary>#2206: whether End turn would refuse the replacement Arms purchase for the debt ceiling.</summary>
         public static bool BorrowsPastDebtCeiling(Content c, GameState turnStart, IReadOnlyList<Command> orders, int count)
             => BuyArmsRefusal(c, turnStart, orders, count) == RefusedDebtCeiling;
+
+        /// <summary>R-FOOD-001 under gdd-0.3 (#2470): an initialized ledger's need, its living own population ids, after it
+        /// reconciles, so an invalid ledger sets no Food.</summary>
+        static int LedgerNeed(GameState s)
+        {
+            s.PopulationLedger.Reconcile();
+            return Rations(s.PopulationLedger.Units);
+        }
 
         /// <summary>The nation's need for one turn: its head count in population units, rounded half away from zero.</summary>
         static int Need(GameState s, MvpRules r) => (int)Math.Round(s.TotalPopulation / r.PeoplePerUnit, MidpointRounding.AwayFromZero);

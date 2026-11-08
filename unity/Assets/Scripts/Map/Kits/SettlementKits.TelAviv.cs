@@ -82,7 +82,7 @@ namespace Statecraft.Game.Map.Kits
                 var shade = C(wall.r / 255f * 0.62f, wall.g / 255f * 0.62f, wall.b / 255f * 0.64f);
                 km.Box(c.x, c.y, yaw, w * 0.72f, b.d * 0.6f, bottom, top, storey, shade, shade, Facade.Plain, m, roofed: true);
                 km.Box(c.x, c.y, yaw, w, b.d, top + storey - 0.3f * m, top + storey, body - storey, wall, terrace, Facade.WhiteCity, m);
-                Ribbons(km, c, yaw, w, b.d, top + storey, body - storey, m);
+                Ribbons(km, c, yaw, w, b.d, top + storey, body - storey, m, 0);   // the first storey up: the pilotis are the ground storey
             }
             else
             {
@@ -105,10 +105,10 @@ namespace Statecraft.Game.Map.Kits
             {
                 var pc = At(du + pu, pv);
                 km.Box(pc.x, pc.y, yaw, pw, pd, top + body - 0.3f * m, top + body, storey, wall, terrace, Facade.WhiteCity, m);
-                Ribbons(km, pc, yaw, pw, pd, top + body, storey, m);
+                Ribbons(km, pc, yaw, pw, pd, top + body, storey, m, 0);
             }
             var r1 = At(du + su, sv);
-            km.Box(r1.x, r1.y, yaw, rw, rd, top + h - 2f, top + h, 2.8f * m, wall, terrace, Facade.Plain, m);
+            km.Box(r1.x, r1.y, yaw, rw, rd, top + h - 2f, top + h, 2.8f * m, wall, terrace, Facade.Plaster, m);
             if (RoofDetail && detail.Chance(RoofTankShare)) RoofTank(km, r1, yaw, rw, rd, top + h + 2.8f * m, m);
             if (rnd.Chance(0.4f))
             {
@@ -116,7 +116,7 @@ namespace Statecraft.Game.Map.Kits
                 // Keep the old 0.1 lw clearance, but measure it from the parapet's inner edge rather than the outer wall.
                 var r2 = At(du + (rnd.Chance(0.5f) ? 1f : -1f) * (0.5f * w - WhiteParapetThicknessM * m - 0.6f * lw),
                     rnd.Range(-0.2f, 0.2f) * b.d);
-                if (!setback) km.Box(r2.x, r2.y, yaw, lw, ld, top + h - 2f, top + h, 2.4f * m, wall, terrace, Facade.Plain, m);
+                if (!setback) km.Box(r2.x, r2.y, yaw, lw, ld, top + h - 2f, top + h, 2.4f * m, wall, terrace, Facade.Plaster, m);
             }
             Record(id, "building", p, yaw, b.w, b.d, b.h, wall);
         }
@@ -148,28 +148,32 @@ namespace Statecraft.Game.Map.Kits
             return (pw, pd, pu, pv, pu + fu * pw, pv + fv * pd);
         }
 
-        /// <summary>Glass of the ribbon windows: near black, as promo 03's deep-set windows read.</summary>
-        static readonly Color32 RibbonGlass = new Color32(38, 42, 48, 0);
+        /// <summary>The ribbon windows' surface: its atlas cell paints the dark glass, the steel frames and the blinds, so far off
+        /// it still reads as promo 03's deep-set, near-black strip, and this tint leaves the cell as painted.</summary>
+        static readonly Color32 RibbonGlass = new Color32(255, 255, 255, (byte)Facade.RibbonGlass);
 
         /// <summary>Tel Aviv's ribbon windows (the International Style's horizontal strip window): one unbroken dark strip per
         /// storey along each long side of a w x d block whose walls rise <paramref name="h"/> from <paramref name="y0"/>, set
         /// a hair proud of the wall (no z-fight), 1.4-2.6 m above each floor, so it shows above the balcony's parapet. Geometry,
         /// not the facade shader (Kit.shader is left alone): at the gameplay zoom a 2 m window bay is under a pixel and the
-        /// shader's discrete windows fade to their mean, while a strip stays a band. Two triangles per storey and side.</summary>
-        static void Ribbons(KitMesh km, Vector2 c, float yaw, float w, float d, float y0, float h, float m)
+        /// shader's discrete windows fade to their mean, while a strip stays a band. Two triangles per storey and side, from storey
+        /// <paramref name="first"/> up: the ground storey (0) keeps its doors and shop (the facade's own cell, #2428).</summary>
+        static void Ribbons(KitMesh km, Vector2 c, float yaw, float w, float d, float y0, float h, float m, int first = 1)
         {
             float storey = 3.3f * m, a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
             float hu = 0.5f * w - 0.6f * m, off = 0.06f * m;
             if (hu <= 0f) return;
             Vector3 P(float u, float v, float y) => new Vector3(c.x + u * ca - v * sa, y, c.y + u * sa + v * ca);
             int storeys = Mathf.RoundToInt(h / storey);
-            for (int k = 0; k < storeys; k++)
+            float tu = 2f * hu / m / KitMesh.Tile(Facade.RibbonGlass).x;
+            for (int k = first; k < storeys; k++)
             {
                 float y1 = y0 + k * storey + 1.4f * m, y2 = y0 + k * storey + 2.6f * m;
                 for (int side = -1; side <= 1; side += 2)
                 {
                     float v = side * (0.5f * d + off), u0 = side * hu, u1 = -side * hu;   // clockwise seen from outside, as Box's walls
-                    km.Face(P(u0, v, y1), P(u0, v, y2), P(u1, v, y2), P(u1, v, y1), RibbonGlass, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
+                    km.Face(P(u0, v, y1), P(u0, v, y2), P(u1, v, y2), P(u1, v, y1), RibbonGlass,
+                        new Vector2(k * 0.37f, 0f), new Vector2(k * 0.37f, 1f), new Vector2(k * 0.37f + tu, 1f), new Vector2(k * 0.37f + tu, 0f));
                 }
             }
         }
@@ -181,8 +185,8 @@ namespace Statecraft.Game.Map.Kits
             for (int side = -1; side <= 1; side += 2)
             {
                 float v = side * 0.5f * (d - t), u = side * 0.5f * (w - t);
-                km.Box(c.x - v * sa, c.y + v * ca, yaw, w, t, roofY - 0.1f * m, roofY, hgt, wall, wall, Facade.Plain, m);
-                km.Box(c.x + u * ca, c.y + u * sa, yaw, t, d - 2f * t, roofY - 0.1f * m, roofY, hgt, wall, wall, Facade.Plain, m);
+                km.Box(c.x - v * sa, c.y + v * ca, yaw, w, t, roofY - 0.1f * m, roofY, hgt, wall, wall, Facade.Plaster, m);
+                km.Box(c.x + u * ca, c.y + u * sa, yaw, t, d - 2f * t, roofY - 0.1f * m, roofY, hgt, wall, wall, Facade.Plaster, m);
             }
         }
 

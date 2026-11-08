@@ -6,6 +6,10 @@ text: 'Israeli forces crossed into Sinai and reached the outskirts of El-Arish a
 # (https://he.wikipedia.org/wiki/מבצע_חורב).
 title_he: האולטימטום הבריטי
 text_he: 'כוחות ישראליים חצו לסיני והגיעו לפאתי שדה התעופה של אל־עריש. מועצת הביטחון קראה להפסקת אש, ארצות הברית הוסיפה את לחצה, ובריטניה איימה לפעול נגד ישראל מכוח ההסכם שלה עם מצרים משנת 1936. עד 2 בינואר נסוגו רוב הכוחות לגבול הנגב, אך כוח נשאר ממערב לרפיח וחסם את כביש רפיח–אל־עריש. ההחלטה אם להשלים את הנסיגה בידי {prime_minister}.'
+# R-ENEMY-007 (owner, 7 November 2026, "Dateless variants (Recommended)", then "All approved (Recommended)" for these exact
+# words): the text when the card is shown after its own window has closed.
+late_text: 'Israeli forces crossed into Sinai and reached the outskirts of El-Arish airfield. The Security Council called for a cease-fire, the United States added its pressure, and Britain threatened to act against Israel under its 1936 treaty with Egypt. Most forces have pulled back to the Negev frontier, but a force remains west of Rafah, blocking the Rafah-El-Arish road. {prime_minister} must decide whether to complete the pullback.'
+late_text_he: 'כוחות ישראליים חצו לסיני והגיעו לפאתי שדה התעופה של אל־עריש. מועצת הביטחון קראה להפסקת אש, ארצות הברית הוסיפה את לחצה, ובריטניה איימה לפעול נגד ישראל מכוח ההסכם שלה עם מצרים משנת 1936. רוב הכוחות נסוגו לגבול הנגב, אך כוח נשאר ממערב לרפיח וחוסם את כביש רפיח–אל־עריש. ההחלטה אם להשלים את הנסיגה בידי {prime_minister}.'
 anchor: hard
 tags: [security]
 office: prime_minister
@@ -28,6 +32,8 @@ office: prime_minister
 from: 1949-01-02
 to: 1949-01-16
 requires: [{ event: operation_horev, option: launch }]
+follows: true   # R-ENEMY-007 (owner, 7 November 2026, "Follow the launch (Recommended)"; "They drop (Recommended)"): a late launch still brings this card, on the turn after
+armistice_front: egypt   # R-ENEMY-007: once the armistice with Egypt is signed this card no longer comes
 options:
   - id: withdraw
     text: Keep the forces behind the Negev frontier

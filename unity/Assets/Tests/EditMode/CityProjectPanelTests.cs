@@ -734,17 +734,19 @@ public class WorkshopPanelTests
     public void AStaffedWorkshopShowsItsCycleAndWhyItWaits([Values] bool hebrew)
     {
         var t = hebrew ? He : En;
-        var paused = new Cause("city", City, 0, "Haifa: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { Workshops.NoWorker });
+        Cause? paused = null;
         using (var ui = new UiTestKit())
         {
             var (bridge, _) = Game(C03, t, edit: (s, id) =>
             {
+                paused = new Cause("city", City, 0, "Haifa: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused,
+                    args: new[] { Workshops.NoWorker, id.ToString(System.Globalization.CultureInfo.InvariantCulture) });   // #2711: the cause names its workshop
                 s.Workshops.Add(id, new Workshop(id, true, SyntheticWorkshopTier.Ordinary, 5m, 1));   // a cycle paid IL 5m, 1 month in
                 var enemy = s.Units.Values.First(u => u.Side != "" && u.Side != Movement.PlayerSide);
                 var home = C03.SettlementHexes.First(h => h.Id == City);
                 var uid = s.NextId++;
                 s.Units.Add(uid, new Unit(uid, enemy.Type, home.Q, home.R, side: enemy.Side, strength: enemy.Strength));
-            }, last: g => new StepResult(g.State, new[] { paused }, Array.Empty<Rejection>()));
+            }, last: g => new StepResult(g.State, new[] { paused! }, Array.Empty<Rejection>()));
             using var panel = Panel(ui, bridge, t);
             var (q, r) = Hex(C03);
             panel.Show(q, r);
@@ -754,7 +756,7 @@ public class WorkshopPanelTests
                 ui.Q<Label>("city-workshop-cycle").text, "the record's paid cost and the sim's cycle length");
             Assert.IsTrue(Cities.Held(C03, bridge.State).Contains(City), "precondition: the enemy holds Haifa");
             Assert.AreEqual(t.Format("city.workshop_held", hebrew ? TownsHe[City] : Towns[City]), ui.Q<Label>("city-workshop-held").text);
-            Assert.AreEqual(CauseText.Line(paused, C03, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), t, TownsHe), ui.Q<Label>("city-workshop-paused-0").text);
+            Assert.AreEqual(CauseText.Line(paused!, C03, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), t, TownsHe), ui.Q<Label>("city-workshop-paused-0").text);
         }
         using (var ui = new UiTestKit())
         {
@@ -832,6 +834,66 @@ public class WorkshopPanelTests
         // formats are anchored (^...$), so the plain format cannot match it.
         var noJob = SimBridge.ReasonText(He, string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeopleNoJob, "Haifa", 1), C03, TownsHe);
         Assert.IsTrue(string.Equals(TownsHe[City] + ": אין די אזרחים ובעלי מלאכה ללא משרה (יש\u00A0\u200E1\u200E)", noJob, StringComparison.Ordinal), noJob);
+    }
+
+    // #2711 item 2, R-ARMS-006: workshops pause one by one, so a city with two staffed workshops shows the pause under the one
+    // it names (the cause's second arg is the project id) and not under the other.
+    [Test]
+    public void APausedWorkshopShowsItsPauseUnderItselfAndNotUnderTheCitysOtherWorkshop([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var second = 0;
+        Cause Paused() => new Cause("city", City, 0, "Haifa: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused,
+            args: new[] { Workshops.NoWorker, second.ToString(System.Globalization.CultureInfo.InvariantCulture) });
+        var (bridge, first) = Game(C03, t, employed: 8, edit: (s, id) =>
+            {
+                second = SecondWorkshop(C03, s);
+                foreach (var w in new[] { id, second }) s.Workshops.Add(w, new Workshop(w, true, SyntheticWorkshopTier.Ordinary));
+            },
+            last: g => new StepResult(g.State, new[] { Paused() }, Array.Empty<Rejection>()));
+        var line = CauseText.Line(Paused(), C03, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), t, TownsHe);
+        foreach (var (id, shown) in new[] { (first, false), (second, true) })
+        {
+            using var ui = new UiTestKit();
+            using var panel = Panel(ui, bridge, t);
+            var hex = bridge.State.CityProjects[id];
+            panel.Show(hex.Q, hex.R);
+            Assert.AreEqual(t["city.workshop_staffed"], ui.Q<Label>("city-workshop-state").text, "precondition: this workshop's own panel");
+            if (shown) Assert.AreEqual(line, ui.Q<Label>("city-workshop-paused-0").text, "the workshop that paused");
+            else Assert.IsNull(ui.Root.Q("city-workshop-paused-0"), "the city's other workshop did not pause");
+        }
+    }
+
+    // #2711 item 1 (R-ARMS-005): with a staffing order queued, each workshop's line follows the order, as the count above it
+    // does, not the sim's current record. Two built, none staffed, one ordered: the first by id is staffed at End turn and
+    // the second is not, and End turn agrees.
+    [Test]
+    public void WithAStaffingOrderQueuedEachWorkshopShowsWhatTheOrderMakesIt([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var second = 0;
+        var (bridge, first) = Game(C03, t, employed: 8, edit: (s, _) => second = SecondWorkshop(C03, s));
+        using (var ui = new UiTestKit())
+        {
+            using var panel = Panel(ui, bridge, t);
+            var (q, r) = Hex(C03);
+            panel.Show(q, r);
+            Assert.AreEqual(t["city.workshop_unstaffed"], ui.Q<Label>("city-workshop-state").text, "no order: the sim's record");
+            ui.Press("city-workshops-more");
+            Assert.AreEqual(1, Queued(bridge)!.Count);
+        }
+        foreach (var (id, key) in new[] { (first, "city.workshop_ordered_staffed"), (second, "city.workshop_ordered_unstaffed") })
+        {
+            using var ui = new UiTestKit();
+            using var panel = Panel(ui, bridge, t);
+            var hex = bridge.State.CityProjects[id];
+            panel.Show(hex.Q, hex.R);
+            Assert.AreEqual(t.Format("city.workshops_ordered", 1, 2), ui.Q<Label>("city-workshops").text);
+            Assert.AreEqual(t[key], ui.Q<Label>("city-workshop-state").text, id == first ? "the first by id" : "past the order's count");
+        }
+        var turn = bridge.EndTurn();
+        Assert.IsTrue(turn.State.Workshops[first].Staffed);
+        Assert.IsFalse(turn.State.Workshops.TryGetValue(second, out var w) && w.Staffed);
     }
 
     // R-ARMS-005 (#1722 review, C7): two built, one person free. + orders one; with that order queued, + is off and the

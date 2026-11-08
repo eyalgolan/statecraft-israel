@@ -19,6 +19,15 @@ namespace Statecraft.Sim
         /// is the player's.</summary>
         public const string PlayerSide = "israel";
 
+        /// <summary>The go-to's and the move's refusals (R-MOVE-005/006/008), as constants so the UI can say them in its
+        /// language (#2707). RefusedFull takes the count the hex already holds.</summary>
+        public const string RefusedNoHex = "A route names a hex", RefusedCannotMove = "That unit cannot move",
+            RefusedAlreadyThere = "That unit is already there", RefusedOffLand = "Units cannot enter water or leave the map",
+            RefusedEnemyHex = "An enemy unit holds that hex",
+            RefusedClosed = "Units may not enter an enemy-held locality before its capture is possible",
+            RefusedNoRoute = "No route reaches that hex", RefusedOutOfReach = "That hex is out of reach this turn",
+            RefusedFull = "That hex already holds {0} units of that side, the most one hex can hold";
+
         static readonly IReadOnlyDictionary<int, int> NothingSpent = new Dictionary<int, int>();
 
         /// <summary>The six axial directions in tools/hexgrid.py's NEIGHBOURS order, the fixed order of hexes.json's layout
@@ -92,16 +101,37 @@ namespace Statecraft.Sim
         /// and goes round every enemy-held locality but (q, r) (<see cref="Search"/>).</summary>
         public static IReadOnlyList<(int Q, int R, int Turn)> Route(Content c, GameState s, int unitId, int q, int r, IReadOnlyDictionary<int, int> spent, bool card = false)
         {
-            var result = new List<(int Q, int R, int Turn)>();
-            if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u) || (u.Q, u.R) == (q, r)) return result;
-            var full = Points(c, u);
-            if (full == 0) return result;
+            if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u) || (u.Q, u.R) == (q, r) || Points(c, u) == 0)
+                return new List<(int Q, int R, int Turn)>();
             var (dist, prev) = Search(c, s, u, int.MaxValue, card: card ? (q, r) : ((int, int)?)null);
+            return Split(c, s, u, q, r, spent, dist, prev);
+        }
+
+        /// <summary><see cref="Route"/> without a card, to many hexes of one unit: the search does not depend on the target, so
+        /// it runs once (at the first call) and each call only reads that unit's path to (q, r). The same routes as Route.</summary>
+        internal static Func<int, int, IReadOnlyList<(int Q, int R, int Turn)>> Routes(Content c, GameState s, int unitId, IReadOnlyDictionary<int, int> spent)
+        {
+            (Dictionary<(int Q, int R), int> Dist, Dictionary<(int Q, int R), (int Q, int R)> Prev)? search = null;
+            return (q, r) =>
+            {
+                if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u) || (u.Q, u.R) == (q, r) || Points(c, u) == 0)
+                    return new List<(int Q, int R, int Turn)>();
+                search ??= Search(c, s, u, int.MaxValue);
+                return Split(c, s, u, q, r, spent, search.Value.Dist, search.Value.Prev);
+            };
+        }
+
+        /// <summary>The path to (q, r) in one search, split into turns (R-MOVE-001, R-MOVE-003); empty when no path reaches it.</summary>
+        static IReadOnlyList<(int Q, int R, int Turn)> Split(Content c, GameState s, Unit u, int q, int r, IReadOnlyDictionary<int, int> spent,
+            Dictionary<(int Q, int R), int> dist, Dictionary<(int Q, int R), (int Q, int R)> prev)
+        {
+            var result = new List<(int Q, int R, int Turn)>();
+            var full = Points(c, u);
             if (!dist.ContainsKey((q, r))) return result;
             var hexes = new List<(int Q, int R)>();
             for (var h = (q, r); h != (u.Q, u.R); h = prev[h]) hexes.Add(h);
             hexes.Reverse();
-            spent.TryGetValue(unitId, out var used);
+            spent.TryGetValue(u.Id, out var used);
             int left = full - used, turn = 1, before = 0, first = 0;
             for (int i = 0; i < hexes.Count; i++)
             {
@@ -155,15 +185,15 @@ namespace Statecraft.Sim
         /// ends on that day (<see cref="ContinueRoutes"/>). The player's own go-to replaces a card's.</summary>
         internal static string? GiveGoTo(Content c, GameState s, int unitId, int? q, int? r, Dictionary<int, int> spent, List<Cause> why, DateTime? cardUntil = null)
         {
-            if (q == null || r == null) return "A route names a hex";
+            if (q == null || r == null) return RefusedNoHex;
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (IsEnemy(u)) return "That unit is not yours";
-            if (Points(c, u) == 0) return "That unit cannot move";
-            if (u.Q == q && u.R == r) return "That unit is already there";
-            if (!(c.HexAt(q.Value, r.Value) is MapHex hex) || !hex.Land) return "Units cannot enter water or leave the map";
-            if (s.Units.Values.Any(x => x.Q == q && x.R == r && IsEnemy(x))) return "An enemy unit holds that hex";
-            if (Closed(c, s, false).Contains((q.Value, r.Value))) return "Units may not enter an enemy-held locality before its capture is possible";
-            if (Route(c, s, unitId, q.Value, r.Value, spent, cardUntil != null).Count == 0) return "No route reaches that hex";
+            if (Points(c, u) == 0) return RefusedCannotMove;
+            if (u.Q == q && u.R == r) return RefusedAlreadyThere;
+            if (!(c.HexAt(q.Value, r.Value) is MapHex hex) || !hex.Land) return RefusedOffLand;
+            if (s.Units.Values.Any(x => x.Q == q && x.R == r && IsEnemy(x))) return RefusedEnemyHex;
+            if (Closed(c, s, false).Contains((q.Value, r.Value))) return RefusedClosed;
+            if (Route(c, s, unitId, q.Value, r.Value, spent, cardUntil != null).Count == 0) return RefusedNoRoute;
             var target = HexText(q.Value, r.Value);
             var given = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, GoTo, target, u.HomeCity, u.Full, u.CombatXp);
             s.Units[unitId] = given;
@@ -253,15 +283,15 @@ namespace Statecraft.Sim
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (IsEnemy(u) != enemy) return "That unit is not yours";
             var points = Points(c, u);
-            if (points == 0) return "That unit cannot move";
-            if (u.Q == q && u.R == r) return "That unit is already there";
-            if (!(c.HexAt(q, r) is MapHex hex) || !hex.Land) return "Units cannot enter water or leave the map";
-            if (s.Units.Values.Any(x => x.Q == q && x.R == r && IsEnemy(x) != enemy)) return "An enemy unit holds that hex";
-            if (Closed(c, s, enemy).Contains((q, r))) return "Units may not enter an enemy-held locality before its capture is possible";
+            if (points == 0) return RefusedCannotMove;
+            if (u.Q == q && u.R == r) return RefusedAlreadyThere;
+            if (!(c.HexAt(q, r) is MapHex hex) || !hex.Land) return RefusedOffLand;
+            if (s.Units.Values.Any(x => x.Q == q && x.R == r && IsEnemy(x) != enemy)) return RefusedEnemyHex;
+            if (Closed(c, s, enemy).Contains((q, r))) return RefusedClosed;
             if (Full(c, s, u, q, r) is string full) return full;
             spent.TryGetValue(unitId, out var used);
             var (dist, _) = Search(c, s, u, points - used, fresh: used == 0, card: card);
-            if (!dist.TryGetValue((q, r), out var cost)) return "That hex is out of reach this turn";
+            if (!dist.TryGetValue((q, r), out var cost)) return RefusedOutOfReach;
             // Moving clears fortify at once (Q-HOLD-1, "lost on move"; the standing orders' "fortify", or "fortifying" the turn it
             // is given, with the hex it names), so a unit that goes out and comes back the same turn is not fortified; hold moves with
             // the unit. The order step at the end of the turn only sees the final hex.
@@ -286,7 +316,7 @@ namespace Statecraft.Sim
         {
             var limit = StackLimit(c, s);   // the loader requires it in the GDD loop
             var held = s.Units.Values.Count(x => x.Id != u.Id && x.Side == u.Side && x.Q == q && x.R == r);
-            return held >= limit ? FormattableString.Invariant($"That hex already holds {held} units of that side, the most one hex can hold") : null;
+            return held >= limit ? string.Format(CultureInfo.InvariantCulture, RefusedFull, held) : null;
         }
 
         /// <summary>R-MOVE-005: the hexes of mvp.enemy_held_localities. For the enemy (R-ENEMY-001, the rule's mirror) every

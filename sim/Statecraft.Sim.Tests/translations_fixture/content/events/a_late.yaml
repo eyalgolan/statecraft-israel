@@ -3,6 +3,8 @@ title: Late
 text: Later.
 title_he: מאוחר
 text_he: מאוחר יותר.
+late_text: Later still.
+late_text_he: מאוחר עוד יותר.
 from: 1948-07-01
 options:
   - id: continue

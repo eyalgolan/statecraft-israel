@@ -14,5 +14,6 @@ vote:
 late:
   title: "מאוחר"
   text: "מאוחר יותר."
+  late_text: "מאוחר עוד יותר."
   options:
     continue: "להמשיך"

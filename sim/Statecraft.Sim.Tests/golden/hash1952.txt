@@ -1,9 +1,9 @@
 1952-01-15;15755400384260045787;Historical;44;
 ind{
-  food_supply=0.8555395682661614 [3FEB60948444634F]
+  food_supply=0.8555395683057426 [3FEB60948449D3F3]
   housing=0.08527449992708651 [3FB5D48CB45E9D83]
   intl_standing=0.8300000000000003 [3FEA8F5C28F5C292]
-  morale=0.47314470757140437 [3FDE4800BD52DBCC]
+  morale=0.4731417780123105 [3FDE47F473BBC95E]
   security=0.5211322526321603 [3FE0AD1D8BBE4521]
 pol{
   border_settlement=0.2 [3FC999999999999A]
@@ -13,9 +13,9 @@ pol{
 eff{
   border_villages_secure=0.04113225263216018 [3FA50F495FBB5C36]
   building_houses=0.08504947742483629 [3FB5C5CD7414E142]
-  food_lifts_cohesion=0.08899999973526929 [3FB6C8B43834FD50]
-  homes_lift_morale=0.012822260189952167 [3F8A428EA169C610]
-  rationing_feeds=0.3399999999208376 [3FD5C28F5C133334]
+  food_lifts_cohesion=0.0889999998636754 [3FB6C8B438C22C6C]
+  homes_lift_morale=0.012819330502452167 [3F8A41056A1DFF68]
+  rationing_feeds=0.33999999996041885 [3FD5C28F5C1E147C]
   rationing_grates=-0.15 [BFC3333333333333]
   safety_lifts_morale=0.0520437005265136 [3FAAA578CF72C98B]
   work_lifts_cohesion=0.019278747119669332 [3F93BDCED18C1E35]
@@ -45,11 +45,11 @@ sit[
   fx_crisis
   housing_crisis
 treasury=0 [0000000000000000]
-debt=224.04012071283807 [406C0148AB3BB104]
-fx=-12.99043132809653 [C029FB19D0A63786]
+debt=220.19012071283805 [406B861578087DD0]
+fx=-12.990431328096534 [C029FB19D0A63788]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
-stab=0.4456162321139136 [3FDC84F9F1DFBE87]
+stab=0.4455118208245455 [3FDC8344031B0FB9]
 att=4 [4010000000000000]
 fired[
   altalena
@@ -139,8 +139,8 @@ city{
   tiberias=6,2,13,2,0,c0 [0000000000000000]
   zikhron_yaakov=2,1,4,1,0,c0 [0000000000000000]
 units[
-  0:veteran_soldier@4,14|side=israel|strength=4
-  1:veteran_soldier@15,4|side=israel|strength=2
+  0:veteran_soldier@-7,28|side=israel|strength=2|full=4
+  1:veteran_soldier@14,3|side=israel|strength=2
   2:veteran_soldier@0,17|side=israel|strength=4
   3:veteran_soldier@-2,24|side=israel|strength=3
   4:veteran_soldier@-9,29|side=israel|strength=3
@@ -149,9 +149,9 @@ units[
   8:egyptian_army@-8,27|side=egypt|strength=10|order=fortify|target=-8,27
   9:arab_legion@-3,25|side=jordan|strength=4|order=fortify|target=-3,25
   10:syrian_army@15,5|side=syria|strength=3|order=fortify|target=15,5
-  11:iraqi_army@6,14|side=iraq|strength=3|order=fortify|target=6,14
+  11:iraqi_army@7,14|side=iraq|strength=3|order=fortify|target=7,14
   12:arab_liberation_army@14,4|side=ala|strength=4|order=fortify|target=14,4
-  13:veteran_soldier@-4,24|side=israel|strength=1|full=2
+  13:veteran_soldier@8,8|side=israel|strength=2
   15:veteran_halutz@-3,21/6
 site{
   beit_kama=done,1949-08-15
@@ -173,6 +173,6 @@ obj{
   yishuvim=1951-09-15
 ctrl{
   beersheba=since=1949-01-15,fled=1
-  ramla=since=1948-09-15,fled=1
+  ramla=since=1948-08-15,fled=1
 food=2733,1390,0
 arms=12

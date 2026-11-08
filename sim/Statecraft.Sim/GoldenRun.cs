@@ -16,13 +16,13 @@ namespace Statecraft.Sim
         /// <summary>Final hash of Play(content, Until1950). Changing it is a deliberate rules or content change: the value
         /// is pinned in sim/Statecraft.Sim.Tests/golden/manifest.txt, and STATECRAFT_UPDATE_GOLDEN=1 dotnet test rewrites
         /// both (docs/determinism.md). Say why in the commit message.</summary>
-        public const string Hash1950 = "7d8e158b26fd2301d27361dc4912debc5085d1cc0915b2182195bd1a6cc5f6ba";
+        public const string Hash1950 = "832e8ccc38e3fb36228826816b452477fbbd6ab667ee30cdaef40e5b1b2fe869";
 
         public static readonly DateTime Until1950 = new DateTime(1950, 1, 1);
 
         /// <summary>Final hash of Play(content, Until1952): the M3 content range (to 31 December 1951). The GDD game ends on
         /// 15 January 1952 (R-LOOP-004), the first turn on or after Until1952, so this is also the mvp-end run.</summary>
-        public const string Hash1952 = "f5ebb83052aa1fed13a0f3ce0295e5620e70a34906ff0f7fc5c4ce8654ee708e";
+        public const string Hash1952 = "841f05536a49b68cd10d3f1ca548e559098415119284d483620f14bb6a4bb44e";
 
         public static readonly DateTime Until1952 = new DateTime(1952, 1, 1);
 
@@ -67,20 +67,25 @@ namespace Statecraft.Sim
             return s;
         }
 
-        /// <summary>The smoke5 golden's orders for one turn, what the WebGL ?smoke run's GameRoot.Smoke does: each open event,
-        /// in the card's order, answered with its first option while the turn's Attention pays for an answer; the rest go
-        /// to their ministers at the turn's end (docs/determinism.md). SliceSmokeTests plays the same policy.</summary>
+        /// <summary>The smoke5 golden's orders for one turn, what the WebGL ?smoke run's GameRoot.Smoke does: each open event is
+        /// answered with its first option while the turn's Attention pays and while that option's operation units are in
+        /// place (R-ENEMY-007), judged on the no-orders preview, the state the card enables its options from (SimBridge.State:
+        /// the turn's start after its standing go-to routes have moved; the smoke itself gives no unit orders); at the first
+        /// event that fails either, the rest go to their ministers at turn end. The Attention is the turn start's.
+        /// SliceSmokeTests plays the same policy.</summary>
         public static List<Command> SmokeOrders(Content c, GameState s)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var answers = new List<Command>();
+            var shown = Simulation.Preview(c, s, Array.Empty<Command>()).State;
             var left = s.Attention;
             foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id)))
             {
                 var cmd = new ChooseEventOption(e.Id, e.Options[0].Id);
                 var price = AttentionSystem.Cost(c, s, cmd.Kind);
                 if (price > left + 1e-9) break;
+                if (!EventSystem.OperationStatus(c, shown, e.Options[0]).Met) break;
                 left -= price;
                 answers.Add(cmd);
             }

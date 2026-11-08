@@ -333,9 +333,10 @@ namespace Statecraft.Game.UI
             {
                 if (result.StartsWith("fail save ", StringComparison.Ordinal))
                 {
-                    toast.Append(text["save.write_failed"]);
+                    toast.SaveFailed(text["save.write_failed"]);
                     Debug.Log("SAVE FAILURE SHOWN save.write_failed");
                 }
+                else if (result.StartsWith("ok save ", StringComparison.Ordinal)) toast.SaveSucceeded();   // #2707: the failure stays until then
             };
             unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
             var hudPresenter = Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
@@ -465,6 +466,8 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase("screens wired");   // issue #321: the splits of the units layer
             // The map's own parse of the unit file when it read this text (issue #321: it was parsed twice at boot).
             var unitData = map.UnitEntriesFor(inputs.Map.UnitsYaml, Debug.LogWarning);
+            card.Units = unitData;
+            card.Render();   // a continued operation card replaces raw row ids with the sourced unit names immediately
             why.Units = unitData;
             report.Units = unitData;   // the turn report names the enemy's units by these rows (#1293)
             DiagLog.BootPhase("units layer data read");
@@ -520,7 +523,7 @@ namespace Statecraft.Game.UI
             {
                 newGame = Own(new NewGamePresenter(root, bridge, store, toast, text, GameStart.NewSeed, gameObject.name));
                 this.newGame = newGame;
-                Own(GameStart.Autosave(bridge, store, text, toast.Append, gameObject.name));   // appends: the turn's refusals stay visible
+                Own(GameStart.Autosave(bridge, store, text, toast.SaveFailed, gameObject.name, toast.SaveSucceeded));   // under the turn's refusals, until a save succeeds (#2707)
             }
             // Once the game is over, the sim's end report (#812); after the autosave, so the last turn is saved first. New Game
             // is its two presses; a smoke run has none.
@@ -695,7 +698,7 @@ namespace Statecraft.Game.UI
             if (showsStart)                                                // newGame is made above whenever smoke == 0
             {
                 var cam = cameraController;
-                var recording = Own(new DeclarationRecording(root, text, toast.Show));   // never built in automated runs (Skipped)
+                var recording = Own(new DeclarationRecording(root, text, toast.RecordingFailed, retry: toast.RecordingRetried));   // never built in automated runs (Skipped)
                 if (music != null) music.Duck = () => recording.Playing || film?.IsOpen == true;   // the theme drops low under Ben-Gurion's voice and under a replayed film
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
@@ -861,9 +864,32 @@ namespace Statecraft.Game.UI
             bool fromStart = start?.IsOpen == true;
             keptResumed = start?.Resumed ?? true;
             keptBudgetDraft = budgetScreen?.Draft;   // read before Begin disposes it; the new screen copies it
+            // #2340: the selection, read before Begin disposes the panel and the unit layer (a pioneer card has no token).
+            var pioneer = info?.Pioneer;
+            var unit = info?.ShowsUnit == true ? units?.Selected : null;
+            var hex = info?.ShowsUnit == true ? null : info?.Selected;
+            // #2340: the card or capture dialog the player hid; the rebuilt presenters would open it again.
+            var hiddenCard = card?.Collapsed == true ? card.Shown!.Id : null;
+            var hiddenCapture = capture?.Collapsed == true ? capture.Shown : null;
             // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
             try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
             finally { keptBudgetDraft = null; }
+            // Hidden again before the selection is put back: an open card or dialog disables the info panel (ScreenNav).
+            if (hiddenCard != null && card?.Shown?.Id == hiddenCard) card.Collapse(takeFocus: false);
+            if (hiddenCapture != null && capture?.Shown == hiddenCapture) capture.Collapse(takeFocus: false);
+            // Put back before Settings opens again: a screen that covers the panel would ignore it. The map's hex outline
+            // outlives Begin, so it is set to match (before, the new panel showed nothing under the old outline).
+            if (info != null && units != null)
+            {
+                if (pioneer is int pioneerId) info.ShowPioneer(pioneerId);   // clears the token and the outline itself
+                else
+                {
+                    units.Select(unit);
+                    if (units.Selected != null) { map.ClearSelection(); info.ShowUnit(); }
+                    else if (hex is (int q, int r)) { map.Select(q, r); info.Show(q, r); }
+                    else map.ClearSelection();
+                }
+            }
             if (!fromStart) nav?.Open("settings");
             // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
             // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
@@ -1129,6 +1155,8 @@ namespace Statecraft.Game.UI
             // once the swamp is drained (#2082; owner, 2 November 2026: "Hula + Arava, map and boards").
             Statecraft.Game.Map.Collection.HulaPapyrusLayer.ShowAt(map, Bridge.Content,
                 Statecraft.Game.Map.Collection.HulaPapyrusLayer.Drained(Bridge.State));
+            // A plowed field's or drained swamp's ground on its hex (#2877): from the sites, so a loaded save shows its own.
+            SiteGroundLayer.ShowAt(map, Bridge.Content, Bridge.State.Sites.Values);
             // Tal Heuberger's civilian figures at towns, villages, transit camps and building sites, ambience only and streamed
             // after the first frame (#666, #708, #886): the residents follow the settlement state, the builders the projects.
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content,
@@ -1315,7 +1343,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Plays turns the way a player does: answers each open event by pressing the card's first option button
-        /// while the turn's Attention pays for an answer, then presses End Turn and closes the turn report it brings (#1037); a card left unanswered goes to its minister
+        /// while the turn's Attention pays for an answer and that option's operation units are in place (R-ENEMY-007), then presses End Turn and closes the turn report it brings (#1037); a card left unanswered goes to its minister
         /// (since the GDD cutover, 15 July 1948 brings three cards at full war, where an answer costs 2 of the 4). Logs "SMOKE turn &lt;n&gt; &lt;date&gt; refused &lt;k&gt;" per turn through <paramref name="log"/>,
         /// then "SMOKE OK &lt;n&gt; turns &lt;date&gt; &lt;hash&gt;", or "SMOKE FAIL &lt;reason&gt;" when a press does not take effect.
         /// Static, so an edit-mode test can drive it step by step.</summary>
@@ -1330,6 +1358,9 @@ namespace Statecraft.Game.UI
                     // Rulesets with Attention keep the smoke's own pool check unchanged; gdd-0.3 has no pool to run out of (#1688).
                     if (bridge.Content.UsesAttention
                         && bridge.AttentionLeft!.Value + 1e-9 < AttentionSystem.Cost(bridge.Content, bridge.State, new ChooseEventOption(shown.Id, "").Kind)) break;
+                    // R-ENEMY-007 (#2621): a first option whose operation units are not in place is disabled, and the smoke gives no
+                    // unit orders, so the card goes to its minister as an unpaid one does (GoldenRun.SmokeOrders plays the same).
+                    if (!EventSystem.OperationStatus(bridge.Content, bridge.State, shown.Options[0]).Met) break;
                     var option = root.Q<VisualElement>("event-options")?.Q<Button>();
                     if (option == null || guard >= 50) { log(FormattableString.Invariant($"SMOKE FAIL event {shown.Id} has no option to press")); yield break; }
                     if (!Press(option, log)) yield break;

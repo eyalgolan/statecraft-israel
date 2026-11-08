@@ -22,6 +22,25 @@
         "r": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 }
       }
     },
+    "field_hex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["q", "r"],
+      "dependentRequired": {
+        "field": ["host", "host_basis", "host_source"],
+        "host": ["field"],
+        "host_basis": ["field"],
+        "host_source": ["field"]
+      },
+      "properties": {
+        "q": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+        "r": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+        "field": { "type": "string", "pattern": "^F[0-9]{2}$", "description": "This field's place in the file's order." },
+        "host": { "$ref": "#/$defs/id", "description": "A census city of this region, or for F19 and F20 only a settlement of this region (R-POP-004)." },
+        "host_basis": { "enum": ["sourced", "administrative", "forced", "inference", "design_choice", "decision_a"] },
+        "host_source": { "type": "string", "minLength": 1 }
+      }
+    },
     "control": {
       "type": "object",
       "additionalProperties": false,
@@ -43,7 +62,7 @@
         "capital_location": { "$ref": "#/$defs/id" },
         "member_hexes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/hex" } },
         "member_locations": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" }, "description": "Each location's effective hex (after map overrides) must be one of this region's member_hexes, and a location may belong to at most one region." },
-        "field_hexes": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/hex" }, "description": "Optional opening field hexes (#1691 Q4), each one of this region's member_hexes. Data only." },
+        "field_hexes": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/field_hex" }, "description": "Optional opening field hexes (#1691 Q4), each one of this region's member_hexes, with an optional host (#1717). Data only." },
         "design_note": { "type": "string", "minLength": 1 },
         "sources": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
         "capital_approval": { "enum": ["APPROVED", "NEEDS-RESEARCH"] },
