@@ -48,11 +48,11 @@ public class GoldenCheckTests
         var c = ContentLoader.Load(Paths.Content);
         var data = new GoldenData { Manifest = "hash1950 " + GoldenRun.Hash1950 + "\nmade-up-golden " + GoldenRun.Hash1950 + "\n" };
         var expected = GoldenCheck.Run(c, data);
-        var run = GoldenCheck.RunAsync(c, data);
+        var run = GoldenCheck.RunAsync(c, data).GetAwaiter();
         int frames = 0;
         while (!run.IsCompleted && frames < 600) { frames++; yield return null; }
         Assert.IsTrue(run.IsCompleted, "RunAsync did not finish in 600 frames");
-        var (ok, lines) = run.GetAwaiter().GetResult();
+        var (ok, lines) = run.GetResult();
         Assert.AreEqual(expected.ok, ok);
         Assert.IsFalse(ok);
         CollectionAssert.AreEqual(expected.lines, lines);
