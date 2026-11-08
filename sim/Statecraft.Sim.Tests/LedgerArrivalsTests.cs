@@ -152,4 +152,20 @@ public class LedgerArrivalsTests
         Assert.Contains("integration is held", Assert.Throws<NotSupportedException>(Invoke).Message);
         Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
     }
+
+    /// <summary>PopulationLedger.RegisterArrivals takes only PopulationInventoryRow items, and a row is refused at
+    /// construction for each item RegisterArrival refuses: a blank source, a negative ordinal, or malformed UTF-16. So
+    /// the batch registration makes the same per-item checks without repeating them.</summary>
+    [Theory]
+    [InlineData("", 0)]
+    [InlineData("   ", 0)]
+    [InlineData("ship", -1)]
+    public void AnArrivalRowRefusesWhatRegisterArrivalRefuses(string source, int ordinal) =>
+        Assert.ThrowsAny<ArgumentException>(() => new PopulationInventoryRow(source, ordinal, PopulationLedgerTests.Person()));
+
+    /// <summary>The malformed UTF-16 case, built in code: xUnit's test data turns a lone surrogate into U+FFFD, which is
+    /// valid text, so it cannot be an InlineData value.</summary>
+    [Fact]
+    public void AnArrivalRowRefusesALoneSurrogateSource() =>
+        Assert.ThrowsAny<ArgumentException>(() => new PopulationInventoryRow("ship" + (char)0xD800, 0, PopulationLedgerTests.Person()));
 }
