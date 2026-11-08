@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -127,6 +128,12 @@ namespace Statecraft.Sim
         int peoplePerUnit;
         /// <summary>People one record stands for in this ledger (CreateFixture's scale).</summary>
         internal int PeoplePerUnit { get { RequireInitialized(); return peoplePerUnit; } }
+        /// <summary>#1725 PR 7, natural increase (R-CITY-008; owner, 8 November 2026: "Carry the fraction (Recommended)"): the
+        /// records' worth of natural increase owed but not yet a whole record, carried from turn to turn: a double, as the
+        /// aggregate natural increase is, written as its IEEE bits (docs/determinism.md's carry rule).</summary>
+        internal double NaturalIncreaseCarry { get; private set; }
+        /// <summary>The natural-increase records added so far: their split over the cities is Cities.Apportion of this count.</summary>
+        internal int NaturalIncreaseRecords { get; private set; }
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }
         public double TotalPeople => (double)units.Count * peoplePerUnit;
@@ -220,6 +227,41 @@ namespace Statecraft.Sim
             Validate(candidate);
             units = candidate; sources.Add(key, id); NextPopulationId = next;
             return id;
+        }
+        /// <summary>Whether the manifest item <paramref name="source"/>, <paramref name="ordinal"/> has arrived, even if its
+        /// population id was lost since.</summary>
+        internal bool HasArrived(string source, int ordinal) => sources.ContainsKey(PopulationText.Fields(source, ordinal));
+        /// <summary><see cref="RegisterArrival"/> for several items, in order, all or nothing (#1725 PR 7, Cities.Arrive): every
+        /// record is validated in one candidate before any is committed, so a refused item adds none of the others.</summary>
+        internal IReadOnlyList<int> RegisterArrivals(IReadOnlyList<PopulationInventoryRow> rows)
+        {
+            RequireInitialized();
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var registered = new SortedDictionary<string, int>(sources, StringComparer.Ordinal);
+            var next = NextPopulationId;
+            var ids = new List<int>();
+            foreach (var row in rows)
+            {
+                var key = PopulationText.Fields(row.Source, row.Ordinal);
+                if (registered.ContainsKey(key)) throw new ArgumentException("Source item already registered.");
+                // int.MaxValue is the exhausted next-id sentinel; never overflow after partially inserting a record.
+                var id = next; next = checked(next + 1);
+                candidate[id] = row.Template.WithId(id); registered.Add(key, id); ids.Add(id);
+            }
+            Validate(candidate);
+            units = candidate; sources = registered; NextPopulationId = next;
+            return ids.AsReadOnly();
+        }
+        /// <summary>#1725 PR 7, natural increase: registers <paramref name="rows"/> as <see cref="RegisterArrivals"/> does, all or
+        /// nothing, then counts them in <see cref="NaturalIncreaseRecords"/> and keeps <paramref name="carry"/>, the fraction of a
+        /// record still owed (0 up to 1).</summary>
+        internal void RegisterNaturalIncrease(IReadOnlyList<PopulationInventoryRow> rows, double carry)
+        {
+            RequireInitialized();
+            if (!(carry >= 0 && carry < 1)) throw new ArgumentOutOfRangeException(nameof(carry), "The carried natural increase is a fraction of one record.");
+            var records = checked(NaturalIncreaseRecords + rows.Count);
+            RegisterArrivals(rows);
+            NaturalIncreaseCarry = carry; NaturalIncreaseRecords = records;
         }
         public void RegisterCombatLoss(int id, string source)
         {
@@ -334,6 +376,14 @@ namespace Statecraft.Sim
         {
             yield return PopulationText.Fields("initialized", IsInitialized, "next", NextPopulationId,
                 "people-per-unit", peoplePerUnit, "reception-limit", receptionLimit);
+            // #1725 PR 7: written only once natural increase has run, so every ledger before it hashes as before. The carry
+            // follows docs/determinism.md's carry rule: a nonzero carry is the 16 hex digits of its IEEE bits, -0.0 as 0.0
+            // (as GameState's Num and GddState's segment carry write theirs), and a zero carry is omitted.
+            if (NaturalIncreaseRecords != 0 || NaturalIncreaseCarry != 0)
+                yield return NaturalIncreaseCarry == 0
+                    ? PopulationText.Fields("natural-increase", "records", NaturalIncreaseRecords)
+                    : PopulationText.Fields("natural-increase", "records", NaturalIncreaseRecords, "carry",
+                        BitConverter.DoubleToInt64Bits(NaturalIncreaseCarry).ToString("X16", CultureInfo.InvariantCulture));
             if (bindings != null) foreach (var b in bindings.Canonical()) yield return b;
             foreach (var p in units.Values) yield return PopulationText.Fields("unit", p.Canonical());
             foreach (var source in sources) yield return PopulationText.Fields("source", source.Key, source.Value);
