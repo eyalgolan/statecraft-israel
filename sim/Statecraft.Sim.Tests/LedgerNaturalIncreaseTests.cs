@@ -14,10 +14,12 @@ public class LedgerNaturalIncreaseTests
     // A week: 0.0169 a year of the dark start's living records is below one record, so the carry crosses one after a few turns.
     const double Week = 7 / 365.0;
 
-    // The increase a turn owes, in records, as the owner's carry describes it: the rate times the turn's share of a year
-    // times every living record, held as decimal (as Cities.Apportion is, "so exact on every runtime").
-    static decimal Owed(Content c, GameState s, double yearFraction) =>
-        (decimal)c.RulesAt(s.Date).NaturalIncreasePerYear * (decimal)yearFraction * s.PopulationLedger.Units.Count;
+    // The increase a turn owes, in records, as the owner's carry describes it: the aggregate's rate (NaturalIncreasePerYear
+    // times the turn's share of a year) times every living record, in doubles.
+    static double Owed(Content c, GameState s, double yearFraction) =>
+        c.RulesAt(s.Date).NaturalIncreasePerYear * yearFraction * s.PopulationLedger.Units.Count;
+
+    static string Bits(double v) => BitConverter.DoubleToInt64Bits(v).ToString("X16", System.Globalization.CultureInfo.InvariantCulture);
 
     // "Carry the fraction (Recommended)": turns whose increase stays below one record add none and carry it; the turn whose
     // carried sum first reaches one adds exactly one record and carries the rest. "Same split as arrivals (Recommended)"
@@ -32,18 +34,19 @@ public class LedgerNaturalIncreaseTests
         var next = s.PopulationLedger.NextPopulationId;
         var per = Owed(c, s, Week);
         Assert.True(per > 0 && per < 1);
-        var crossing = (int)Math.Ceiling(1 / per);
-        Assert.True(crossing > 1);
-        var carry = 0m;
-        for (var turn = 1; turn < crossing; turn++)
+        var carry = 0.0;
+        var turns = 0;
+        var why = new List<Cause>();
+        while (true)
         {
-            PopulationSystem.Apply(c, s, s.Date.AddDays(7), Week, new List<Cause>());
+            turns++;
+            PopulationSystem.Apply(c, s, s.Date.AddDays(7), Week, why);
+            if (carry + per >= 1) break;
             carry += per;
             Assert.Equal(living, s.PopulationLedger.Units.Count);
             Assert.Equal(carry, s.PopulationLedger.NaturalIncreaseCarry);
         }
-        var why = new List<Cause>();
-        PopulationSystem.Apply(c, s, s.Date.AddDays(7), Week, why);
+        Assert.True(turns > 1);
         Assert.Equal(living + 1, s.PopulationLedger.Units.Count);
         Assert.Equal(carry + per - 1, s.PopulationLedger.NaturalIncreaseCarry);
         Assert.Empty(why);
@@ -70,7 +73,7 @@ public class LedgerNaturalIncreaseTests
         lost.PopulationLedger.RegisterCombatLoss(lost.PopulationLedger.Units[0].Id, "fixture-loss");
         PopulationSystem.Apply(c, s, s.Date.AddDays(7), Week, new List<Cause>());
         PopulationSystem.Apply(c, lost, lost.Date.AddDays(7), Week, new List<Cause>());
-        var rate = (decimal)c.RulesAt(s.Date).NaturalIncreasePerYear * (decimal)Week;
+        var rate = c.RulesAt(s.Date).NaturalIncreasePerYear * Week;
         Assert.Equal(rate * s.PopulationLedger.Units.Count, s.PopulationLedger.NaturalIncreaseCarry);
         Assert.Equal(rate * (s.PopulationLedger.Units.Count - 1), lost.PopulationLedger.NaturalIncreaseCarry);
     }
@@ -87,6 +90,9 @@ public class LedgerNaturalIncreaseTests
         Assert.DoesNotContain("natural-increase", Simulation.NewGame(HistoricalPopulationTests.Real(false), 1, Mode.Historical).Describe());
         PopulationSystem.Apply(c, s, s.Date.AddDays(7), Week, new List<Cause>());
         Assert.Contains("natural-increase", s.Describe());
+        // docs/determinism.md: a nonzero carry is written as the 16 hex digits of its IEEE bits.
+        var line = s.PopulationLedger.Canonical().Single(x => x.Contains("natural-increase"));
+        Assert.Contains("16:" + Bits(Owed(c, LedgerArrivalsTests.Fixture(c), Week)), line);
         var saved = s.Clone();
         Assert.Equal(s.PopulationLedger.NaturalIncreaseCarry, saved.PopulationLedger.NaturalIncreaseCarry);
         Assert.Equal(s.Hash(), saved.Hash());
@@ -123,7 +129,7 @@ public class LedgerNaturalIncreaseTests
         var units = Cities.ArrivedUnits(c, LedgerArrivalsTests.From, to, r.PeoplePerUnit);
         Assert.Equal(units, LedgerArrivalsTests.Arrived(s).Count);
         var owed = Owed(c, s, yf);
-        var whole = (int)decimal.Floor(owed);
+        var whole = (int)Math.Floor(owed);
         Assert.True(units > 0 && whole > 0);
         PopulationSystem.Apply(c, s, to, yf, new List<Cause>());
         Assert.Equal(units, LedgerArrivalsTests.Arrived(s).Count);

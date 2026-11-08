@@ -56,7 +56,8 @@ namespace Statecraft.Sim
         /// "stays the national rate, 0.0169 a year") in whole records. The owner, 8 November 2026: "Everyone alive
         /// (Recommended)": the base is every living record. "Carry the fraction (Recommended)": the turn owes the carry plus the
         /// rate times the turn's share of a year times that base, in records; each whole record of it is added and the rest
-        /// carried. Decimal, as Cities.Apportion is, so exact on every runtime and culture-free. "Same split as arrivals
+        /// carried. In doubles, with the aggregate's operations in a fixed
+        /// order, the carry written as IEEE bits (docs/determinism.md). "Same split as arrivals
         /// (Recommended)": the records are split over the cities by Cities.Apportion of all natural-increase records so far,
         /// keyed <see cref="IncreasePrefix"/> plus the city id with that city's ordinal, so a replay adds the same records.
         /// "Free civilian (Recommended)": each is a free civilian of its city with no work experience and no reception wait,
@@ -65,11 +66,13 @@ namespace Statecraft.Sim
         static void LedgerIncrease(Content c, GameState s, double yearFraction)
         {
             var ledger = s.PopulationLedger;
-            var perYear = c.RulesAt(s.Date).NaturalIncreasePerYear;
-            if (perYear < 0 || yearFraction < 0)
+            // The aggregate's own rate, in the same double arithmetic and order (Apply: `var rate =
+            // c.RulesAt(s.Date).NaturalIncreasePerYear * yearFraction;`).
+            var rate = c.RulesAt(s.Date).NaturalIncreasePerYear * yearFraction;
+            if (!(rate >= 0))
                 throw new InvalidOperationException("A negative natural increase on the ledger has no rule (R-CITY-008).");
-            var owed = ledger.NaturalIncreaseCarry + (decimal)perYear * (decimal)yearFraction * ledger.Units.Count;
-            var whole = (int)decimal.Floor(owed);
+            var owed = ledger.NaturalIncreaseCarry + rate * ledger.Units.Count;
+            var whole = checked((int)Math.Floor(owed));
             var had = Cities.Apportion(c, ledger.NaturalIncreaseRecords);
             var rows = new List<PopulationInventoryRow>();
             foreach (var kv in Cities.Apportion(c, checked(ledger.NaturalIncreaseRecords + whole)))
