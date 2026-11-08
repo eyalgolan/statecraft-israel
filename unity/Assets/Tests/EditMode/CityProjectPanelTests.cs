@@ -1284,6 +1284,58 @@ public class WorkshopPanelTests
         }
     }
 
+    // R-HOUSE-005 (#1722 review S2): a housing line shows only when its figure, as the panel rounds it, says something. A
+    // surcharge under IL 0.05m would read "IL 0.0m a turn" (and "none" is not true), an overflow that leaves the rounded
+    // condition where it is would repeat the housing line's percentage, and a cohesion share under 0.05 points would read
+    // "0.0% a turn": none of the three has a line. Each case is shaped from the sim's own readout (TEST-ONLY SYNTHETIC values).
+    [Test]
+    public void AHousingTermTooSmallToShowHasNoLine_RHouse005([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var (q, r) = Home(C03);
+        Cities.HousingReadout Outlook(GameState s) => Cities.HousingOutlook(C03, s, City)!.Value;
+
+        // A surcharge of IL 0.02m: just under 50%, in enough homes (the surcharge is linear in the points below 50%).
+        using (var ui = new UiTestKit())
+        {
+            var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) =>
+            {
+                Housing(s, 100000, 0.40);
+                Housing(s, 100000, 0.50 - 0.02 * 0.10 / Outlook(s).Surcharge);
+            });
+            var o = Outlook(bridge.State);
+            Assert.IsTrue(o.Surcharge > 0 && PlayerText.Money(C03, "treasury", o.Surcharge) == PlayerText.Money(C03, "treasury", 0), "precondition: a surcharge that rounds to nothing");
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(q, r);
+            Assert.IsNotNull(ui.Root.Q("city-housing"), "precondition: the city's block shows");
+            Assert.IsNull(ui.Root.Q("city-surcharge"), "no \"IL 0.0m a turn\" and no \"none\"");
+        }
+
+        // One person over capacity at 60.4%: the overflow lowers the condition by less than the half point that would move "60%".
+        using (var ui = new UiTestKit())
+        {
+            var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) => Housing(s, Cities.Housed(s, s.Cities[City]) - 1, 0.604));
+            var o = Outlook(bridge.State);
+            Assert.IsTrue(o.ConditionAfter < 0.604 && PlayerText.Percent(o.ConditionAfter) == PlayerText.Percent(0.604), "precondition: an overflow that leaves the rounded condition");
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(q, r);
+            Assert.AreEqual(t.Format("city.housing_no_surcharge", "50%"), ui.Q<Label>("city-surcharge").text, "precondition: the readout shows");
+            Assert.IsNull(ui.Root.Q("city-housing-falls"), "the condition is not said twice");
+        }
+
+        // At 24.99% in enough homes: Social cohesion's share is far under 0.05 points.
+        using (var ui = new UiTestKit())
+        {
+            var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) => Housing(s, 100000, 0.2499));
+            var o = Outlook(bridge.State);
+            Assert.IsTrue(o.CohesionShift < 0 && PlayerText.PercentChange(o.CohesionShift) == PlayerText.PercentChange(0), "precondition: a cohesion share that rounds to nothing");
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(q, r);
+            Assert.IsNotNull(ui.Root.Q("city-surcharge"), "precondition: the readout shows");
+            Assert.IsNull(ui.Root.Q("city-housing-cohesion"), "no \"0.0% a turn\"");
+        }
+    }
+
     // R-PROJ-001 to R-PROJ-003, R-CITY-011, R-HOUSE-006 (#1722: "Project list with builders, work done and cost"): the city's
     // block lists every project of the city in id order, wherever it stands, the repair (no hex of its own) included: a
     // housing project with 2 of its 6 turns of work left is "work 4 of 6", cost IL 6.0m (content/projects.yaml), no builder; a
