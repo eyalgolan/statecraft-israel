@@ -63,10 +63,12 @@ namespace Statecraft.Sim
         /// stock that would pass a whole number's range, or borrowing that would take the debt past mvp.debt_ceiling (#2198,
         /// owner 2 Nov 2026: "Refuse buys over ceiling (Recommended)"; the debt after is PayOrBorrow's, the debt plus what the
         /// Treasury lacks, and exactly at the ceiling is allowed). A purchase the Treasury pays in full borrows nothing and is
-        /// never refused at the ceiling. Step has already refused it in the legacy loop.</summary>
+        /// never refused at the ceiling. Step has already refused it in the legacy loop. It reads no population, so it runs
+        /// on an initialized Historical ledger (the dark start, #1725 PR 7): a bought Arms joins the national stock, not a
+        /// record's issued items. A synthetic or Open ledger stays refused (R-POP-002).</summary>
         public static string? BuyArms(Content c, GameState s, int count, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
             if (count < 1) return RefusedCount;
             if ((long)s.Arms + count > int.MaxValue) return RefusedStockCapacity;
             if (BorrowsPastDebtCeiling(c, s, count)) return RefusedDebtCeiling;
