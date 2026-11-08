@@ -99,7 +99,7 @@ The live tracker is [#374](https://github.com/eyalgolan/statecraft-israel/issues
 flowchart LR
   V["Visual v1"]:::done --> P0["0 · Decisions"]:::now
   P0 --> P1["1 · Vertical slice"]:::done
-  P1 --> P2["2 · Monthly turns"]:::now
+  P1 --> P2["2 · Monthly turns"]:::done
   P2 --> P3["3 · Cities"]:::done
   P3 --> P4["4 · Pioneers"]:::now
   P4 --> P5["5 · Units and combat"]:::now
@@ -114,7 +114,7 @@ flowchart LR
 |---|---|---|---|
 | 0 | Owner decisions on the open GDD items | In progress: every phase's main decisions are made | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
 | 1 | A first slice behind a switch: one city (Tel Aviv), training, one new settlement and one objective card | Done: 8 of 8 PRs merged | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
-| 2 | Monthly turns for the real game, and the five resources | In progress: all but the top bar for the five resources | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
+| 2 | Monthly turns for the real game, and the five resources | Done | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
 | 3 | Every city, with housing, jobs and immigrant absorption | Done: 8 of 8 PRs merged | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | Pioneers, building sites, roads and railways | In progress: 6 of 8 PRs merged | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
 | 5 | Military units, movement and combat | In progress: 13 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
