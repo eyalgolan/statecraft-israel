@@ -393,6 +393,33 @@ public class LedgerArmsWorkshopTests
         }
     }
 
+    // R-ARMS-004 worker_slots 1 (#1725 PR 7 review S2): a corrupted ledger with two worker records on one workshop's target
+    // throws before step 6 writes anything. The first workshop in ascending project id is valid, yet it is not paid or
+    // advanced: Treasury, Debt, Arms, every workshop and the ledger are unchanged, and no Why line is added.
+    [Fact]
+    public void ASecondWorkerRecordOnALaterWorkshopThrowsBeforeAnyWrite()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var first = Built(c, s, Haifa); var second = Built(c, s, Haifa);
+        Assert.True(first < second);
+        Assert.Null(Cities.Assign(c, s, Haifa, Workshops.Role, 2, new List<Cause>()));
+        var p = Free(s, Haifa)[0];   // a fixture: a second record on the second workshop's (already bound) target
+        s.PopulationLedger.Commit(new[] { p.WithPlacement(p.Status, p.Location, new PopulationAssignment(PopulationAssignmentKind.Work, Target(second)), p.Captor, p.Home) }, Array.Empty<PopulationTarget>());
+        Assert.Equal((1, 2), (On(s, first).Count, On(s, second).Count));
+        var ledger = s.PopulationLedger.Canonical().ToList();
+        var shops = s.Workshops.Values.Select(w => w.Canonical()).ToList();
+        var money = (s.Treasury, s.Debt, s.Arms);
+        var why = new List<Cause>();
+
+        Assert.Contains("more than one worker record", Assert.Throws<InvalidOperationException>(() => Workshops.Produce(c, s, why)).Message);
+
+        Assert.Equal(money, (s.Treasury, s.Debt, s.Arms));
+        Assert.Equal(shops, s.Workshops.Values.Select(w => w.Canonical()).ToList());
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Empty(why);
+    }
+
     // R-POP-002: on a Historical ledger only the "workshop" role runs; "job" and "build" are still refused before any write.
     [Theory]
     [InlineData("job")] [InlineData(Projects.BuildRole)]

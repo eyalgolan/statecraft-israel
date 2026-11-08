@@ -261,6 +261,15 @@ namespace Statecraft.Sim
             var ceiling = c.RulesAt(s.Date).Mvp!.DebtCeiling!.Value;
             var held = Cities.Held(c, s);
             var working = new Dictionary<string, int>(StringComparer.Ordinal);
+            // #1725 PR 7 review S2: on a Historical ledger every workshop the loop reaches has its worker records checked
+            // first, in the loop's own order, so a corrupted ledger (more than one record on a target) throws before any write.
+            if (ledger)
+                foreach (var w in s.Workshops.Values)
+                {
+                    if (!w.Staffed) continue;
+                    var city = s.CityProjects[w.Project].City;
+                    if (!held.Contains(city)) LedgerWorker(s, w.Project, city);
+                }
             foreach (var w in s.Workshops.Values.ToList())
             {
                 if (!w.Staffed) continue;
