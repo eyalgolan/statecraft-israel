@@ -145,6 +145,10 @@ namespace Statecraft.Sim
         /// unassigned free-civilian records.</summary>
         internal const string LedgerRefusedFree = "{0} has {1} free civilians without an assignment";
 
+        /// <summary>Owner, 8 November 2026, "Refuse with a reason (Recommended)": a staffing order in a city with builders
+        /// (R-CITY-011), which are city counts and not records yet.</summary>
+        internal const string LedgerRefusedBuilders = "{0} has builders on city projects, who are not on the population ledger yet";
+
         /// <summary>Owner, 8 November 2026, Q1 "Work assignment (Rec.)": the Work target a workshop's worker record holds.</summary>
         internal static string WorkerTarget(int project) => "workshop/" + project.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
@@ -198,9 +202,8 @@ namespace Statecraft.Sim
             var built = BuiltIn(c, s, city);
             if (count > built.Count) return built.Count == 1 ? Refused(RefusedBuiltOne, name) : Refused(RefusedBuilt, name, built.Count);
             // R-CITY-011's builders are city counts (CityProject.Builder), not records, so which records they are is not known.
-            // No ledger game can start a project yet (Simulation.Step refuses it); refused before any write rather than guessed.
-            if (Projects.Builders(s, city) > 0)
-                throw new InvalidOperationException("No ruling yet for arms workshop workers beside a city's builders on the population ledger (#1725 PR 7).");
+            // Refused with a reason before any write rather than guessed (owner, 8 November 2026: "Refuse with a reason (Recommended)").
+            if (Projects.Builders(s, city) > 0) return Refused(LedgerRefusedBuilders, name);
             var on = new List<int>(); var off = new List<int>();
             for (int i = 0; i < built.Count; i++)
             {

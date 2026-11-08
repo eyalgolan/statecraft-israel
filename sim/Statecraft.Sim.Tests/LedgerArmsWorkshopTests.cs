@@ -196,6 +196,27 @@ public class LedgerArmsWorkshopTests
         s.PopulationLedger.Reconcile();
     }
 
+    // Owner, 8 November 2026: "Refuse with a reason (Recommended)". R-CITY-011's builders are city counts, not records, so a
+    // staffing order in a city with a builder is refused with a shown reason before any write; nothing throws, and the state,
+    // the ledger and the hash are unchanged.
+    [Fact]
+    public void ACityWithABuilderIsRefusedWithAReason()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        Built(c, s, Haifa);
+        var h = c.SettlementHexes.First(x => x.Id == Haifa);
+        var site = s.NextId++;
+        s.CityProjects.Add(site, new CityProject(site, "housing", Haifa, h.Q, h.R + 1, 2, builder: true));
+        Assert.Equal(1, Projects.Builders(s, Haifa));
+        var why = new List<Cause>();
+        var before = s.Describe(); var hash = s.Hash(); var ledger = s.PopulationLedger.Canonical().ToList();
+        Assert.Equal("Haifa has builders on city projects, who are not on the population ledger yet", Cities.Assign(c, s, Haifa, Workshops.Role, 1, why));
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Empty(why);
+        s.PopulationLedger.Reconcile();
+    }
+
     // R-ARMS-006 (27M-11: "At the monthly production step."; Q4 "Only craftsmen discount (Rec.)", owner, 8 November 2026): the
     // dark start's workshop, worked by a census record (profession None), pays IL 5m for its first cycle and counts the month.
     [Fact]
