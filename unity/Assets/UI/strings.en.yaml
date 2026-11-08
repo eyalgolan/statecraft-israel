@@ -881,6 +881,21 @@ city.project_builder: "This project: has a builder"
 city.project_no_builder: "This project: no builder, waiting"
 city.builders: "Projects with a builder: {0} of {1}"
 city.builders_ordered: "Projects with a builder at End turn: {0} of {1}"
+# #1722 (R-HOUSE-005), gdd-0.3 only: the city's housing readout, the sim's Cities.HousingOutlook on the state as it is
+# now: {0} the surcharge a turn (Money) or the condition after the overflow or Social cohesion's change a turn; {1} the
+# threshold the term starts below (a percent).
+city.housing_surcharge: "Housing surcharge now: {0} a turn (condition below {1})"
+city.housing_no_surcharge: "Housing surcharge now: none (condition {0} or more)"
+city.housing_falls: "Overflow now lowers the condition to {0}"
+city.housing_cohesion: "Social cohesion now: {0} a turn (condition below {1})"
+# #1722 (R-PROJ-001 to R-PROJ-003, R-CITY-011), gdd-0.3 only: the city's own list of its projects. {0} the kind, then for
+# one being built {1} its turns of work done, {2} the kind's turns, {3} the cost paid at its start, {4} city.list_builder or
+# city.list_no_builder; for a built one {1} the day it was finished, {2} the cost.
+city.list_header: "This city's projects: {0}"
+city.list_building: "{0}: work {1} of {2} · cost {3} · {4}"
+city.list_built: "{0}: finished on {1} · cost {2}"
+city.list_builder: "has a builder"
+city.list_no_builder: "no builder, waiting"
 builder.refused_being_built_one: "{0} has 1 city project being built"
 builder.refused_being_built: "{0} has {1} city projects being built"
 site.available: "A designated site for a new yishuv"
