@@ -148,6 +148,41 @@ public class LedgerHarvestTests
         Assert.Contains(again, x => x.Args.Single() == field && x.Delta == Expected(c, r, farmer));
     }
 
+    // The finding on #2972: at the dark start the Iraqi army (unit 11 today) already stands on field/11,12, a trained
+    // farmer's field. Under "Held unless enemy on it (Recommended)" that field yields nothing on turn 1 and its farmer
+    // keeps the record, so the turn's harvest is the other staffed fields only: 58 Food today, not the plan's 61.
+    [Fact]
+    public void TheDarkStartsEnemyHeldFieldYieldsNothingOnTurnOne()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var r = c.RulesAt(s.Date).Mvp!;
+        const string fieldId = "field/11,12";
+        var field = Field(c, fieldId);
+        // The unit is read from the state, not pinned by id.
+        var enemy = s.Units.Values.Where(u => u.Side != "" && u.Side != Movement.PlayerSide && u.Q == field.Q && u.R == field.R).ToList();
+        Assert.NotEmpty(enemy);
+        Assert.Contains(fieldId, EnemyHeld(c, s));
+        var all = Farmers(c, s, heldOnly: false);
+        Assert.True(all.TryGetValue(fieldId, out var farmer));
+        Assert.Equal(PopulationAssignmentKind.Work, farmer!.Assignment.Kind);
+        Assert.Equal(fieldId, farmer.Assignment.Target);
+        var others = Farmers(c, s);
+        Assert.DoesNotContain(fieldId, others.Keys);
+        Assert.Equal(all.Count - 1, others.Count);
+        var expected = others.Values.Sum(f => Expected(c, r, f));   // 58 today
+        var food = s.Food;
+        var why = new List<Cause>();
+
+        Pools.Harvest(c, s, r, Gdd03SyntheticMonthContext.CreateLive(c, s), why);
+
+        Assert.DoesNotContain(why, x => x.Key == CauseKeys.FieldFood && x.Args.Single() == fieldId);
+        Assert.Equal(others.Count, why.Count);
+        Assert.Equal(food + expected, s.Food);
+        Assert.Equal((double)expected, why.Sum(x => x.Delta));
+        Assert.Equal(farmer, s.PopulationLedger.Get(farmer.Id));
+    }
+
     // "Yes, recheck (Recommended)": the snapshot's farmer must still exist and still hold Work on that field when the
     // harvest runs. A farmer taken off after the snapshot, or lost, yields nothing for that field.
     [Theory]
