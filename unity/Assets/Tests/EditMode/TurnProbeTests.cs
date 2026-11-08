@@ -34,8 +34,12 @@ public class TurnProbeTests
     void Capture(string message, string stack, LogType type) { if (message.StartsWith(TurnProbe.Prefix, StringComparison.Ordinal)) logged.Add(message); }
     bool wasOn;
 
-    [SetUp] public void Listen() { wasOn = TurnProbe.On; logged.Clear(); Application.logMessageReceived += Capture; }
-    [TearDown] public void Stop() { Application.logMessageReceived -= Capture; TurnProbe.On = wasOn; }
+    // TurnProbe is static: each test starts and ends with no open turn, so one failed test (an assert between BeginTurn
+    // and EndTurn) cannot leave Active set and fail the next ones. Closing it through EndTurn with a no-op log logs nothing.
+    static void CloseOpenTurn() => TurnProbe.EndTurn(_ => { });
+
+    [SetUp] public void Listen() { wasOn = TurnProbe.On; CloseOpenTurn(); logged.Clear(); Application.logMessageReceived += Capture; }
+    [TearDown] public void Stop() { Application.logMessageReceived -= Capture; CloseOpenTurn(); TurnProbe.On = wasOn; }
 
     static Dictionary<string, string> Fields(string line) =>
         line.Split(' ').Skip(1).Select(f => f.Split('=')).ToDictionary(kv => kv[0], kv => kv[1]);
