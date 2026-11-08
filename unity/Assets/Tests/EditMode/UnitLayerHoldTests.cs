@@ -198,10 +198,15 @@ public class UnitLayerHoldTests
         layer.Show(C, state, slide: false);   // SimBridge.Replace: another game, the same sim ids
         Assert.IsFalse(MotionOf(unit.Id).Held);
         Assert.AreEqual(Vector3.zero, MotionOf(unit.Id).transform.position);
-        Move(unit);
+        // The unit goes back to where it started, a place the layer draws it apart from its moved one (the slide the tests
+        // above see). A second Move from the moved hex could be placed on the very spot it is drawn on (a moved anchor's spot
+        // is any clear one within a hex), and a token that has not moved does not slide.
+        var drawn = MotionOf(unit.Id).GroundHome;
+        state = NewGame();
         layer.Show(C, state);
+        Assert.AreNotEqual(drawn, MotionOf(unit.Id).GroundHome, "the unit is drawn somewhere else");
         Assert.IsFalse(MotionOf(unit.Id).Held, "nothing is left held for the new game");
-        Assert.IsTrue(MotionOf(unit.Id).Moving);
+        Assert.IsTrue(MotionOf(unit.Id).Moving, "so it slides there, as any unheld move");
     }
 
     [Test]
