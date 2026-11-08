@@ -74,7 +74,7 @@ public class PanelPreviewShots
 
     SimBridge Bridge => root.Bridge!;
     static Content C => MapFocusTests.Inputs.Content;
-    static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    static UiText Text(bool he) => UiText.Parse(UiPaths.StringsText(he));
 
     IEnumerator Frames(int n) { for (int i = 0; i < n; i++) yield return null; }
 

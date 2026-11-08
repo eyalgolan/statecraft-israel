@@ -57,7 +57,7 @@ public class UiFoundationTests
         for (int language = 0; language < expected.Length; language++)
         {
             var path = language == 0 ? UiPaths.Strings : UiPaths.StringsHebrew;
-            var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(path).text,
+            var text = UiText.Parse(System.IO.File.ReadAllText(path),
                 language == 0 ? "strings.en.yaml" : "strings.he.yaml");
             using var ui = new UiTestKit();
             for (int i = 0; i < ScreenNav.Screens.Length; i++)

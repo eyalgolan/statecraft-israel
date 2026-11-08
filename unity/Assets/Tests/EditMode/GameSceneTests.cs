@@ -779,7 +779,7 @@ public class GameSceneTests
     public void WebSavePersistenceFailuresUseTheCurrentLanguagesExistingToast(bool hebrew)
     {
         var language = hebrew ? UiLanguage.Hebrew : UiLanguage.English;
-        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text,
+        var text = UiText.Parse(UiPaths.StringsText(hebrew),
             hebrew ? "strings.he.yaml" : "strings.en.yaml");
         var root = Boot(language: language);
 

@@ -255,3 +255,16 @@ def test_exact_licensing_code_row_is_unchanged():
     text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
     code = [line for line in text.splitlines(keepends=True) if line.startswith("| Code |")]
     assert code == ['| Code | `sim/`, `tools/` (Python), `scripts/`, `.github/`, `.gitignore`, `unity/Assets/Scripts/`, `unity/Assets/Editor/`, `unity/Assets/Tests/`, `promo/*.py`, `spikes/` code, and everything else under `unity/Assets/` not listed below (scenes such as `Map.unity`, `WebGLTemplates/`, `link.xml`, `*.inputactions`, `.meta` files) | [PolyForm Noncommercial 1.0.0](LICENSE). Code released up to and including v0.2.1 stays MIT; see below |\n']
+
+
+def test_the_hebrew_translations_keep_each_files_licence():
+    """Owner, 4 November 2026 (#1618): "Keep each file's licence". The Hebrew UI keeps the code licence it had as
+    strings.he.yaml; the content's Hebrew keeps content/'s CC BY-SA 4.0. The translations/ row still covers only the other
+    languages."""
+    text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    row = next(l for l in text.splitlines() if l.startswith("| Hebrew translations |"))
+    ui, content = row.split("events.yaml and content.yaml")
+    assert "`translations/he/ui.yaml`" in ui and "PolyForm Noncommercial 1.0.0" in ui and "CC BY-SA" not in ui.split("|")[-1]
+    assert "CC BY-SA 4.0" in content and "Statecraft: Israel contributors" in content
+    other = next(l for l in text.splitlines() if l.startswith("| Translations |"))
+    assert "other than English and Hebrew" in other

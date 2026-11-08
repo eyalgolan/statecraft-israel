@@ -282,7 +282,7 @@ public class InfoPanelLayoutTests
     public IEnumerator ACityHexWithARepairBeingBuiltFitsEveryWindow_RCity011([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var c = WorkshopPanelTests.Load03();
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var city = c.SettlementHexes.Single(s => s.Id == "haifa");
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
@@ -618,7 +618,7 @@ public class InfoPanelLayoutTests
         var names = Names();
         var namesHe = SettlementPlacer.Parse(MapFile(SettlementPlacer.DefaultFileName)).ToDictionary(t => t.Id, t => t.NameHe);
         var acre = C.SettlementHexes.Single(s => s.Id == "acre");
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var states = new[]
         {
             new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, new System.DateTime(1948, 5, 20)),

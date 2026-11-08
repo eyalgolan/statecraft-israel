@@ -50,7 +50,7 @@ public class AdvisorMediaTests
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text +
         "\nadvisor.t.teach.text: \"Teach.\"\nadvisor.t.warn.text: \"Warn.\"\nadvisor.t.crit.text: \"Critical.\"\nadvisor.x.cue.1: \"First.\"\nadvisor.x.cue.2: \"Second.\"\nlab: \"Label.\"\n" +
         "advisor.t.teach.cue.1: \"Teach one.\"\nadvisor.t.teach.cue.2: \"Teach two.\"\n");
-    static UiText HebrewText => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text +
+    static UiText HebrewText => UiText.Parse(UiPaths.HebrewText() +
         "\nadvisor.t.teach.text: \"לימוד.\"\nadvisor.t.warn.text: \"אזהרה.\"\nadvisor.t.crit.text: \"קריטי.\"\nadvisor.x.cue.1: \"ראשון.\"\nadvisor.x.cue.2: \"שני.\"\nlab: \"תווית.\"\n" +
         "advisor.t.teach.cue.1: \"לימוד ראשון.\"\nadvisor.t.teach.cue.2: \"לימוד שני.\"\n", "strings.he.yaml");
 
