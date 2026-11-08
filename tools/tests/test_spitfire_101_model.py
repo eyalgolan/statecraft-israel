@@ -53,7 +53,8 @@ def test_the_fbx_is_in_the_frame_the_streamed_swap_expects():
 
 def test_the_dimensions_follow_the_cited_figures():
     mod = tool()
-    assert abs(mod.SPAN - 10.16) < 1e-9 and mod.LENGTH == 9.47 and mod.DIHEDRAL == 6.0
+    # Owner, 8 November 2026: "9.9 m (Recommended)", the clipped LF Mk IXe's 32 ft 6 in (en.wiki variants page).
+    assert abs(mod.SPAN - 9.9) < 1e-9 and mod.LENGTH == 9.47 and mod.DIHEDRAL == 6.0
     # The clipped elliptical planform's area against the LF Mk IXe's 21.46 m2 (en.wiki variants page).
     n = 4000
     area = 2 * sum(mod.wing_chord((i + 0.5) * mod.SEMI / n) * mod.SEMI / n for i in range(n))
@@ -116,3 +117,40 @@ def test_the_unity_files_point_at_each_other_with_unique_guids():
     for g in (fbx_g, png_g, mat_g):
         hits = subprocess.run(["git", "grep", "-l", "-e", f"^guid: {g}$", "--", "*.meta"], cwd=ROOT, capture_output=True, text=True).stdout.split()
         assert len(hits) <= 1, f"{g} is the guid of more than one asset: {hits}"
+
+
+def test_the_rear_fuselage_band_is_white_blue_white_ahead_of_the_fin():
+    """Owner, 8 November 2026: "Add the band"; Efrati p. 4: the 31 May 1948 order, "An additional white-blue-white
+    recognition band was to be applied ahead of the vertical fin". Its width and place are DESIGN VALUES."""
+    mod = tool()
+    P = mod.PARTS.index
+    zc, w = mod.BAND_Z, mod.BAND_STRIPE
+    fin_le = mod.FIN_ZREF + 0.45 * mod.FIN_C0           # the fin's root leading edge
+    roundel_back = mod.FUS_ROUNDEL[0] - mod.FUS_ROUNDEL[2]
+    assert roundel_back > zc + 1.5 * w and zc - 1.5 * w > fin_le, "between the fuselage roundel and the fin"
+    hw, ym, top, bot = mod.fuselage_at(zc)
+    rings = [((hw, ym, None), (1, 0, 0)), ((-hw, ym, None), (-1, 0, 0)), ((0.0, top, None), (0, 1, 0)), ((0.0, bot, None), (0, -1, 0))]
+    for dz, colour in ((0.0, "RoundelBlue"), (w, "RoundelWhite"), (-w, "RoundelWhite")):
+        pos = np.array([(x, y, zc + dz) for (x, y, _), _n in rings])
+        nrm = np.array([n for _p, n in rings], float)
+        out = mod.paint(pos, nrm, np.full(len(pos), P("fuselage")), 0.01)
+        for got in out:
+            assert np.abs(got - np.array(mod.COL[colour])).max() < 0.05, f"{dz:+.2f} m: {got} is not {colour}"
+    # Clear of the band, fore and aft, the fuselage keeps its paint.
+    for dz in (2.5 * w, -2.5 * w):
+        got = mod.paint(np.array([(hw, ym, zc + dz)]), np.array([(1.0, 0, 0)]), np.array([P("fuselage")]), 0.01)[0]
+        assert min(np.abs(got - np.array(mod.COL[k])).max() for k in ("CamoGreen", "CamoGrey", "Underside")) < 0.06, got
+
+
+def test_no_fuselage_number():
+    """Owner, 8 November 2026: "No number (Recommended)": the fuselage sides carry the roundel and the band only."""
+    mod = tool()
+    assert mod.FUSELAGE_NUMBER is None
+    P = mod.PARTS.index
+    zc, yc, r = mod.FUS_ROUNDEL
+    # Where Efrati p. 12's Spitfire 14 wears its number, just behind the roundel: camouflage on both sides.
+    for side in (1, -1):
+        z = zc - r - 0.25
+        hw, ym, _, _ = mod.fuselage_at(z)
+        got = mod.paint(np.array([(side * hw, 0.10, z)]), np.array([(side * 1.0, 0, 0)]), np.array([P("fuselage")]), 0.01)[0]
+        assert min(np.abs(got - np.array(mod.COL[k])).max() for k in ("CamoGreen", "CamoGrey")) < 0.06, got

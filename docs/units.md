@@ -57,6 +57,27 @@ parked; the S-199 stays code-built):
 - in edit mode nothing is asked for unless `StreamedAircraft.Source` is set: `MapCapture.Promo` and `MapCapture.Aircraft`
   answer from the AssetDatabase at once.
 
+The Blender-built model follows the owner's rulings of 8 November 2026 on #2734 (the option labels are verbatim):
+- **Span: "9.9 m (Recommended)".** The clipped LF Mk IXe's 32 ft 6 in (9.9 m), from en.wikipedia "Supermarine Spitfire
+  variants: specifications, performance and armament"; the clipped wing itself is Efrati p. 14. The elliptical planform
+  is still the full wing's (11.23 m, en.wikipedia "Supermarine Spitfire"), clipped at 9.9 m. Before the ruling the model
+  spanned 10.16 m (11.23 m less the 3 ft 6 in clip). `CollectionImportTests.TheIsraeliSpitfirePrefabIsItsRealSizeWingsAlongXNoseAlongZ`
+  checks 9.9 m, plus or minus 5 percent.
+- **Rear-fuselage band: "Add the band".** White, blue, white, round the fuselage ahead of the fin. Source: Efrati p. 4,
+  the IAF command's order of 31 May 1948: "An additional white-blue-white recognition band was to be applied ahead of the
+  vertical fin". The same page adds that "Airplanes delivered from abroad were rushed into service in their original
+  colors", and the Spitfire captions on pp. 12 and 14 name no band; it is drawn by the owner's ruling. No source gives its
+  width or place, so both are a DESIGN VALUE in `tools/spitfire_101_model.py` (`BAND_Z`, centred 3.75 m behind the centre
+  of gravity; `BAND_STRIPE`, 0.10 m a stripe).
+- **101 Squadron insignia: "Paint it, left side".** Not painted yet. Efrati p. 12 gives the place: from the early October
+  1948 cease-fire the squadron added "their famous flying 'angel of death' insignia to the left side of their airplanes",
+  and the caption of Spitfire 17 on the same page puts it on "the engine cowling". But p. 12 shows no insignia that can be
+  read: Spitfire 17 has none, and in the photograph of Spitfire 14 the cowling is not legible. Its shape is shown only on
+  p. 11, on an S-199 (a red, white and black "angel of death" sticker, a winged skull wearing a flying cap, on the left
+  nose section), so it waits for a ruling on that source. It is never drawn from a guess.
+- **Fuselage number: "No number (Recommended)".** A stated choice: the model carries no fuselage number.
+- The rudder stripe angle, the wing-star orientation and the camouflage were not asked about and are unchanged.
+
 ## What is in the slice
 
 | Piece | Model | Where (PromoPose.Gameplay03) |
@@ -790,6 +811,9 @@ Aircraft:
   Israeli Air Force Service 1948–1956* has still not been checked.
 - Yoav Efrati, *Colors & Markings of the Israeli Air Force* (IAF, 2005), http://files.iaflibrary.org.il/DigitalLibrary/English/ColorsMarkings.pdf: the IAF's own library publishes this reference, which these marking corrections rest on (pages are the
   book's own numbers).
+  Read again on 8 November 2026 for the Blender-built Spitfire (book page N is PDF page N + 1): p. 4, the order of 31 May
+  1948 (the white-blue-white band ahead of the fin); p. 11, the squadron insignia's origin and shape on an S-199; p. 12,
+  its place on the Spitfires, the left side.
 
 Navy:
 - INS Haganah (K-20), ex-HMCS Norsyd, a modified Flower-class corvette, 208 ft (63.4 m) overall, with an upright

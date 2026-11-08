@@ -32,15 +32,22 @@ provenance.json. --verify re-hashes the files against provenance.json.
 
 Sources (each number below carries its own tag):
   [V]  en.wikipedia "Supermarine Spitfire variants: specifications, performance and armament", LF Mk IXe entry, read
-       5 November 2026: length 31 ft 1 in (9.47 m), wing area 231 sq ft (21.46 m2) (its span, 32 ft 6 in (9.9 m), is the
-       page's general clipped figure, "this could vary slightly").
+       5 November 2026: length 31 ft 1 in (9.47 m), wing area 231 sq ft (21.46 m2), span 32 ft 6 in (9.9 m) (the
+       page's general clipped figure, "this could vary slightly"; the span the owner chose, below).
   [S]  en.wikipedia "Supermarine Spitfire", read 5 November 2026: span 36 ft 10 in (11.23 m) (also SeaAirCollection's
        cite); clipped tips "reduced the span by 3 ft 6 in (1.07 m)"; "A dihedral of 6° was adopted"; root NACA 2213,
        tip NACA 2209.4; incidence "+2° at its root to -½° at its tip"; a semi-elliptical wing.
   [E]  Yoav Efrati, Colors & Markings of the Israeli Air Force (IAF, 2005), as UnitModels.Spitfire and docs/units.md cite
        it: clipped wing on every 1948 Spitfire (p. 14); Ocean Grey and Dark Green over Medium Sea Grey (p. 14); red
        spinner and DIAGONAL red and white rudder stripes from early October 1948 (p. 12); filled Star of David roundels,
-       no ring, on the fuselage sides and both wing surfaces (pp. 6, 14).
+       no ring, on the fuselage sides and both wing surfaces (pp. 6, 14); the IAF command's order of 31 May 1948: "An
+       additional white-blue-white recognition band was to be applied ahead of the vertical fin" (p. 4), read 8 November
+       2026 in the IAF library's copy, http://files.iaflibrary.org.il/DigitalLibrary/English/ColorsMarkings.pdf (book
+       page N is PDF page N + 1).
+  [O]  The owner's rulings of 8 November 2026 on #2734 (option labels verbatim): span "9.9 m (Recommended)"; rear-fuselage
+       band "Add the band"; 101 Sqn insignia "Paint it, left side" (NOT painted yet: Efrati p. 12 gives its place, the
+       left side, but no shape the model can be painted from; see docs/units.md); fuselage number "No number
+       (Recommended)".
   [U]  docs/units.md: a four-blade propeller (the IAF Museum Mk IX at Hatzerim, Commons, CC BY 2.5).
   [P]  unity/Assets/Scripts/Map/Units/UnitPalette.cs: the colours (the same sRGB values the code-built model paints).
   DESIGN VALUE marks every number no source above gives (sections, positions, roundel sizes, stripe width ...).
@@ -72,8 +79,9 @@ FIXED_TIME = (2026, 11, 5)                                # the FBX header's cre
 # ---- dimensions ----
 LENGTH = 9.47                     # [V] spinner tip to rudder trailing edge
 SPAN_FULL = 11.23                 # [S] the standard (unclipped) wing
-CLIP = 1.07                       # [S] clipped tips cut 3 ft 6 in
-SPAN = SPAN_FULL - CLIP           # 10.16 m, the clipped span (UnitModels: "about 10.2 m")
+SPAN = 9.90                       # [V] [O] the clipped LF Mk IXe's 32 ft 6 in; owner, 8 November 2026: "9.9 m (Recommended)"
+                                  # (the ellipse stays the full wing's, [S], clipped at this span; [S]'s 3 ft 6 in clip
+                                  # from 11.23 m would give 10.16 m, the span before the ruling)
 B0 = SPAN_FULL / 2                # the ellipse's semi-span
 SEMI = SPAN / 2                   # the clipped semi-span
 WING_AREA_FULL = 22.49            # [S] Mk Vb (standard wing) 242.1 sq ft
@@ -118,6 +126,12 @@ WING_ROUNDEL_X, WING_ROUNDEL_R = 3.25, 0.50
 STAR_SHARE = 0.74                           # UnitModels.RoundelStarShare (FOTW / Efrati pp. 11-14)
 RUDDER_HINGE_Z = -5.18
 STRIPE_PERIOD = 0.30
+# The rear-fuselage recognition band, white-blue-white, round the fuselage ahead of the fin ([E] p. 4; owner, 8 November
+# 2026: "Add the band"). DESIGN VALUE: its place (centre z) and each stripe's width; no source gives them.
+BAND_Z = -3.75
+BAND_STRIPE = 0.10
+# Owner, 8 November 2026: "No number (Recommended)". A stated choice: no fuselage number is painted.
+FUSELAGE_NUMBER = None
 
 # Colours: UnitPalette.Base, sRGB [P].
 COL = {
@@ -507,6 +521,11 @@ def paint(pos, nrm, part, texel_m):
     red = (np.mod(d / STRIPE_PERIOD, 1.0) < 0.5)
     out[rud & red] = c("MarkingRed")
     out[rud & ~red] = c("RoundelWhite")
+
+    # The recognition band round the rear fuselage ([E] p. 4, [O]; place and width DESIGN VALUES): white, blue, white.
+    band = P["fuselage"] & (np.abs(z - BAND_Z) < 1.5 * BAND_STRIPE)
+    out[band] = c("RoundelWhite")
+    out[band & (np.abs(z - BAND_Z) < 0.5 * BAND_STRIPE)] = c("RoundelBlue")
 
     # Roundels: white disc, filled blue star, no ring ([E] pp. 6, 14). Fuselage sides: a point straight up.
     def roundel(mask, u, v, radius):
@@ -935,14 +954,22 @@ def write_provenance(repo: Path, inspected: dict) -> None:
         "build": "uv run --no-project --python 3.13 --with bpy==5.2.2 python -I tools/spitfire_101_model.py --build",
         "sources": {
             "length_9.47_m": "en.wikipedia 'Supermarine Spitfire variants: specifications, performance and armament', LF Mk IXe, read 2026-11-05",
-            "span_11.23_m_minus_clip_1.07_m": "en.wikipedia 'Supermarine Spitfire', read 2026-11-05 (span, clipped tips, dihedral 6 deg, NACA 2213/2209.4, incidence +2/-0.5 deg)",
+            "planform_11.23_m_ellipse": "en.wikipedia 'Supermarine Spitfire', read 2026-11-05 (the full wing's span, the ellipse clipped at 9.9 m; dihedral 6 deg, NACA 2213/2209.4, incidence +2/-0.5 deg)",
             "markings": "Yoav Efrati, Colors & Markings of the Israeli Air Force (IAF, 2005) pp. 6, 12, 14, as cited in UnitModels.Spitfire and docs/units.md",
+            "band_white_blue_white_ahead_of_fin": "Efrati p. 4 (the IAF command's order of 31 May 1948), read 2026-11-08 at http://files.iaflibrary.org.il/DigitalLibrary/English/ColorsMarkings.pdf (PDF page 5)",
+            "span_9.9_m": "en.wikipedia 'Supermarine Spitfire variants: specifications, performance and armament', clipped LF Mk IXe 32 ft 6 in (9.9 m), read 2026-11-05",
             "colours": "UnitPalette.Base (sRGB), the code-built model's",
             "four_blades": "docs/units.md (IAF Museum Mk IX, Hatzerim, Commons CC BY 2.5)",
         },
+        "owner_rulings_2026_11_08": {
+            "span": "9.9 m (Recommended)",
+            "rear_fuselage_band": "Add the band",
+            "101_sqn_insignia": "Paint it, left side (not painted yet: Efrati p. 12 gives the place, the left side, but no paintable shape; see docs/units.md)",
+            "fuselage_number": "No number (Recommended)",
+        },
         "design_values": "fuselage sections, canopy, radiators, intake, exhausts, tailplane and fin sizes, hub position, "
                          "propeller diameter and blade shape, roundel sizes and places, wing-roundel star orientation, "
-                         "rudder stripe angle and width, camouflage pattern, demarcation line, panel lines",
+                         "rudder stripe angle and width, the rear-fuselage band's place and stripe width, camouflage pattern, demarcation line, panel lines",
         "files": meta_record(repo),
         "triangles": inspected["triangles"], "triangles_by_object": inspected["triangles_by_object"],
         "span_m": inspected["span_m"], "length_m": inspected["length_m"], "hub_game_m": inspected["hub_game_m"],

@@ -497,15 +497,16 @@ public class CollectionImportTests
 
     /// <summary>#2734 review: the real imported prefab is the aircraft's real size in metres, so a later import change (file
     /// scale, global scale, a unit mix-up) cannot ship a 100x or 0.01x Spitfire. The PR body ("Against the coordinator's
-    /// requirements", 2. Size and frame) gives "real metres, span 10.16 m, length 9.47 m (spinner tip to rudder trailing
-    /// edge)" and "Nose +Z, Y up, wings along X". Its Sources give the length from en.wikipedia "Supermarine Spitfire variants:
-    /// specifications, performance and armament" (LF Mk IXe, 9.47 m) and the span from en.wikipedia "Supermarine Spitfire"
-    /// (11.23 m less the 1.07 m clip). The span is an open owner question (10.16 m or the variants page's 9.9 m); plus or minus
-    /// 5 percent of 10.16 m holds either. Both a lower and an upper bound, so a 100x or 0.01x import fails.</summary>
+    /// requirements", 2. Size and frame) gives "real metres", the length 9.47 m (spinner tip to rudder trailing edge) and "Nose
+    /// +Z, Y up, wings along X". The length and the span are en.wikipedia "Supermarine Spitfire variants: specifications,
+    /// performance and armament" (LF Mk IXe, 9.47 m; the clipped wing's 32 ft 6 in, 9.9 m). The span is the owner's ruling
+    /// of 8 November 2026: "9.9 m (Recommended)" (before it the model spanned 10.16 m, 11.23 m less the 1.07 m clip). Plus or
+    /// minus 5 percent is for import-scale faults, not the span's last centimetre (tools/tests/test_spitfire_101_model.py pins
+    /// the FBX's span to 1 cm). Both a lower and an upper bound, so a 100x or 0.01x import fails.</summary>
     [Test]
     public void TheIsraeliSpitfirePrefabIsItsRealSizeWingsAlongXNoseAlongZ()
     {
-        const float span = 10.16f, length = 9.47f, tolerance = 0.05f;   // metres; plus or minus 5 percent
+        const float span = 9.9f, length = 9.47f, tolerance = 0.05f;   // metres; plus or minus 5 percent
         var path = CollectionCatalog.PrefabPath(CollectionCatalog.IsraeliSpitfire, CollectionDetail.Far);
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
         Assert.IsNotNull(prefab, path + " (made by CollectionImport.MakeAuthoredUnitPrefabs)");
