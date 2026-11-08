@@ -1244,6 +1244,9 @@ why.cause.advisory_budget_rejected: "{0} voted against the budget, but its vote 
 why.cause.budget_rejected: "{0} voted the budget down"
 why.cause.place_captured: "{0} is captured: Israeli units hold it and no enemy unit is there. {1}It awaits a decision"
 why.cause.enemy_regained: "{0} is under enemy control again: enemy units hold it and no Israeli unit is there{1}"
+# R-CTRL-006 (#1305): enemy units took a player's locality; Israeli units took it back.
+why.cause.place_lost: "{0} is lost: enemy units hold it and no Israeli unit is there"
+why.cause.place_retaken: "{0} is retaken: Israeli units hold it again and no enemy unit is there"
 why.cause.place_annexed: "{0} is annexed. {1}"
 why.cause.place_withdrawn: "{0}{1} {2}"
 why.cause.place_deported: "{0}: Deport. Its residents are displaced and the place is depopulated"

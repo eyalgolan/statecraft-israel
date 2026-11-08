@@ -47,7 +47,8 @@ namespace Statecraft.Sim
         }
 
         /// <summary>Resolver step 3, after enemy combat: perform any remaining player capture, stamp its date, then return
-        /// an awaiting-choice target held by enemy military units alone to enemy control. No resident field or RNG changes.</summary>
+        /// an awaiting-choice target held by enemy military units alone to enemy control, then take or give back the player's
+        /// localities (R-CTRL-006). No resident field or RNG changes.</summary>
         public static void Capture(Content c, GameState s, DateTime next, List<Cause> why)
         {
             CaptureHeld(c, s, why);
@@ -60,7 +61,37 @@ namespace Statecraft.Sim
                 why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is under enemy control again: enemy units hold it and no Israeli unit is there"
                     + (record.Fled ? ". " + FledLine : ""), key: CauseKeys.EnemyRegained, args: new[] { record.Fled ? "1" : "0" }));
             }
+            // R-CTRL-006 (Q-TGT-2 (c); #796 default 3): enemy military units alone on a player's locality take it, with no
+            // choice, as an ownerless record dated the turn's end (the lost marker); Israeli military units alone on it again
+            // give it back by removing that record. In ordinal id; a record of any other shape is left alone.
+            foreach (var h in PlayerLocalities(c, s).OrderBy(x => x.Id, StringComparer.Ordinal))
+            {
+                var holder = Holder(s, h.Q, h.R);
+                var has = s.Settlements.TryGetValue(h.Id, out var x);
+                if (holder == Enemy && !has)
+                {
+                    s.Settlements[h.Id] = new SettlementControl(since: next);
+                    why.Add(new Cause("map", h.Id, 0, $"{c.SettlementNames[h.Id]} is lost: enemy units hold it and no Israeli unit is there", key: CauseKeys.PlaceLost));
+                }
+                else if (holder == Movement.PlayerSide && has && IsLost(x))
+                {
+                    s.Settlements.Remove(h.Id);
+                    why.Add(new Cause("map", h.Id, 0, $"{c.SettlementNames[h.Id]} is retaken: Israeli units hold it again and no enemy unit is there", key: CauseKeys.PlaceRetaken));
+                }
+            }
         }
+
+        /// <summary>R-CTRL-006 (#796 default 3, owner, 21 October 2026): the player's localities, every map/settlements_1948.yaml
+        /// row that is not an arab_town and not on mvp.enemy_held_localities, in file order. An annexed target is an arab_town,
+        /// so it is not one of them.</summary>
+        internal static IEnumerable<SettlementHex> PlayerLocalities(Content c, GameState s)
+        {
+            var enemyHeld = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities;
+            return c.SettlementHexes.Where(h => !c.ArabTowns.Contains(h.Id) && !enemyHeld.Contains(h.Id));
+        }
+
+        /// <summary>R-CTRL-006: the lost marker of a player's locality, an ownerless, inhabited record with no state.</summary>
+        static bool IsLost(SettlementControl x) => x.Owner == "" && x.State == "" && !x.Depopulated;
 
         /// <summary>The kind of <see cref="ResolveCapture"/>: one attention_cost key for every outcome, so none is cheaper (Q-TECH-3).</summary>
         public const string ResolveKind = "resolve_capture";

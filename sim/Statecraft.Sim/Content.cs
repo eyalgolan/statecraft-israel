@@ -1509,6 +1509,9 @@ namespace Statecraft.Sim
         public List<SettlementTarget> SettlementTargets = new List<SettlementTarget>();
         /// <summary>The display name of each settlement id (map/settlements_1948.yaml name), for text the player reads.</summary>
         public Dictionary<string, string> SettlementNames = new Dictionary<string, string>();
+        /// <summary>The ids of the arab_town rows of map/settlements_1948.yaml. Every other row that is not enemy-held is a
+        /// player's locality (R-CTRL-006; #796 default 3).</summary>
+        public HashSet<string> ArabTowns = new HashSet<string>(StringComparer.Ordinal);
         /// <summary>The GDD cities' start values (cities.yaml), in file order. Empty in the legacy loop.</summary>
         public List<CityStart> Cities = new List<CityStart>();
         /// <summary>The GDD population and unit types (unit_types.yaml). Empty in the legacy loop.</summary>

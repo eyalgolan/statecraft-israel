@@ -1487,6 +1487,9 @@ why.cause.advisory_budget_rejected: "הצבעת {0} נגד התקציב, אך ה
 why.cause.budget_rejected: "דחיית התקציב בהצבעת {0}"
 why.cause.place_captured: "{0}: המקום נכבש ומוחזק בידי יחידות ישראליות ללא יחידת אויב. {1}המקום ממתין להחלטה"
 why.cause.enemy_regained: "{0}: המקום שוב בשליטת האויב ומוחזק בידי יחידות אויב ללא יחידה ישראלית{1}"
+# For the native reviewer (#564): agent-drafted, #1305 (R-CTRL-006), in the words of place_captured and enemy_regained.
+why.cause.place_lost: "{0}: המקום אבד ומוחזק בידי יחידות אויב ללא יחידה ישראלית"
+why.cause.place_retaken: "{0}: המקום נכבש מחדש ומוחזק שוב בידי יחידות ישראליות ללא יחידת אויב"
 why.cause.place_annexed: "{0}: המקום סופח. {1}"
 why.cause.place_withdrawn: "{0}{1} {2}"
 why.cause.place_deported: "{0}: גירוש. התושבים נעקרו והמקום התרוקן מתושביו"

@@ -58,7 +58,8 @@ public class EnemyAITests
     }
 
     // R-ENEMY-001: an enemy order goes through the player's validation, with the sides swapped, and a refused one leaves the
-    // state as it was. The locality rule is R-MOVE-005's mirror: no enemy unit enters a locality off enemy_held_localities.
+    // state as it was. The locality rule, R-MOVE-005's mirror less the player's localities an enemy move may now take
+    // (R-CTRL-006), is in CaptureTests.AnEnemyUnitMayMoveOntoAPlayersLocality: this fixture's one place, town_a, is a player's.
     [Fact]
     public void AnInvalidEnemyOrderIsRefusedLikeThePlayers()
     {
@@ -69,7 +70,6 @@ public class EnemyAITests
         var why = new List<Cause>();
         Assert.Equal("That unit is not yours", Movement.Move(c, s, 1, 4, 0, spent, why, enemy: true));
         Assert.Equal("An enemy unit holds that hex", Movement.Move(c, s, 2, 3, 0, spent, why, enemy: true));
-        Assert.Equal("Units may not enter an enemy-held locality before its capture is possible", Movement.Move(c, s, 2, 1, 0, spent, why, enemy: true));
         Assert.Equal("Units cannot enter water or leave the map", Movement.Move(c, s, 2, 2, -1, spent, why, enemy: true));
         Assert.Equal("That hex already holds 2 units of that side, the most one hex can hold", Movement.Move(c, s, 5, 2, 2, spent, why, enemy: true));
         Assert.Equal("That unit is not yours", Combat.Give(c, s, 1, 2, 0, why, enemy: true));

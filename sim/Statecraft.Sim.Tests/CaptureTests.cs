@@ -354,4 +354,194 @@ public class CaptureTests
         Assert.Empty(ended.Rejected);
         Assert.Equal(ended.State.Date, ended.State.Settlements["town_a"].Since);
     }
+
+    // R-CTRL-006 fixture: town_b, a kibbutz on (3, 1), appended after town_h so file order differs from ordinal id order.
+    // Fixture values, not history.
+    static Content LoadWithKibbutz() => Load(f =>
+    {
+        f["map/settlement_hexes.yaml"] += "  - { id: town_b, q: 3, r: 1 }\n";
+        f["map/settlements_1948.yaml"] += "  - { id: town_b, name: Town B, lon: 34.29, lat: 33.25, type: kibbutz, founded: 1930, pre_modern: false }\n";
+    }, AllTargets);
+
+    static void AssertLost(GameState s, string id, DateTime since)
+    {
+        var x = s.Settlements[id];
+        Assert.Equal(("", "", since, false, false, 0, "", 0), (x.Owner, x.State, x.Since, x.Depopulated, x.Fled, x.Combatants, x.Buildings, x.Turns));
+    }
+
+    // R-CTRL-006 (Q-TGT-2 (c), owner, 18 October 2026, #783; #796 default 3, owner, 21 October 2026): an enemy military unit
+    // alone on a player's locality (town_h, a town that is not an arab_town and not enemy-held) changes its state with no
+    // player choice: an ownerless record dated the turn's end, the same lost marker as R-CTRL-002, and one Why line.
+    [Fact]
+    public void AnEnemyUnitAloneOnAPlayersLocalityTakesIt()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Enemy(1, 0, 2));
+        var next = s.Date.AddDays(7);
+        var why = Capture(c, s);
+        AssertLost(s, "town_h", next);
+        Assert.Single(s.Settlements);
+        var line = Assert.Single(why);
+        Assert.Equal(("town_h", "place_lost"), (line.Target, line.Key));
+        Assert.Equal("Town H is lost: enemy units hold it and no Israeli unit is there", line.Message);
+    }
+
+    // R-CTRL-006: an Israeli military unit on the hex keeps it (no loss), and so does nobody on it; a halutz is no
+    // combatant (R-UNIT-001; #796 default 1), so it does not keep it.
+    [Fact]
+    public void OnlyEnemyUnitsAloneTakeAPlayersLocality()
+    {
+        var c = Load(AllTargets);
+        var both = With(c, Enemy(1, 0, 2), Soldier(2, 0, 2));
+        Assert.Empty(Capture(c, both));
+        Assert.Empty(both.Settlements);
+        var none = With(c);
+        Assert.Empty(Capture(c, none));
+        Assert.Empty(none.Settlements);
+        var halutz = With(c, Enemy(1, 0, 2), new Unit(2, "halutz", 0, 2));
+        Capture(c, halutz);
+        AssertLost(halutz, "town_h", halutz.Date.AddDays(7));
+    }
+
+    // R-CTRL-006 (#796 default 3): an arab_town is no player's locality, whether a target that is not enemy-held (town_d,
+    // Jaffa's case) or an enemy-held place (town_e), so an enemy unit on it records nothing.
+    [Fact]
+    public void AnArabTownIsNoPlayersLocality()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Enemy(1, 1, 2), Enemy(2, 4, 2));
+        Assert.Empty(Capture(c, s));
+        Assert.Empty(s.Settlements);
+    }
+
+    // R-CTRL-006 (#796 default 3: "Israeli units holding it again change it back"): Israeli military units alone on a lost
+    // locality remove its record, so it is the player's again as at the start, with one Why line. A lost locality nobody
+    // holds stays lost, and so does one both sides are on.
+    [Fact]
+    public void IsraeliUnitsRetakingAPlayersLocalityChangeItBack()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Enemy(1, 0, 2));
+        Capture(c, s);
+        var lost = s.Settlements["town_h"].Since;
+        s.Units.Clear();
+        Assert.Empty(Capture(c, s));
+        AssertLost(s, "town_h", lost);
+        s.Units[1] = Enemy(1, 0, 2);
+        s.Units[2] = Soldier(2, 0, 2);
+        Assert.Empty(Capture(c, s));
+        AssertLost(s, "town_h", lost);
+        s.Units.Remove(1);
+        var why = Capture(c, s);
+        Assert.Empty(s.Settlements);
+        var line = Assert.Single(why);
+        Assert.Equal(("town_h", "place_retaken"), (line.Target, line.Key));
+        Assert.Equal("Town H is retaken: Israeli units hold it again and no enemy unit is there", line.Message);
+    }
+
+    // R-CTRL-006, determinism: losses resolve in ordinal settlement id, not file order (town_b is after town_h in the
+    // files) nor unit order, and the state is the same either way.
+    [Fact]
+    public void PlayersLocalitiesResolveInOrdinalOrder()
+    {
+        var c = LoadWithKibbutz();
+        var s1 = With(c, Enemy(1, 0, 2), Enemy(2, 3, 1));
+        var s2 = With(c, Enemy(2, 3, 1), Enemy(1, 0, 2));
+        var why1 = Capture(c, s1);
+        var why2 = Capture(c, s2);
+        Assert.Equal(new[] { "town_b", "town_h" }, why1.Select(x => x.Target).ToArray());
+        Assert.Equal(why1.Select(x => x.Message), why2.Select(x => x.Message));
+        Assert.Equal(s1.Describe(), s2.Describe());
+    }
+
+    // R-CTRL-006, determinism: neither a loss nor a retake draws from the RNG.
+    [Fact]
+    public void ALossAndARetakeDrawNothing()
+    {
+        var c = LoadWithKibbutz();
+        var s = With(c, Enemy(1, 0, 2), Enemy(2, 3, 1));
+        var rng = s.RngState;
+        Capture(c, s);
+        Assert.Equal(2, s.Settlements.Count);
+        s.Units.Clear();
+        s.Units[3] = Soldier(3, 3, 1);
+        Capture(c, s);
+        Assert.Single(s.Settlements);
+        Assert.Equal(rng, s.RngState);
+    }
+
+    // R-CTRL-006 and R-CTRL-005's mirror: a loss changes only the settlement state. Every resource, city, unit, the score
+    // and every objective are as before step 3.
+    [Fact]
+    public void ALossTakesNothingElse()
+    {
+        var c = LoadWithKibbutz();
+        var s = With(c, Enemy(1, 3, 1));
+        var before = s.Clone();
+        Assert.NotEmpty(Capture(c, s));
+        s.Settlements.Clear();
+        Assert.Equal(before.Describe(), s.Describe());
+    }
+
+    // R-ENEMY-001 with R-CTRL-006: an enemy unit may now end a move on a player's locality (town_h) and its path may pass
+    // through one, but not on an arab_town that is not enemy-held (town_d, Jaffa's case) nor on an annexed target, which
+    // R-CTRL-006 does not cover. A retreat still never ends on any of them (#2932: NoEntry is unchanged).
+    [Fact]
+    public void AnEnemyUnitMayMoveOntoAPlayersLocality()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Enemy(1, 0, 1));
+        var spent = new Dictionary<int, int>();
+        Assert.Null(Movement.Move(c, s, 1, 0, 2, spent, new List<Cause>(), enemy: true));
+        Assert.Equal((0, 2), (s.Units[1].Q, s.Units[1].R));
+        var noEntry = Movement.NoEntry(c, s, true);
+        Assert.Contains((0, 2), noEntry);
+        Assert.Contains((1, 2), noEntry);
+        var t = With(c, Enemy(1, 1, 1));
+        Assert.Equal("Units may not enter an enemy-held locality before its capture is possible",
+            Movement.Move(c, t, 1, 1, 2, new Dictionary<int, int>(), new List<Cause>(), enemy: true));
+        t.Settlements["town_a"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Annexed, t.Date);
+        Assert.Equal("Units may not enter an enemy-held locality before its capture is possible",
+            Movement.Move(c, t, 1, 1, 0, new Dictionary<int, int>(), new List<Cause>(), enemy: true));
+    }
+
+    // R-CTRL-006 only as far as the rule needs (R-ENEMY-001): an enemy path goes round a player's locality it is not sent
+    // to, as a card's go-to goes round every enemy-held place but its own (the owner's answer 1 on #2087), so a march never
+    // takes a place on its way. From (4, 1) to (2, 1) the way through town_b on (3, 1) costs 2; the way round costs 3.
+    [Fact]
+    public void AnEnemyPathGoesRoundAPlayersLocalityItIsNotSentTo()
+    {
+        var c = LoadWithKibbutz();
+        var s = With(c, Enemy(1, 4, 1));
+        var spent = new Dictionary<int, int>();
+        Assert.Null(Movement.Move(c, s, 1, 2, 1, spent, new List<Cause>(), enemy: true));
+        Assert.Equal(3, spent[1]);
+        var t = With(c, Enemy(1, 4, 1));
+        var sent = new Dictionary<int, int>();
+        Assert.Null(Movement.Move(c, t, 1, 3, 1, sent, new List<Cause>(), enemy: true));
+        Assert.Equal(((3, 1), 1), ((t.Units[1].Q, t.Units[1].R), sent[1]));
+    }
+
+    // R-CTRL-006 through the whole resolver: an enemy unit alone on a player's locality at End turn takes it in step 3.
+    [Fact]
+    public void TheResolverRecordsTheLossAtTurnEnd()
+    {
+        var c = LoadWithKibbutz();
+        var s = With(c, Enemy(1, 3, 1));
+        var next = Simulation.Step(c, s, Array.Empty<Command>());
+        AssertLost(next.State, "town_b", next.State.Date);
+        Assert.Contains(next.Why, x => x.Key == "place_lost" && x.Target == "town_b");
+    }
+
+    // #1305 done-when: on the shipped content no player's locality is lost on the first turn (Historical mode; Open mode
+    // arrives with milestone M4).
+    [Fact]
+    public void RealContentLosesNoPlayersLocalityOnTheFirstTurn()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var s = Simulation.NewGame(c, 42, Mode.Historical);
+        var next = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.DoesNotContain(next.Why, x => x.Key == "place_lost");
+        Assert.Empty(next.State.Settlements);
+    }
 }

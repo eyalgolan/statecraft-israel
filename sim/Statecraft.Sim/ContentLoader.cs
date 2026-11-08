@@ -427,6 +427,7 @@ namespace Statecraft.Sim
             var settlements = ReadSettlements(readFile);
             var settlementIds = settlements.Select(x => x.id).ToList();
             foreach (var (id, name, _) in settlements) c.SettlementNames[id] = name;   // a duplicate id fails in ValidateMap
+            c.ArabTowns = new HashSet<string>(settlements.Where(x => x.type == ArabTown).Select(x => x.id), StringComparer.Ordinal);
             c.SettlementTargets = Read<SettlementTargetsFile>(readFile, SettlementTargetsFileName).Targets;
             ValidateSettlementTargets(c, settlements.Where(x => x.type == ArabTown).Select(x => x.id));
             // Event files (content/events/*.yaml), one GameEvent each. Keys, for content authors:
