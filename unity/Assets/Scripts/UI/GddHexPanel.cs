@@ -222,11 +222,15 @@ namespace Statecraft.Game.UI
         {
             if (!(Cities.HousingOutlook(bridge.Content, bridge.State, id) is Cities.HousingReadout o)) return;
             var c = bridge.Content; var condition = bridge.State.Cities[id].Condition!.Value;
-            Line(host, "city-surcharge", o.Surcharge > 0
-                ? text.Format("city.housing_surcharge", PlayerText.Money(c, "treasury", o.Surcharge), PlayerText.Percent(o.MoneyThreshold))
-                : text.Format("city.housing_no_surcharge", PlayerText.Percent(o.MoneyThreshold)));
-            if (o.ConditionAfter < condition) Line(host, "city-housing-falls", text.Format("city.housing_falls", PlayerText.Percent(o.ConditionAfter)));
-            if (o.CohesionShift < 0)
+            // #1722 review S2: a term shows only when its figure, rounded as shown, says something. A surcharge under the
+            // smallest amount shown has no line ("IL 0.0m a turn" says nothing, and "none" would not be true).
+            var surcharge = PlayerText.Money(c, "treasury", o.Surcharge);
+            if (o.Surcharge <= 0) Line(host, "city-surcharge", text.Format("city.housing_no_surcharge", PlayerText.Percent(o.MoneyThreshold)));
+            else if (surcharge != PlayerText.Money(c, "treasury", 0))
+                Line(host, "city-surcharge", text.Format("city.housing_surcharge", surcharge, PlayerText.Percent(o.MoneyThreshold)));
+            if (o.ConditionAfter < condition && PlayerText.Percent(o.ConditionAfter) != PlayerText.Percent(condition))
+                Line(host, "city-housing-falls", text.Format("city.housing_falls", PlayerText.Percent(o.ConditionAfter)));
+            if (o.CohesionShift < 0 && PlayerText.PercentChange(o.CohesionShift) != PlayerText.PercentChange(0))
                 Line(host, "city-housing-cohesion", text.Format("city.housing_cohesion", PlayerText.PercentChange(o.CohesionShift), PlayerText.Percent(o.CohesionThreshold)));
         }
 
