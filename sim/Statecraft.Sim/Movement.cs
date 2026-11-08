@@ -101,16 +101,37 @@ namespace Statecraft.Sim
         /// and goes round every enemy-held locality but (q, r) (<see cref="Search"/>).</summary>
         public static IReadOnlyList<(int Q, int R, int Turn)> Route(Content c, GameState s, int unitId, int q, int r, IReadOnlyDictionary<int, int> spent, bool card = false)
         {
-            var result = new List<(int Q, int R, int Turn)>();
-            if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u) || (u.Q, u.R) == (q, r)) return result;
-            var full = Points(c, u);
-            if (full == 0) return result;
+            if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u) || (u.Q, u.R) == (q, r) || Points(c, u) == 0)
+                return new List<(int Q, int R, int Turn)>();
             var (dist, prev) = Search(c, s, u, int.MaxValue, card: card ? (q, r) : ((int, int)?)null);
+            return Split(c, s, u, q, r, spent, dist, prev);
+        }
+
+        /// <summary><see cref="Route"/> without a card, to many hexes of one unit: the search does not depend on the target, so
+        /// it runs once (at the first call) and each call only reads that unit's path to (q, r). The same routes as Route.</summary>
+        internal static Func<int, int, IReadOnlyList<(int Q, int R, int Turn)>> Routes(Content c, GameState s, int unitId, IReadOnlyDictionary<int, int> spent)
+        {
+            (Dictionary<(int Q, int R), int> Dist, Dictionary<(int Q, int R), (int Q, int R)> Prev)? search = null;
+            return (q, r) =>
+            {
+                if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u) || (u.Q, u.R) == (q, r) || Points(c, u) == 0)
+                    return new List<(int Q, int R, int Turn)>();
+                search ??= Search(c, s, u, int.MaxValue);
+                return Split(c, s, u, q, r, spent, search.Value.Dist, search.Value.Prev);
+            };
+        }
+
+        /// <summary>The path to (q, r) in one search, split into turns (R-MOVE-001, R-MOVE-003); empty when no path reaches it.</summary>
+        static IReadOnlyList<(int Q, int R, int Turn)> Split(Content c, GameState s, Unit u, int q, int r, IReadOnlyDictionary<int, int> spent,
+            Dictionary<(int Q, int R), int> dist, Dictionary<(int Q, int R), (int Q, int R)> prev)
+        {
+            var result = new List<(int Q, int R, int Turn)>();
+            var full = Points(c, u);
             if (!dist.ContainsKey((q, r))) return result;
             var hexes = new List<(int Q, int R)>();
             for (var h = (q, r); h != (u.Q, u.R); h = prev[h]) hexes.Add(h);
             hexes.Reverse();
-            spent.TryGetValue(unitId, out var used);
+            spent.TryGetValue(u.Id, out var used);
             int left = full - used, turn = 1, before = 0, first = 0;
             for (int i = 0; i < hexes.Count; i++)
             {
