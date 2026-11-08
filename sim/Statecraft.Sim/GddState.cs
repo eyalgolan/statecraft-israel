@@ -238,8 +238,8 @@ namespace Statecraft.Sim
         /// <summary>The formation these replacements join when they finish (R-TRAIN-004), or null for a cohort that becomes
         /// something new (R-TRAIN-003).</summary>
         public int? Unit { get; }
-        /// <summary>#1725 PR 7, producer 12 (owner, 8 November 2026, "Cohorts stay main (Rec.)": "the cohort gets a sorted
-        /// member-id list, hashed only when set"): on a Historical ledger game, the population ids of the cohort's trainee
+        /// <summary>#1725 PR 7, producer 12 (owner, 8 November 2026, "Cohorts stay main (Rec.)" (#1725 issuecomment-6724941867): the cohort keeps a
+        /// sorted list of its members' ids, hashed only when set): on a Historical ledger game, the population ids of the cohort's trainee
         /// records, ascending, one per <see cref="Count"/>; null on any other game.</summary>
         public IReadOnlyList<int>? Members { get; }
 

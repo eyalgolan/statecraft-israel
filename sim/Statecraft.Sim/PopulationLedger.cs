@@ -272,9 +272,9 @@ namespace Statecraft.Sim
         }
         /// <summary>The bound target <paramref name="id"/>, or null (#1725 PR 7, producer 12).</summary>
         internal PopulationTarget? Target(string id) { RequireInitialized(); return bindings!.FindTarget(id); }
-        /// <summary>#1725 PR 7, producer 12. Owner, 8 November 2026, "Start + runtime bind (Rec.)": "the start facilities'
-        /// Course targets are bound at Initialize, plus one all-or-nothing runtime BindTarget for new formations and built
-        /// camps". Binds <paramref name="target"/>, refusing an id already bound, with the ledger unchanged.</summary>
+        /// <summary>#1725 PR 7, producer 12. Owner, 8 November 2026, "Start + runtime bind (Rec.)" (#1725 issuecomment-6724941867): the start
+        /// facilities' Course targets are bound at the start, plus one all-or-nothing runtime bind for new formations and
+        /// built camps. Binds <paramref name="target"/>, refusing an id already bound, with the ledger unchanged.</summary>
         internal void BindTarget(PopulationTarget target) => Commit(Array.Empty<PopulationUnit>(), new[] { target });
         /// <summary>#1725 PR 7, producer 12: several record replacements and new targets, all or nothing. The new bindings and
         /// every replaced record are validated as one candidate before anything is committed, so a refused record or target
