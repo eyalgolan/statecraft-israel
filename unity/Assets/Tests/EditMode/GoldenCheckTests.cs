@@ -41,7 +41,9 @@ public class GoldenCheckTests
     }
 
     /// <summary>The WebGL player's RunAsync, a frame between goldens (the 8 Nov 2026 nightly OOM), reports Run's lines and
-    /// verdict, a FAIL included, and yields at least once per golden.</summary>
+    /// verdict, a FAIL included, and yields at least once per golden. Each tick queues a player-loop update, as
+    /// GameInputsTests.Await does: a batch-mode editor runs the player loop (which resumes Awaitable.NextFrameAsync) only
+    /// now and then while idle.</summary>
     [UnityTest]
     public IEnumerator RunAsyncGivesRunsLinesWithAFrameBetweenGoldens()
     {
@@ -50,7 +52,12 @@ public class GoldenCheckTests
         var expected = GoldenCheck.Run(c, data);
         var run = GoldenCheck.RunAsync(c, data).GetAwaiter();
         int frames = 0;
-        while (!run.IsCompleted && frames < 600) { frames++; yield return null; }
+        while (!run.IsCompleted && frames < 600)
+        {
+            frames++;
+            UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+            yield return null;
+        }
         Assert.IsTrue(run.IsCompleted, "RunAsync did not finish in 600 frames");
         var (ok, lines) = run.GetResult();
         Assert.AreEqual(expected.ok, ok);
