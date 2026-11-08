@@ -44,7 +44,7 @@ public class UnitLayerHoldTests
     [TearDown]
     public void Free() { if (map != null) Object.DestroyImmediate(map.gameObject); }
 
-    static GameObject Load(string name) => AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Prefabs/{name}.prefab");
+    static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");
 
     (int q, int r) FreeNeighbour(int q, int r)
     {
