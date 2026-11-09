@@ -387,9 +387,21 @@ namespace Statecraft.Sim
                 {
                     // The only way a unit is captured (impact plan section 4.3 item 1; R-POW-001). Its captor is the engagement's
                     // lowest-id attacker (not attackers[0]: the guns are listed last, R-COMBAT-007), whose side holds the
-                    // player's soldiers (R-POW-005).
+                    // player's soldiers (R-POW-005). Take runs before the unit is removed (#1710). On a Historical ledger game
+                    // it may refuse, before it writes anything: InvalidOperationException for a held count that disagrees with
+                    // the Captured records, a unit that is not a units_1948 formation or a strength its records do not number,
+                    // and ArgumentException from PopulationLedger.Capture for an unbound captor or a record that is not an
+                    // active soldier (a synthetic or Open ledger is NotSupportedException). This engagement's draw and losses,
+                    // and any earlier write to s (an earlier engagement, or the Strike's own), stay on s. In the game s is
+                    // always a clone: Strike's caller (Simulation.RunOrders) and Resolve's (TurnResolver) run inside
+                    // Simulation.Step on its clone (Preview and DelegatedTo clone too), so the whole command's or turn's result
+                    // is discarded and the caller's state is unchanged. Today Step refuses a ledger game before it clones, and
+                    // Resolve refuses one at its entry.
+                    // Hand-off to #1706: the defenders' combat losses above have already lowered u.Strength, and no ledger
+                    // loss is written for them, so Take sees records that still number the strength before the losses and
+                    // refuses. When #1706 runs Resolve on a ledger, it must write those losses to the ledger before this call.
+                    var held = Prisoners.Take(c, s, u, attackers.OrderBy(x => x.Id).First());
                     s.Units.Remove(u.Id);
-                    var held = Prisoners.Take(s, u, attackers.OrderBy(x => x.Id).First());
                     why.Add(UnitLines.Line(u.Side == Movement.PlayerSide ? WhyKeys.SurrenderedHeld : WhyKeys.SurrenderedPrisoners,   // Prisoners.Take's two cases
                         FormattableString.Invariant($"Unit {u.Id} surrendered with {u.Strength * ppu:N0} people: it had no hex to retreat to. {held}"),
                         new[] { u }, (u.Strength * ppu).ToString(CultureInfo.InvariantCulture)));

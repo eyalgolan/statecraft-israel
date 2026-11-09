@@ -279,8 +279,19 @@ def save_state(path: Path, state: State) -> None:
 
 # --- naming and dates -------------------------------------------------------------------------------------------
 
-def next_version(releases: list[dict]) -> str:
-    """One patch above the numerically highest published exact vX.Y.Z tag, regardless of release type."""
+VERSION_FORM = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
+
+
+def check_version_form(version: str) -> None:
+    """A version given by hand is plain X.Y.Z without leading zeros, so its tag can never be a second spelling of a
+    published one (v0.04.0 beside v0.4.0)."""
+    if not isinstance(version, str) or not VERSION_FORM.fullmatch(version):
+        raise Refused("version", f"{version!r} is not a version of the form X.Y.Z (for example 0.4.0)")
+
+
+def next_version(releases: list[dict], override: str | None = None) -> str:
+    """One patch above the numerically highest published exact vX.Y.Z tag, regardless of release type. `override`
+    (nightly.py run --manual --version) replaces that choice, and only when it is above every published version."""
     versions = []
     for row in releases:
         if (not isinstance(row, dict) or not isinstance(row.get("tag_name"), str)
@@ -289,10 +300,16 @@ def next_version(releases: list[dict]) -> str:
         match = re.fullmatch(r"v([0-9]+)\.([0-9]+)\.([0-9]+)", row["tag_name"])
         if match and not row["draft"]:
             versions.append(tuple(int(part) for part in match.groups()))
+    if override is not None:
+        check_version_form(override)
     if not versions:
         raise Refused("version", "no published vX.Y.Z release to increment")
     major, minor, patch = max(versions)
-    return f"{major}.{minor}.{patch + 1}"
+    if override is None:
+        return f"{major}.{minor}.{patch + 1}"
+    if tuple(int(part) for part in override.split(".")) <= (major, minor, patch):
+        raise Refused("version", f"{override} is not above the highest published release v{major}.{minor}.{patch}")
+    return override
 
 
 def tag_for(version: str) -> str:

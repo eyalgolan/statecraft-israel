@@ -851,11 +851,15 @@ unit.service.navy: "חיל הים"
 # native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.type.veteran_soldier: "חיילים ותיקים"
 unit.strength: "כוח: {0}"
+# For the native reviewer (#564): agent-drafted (#2432), as unit.points' "{0} מתוך {1}".
+unit.strength_of: "כוח: {0} מתוך {1}"
 unit.home_city: "עיר הבית: {0}"
 # Agent-checked; native review pending (#564).
 unit.position: "מיקום: {0}, מאז {1}"
 unit.position_plain: "מיקום: {0}"
 unit.formed: "הוקמה: {0}"
+# For the native reviewer (#564): agent-drafted (#2432), as unit.subtitle's "{0} · {1}".
+unit.formed_strength: "{0} · {1}"
 unit.commander: "מפקד ראשון: {0}"
 unit.aircraft.s199: "אוויה S-199"
 unit.aircraft.spitfire: "ספיטפייר LF Mk IXe"
@@ -1137,6 +1141,15 @@ advisor.opening.training.text: "אימון והכשרה דורשים אזרחי�
 advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משבצת. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאות."
 advisor.opening.event.text: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
 advisor.opening.objectives.text: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
+# #2933's steps, agent-drafted: native review: owner, 8 Nov 2026 ("Approve all six"; step 10's report named by the screen
+# title, "Use the screen title"; step 2 keeps its date, "Keep date, add exception (Recommended)", HE-08; step 2's
+# maqaf, "Use maqaf ב־15 (Recommended)", HE-07).
+advisor.opening.invasion.text: "ב־15 במאי 1948 שלחו מצרים, סוריה ועיראק צבאות אל הארץ. הלגיון הערבי של עבר הירדן, המסומן במפה ״ירדן״, עמד ברמאללה וליד שער הגיא. החטיבות שלכם צריכות לעצור אותם."
+advisor.opening.units.text: "צבא לבנון עמד על הגבול, ומתנדבי הליגה הערבית כבר היו כאן. בחרו יחידה כלשהי במפה כדי לראות של מי היא."
+advisor.opening.cities.text: "בערים שלכם נמצאים האנשים, המשרות וההכשרה, והעבודה בהן מכניסה כסף. בחרו עיר כדי לראות אותם."
+advisor.opening.move_how.text: "כדי לנוע, בחרו חטיבה, לחצו על ״תנועה״ ואז על משבצת מוארת. לחיצה על משבצת רחוקה יותר שולחת אליה את החטיבה במשך כמה תורות."
+advisor.opening.orders.text: "חטיבה ללא הוראה מעכבת את ״סיום התור״. ״ביצור״ ו״החזקה״ נשארים עד שתשנו אותם, ומסלול ממשיך מעצמו. ״דילוג על התור״ חל על תור אחד."
+advisor.opening.end_turn.text: "כשאף יחידה לא ממתינה להוראות, לחצו על ״סיום התור״. אם הכפתור מציג ״יחידה ממתינה להוראות״, לחיצה עליו תביא אתכם אל היחידה. אחר כך החודש מתנהל, ואחריו מוצג ״מה קרה בתור הזה״."
 advisor.next: "הבא"
 advisor.done: "סיום"
 advisor.step: "שלב {0} מתוך {1}"
@@ -1553,6 +1566,10 @@ opening.begin: "המשך למפה"
 opening.return: "חזרה למסך הפתיחה"
 opening.count: "שלב {0} מתוך {1}"
 opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת המקורות בידי אדם ממתינה."
+
+# The Tel Aviv raid card on New game. For the native reviewer (#564): agent-drafted; "אישור" as the Hebrew UI's OK
+# buttons commonly say it. The card's text is in Resources/RaidIntro/raid-intro.yaml, with its own he_review.
+raid.ok: "אישור"
 
 # #813 (R-MONEY-004): the Defence screen's dollar conversion. Agent-drafted Hebrew; every line below is
 # native-review-pending (#564).
