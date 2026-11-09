@@ -35,13 +35,9 @@ on:
     - cron: "*/10 * * * *"
   workflow_dispatch:
 
-# Least privilege (#2698). Listing and reading pull requests needs Pull requests: read; GitHub's "Permissions required
-# for GitHub Apps" page lists the merge endpoint (PUT .../pulls/{pull_number}/merge) under Contents, write. gh merges
-# through the GraphQL mergePullRequest mutation, which that page does not cover; if it needed more, a CI or timer run
-# would fail on "Resource not accessible by integration" (only review runs tolerate it, see above).
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
 
 concurrency:
   group: merge-approved

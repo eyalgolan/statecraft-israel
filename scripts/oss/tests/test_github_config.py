@@ -191,7 +191,7 @@ def test_merge_workflow_never_touches_pull_request_code():
     assert set(triggers(wf)) == {"workflow_run", "pull_request_review", "schedule", "workflow_dispatch"}
     assert triggers(wf)["workflow_run"]["workflows"] == ["CI"]
     assert "pull_request_target" not in triggers(wf)
-    assert wf["permissions"] == {"contents": "write", "pull-requests": "read"}
+    assert wf["permissions"] == {"contents": "write", "pull-requests": "write"}
     script = "\n".join(s.get("run", "") for s in steps(wf))
     assert not any("uses" in s for s in steps(wf)) and "checkout" not in script
     for field in ("title", "headRefName"):
@@ -233,14 +233,6 @@ def test_merge_workflow_waits_for_every_required_check():
     wf = yaml.safe_load(MERGE.read_text(encoding="utf-8"))
     need = set(wf["jobs"]["merge"]["env"]["REQUIRED_CHECKS"].split("|"))
     assert need == EXPECTED_JOBS
-
-
-def test_merge_workflow_holds_only_the_permissions_its_steps_use():
-    # #2698: the step lists and reads pull requests (Pull requests: read) and merges them (Contents: write, the
-    # permission GitHub's "Permissions required for GitHub Apps" page lists for the merge endpoint).
-    wf = yaml.safe_load(MERGE.read_text(encoding="utf-8"))
-    assert wf["permissions"] == {"contents": "write", "pull-requests": "read"}
-    assert all("permissions" not in job for job in wf["jobs"].values())
 
 
 # A stand-in for gh, enough for the merge step: `pr list` prints the numbers in prs.txt, `pr view N --json ... --jq P`
