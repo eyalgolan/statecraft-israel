@@ -8,10 +8,13 @@ namespace Statecraft.Sim
     {
         /// <summary>R-UNIT-004: recruits already in play serve this turn. Run before training completes, so training time
         /// never counts as service. Promotion preserves the formation and its standing order; combat adds no service. Under
-        /// exact gdd-0.3 service is a statistic only and never promotes: veterancy comes from combat experience (R-UNIT-011, Q16).</summary>
+        /// exact gdd-0.3 service is a statistic only and never promotes: veterancy comes from combat experience (R-UNIT-011, Q16).
+        /// It runs on an initialized Historical ledger (the dark start, #1725 PR 7): service stays on the formation, so it reads
+        /// and writes no ledger record; a synthetic or Open ledger stays refused (R-POP-002). Maintainer calls by coordinator
+        /// eyalgolan-30, 8 November 2026, not owner rulings.</summary>
         public static void Serve(Content c, GameState s, MvpRules r, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: service is the formation's, no ledger field
             var byService = !Gdd03Military.Applies(c);
             foreach (var u in s.Units.Values.ToList())
             {
