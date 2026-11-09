@@ -8,11 +8,615 @@ checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-09
+
 ### Changed
+- In a Historical game the Syrian army no longer stops following its script when the first truce ends on 8 July 1948:
+  it keeps marching on its sourced position, the bridgehead at Mishmar HaYarden, until the Syrian armistice of
+  20 July 1949 (Refs #1270). The other Arab forces' positions after 8 July come in later slices. A gdd-0.1 save made
+  before it that reaches 15 July 1948 loads with the "content changed" warning plus "replay differs" (owner, 4 November
+  2026).
+- GDD 0.3 opening ledger (Refs #1689, Refs #1717): the rules text now records the owner's 7 November 2026 decisions on
+  every opening-ledger item, and tests pin each city's employed units and the plain starting records. Docs and tests only,
+  so there is no change in the game.
+- Under the gdd-0.3 rules only, the sim's test fixture of the population ledger gives a pioneer one work-experience point
+  for each turn its site or corridor segment is being built, and makes it a veteran after 9 such turns, working at the
+  catalogue's pioneer rates (Refs #1693). Idle, travelling and training turns give none and keep what it has. The
+  ledger is not yet in the game; the game players play (gdd-0.1) is unchanged.
+- Hex tiles (opt-in `?hex-tiles` look): Hadera's eucalyptus groves and the Jezreel Valley's windbreaks now draw Tal
+  Heuberger's railway-halt eucalyptus instead of grey-green stand-ins, one eucalyptus everywhere (owner, 7 November
+  2026; Refs #1940, Refs #1952). The tree is 6,423 triangles, so Hadera keeps 12 trees (was up to 52 stand-ins) and
+  the Jezreel Valley one per hex (was up to 50), inside the tiles' triangle budgets.
+- Cabinet, keyboard (Refs #2340, accessibility audit M2): pressing Enter on a seat now moves the focus to the first
+  candidate who can be appointed, so you no longer Tab through up to 50 names to reach one. Escape in the candidate
+  list puts the focus back on that seat and leaves the Cabinet open. A mouse click on a seat still moves no focus.
+- The decision card's focus ring (and the Capture dialog's, which shares its style) is 2 px instead of 1 px. The extra
+  pixel is drawn on the card's trim overlay, so nothing inside the card moves when the focus comes or goes (#2340, L3).
+- PageUp, PageDown, Home and End now scroll the turn report, the end screen, the capture dialog and the map's info
+  panel too, with or without the focus inside them; the topmost open one takes the keys and the map does not move.
+  Their scroll bars are no longer Tab stops (accessibility audit H3, K6; #2479).
+- The info panel for Jerusalem's hex now names West Jerusalem as Israeli-held from 15 May 1948, extending #2400's change
+  from 11 June to the opening period, when it said "No-man's land" (#2039). The map's colours are unchanged.
+- The map's light and colour grade take a second pass towards the promo's warm golden look (#2427): a stronger sun with a
+  lighter fill, and hue curves that turn the land's terracotta and green fields to gold. The owner's exposure stays, the
+  open sea keeps its brightness and is slightly bluer, and the sand keeps its hue.
+- Map: every code-built town kit now has real surface detail from one shared atlas, painted by code: plastered White City
+  blocks with casements, blinds, doors and shopfronts; coursed stone with arched windows for Jerusalem, Jaffa and the old
+  towns; rough stone and mud plaster in the Arab villages; whitewash with green shutters and red tiled roofs in the moshavot and
+  kibbutzim; gravelled flat roofs, weathered walls and stone plinths. Same meshes and one material, so no town gains a draw
+  call (#2428).
+- Units read better at the gameplay zoom: a unit's badge stays smaller than its figures, the figures and flag grow by up to 30% between 45 and 60 km, and the base sits closer round the figures. In a town, a unit's three figures no longer merge into one shape (Refs #2430).
+- The map's front lines read brighter at the gameplay zoom: a brighter orange-red stripe, the Israeli side's blue kept as
+  ruled, and a soft glow along the inside of each band. Grey contested lines stay flat and dashed (#2431).
+- GDD 0.3: the monthly Food settlement can now read its need from the month's frozen population snapshot, one ration for
+  each living person record whatever it is doing (working, on a course, travelling, serving), counted once each, so a
+  change during the month does not move that month's need (Fixes #2470). The
+  stock still stops at zero, and the import refill and the foreign-currency crisis work as before. No game uses the
+  ledger yet, so play is unchanged.
+- GDD 0.3: a staffed field can now settle its month's Food into the national stock: 2, 3 or 5 times
+  `field_food_per_turn` by its farmer's tier, once per field and in field order, with a Why line for each. A field the
+  enemy holds adds nothing but keeps its farmer and assignment, and once retaken it produces again from the next month
+  with no new order (Fixes #2471). No game uses it yet, so play is unchanged.
+- GDD 0.3: an apprentice craftsman now earns one work turn for each month spent working in Industry or an arms
+  workshop, whatever the output or pay, and becomes an expert at the 36th; the expert level counts from the next month,
+  and the same person keeps their job, place, equipment and military record. Idle, travel, course, teaching, service,
+  farming and building months earn nothing, and a month can only count once (Fixes #2472). No game uses it yet, so
+  play is unchanged.
+- On the 15 May 1948 turn two slightly smaller Egyptian Dakotas now fly a loop together over Tel Aviv instead of one big
+  Dakota off the coast, and drop bombs that flash and smoke on Tel Aviv's hex; their propellers turn, they bank into
+  their turns and cast a shadow on the ground (#2482). Looks only: the game's numbers do not change.
+- With the Dakotas over Tel Aviv, the map's place names now hide only where an aircraft (with its flag) actually covers
+  them, not over the planes' whole loop, so most names round Tel Aviv stay visible (owner chose "Shrink the keep-clear
+  area (Recommended)", 4 November 2026).
+- The Dakotas' bombs now burst in a fireball that swells, burns out into black smoke and fades, and dark smoke columns
+  rise and lean downwind from where they hit, standing over Tel Aviv while the planes fly (owner, 4 November 2026: "the
+  explosions look bad in the screenshot and there is no smoke columns coming up"). The fire and smoke are Unity Labs'
+  free CC0 flipbooks.
+- Under the gdd-0.3 rules only, the sim's field test fixture now cites the owner's 4 November 2026 ruling that only a
+  farmer may work a field, where it used to call that rule our own reading (Fixes #2491). The refusal itself is
+  unchanged. The game players play (gdd-0.1) is unchanged.
+- While a screen is open, the Up and Down arrows move the keyboard focus between its rows, so a long list such as the
+  Budget or the Cabinet's candidates is no longer Tab-only (#2495, accessibility audit L4). Hidden and disabled controls
+  are skipped, the focus stays in the screen, and moving presses nothing. Left and Right still pan the map, and with no
+  screen open all four arrows pan it as before.
+- Approval (Refs #2511): each voter group's weights are now summed in a fixed (ordinal key) order, so the result no
+  longer rests on the order a dictionary happens to return them in. Shipped content gives the same numbers as before.
+- GDD 0.3 test fixtures follow the later rulings (Fixes #2514): the detached project-build fixture now gives a project
+  one builder and counts each turn with it as one of the kind's turns, and the detached absorption check no longer
+  blocks on refugees waiting for a bed. Nothing in the game calls either one, so play is unchanged.
+- The smallest interface text is now 15 px at the default scale, up from 13 and 14 px: the exhausted-turn line, photo
+  credits, the AI-illustration label, the Cabinet's card stat names, House label and party chips, map-label tooltips and
+  the tight top bar's changes (#2522, #2340). The date plate widens to keep the exhausted-turn line on one row.
+- Require the units named by an operation decision to be in one of that operation's regions before it can begin. A
+  delegated operation whose units are elsewhere is postponed, keeps its option, and waits for its units for up to 6 turns
+  (`mvp.operation_wait_turns`); it lapses earlier when a unit it needs is gone or its front's armistice is signed, and a
+  lapse costs 0.01 Security (`mvp.operation_lapse_security`). While that armistice is undecided the operation waits for
+  it. A late launch's unit orders end later by the time it waited, and one launched inside a truce the player accepted
+  costs 0.10 International Support unless its own effects already do. Rhodes Talks, Sinai Withdrawal and Rafah follow a
+  late Horev, and drop once Egypt signs.
+  Operation cards' unit orders now also apply under gdd-0.3, and an objective, prisoner-exchange or Deport card can no
+  longer give unit orders (the content loader refuses it). The escalations (Yoav's push to Hebron, Hiram's advance into
+  Lebanon) and Ten Days' southern front give orders too; Givati gains a Bayt Jibrin order target.
+  A card shown after its own window has closed reads its late text (`late_text`, with `late_text_he`); five cards
+  have one, and the translators' page (`tools/translate.py`) lists it.
+- The decision card lists each required unit once, shows an operation waiting for its front's armistice after that
+  armistice and a waiting operation after the turn's other cards, takes a queued operation back when its unit is moved
+  away, and moves the toast below a short photograph band. The turn report has a row for postponed and lapsed operations.
+- The automated players no longer stage an operation's units onto an enemy-held place.
+- Ten decision cards now reach the player a turn earlier, on the turn before the historical decision (R-TURN-002, #2551,
+  #2833): the four armistices (Egypt on 15 February 1949, Lebanon and Jordan on 15 March, Lebanon's card first, and
+  Syria on 15 July), Austerity (15 April 1949), the Law of Return (15 June 1950), Schools in the Transit Camps
+  (15 January 1951), A Claim on Germany and The Jews of Iraq (15 February 1951) and Foreign Currency Runs Out
+  (15 October 1951). Israel Bonds stays on its historical date, 10 May 1951, as the owner chose. Saves made before this
+  change show the content-changed notice.
+- The smoke columns over Tel Aviv on the 15 May 1948 turn are reworked (#2604): four thin columns instead of six wide
+  ones, each starting 260 m across on its bomb's impact and widening to 1.5 km as it rises 4 km, near-black at the foot
+  and fading to light grey and half see-through toward the top, leaning gently downwind. They are drawn unlit, as the
+  blast, so their shade no longer turns the whole column dark brown.
+- Behind the scenes: notes in `content/gdd03-balance.yaml` now mark the keys no gameplay rule uses as documentation only. No gameplay change. The file is part of the content hash, so a save from an earlier build shows the content-changed notice.
+- The web build's safe-area poll no longer allocates a new C# array every frame (the browser-side probe is unchanged).
+- Behind the scenes: `content/schema/event.schema.json` now agrees with the loader on requirements, alternatives, `set_rung` and Hebrew fields. No gameplay change; the schema is not part of the content hash.
+- Behind the scenes: the Web build validates its arguments before changing any project setting and restores them on every path, and the route capture restores each visual toggle to its own previous value. No gameplay change.
+- Behind the scenes: the smallest dollar conversion is one value, which both the refusal and its message read, so
+  they cannot disagree. No gameplay change (Refs #2704).
+- A shareable build now also waits for a person's check of a starting unit's field that was sourced after the unit's
+  own check: each fact-checked row in `units_1948.yaml` records the day of that check (`checked_on`), and the release
+  gate names the row and the field. Today that holds back the order targets of six brigades (#2722).
+- The country's head count adds up its population groups in a fixed order, so the same game gives the same numbers
+  however the groups are stored (Refs #2804). Debt and foreign currency move only in their last digits; nothing a
+  player sees changes.
+- A plowed field site or the drained Hula swamp no longer gets a kibbutz kit and a name pill of its own on the map.
+  Only a built yishuv or camp site does, so Beit Kama and its fields show one kibbutz and one pill on their hex.
+- The GDD 0.3 balance catalogue's prepared-fields note cites its own ruling (the authored opening fields, 1 November
+  2026) instead of calling the row derived from the farmers; it stays Agreed and its value (20) is unchanged (#2859).
+- The first-turn advisor course is now ten steps: the war and its armies, your cities, how to move and give orders, the
+  event card, and End turn (Refs #2933). Objectives and the city's two lines left the chain for turns 3 to 5, one a turn.
+  The six new steps are in Hebrew too.
+- The `reviewed_by` notes in the content schemas and map files, the sim's comments and tools/review_record.py now match
+  the owner's ruling of 4 November 2026 (asked whether an AI-assisted contributor's source check counts as the sign-off,
+  the owner answered "Yes, it counts"). In our words: it counts when the pull request discloses the AI help and names the
+  check, and an AI-co-authored commit never removes a sign-off. No change in the game.
+- The Hebrew review notes in the content files and schemas, the docs and tools, the sim's and the Unity code's
+  comments, and the loader's `*_he_review` and translation `review` messages now say that a native speaker, or an
+  AI-assisted contributor who discloses it, may clear `agent-checked` (owner, 4 November 2026: "AI-assisted can clear
+  it"). No change in the game.
+- The start menu's theme plays from the top once, then loops between Afik's proposed loop points, 00:10 to 04:03,
+  instead of looping the whole clip (Refs #2338). The loop points are data
+  (`unity/Assets/Resources/Music/menu-music.yaml`); the OGG is unchanged. At each seam the next source is scheduled to
+  start at the loop start on the same `dspTime` the other ends. Not yet listened to in a web build: in the OGG the cut
+  lands on a step of about -45 dBFS (measured with ffmpeg), and #2338 stays open for that check.
+- The nightly's EditMode run leaves out the two tests that compare against gitignored local art
+  (`HexModelMeshTests.TownAliasesFaceAsTheirSandboxPrefabs`, `HexUnitTests.CollectionFiguresFaceAsTheirProtoFigures`,
+  now in a `LocalOnly` category), so its skip count is only the `[Explicit]` tests (Refs #2655). A local run still
+  runs them.
+- Tel Aviv, Jerusalem, Haifa and Jaffa keep their big code-built blocks, with their landmarks, from 40 km out: there
+  they no longer draw Tal Heuberger's far-off building copies (owner, 6 November 2026: "Big blocks, every zoom", "Just
+  the four (Recommended)"). Closer than 40 km they show Tal Heuberger's building models, as before (owner, 7 November
+  2026: "Tal's models close (Recommended)", which replaces "Big blocks, every zoom" below 40 km), switching back to
+  the blocks past 45 km, as every other town does. This replaces the 2 November 2026 ruling ("Yes, small buildings at
+  every zoom"). A city is one of these when its 1945 population is at least 60,000. The game no longer streams these
+  four cities' far-off building copies; the files still ship.
+- An arms workshop built in one of these four cities stands at the edge of the city (owner, 6 November 2026: "make the
+  workshop at the edge of the city"), just past the city's outermost blocks, on its hex where it can be and otherwise on
+  the land beside the city, with the camera's side (the south) tried first, so the map's camera can see it past the big
+  blocks: no block between it and the camera rises above it, and no tree in front of it is drawn. It stands on ground the
+  map shows Israeli-held on the day it was built, and keeps that spot as the front moves. It keeps off the sea and the
+  beach, the routes, the units, the names and the other buildings (the big blocks and Tal Heuberger's building models both), and stands nearer its own city's blocks than any other
+  city's. Where no such spot is left, the workshop is not drawn and the game logs a warning naming the city, rather than
+  standing it hidden behind the blocks.
+- Tel Aviv's three port sheds are shorter along the shore, so they read as three sheds up close rather than one long
+  strip.
+- Every built arms workshop's building is drawn 2.5 times bigger, 720 m long on the map instead of 288 m (owner,
+  6 November 2026: "the workshop should be bigger as it's barely visible"). It keeps a wider ring of ground clear
+  around it to match, so in a crowded town its spot may move.
+- An arms workshop in any other town whose spot on its own hex would be on the beach stands at the town's edge instead,
+  where it can with no tree in front of it (owner, 7 November 2026, on Hadera: "Move the workshop (Recommended)":
+  Hadera's workshop moves to a clear spot at the town's edge, and the palms stay). On today's map that is Hadera alone.
+- The Spitfires look more like they are flying: each turning propeller is a light blur, their paint has a satin sheen, and
+  the 101 Squadron Spitfire now casts a soft shadow on the ground. The Egyptian Spitfire's shadow now lies near it (it was
+  about 7 km away), and its flag no longer covers the cockpit in a turn.
+- Bring share messages, the dollar conversion minimum, and Hebrew controls and credits into line with the writing
+  guides; capitalise Security in three tips to match the meter's caption; and word the Israel Bonds donations-only
+  option to match its effects (it adds no Debt).
 
 - The gdd-0.3 basic training fixture's cancel: an Arms item a recruit already carried stays with them by our reading
   of R-ARMS-003 ('the Arms it took'). A wording correction to the 0.3.5 entry; nothing changes in the game (Refs #1699,
   #2438).
+
+### Added
+- GDD 0.3 starting population (Refs #1689, Refs #1725): an internal, test-only "dark start" builds a GDD 0.3 Historical
+  game with its population ledger in place before the Food stock is set, so the stock starts at three months of the
+  ledger's need (`cover_months` 3 in `content/rules.yaml`, one ration per person record). It still places the starting
+  brigades, checked against the ledger's soldiers, and fires no opening event yet. The public new game is unchanged,
+  so there is no change in the game.
+- GDD 0.3 starting population (Refs #1689, Refs #1725): the inactive Historical ledger now holds the 20 opening field
+  farmers on top of the census (owner, 7 November 2026: "On top of census (Recommended)"), one on each field from the
+  first turn, living in the field's host. They split 1:2:1 per host (owner: "Per host, 1/18/1 (Recommended)"): Tiberias
+  has a novice on F03, four trained and a veteran on F08 (owner, relayed: "F08 veteran, F03 novice (Recommended)"), and
+  every other host only trained farmers, all with no work experience (owner, relayed: "0 for all (Recommended)"). The
+  dark start adds one housing place per farmer in the census towns that host them; Nir Am and Nirim get none for now
+  (owner, relayed: "None for those two for now (Recommended)"). No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1689): in the inactive Historical ledger fixture, each starting soldier now carries
+  its formation's class (infantry) as its military qualification and its formation's opening combat experience from
+  `content/gdd03-start.yaml`: 1 for Golani, Carmeli, Alexandroni, Kiryati, Givati, Etzioni and Harel, 0 for Negev, a
+  labelled stand-in (owner, 7 November 2026: "Veteran for all 8 (Recommended)" and "1 each, Negev 0 (Recommended)").
+  Keeping the veteran level on the formation and reading the class from `unit_types.yaml` is a maintainer call
+  (eyalgolan-30's coordinator, 7 November 2026), not an owner ruling. The units a new game starts with keep 0 combat
+  experience. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1689, Refs #1725): in the inactive Historical ledger, the training centre's one
+  veteran pioneer teacher is now one of Haifa's census units, so no person is added (owner, 7 November 2026: "Yes to
+  all three (Recommended)"). It is the last Haifa record (a maintainer call by the coordinator, 7 November 2026), a
+  veteran pioneer with no work experience (owner, relayed: "0 (Recommended)") and no job or pupil at the start. Jobs
+  and training may take it, but last (owner, relayed: "Takeable, but last (Recommended)"). No new-game wiring, so
+  there is no change in the game.
+- GDD 0.3 starting population (Refs #1689): in the inactive Historical ledger fixture, each census civilian now starts
+  with its reception done (`reception.turns`), so opening civilians can earn work experience once they work. This is an
+  agent reading, not an owner ruling, of `docs/gdd/balance.md:91` ("actual reception turns before free-civilian status").
+  Starting soldiers are unchanged. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1689): a population record's location can now name its city, and the inactive
+  Historical ledger fixture binds each census record to its city. A city outside the location's region is refused,
+  naming both, and so is a member location that is neither a census city nor a field host. A location without a city keeps its saved text and hash. No new-game wiring, so there is no change in
+  the game.
+- GDD 0.3 training centre courses in the sim test fixture (Refs #1697): a farmer or pioneer course whose centre stops
+  operating is now cancelled at once, like any cancel, instead of being refused as "Deferred": the pupil and the
+  teacher are civilians without a job in their city, no Money is refunded, and nobody graduates, even on the turn the
+  course would have finished. Nothing in the game calls this fixture yet, so nothing changes for players and saves are
+  unaffected.
+- GDD 0.3 craftsman course in the sim test fixture (Refs #1698): a free civilian, or a novice farmer or pioneer, can start
+  the craftsman course as a novice craftsman under the same population id, and becomes an apprentice on the course's
+  third counted turn. Cancelling before then makes them an ordinary civilian again, keeping their tools with no refund.
+  The course creates no mentor. Nothing in the game calls this fixture yet, so nothing changes for players and saves are
+  unaffected.
+- GDD 0.3 craftsman course (Refs #1698): a trained or veteran farmer or pioneer can start the course too and loses
+  that level; tools are kept, and cancelling leaves an ordinary civilian (owner, 4 November 2026).
+- GDD 0.3 craftsman course (Refs #1698): an apprentice or expert craftsman can take the course again and keeps their
+  level on the course, after graduating and after cancelling (owner, 4 November 2026).
+- In the same gdd-0.3 basic training test fixture, a recruit group that finishes its course becomes one formation: the
+  same people serve as active soldiers in their camp's region, qualified as infantry so they cannot take basic training
+  again, and keep their Arms, and the formation pays IL 0.05m a month from the month it graduates, whatever its size
+  (Refs #1699). It is not in the game yet; the game players play (gdd-0.1) is unchanged.
+- GDD 0.3 starting population (Refs #1699, Refs #1725): military upkeep (R-UNIT-010) now runs on the inactive dark
+  start's Historical ledger and pays what the aggregate start pays: IL 0.05m for each formation on the map, whatever its
+  strength. No soldier record is read or written. No new-game wiring, so there is no change in the game.
+- Under the gdd-0.3 rules, a city project being built now says in the hex panel whether it has a builder, and shows its
+  city's builder count with − and + to change it (R-CITY-011, Refs #2477). A housing repair being built shows on its
+  city's own hex. + is off where End turn would refuse one more builder with this turn's orders, or another of them,
+  and the reason shows in English or Hebrew.
+- GDD 0.3 housing repairs in the sim (Refs #1700, #1703): under the gdd-0.3 ruleset only, a city can order a housing
+  repair, a city project costing IL 0.5m and 1 work (borrowing the shortfall) that raises its housing condition by
+  10 percentage points, never above the maximum. It uses the turn's city start and needs a builder like any project.
+  It is done on the city's own hex and needs no free hex, so a city whose nearby hexes are all built on can still
+  repair, and it leaves no building. The current game (gdd-0.1) is unchanged. Its Hebrew name is owner-approved
+  (3 November 2026, #564); its Hebrew refusal is an agent draft awaiting a native read. Older saves show the
+  "different game content" notice.
+- GDD 0.3 housing repair from a built-on city hex (Refs #1700): under the gdd-0.3 ruleset, when a city's own hex
+  already holds a city project, the hex panel now offers the housing repair under that project's state, as the rules
+  allow, instead of showing the project alone. The current game (gdd-0.1) is unchanged.
+- GDD 0.3 housing repair on a hex off its city (Refs #1700): under the gdd-0.3 ruleset, on a hex where every other
+  city project is refused for the same reason, the hex panel again says that reason once instead of one line per
+  kind; the housing repair, which is only ever done on its city's own hex, no longer splits it. The current game
+  (gdd-0.1) is unchanged.
+- GDD 0.3 starting population (Refs #1704, Refs #1725): food_supply's Food stock term (R-FOOD-003) now runs on the
+  inactive dark start's Historical ledger and gives what the aggregate start gives for the same Food state. It reads no
+  record, so no ledger record changes. No new-game wiring, so there is no change in the game.
+- Under the gdd-0.3 ruleset only, an armistice can now come early (Fixes #2478, Refs #1709). From the 15 December 1948
+  turn, once a front has had two quiet turns, its armistice card can come before its historical date. After a refusal,
+  the card comes back once two full quiet turns have followed. Early cards come first among the turn's three
+  soft-event places, ahead of follow-up cards and other events. The historical dates still bring the card if the front
+  never goes quiet. The current game (gdd-0.1) is unchanged.
+- Under the gdd-0.3 ruleset only, the sim counts each front's quiet turns for the early armistices (Refs #1709): a turn
+  with no engagement involving Egypt's, Jordan's (with Iraq's), Lebanon's or Syria's units adds one to that front, an
+  engagement sets it back to zero, and refusing a front's armistice starts it again. From the 15 December 1948 turn, two
+  quiet turns make a front eligible for an early offer of its armistice card (R-WAR-008). Signing a front's armistice now
+  takes that front's units off the board. The current game (gdd-0.1) is unchanged.
+- `gdd-0.3` held cities in the turn report (#1711): each turn an enemy military unit holds a city, the turn report lists
+  it in a row of its own, "Cities held by the enemy" ("Tel Aviv: held by the enemy; no job income or project work this
+  turn"), and the Why screen has the same line. A retaken city gets no line. `gdd-0.1` is unchanged. The Hebrew lines
+  are agent drafts awaiting a native read.
+- GDD 0.3 opening fields (Refs #1717, Refs #1689): each of the 20 opening fields now names the place that hosts its farmer,
+  as data under exact `gdd-0.3` only, with its evidence basis, and the loader refuses a settlement host outside F19 and F20
+  or a census-city host outside its field's region. Nirim joins the Negev's member locations. F13, F14 and F17 are design
+  choices, not sourced. No farmer records and no new-game wiring, so there is no change in the game.
+- Map editor (Refs #1721 slice C): the map override editor window can search locations by part of their id, shows a
+  "Changes since save" list with the saved and the current value of every edited hex, control period and location,
+  and has a Revert button on each row that puts only that row back to the saved file, as one Undo step.
+- GDD 0.3 starting population (Refs #1725): on the inactive dark start's Historical ledger, the arms workshop staffing
+  order and the monthly workshop step now run on people records: each newly staffed workshop takes the city's
+  lowest-id free civilian with no assignment, who works it on a workshop target of its own, and a cycle is priced at
+  that worker's tier (a craftsman apprentice or expert pays less). A workshop whose worker is gone waits. No new-game
+  wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1689): on the inactive dark start's Historical ledger, the 7th Brigade,
+  which arrives on 24 May 1948, brings its 2 units as 2 new soldier records of the brigade, with combat experience 1 and
+  equipment apart from the Arms stock. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1689): buying Arms (R-ARMS-002) now runs on the inactive dark start's
+  Historical ledger as in the aggregate start, at today's price of IL 1m an Arms. Bought Arms join the national stock,
+  not any record's issued items, so no ledger record changes. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1689): on the inactive dark start's Historical ledger, each whole unit of
+  CBS immigrants that arrives in a turn becomes one refugee record in its city, split over the cities as today, and the
+  national count adds none of them a second time. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1689): civilian upkeep (R-MONEY-002) now runs on the inactive dark
+  start's Historical ledger and pays what the aggregate start pays, IL 0m with today's rates. It counts places, not
+  people, so no ledger record changes. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1689): the money flows (tax, spending, the reserve call-up and the
+  foreign-currency flows, R-MONEY-001; borrowing, R-MONEY-003) now run on the inactive dark start's Historical ledger.
+  Every living record counts per head (owner, 8 November 2026), so the dark start's flows start from 552,000 people, not
+  the aggregate start's 649,400, at the unchanged rates. No ledger record changes and there is no new-game wiring, so
+  there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1694): the field harvest (R-FIELD-002) can now run on the inactive
+  dark start's Historical ledger. Given the turn's month snapshot, each field whose farmer is still on it and that no
+  enemy unit stands on yields its farmer's tier of Food, with one Why line per field. Plowed site fields yield nothing
+  there until field preparation (#1713), and the harvest gives no work XP. No turn passes it a month yet, so there is
+  no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1689): the gdd-0.3 housing step (surcharge, condition and Social
+  cohesion) now runs on the inactive dark start's Historical ledger, counting each city's housed people and the own
+  population from the ledger's records. The opening field farmers are housed in their host city; the two at Nir Am and
+  Nirim, which have no city record, are counted in no city. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1689): formation service (R-UNIT-004) now runs on the inactive dark
+  start's Historical ledger. A recruit formation gains its service turn as in the aggregate game and, under gdd-0.3,
+  never promotes; no ledger record changes. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1716): the inactive dark start's Historical ledger can now give the
+  month's frozen opening snapshot, its living records and its farmed fields, as the synthetic month the fixtures use,
+  so Food, harvest and Industry income can later read one snapshot a turn. Building it changes nothing. No turn takes
+  it yet, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1689): on the inactive dark start's Historical ledger, natural increase
+  (0.0169 a year of everyone alive) now adds whole free civilians to the cities, split as the immigrants are, carrying the
+  part of a person each turn leaves over to the next. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1725, Refs #1710): a surrender of one of the player's opening formations now works on
+  the inactive dark start's Historical ledger. Its soldier records become captives of the winning side, keep their id,
+  history and issued item, and the held-soldier count stays beside them with a check that the two agree. The prisoners
+  eat and the held soldiers cost Money as in the aggregate start. Every enemy side is bound as a captor when the
+  Historical ledger starts. No new-game wiring, so there is no change in the game.
+- GDD 0.3 starting population (Refs #1699, Refs #1725): on the inactive dark start's Historical ledger, Send home now
+  moves people records: every soldier serving the formation becomes a settled-in civilian without a job in the nearest
+  city, keeping their military training and combat experience, and their issued Arms go back to the stock once, with one Why line naming the Arms returned. A
+  formation whose strength differs from its soldiers on record is refused with a reason. No new-game wiring, so there is
+  no change in the game.
+- GDD 0.3 starting population (Refs #1725): on the inactive dark start's Historical ledger, Train, Reinforce,
+  CancelTraining and the training step now move people records: a city's free civilians without a job become trainees
+  on their camp's or Hakhshara's course, each recruit and crew trainee is issued one item of Arms, a camp holds 50
+  trainees, a cancel returns the same people and their Arms, and graduates become soldiers of one new formation or free
+  pioneers. Craft training is refused there until #2476. No new-game wiring, so there is no change in the game.
+- GDD 0.3 craftsman course notes (Refs #1698): code comments and the rules text now credit the owner's 4 November 2026
+  answer only for the level a re-enrolled craftsman keeps; keeping their work XP is labelled a maintainer reading. Comments
+  and docs only, so there is no change in the game.
+- GDD 0.3: the Israel Bonds card is back (#2457). Launching the bond issue adds the $52m of foreign currency and the same
+  amount to Debt in IL at the rate on the day, IL 18.564m, with its own line on the Why screen. Relying on donations adds
+  no Debt. GDD 0.1 is unchanged.
+- GDD 0.3 training centre courses in the sim test fixture (Fixes #2464): a free civilian with no profession can start
+  a farmer or pioneer course with a matching veteran teacher, graduates in the teacher's profession at the trained
+  tier, and is still professionless after a cancelled course.
+- GDD 0.3 starting farmer split (Refs #2465): a helper that splits a farmer count into novice, trained and veteran at 1:2:1 by largest remainder, ties to trained (5 farmers: 1 / 3 / 1; 6 farmers: 1 / 4 / 1, owner, 6 November 2026). Nothing in the game calls it yet, so nothing changes for players and saves are unaffected.
+- Under gdd-0.3, in synthetic ledger fixtures only, a farmer who works a field for the month, on a field still
+  Israeli-held, gains one work XP, and becomes veteran at the ninth such month with the same record (R-VET-001,
+  R-VET-002). A month with more farmers on a field than its one slot is refused. The farmer counterpart of the
+  pioneer work-XP producer. No game-loop caller yet, so no change in the game.
+- Under the `gdd-0.3` rules the austerity (1949), foreign-currency crisis (1951), Iraqi exodus and ma'abarot cards are
+  back in the game. Their effects on Food supply, housing and the rationing and transit-camp policies apply as under
+  `gdd-0.1` (#2483).
+- Sim hardening (Refs #2513): a qualified halutz list and a corridor's segment list can no longer be written through
+  from a cloned game state, so a clone cannot change the original's hash. No change to play.
+- The end screen gives the date the game ended on and, under the population, the sources of its CBS figure (R-END-005,
+  R-END-006, #2545). Its Hebrew "Ended on" line is an agent draft awaiting a native read (#564).
+- Annexing a town whose residents stayed now adds them to the nation's population record (Fixes #2608). Before, the new
+  city held its people but the national count left them out. They join their own group, so the record of who arrived
+  from where is unchanged. The bigger population feeds the economy and needs more Food, so a game that annexes
+  Nazareth ends with slightly different debt, foreign currency and Food. A town whose residents fled still adds no one.
+- The end screen's population line now names what it compares with: the game's population counts annexed residents,
+  so the CBS figure beside it is labelled as the Jewish population. The absorption objective reads the same total, so
+  annexing a stayed town can bring its 1,000,000 milestone a little earlier.
+- Moving units now leave a short, light ground-dust trail, and a defending group that takes losses briefly shakes and flashes.
+- A plowed field now shows on its hex's ground as parcels with pale tracks, and a drained swamp as dark drained ground cut by
+  straight canals. Both are redrawn from the game's sites, so a loaded save shows its own (Refs #2877).
+- The land between the towns has ground detail at the gameplay zooms: soil grain, painted scrub and stones in a pass of its own over
+  the terrain, and low 3D bushes, a few tile draws a frame, that gather on the hills and along the fields' hedges, by the map's
+  biomes, the land-use weight, curvature and the towns and routes (#2878).
+- Advisors: groundwork for the new-player course (#2933): a `turn_at_least` condition, `lapse_after` and `fallback` fields on
+  a message, and a `course_open` signal set when the opening chain opens by itself. No message uses them yet, so nothing
+  changes on screen.
+- Advisors: at help level off, experienced or warnings the opening chain no longer opens by itself on a first game. It
+  counts as seen, so it does not come later, and the new-player course does not open. The encyclopedia still reopens it.
+- The unit card states every military unit's strength on both sides, and once a unit has lost strength it reads
+  "Strength: 3 of 4", from the live state, so it clears when the unit is reinforced to full (#2432).
+- New game now shows a card about the Egyptian air raid on Tel Aviv on the morning of 15 May 1948, after the opening and
+  before the turn 1 advisors, with an AI-generated clip of people running from the bombing (from the opening film) and
+  only an OK button. The card gives the number killed across all the Egyptian air raids on Tel Aviv in the war.
+  Continue and loaded games skip it. It is a draft: only the Editor shows it until the
+  owner's sensitivity review and a native Hebrew read.
+- The map now shows where an attack lands and what it costs (owner, 4 November 2026: "Hit on target hex",
+  "Fire/smoke on attacked hexes" and "Dust when a unit dies"). When guns attack, a shell bursts on the defender's token
+  just after the gun's flash; small arms kick up a short volley of dust there. A unit destroyed in the fight leaves a
+  cloud of dust where its token stood. On a hex under attack the small flame cones are now animated flames and the
+  smoke columns are drawn from a smoke flipbook. All of it uses the two CC0 Unity Labs flipbooks the Dakotas brought in
+  (#2490), drawn the same way, from small pools that allocate nothing per frame. Looks only: no change to the game's
+  rules, numbers or saves.
+- On the 15 July 1948 turn, the second Egyptian bombing period (8 to 17 July 1948), the two Egyptian Dakotas bomb Tel Aviv
+  again, as on 15 May, and Tel Aviv's air defence fights them. Two of 101 Squadron's Avia S-199s dive on the lead Dakota
+  in turn, the first as the pair bombs Tel Aviv and the second on the pass back out to sea; each fires (a muzzle flash and
+  tracer) and hits it (puffs of smoke), then pulls away, never bringing it down. Between the two attacks, anti-aircraft
+  fire from Tel Aviv bursts round the second Dakota, which trails smoke, falls out of the loop and goes down in a blast,
+  and a fresh one joins the loop out at sea before the next pass. The anti-aircraft kill is sourced (17 July
+  1948, JTA); no source shows 101 Squadron intercepting the Dakotas over Tel Aviv in July, so the fighters' attack is an
+  illustration (owner: "do 1+2"). Looks only: the game's numbers do not change. The S-199 is the map's own code-built
+  model.
+- The steam train now leaves a short trail of smoke and steam while it runs (owner, 4 November 2026: "Train steam").
+  Palestine Railways had converted its locomotives from coal to oil by 1943; the game assumes they still burned oil in
+  1950 (unsourced). The smoke leaves the chimney dark grey-black and thins to grey, with white steam puffs among it,
+  drifting back along the track; the smoke colour is a design choice. It stops when the train
+  stands at either end of its run and is never drawn while the train is hidden. It uses the CC0 smoke flipbook the
+  Dakotas brought in (#2490), from a small pool that allocates nothing per frame. Looks only: no change to the game's
+  rules, numbers or saves.
+
+### Fixed
+- With an advisor's picture open over the game, Tab no longer leaves it for the advisor's popup behind it. The popup
+  is out of reach until the picture closes, then it is as it was. (#2340)
+- Switching the language keeps a decision card or capture dialog hidden behind "Decision waiting" if the player had hidden
+  it, and keeps a pioneer group's card shown beside it. Before, the rebuild opened the card again (Refs #2340).
+- Switching the language keeps what was selected on the map: the hex with its outline, the unit with its card, or a
+  pioneer group's card. Before, the rebuilt info panel showed nothing while the old hex outline stayed on the map
+  (Refs #2340).
+- Picking a friendly unit's hex or a city with the keyboard, to send the selected unit there, now puts the focus on
+  the "Send ... to ..." confirmation, so Enter takes it. It used to be several Tabs away. A pick with the pointer
+  moves no focus, as before. (#2340)
+- The start screen's English lines and its source line are drawn in the main text colour, so they keep at least 4.5:1
+  contrast where the lit hats of the painting show through the panel (#2340).
+- Every rise and fall in the top bar has a small up or down triangle before the signed number, so the change no longer
+  relies on green and red alone, in English and Hebrew (#2340).
+- gdd-0.3 basic training (synthetic fixture, no game caller yet): a military camp that stops operating during a course no
+  longer stops the sim with a "Deferred" error. Its next course turn cancels every course at that camp at once, as a
+  cancel does: the people stay in place as civilians without a job, Arms the course issued go back to the spare pool,
+  Arms a recruit already carried stay with them, and Money and debt are not refunded (27M-9, R-TRAIN-002; Fixes #2463).
+  gdd-0.1 and the goldens are unchanged.
+- Under gdd-0.3 a test now pins that pioneer work is not a city project: in either order, pioneer work and two city
+  starts in one turn are all accepted, pioneer work takes neither a city's start nor a national one, and a third city
+  start is still refused (R-PROJ-001, R-PROJ-004). No change in the game.
+- Content loading (Fixes #2512): a map override hex without `q` or `r` (`map/overrides.yaml`) and an event effect
+  without `delta` are now refused at load with an error naming the file and the field, instead of loading as
+  coordinate 0 or a change of 0. Shipped content already has both, so nothing in the game changes.
+- Under the gdd-0.3 rules only, the detached housing test fixtures now count housing overflow from the housed residents
+  after the step's arrivals, as the owner ruled (27M-15), not from the residents before them (Fixes #2517). The synthetic
+  month context drops its unused pre-arrival resident list. The live housing step already counted after arrivals, so
+  the game is unchanged.
+- Escape now withdraws a New Game request armed from the top bar when the start screen is closed, and takes the prompt
+  off the toast; that Escape no longer also clears the map selection (accessibility audit L2, Fixes #2521).
+- The month's Food import and a dollar conversion each add their Why line, and a Food shortage's line is
+  informational, so the turn report's Food row and the HUD's foreign-currency meter no longer show a change without
+  its reason, and the Food row's lines add up to its change (#2527).
+- English counts of one name the singular: "1 unit of Food", "1 turn of occupation left", "1 group", "1 civilian",
+  "1 week" (#2530).
+- The turn report's enemy-orders row now names an enemy attack order on the turn it is given, not only once the attack
+  engages (#2534).
+- An objective completed on the game's last turn (or on a defeat turn) now shows its card before the end screen, as on
+  any other turn, and so does an objective card an earlier turn's card limit held back; the score is unchanged and no
+  other event fires then (#2536).
+- A finished game saved before this change loads and shows its ending card(s) (#2536).
+- Show live settlement ownership and capture state on the map and in the info panel, including after a captured place is lost.
+- A go-to route whose day would end on a hex already full of your units now ends that day on the last free hex
+  before it, as the unit really does, so the turn shown for each hex and for the arrival is right (#2548).
+- Save notices remain visible in the selected language when the start screen's language changes.
+- The unit card's attack preview no longer shows losses a unit cannot suffer: each outcome's losses now stop at the
+  attacking unit's remaining strength and at the defenders' combined strength, as the attack itself does, and an outcome
+  that wipes out the defenders no longer says they retreat. Outcomes that become the same after this are shown together
+  (Fixes #2553).
+- Under gdd-0.3, the Money row of the turn report and the Money meter tip now show the Israel Bonds Debt line as its
+  effect on Money, "Money IL -18.6m (Israel Bonds)", in English and Hebrew. Before, it read "Debt IL +18.6m (Israel
+  Bonds)", which looked like a gain beside the Money lines (Fixes #2558). The Why screen still lists it as Debt.
+- Every screen's close button keeps its visible X and now has a localized tooltip naming the screen (#2566).
+- Corrected the encyclopedia's guidance for changing waiting orders and for job income in enemy-held cities.
+- Corrected the gdd-0.3 encyclopedia page on city projects: it names the extra kinds and says a project moves only
+  with a builder.
+- On phones with a top safe area, the map is now framed below both the notch and the top bar instead of partly behind
+  the bar (#2572).
+- Disabled Train and corridor Build when the simulation would refuse them for  
+  insufficient Arms or a depopulated crossing, and localized the depopulated-place reason.
+- Label the Immigration turn-report value and its cause lines as this turn's arrivals while keeping the change since the preceding turn.
+- Icon-button tooltips now return to a still-focused button after the pointer leaves another HUD button group.
+- The enemy again counts its units already ordered on a hex before attacking it.
+- Enforce the no-enemy-reinforcements rule and let a scripted unit spend all its points on an otherwise too-costly first step, with no change in play with today's content.
+- Content loaded outside schema validation now rejects missing required display text, names, sources, portrait metadata, wrapper keys, and unit-order coordinates.
+- Test scenarios now run instant orders before deferred orders like live play, and replacing a game session or refusing a
+  turn clears the previous turn batch's date.
+- The Defence screen no longer queues an Arms purchase that End turn would refuse
+  for the debt ceiling or stock capacity.
+- Seven content-looping tests now assert their filtered set is non-empty before the loop, so they cannot pass while
+  checking nothing (#2593).
+- Mirror the Security caption, turn-report cause indentation, and inline advisor close button in Hebrew.
+- A hand-edited translation of the interface is now checked when the content loads in the editor, on the command line
+  and before every player build, as the translation editor already checks a save (Fixes #2598). A string the English
+  table does not have, such as a misspelt key, or a string whose placeholders differ from the English one, is refused
+  with the file and the key, so a typo can no longer leave a line in English unnoticed or drop a number from it. Hebrew
+  is unchanged.
+- The content loader now refuses a site whose kinds hold `yishuv` together with `military_camp` or `hakhshara`,
+  naming `sites.yaml` and the row's `kinds` (Fixes #2599). Such a site would share one built record, so building the
+  yishuv would also count as a built camp for its city. No shipped site has both kinds, so the game is unchanged.
+- The content loader now refuses a `recruit` type that is not infantry, an artillery or armour type that trains anywhere
+  but a military camp, and a gdd-0.3 `military.fortify_turns` row that is not Agreed, each naming the file and field
+  (Fixes #2601). Today's content already keeps all three, so the game is unchanged.
+- Each Dakota's keep-clear box for the map names is now the aircraft and its flag as they fly, not a box for every
+  heading and bank at once that reached about 3.7 km under the aircraft, so names in frame should no longer hide for a
+  Dakota just off the frame's edge (#2604).
+- Keep soft events that exceed a turn's three-card cap waiting until a later free slot, and let objective cards fire without taking a slot.
+  Saves now record the waiting events and are written as save schema 5. An older save still loads; if its game now plays
+  out differently, it loads with the notice that some parts differ from the save, instead of being refused.
+- Closing the advisor's full-screen clip no longer also closes the screen under it, and Escape on the start screen no
+  longer closes an ended game's end report hidden under it (Fixes #2609).
+- Refused Unity shareable builds when alternate cards lack a person's sign-off or settlement-control review keys are omitted.
+- Avoid repeated map-picking, label, city-hover and whole-town scans while the pointer and map view are unchanged.
+- Show Hebrew media descriptions and feedback-preview labels in the Hebrew UI, with English fallback when a media translation is unavailable.
+- In the web version, a save that the browser fails to store (for example when its storage is full) now shows the
+  "could not be saved" message instead of failing silently.
+- The release packaging gate refuses a web build that lost every translation, instead of passing it as empty.
+- Keep the front of a unit's attack for the rest of the turn when combat destroys, surrenders or drives off the defenders,
+  so Send home still waits for that front's armistice.
+- Disabled city-project and legacy map-action Build controls when orders already queued this turn would make the simulation
+  refuse the new order. An order the Attention left cannot pay for keeps its button, and pressing it still says why.
+- Make collection checks, diagnostic protocols, locality URL checks and CLI preview headings independent of the machine's culture.
+- Close the previous turn's report when New Game starts.
+- Size the Hebrew top bar's indicators and values up when it has the same spare room as the English bar.
+- A confirmed New Game no longer deletes the autosave; it writes the new game's autosave at once (it used to write
+  nothing until the next order or turn). In the web version the browser finishes storing it a moment later, so closing
+  the tab immediately can still lose it.
+- When the start screen's recording cannot be played, "The recording could not be played." now appears under the
+  start-up notes (such as an unreadable saved game) instead of replacing them, and it goes away when you press the
+  button again.
+- In Hebrew, more refusals now read in Hebrew: the workers' role and count, returning and reassigning craftsmen and
+  pioneers, pioneer work (not a halutz group, no such work or site, nothing being built), cancelling a city project or a
+  training group, the budget screen's checks, and a road or railway segment that does not exist. Before, they showed in English.
+- A capture or end-of-occupation answer that the end of turn refuses (no Israeli unit left on the place, no free hex to
+  withdraw to, no one to deport, already a city, an unknown choice) now reads in the toast as the capture dialog says it,
+  in Hebrew with the place's Hebrew name. Before, it showed the sim's English in a Hebrew game.
+- "Your game could not be saved." now stays in the message under the top bar until a save works again. Before, the
+  next order or message cleared it while saves could still be failing.
+- In Hebrew, the move and go-to refusals ("That unit cannot move", "That hex is out of reach this turn" and the rest),
+  the stack limit, the Attention shortfall on an instant order, "Buy at least 1 Arms", the reserve call-up's range,
+  Send home with no armistice signed, and a housing repair off its city's hex now read in Hebrew. Before, they showed in
+  English.
+- Switching the language in Settings keeps the Budget changes you have not submitted yet.
+- The start screen's recording of Ben-Gurion now stops when Report or Replay the opening covers the painting, as it
+  does when the screen closes (#2710).
+- Under the gdd-0.3 rules, when one of a city's arms workshops paused last turn, the hex panel now shows the pause under
+  that workshop only, not under every workshop in the city (R-ARMS-006, Refs #2711).
+- Under the gdd-0.3 rules, with a workshop staffing order queued, each arms workshop's hex panel now says whether that
+  order staffs it at End turn (the city's first workshops by id, R-ARMS-005), matching the count above it, instead of
+  its current state (Refs #2711).
+- On a narrow window, where an open screen covers the whole map, the camera keys no longer move the hidden map;
+  beside a desktop screen they still do. A New Game opens on the opening view again instead of where the last game's
+  camera was left.
+- An event that adds housing or job slots to a city near the largest possible number now stops at that number instead
+  of wrapping round and removing them (Refs #2725). No shipped event is affected; play and saves are unchanged.
+- Keep houses and orchard trees clear of a parked 101 Squadron aircraft token, and keep its badge off its tail.
+- Under the GDD 0.3 rules, Reassign craftsmen no longer takes people who are working in an arms workshop or as builders;
+  like Train, it counts only civilians without work.
+- The content loader now refuses a `cities.yaml` that is not exactly the `city` and `town` rows of
+  `map/settlements_1948.yaml`, in that file's order (R-CITY-006, Fixes #2732). It names the missing city, the city out of
+  place, or the row that is not a city or town. The shipped twelve cities already match, so the game is unchanged.
+- An exchange card no longer fires for a side whose stored count of prisoners or held soldiers is 0.
+- The loader now refuses `mvp.cover_months` above 120 and `mvp.field_food_per_turn` above 1,000, so a content edit can't
+  wrap the Food stock.
+- On the Hebrew unit card, a Latin name inside the Hebrew sector line (HMCS Norsyd, HMCS Beauharnois, CIA) now sits
+  between left-to-right marks, so it stays one run in the right-to-left line (Refs #2735, item 3).
+- In the gdd-0.3 basic training test fixture, a camp's cap of 50 now means 50,000 people at any ledger scale: 50 groups
+  at 1,000 people a group, 5 at 10,000. Before, the synthetic fixture let 500,000 people into one camp. A scale that
+  doesn't divide evenly rounds down (Refs #2739). It is not in the game yet; the game players play (gdd-0.1) is unchanged.
+- The dollar conversion panel and the unit card's Reinforce now check what End turn will do with this turn's queued
+  orders, so an earlier order that spends foreign currency or the last civilian without work no longer leaves a
+  conversion or reinforcement offered that End turn then refuses (Refs #2740).
+- Map: when no side data is drawn (a build without the control file, or a date before its first period), a live
+  settlement's colour no longer restyles the whole Acre or Beisan sub-district; only the settlement's hex changes. The
+  shipped game always draws the control layer, so nothing changes on screen today (#2742).
+- The Cabinet screen no longer offers an appointment that this turn's queued appointments make End turn refuse, such as
+  a minister's post for the person just appointed Chief of Staff (Refs #2743).
+- The release gate passes again (#2757): the owner checked the six starting units' order targets sourced on
+  1 November (Carmeli to Manara, Kiryati to Ramle, Givati to Huleiqat, the 7th Brigade to al-Malikiyya, Harel to the
+  Latrun police fort and Negev to Beersheba), so those rows' `checked_on` moves to 6 November 2026. No unit's
+  strength, place or date changes.
+- Content checks: the loader now refuses `front_quiet` on a Deport follow-up card, so such a card can't fire a second
+  time when its front gets an early offer. No shipped card is affected.
+- Enemy scripts: an anchor's two-source check now counts a URL listed twice as one source, and treats a Wikipedia or
+  Wikidata link in capitals as Wikipedia or Wikidata. No shipped anchor changes.
+- Content checks: the loader now refuses a map location whose `name_he_review` is there but blank (`""` or a bare key),
+  naming `map/locations_1948.yaml` and the field (Refs #2804). A blank flag used to load as a reviewed Hebrew name.
+  Rows without the line still load, and every shipped row says `agent-checked`, so the game is unchanged.
+- Content checks: the loader now refuses an objective's card that opens after the game's start, closes before its end,
+  or has `requires` or `conditions`, naming the file and field. Such a card could fire late or never once its objective
+  is completed (R-OBJ-003). No shipped card is affected.
+- The content loader now refuses a Ramla capture hex other than (-3, 24), the hex R-CTRL-001 names (the neighbour nearest Ramla's point; owner on #1796). Before, any land
+  neighbour of Ramla's own hex loaded. The shipped list already uses (-3, 24), so nothing changes in play.
+- The content loader now refuses a designated site on a settlement target's hex, as it already did on a 1948
+  settlement's hex. Ramla's target (-3, 24) is not a settlement's hex, so a site there would have loaded and stayed
+  open to pioneer work after Ramla was depopulated. No shipped site is there, so nothing changes in play.
+- The gdd-0.3 pioneer and farmer work fixtures check for a veteran before they count its work XP, so a veteran at the
+  largest work XP the ledger allows keeps working at its rate instead of throwing (Refs #2804). No game-loop caller yet.
+- gdd-0.3: a refused armistice card now comes back after its `to` date once its front has had two full quiet turns
+  (R-WAR-008). Before, a card refused late in 1949 was never offered again from 1 January 1950. Not live in shipped play,
+  which runs gdd-0.1 (Fixes #2813).
+- A starting force whose `map/units_1948.yaml` strength is 0 is now refused when the game loads, with "must be a whole
+  number >= 1", instead of being skipped without a word. R-UNIT-006 says a force is never below 1. No row in the real
+  file has 0 people, so nothing changes for players and no golden moves.
+- An enemy unit beaten back in combat no longer retreats onto an empty Israeli town or city. It obeys the same limit
+  as an enemy move, and with no other hex to go to it surrenders. Before, under gdd-0.1 such a retreat onto a city
+  ended the game at once with "The enemy holds a city". A save in which that retreat happened replays differently
+  (Fixes #2932).
+- The whole-town landmarks find the map's building layer once and keep it, instead of walking the whole map hierarchy
+  for it on every town swap, up to three times per camera per frame (frame cost finding, 7 November 2026).
+- The three `name_he_review` messages that #2500 missed (map locations in the sim, and the Unity locality and
+  settlement loaders) now match the others: a native speaker, or an AI-assisted contributor who discloses it, may clear it.
+- The Hebrew message shown when the share picture can't be copied no longer points to "the button above", matching the
+  English since the writing-guide pass (owner's wording).
+- Behind the scenes: the automated player that plays the test games searched the whole map once for every hex it
+  considered when moving a brigade into place for an operation card. It now searches once per brigade and picks the same
+  moves. A full test game had used about 300 MB more memory since #2621. The game you play does not use this player.
+- Behind the scenes: the web build's golden check now waits a frame before each golden, so the browser can free each
+  run's memory. The 8 November nightly's check ran out of memory at the 2 GB cap because all 11 goldens played in one
+  frame.
+- On the web, a device that still runs under 30 frames a second after the automatic quality steps (render scale, then
+  the tilt-shift) now gets one more: the towns' buildings draw their lighter far copies, without shadows, at every zoom.
+  The game still opens at about 30 km. Since v0.3.5 that opening drew the full building models with their shadows from
+  the first frame, and weaker graphics ran at 2-3 frames a second. The step undoes itself as frames recover, and a fixed
+  quality choice in Settings clears it.
+
+### Removed
+- The `gdd-0.3` test-only housing arithmetic no longer has an unpaid-upkeep loss, since the MVP has no housing upkeep
+  (27M-17). Nothing in the game changes. (#2516)
 
 ## [0.3.5] - 2026-11-04
 
