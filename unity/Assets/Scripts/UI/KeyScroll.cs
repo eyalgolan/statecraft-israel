@@ -47,6 +47,7 @@ namespace Statecraft.Game.UI
         static ScrollView? Target(VisualElement root, string? screen, bool cardOpen)
         {
             if ((root.Q("root") ?? root).ClassListContains(OpeningPresenter.OpenClass)) return root.Q<ScrollView>("opening-scroll");
+            if ((root.Q("root") ?? root).ClassListContains(RaidCardPresenter.OpenClass)) return root.Q<ScrollView>("raid-scroll");
             if ((root.Q("root") ?? root).ClassListContains(StartScreenPresenter.OpenClass)) return null;
             // Topmost first, the order Escape closes them in (GameRoot.Update): the ending is over the turn report, and both
             // cover the screens, the card, the capture dialog and the info panel (ScreenNav.DisableCovered).

@@ -647,7 +647,7 @@ public class CauseTextTests
             CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
             CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
             CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned,
-            CauseKeys.FieldFood }), rows.Select(x => x.Key).Distinct(), "all remaining keys");   // FieldFood (#2471): only the gdd-0.3 field fixture makes it, no turn yet, so no wording yet
+            CauseKeys.FieldFood, CauseKeys.SentHomeArmsReturned }), rows.Select(x => x.Key).Distinct(), "all remaining keys");   // FieldFood (#2471): only the gdd-0.3 field fixture makes it, no turn yet, so no wording yet; SentHomeArmsReturned (#1725 PR 7): only a Historical ledger game's Send home makes it, no turn yet, so no wording yet
         var appointed = rows.Single(x => x.Key == CauseKeys.Appointed);
         StringAssert.Contains("התפקיד שנשמר", CauseText.Line(appointed, c, NoRows, he, names), "historical title, not current title");
     }

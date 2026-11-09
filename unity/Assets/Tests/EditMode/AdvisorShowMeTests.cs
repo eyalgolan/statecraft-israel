@@ -32,6 +32,16 @@ public class AdvisorShowMeTests
         });
     }
 
+    /// <summary>#2933: End turn is a target of its own, and the unit card's orders show their unit first (the chain's step 8).</summary>
+    [UnityTest]
+    public IEnumerator EndTurnAndTheUnitOrdersAreNamed()
+    {
+        CollectionAssert.Contains(AdvisorTargets.Names, "end_turn"); CollectionAssert.Contains(AdvisorTargets.Names, "unit_orders");
+        Assert.IsTrue(AdvisorTargets.ShowsUnit("unit_orders")); Assert.IsFalse(AdvisorTargets.ShowsUnit("end_turn"));
+        yield return AdvisorPopupLayoutTests.Shown(1280, 720, false, (root, advisor) =>
+            Assert.AreEqual("end-turn", AdvisorTargets.Find(root.Q("root") ?? root, "end_turn", null).Single().name));
+    }
+
     [Test]
     public void ShowMeOnACityShowsItAndPutsTheSelectionBackWhenDone()
     {
@@ -118,7 +128,7 @@ public class AdvisorShowMeNoAttentionTests
         rig.Advisor.OpenChain(); int steps = 0;
         while (rig.Advisor.InChain)
         {
-            Assert.Less(++steps, 7); Assert.AreNotEqual("opening.attention", rig.Advisor.Shown?.Id);
+            Assert.Less(++steps, 10); Assert.AreNotEqual("opening.attention", rig.Advisor.Shown?.Id);
             Assert.IsFalse(rig.Advisor.Shown!.Actions.Any(a => a.ShowMe == AdvisorTargets.Attention));
             var caption = rig.Ui.Q<Label>("advisor-text");
             Assert.AreNotEqual(AdvisorTour1688Fixture.Text(he)["advisor.opening.attention.text"], caption.text);
@@ -130,7 +140,7 @@ public class AdvisorShowMeNoAttentionTests
             }
             rig.Advisor.NextStep();
         }
-        Assert.AreEqual(6, steps);
+        Assert.AreEqual(9, steps);
         if (!he) { Assert.IsNotEmpty(picture.Loaded); Assert.IsNotEmpty(audio); }
         Assert.IsFalse(picture.Loaded.Concat(audio).Any(url => url.Contains("opening.attention")));
         Assert.IsFalse(rig.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.RingClass));

@@ -1520,7 +1520,8 @@ namespace Statecraft.Sim
         /// of a new game is the i-th. Empty in the legacy loop.</summary>
         public List<StartingForce> StartingForces = new List<StartingForce>();
         /// <summary>Exact gdd-0.3 only: gdd03-start.yaml's formation_combat_xp, each own opening formation's combat XP in the
-        /// Historical ledger fixture (#1689 rows 7 and 8), by row id. Null when the file or the list is absent.</summary>
+        /// Historical ledger fixture (#1689 rows 7 and 8), and each own dated brigade's (#1725 PR 7, producer 08), by row id.
+        /// Null when the file or the list is absent.</summary>
         public SortedDictionary<string, int>? Gdd03FormationCombatXp { get; internal set; }
         /// <summary>Every anchor's hex of map/unit_anchor_hexes.yaml by (row id, anchor index), the only hexes an operation
         /// card may order a row's unit to (R-ENEMY-005). Empty in the legacy loop.</summary>
