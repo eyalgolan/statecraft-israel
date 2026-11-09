@@ -14,7 +14,7 @@ using Statecraft.Sim;
 /// - "No, records only (Recommended)": no aggregate city field is written.
 /// The owner's ruling, 8 November 2026, "Yes, one Why line (Recommended)": Send home writes one Why line naming the Arms
 /// returned to the stock, as training's Cancel does (R-TRAIN-002).
-/// The tests call Demobilization.Give directly: Simulation.Step and TurnResolver.Resolve still refuse a ledger game.</summary>
+/// The tests call Demobilization.Give directly: the turn (TurnResolver.Resolve) still refuses a ledger game.</summary>
 public class LedgerSendHomeTests
 {
     static Content Gdd03() => HistoricalPopulationTests.Real(true);

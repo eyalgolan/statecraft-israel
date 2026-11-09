@@ -44,7 +44,7 @@ namespace Statecraft.Sim
         public const string RefusedArms = "{0}: not enough Arms for {1} (need {2}, have {3})";
 
         // #1725 PR 7, producer 12: the refusals only a Historical ledger game gives. Internal, not Refused* constants: no
-        // player reaches them yet (Simulation.Step still refuses a ledger game, R-POP-002), and the UI strings follow when it
+        // player reaches them yet (the turn, TurnResolver.Resolve, still refuses a ledger game, R-POP-002), and the UI strings follow when it
         // does.
         /// <summary>Owner, 8 November 2026, "Recruit+crews+halutz (Rec.)" (#1725 issuecomment-6724941867): the craftsman track is refused with a plain reason until #2476.</summary>
         internal const string LedgerRefusedCraftsman = "Craft training does not run on the population ledger yet (#2476)";
