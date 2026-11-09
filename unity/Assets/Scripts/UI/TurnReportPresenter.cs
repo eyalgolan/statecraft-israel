@@ -82,7 +82,10 @@ namespace Statecraft.Game.UI
                     var last = bridge.Session.Last;
                     if (last == null || ReferenceEquals(last, seen)) return;
                     seen = last;
-                    if (held) { wantsShow = true; return; }   // #2202: it opens when the enemy playback ends (Held)
+                    // #2202: it opens when the enemy playback ends (Held). End turn still closes an open screen, as Show does
+                    // without a playback, so the moves play on the open map (#2967 review, S1); a screen opened while they
+                    // play stays (ShowWhenFree waits for it).
+                    if (held) { nav.Close(); wantsShow = true; return; }
                     wantsShow = false;   // this turn's report replaces one that waited for a screen
                     Show();
                 }
