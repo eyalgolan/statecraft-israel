@@ -273,6 +273,33 @@ public class DecisionCardTests
         Assert.AreSame(r.CardElement, r.Focused, "and puts the focus on the card");
     }
 
+    /// <summary>#2202 (owner, 8 November 2026: "Hide it, bring back (Recommended)"): a card held out of view while the enemy's
+    /// moves play comes back with the keyboard focus, as from under a cover, also when a screen opened and closed meanwhile
+    /// (that close must not mark the hidden card as focused; #2967 review 9 November, N1).</summary>
+    [UnityTest]
+    public IEnumerator ACardHeldForTheEnemyMovesComesBackWithTheFocus()
+    {
+        using var r = new Rig(1920, 1080, "law_of_return");
+        yield return Frames(4);
+        Assert.AreSame(r.CardElement, r.Focused, "precondition: the open card has the focus");
+        var endTurn = r.Root.Q<Button>("end-turn");
+        endTurn.Focus();   // End turn pressed from the keyboard
+        r.Card.HeldForPlayback = true;
+        yield return Frames(3);
+        Assert.IsFalse(r.Shows("event-card"), "precondition: held out of view");
+        r.Nav.Open("cabinet");
+        yield return Frames(3);
+        r.Nav.Open(null);
+        yield return Frames(3);
+        Assert.IsFalse(r.Shows("event-card"), "precondition: still held after the screen closed");
+        endTurn.Focus();
+        Assert.AreSame(endTurn, r.Focused, "precondition");
+        r.Card.HeldForPlayback = false;
+        yield return Frames(3);
+        Assert.IsTrue(r.Shows("event-card"), "the moves ended: the card is back");
+        Assert.AreSame(r.CardElement, r.Focused, "with the keyboard focus");
+    }
+
     [UnityTest]
     public IEnumerator AnOpenEventDoesNotTakeTheFocusBack()
     {
