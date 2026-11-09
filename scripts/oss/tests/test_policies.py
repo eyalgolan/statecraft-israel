@@ -71,10 +71,14 @@ def test_a_test_step_that_runs_zero_tests_fails():
     script = read("scripts/check.sh")
     steps = [s for job in ci["jobs"].values() for s in job["steps"] if "run" in s]
     script_lines = [l for l in script.splitlines() if not l.lstrip().startswith("#")]
-    dotnet = [s["run"] for s in steps if "dotnet test" in s["run"]] + [l for l in script_lines if "dotnet test" in l]
+    # The release gate collects failures with `|| fail=1` and refuses at the end; that keeps the exit code.
+    gate_lines = [l.removesuffix(" || fail=1") for l in read("scripts/oss/release_gate.sh").splitlines()
+                  if not l.lstrip().startswith("#")]
+    dotnet = [s["run"] for s in steps if "dotnet test" in s["run"]] + [
+        l for l in script_lines + gate_lines if "dotnet test" in l]
     pytest_steps = [s for s in steps if "pytest " in s["run"]]
-    pytest_lines = [l for l in script_lines if "pytest " in l]
-    assert len(dotnet) == 2 and len(pytest_steps) == 2 and len(pytest_lines) == 2
+    pytest_lines = [l for l in script_lines + gate_lines if "pytest " in l]
+    assert len(dotnet) == 3 and len(pytest_steps) == 2 and len(pytest_lines) == 4
     for cmd in dotnet:
         assert cmd.rstrip().endswith(" -- RunConfiguration.TreatNoTestsAsError=true"), cmd
     for step in pytest_steps:
