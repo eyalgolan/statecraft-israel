@@ -3609,3 +3609,127 @@ def test_a_run_lock_release_failure_does_not_replace_run_nights_record(tmp_path,
     assert log.count("REFUSED") == 1 and "gate=github-client" in log and "gate=lock" not in log
     err = capsys.readouterr().err
     assert "cannot release" in err and "existing record is unchanged" in err
+
+
+# --- #3009: a refusal recorded by main() marks the night as run, under run.lock ------------------------------------
+
+class _FixedNow(datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return NOW.astimezone(tz) if tz else NOW
+
+
+def _main_job(tmp_path, monkeypatch, *, corrupt_config: bool):
+    job = tmp_path / "job"
+    job.mkdir()
+    ns.save_state(job / "state.json", ns.State(boot_baseline=[8000.0], last_run_day="2026-10-26",
+                                               site_pending="0.3.1"))
+    monkeypatch.setattr(nightly, "JOB", job)
+    monkeypatch.setattr(nightly, "datetime", _FixedNow)
+    monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
+    if corrupt_config:
+        (job / "config.json").write_text("{not json")
+        monkeypatch.setattr(nightly, "Config", lambda: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    else:
+        monkeypatch.setattr(nightly, "load_config", lambda p: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    return job
+
+
+def _lock_fails_once(monkeypatch, then=None):
+    """run_lock raises a lock-system Refused on its first use only; later uses get `then` (default: the real lock)."""
+    real = nightly.run_lock
+    calls = 0
+
+    def run_lock(job):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise ns.Refused("lock", f"cannot open {job / 'run.lock'}: transient")
+        return then(job) if then else real(job)
+    monkeypatch.setattr(nightly, "run_lock", run_lock)
+
+
+def _save_seeing_the_lock(job, seen):
+    real = ns.save_state
+
+    def save(path, state):
+        with (job / "run.lock").open("a") as fh:   # a second open file: flock conflicts unless someone holds it
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(fh, fcntl.LOCK_UN)
+                seen.append(False)
+            except BlockingIOError:
+                seen.append(True)
+        real(path, state)
+    return save
+
+
+def _assert_main_marked_the_night(job):
+    state = ns.load_state(job / "state.json")
+    assert state.last_run_day == "2026-10-28"
+    assert state.boot_baseline == [8000.0] and state.site_pending == "0.3.1"   # the rest of the state is kept
+    assert ns.missed_days(state.last_run_day, date(2026, 10, 29)) == []   # the next night records no MISSED line
+
+
+@pytest.mark.parametrize("path", ["config", "lock"])
+def test_a_refusal_recorded_by_main_marks_the_night_as_run_under_the_lock(tmp_path, monkeypatch, path):
+    job = _main_job(tmp_path, monkeypatch, corrupt_config=path == "config")
+    if path == "lock":
+        _lock_fails_once(monkeypatch)
+    seen: list[bool] = []
+    monkeypatch.setattr(nightly, "save_state", _save_seeing_the_lock(job, seen))
+    assert nightly.main(["run"]) == 1
+    assert f"gate={path}" in (job / "LOG.md").read_text()
+    _assert_main_marked_the_night(job)
+    assert seen == [True]   # written while run.lock was held
+
+
+def test_a_main_refusal_writes_no_state_when_another_run_holds_the_lock(tmp_path, monkeypatch):
+    job = _main_job(tmp_path, monkeypatch, corrupt_config=False)
+
+    @contextmanager
+    def held_elsewhere(job):
+        yield False
+    _lock_fails_once(monkeypatch, then=held_elsewhere)
+    before = (job / "state.json").read_text()
+    assert nightly.main(["run"]) == 1
+    assert "gate=lock" in (job / "LOG.md").read_text()
+    assert (job / "state.json").read_text() == before   # the run holding the lock writes the day itself
+
+
+def test_a_main_refusal_with_a_still_broken_lock_leaves_the_state_alone(tmp_path, monkeypatch, capsys):
+    job = _main_job(tmp_path, monkeypatch, corrupt_config=False)
+    (job / "run.lock").mkdir()
+    before = (job / "state.json").read_text()
+    assert nightly.main(["run"]) == 1
+    assert "gate=lock" in (job / "LOG.md").read_text()
+    assert (job / "state.json").read_text() == before   # never written outside run.lock
+    assert "could not mark 2026-10-28 as run" in capsys.readouterr().err
+
+
+def test_a_main_refusal_leaves_a_corrupt_state_file_alone(tmp_path, monkeypatch, capsys):
+    job = _main_job(tmp_path, monkeypatch, corrupt_config=True)
+    (job / "state.json").write_text("{not json")
+    assert nightly.main(["run"]) == 1
+    assert "gate=config" in (job / "LOG.md").read_text()   # the refusal is still recorded
+    assert (job / "state.json").read_text() == "{not json"   # the next night refuses it itself, as gate=state
+    assert "could not mark" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("path", ["config", "lock"])
+def test_a_no_publish_refusal_in_main_writes_no_state(tmp_path, monkeypatch, path):
+    job = _main_job(tmp_path, monkeypatch, corrupt_config=path == "config")
+    if path == "lock":
+        _lock_fails_once(monkeypatch)
+    before = (job / "state.json").read_text()
+    assert nightly.main(["run", "--no-publish"]) == 1
+    assert not (job / "LOG.md").exists() and (job / "state.json").read_text() == before
+
+
+def test_a_savetest_refusal_in_main_does_not_mark_the_night(tmp_path, monkeypatch):
+    """The save test is not the night's run (run_savetest never sets last_run_day), so its refusal leaves the day."""
+    job = _main_job(tmp_path, monkeypatch, corrupt_config=True)
+    before = (job / "state.json").read_text()
+    assert nightly.main(["savetest", "--tag", TAG]) == 1
+    assert "gate=config" in (job / "LOG.md").read_text()
+    assert (job / "state.json").read_text() == before
