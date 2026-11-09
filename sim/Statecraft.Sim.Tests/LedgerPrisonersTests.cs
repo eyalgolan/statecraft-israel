@@ -218,16 +218,16 @@ public class LedgerPrisonersTests
         Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
     }
 
-    // Where Take's refusal can be reached from combat, and what it leaves. Combat.Resolve (step 2, TurnResolver.cs:20) refuses
-    // any initialized ledger at its entry (Combat.cs:267), before any engagement, so on this branch only the player's instant
-    // attack, Combat.Strike (its one caller is Step, Simulation.cs:268), can reach Prisoners.Take on a dark start. Here an
+    // Where Take's refusal can be reached from combat, and what it leaves. Combat.Resolve (step 2, called by TurnResolver) refuses
+    // any initialized ledger at its entry, before any engagement, so on this branch only the player's instant
+    // attack, Combat.Strike (its one caller is Step, through Simulation.RunOrders), can reach Prisoners.Take on a dark start. Here an
     // enemy unit boxed in by own units surrenders to a Strike while SoldiersHeld disagrees with the Captured records, so Take
     // throws InvalidOperationException before it writes anything. The throw comes after the Strike's own writes (the
     // attacker's order and the engagement's draw and losses), and those stay on the state object a direct call is given. In
-    // the game that object is never the caller's: Step works on a clone (Simulation.cs:51), so the throw discards the whole
+    // the game that object is never the caller's: Step works on a clone, so the throw discards the whole
     // command's result and Step's caller is unchanged. A Clone() taken before the call pins that isolation. Step itself
     // cannot be driven there: the refusal needs an initialized Historical ledger, and Step refuses any initialized ledger
-    // at Simulation.cs:48, while a game without a ledger skips every ledger check in Take.
+    // before it clones, while a game without a ledger skips every ledger check in Take.
     [Fact]
     public void ARefusedCaptureInCombatThrowsAndAPriorCloneIsUnchanged()
     {
@@ -282,6 +282,24 @@ public class LedgerPrisonersTests
         Assert.NotEqual(prior.RngState, s.RngState);
         Assert.NotEqual(hash, s.Hash());
         Assert.Contains(lines, x => x.Key == WhyKeys.Engagement);
+    }
+
+    // R-POW-005, #2473: Prisoners.Return still refuses a Historical ledger. It removes a front's SoldiersHeld count but moves
+    // no Captured record, so on a dark start after a real capture it must throw before any write; lifting that refusal must
+    // move the records home in the same change, or the next Take or Upkeep finds the count and the records disagree.
+    [Fact]
+    public void ReturnStillRefusesAHistoricalLedger()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        Take(c, s, Own(c, s)[0], Enemy(s, "egypt"));
+        Assert.True(s.SoldiersHeld["egypt"] > 0);
+        Assert.True(s.PopulationLedger.IsHistorical);
+        var before = s.Describe(); var hash = s.Hash(); var ledger = s.PopulationLedger.Canonical().ToList(); var why = new List<Cause>();
+        Assert.Contains("integration is held", Assert.Throws<NotSupportedException>(() => Prisoners.Return(c, s, "egypt", why)).Message);
+        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash());
+        Assert.Equal(ledger, s.PopulationLedger.Canonical()); Assert.Empty(why);
+        AssertHeldMatchesRecords(s);
     }
 
     // Determinism: Take and Upkeep draw no RNG; two dark games given the same captures and upkeep end with the same hash and
