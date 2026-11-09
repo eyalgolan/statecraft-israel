@@ -64,7 +64,8 @@ elif [ ! -d unity/Library ]; then
 else
   run "unity compile (dotnet, outside Unity)" scripts/unity_compile/compile.sh "$unity_contents"
 fi
-run "sim and content tests" dotnet test sim/Statecraft.sln -c Release --nologo
+# TreatNoTestsAsError: zero tests found is a failure, not a pass (#2532); pytest already exits 5 on no tests.
+run "sim and content tests" dotnet test sim/Statecraft.sln -c Release --nologo -- RunConfiguration.TreatNoTestsAsError=true
 run "data tool tests" uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q
 
 echo
