@@ -1574,8 +1574,9 @@ public class CityPanelTests
     public void TheWorkersLineAlsoPricesATrainOrder([Values] bool hebrew)
     {
         // Playtest: at security level 5 the only price on the panel was the Assign order's (0.5 x 2 = 1.0), right above the
-        // Train buttons, though a Train order costs 1 x 2 = 2.0 (R-GOV-002): with 1.0 left the Train buttons were disabled
-        // with nothing on the panel to say why. The workers line now names the change it prices and adds the Train order's
+        // Train buttons, though a Train order costs 1 x 2 = 2.0 (R-GOV-002's cost of 1, doubled at level 5 by
+        // content/rules.yaml's rung_attention_step through AttentionSystem.Cost): with 1.0 left the Train buttons were
+        // disabled with nothing on the panel to say why. The workers line now names the change it prices and adds the Train order's
         // price, which every Train button shares. It stays one line of the panel, so the panel still fits short windows.
         var t = hebrew ? He : En; var bridge = Bridge(t);
         Assert.AreEqual(5, bridge.TurnStart.Rung, "precondition: the game starts at security level 5");
