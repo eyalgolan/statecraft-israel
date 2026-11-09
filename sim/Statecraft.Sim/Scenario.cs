@@ -106,7 +106,9 @@ namespace Statecraft.Sim
                 case "reinforce": return new Reinforce(Whole(c, "unit"), Str(c, "city"), Whole(c, "count"));
                 case "pioneer_work": return new PioneerWork(Whole(c, "unit"), Str(c, "action"), Str(c, "site"));
                 case "stop_work": return new StopWork(Whole(c, "unit"));
-                case "unit_order": return new UnitOrder(Whole(c, "unit"), Str(c, "order"), c.ContainsKey("q") ? Whole(c, "q") : (int?)null, c.ContainsKey("r") ? Whole(c, "r") : (int?)null);
+                case "unit_order":
+                    if (c.ContainsKey("q") != c.ContainsKey("r")) throw new InvalidDataException("command 'unit_order' needs both 'q' and 'r', or neither");
+                    return new UnitOrder(Whole(c, "unit"), Str(c, "order"), c.ContainsKey("q") ? Whole(c, "q") : (int?)null, c.ContainsKey("r") ? Whole(c, "r") : (int?)null);
                 case "start_project": return new StartProject(Str(c, "project"), Str(c, "city"), Whole(c, "q"), Whole(c, "r"));
                 case "cancel_project": return new CancelProject(Whole(c, "project"));
                 case "move": return new Move(Whole(c, "unit"), Whole(c, "q"), Whole(c, "r"));
