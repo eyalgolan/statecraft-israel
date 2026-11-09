@@ -33,41 +33,42 @@ namespace Statecraft.Sim
         /// people become prisoners under its own side; the player's soldiers are counted under the captor's side. Called only by
         /// Combat's surrender, the one way a unit is captured. With an initialized Historical ledger (the dark start, #1710,
         /// #1725 PR 7) the player's surrendering formation's serving soldier records also become Captured under the captor's
-        /// side (<see cref="CaptureRecords"/>), checked in full before anything is written; enemy prisoners stay a count per
-        /// side (owner, 8 November 2026: "No, keep count (Recommended)"). A synthetic or Open ledger is still refused. A refusal
-        /// throws before Take writes anything; what the throw leaves in combat is set out at Combat.Fight's call.</summary>
+        /// side (<see cref="CaptureRecords"/>), and SoldiersHeld grows by the records captured, so the count per captor stays
+        /// the Captured records with that captor (owner, 8 November 2026: "Keep count + check (Recommended)"). Without a
+        /// ledger it grows by the unit's strength, as before. Enemy prisoners stay a count per side (owner, 8 November 2026:
+        /// "No, keep count (Recommended)"). A synthetic or Open ledger, an unbound captor and a held count that already
+        /// disagrees with the records are refused; a refusal throws before Take writes anything, and what the throw leaves in
+        /// combat is set out at Combat.Fight's call.</summary>
         internal static string Take(Content c, GameState s, Unit u, Unit captor)
         {
             PopulationLedger.RefuseUnlessHistorical(s);
             if (s.PopulationLedger.IsInitialized) RequireHeldMatchesRecords(s);
             if (u.Side == Movement.PlayerSide)
             {
-                if (s.PopulationLedger.IsInitialized) CaptureRecords(c, s, u, captor.Side);
-                Add(s.SoldiersHeld, captor.Side, u.Strength);
+                var held = s.PopulationLedger.IsInitialized ? CaptureRecords(c, s, u, captor.Side) : u.Strength;
+                Add(s.SoldiersHeld, captor.Side, held);
                 return "They are held by the enemy";
             }
             Add(s.PrisonersHeld, u.Side, u.Strength);
             return "They are held as prisoners";
         }
 
-        /// <summary>R-POW-005, R-POP-002 on the dark start: the opening formation <paramref name="u"/>'s serving soldier records
-        /// (active soldiers on its units_1948 target; unit id i is c.StartingForces[i], StartingForces.Init) become Captured
-        /// under <paramref name="side"/>, in one validated ledger commit. Refused before any write when the unit is not a
-        /// units_1948 formation (a trained formation's soldiers serve a target this ledger does not have yet) or when its
-        /// records do not number its strength (R-POP-004).</summary>
-        static void CaptureRecords(Content c, GameState s, Unit u, string side)
+        /// <summary>R-POW-005, R-POP-002 on the dark start: the serving soldier records of the player's formation
+        /// <paramref name="u"/> become Captured under <paramref name="side"/>, in one validated ledger commit, and the number
+        /// captured is returned. They are the active soldiers on its ActiveService target, found as battles find them
+        /// (<see cref="Training.FormationTarget"/>: an opening formation's units_1948 target, a trained one's formation/&lt;id&gt;;
+        /// owner, 9 November 2026: "Yes, in #1706 (Recommended)"). A strength its records do not number is not refused (owner,
+        /// 9 November 2026: "Go ahead on strength (Recommended)"): with more records than its strength, its strength of them
+        /// are captured, the lowest ids first, and the rest stay serving; with fewer, all of them are. An unbound captor or a
+        /// record that is not an active soldier is refused by PopulationLedger.Capture before any write.</summary>
+        static int CaptureRecords(Content c, GameState s, Unit u, string side)
         {
-            if (u.Id < 0 || u.Id >= c.StartingForces.Count || c.StartingForces[u.Id].Side != Movement.PlayerSide)
-                throw new InvalidOperationException(FormattableString.Invariant(
-                    $"Unit {u.Id} is not a formation of units_1948.yaml, so its soldiers have no ledger records to capture (R-POP-002)."));
-            var key = HistoricalPopulation.FormationPrefix + c.StartingForces[u.Id].Row;
+            var key = Training.FormationTarget(c, u.Id);
             var ids = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier
                     && p.Assignment.Kind == PopulationAssignmentKind.ActiveService && p.Assignment.Target == key)
-                .Select(p => p.Id).OrderBy(x => x).ToList();
-            if (ids.Count != u.Strength)
-                throw new InvalidOperationException(FormattableString.Invariant(
-                    $"Unit {u.Id} has strength {u.Strength} but the population ledger serves it with {ids.Count} (R-POP-004)."));
+                .Select(p => p.Id).OrderBy(x => x).Take(Math.Max(0, u.Strength)).ToList();
             s.PopulationLedger.Capture(ids, side);
+            return ids.Count;
         }
 
         /// <summary>The owner's ruling of 8 November 2026, "Keep count + check (Recommended)": on an initialized ledger,
