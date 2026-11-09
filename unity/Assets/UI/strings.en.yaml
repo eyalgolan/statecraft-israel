@@ -730,10 +730,16 @@ unit.service.navy: "Navy"
 # A formation raised in play has no historical unit row: its card uses the sim's type, strength and home city (#1396).
 unit.type.veteran_soldier: "Veteran soldiers"
 unit.strength: "Strength: {0}"
+# A damaged formation (#2432): {0} its strength now, {1} its full strength (R-TRAIN-004: the strength before its first loss;
+# an enemy unit's, its starting force's), in population units as unit.strength.
+unit.strength_of: "Strength: {0} of {1}"
 unit.home_city: "Home city: {0}"
 unit.position: "At {0} since {1}"
 unit.position_plain: "At {0}"
 unit.formed: "Formed {0}"
+# A unit's Formed line with its strength (#2432): {0} unit.formed, {1} unit.strength or unit.strength_of, on one line so the
+# card is no taller than before the strength was shown.
+unit.formed_strength: "{0} · {1}"
 unit.commander: "First commander: {0}"
 unit.aircraft.s199: "Avia S-199"
 unit.aircraft.spitfire: "Supermarine Spitfire LF Mk IXe"
