@@ -1554,10 +1554,10 @@ opening.return: "חזרה למסך הפתיחה"
 opening.count: "שלב {0} מתוך {1}"
 opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת המקורות בידי אדם ממתינה."
 
-# The opening film. film.skip repeats opening.skip's existing Hebrew, as no film line covers it. The two cues are
+# The opening film. film.skip matches the English "Skip the film" (owner, 9 November 2026: "\"דילוג על הסרט\" (Recommended)"). The two cues are
 # placeholders, not the film's words, until the new film's script (#2953) is agreed. Agent-drafted Hebrew,
 # native-review-pending (#564). They show only once Assets/Resources/Film/film.yaml says he_review: approved.
-film.skip: "דילוג על הפתיח"
+film.skip: "דילוג על הסרט"
 film.cue.1: "כתובית זמנית ראשונה. התסריט של סרט הפתיחה עדיין לא סוכם."
 film.cue.2: "כתובית זמנית שנייה. התסריט המוסכם יחליף את השורות האלה."
 
