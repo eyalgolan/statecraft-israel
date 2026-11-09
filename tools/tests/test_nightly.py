@@ -71,9 +71,12 @@ class FakeGH:
         row = self.at_tag(tag)
         return row[2] if row else None
 
-    def next_version(self):
-        self.calls.append(("next_version",))
-        return "0.3.2"
+    def next_version(self, override=None):
+        if override is None:
+            self.calls.append(("next_version",))
+            return "0.3.2"
+        self.calls.append(("next_version", override))
+        return ns.next_version([{"tag_name": "v0.3.1", "draft": False}], override=override)
 
     def ensure_tag_available(self, tag):
         self.calls.append(("ensure_tag_available", tag))
@@ -185,15 +188,15 @@ class Env:
             setattr(self, k, v)
         self._rules()
 
-    def pre(self, state=None, gh=None, *, now=NOW, manual=False, free=100.0, no_publish=False):
+    def pre(self, state=None, gh=None, *, now=NOW, manual=False, free=100.0, no_publish=False, **kw):
         return nightly.preflight(self.cfg, state or ns.State(), self.runner, gh or FakeGH(), job=self.job, now=now,
-                                 manual=manual, free_gb=lambda p: free, no_publish=no_publish)
+                                 manual=manual, free_gb=lambda p: free, no_publish=no_publish, **kw)
 
-    def night(self, state=None, gh=None, *, now=NOW, manual=False, free=100.0, no_publish=False):
+    def night(self, state=None, gh=None, *, now=NOW, manual=False, free=100.0, no_publish=False, **kw):
         if state is not None:
             ns.save_state(self.state_path, state)
         return nightly.run_night(self.cfg, self.state_path, self.job, self.runner, gh or FakeGH(), None, now=now,
-                                 manual=manual, no_publish=no_publish, free_gb=lambda p: free)
+                                 manual=manual, no_publish=no_publish, free_gb=lambda p: free, **kw)
 
     def log(self):
         p = self.job / "LOG.md"
@@ -287,6 +290,44 @@ def test_changed_sha_builds_even_when_the_saved_tag_matches(env):
     st = ns.State(last_published=ns.Published(TAG, OLD, "0.3.2", {}, None))
     assert env.pre(st, gh).sha == SHA
     assert gh.calls == [("next_version",), ("release_state", TAG), ("ensure_tag_available", TAG)]
+
+
+def test_a_manual_version_replaces_the_next_patch_and_flows_into_the_tag(env):
+    gh = FakeGH()
+    n = env.pre(ns.State(), gh, manual=True, version="0.4.0")
+    assert (n.version, n.tag) == ("0.4.0", "v0.4.0")
+    assert gh.calls == [("next_version", "0.4.0"), ("release_state", "v0.4.0"), ("ensure_tag_available", "v0.4.0")]
+
+
+def test_without_a_manual_version_the_night_takes_the_next_patch(env):
+    gh = FakeGH()
+    n = env.pre(ns.State(), gh, manual=True)
+    assert (n.version, n.tag) == ("0.3.2", TAG)
+    assert gh.calls == [("next_version",), ("release_state", TAG), ("ensure_tag_available", TAG)]
+
+
+def test_a_manual_version_needs_a_manual_run(env):
+    gh = FakeGH()
+    with pytest.raises(ns.Refused) as e:
+        env.pre(ns.State(), gh, version="0.4.0")
+    assert e.value.gate == "version" and gh.calls == []
+
+
+def test_a_manual_version_at_or_below_the_latest_is_a_refused_night(env):
+    gh = FakeGH()
+    assert env.night(ns.State(), gh, manual=True, version="0.3.1") == "REFUSED"
+    assert gh.calls == [("next_version", "0.3.1")]
+    assert "REFUSED" in env.log() and "version" in env.log()
+
+
+def test_a_manual_version_refuses_while_an_own_draft_of_another_tag_is_open(env):
+    gh = FakeGH()
+    st = ns.State(open_draft=TAG)
+    st.open_draft_id = 101
+    with pytest.raises(ns.Refused) as e:
+        env.pre(st, gh, manual=True, version="0.4.0")
+    assert e.value.gate == "version" and TAG in e.value.detail
+    assert "delete_draft" not in [c[0] for c in gh.calls] and st.open_draft == TAG
 
 
 def test_a_late_start_is_missed_and_earlier_gaps_are_reported(env):
@@ -3386,6 +3427,27 @@ def test_the_steam_stage_is_skipped_while_ids_are_null(night, env, stages, monke
     steam_ready(env)
     assert staged(night, env, stages, st, no_publish=False, no_steam=True)
     assert steam_calls(env) == []
+
+
+def test_version_reaches_the_night_only_with_manual(env, monkeypatch, capsys):
+    seen = {}
+    loaded = []
+    monkeypatch.setattr(nightly, "load_config", lambda path: loaded.append(path) or env.cfg)
+    monkeypatch.setattr(nightly, "_clients", lambda cfg: (FakeGH(), None))
+    monkeypatch.setattr(nightly, "JOB", env.job)
+    monkeypatch.setattr(nightly, "run_night", lambda *a, **k: seen.update(k) or "PUBLISHED")
+    assert nightly.main(["run", "--manual", "--version", "0.4.0"]) == 0 and seen["version"] == "0.4.0"
+    assert nightly.main(["run"]) == 0 and seen["version"] is None   # the launchd command line
+    seen.clear()
+    loaded.clear()
+    for argv in (["run", "--version", "0.4.0"], ["run", "--manual", "--version", "v0.4.0"],
+                 ["run", "--manual", "--version", "0.4"]):
+        with pytest.raises(SystemExit) as e:
+            nightly.main(argv)
+        assert e.value.code == 2
+    assert seen == {} and loaded == [] and not (env.job / "LOG.md").exists()   # refused before any work or record
+    err = capsys.readouterr().err
+    assert "--version needs --manual" in err and "X.Y.Z" in err
 
 
 def test_no_steam_reaches_the_stage_from_the_command_line(env, monkeypatch):

@@ -206,7 +206,8 @@ Every night at 03:00 (Israel time) the newest `main` is built and, only if every
 game: a normal GitHub release marked **Latest**, tagged `vX.Y.Z`, which GitHub Pages' `/demo/` serves, and, once itch
 pushes are enabled, the itch.io page. X.Y.Z is one patch above the numerically highest published release tag matching
 `^v[0-9]+\.[0-9]+\.[0-9]+$`; drafts, `-nightly` tags and other names do not choose the version. With v0.3.1 and
-v0.3.1-nightly.20261028 published, the next nightly is v0.3.2. The job is
+v0.3.1-nightly.20261028 published, the next nightly is v0.3.2. A by-hand run can choose a higher version instead
+(`--manual --version X.Y.Z`, `tools/README.md`, "Nightly release"); the 03:00 night never does. The job is
 `tools/nightly.py` under launchd; the install steps are in `tools/README.md`, "Nightly release". Nothing here changes
 the owner-run release steps above (steps 1-7). Published nightlies are never deleted.
 

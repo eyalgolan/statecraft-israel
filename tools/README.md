@@ -273,6 +273,11 @@ run it again. Then:
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.statecraft.nightly.plist
 ```
 
+A by-hand night can choose its version instead of the next patch, for a minor bump such as
+`uv run tools/nightly.py run --manual --version 0.4.0` from the clone. `--version` is refused without `--manual`, when
+it is not plain X.Y.Z, and when it is not above every published vX.Y.Z; the launchd job never passes it, so the next
+scheduled night is one patch above whatever was published last (v0.4.1 after v0.4.0).
+
 A change to `nightly_launch.py` or `nightly_state.py` needs the `cp` again; a change to `nightly.py` does not.
 
 Uninstall: `launchctl bootout gui/$(id -u)/com.statecraft.nightly`, then delete the plist. To remove the clone too,
