@@ -143,6 +143,13 @@ namespace Statecraft.Sim
         internal double NaturalIncreaseCarry { get; private set; }
         /// <summary>The natural-increase records added so far: their split over the cities is Cities.Apportion of this count.</summary>
         internal int NaturalIncreaseRecords { get; private set; }
+        /// <summary>#1725 PR 7: whether the training centre's census teacher (HistoricalPopulation.TeacherId) has ever been
+        /// linked to a pioneer map unit (Unit.Records). Until then it is set apart as the untouched teacher ("Takeable, but last
+        /// (Recommended)"); after it, its record is a pioneer like any other. Written to the canonical text only once set, so
+        /// a ledger that never linked it hashes as before; a save replays the orders that set it.</summary>
+        internal bool TeacherLinked { get; private set; }
+        /// <summary>Records that the census teacher is linked to a map unit (<see cref="TeacherLinked"/>); once set it stays set.</summary>
+        internal void MarkTeacherLinked() { RequireInitialized(); TeacherLinked = true; }
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }
         public double TotalPeople => (double)units.Count * peoplePerUnit;
@@ -444,6 +451,7 @@ namespace Statecraft.Sim
                     ? PopulationText.Fields("natural-increase", "records", NaturalIncreaseRecords)
                     : PopulationText.Fields("natural-increase", "records", NaturalIncreaseRecords, "carry",
                         BitConverter.DoubleToInt64Bits(NaturalIncreaseCarry).ToString("X16", CultureInfo.InvariantCulture));
+            if (TeacherLinked) yield return PopulationText.Fields("teacher-linked", true);
             if (bindings != null) foreach (var b in bindings.Canonical()) yield return b;
             foreach (var p in units.Values) yield return PopulationText.Fields("unit", p.Canonical());
             foreach (var source in sources) yield return PopulationText.Fields("source", source.Key, source.Value);

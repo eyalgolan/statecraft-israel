@@ -346,6 +346,96 @@ public class LedgerHalutzLinkTests
         ledger.Reconcile();
     }
 
+    static int Unskilled(GameState s, string city) => s.PopulationLedger.Units.Count(p => p.Status == PopulationStatus.FreeCivilian
+        && p.Assignment.Kind == PopulationAssignmentKind.Unassigned && p.Location?.City == city && p.Profession == CivilianProfession.None);
+
+    // The track is a preference, not a filter. A Veteran pioneer record trained on the halutz track keeps its tier ("Keeps tier
+    // and XP (Recommended)"), so it graduates as a halutz unit linked to a Veteran record; returned, its halutz group comes
+    // back as a halutz unit linked to that record, because the halutz track has no other record to take.
+    [Fact]
+    public void AHalutzGroupWhoseRecordIsVeteranCanBeReassigned()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var why = new List<Cause>();
+        var veteran = s.PopulationLedger.NextPopulationId;
+        Assert.Null(Qualification.Return(c, s, Unlinked(c, s, Projects.VeteranType, c.RulesAt(s.Date).Mvp!.VeteranHalutzService!.Value), why));
+        Assert.Equal(CivilianTier.Veteran, s.PopulationLedger.Get(veteran).Tier);
+        var before = s.Units.Keys.ToHashSet();
+        Assert.Null(Training.Start(c, s, TelAviv, "halutz", Unskilled(s, TelAviv) + 1, why));
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(veteran).Status);
+        for (int t = 0; t < c.UnitTypes.First(x => x.Id == "halutz").TrainingTurns; t++) Training.Progress(c, s, why);
+        var unit = Assert.Single(s.Units.Values, u => !before.Contains(u.Id) && u.Records!.Contains(veteran));
+        Assert.Equal(("halutz", CivilianTier.Veteran), (unit.Type, s.PopulationLedger.Get(veteran).Tier));
+        Assert.Null(Qualification.Return(c, s, unit.Id, why));
+        Assert.Equal(new[] { 0 }, s.Cities[TelAviv].Qualified.Halutzim);
+        var id = s.NextId;
+        Assert.Null(Qualification.ReassignPioneers(c, s, TelAviv, "halutz", 1, why));
+        Assert.Equal(("halutz", Ids(veteran)), (s.Units[id].Type, Ids(s.Units[id].Records!)));
+        s.PopulationLedger.Reconcile();
+    }
+
+    // R-QUAL-006 lowers the halutz groups first whatever record the Train order took. With a Veteran record (the veteran's)
+    // and a Novice one (the halutz's) returned, training one past the unskilled takes the Veteran record and leaves one
+    // qualified veteran; the veteran track then takes the Novice record, its only one.
+    [Fact]
+    public void AVeteranGroupFallsBackToANoviceRecordAfterTrainLowersTheHalutzCount()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var why = new List<Cause>();
+        var (records, units) = Graduate(c, s, 2, why);
+        SetService(s, units[0], c.RulesAt(s.Date).Mvp!.VeteranHalutzService!.Value, Projects.VeteranType);
+        SetService(s, units[1], 1);
+        Assert.Null(Qualification.Return(c, s, units[0], why));
+        Assert.Null(Qualification.Return(c, s, units[1], why));
+        Assert.Null(Training.Start(c, s, TelAviv, "halutz", Unskilled(s, TelAviv) + 1, why));
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(records[0]).Status);
+        Assert.Equal((0, 1), (s.Cities[TelAviv].Qualified.Halutzim.Count, s.Cities[TelAviv].Qualified.Veterans));
+        var id = s.NextId;
+        Assert.Null(Qualification.ReassignPioneers(c, s, TelAviv, Projects.VeteranType, 1, why));
+        Assert.Equal((Projects.VeteranType, Ids(records[1])), (s.Units[id].Type, Ids(s.Units[id].Records!)));
+        s.PopulationLedger.Reconcile();
+    }
+
+    // "Takeable, but last (Recommended)": the census teacher is set apart only while it is untouched. Once a Reassign has
+    // linked it to a unit, it is a pioneer like any other: returned, it holds its qualified group, and a Train order that
+    // takes only an unskilled civilian lowers nothing. The ledger records the link (hashed only once set), so a replay of
+    // the same orders gives the same state.
+    // No order in the real content links the teacher today (Haifa has no training facility, and every ascending-id pick
+    // reaches the teacher before any later record), so Haifa's qualified veterans are raised by hand to make the Reassign
+    // reach it.
+    [Fact]
+    public void ATeacherOnceLinkedHoldsItsGroupLikeAnyReturnedPioneer()
+    {
+        var c = Gdd03();
+        GameState Run()
+        {
+            var s = Dark(c);
+            var teacher = Teacher(s);
+            var why = new List<Cause>();
+            var h = s.Cities[Haifa];
+            s.Cities[Haifa] = h.WithQualified(h.Qualified.WithVeterans(1));
+            var id = s.NextId;
+            Assert.Null(Qualification.ReassignPioneers(c, s, Haifa, Projects.VeteranType, 1, why));
+            Assert.Equal(Ids(teacher), Ids(s.Units[id].Records!));
+            Assert.True(s.PopulationLedger.TeacherLinked);
+            var hex = c.SettlementHexes.First(x => x.Id == TelAviv);
+            var u = s.Units[id];
+            s.Units[id] = new Unit(u.Id, u.Type, hex.Q, hex.R, u.Service, records: u.Records);
+            Assert.Null(Qualification.Return(c, s, id, why));
+            Assert.Equal((TelAviv, 1), (s.PopulationLedger.Get(teacher).Location!.City, s.Cities[TelAviv].Qualified.Veterans));
+            Assert.Null(Training.Start(c, s, TelAviv, "halutz", 1, why));
+            Assert.Equal(1, s.Cities[TelAviv].Qualified.Veterans);
+            s.PopulationLedger.Reconcile();
+            return s;
+        }
+        var a = Run(); var b = Run();
+        Assert.Equal(a.Hash(), b.Hash());
+        Assert.Contains(a.PopulationLedger.Canonical(), line => line.Contains("teacher-linked"));
+        Assert.DoesNotContain(Dark(c).PopulationLedger.Canonical(), line => line.Contains("teacher-linked"));
+    }
+
     // Following "Yes, keep the link (Recommended)" (a returned veteran record counts for the veteran track): a linked veteran
     // unit's record returns as a Veteran pioneer, as a new record from a veteran unit is ("Beginner; veteran stays
     // (Recommended)"), and each track takes only its own records: Veteran ones for veteran_halutz, the others for halutz.

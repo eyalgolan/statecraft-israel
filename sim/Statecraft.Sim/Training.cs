@@ -432,9 +432,10 @@ namespace Statecraft.Sim
             // R-QUAL-006 on the ledger (owner, 9 November 2026, "Yes, lower it (Recommended)"): a returned pioneer record the
             // order takes loses its qualification, so the city's qualified pioneers (City.Qualified) never outnumber its
             // free pioneer records. As the aggregate path counts it, only what the remaining records cannot hold is lost.
-            // The training centre's census teacher (#1689) is not a returned pioneer, so it holds no qualified group.
+            // The training centre's census teacher (#1689), while untouched, is not a returned pioneer, so it holds no
+            // qualified group; once linked to a unit it is a pioneer like any other (HistoricalPopulation.UntouchedTeacherId).
             var x = s.Cities[city];
-            var teacher = HistoricalPopulation.TeacherId(ledger);
+            var teacher = HistoricalPopulation.UntouchedTeacherId(ledger);
             bool CityPioneer(PopulationUnit p) => p.Status == PopulationStatus.FreeCivilian && p.Profession == CivilianProfession.Pioneer
                 && string.Equals(p.Location?.City, city, StringComparison.Ordinal) && p.Id != teacher;
             var pioneers = ledger.Units.Count(CityPioneer) - taken.Count(CityPioneer);
@@ -562,7 +563,7 @@ namespace Statecraft.Sim
                     var first = next;
                     next = checked(next + k.Count);
                     var linked = members.Select(p => p.Id).ToList();   // ascending id, one per group (Members, Cohort)
-                    apply.Add(() => { s.Cohorts.Remove(k.Id); Halutzim(c, s, k, type, name, first, linked, why); });
+                    apply.Add(() => { s.Cohorts.Remove(k.Id); Halutzim(c, s, k, type, name, first, linked, why); HistoricalPopulation.NoteLinked(ledger, linked); });
                 }
                 else throw new InvalidOperationException("Cohort " + k.Id.ToString(CultureInfo.InvariantCulture) + " of type " + k.Type + " does not run on the population ledger.");
             }

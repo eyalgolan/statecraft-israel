@@ -238,13 +238,13 @@ namespace Statecraft.Sim
             {
                 // #1725 PR 7 (owner, 9 November 2026, "Free pioneers by service (Recommended)"): the city's free, unassigned
                 // pioneer records, lowest id first, are the groups that come back; the city's counts are not the ledger's.
-                // Each track takes its own records, following "Yes, keep the link (Recommended)": Veteran ones for
-                // veteran_halutz, the others for halutz. The training centre's census teacher comes last ("Takeable, but last
-                // (Recommended)", #1689), after every record made later.
-                var teacher = HistoricalPopulation.TeacherId(s.PopulationLedger);
-                var free = s.PopulationLedger.Units.Where(p => IsFreePioneer(p) && string.Equals(p.Location?.City, city, StringComparison.Ordinal)
-                        && (p.Tier == CivilianTier.Veteran) == veteran)
-                    .Select(p => p.Id).OrderBy(id => id == teacher ? 1 : 0).ThenBy(id => id).ToList();
+                // Each track prefers its own records, following "Yes, keep the link (Recommended)": Veteran ones for
+                // veteran_halutz, the others for halutz, then the other tier's when it has too few. The training centre's
+                // census teacher, while untouched, comes after every other record ("Takeable, but last (Recommended)", #1689).
+                var teacher = HistoricalPopulation.UntouchedTeacherId(s.PopulationLedger);
+                var free = s.PopulationLedger.Units.Where(p => IsFreePioneer(p) && string.Equals(p.Location?.City, city, StringComparison.Ordinal))
+                    .OrderBy(p => (p.Tier == CivilianTier.Veteran) == veteran ? 0 : 1).ThenBy(p => p.Id == teacher ? 1 : 0).ThenBy(p => p.Id)
+                    .Select(p => p.Id).ToList();
                 if (count > free.Count) return string.Format(CultureInfo.InvariantCulture, LedgerRefusedFreePioneers, name, free.Count);
                 picked = free.Take(count).ToList();
             }
@@ -269,6 +269,7 @@ namespace Statecraft.Sim
                     var p = s.PopulationLedger.Get(id);
                     return p.WithPlacement(p.Status, new PopulationLocation(region), p.Assignment, p.Captor, p.Home);
                 }).ToList(), Array.Empty<PopulationTarget>());
+                HistoricalPopulation.NoteLinked(s.PopulationLedger, picked);
             }
             for (int i = 0; i < count; i++)
             {
