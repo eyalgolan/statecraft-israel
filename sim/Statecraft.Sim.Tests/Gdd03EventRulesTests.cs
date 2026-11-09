@@ -542,7 +542,7 @@ public class Gdd03EventRulesTests
     static readonly string[] SourceBytes =
     {
         "absorb_immigrants:95682d1835e8de59e3e69f56a9beb13ddf91447270a672d23eaff2523898fea1", // re-pinned for #1065 (reviewer comment matches the text), then for the stale reviewer comment (comment-only)
-        "altalena:83f547759e5a991e78c32240c2ee3551b9b8ad9acdad8c135621b56805895f8d", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
+        "altalena:e23501e5efab804b5a1e41edcbbb7e25bbaf46b73fe5675650ee46622a6853cd", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only), then for #2531 (compromise's arms: -2 and comments on both options; no title, text or option text changed)
         "armistice_egypt:253a579e5de78fd3648b582b3f2329ca2947100df5568db74ff2a1819442a782", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "armistice_jordan:fe65c03057dc670b096a8385478738b76fd7ebd200b4f5e7c281b94b0c48a8c4", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment), then for `order: 1` and its comment (R-EVT-006: after Lebanon's card)
         "armistice_lebanon:5ce3ba85f056294691be4ac345896a3222a8898042491bbb989a281b8bc6a882", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
