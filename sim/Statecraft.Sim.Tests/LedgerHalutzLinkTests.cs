@@ -213,6 +213,81 @@ public class LedgerHalutzLinkTests
         s.PopulationLedger.Reconcile();
     }
 
+    // A pioneer unit with no linked records (one an event grants) at Tel Aviv's settlement hex, not at work.
+    static int Unlinked(Content c, GameState s, string type, int service)
+    {
+        var hex = c.SettlementHexes.First(h => h.Id == TelAviv);
+        var id = s.NextId++;
+        s.Units.Add(id, new Unit(id, type, hex.Q, hex.R, service));
+        return id;
+    }
+
+    // Owner, 9 November 2026, "Make new records" with "One per unit (Recommended)", "Own heading (Recommended)",
+    // "Beginner; veteran stays (Recommended)" and "Yes, new people (Recommended)": a returned pioneer unit with no records
+    // makes one new person record, booked under its own source heading (returned_pioneer_unit/<city>, ordinals from 0),
+    // landing as other returned pioneers do ("Nearest city, settled (Recommended)"): free, unassigned, settled in, in the
+    // nearest city. A halutz gives a Novice pioneer with 0 work XP, a veteran pioneer a Veteran pioneer; the service goes
+    // to City.Qualified as for any return, and the ledger has one more person.
+    [Fact]
+    public void AnUnlinkedPioneerUnitReturnedOnTheLedgerMakesOneNewRecord()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var ledger = s.PopulationLedger;
+        var source = Qualification.ReturnedUnitPrefix + TelAviv;
+        Assert.Equal("returned_pioneer_unit/tel_aviv", source);
+        var halutz = Unlinked(c, s, "halutz", 2);
+        var veteran = Unlinked(c, s, Projects.VeteranType, c.RulesAt(s.Date).Mvp!.VeteranHalutzService!.Value);
+        var (count, people, next) = (ledger.Units.Count, ledger.TotalPeople, ledger.NextPopulationId);
+        var why = new List<Cause>();
+
+        Assert.Null(Qualification.Return(c, s, halutz, why));
+        Assert.Equal((count + 1, next + 1), (ledger.Units.Count, ledger.NextPopulationId));
+        Assert.Equal(people / count * (count + 1), ledger.TotalPeople);   // one more person record, as an arrival adds
+        Assert.True(ledger.HasArrived(source, 0));
+        Assert.False(ledger.HasArrived(source, 1));
+        var p = ledger.Get(next);
+        Assert.Equal((PopulationStatus.FreeCivilian, c.RequirePopulationInteger("reception.turns"), PopulationAssignmentKind.Unassigned),
+            (p.Status, p.ReceptionTicks, p.Assignment.Kind));
+        Assert.Equal((Region(c, TelAviv), (string?)TelAviv), (p.Location!.Region, p.Location.City));
+        Assert.Equal((CivilianProfession.Pioneer, CivilianTier.Novice, 0, "", 0, (string?)null, (string?)null),
+            (p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp, p.Equipment.ToolsId, p.Equipment.MilitaryId));
+        Assert.Equal(new[] { 2 }, s.Cities[TelAviv].Qualified.Halutzim);
+        Assert.False(s.Units.ContainsKey(halutz));
+        ledger.Reconcile();
+
+        Assert.Null(Qualification.Return(c, s, veteran, why));
+        Assert.Equal((count + 2, next + 2), (ledger.Units.Count, ledger.NextPopulationId));
+        Assert.True(ledger.HasArrived(source, 1));
+        var v = ledger.Get(next + 1);
+        Assert.Equal((CivilianProfession.Pioneer, CivilianTier.Veteran, 0, TelAviv), (v.Profession, v.Tier, v.WorkXp, v.Location!.City));
+        Assert.Equal(1, s.Cities[TelAviv].Qualified.Veterans);
+        ledger.Reconcile();
+
+        // The new people are ordinary returned pioneers: Reassign links its unit to the lowest-id one.
+        Assert.Equal(new[] { next, next + 1 }, FreePioneers(s, TelAviv));
+        var id = s.NextId;
+        Assert.Null(Qualification.ReassignPioneers(c, s, TelAviv, "halutz", 1, why));
+        Assert.Equal((2, Ids(next)), (s.Units[id].Service, Ids(s.Units[id].Records!)));
+        ledger.Reconcile();
+    }
+
+    // The new records are deterministic: the same returns on two dark starts give the same hash and ledger text.
+    [Fact]
+    public void NewRecordsForAnUnlinkedUnitAreDeterministic()
+    {
+        var c = Gdd03();
+        (string, string) Run()
+        {
+            var s = Dark(c);
+            var why = new List<Cause>();
+            Assert.Null(Qualification.Return(c, s, Unlinked(c, s, "halutz", 1), why));
+            Assert.Null(Qualification.Return(c, s, Unlinked(c, s, "halutz", 0), why));
+            return (s.Hash(), string.Join("\n", s.PopulationLedger.Canonical()));
+        }
+        Assert.Equal(Run(), Run());
+    }
+
     // "Yes, keep the link": a veteran pioneer unit keeps its record; returned, the record counts for the veteran track, and
     // reassigned as a veteran it comes back with veteran_halutz_service and the same link rule.
     [Fact]

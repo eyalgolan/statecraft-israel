@@ -76,6 +76,12 @@ namespace Statecraft.Sim
             RefusedNotPioneer = "Only a pioneer unit takes that order", RefusedPioneerBusy = "That unit is at work; stop the work first",
             RefusedNoQualification = "There is no such qualification";
 
+        /// <summary>#1725 PR 7 (owner, 9 November 2026, "Own heading (Recommended)"): the source heading of a person record made
+        /// when a pioneer unit with no linked records returns (<see cref="LedgerReturn"/>): this prefix and the city
+        /// (<c>returned_pioneer_unit/&lt;city&gt;</c>, ordinals from 0), kept apart from the census, the natural increase
+        /// (PopulationSystem.IncreasePrefix) and the arrivals (Cities.ArrivalPrefix), as they are a short heading and the city.</summary>
+        internal const string ReturnedUnitPrefix = "returned_pioneer_unit/";
+
         public const string ReturnCraftsmenKind = "return_craftsmen";
         public const string ReassignCraftsmenKind = "reassign_craftsmen";
         public const string ReassignPioneersKind = "reassign_pioneers";
@@ -155,11 +161,12 @@ namespace Statecraft.Sim
         /// settled (Recommended)": it becomes a free civilian without an assignment located in <paramref name="city"/> (its
         /// region plus the city), with reception ticks = reception.turns, as Send home does; its profession, tier, work XP,
         /// qualification, combat XP and items stay. "City counts, as today (Recommended)": the service is the caller's, in
-        /// <see cref="City.Qualified"/>. One validated commit; a pioneer unit without its one free pioneer record is a broken
-        /// invariant, not a refusal.</summary>
+        /// <see cref="City.Qualified"/>. One validated commit; a linked unit without its one free pioneer record is a broken
+        /// invariant, not a refusal. A unit with no records (one an event grants) makes a new one: see <see cref="NewRecord"/>.</summary>
         static void LedgerReturn(Content c, GameState s, Unit u, string city)
         {
-            var ids = u.Records ?? throw new InvalidOperationException("Unit " + u.Id.ToString(CultureInfo.InvariantCulture) + " has no pioneer records on the ledger.");
+            if (u.Records == null) { NewRecord(c, s, u, city); return; }
+            var ids = u.Records;
             if (ids.Count != 1)
                 throw new InvalidOperationException("Unit " + u.Id.ToString(CultureInfo.InvariantCulture) + " is one group but has " + ids.Count.ToString(CultureInfo.InvariantCulture) + " records.");
             var region = c.PlayerRegions.AtLocation(city)?.Id
@@ -175,6 +182,26 @@ namespace Statecraft.Sim
                     p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp, p.Equipment, p.Captor, p.Home);
             }).ToList();
             s.PopulationLedger.Commit(records, Array.Empty<PopulationTarget>());
+        }
+
+        /// <summary>Owner, 9 November 2026, "Make new records": a returned pioneer unit with no linked records makes "One per unit
+        /// (Recommended)" new person record, registered as an arrival is under its "Own heading (Recommended)",
+        /// <see cref="ReturnedUnitPrefix"/> and the city, at the heading's next unused ordinal, so it counts as a new person
+        /// ("Yes, new people (Recommended)") and Reconcile holds. "Beginner; veteran stays (Recommended)": a halutz gives a
+        /// Novice pioneer with 0 work XP, a veteran pioneer a Veteran pioneer. It lands as other returned pioneers do ("Nearest
+        /// city, settled (Recommended)"): a free civilian without an assignment in <paramref name="city"/>, reception ticks =
+        /// reception.turns; like a census civilian a halutz graduate came from, it has no qualification, combat XP or item.</summary>
+        static void NewRecord(Content c, GameState s, Unit u, string city)
+        {
+            var ledger = s.PopulationLedger;
+            var source = ReturnedUnitPrefix + city;
+            var ordinal = 0;
+            while (ledger.HasArrived(source, ordinal)) ordinal = checked(ordinal + 1);
+            var region = c.PlayerRegions.AtLocation(city)?.Id
+                ?? throw new InvalidOperationException("No region in regions.yaml for " + city + " (R-POP-004).");
+            ledger.RegisterArrival(source, ordinal, new PopulationUnit(0, PopulationStatus.FreeCivilian, c.RequirePopulationInteger("reception.turns"),
+                new PopulationLocation(region, city: city), PopulationAssignment.Unassigned, CivilianProfession.Pioneer,
+                u.Type == Projects.VeteranType ? CivilianTier.Veteran : CivilianTier.Novice, 0, "", 0, PopulationEquipment.None));
         }
 
         /// <summary>A free civilian pioneer without an assignment: a halutz graduate ("Free pioneer, not housed (Rec.)"), or one
