@@ -17,7 +17,7 @@ public class LedgerPrisonersTests
 
     static GameState Dark(Content c) => Simulation.NewGame(c, 1, Mode.Historical, darkStart: true);
 
-    static string Take(Content c, GameState s, Unit u, Unit captor) => Prisoners.Take(c, s, u, captor);
+    static string Take(Content c, GameState s, Unit u, Unit captor) => Prisoners.Take(c, s, u, captor).Text;
 
     // The own opening formations on the board, lowest id first: unit id i is c.StartingForces[i] (StartingForces.Init).
     static List<Unit> Own(Content c, GameState s) => s.Units.Values

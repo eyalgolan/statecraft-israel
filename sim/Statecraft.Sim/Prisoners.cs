@@ -38,19 +38,24 @@ namespace Statecraft.Sim
         /// ledger it grows by the unit's strength, as before. Enemy prisoners stay a count per side (owner, 8 November 2026:
         /// "No, keep count (Recommended)"). A synthetic or Open ledger, an unbound captor and a held count that already
         /// disagrees with the records are refused; a refusal throws before Take writes anything, and what the throw leaves in
-        /// combat is set out at Combat.Fight's call.</summary>
-        internal static string Take(Content c, GameState s, Unit u, Unit captor)
+        /// combat is set out at Combat.Fight's call. Returns the Why line's last sentence; Held, the population units taken
+        /// (the records captured on a ledger, owner, 9 November 2026: "Records captured (Recommended)"; else the unit's
+        /// strength), which the surrender Why line states in people; and, when a formation's leftover records went home
+        /// ("Sent home (Recommended)"), the Arms they returned to the stock (ArmsBack) and their city (Home), else 0 and
+        /// null.</summary>
+        internal static (string Text, int Held, int ArmsBack, string? Home) Take(Content c, GameState s, Unit u, Unit captor)
         {
             PopulationLedger.RefuseUnlessHistorical(s);
             if (s.PopulationLedger.IsInitialized) RequireHeldMatchesRecords(s);
             if (u.Side == Movement.PlayerSide)
             {
-                var held = s.PopulationLedger.IsInitialized ? CaptureRecords(c, s, u, captor.Side) : u.Strength;
+                int back = 0; string? home = null;
+                var held = s.PopulationLedger.IsInitialized ? CaptureRecords(c, s, u, captor.Side, out back, out home) : u.Strength;
                 Add(s.SoldiersHeld, captor.Side, held);
-                return "They are held by the enemy";
+                return ("They are held by the enemy", held, back, home);
             }
             Add(s.PrisonersHeld, u.Side, u.Strength);
-            return "They are held as prisoners";
+            return ("They are held as prisoners", u.Strength, 0, null);
         }
 
         /// <summary>R-POW-005, R-POP-002 on the dark start: the serving soldier records of the player's formation
@@ -59,15 +64,32 @@ namespace Statecraft.Sim
         /// (<see cref="Training.FormationTarget"/>: an opening formation's units_1948 target, a trained one's formation/&lt;id&gt;;
         /// owner, 9 November 2026: "Yes, in #1706 (Recommended)"). A strength its records do not number is not refused (owner,
         /// 9 November 2026: "Go ahead on strength (Recommended)"): with more records than its strength, its strength of them
-        /// are captured, the lowest ids first, and the rest stay serving; with fewer, all of them are. An unbound captor or a
-        /// record that is not an active soldier is refused by PopulationLedger.Capture before any write.</summary>
-        static int CaptureRecords(Content c, GameState s, Unit u, string side)
+        /// are captured, the lowest ids first; with fewer, all of them are. The leftover records leave service as soldiers sent
+        /// home do (owner, 9 November 2026: "Sent home (Recommended)"; R-UNIT-005): Demobilization's
+        /// <see cref="Demobilization.RecordsHome"/> and <see cref="Demobilization.CommitHome"/>, Send home's own ledger code,
+        /// make them settled-in free civilians without an assignment in the nearest city to the formation's hex
+        /// (<see cref="Demobilization.Nearest"/>) and return their issued items to the Arms stock; <paramref name="back"/> is
+        /// the Arms added and <paramref name="home"/> that city (0 and null with no leftover). An unbound captor or a record
+        /// that is not an active soldier is refused by PopulationLedger.Capture, and a missing region by RecordsHome, before
+        /// any write; the capture's commit comes first, then the leftovers' one.</summary>
+        static int CaptureRecords(Content c, GameState s, Unit u, string side, out int back, out string? home)
         {
             var key = Training.FormationTarget(c, u.Id);
-            var ids = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier
+            var serving = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier
                     && p.Assignment.Kind == PopulationAssignmentKind.ActiveService && p.Assignment.Target == key)
-                .Select(p => p.Id).OrderBy(x => x).Take(Math.Max(0, u.Strength)).ToList();
+                .OrderBy(p => p.Id).ToList();
+            var take = Math.Max(0, u.Strength);
+            var ids = serving.Take(take).Select(p => p.Id).ToList();
+            var leftover = serving.Skip(take).ToList();
+            back = 0; home = null;
+            List<PopulationUnit>? civilians = null; var items = 0;
+            if (leftover.Count > 0)
+            {
+                home = Demobilization.Nearest(c, u.Q, u.R);
+                civilians = Demobilization.RecordsHome(c, leftover, home, out items);
+            }
             s.PopulationLedger.Capture(ids, side);
+            if (civilians != null) back = Demobilization.CommitHome(s, civilians, items);
             return ids.Count;
         }
 

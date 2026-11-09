@@ -395,7 +395,12 @@ namespace Statecraft.Sim
                     // formation and a strength its records do not number are not refused (owner, 9 November 2026: "Yes, in
                     // #1706 (Recommended)" and "Go ahead on strength (Recommended)"): Take captures the records on the
                     // formation's target, at most its strength of them, the lowest ids first, and SoldiersHeld grows by
-                    // that number. This engagement's draw and losses,
+                    // that number. A formation's leftover records, beyond its strength, leave service as Send home's do
+                    // (owner, 9 November 2026: "Sent home (Recommended)"; R-UNIT-005, Demobilization.RecordsHome), and the
+                    // Arms they return get Send home's Why line after the surrender line. On a ledger the surrender line
+                    // states the records captured in people, not the strength (owner, 9 November 2026: "Records captured
+                    // (Recommended)"); Take's Held is the strength without one, so the aggregate line is unchanged.
+                    // This engagement's draw and losses,
                     // and any earlier write to s (an earlier engagement, or the Strike's own), stay on s. In the game s is
                     // always a clone: Strike's caller (Simulation.cs:268) and Resolve's (TurnResolver.cs:20) run inside
                     // Simulation.Step on its clone (Simulation.cs:51; Preview and DelegatedTo clone too), so the whole
@@ -403,11 +408,12 @@ namespace Statecraft.Sim
                     // game (Simulation.cs:48). On a Historical ledger the losses above already removed this formation's lost
                     // records (LoseRecord, #1706: "Prisoners #1710 first (Recommended)"), so for a formation whose records
                     // matched its strength Take finds the records left numbering its strength.
-                    var held = Prisoners.Take(c, s, u, attackers.OrderBy(x => x.Id).First());
+                    var taken = Prisoners.Take(c, s, u, attackers.OrderBy(x => x.Id).First());
                     s.Units.Remove(u.Id);
                     why.Add(UnitLines.Line(u.Side == Movement.PlayerSide ? WhyKeys.SurrenderedHeld : WhyKeys.SurrenderedPrisoners,   // Prisoners.Take's two cases
-                        FormattableString.Invariant($"Unit {u.Id} surrendered with {u.Strength * ppu:N0} people: it had no hex to retreat to. {held}"),
-                        new[] { u }, (u.Strength * ppu).ToString(CultureInfo.InvariantCulture)));
+                        FormattableString.Invariant($"Unit {u.Id} surrendered with {taken.Held * ppu:N0} people: it had no hex to retreat to. {taken.Text}"),
+                        new[] { u }, (taken.Held * ppu).ToString(CultureInfo.InvariantCulture)));
+                    if (taken.ArmsBack > 0 && taken.Home != null) why.Add(Demobilization.ArmsReturnedLine(c, taken.Home, u.Id, taken.ArmsBack));
                 }
             }
         }

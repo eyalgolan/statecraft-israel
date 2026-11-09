@@ -88,9 +88,16 @@ namespace Statecraft.Sim
                 key: WhyKeys.SentHome, units: new[] { new UnitRef(u) },
                 args: new[] { (u.Strength * ppu).ToString(CultureInfo.InvariantCulture), city }));
             if (back > 0)   // the ledger path only (owner, 8 November 2026: "Yes, one Why line (Recommended)"), as Training's Cancel writes it
-                why.Add(new Cause("city", "arms", back, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: unit {unitId} returned {back} Arms"), key: CauseKeys.SentHomeArmsReturned, args: new[] { city, CauseKeys.Number(unitId) }));
+                why.Add(ArmsReturnedLine(c, city, unitId, back));
             return null;
         }
+
+        /// <summary>"Yes, one Why line (Recommended)" (owner, 8 November 2026): the line naming the <paramref name="back"/> Arms
+        /// that unit <paramref name="unitId"/>'s records returned to the stock in <paramref name="city"/>. Written by Send home
+        /// and, for a surrendering formation's leftover records (owner, 9 November 2026: "Sent home (Recommended)"), by
+        /// Combat's surrender.</summary>
+        internal static Cause ArmsReturnedLine(Content c, string city, int unitId, int back) =>
+            new Cause("city", "arms", back, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: unit {unitId} returned {back} Arms"), key: CauseKeys.SentHomeArmsReturned, args: new[] { city, CauseKeys.Number(unitId) });
 
         /// <summary>R-UNIT-005 on a Historical ledger game (#1699, #1725 PR 7; owner, 8 November 2026, #1725
         /// issuecomment-6726421643 and issuecomment-6727007834). "Every soldier in it (Recommended)": every active-soldier record
@@ -102,7 +109,8 @@ namespace Statecraft.Sim
         /// qualification and combat XP stay. "Back to Arms stock (Recommended)": its issued military item leaves the record and
         /// goes back to the stock once. "No, records only (Recommended)": no aggregate city field is written. The records are
         /// written in one validated commit; the caller removes the unit after it and, for "Yes, one Why line (Recommended)",
-        /// writes one Why line naming the <paramref name="back"/> Arms returned. Null when done, else the reason.</summary>
+        /// writes one Why line naming the <paramref name="back"/> Arms returned. Null when done, else the reason. The records'
+        /// change is <see cref="RecordsHome"/> then <see cref="CommitHome"/>, shared with a surrender's leftover records.</summary>
         static string? LedgerSendHome(Content c, GameState s, Unit u, string city, out int back)
         {
             back = 0;
@@ -111,23 +119,47 @@ namespace Statecraft.Sim
                 && string.Equals(p.Assignment.Target, target, StringComparison.Ordinal)).ToList();
             if (serving.Count != u.Strength)
                 return string.Format(CultureInfo.InvariantCulture, Training.LedgerRefusedStrength, u.Id, serving.Count, u.Strength);
+            var civilians = RecordsHome(c, serving, city, out var items);
+            back = CommitHome(s, civilians, items);
+            return null;
+        }
+
+        /// <summary>R-UNIT-005 on a Historical ledger, the records leaving service (owner, 8 November 2026): each of
+        /// <paramref name="serving"/> as a free civilian without an assignment located in <paramref name="city"/> (its region
+        /// plus the city; "Nearest city, unemployed (Recommended)"), reception ticks reception.turns ("Settled in
+        /// (Recommended)"), qualification and combat XP kept ("Keep both (Recommended)"), its issued military item taken off
+        /// and counted in <paramref name="items"/> ("Back to Arms stock (Recommended)"). Writes nothing: a missing region or
+        /// reception.turns throws here, before the caller's first write. Send home's ledger path and, for "Sent home
+        /// (Recommended)" (owner, 9 November 2026), a surrendering formation's leftover records (Prisoners.CaptureRecords)
+        /// use it.</summary>
+        internal static List<PopulationUnit> RecordsHome(Content c, IEnumerable<PopulationUnit> serving, string city, out int items)
+        {
             var region = c.PlayerRegions.AtLocation(city)?.Id
                 ?? throw new InvalidOperationException("No region in regions.yaml for " + city + " (R-POP-004).");
             var location = new PopulationLocation(region, city: city);
             var received = c.RequirePopulationInteger("reception.turns");
-            var items = 0;
+            var issued = 0;
             var civilians = serving.Select(p =>
             {
                 var e = p.Equipment;
-                if (e.MilitaryId != null) items++;
+                if (e.MilitaryId != null) issued++;
                 return new PopulationUnit(p.Id, PopulationStatus.FreeCivilian, received, location, PopulationAssignment.Unassigned,
                     p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp, new PopulationEquipment(e.ToolsId, e.ToolsPaid),
                     p.Captor, p.Home);
             }).ToList();
+            items = issued;
+            return civilians;
+        }
+
+        /// <summary>Writes <see cref="RecordsHome"/>'s records in one validated commit ("No, records only (Recommended)": no
+        /// aggregate city field), then returns their <paramref name="items"/> issued items to the Arms stock once ("Back to
+        /// Arms stock (Recommended)") and gives the Arms added.</summary>
+        internal static int CommitHome(GameState s, IReadOnlyCollection<PopulationUnit> civilians, int items)
+        {
             s.PopulationLedger.Commit(civilians, Array.Empty<PopulationTarget>());
-            back = (int)Math.Min(items, (long)int.MaxValue - s.Arms);   // the stock stops at int.MaxValue, as Training's cancel leaves it
+            var back = (int)Math.Min(items, (long)int.MaxValue - s.Arms);   // the stock stops at int.MaxValue, as Training's cancel leaves it
             s.Arms += back;
-            return null;
+            return back;
         }
 
         /// <summary>The nearest of the cities by hex distance to its settlement hex; a tie takes the city's id in ordinal
