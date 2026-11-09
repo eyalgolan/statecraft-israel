@@ -600,7 +600,9 @@ namespace Statecraft.Game.UI
                 enabled: () => Application.isPlaying && !smokeRun && SettingsPresenter.EnemyMovesOn(SettingsFile()),
                 waiting: () => outcomes?.Showing != null || opening?.HoldsThePointer == true));
             attacks.Claimed = play.Claims;
-            Action<bool> holding = held => { if (report != null) report.Held = held; if (card != null) card.HeldForPlayback = held; };
+            // The card first, then the report, as at an End turn with no playback: the card comes into view with its cue, then
+            // the report covers it.
+            Action<bool> holding = held => { if (card != null) card.HeldForPlayback = held; if (report != null) report.Held = held; };
             play.Holding += holding;
             owned.Add(new Undo(() => play.Holding -= holding));   // disposed before the playback: its last release touches neither
             Own(new EnemyPlaybackBar(root, text, play, bridge)).Units = unitData;

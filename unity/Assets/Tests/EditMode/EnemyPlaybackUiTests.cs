@@ -53,7 +53,7 @@ public class EnemyPlaybackUiTests
             owned.Add(Card = new EventCardPresenter(Ui.Root, Bridge, text, null));
             owned.Add(Report = new TurnReportPresenter(Ui.Root, Bridge, text, nav));
             owned.Add(Playback = new EnemyTurnPlayback(Bridge, Map, new Fakes.FakeCamera(), () => On, () => false));
-            Playback.Holding += held => { Report.Held = held; Card.HeldForPlayback = held; };
+            Playback.Holding += held => { Card.HeldForPlayback = held; Report.Held = held; };   // as GameRoot
             owned.Add(Bar = new EnemyPlaybackBar(Ui.Root, text, Playback, Bridge));
         }
 
@@ -112,8 +112,21 @@ public class EnemyPlaybackUiTests
         var outline = UnitFlags.PennantCloth();
         CollectionAssert.AreEqual(new[] { outline[0], outline[1], outline[2] }, shape.Points, "the map's pennant, as UnitFlags.BuildPennant");
         CollectionAssert.AreEqual(new[] { UnitFlags.PennantColour }, shape.Colours);
+        // The token's mesh is its pole and finial, then the cloth: the last two triangles, its front and its back (a two-sided
+        // plate), each on the same three points, in the cloth's plane at z = 0.
         var mesh = UnitFlags.BuildPennant();
-        try { Assert.AreEqual(1, mesh.subMeshCount > 0 ? mesh.GetTriangles(0).Length / 3 : 0, "the token's pennant is one triangle too"); }
+        try
+        {
+            var tris = mesh.GetTriangles(0); var verts = mesh.vertices;
+            Assert.GreaterOrEqual(tris.Length, 6, "fixture: a pole and a cloth");
+            for (int side = 0; side < 2; side++)
+            {
+                var corners = Enumerable.Range(0, 3).Select(i => verts[tris[tris.Length - 6 + side * 3 + i]]).ToList();
+                foreach (var p in outline.Take(3))
+                    Assert.IsTrue(corners.Any(v => Vector3.Distance(v, new Vector3(p.x, p.y, 0f)) < 1e-5f),
+                        $"the token's pennant is one triangle too: side {side} has the cloth's point {p}");
+            }
+        }
         finally { Object.DestroyImmediate(mesh); }
         Assert.IsNull(SideFlag.For("nobody"), "a side the map gives nothing gets nothing");
         Assert.IsNull(SideFlag.For(null));
@@ -382,9 +395,12 @@ public class EnemyPlaybackUiTests
     public void WithItOffEndTurnPlaysNothing()
     {
         new SettingsStore(dir).Write(SettingsPresenter.EnemyMovesKey, "off");
-        using var k = new Kit(En, Fakes.Step(ThreeSides));
+        // The real opening turn: the enemy moves, and the bar moves too, so the report has lines (a Fakes.Step turn changes
+        // no number, and an empty report never opens).
+        using var k = new Kit(En);
         k.On = SettingsPresenter.EnemyMovesOn(new SettingsStore(dir));
         k.Bridge.EndTurn();
+        Assert.IsNotEmpty(UnitBeats.From(k.Bridge.Session.Last!.Why, BeatSource.Enemy), "fixture: the turn has enemy moves");
         k.Playback.Tick(0.05f);
         Assert.IsFalse(k.Playback.Active || k.Playback.Pending);
         Assert.IsEmpty(k.Map.Log, "no token held");

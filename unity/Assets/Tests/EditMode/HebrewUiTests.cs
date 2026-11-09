@@ -942,6 +942,7 @@ public class HebrewUiTests
         ("settings-music-low", "settings.music.low"), ("settings-music-high", "settings.music.high"),
         ("settings-advisors-label", "settings.advisors"), ("settings-language-label", "settings.language"),
         ("settings-uiscale-label", "settings.uiscale"), ("settings-companion-label", "settings.companion"),   // #1119
+        ("settings-enemymoves-label", "settings.enemymoves"),   // #2202
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
         ("settings-report", "feedback.open"), ("start-report", "feedback.open"), ("feedback-title", "feedback.open"),   // #1169
         ("hud-star", "community.star"), ("hud-report", "feedback.open"), ("hud-share", "share.open"),   // #1236
