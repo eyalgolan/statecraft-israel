@@ -399,10 +399,11 @@ read on #2943's tree after its merge of main `597b9367a`, not on this spec's bas
   (`advisor-messages.yaml:22`, `:33`). A player who quit, pressed X or chose Continue before seeing them still gets
   them as queue rows, until game turn 3. A fallback row ignores `requires` (`AdvisorQueue.cs:65-68`, `Eligible`). This
   changes the rule above that the chain never shows on a Continue, for these two rows only. The issue's question 6 was
-  put to the owner on 7 November 2026 in one question with questions 3, 4, 5 and 7, which read in part "two steps may
-  show as queue rows on Continue or after X" and ended "All as recommended?". The owner chose "All as recommended
-  (Recommended)" (recorded at https://github.com/eyalgolan/statecraft-israel/issues/2933#issuecomment-6709091558,
-  "the two queue rows are allowed on Continue and after X").
+  put to the owner on 7 November 2026 in one question with questions 3, 4, 5 and 7; that question said two steps may
+  show as queue rows on Continue or after X, and asked whether to take all the recommendations. The owner chose "All as
+  recommended (Recommended)". The agent's record of the answer,
+  https://github.com/eyalgolan/statecraft-israel/issues/2933#issuecomment-6709091558, lists the two queue rows on
+  Continue and after X as allowed.
 - **course_open.** The signal holds once the chain has opened by itself on a new game, which writes
   `advisor_course=open` to the settings file beside `advisor_opening=seen` (`AdvisorSettings.cs:14`, `:60-74`;
   `AdvisorPresenter.cs:229-239`). A returning player whose chain mark predates the course gets no course rows. The
