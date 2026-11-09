@@ -300,6 +300,24 @@ public class EnemyPlaybackUiTests
         Assert.AreEqual(1, held.Count(h => !h));
     }
 
+    /// <summary>End turn pressed with a screen open (the top bar stays enabled under a side screen): End turn closes the
+    /// screen, as it did before the playback, so the moves play on the open map and the report opens when they end,
+    /// without waiting for the player to close a screen they never asked to keep (#2967 review 9 November, S1).</summary>
+    [Test]
+    public void EndTurnWithAScreenOpenClosesItAndTheReportOpensAfterTheMoves()
+    {
+        using var k = new Kit(En);
+        k.Nav.Open("cabinet");
+        Assert.AreEqual("cabinet", k.Nav.Current, "fixture: a screen is open at End turn");
+        k.Bridge.EndTurn();
+        Assert.IsTrue(k.Playback.Active || k.Playback.Pending, "fixture: the opening turn has enemy moves");
+        Assert.AreEqual(null, k.Nav.Current, "End turn closes the open screen");
+        Assert.IsFalse(k.Report.IsOpen, "the report waits for the moves");
+        k.RunOut();
+        Assert.IsTrue(k.Report.IsOpen, "the moves ended: the report opens");
+        Assert.IsFalse(k.Report.Waiting);
+    }
+
     /// <summary>The moves are not modal: the player may open a screen while they play (Settings, to turn them off; the
     /// Cabinet). When they end, the report does not close that screen under the player's hand; it opens once the player
     /// closes it, as long as nothing else holds it (#2967 review, S3).</summary>
