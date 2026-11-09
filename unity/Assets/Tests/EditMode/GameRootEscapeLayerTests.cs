@@ -132,6 +132,57 @@ public class GameRootEscapeLayerTests : SharedCameraActionsFixture
         Assert.AreEqual(text["newgame.confirm"], Ui.Q<Label>("toast").text, "and its prompt stays on the toast");
     }
 
+    /// <summary>#2202: the Arab forces' moves play on the map, under every screen. A screen the player opened while they play
+    /// is the topmost layer: the first Escape closes it and leaves the moves playing, and the next one skips them (#2967
+    /// review, S1). The same holds when the focused element's Cancel closed the screen in this frame. GameRoot plays nothing in
+    /// EditMode (Application.isPlaying), so the test puts a playback of its own, on a bridge of its own, in GameRoot's field.</summary>
+    [Test]
+    public void EscapeClosesAScreenOverTheEnemyMovesBeforeSkippingThem([Values(false, true)] bool focusedCancel)
+    {
+        var root = Open(GameInputs.FromDisk(Paths.Content, Paths.StreamingMap), startScreen: false);
+        GameSceneTests.HideTheOpeningCard(Ui);
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        var bridge = new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content), GoldenRun.Seed, Mode.Historical), text,
+            EnemyTurnPlaybackTests.Step(EnemyTurnPlaybackTests.Move(901, 0, 0, 1, 0), EnemyTurnPlaybackTests.Move(902, 30, 0, 31, 0)));
+        using var playback = new EnemyTurnPlayback(bridge, new EnemyTurnPlaybackTests.FakeMap(), new EnemyTurnPlaybackTests.FakeCamera(),
+            () => true, () => false);
+        var field = typeof(GameRoot).GetField("playback", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var own = field.GetValue(root);
+        field.SetValue(root, playback);
+        try
+        {
+            bridge.EndTurn();
+            playback.Tick(0.05f);
+            Assert.IsTrue(playback.Active, "precondition: the moves play");
+            UiTestKit.Press(Ui.Q<Button>("nav-budget"));
+            Assert.AreEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "precondition: a side screen is open over them");
+
+            if (focusedCancel)
+            {
+                var at = Ui.Q<Button>("nav-budget");
+                using (var e = NavigationCancelEvent.GetPooled()) { e.target = at; at.SendEvent(e); }
+                Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "precondition: the Cancel closed the screen");
+                Press(keyboard.escapeKey);                             // the same press, as GameRoot's poll reads it
+                typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+                Release(keyboard.escapeKey);
+            }
+            else
+            {
+                Escape(root);
+                Assert.AreNotEqual(DisplayStyle.Flex, Ui.Q("screen-budget").style.display.value, "the first Escape closes the screen");
+            }
+            Assert.IsTrue(playback.Active, "and only the screen: the moves go on");
+
+            // A later frame: the screen's close counts as this press's only in the frame it happened (ScreenNav.ClosedThisFrame),
+            // and an EditMode test cannot advance Time.frameCount between two presses.
+            var nav = typeof(GameRoot).GetField("nav", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+            typeof(ScreenNav).GetField("closedFrame", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(nav, -1);
+            Escape(root);
+            Assert.IsFalse(playback.Active || playback.Pending, "the next Escape skips the moves");
+        }
+        finally { field.SetValue(root, own); }
+    }
+
     /// <summary>An ended autosave opens the end screen before the start screen goes up over it. Escape on the start screen
     /// is the start screen's: it withdraws an armed New Game, and never closes the hidden end screen under it.</summary>
     [Test]
