@@ -15,7 +15,8 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 /// <summary>Writes the stills #2432 asks for (#2960 PR 2): a full, a damaged and a badly damaged unit's badge pips, on both
-/// sides, at the gameplay zoom (31 km, yaw 10 as PromoPose.Gameplay03) and at 12 km, to `.superpowers/shots-2960/&lt;SHOTS_TAG&gt;/`
+/// sides, at the gameplay zoom (31 km, yaw 10 as PromoPose.Gameplay03) and from 60 km (nearer, the badge leaves the top of
+/// the frame at this look-at point), to `.superpowers/shots-2960/&lt;SHOTS_TAG&gt;/`
 /// at the repository root (local, not committed; "untagged" when SHOTS_TAG is unset). Each still is the map camera at
 /// 1920x1080 without the UI, plus a 4x crop round the unit's badge. The figures come from the AssetDatabase. Explicit, so it
 /// does not run with the checks.</summary>
@@ -62,7 +63,7 @@ public class UnitPipsShots
                 var badge = layer.transform.Find("Tokens/" + row + "/Badge");
                 Assert.IsNotNull(badge, $"{row} is drawn");
                 var at = badge.position; at.y = 0f;
-                foreach (var km in new[] { 31f, 12f })
+                foreach (var km in new[] { 31f, 60f })
                 {
                     rig.LookAt = at; rig.Distance = km * 1000f; rig.Yaw = 10f; rig.Apply();
                     for (int i = 0; i < 4; i++) { layer.FaceCamera(cam); UnitFlagFacing.FaceAll(cam.transform.position); cam.Render(); }
