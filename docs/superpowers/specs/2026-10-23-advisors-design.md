@@ -10,6 +10,10 @@ Nothing is built until this PR is merged, every slice below is its own PR, and n
 
 ## What changed in this revision
 
+- **8 November 2026, the new-player course** (section 9.2, issue #2933, PR #2943): the opening chain is rewritten.
+  It now opens with the war and teaches turn one on a real unit, in ten steps (nine under gdd-0.3); objectives, a city
+  and training leave the chain for queue rows on later turns. Where the older text in sections 9.2, 9.3, 15 and 16
+  still describes the seven-step chain, the amendment at the end of section 9.2 governs.
 - **24 October 2026, the media route** (sections 11 and 12, for the owner's approval): real archival photographs,
   faithfully colorized, animated with ElevenLabs Kling 3.0 Pro and lip-synced with Sync 3 to voices made as close to the
   real people as possible (Fish Audio), English first, with a live disclosure label, a credit per clip and a review of
@@ -360,6 +364,57 @@ The event step changes, because the popup never sits over an open card (section 
 card opens ("A decision is waiting..."), with the card collapsed and the ring on "Decision waiting". Its `Show me` opens
 the card, the popup steps aside at once, and the card's own text explains the options. When the card closes, the chain
 goes on.
+
+**Amended 8 November 2026 (issue #2933, PR #2943).** The owner chose "Rewrite, start now (Recommended)" on 7 November
+2026 (recorded at https://github.com/eyalgolan/statecraft-israel/issues/2933#issuecomment-6708639509), on the issue's
+question 2, which asked to rewrite this chain. The paragraphs above are kept as the record of the S2 design. The chain
+is now the `signal: opening` rows of `unity/Assets/Resources/Advisors/advisor-messages.yaml`, in the order of their
+`requires` links, not the file's order (`AdvisorPresenter.cs`, `OrderedChain`). Every file:line in this amendment was
+read on #2943's tree after its merge of main `597b9367a`, not on this spec's base.
+
+| # | Row | Advisor | Teaches | File line |
+|---|---|---|---|---|
+| 1 | `opening.greeting` | Ben-Gurion | The greeting, recorded, unchanged | `:19` |
+| 2 | `opening.invasion` | Dayan | The armies that invaded on 15 May 1948; a fallback row | `:22` |
+| 3 | `opening.units` | Dayan | Whose units are on the map; select one | `:23` |
+| 4 | `opening.cities` | Meyerson | What a city holds; select one | `:24` |
+| 5 | `opening.attention` | Ben-Gurion | Attention, recorded, unchanged; left out under gdd-0.3 | `:26` |
+| 6 | `opening.move_how` | Dayan | How to move a brigade | `:29` |
+| 7 | `opening.move` | Dayan | Moves and routes, recorded, unchanged | `:30` |
+| 8 | `opening.orders` | Dayan | Standing orders and what holds up End turn | `:31` |
+| 9 | `opening.event` | Ben-Gurion | The event card, recorded, unchanged; only while a card waits | `:32` |
+| 10 | `opening.end_turn` | Ben-Gurion | End turn and the report after it; a fallback row | `:33` |
+
+- **Steps.** Ten under gdd-0.1. Under gdd-0.3 step 5 is left out, so the chain has nine (`AdvisorPresenter.cs:478-479`,
+  `IncludedInTour`). The event step keeps the rule above: it speaks while the card is collapsed (`when:
+  { cards_waiting_at_least: 1 }`, `advisor-messages.yaml:32`), and `EventStep` is 8 (`AdvisorPresenter.cs:457`). The new
+  rows' English is `strings.en.yaml:960-965` (`unity/Assets/UI/`); they are text only, with no clip.
+- **Rows that left the chain.** `opening.objectives`, `opening.city` and `opening.training` are now `signal:
+  course_open` rows with no `requires` (`advisor-messages.yaml:35`, `:27`, `:28`). Each waits for a turn floor,
+  `turn_at_least` 3, 4 and 5, and lapses after `lapse_after` 6, 7 and 8, game turns counted from 1
+  (`AdvisorCatalog.cs:68-69`; `AdvisorSignals.cs:49` reads `State.Turn + 1`). A teaching row still waiting past its
+  last turn goes to the history as missed (`AdvisorQueue.cs:54-62`, `:72`). Their words, clips and approved Hebrew are
+  unchanged. Because they left the chain, they also left the chain's replay from the encyclopedia.
+- **Fallback.** `opening.invasion` and `opening.end_turn` carry `fallback: course_open` and `lapse_after: 3`
+  (`advisor-messages.yaml:22`, `:33`). A player who quit, pressed X or chose Continue before seeing them still gets
+  them as queue rows, until game turn 3. A fallback row ignores `requires` (`AdvisorQueue.cs:65-68`, `Eligible`). This
+  changes the rule above that the chain never shows on a Continue, for these two rows only. The issue's question 6 was
+  put to the owner on 7 November 2026 in one question with questions 3, 4, 5 and 7, which read in part "two steps may
+  show as queue rows on Continue or after X" and ended "All as recommended?". The owner chose "All as recommended
+  (Recommended)" (recorded at https://github.com/eyalgolan/statecraft-israel/issues/2933#issuecomment-6709091558,
+  "the two queue rows are allowed on Continue and after X").
+- **course_open.** The signal holds once the chain has opened by itself on a new game, which writes
+  `advisor_course=open` to the settings file beside `advisor_opening=seen` (`AdvisorSettings.cs:14`, `:60-74`;
+  `AdvisorPresenter.cs:229-239`). A returning player whose chain mark predates the course gets no course rows. The
+  help-level gate on that auto-open is #2942's and is recorded in `AdvisorPresenter.cs:234-236`.
+- **Hebrew.** The six new rows are `he_review: approved` (`advisor-messages.yaml:22-24`, `:29`, `:31`, `:33`). The
+  owner's answers of 8 November 2026, in their words: on the six rows, "Approve all six"; on step 2's date, "Keep date,
+  add exception (Recommended)"; on step 10's word for the report, "Use the screen title" (recorded at
+  https://github.com/eyalgolan/statecraft-israel/issues/2933#issuecomment-6718317501 and in
+  `.superpowers/coordination/handover-1107/OWNER-RULINGS-0811-morning.md:17-19`, which is not tracked).
+- **Not decided here.** The advisor on each new row is the agent's choice (#2943, "Calls to check", item 2), not an
+  owner ruling. Section 9.3's 17 parity tests describe the old steps; the chain's tests in #2943 are the record of
+  what the new chain does.
 
 ### 9.3 Parity first, tests migrate first
 

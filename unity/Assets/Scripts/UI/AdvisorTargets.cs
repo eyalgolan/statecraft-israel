@@ -14,15 +14,15 @@ namespace Statecraft.Game.UI
     {
         public const float MoveStepDistanceM = 40000f;
         public const string Attention = "attention", CityHousing = "city_housing", CityTraining = "city_training",
-            UnitMove = "unit_move", DecisionWaiting = "decision_waiting";
+            UnitMove = "unit_move", UnitOrders = "unit_orders", DecisionWaiting = "decision_waiting", EndTurn = "end_turn";
 
         public static string Nav(string screen) => "nav_" + screen.Replace('-', '_');
 
         public static IReadOnlyList<string> Names =>
-            new[] { Attention, CityHousing, CityTraining, UnitMove, DecisionWaiting }.Concat(ScreenNav.Screens.Select(Nav)).ToList();
+            new[] { Attention, CityHousing, CityTraining, UnitMove, UnitOrders, DecisionWaiting, EndTurn }.Concat(ScreenNav.Screens.Select(Nav)).ToList();
 
         public static bool ShowsCity(string name) => name == CityHousing || name == CityTraining;
-        public static bool ShowsUnit(string name) => name == UnitMove;
+        public static bool ShowsUnit(string name) => name == UnitMove || name == UnitOrders;
 
         /// <summary>The shown elements a name points at, as the HUD has them now (the guide's rules, #1265, #1189).</summary>
         public static IReadOnlyList<VisualElement> Find(VisualElement hudRoot, string name, EventCardPresenter? card)
@@ -37,6 +37,8 @@ namespace Statecraft.Game.UI
                     if (host != null) found.AddRange(host.Query<VisualElement>().Where(e => e.name.StartsWith("city-train-", StringComparison.Ordinal) && e.name.EndsWith("-row", StringComparison.Ordinal)).ToList());
                     break;
                 case UnitMove: found.Add(hudRoot.Q("info-move")); break;
+                case UnitOrders: foreach (var n in new[] { "info-move", "info-fortify", "info-hold", "info-skip" }) found.Add(hudRoot.Q(n)); break;
+                case EndTurn: found.Add(hudRoot.Q("end-turn")); break;
                 case DecisionWaiting: found.Add(card?.Shown != null && card.Collapsed ? hudRoot.Q("event-reopen") : hudRoot.Q("event-options")); break;
                 default:
                     var screen = ScreenNav.Screens.FirstOrDefault(s => Nav(s) == name);

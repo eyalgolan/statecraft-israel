@@ -192,10 +192,13 @@ namespace Statecraft.Sim
 
         /// <summary>R-FOOD-003: food_supply's stock term, k_food * (stock - full) / full - unmet / need, where full is
         /// cover_months of the last need. It is exactly 0 at a full stock, -k_food when the stock is empty, and the unmet
-        /// share lowers it further; food_supply's clamp to 0..1 bounds it. 0 in the legacy loop and with no need.</summary>
+        /// share lowers it further; food_supply's clamp to 0..1 bounds it. 0 in the legacy loop and with no need. It reads
+        /// only the stock, the last need and the unmet share, never a record, so it runs on an initialized Historical ledger
+        /// (the dark start, #1704, #1725 PR 7), where the need is already the ledger's rations (R-FOOD-001). A synthetic or
+        /// Open ledger stays refused (R-POP-002).</summary>
         public static double FoodTerm(Content c, GameState s)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
             if (!c.IsGdd || s.FoodNeed == 0) return 0.0;
             var r = c.RulesAt(s.Date).Mvp!;
             var full = (long)r.CoverMonths!.Value * s.FoodNeed;
