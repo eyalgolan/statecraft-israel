@@ -399,7 +399,8 @@ namespace Statecraft.Sim
         /// facility's course in the same place (27M-7), keeping their profession dormant (owner, 8 November 2026, "Unskilled
         /// first, keep (Rec.)"), and are validated as one candidate with any Course target a built camp still needs
         /// (owner, "Start + runtime bind (Rec.)"). The Money, the cohort's id and the Why lines are the aggregate game's; no
-        /// city field is written.</summary>
+        /// city field is written, but for City.Qualified when the order takes a returned pioneer (R-QUAL-006; owner, 9 November
+        /// 2026, "Yes, lower it (Recommended)").</summary>
         static string? LedgerStart(Content c, GameState s, string city, UnitType type, int count, List<Cause> why, int? unit, string name)
         {
             var ledger = s.PopulationLedger;
@@ -428,6 +429,14 @@ namespace Statecraft.Sim
             if (per > 0 && taken.Any(p => p.Equipment.MilitaryId != null)) return Refused(LedgerRefusedCarried, name);
             if (type.Side == "" && taken.Any(p => p.Profession == CivilianProfession.Farmer || p.Profession == CivilianProfession.Craftsman))
                 return Refused(LedgerRefusedHalutzTrade, name);
+            // R-QUAL-006 on the ledger (owner, 9 November 2026, "Yes, lower it (Recommended)"): a returned pioneer record the
+            // order takes loses its qualification, so the city's qualified pioneers (City.Qualified) never outnumber its
+            // free pioneer records. As the aggregate path counts it, only what the remaining records cannot hold is lost.
+            var x = s.Cities[city];
+            bool CityPioneer(PopulationUnit p) => p.Status == PopulationStatus.FreeCivilian && p.Profession == CivilianProfession.Pioneer
+                && string.Equals(p.Location?.City, city, StringComparison.Ordinal);
+            var pioneers = ledger.Units.Count(CityPioneer) - taken.Count(CityPioneer);
+            var lost = Math.Max(0, x.Qualified.Halutzim.Count + x.Qualified.Veterans - pioneers);
             var id = s.NextId;
             var course = new PopulationAssignment(PopulationAssignmentKind.Course, target);
             var bind = ledger.Target(target) == null
@@ -439,6 +448,7 @@ namespace Statecraft.Sim
                     p.WorkXp, p.Qualification, p.CombatXp, per > 0 ? new PopulationEquipment(e.ToolsId, e.ToolsPaid, IssuedId(id, p.Id), true) : e,
                     p.Captor, p.Home);
             }).ToList(), bind);
+            if (lost > 0) s.Cities[city] = x.WithQualified(x.Qualified.LosePioneers(lost));
             Open(c, s, city, name, type, count, arms, (int)(arms - (per > 0 ? count : 0)), unit, taken.Select(p => p.Id), why);
             return null;
         }

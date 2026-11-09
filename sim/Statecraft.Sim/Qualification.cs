@@ -43,6 +43,15 @@ namespace Statecraft.Sim
             return new Qualified(Craftsmen - c, Veterans - n, Halutzim.Skip(h).ToArray());
         }
 
+        /// <summary>Without <paramref name="n"/> qualified pioneers, in R-QUAL-006's order without the craftsmen: halutz groups
+        /// with the least service, then veterans (#1725 PR 7, a ledger Train order; owner, 9 November 2026, "Yes, lower it
+        /// (Recommended)").</summary>
+        public Qualified LosePioneers(int n)
+        {
+            var h = Math.Min(n, Halutzim.Count);
+            return new Qualified(Craftsmen, Veterans - Math.Min(n - h, Veterans), Halutzim.Skip(h).ToArray());
+        }
+
         /// <summary>The state hash's text: nothing at all when nobody is qualified, so a city without them hashes as before
         /// (R-LOOP-002's rule).</summary>
         public string Canonical()

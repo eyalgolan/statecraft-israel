@@ -179,6 +179,40 @@ public class LedgerHalutzLinkTests
         s.PopulationLedger.Reconcile();
     }
 
+    // R-QUAL-006 on the ledger (owner, 9 November 2026, "Yes, lower it (Recommended)"): a Train order that takes a returned
+    // pioneer record lowers the city's qualified pioneer count by one, halutz groups with the least service first, so the
+    // count and the city's pioneer records stay equal and a later Reassign finds its records.
+    [Fact]
+    public void ATrainOrderThatTakesAReturnedPioneerLowersTheQualifiedCount()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var (records, units) = Graduate(c, s, 2, new List<Cause>());
+        SetService(s, units[0], 1); SetService(s, units[1], 3);
+        var why = new List<Cause>();
+        Assert.Null(Qualification.Return(c, s, units[0], why));
+        Assert.Null(Qualification.Return(c, s, units[1], why));
+        var free = FreePioneers(s, TelAviv);
+        Assert.Equal(2, free.Count);
+        var unskilled = s.PopulationLedger.Units.Count(p => p.Status == PopulationStatus.FreeCivilian && p.Assignment.Kind == PopulationAssignmentKind.Unassigned
+            && p.Location?.City == TelAviv && p.Profession == CivilianProfession.None);
+
+        // Only unqualified civilians taken: the count stays.
+        Assert.Null(Training.Start(c, s, TelAviv, "halutz", unskilled, why));
+        Assert.Equal(new[] { 1, 3 }, s.Cities[TelAviv].Qualified.Halutzim);
+
+        // One more takes the lowest-id pioneer record: the group with the least service loses its qualification.
+        Assert.Null(Training.Start(c, s, TelAviv, "halutz", 1, why));
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(free[0]).Status);
+        Assert.Equal(new[] { 3 }, s.Cities[TelAviv].Qualified.Halutzim);
+        Assert.Equal(FreePioneers(s, TelAviv).Count, s.Cities[TelAviv].Qualified.Halutzim.Count + s.Cities[TelAviv].Qualified.Veterans);
+
+        var id = s.NextId;
+        Assert.Null(Qualification.ReassignPioneers(c, s, TelAviv, "halutz", 1, why));
+        Assert.Equal((3, Ids(free[1])), (s.Units[id].Service, Ids(s.Units[id].Records!)));
+        s.PopulationLedger.Reconcile();
+    }
+
     // "Yes, keep the link": a veteran pioneer unit keeps its record; returned, the record counts for the veteran track, and
     // reassigned as a veteran it comes back with veteran_halutz_service and the same link rule.
     [Fact]
