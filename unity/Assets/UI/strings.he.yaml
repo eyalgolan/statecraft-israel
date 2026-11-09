@@ -655,8 +655,8 @@ playback.turn_lebanon: "התור של לבנון"
 playback.turn_ala: "התור של צבא ההצלה"
 # native-review-pending
 playback.turn_local_arab_forces: "התור של הכוחות הערביים המקומיים"
-# native-review-pending
-playback.step: "מהלך {0} מתוך {1}"
+# native-review-pending; "Step n of m" (owner, 9 November 2026): the Hebrew is a proposal until the owner reads it
+playback.step: "שלב {0} מתוך {1}"
 # native-review-pending
 playback.folded: "שאר המהלכים בבת אחת"
 # native-review-pending

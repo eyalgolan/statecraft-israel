@@ -160,7 +160,7 @@ public class EnemyPlaybackUiTests
         k.Playback.BeatChanged += () => steps.Add(k.Ui.Q<Label>("enemy-playback-step").text);
         k.Bridge.EndTurn();
         k.RunOut();
-        CollectionAssert.AreEqual(new[] { "Move 1 of 4", "Move 2 of 4", "Move 3 of 4", "Move 4 of 4" }, steps);
+        CollectionAssert.AreEqual(new[] { "Step 1 of 4", "Step 2 of 4", "Step 3 of 4", "Step 4 of 4" }, steps);
     }
 
     [Test]

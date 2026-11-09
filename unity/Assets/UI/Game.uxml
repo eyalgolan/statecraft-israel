@@ -602,7 +602,7 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- #2202: the footer while the Arab forces' moves play (EnemyPlaybackBar): the side's flag (SideFlag, put first in
-             the panel in code), its name, "Move n of m" and the beat's actions in words, and Skip. Not modal: only the panel
+             the panel in code), its name, "Step n of m" and the beat's actions in words, and Skip. Not modal: only the panel
              takes the pointer, and it takes no focus when it opens. After the report and the end screen, before the outcome
              clip, so a clip is drawn over it. -->
         <ui:VisualElement name="enemy-playback" class="enemy-playback" picking-mode="Ignore">

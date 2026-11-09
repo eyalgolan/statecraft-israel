@@ -12,7 +12,7 @@ namespace Statecraft.Game.UI
     /// moves play. The owner's answers (8 November 2026): "Flag + name (Recommended)", so it shows the side whose turn it is
     /// as the flag its tokens fly (<see cref="SideFlag"/>, the neutral pennant for the Arab Liberation Army) beside the side's
     /// name in words (playback.turn_&lt;side&gt;), and "One side at a time (Recommended)", so the picture changes once a side
-    /// (the beats come side by side, UnitBeats.From). Under the name, "Move n of m" and each beat's action in words, the turn
+    /// (the beats come side by side, UnitBeats.From). Under the name, "Step n of m" and each beat's action in words, the turn
     /// report's own lines (report.enemy_move, report.enemy_attack through UnitNames.Of), so the motion is never the only
     /// signal (WRITING_UI UI-18). Skip ends the playback (as Esc does, GameRoot.Update); its tooltip holds the spoken text
     /// for the later accessibility layer: no runtime tooltip is read by a screen reader yet.
