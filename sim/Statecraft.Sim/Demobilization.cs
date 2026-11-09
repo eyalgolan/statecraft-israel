@@ -82,14 +82,23 @@ namespace Statecraft.Sim
                 s.Cities[city] = x.WithCounts(x.Civilians + u.Strength, x.Employed, x.Refugees);
             }
             s.Units.Remove(unitId);
-            var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;
-            why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), u.Strength, FormattableString.Invariant(
-                $"Unit {unitId} is sent home: its {u.Strength * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now"),
-                key: WhyKeys.SentHome, units: new[] { new UnitRef(u) },
-                args: new[] { (u.Strength * ppu).ToString(CultureInfo.InvariantCulture), city }));
+            why.Add(SentHomeLine(c, s, u, u.Strength, city));
             if (back > 0)   // the ledger path only (owner, 8 November 2026: "Yes, one Why line (Recommended)"), as Training's Cancel writes it
                 why.Add(ArmsReturnedLine(c, city, unitId, back));
             return null;
+        }
+
+        /// <summary>R-UNIT-005's Why line, in people (Q-CIV-4): <paramref name="count"/> population units of unit
+        /// <paramref name="u"/> are civilians in <paramref name="city"/> now. Send home writes it for the unit's strength and,
+        /// for a surrendering formation's leftover records (owner, 9 November 2026: "Yes, reuse Send home's (Recommended)"),
+        /// Combat's surrender for the leftovers, both before the Arms line.</summary>
+        internal static Cause SentHomeLine(Content c, GameState s, Unit u, int count, string city)
+        {
+            var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;
+            return new Cause("map", u.Id.ToString(CultureInfo.InvariantCulture), count, FormattableString.Invariant(
+                $"Unit {u.Id} is sent home: its {count * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now"),
+                key: WhyKeys.SentHome, units: new[] { new UnitRef(u) },
+                args: new[] { (count * ppu).ToString(CultureInfo.InvariantCulture), city });
         }
 
         /// <summary>"Yes, one Why line (Recommended)" (owner, 8 November 2026): the line naming the <paramref name="back"/> Arms
@@ -129,9 +138,9 @@ namespace Statecraft.Sim
         /// plus the city; "Nearest city, unemployed (Recommended)"), reception ticks reception.turns ("Settled in
         /// (Recommended)"), qualification and combat XP kept ("Keep both (Recommended)"), its issued military item taken off
         /// and counted in <paramref name="items"/> ("Back to Arms stock (Recommended)"). Writes nothing: a missing region or
-        /// reception.turns throws here, before the caller's first write. Send home's ledger path and, for "Sent home
-        /// (Recommended)" (owner, 9 November 2026), a surrendering formation's leftover records (Prisoners.CaptureRecords)
-        /// use it.</summary>
+        /// reception.turns throws here, before the caller's first write; the ledger's own location check comes in the commit
+        /// that writes them. Send home's ledger path and, for "Sent home (Recommended)" (owner, 9 November 2026), a
+        /// surrendering formation's leftover records (Prisoners.CaptureRecords, in the capture's own commit) use it.</summary>
         internal static List<PopulationUnit> RecordsHome(Content c, IEnumerable<PopulationUnit> serving, string city, out int items)
         {
             var region = c.PlayerRegions.AtLocation(city)?.Id
@@ -157,6 +166,13 @@ namespace Statecraft.Sim
         internal static int CommitHome(GameState s, IReadOnlyCollection<PopulationUnit> civilians, int items)
         {
             s.PopulationLedger.Commit(civilians, Array.Empty<PopulationTarget>());
+            return ReturnArms(s, items);
+        }
+
+        /// <summary>"Back to Arms stock (Recommended)": <paramref name="items"/> issued items go back to the stock once, after
+        /// the records' commit; gives the Arms added.</summary>
+        internal static int ReturnArms(GameState s, int items)
+        {
             var back = (int)Math.Min(items, (long)int.MaxValue - s.Arms);   // the stock stops at int.MaxValue, as Training's cancel leaves it
             s.Arms += back;
             return back;

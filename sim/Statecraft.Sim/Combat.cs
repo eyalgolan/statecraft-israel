@@ -396,8 +396,10 @@ namespace Statecraft.Sim
                     // #1706 (Recommended)" and "Go ahead on strength (Recommended)"): Take captures the records on the
                     // formation's target, at most its strength of them, the lowest ids first, and SoldiersHeld grows by
                     // that number. A formation's leftover records, beyond its strength, leave service as Send home's do
-                    // (owner, 9 November 2026: "Sent home (Recommended)"; R-UNIT-005, Demobilization.RecordsHome), and the
-                    // Arms they return get Send home's Why line after the surrender line. On a ledger the surrender line
+                    // (owner, 9 November 2026: "Sent home (Recommended)"; R-UNIT-005, Demobilization.RecordsHome), in the
+                    // capture's own ledger commit. After the surrender line come Send home's own lines, in its order: the
+                    // people sent home ("Yes, reuse Send home's (Recommended)"), then, only when Arms go back, the Arms
+                    // line. On a ledger the surrender line
                     // states the records captured in people, not the strength (owner, 9 November 2026: "Records captured
                     // (Recommended)"); Take's Held is the strength without one, so the aggregate line is unchanged.
                     // This engagement's draw and losses,
@@ -413,7 +415,11 @@ namespace Statecraft.Sim
                     why.Add(UnitLines.Line(u.Side == Movement.PlayerSide ? WhyKeys.SurrenderedHeld : WhyKeys.SurrenderedPrisoners,   // Prisoners.Take's two cases
                         FormattableString.Invariant($"Unit {u.Id} surrendered with {taken.Held * ppu:N0} people: it had no hex to retreat to. {taken.Text}"),
                         new[] { u }, (taken.Held * ppu).ToString(CultureInfo.InvariantCulture)));
-                    if (taken.ArmsBack > 0 && taken.Home != null) why.Add(Demobilization.ArmsReturnedLine(c, taken.Home, u.Id, taken.ArmsBack));
+                    if (taken.Home != null)   // leftover records went home: Send home's two lines, in its order ("Yes, reuse Send home's (Recommended)")
+                    {
+                        why.Add(Demobilization.SentHomeLine(c, s, u, taken.Sent, taken.Home));
+                        if (taken.ArmsBack > 0) why.Add(Demobilization.ArmsReturnedLine(c, taken.Home, u.Id, taken.ArmsBack));
+                    }
                 }
             }
         }
