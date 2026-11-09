@@ -402,7 +402,7 @@ public sealed class WebCompanionTests
         }
     }
 
-    // The owner's ruling of 2 November 2026, "Link wins, that visit (Recommended)": "?companion=1" turns the companion on
+    // The owner's ruling of 2 November 2026, "Link wins, that visit (Recommended)": ?companion=1 turns the companion on
     // for that visit over a stored "off", and the saved Settings choice is kept for later visits.
     [Test]
     public void TheLinkTurnsTheCompanionOnForThatVisitAndKeepsTheSavedOff()
