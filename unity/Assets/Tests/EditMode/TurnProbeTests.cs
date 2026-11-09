@@ -175,7 +175,7 @@ public class TurnProbeTests
         Assert.AreEqual("TurnProbeTests.Handler_names_drop_the_compilers_numbering.Local", TurnProbe.HandlerName(local));
     }
 
-    /// <summary>The game as a player boots it: the line times every subscriber of the three events, and the map layers'
+    /// <summary>The game as a player boots it: the line times every subscriber of the four events, and the map layers'
     /// sections #2905 measured (the unit tokens, the special buildings, the other scenery layers).</summary>
     [Test]
     public void In_the_booted_game_every_subscriber_and_the_map_layers_are_timed()
@@ -192,7 +192,8 @@ public class TurnProbeTests
             var bridge = root.Bridge!;
             int Subscribers(string evt) =>
                 (typeof(SimBridge).GetField(evt, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(bridge) as Delegate)?.GetInvocationList().Length ?? 0;
-            int expected = Subscribers(nameof(SimBridge.Changed)) + Subscribers(nameof(SimBridge.CombatResolved)) + Subscribers(nameof(SimBridge.TurnEnded));
+            int expected = Subscribers(nameof(SimBridge.Stepped)) + Subscribers(nameof(SimBridge.Changed)) + Subscribers(nameof(SimBridge.CombatResolved))
+                + Subscribers(nameof(SimBridge.TurnEnded));
             Assert.Greater(expected, 10, "the game's presenters listen");
 
             TurnProbe.On = true;
@@ -205,7 +206,7 @@ public class TurnProbeTests
             Assert.AreEqual(expected, f.Keys.Count(k => k.Contains("/")), line);
             foreach (var key in new[]
             {
-                "Changed/GameRoot.RenderPlacementsIfChanged", "TurnEnded/GameStart.Autosave.Save",
+                "Stepped/EnemyTurnPlayback.Stepped", "Changed/GameRoot.RenderPlacementsIfChanged", "TurnEnded/GameStart.Autosave.Save",
                 "@GameRoot.regions", "@UnitLayer.Show", "@GameRoot.unitsDim",
                 "@RouteLayer", "@ArmisticeLines", "@TownLandmarks", "@WildlifeLayer", "@HulaPapyrusLayer", "@SiteGroundLayer",
                 "@CivilianPeople", "@RuralLife", "@SpecialBuildingModels", "@HexPropModels", "@SeaAirCollection", "@Sites", "@Placements",
