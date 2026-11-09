@@ -329,7 +329,7 @@ public class AdvisorOpeningTests
     }
 
     /// <summary>#2933 section 3: the later lessons, each a teaching row from its turn floor to its last turn, outside the chain,
-    /// in the issue's words, under the word cap, and its Hebrew waiting for the owner.</summary>
+    /// in the issue's words, under the word cap, and its Hebrew approved by the owner.</summary>
     [TestCase("lesson.report", "course_open", 2, 4, 3, "That report shows what moved and what was fought. If the truce was accepted, your brigades cannot attack until it ends.")]
     [TestCase("lesson.attack", "course_open", 6, 8, 3, "The truce period is over. Select a brigade next to an enemy to see Attack and its odds. An attack can force the enemy back.")]
     [TestCase("lesson.stakes", "course_open", 7, 10, 1, "Your score counts objectives, how early you reach them, and prisoners returned. Battles wear brigades down. If Money and Food stay exhausted, the game ends.")]
@@ -342,10 +342,11 @@ public class AdvisorOpeningTests
         Assert.AreEqual("new", row.Level); Assert.IsTrue(row.Teaching); Assert.AreEqual(AdvisorCatalog.Once, row.Repeat);
         CollectionAssert.AreEquivalent(new[] { "turn_at_least" }, row.When.Keys);
         Assert.AreEqual(floor, row.When["turn_at_least"]); Assert.AreEqual(last, row.LapseAfter); Assert.AreEqual(priority, row.Priority);
-        Assert.AreEqual(AdvisorCatalog.Pending, row.HeReview, "agents never finalise Hebrew: the owner approves it");
+        Assert.AreEqual(AdvisorCatalog.Approved, row.HeReview, "the owner approved the four, 9 Nov 2026 (\"Approve all four (Recommended)\")");
+        Assert.IsTrue(row.ApprovedIn(true), "so it shows in Hebrew too");
         Assert.AreEqual(english, En["advisor." + id + ".text"]);
         Assert.LessOrEqual(english.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length, AdvisorCatalog.MaxWords);
-        Assert.AreNotEqual("advisor." + id + ".text", He["advisor." + id + ".text"], "a Hebrew draft is there for the owner to read");
+        Assert.AreNotEqual("advisor." + id + ".text", He["advisor." + id + ".text"], "its Hebrew is there");
     }
 
     /// <summary>#2933: "Priority 3 rows go first, fallback rows included". Without it, lesson.report (priority 3) would take
@@ -616,8 +617,8 @@ public class AdvisorOpeningNoAttentionTests
     }
 
     /// <summary>#2933: the course rows reach a gdd-0.3 player though opening.attention is never marked there, one a turn from
-    /// their floors; the walked chain's fallback steps do not come back. The moved rows' Hebrew stayed approved; the later
-    /// lessons' Hebrew is pending, so a Hebrew player never sees them and they lapse as missed, unseen.</summary>
+    /// their floors; the walked chain's fallback steps do not come back. Every course row's Hebrew is approved (the later
+    /// lessons' on 9 Nov 2026, "Approve all four (Recommended)"), so a Hebrew player gets the same course, nothing missed.</summary>
     [TestCase(false)] [TestCase(true)]
     public void CourseRowsShowFromTheirFloorsAfterTheChain(bool he)
     {
@@ -627,20 +628,15 @@ public class AdvisorOpeningNoAttentionTests
         for (int n = 0; rig.Advisor.InChain && n < 10; n++) rig.Advisor.NextStep();
         Assert.IsFalse(rig.Advisor.InChain);
         rig.Card.Collapse(takeFocus: false);
-        var expected = he
-            ? new[] { null, "opening.objectives", "opening.city", "opening.training", null, null, null, null, null, null }
-            : new[] { "lesson.report", "opening.objectives", "opening.city", "opening.training", "lesson.attack", "lesson.stakes", null, null, null, null };
+        var expected = new[] { "lesson.report", "opening.objectives", "opening.city", "opening.training", "lesson.attack", "lesson.stakes", null, null, null, null };
         for (int turn = 2; turn < 2 + expected.Length; turn++)   // to game turn 11, past lesson.stakes' last (10)
         {
             rig.Bridge.State.Turn = turn - 1; rig.Advisor.Notice(AdvisorSignals.TurnEnded);
             Assert.AreEqual(expected[turn - 2], rig.Advisor.Shown?.Id, "game turn " + turn);
             if (rig.Advisor.Shown != null) rig.Ui.Press("advisor-got-it");
         }
-        foreach (var id in new[] { "lesson.report", "lesson.attack", "lesson.stakes" })
-        {
-            Assert.AreEqual(!he, rig.Session.Settings.Seen(id), id);
-            Assert.AreEqual(he, rig.Session.Queue.History.Any(e => e.Id == id && e.Outcome == AdvisorQueue.Outcome.Missed), id + " missed");
-        }
+        foreach (var id in new[] { "lesson.report", "lesson.attack", "lesson.stakes" }) Assert.IsTrue(rig.Session.Settings.Seen(id), id);
+        Assert.IsFalse(rig.Session.Queue.History.Any(e => e.Outcome == AdvisorQueue.Outcome.Missed), "nothing missed");
         Assert.IsFalse(rig.Session.Queue.History.Any(e => e.Id == "lesson.combat"), "no fight, no combat lesson");
         Assert.IsFalse(rig.Session.Settings.Seen("opening.attention"));
     }

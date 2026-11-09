@@ -35,11 +35,12 @@ messages:
   - { id: opening.objectives, advisor: ben_gurion, signal: course_open, level: new, he_review: approved, when: { turn_at_least: 3 }, lapse_after: 6, actions: [{ show_me: nav_objectives }, { encyclopedia: objectives }] }
 # #2933 section 3: the later lessons, words as the issue gives them, each from its turn floor to its last turn (lapse_after).
 # Priority 3 goes first, the fallback steps above included, so a step put off by X keeps its turn. lesson.combat follows
-# the first fight's report, not the course: combat_seen is its signal. Hebrew: agent-drafted, pending the owner's review.
-  - { id: lesson.report, advisor: dayan, signal: course_open, level: new, priority: 3, he_review: pending, when: { turn_at_least: 2 }, lapse_after: 4, actions: [{ encyclopedia: truces }] }
-  - { id: lesson.attack, advisor: dayan, signal: course_open, level: new, priority: 3, he_review: pending, when: { turn_at_least: 6 }, lapse_after: 8, actions: [{ encyclopedia: combat }] }
-  - { id: lesson.stakes, advisor: ben_gurion, signal: course_open, level: new, he_review: pending, when: { turn_at_least: 7 }, lapse_after: 10, actions: [{ encyclopedia: objectives }] }
-  - { id: lesson.combat, advisor: dayan, signal: combat_seen, level: new, priority: 2, he_review: pending, when: { turn_at_least: 2 }, lapse_after: 8, actions: [{ encyclopedia: combat }] }
+# the first fight's report, not the course: combat_seen is its signal (owner, 9 Nov 2026: "Allow it (Recommended)").
+# The four rows' Hebrew, agent-drafted, was approved by the owner, 9 Nov 2026 ("Approve all four (Recommended)").
+  - { id: lesson.report, advisor: dayan, signal: course_open, level: new, priority: 3, he_review: approved, when: { turn_at_least: 2 }, lapse_after: 4, actions: [{ encyclopedia: truces }] }
+  - { id: lesson.attack, advisor: dayan, signal: course_open, level: new, priority: 3, he_review: approved, when: { turn_at_least: 6 }, lapse_after: 8, actions: [{ encyclopedia: combat }] }
+  - { id: lesson.stakes, advisor: ben_gurion, signal: course_open, level: new, he_review: approved, when: { turn_at_least: 7 }, lapse_after: 10, actions: [{ encyclopedia: objectives }] }
+  - { id: lesson.combat, advisor: dayan, signal: combat_seen, level: new, priority: 2, he_review: approved, when: { turn_at_least: 2 }, lapse_after: 8, actions: [{ encyclopedia: combat }] }
 
 # Spec 6's critical warnings (shown at every help level, Off included) and the defeat lines. Their words and speakers are the
 # recorded clips' (owner, 24 October 2026: "Adopt clip words"; talking-v3/lines.csv): dayan.city_at_risk is
