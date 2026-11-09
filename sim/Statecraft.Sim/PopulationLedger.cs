@@ -96,6 +96,8 @@ namespace Statecraft.Sim
             new PopulationBindings(locations, targets.Values.Concat(added), captors, qualifications);
         /// <summary>The bound target <paramref name="id"/>, or null.</summary>
         internal PopulationTarget? FindTarget(string id) => targets.TryGetValue(id, out var t) ? t : null;
+        /// <summary>The bound assignment targets, in ordinal id order (#1725 PR 7, the live month snapshot reads them).</summary>
+        internal IEnumerable<PopulationTarget> Targets => targets.Values;
         internal bool HasCaptor(string captor) => captors.Contains(captor);
         internal bool HasQualification(string qualification) => qualification == "" || qualifications.Contains(qualification);
         internal IEnumerable<string> Canonical()
@@ -160,6 +162,8 @@ namespace Statecraft.Sim
         /// <summary>Initialized with mode Historical (the R-POP-004 start's scale). Not written to the canonical text: the
         /// scale it implies already is.</summary>
         internal bool IsHistorical { get; private set; }
+        /// <summary>The ledger's frozen bindings; an uninitialized ledger is refused.</summary>
+        internal PopulationBindings Bindings { get { RequireInitialized(); return bindings!; } }
         internal PopulationLedger(bool enabled) { this.enabled = enabled; }
         internal PopulationLedger Clone()
         {
@@ -217,6 +221,27 @@ namespace Statecraft.Sim
         {
             RequireInitialized(); Get(replacement.Id);
             var candidate = new SortedDictionary<int, PopulationUnit>(units) { [replacement.Id] = replacement };
+            Validate(candidate); units = candidate;
+        }
+        /// <summary>#1710 (#1725 PR 7), R-POW-005, R-POP-002: the active soldiers <paramref name="ids"/> surrender to
+        /// <paramref name="captor"/>, all or nothing. Each becomes Captured with that captor, no location and no assignment, its
+        /// Home the place it served in (the formation's region; owner, 8 November 2026: "Formation's region (Recommended)"),
+        /// and keeps its id, history and issued item (owner: "Stays on record (Recommended)"). Every record is checked and the
+        /// candidate validated before any is committed, so a refusal changes nothing. Nobody is lost: no loss is written.</summary>
+        internal void Capture(IReadOnlyList<int> ids, string captor)
+        {
+            RequireInitialized();
+            if (captor == null || !bindings!.HasCaptor(captor))
+                throw new ArgumentException("Side '" + captor + "' is not a bound captor of this ledger (R-POP-002).");
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var seen = new HashSet<int>();
+            foreach (var id in ids)
+            {
+                var p = Get(id);
+                if (p.Status != PopulationStatus.ActiveSoldier || !seen.Add(id))
+                    throw new ArgumentException("Only an active soldier can surrender, once (R-POW-005).");
+                candidate[id] = p.WithPlacement(PopulationStatus.Captured, null, PopulationAssignment.Unassigned, captor, p.Location);
+            }
             Validate(candidate); units = candidate;
         }
         /// <summary>A manifest item can arrive only once, including after its population id is lost.</summary>
