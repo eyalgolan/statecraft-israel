@@ -644,10 +644,19 @@ namespace Statecraft.Sim
 
         /// <summary>Event text as the player sees it now: a matching variant's, with names following the player's appointments.</summary>
         public static string Render(Content c, GameState s, GameEvent e) =>
-            Cabinet.Fill(c, s, Timeline.Variant(c, s, e)?.Text ?? (ShowsLate(e, s.Date) ? e.LateText : e.Text), FillDate(e, s.Date));
+            Cabinet.Fill(c, s, Timeline.Variant(c, s, e)?.Text
+                ?? (ShowsEarly(e, s.Date) ? e.EarlyText : ShowsLate(e, s.Date) ? e.LateText : e.Text), FillDate(e, s.Date));
 
         /// <summary>R-ENEMY-007 ("Dateless variants (Recommended)"): whether <paramref name="e"/>, shown on <paramref name="date"/>,
         /// shows its late text: it has one, and its own window has closed. A road variant (R-ALT-010) still comes first.</summary>
         public static bool ShowsLate(GameEvent e, DateTime date) => e.LateText != "" && e.To.HasValue && date >= e.To.Value;
+
+        /// <summary>R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", "Ordinary text
+        /// (Recommended)"): whether <paramref name="e"/>, shown on <paramref name="date"/>, shows its early text: it has one, and
+        /// it is shown before its `from`. The loader allows an early text only on a front_quiet card, which only the quiet path
+        /// shows before its `from` (gdd-0.3, Armistice.MayOfferEarly), and a card is shown on the date it fired (it is answered
+        /// or delegated before the date moves), so the date alone tells the early path: no saved state. A card refused and
+        /// brought back on or after its `from` shows its ordinary text. A road variant (R-ALT-010) still comes first.</summary>
+        public static bool ShowsEarly(GameEvent e, DateTime date) => e.EarlyText != "" && date < e.From;
     }
 }

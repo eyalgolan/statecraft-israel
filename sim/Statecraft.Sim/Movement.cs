@@ -174,7 +174,7 @@ namespace Statecraft.Sim
         /// <summary>Takes the unit's go-to away where it stands.</summary>
         static void Clear(GameState s, Unit u)
         {
-            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
+            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp, u.Records);
             s.CardOrders.Remove(u.Id);   // a stopped go-to is no operation card's order any more (R-ENEMY-005)
         }
 
@@ -195,7 +195,7 @@ namespace Statecraft.Sim
             if (Closed(c, s, false).Contains((q.Value, r.Value))) return RefusedClosed;
             if (Route(c, s, unitId, q.Value, r.Value, spent, cardUntil != null).Count == 0) return RefusedNoRoute;
             var target = HexText(q.Value, r.Value);
-            var given = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, GoTo, target, u.HomeCity, u.Full, u.CombatXp);
+            var given = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, GoTo, target, u.HomeCity, u.Full, u.CombatXp, u.Records);
             s.Units[unitId] = given;
             if (cardUntil is DateTime until) s.CardOrders[unitId] = until; else s.CardOrders.Remove(unitId);
             why.Add(UnitLines.Line(WhyKeys.OnItsWay, $"Unit {unitId} is on its way to hex {target}", new[] { given }, target));
@@ -290,13 +290,13 @@ namespace Statecraft.Sim
             if (Closed(c, s, enemy).Contains((q, r))) return RefusedClosed;
             if (Full(c, s, u, q, r) is string full) return full;
             spent.TryGetValue(unitId, out var used);
-            var (dist, _) = Search(c, s, u, points - used, fresh: used == 0, card: card);
+            var (dist, _) = Search(c, s, u, points - used, fresh: used == 0, card: card, to: (q, r));
             if (!dist.TryGetValue((q, r), out var cost)) return RefusedOutOfReach;
             // Moving clears fortify at once (Q-HOLD-1, "lost on move"; the standing orders' "fortify", or "fortifying" the turn it
             // is given, with the hex it names), so a unit that goes out and comes back the same turn is not fortified; hold moves with
             // the unit. The order step at the end of the turn only sees the final hex.
             var fortified = u.Order == "fortify" || u.Order == "fortifying";
-            s.Units[unitId] = new Unit(u.Id, u.Type, q, r, u.Service, u.Side, u.Strength, fortified ? "" : u.Order, fortified ? "" : u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
+            s.Units[unitId] = new Unit(u.Id, u.Type, q, r, u.Service, u.Side, u.Strength, fortified ? "" : u.Order, fortified ? "" : u.OrderTarget, u.HomeCity, u.Full, u.CombatXp, u.Records);
             spent[unitId] = used + cost;
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), cost,
                 FormattableString.Invariant($"Unit {unitId} moved to hex {q},{r} for {cost} movement points"), enemy ? Kind : "",
@@ -320,15 +320,16 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-MOVE-005: the hexes of mvp.enemy_held_localities. For the enemy (R-ENEMY-001, the rule's mirror) every
-        /// other locality's hex, so no enemy move ends on a player's locality while enemy capture (Q-TGT-2 (c)) is unbuilt.</summary>
+        /// other locality's hex, so no enemy retreat ends on a player's locality (#2932). An enemy move may, but only on the
+        /// one it is sent to (R-CTRL-006, <see cref="Closed"/>, <see cref="Search"/>).</summary>
         internal static HashSet<(int Q, int R)> NoEntry(Content c, GameState s, bool enemy = false)
         {
-            // An annexed target is Israeli for good (R-CTRL-016, OWNER QUESTION 3 (a) on #799): not enemy-held.
-            var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities
-                .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.State == SettlementControl.Annexed)).ToList();
+            var ids = Held(c, s);
             // The enemy's set is built from the player's localities, not as all hexes minus the enemy-held ones: at 4.4 km (#1183)
             // Rehovot shares Ramla's hex (-4, 24), which must stay closed to the enemy while Ramla is enemy-held (owner review, #1796).
-            if (enemy) return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => !ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
+            // An annexed target closes its target's hex too (Ramla's (-3, 24), #1796), where R-CTRL-006 checks it (#2955).
+            if (enemy) return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => !ids.Contains(h.Id)).Select(h => (h.Q, h.R))
+                .Concat(c.SettlementTargets.Where(t => HeldAnnexed(s, t.Id)).Select(t => (t.Q, t.R))));
             // A target's hex, not its settlement's, as in Closed: for Ramla (ContentLoader.TargetOnANeighbour, #1796) that is
             // (-3, 24), so a retreat or a Raid's withdrawal never ends where it would capture the place, while Rehovot's shared
             // settlement hex (-4, 24) stays open (owner review, #1796).
@@ -336,14 +337,33 @@ namespace Statecraft.Sim
                 .Select(h => (h.Q, h.R)).Concat(c.SettlementTargets.Where(t => ids.Contains(t.Id)).Select(t => (t.Q, t.R))));
         }
 
+        /// <summary>mvp.enemy_held_localities less the annexed targets Israel holds: an annexed target is Israeli (R-CTRL-016,
+        /// OWNER QUESTION 3 (a) on #799), not enemy-held, until enemy units take it (R-CTRL-006; the owner on #2955, "Can be
+        /// taken"); then it is enemy-held again.</summary>
+        static List<string> Held(Content c, GameState s) => c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities
+            .Where(id => !HeldAnnexed(s, id)).ToList();
+
+        /// <summary>An annexed target Israel holds: its record is annexed and Israeli, not taken by enemy units (R-CTRL-006).</summary>
+        static bool HeldAnnexed(GameState s, string id) =>
+            s.Settlements.TryGetValue(id, out var x) && x.State == SettlementControl.Annexed && x.Owner == PlayerSide;
+
         /// <summary>R-MOVE-005 in Phase 6 (#1304): the hexes a move and its path may not enter. For the player, those of
         /// mvp.enemy_held_localities that are not curated targets (settlement_targets.yaml), so a target can be captured in play
         /// (the owner's #793 ruling) while the rest, Gaza today, stay closed, and so does a depopulated target's hex (R-CTRL-020);
-        /// for the enemy, <see cref="NoEntry"/>'s mirror unchanged. Raid's withdrawal and combat retreat still read
-        /// <see cref="NoEntry"/>, so neither ends on an enemy-held place.</summary>
+        /// for the enemy, <see cref="NoEntry"/>'s mirror less the player's localities, which an enemy move may now end on
+        /// when it is sent there (R-CTRL-006; <see cref="Search"/> keeps every other one off its path), and so may it on an
+        /// annexed target Israel holds (the owner on #2955, "Can be taken"), so only an arab_town that is not enemy-held (Jaffa)
+        /// stays closed to them. A hex one of those shares stays closed. Raid's withdrawal and combat retreat still read <see cref="NoEntry"/>, so neither
+        /// ends on an enemy-held place, nor an enemy retreat on a player's locality.</summary>
         static HashSet<(int Q, int R)> Closed(Content c, GameState s, bool enemy)
         {
-            if (enemy) return NoEntry(c, s, true);
+            if (enemy)
+            {
+                var open = new HashSet<string>(SettlementControl.PlayerLocalities(c, s).Select(h => h.Id)
+                    .Concat(c.SettlementTargets.Where(t => HeldAnnexed(s, t.Id)).Select(t => t.Id)), StringComparer.Ordinal);
+                var held = Held(c, s);
+                return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => !held.Contains(h.Id) && !open.Contains(h.Id)).Select(h => (h.Q, h.R)));
+            }
             // A depopulated target (R-CTRL-020) stays closed: Deport leaves nothing to capture there again.
             var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities.Except(c.SettlementTargets.Select(t => t.Id)
                 .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.Depopulated))).ToList();
@@ -360,7 +380,7 @@ namespace Statecraft.Sim
         {
             var points = Points(c, u);
             if (points == 0) return null;
-            var (dist, prev) = Search(c, s, u, int.MaxValue);
+            var (dist, prev) = Search(c, s, u, int.MaxValue, to: (q, r));
             if (!dist.ContainsKey((q, r)) || (u.Q, u.R) == (q, r)) return null;
             var h = (q, r);
             while (dist[h] > points && prev[h] != (u.Q, u.R)) h = prev[h];
@@ -394,13 +414,18 @@ namespace Statecraft.Sim
         /// (R-MOVE-001, OQ-3). Stacking limits only where a move ends, so it is not checked here. With <paramref name="card"/>, an
         /// operation card's go-to to that hex (R-ENEMY-005; the owner's answer 1 on #2087, 31 October 2026), every enemy-held
         /// locality (<see cref="NoEntry"/>) but that hex is closed too, open target or not: the march never ends on, and so
-        /// never captures, a place it was not sent to.</summary>
+        /// never captures, a place it was not sent to. An enemy unit's path, the same way, enters no player's locality and no
+        /// annexed target Israel holds but <paramref name="to"/>, the hex it is sent to (R-CTRL-006; the owner on #2955,
+        /// "Destination only (Recommended)").</summary>
         static (Dictionary<(int Q, int R), int> Dist, Dictionary<(int Q, int R), (int Q, int R)> Prev) Search(
-            Content c, GameState s, Unit u, int budget, bool fresh = false, (int Q, int R)? card = null)
+            Content c, GameState s, Unit u, int budget, bool fresh = false, (int Q, int R)? card = null, (int Q, int R)? to = null)
         {
             var costs = c.RulesAt(s.Date).Mvp!.MoveCost;   // the loader requires a cost for every land biome in the GDD loop
             var blocked = Closed(c, s, IsEnemy(u));
             if (card is (int, int) sent) blocked.UnionWith(NoEntry(c, s).Where(h => h != sent));
+            // R-CTRL-006: an enemy path goes round every player's locality but the one it is sent to, as a card's go-to does
+            // (the owner's answer 1 on #2087), so an enemy march never ends on, and so never takes, a place it was not sent to.
+            if (IsEnemy(u)) blocked.UnionWith(NoEntry(c, s, true).Where(h => h != to));
             var built = BuiltSegments(c, s);
             foreach (var x in s.Units.Values) if (IsEnemy(x) != IsEnemy(u)) blocked.Add((x.Q, x.R));
             var dist = new Dictionary<(int Q, int R), int> { [(u.Q, u.R)] = 0 };

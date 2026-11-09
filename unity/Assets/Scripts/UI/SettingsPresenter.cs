@@ -20,7 +20,7 @@ namespace Statecraft.Game.UI
     /// automatic fallback's tilt-shift step (TiltShift.FallbackOff), which it never changes.</summary>
     public sealed class SettingsPresenter : IDisposable
     {
-        public const string TiltShiftKey = "tiltshift", QualityKey = "quality", LanguageKey = "lang", UiScaleKey = "uiscale", SoundKey = "sfx", MusicKey = "music", CompanionKey = "companion", SelectedClass = "settings-choice-selected";
+        public const string TiltShiftKey = "tiltshift", QualityKey = "quality", LanguageKey = "lang", UiScaleKey = "uiscale", SoundKey = "sfx", MusicKey = "music", CompanionKey = "companion", EnemyMovesKey = "enemymoves", SelectedClass = "settings-choice-selected";
         /// <summary>The owner's UI scales (#40, 18 Oct 2026), in percent; the first is the default.</summary>
         public static readonly int[] UiScales = { 100, 125, 150 };
         /// <summary>The owner's ruling on #1011 (19 Oct 2026): Settings offers only the UI scales verified to fit, and 100% always,
@@ -60,6 +60,13 @@ namespace Statecraft.Game.UI
         bool quitAsked;
         readonly Button companionSwitch;
         readonly (Func<bool> on, Action<bool> set)? companion;
+        readonly Button enemyMoves;
+        readonly Action<bool>? setEnemyMoves;
+        bool enemyMovesOn;
+
+        /// <summary>#2202 (plan docs/superpowers/plans/2026-11-02-enemy-move-playback.md, Task 7): whether End turn plays the
+        /// enemy's moves on the map (EnemyTurnPlayback). On unless the player turned it off (the stored "off").</summary>
+        public static bool EnemyMovesOn(SettingsStore? store) => store?.Read(EnemyMovesKey) != "off";
 
         /// <param name="store">Where the choice is kept; null keeps nothing (the option still works until the page closes).</param>
         /// <param name="switchLanguage">Puts the UI in the language pressed (GameRoot builds the screens again); null changes
@@ -70,8 +77,10 @@ namespace Statecraft.Game.UI
         /// <param name="companion">The WebGL companion (#1119, WebCompanion): whether it runs, and what turns it on or off at
         /// once; null (no page to show it in) hides its row.</param>
         /// <param name="music">The start menu's music the Music volume applies to; null keeps only the choice.</param>
+        /// <param name="enemyMoves">Told the enemy-moves switch's new value at once (#2202: off skips a playback that plays);
+        /// null keeps only the choice, read at the next End turn.</param>
         public SettingsPresenter(VisualElement root, UiText text, SettingsStore? store, Action<string>? switchLanguage = null, PanelSettings? panel = null, GameAudio? audio = null, AdvisorSettings? advisors = null,
-            (Func<bool> on, Action<bool> set)? companion = null, MenuMusic? music = null)
+            (Func<bool> on, Action<bool> set)? companion = null, MenuMusic? music = null, Action<bool>? enemyMoves = null)
         {
             this.store = store; this.text = text; this.root = root; this.audio = audio; this.advisors = advisors; this.companion = companion; this.music = music;
             screen = root.Q<VisualElement>("screen-settings");
@@ -80,6 +89,11 @@ namespace Statecraft.Game.UI
             tiltShift = screen.Q<Button>("settings-tiltshift");
             if (store?.Read(TiltShiftKey) == "off") TiltShift.Enabled = false;
             tiltShift.clicked += Flip;
+            screen.Q<Label>("settings-enemymoves-label").text = text["settings.enemymoves"];
+            this.enemyMoves = screen.Q<Button>("settings-enemymoves");
+            setEnemyMoves = enemyMoves;
+            enemyMovesOn = EnemyMovesOn(store);
+            this.enemyMoves.clicked += FlipEnemyMoves;
             // Graphics quality (#40): three buttons, the one that is set marked. A stored choice is applied at start unless
             // an instrument flag must see the tier's own look (GraphicsQuality.AtStart); Auto at start changes nothing.
             screen.Q<Label>("settings-quality-label").text = text["settings.quality"];
@@ -185,6 +199,7 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             tiltShift.clicked -= Flip;
+            enemyMoves.clicked -= FlipEnemyMoves;
             companionSwitch.clicked -= FlipCompanion;
             foreach (var (b, _, pick) in quality) b.clicked -= pick;
             languages.Dispose();
@@ -218,6 +233,18 @@ namespace Statecraft.Game.UI
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
                 Debug.LogWarning($"Settings: could not keep the companion choice ({e.Message}); it holds until the page is closed");
+            }
+        }
+
+        void FlipEnemyMoves()
+        {
+            enemyMovesOn = !enemyMovesOn;
+            Show();
+            setEnemyMoves?.Invoke(enemyMovesOn);
+            try { store?.Write(EnemyMovesKey, enemyMovesOn ? "on" : "off"); }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"Settings: could not keep the enemy-moves choice ({e.Message}); it holds until the page is closed");
             }
         }
 
@@ -323,6 +350,7 @@ namespace Statecraft.Game.UI
         void Show()
         {
             tiltShift.text = text[TiltShift.Enabled ? "settings.on" : "settings.off"];
+            enemyMoves.text = text[enemyMovesOn ? "settings.on" : "settings.off"];
             companionSwitch.text = text[companion?.on() == true ? "settings.on" : "settings.off"];
             foreach (var (b, c, _) in quality) b.EnableInClassList(SelectedClass, c == GraphicsQuality.Current);
             languages.Mark();

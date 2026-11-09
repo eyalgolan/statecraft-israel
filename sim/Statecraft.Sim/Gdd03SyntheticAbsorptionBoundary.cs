@@ -43,7 +43,7 @@ namespace Statecraft.Sim
 
             // Exact unbounded integer products; 100 is the definition of percent, not a balance default.
             // No rounded shares, binary floating point, text formatting, RNG or state mutation.
-            return new BigInteger(representedOwnUnits) * peoplePerUnit > populationTarget
+            return new BigInteger(representedOwnUnits) * peoplePerUnit >= populationTarget
                 && new BigInteger(ordinaryOverflow) * 100 <= new BigInteger(ordinaryDemand) * maxOverflow
                 && new BigInteger(employedFreeCivilians) * 100 >= new BigInteger(allFreeCivilians) * minEmployment;
         }
