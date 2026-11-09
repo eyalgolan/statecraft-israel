@@ -924,6 +924,61 @@ public class SeaAirCollectionTests
         }
     }
 
+    /// <summary>New game's raid (#3000, DakotaRaidFlight) bombs Tel Aviv as the loop does: every release lies on the pass
+    /// where the raid flies the loop itself (within DakotaRaidFlight.PassS of its middle), so at each release the aircraft is
+    /// where the loop has it and its bomb leaves its belly; half way through its fall a bomb is a quarter of the way down; the
+    /// smoke columns rise only from their first hit; when the raid ends the aircraft is back on its loop's clock.</summary>
+    [Test]
+    public void TheRaidFlightBombsTelAvivAsTheLoopDoes()
+    {
+        var map = OpenMap();
+        var (_, planes, loops, _) = DrawnDakotas(map);
+        float period = SeaAirCollection.DakotaLoopSeconds, fall = SeaAirCollection.DakotaBombFallS;
+        try
+        {
+            for (int p = 0; p < planes.Length; p++)
+            {
+                var loop = loops[p]; var run = loop.Bombs!;
+                Assert.AreEqual(p, Mathf.RoundToInt(loop.Lag / SeaAirCollection.DakotaTrailSeconds), "lead first, then its wing");
+                float firstHit = float.MaxValue;
+                foreach (var d in run.Drops)
+                {
+                    float u = d.At - period * Mathf.Floor(d.At / period + 0.5f);   // its time in the pass, in (-60, 60]
+                    Assert.That(u, Is.InRange(-DakotaRaidFlight.PassS, DakotaRaidFlight.PassS), $"{planes[p].name}'s release at {d.At:0.0} s is on the raid's pass");
+                    firstHit = Mathf.Min(firstHit, u + fall);
+                    loop.Place(loop.Lag + u);
+                    var onLoop = planes[p].position; var turned = planes[p].rotation;
+                    loop.PlaceRaid(DakotaRaidFlight.SecondsAt(u, p));
+                    Assert.Less((planes[p].position - onLoop).magnitude, 0.5f, $"the raid has {planes[p].name} where the loop has it at the release {u:0.0}");
+                    Assert.Less(Quaternion.Angle(planes[p].rotation, turned), 0.5f, "turned as on the loop");
+                }
+                var first = run.Drops.OrderBy(d => d.At - period * Mathf.Floor(d.At / period + 0.5f)).First();
+                float at = first.At - period * Mathf.Floor(first.At / period + 0.5f);
+                loop.PlaceRaid(DakotaRaidFlight.SecondsAt(at + 0.5f * fall, p));
+                var expect = Vector3.Lerp(first.From, first.To, 0.5f); expect.y = first.From.y - 0.25f * (first.From.y - first.To.y);
+                Assert.IsTrue(run.Bombs.Any(r => r.enabled && (r.transform.position - expect).magnitude < 1f), "half way through its fall a bomb is a quarter of the way down");
+                loop.PlaceRaid(0f);
+                Assert.IsFalse(run.Bombs.Concat(run.Flashes).Concat(run.Blasts).Concat(run.Smoke).Concat(run.Columns).Any(r => r.enabled),
+                    $"{planes[p].name}: nothing falls or burns as the raid comes in");
+                loop.PlaceRaid(DakotaRaidFlight.SecondsAt(firstHit - 0.05f, p));
+                Assert.IsFalse(run.Columns.Any(r => r.enabled), "no column before the first hit");
+                loop.PlaceRaid(DakotaRaidFlight.Seconds);
+                Assert.IsTrue(run.Columns.Any(r => r.enabled), "Tel Aviv burning as the raid leaves");
+                for (int i = 0; i <= 400; i++)
+                {
+                    float t = i * DakotaRaidFlight.Seconds / 400f;
+                    loop.PlaceRaid(t);
+                    foreach (var r in run.Bombs.Concat(run.Flashes).Concat(run.Blasts).Concat(run.Smoke).Concat(run.Columns))
+                        if (r.enabled) Assert.IsTrue(OnTelAviv(map, r.transform.position), $"{r.name} over Tel Aviv {t:0.00} s into the raid");
+                }
+            }
+            // Its end hands the aircraft back to the loop: Update places it by the loop's clock again (DakotaRaidFlight.Stop).
+            DakotaRaidFlight.Stop();
+            Assert.IsFalse(DakotaRaidFlight.Since(out _));
+        }
+        finally { DakotaRaidFlight.Stop(); }
+    }
+
     /// <summary>The owner, 4 November 2026, on the 15 May captures: "the explosions look bad in the screenshot and there is no
     /// smoke columns coming up", then "it needs to look top quality" (Unity Labs' CC0 flipbooks approved). The blast plays
     /// the explosion flipbook once over DakotaBlastS: it opens at DakotaBlastOpenShare of DakotaBlastM, swells to the full
