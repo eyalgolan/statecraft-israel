@@ -10,7 +10,8 @@ using Statecraft.Sim;
 /// and the Why lines are the aggregate game's. Owner rulings, 8 November 2026 (#1725): "Lowest id first (Recommended)",
 /// "No, losses are deaths (Recommended)", "No, formation only (Recommended)", "Go ahead on strength", "Date + battle hex
 /// (Recommended)", "Prisoners #1710 first (Recommended)", "No, keep region (Recommended)" and "Yes, after #2964
-/// (Recommended)".</summary>
+/// (Recommended)". Owner rulings, 9 November 2026: "Go ahead on strength (Recommended)" and "Yes, in #1706 (Recommended)"
+/// for a surrender (R-POW-005).</summary>
 public class LedgerCombatTests
 {
     static Content Gdd03() => HistoricalPopulationTests.Real(true);
@@ -58,6 +59,23 @@ public class LedgerCombatTests
     }
 
     static string Units(GameState s) => string.Join(";", s.Units.Values.Select(x => x.Canonical()));
+
+    // No attack order is left standing; one enemy unit goes on each land hex around own unit <paramref name="unit"/> and every
+    // other unit leaves that ring, so it has no hex to retreat to. The lowest-id one attacks it with
+    // <paramref name="strength"/>, the rest have strength 1. Returns the attacker's side, the captor of a surrender.
+    static string Surround(Content c, GameState g, int unit, int strength)
+    {
+        foreach (var u in g.Units.Values.ToList()) if (u.Order == Combat.Attack) Place(g, u, u.Q, u.R);
+        var at = g.Units[unit];
+        var ring = Ring(c, g, at);
+        var enemies = g.Units.Values.Where(u => u.Side != Movement.PlayerSide && u.Side != "").OrderBy(u => u.Id).Take(ring.Count).ToList();
+        Assert.Equal(ring.Count, enemies.Count);
+        foreach (var x in g.Units.Values.ToList())
+            if (x.Id != unit && !enemies.Any(e => e.Id == x.Id) && ring.Contains((x.Q, x.R))) g.Units.Remove(x.Id);
+        for (int i = 0; i < ring.Count; i++)
+            Place(g, enemies[i], ring[i].Q, ring[i].R, i == 0 ? strength : 1, i == 0 ? Combat.Attack : "", i == 0 ? FormattableString.Invariant($"{at.Q},{at.R}") : "");
+        return enemies[0].Side;
+    }
 
     // The first seed for which the aggregate twin, set up by <paramref name="setUp"/> and fought by
     // <paramref name="fight"/>, passes <paramref name="wanted"/>.
@@ -257,20 +275,7 @@ public class LedgerCombatTests
         var c = Gdd03();
         var d = Own(c, Dark(c))[0];
         string side = "";
-        void SetUp(GameState g)
-        {
-            foreach (var u in g.Units.Values.ToList()) if (u.Order == Combat.Attack) Place(g, u, u.Q, u.R);
-            var at = g.Units[d.Id];
-            var ring = Ring(c, g, at);
-            // Put one enemy unit on each land hex of the ring and clear it of every other unit: no hex to retreat to.
-            var enemies = g.Units.Values.Where(u => u.Side != Movement.PlayerSide && u.Side != "").OrderBy(u => u.Id).Take(ring.Count).ToList();
-            Assert.Equal(ring.Count, enemies.Count);
-            foreach (var x in g.Units.Values.ToList())
-                if (x.Id != d.Id && !enemies.Any(e => e.Id == x.Id) && ring.Contains((x.Q, x.R))) g.Units.Remove(x.Id);
-            for (int i = 0; i < ring.Count; i++)
-                Place(g, enemies[i], ring[i].Q, ring[i].R, i == 0 ? 3 * d.Strength : 1, i == 0 ? Combat.Attack : "", i == 0 ? FormattableString.Invariant($"{at.Q},{at.R}") : "");
-            side = enemies[0].Side;
-        }
+        void SetUp(GameState g) => side = Surround(c, g, d.Id, 3 * d.Strength);
         var seed = Seed(c, SetUp, (g, why) => Combat.Resolve(c, g, why),
             (b, g, why) => Lost(b, g, d.Id) >= 1 && why.Any(x => x.Key == WhyKeys.SurrenderedHeld));
         var s = Dark(c); SetUp(s); s.RngState = seed;
@@ -288,6 +293,129 @@ public class LedgerCombatTests
         Assert.Equal(held, s.SoldiersHeld[side]);
         Assert.Equal(serving.Take(lost).Select(p => LossLine(p.Id, Source(s, d.Q, d.R))), LossLines(s));
         foreach (var p in serving.Skip(lost))
+            Assert.Equal((PopulationStatus.Captured, side), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
+        Prisoners.RequireHeldMatchesRecords(s);
+        s.PopulationLedger.Reconcile();
+    }
+
+    // "Go ahead on strength (Recommended)" (owner, 9 November 2026), R-POW-005: an own formation with fewer serving records
+    // than its strength surrenders in step 2 with no refusal. The units and the draw are the aggregate twin's; every record
+    // left after its losses is Captured, SoldiersHeld grows by those records (one fewer than the twin's count, for the one
+    // record taken out first), and the count still matches the records, so the next Upkeep goes on.
+    [Fact]
+    public void AFormationWithFewerRecordsThanStrengthSurrendersAndAllItsRecordsAreCaptured()
+    {
+        var c = Gdd03();
+        var d = Own(c, Dark(c))[0];
+        string side = "";
+        void SetUp(GameState g) => side = Surround(c, g, d.Id, 3 * d.Strength);
+        var seed = Seed(c, SetUp, (g, why) => Combat.Resolve(c, g, why),
+            (b, g, why) => why.Any(x => x.Key == WhyKeys.SurrenderedHeld) && g.SoldiersHeld.Values.Sum() >= 2);
+        var s = Dark(c); SetUp(s); s.RngState = seed;
+        var twin = Aggregate(c); SetUp(twin); twin.RngState = seed;
+        s.PopulationLedger.RegisterCombatLoss(Serving(c, s, d.Id).Last().Id, "fixture");
+        var serving = Serving(c, s, d.Id);
+        Assert.Equal(d.Strength - 1, serving.Count);
+
+        Combat.Resolve(c, s, new List<Cause>());
+        Combat.Resolve(c, twin, new List<Cause>());
+
+        Assert.False(s.Units.ContainsKey(d.Id));
+        Assert.Equal(Units(twin), Units(s));
+        Assert.Equal(twin.RngState, s.RngState);
+        var lost = d.Strength - twin.SoldiersHeld[side];
+        Assert.Empty(Serving(c, s, d.Id));
+        foreach (var p in serving.Skip(lost))
+            Assert.Equal((PopulationStatus.Captured, side), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
+        Assert.Equal(serving.Count - lost, s.SoldiersHeld[side]);
+        Assert.Equal(twin.SoldiersHeld[side] - 1, s.SoldiersHeld[side]);
+        Prisoners.RequireHeldMatchesRecords(s);
+        Prisoners.Upkeep(c, s, c.RulesAt(s.Date).Mvp!, new List<Cause>());
+        s.PopulationLedger.Reconcile();
+    }
+
+    // "Go ahead on strength (Recommended)": an own formation with more serving records than its strength surrenders in step
+    // 2. Its losses take its lowest records first; of the rest exactly its strength are Captured, the lowest ids first, and
+    // the others stay active soldiers on its target. SoldiersHeld is the aggregate twin's.
+    [Fact]
+    public void AFormationWithMoreRecordsThanStrengthSurrendersItsLowestRecords()
+    {
+        var c = Gdd03();
+        var d = Own(c, Dark(c))[0];
+        string side = "";
+        void SetUp(GameState g)
+        {
+            side = Surround(c, g, d.Id, 3 * d.Strength);
+            var u = g.Units[d.Id]; Place(g, u, u.Q, u.R, u.Strength - 2);
+        }
+        var seed = Seed(c, SetUp, (g, why) => Combat.Resolve(c, g, why),
+            (b, g, why) => why.Any(x => x.Key == WhyKeys.SurrenderedHeld) && g.SoldiersHeld.Values.Sum() >= 1);
+        var s = Dark(c); SetUp(s); s.RngState = seed;
+        var twin = Aggregate(c); SetUp(twin); twin.RngState = seed;
+        var serving = Serving(c, s, d.Id);
+        Assert.Equal(s.Units[d.Id].Strength + 2, serving.Count);
+
+        Combat.Resolve(c, s, new List<Cause>());
+        Combat.Resolve(c, twin, new List<Cause>());
+
+        Assert.Equal(Units(twin), Units(s));
+        var held = twin.SoldiersHeld[side];
+        var lost = d.Strength - 2 - held;
+        Assert.Equal(held, s.SoldiersHeld[side]);
+        Assert.Equal(serving.Take(lost).Select(p => LossLine(p.Id, Source(s, d.Q, d.R))), LossLines(s));
+        foreach (var p in serving.Skip(lost).Take(held))
+            Assert.Equal((PopulationStatus.Captured, side), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
+        Assert.Equal(serving.Skip(lost + held).Select(p => p.Id), Serving(c, s, d.Id).Select(p => p.Id));
+        Assert.Equal(2, Serving(c, s, d.Id).Count);
+        Prisoners.RequireHeldMatchesRecords(s);
+        s.PopulationLedger.Reconcile();
+    }
+
+    // "Yes, in #1706 (Recommended)" (owner, 9 November 2026): a trained formation (#2964's formation/<unit id> target)
+    // surrenders in step 2 and its records left after its losses become Captured under the attacker's side, found as its
+    // losses are (Training.FormationTarget); SoldiersHeld matches them.
+    [Fact]
+    public void ATrainedFormationSurrendersAndItsRecordsAreCaptured()
+    {
+        var c = Gdd03();
+        int unit = -1;
+        string side = "";
+        void SetUp(GameState g)
+        {
+            g.Arms = 200; g.Treasury = 100; g.Debt = 0;
+            // Three groups: every face that makes the defender retreat also costs it at least one unit (combat_table).
+            Assert.Null(Training.Start(c, g, "tel_aviv", "recruit", 3, new List<Cause>()));
+            unit = g.NextId;
+            for (int i = 0; i < c.UnitTypes.First(t => t.Id == "recruit").TrainingTurns; i++) Training.Progress(c, g, new List<Cause>());
+            // Alone on the strongest opening formation's hex (whose ring the enemy units can fill: the other units there
+            // change places with it), then surrounded.
+            var trained = g.Units[unit]; var at = g.Units[Own(c, g)[0].Id];
+            foreach (var x in g.Units.Values.Where(x => x.Q == at.Q && x.R == at.R).ToList()) Place(g, x, trained.Q, trained.R);
+            Place(g, trained, at.Q, at.R);
+            side = Surround(c, g, unit, 9);
+        }
+        var s = Dark(c); SetUp(s);
+        Assert.True(unit >= c.StartingForces.Count);
+        // The draw is found on the dark game itself: the aggregate start trains no records, so its twin is not one.
+        ulong seed = 1;
+        for (; seed < 2000; seed++)
+        {
+            var t = s.Clone(); t.RngState = seed; var w = new List<Cause>();
+            Combat.Resolve(c, t, w);
+            if (w.Any(x => x.Key == WhyKeys.SurrenderedHeld && x.Units.Any(u => u.Id == unit))) break;
+        }
+        Assert.True(seed < 2000, "no seed made the trained formation surrender");
+        s.RngState = seed;
+        var serving = Serving(c, s, unit);
+        Assert.Equal(s.Units[unit].Strength, serving.Count);
+        Assert.All(serving, p => Assert.Equal(Training.FormationPrefix + unit.ToString(CultureInfo.InvariantCulture), p.Assignment.Target));
+        var why = new List<Cause>();
+        Combat.Resolve(c, s, why);
+        Assert.False(s.Units.ContainsKey(unit));
+        Assert.Empty(Serving(c, s, unit));
+        var held = s.SoldiersHeld[side];
+        Assert.True(held >= 1);
+        foreach (var p in serving.Skip(serving.Count - held))
             Assert.Equal((PopulationStatus.Captured, side), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
         Prisoners.RequireHeldMatchesRecords(s);
         s.PopulationLedger.Reconcile();
