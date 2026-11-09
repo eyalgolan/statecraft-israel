@@ -257,12 +257,16 @@ namespace Statecraft.Game.UI
             Finished?.Invoke();
         }
 
+        /// <summary>Teardown (a language switch, OnDisable): as <see cref="Skip"/>, but the view goes back without
+        /// <see cref="IPlaybackCamera.Settle"/>, whose callback refreshes the map labels, which GameRoot disposes first (they are
+        /// built after the playback). The camera controller applies the look-at point on its next frame (#2967 review, S2).</summary>
         public void Dispose()
         {
-            Finish();
             bridge.Stepped -= onStepped;
             bridge.TurnEnded -= onTurn;
             bridge.Changed -= onChanged;
+            if (Active && wrote && !tookOver) camera.LookAt = saved;
+            Stop();
         }
     }
 
