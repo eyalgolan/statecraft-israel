@@ -310,6 +310,27 @@ public class EnemyTurnPlaybackTests
         k.Playback.Dispose();
     }
 
+    /// <summary>Teardown mid-glide (a language switch, OnDisable): GameRoot disposes the map labels before the playback (they
+    /// are built after it), and the game camera's Settle refreshes them. So the playback puts the player's view back without
+    /// Settle; the camera controller applies the look-at point on its next frame (#2967 review 9 November, S2).</summary>
+    [Test]
+    public void DisposingMidGlideReturnsTheCameraWithoutSettlingIt()
+    {
+        var k = new Kit(Step(ThreeMoves));
+        var saved = k.Camera.LookAt;
+        k.Bridge.EndTurn();
+        for (int i = 0; i < 10; i++) k.Playback.Tick(0.05f);
+        Assert.IsTrue(k.Playback.Active, "fixture: the playback runs");
+        Assert.AreNotEqual(saved, k.Camera.LookAt, "fixture: the camera has left the player's view");
+        int settles = k.Camera.Settles;
+        Assert.Greater(settles, 0, "fixture: the glide settled the camera");
+        k.Playback.Dispose();
+        Assert.AreEqual(settles, k.Camera.Settles, "no Settle at teardown: its callback reaches presenters already disposed");
+        Assert.AreEqual(saved, k.Camera.LookAt, "the player's view is back");
+        Assert.IsEmpty(k.Map.Held, "every token stands on its place");
+        Assert.IsFalse(k.Playback.Active || k.Playback.Pending);
+    }
+
     [Test]
     public void ItWaitsForTheOutcomeClips()
     {
