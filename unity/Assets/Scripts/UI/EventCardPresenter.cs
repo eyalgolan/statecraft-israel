@@ -124,7 +124,7 @@ namespace Statecraft.Game.UI
                 // A cover has closed: render the first visible cue too; a start-screen photograph waits until now (#592).
                 photoWaits = false;
                 if (Shown != null) Render();
-                focusedFor = null; if (!hiddenInCapture && Shown != null && !Collapsed) FocusCard(Shown.Id, force: true);
+                focusedFor = null; if (!hiddenInCapture && !heldForPlayback && Shown != null && !Collapsed) FocusCard(Shown.Id, force: true);
             };
             onHidePointer = _ => hideByPointer = true;
             onHideSubmit = _ => hideByPointer = false;
@@ -228,8 +228,18 @@ namespace Statecraft.Game.UI
         public bool HeldForPlayback
         {
             get => heldForPlayback;
-            set { if (heldForPlayback == value) return; heldForPlayback = value; Render(); }
+            set
+            {
+                if (heldForPlayback == value) return;
+                heldForPlayback = value;
+                if (value) { Render(); return; }
+                // Back in view: it takes the focus as from under a cover (#2967 review, N1), whatever had it before the hold.
+                focusedFor = null; restoring = true;
+                try { Render(); }
+                finally { restoring = false; }
+            }
         }
+        bool restoring;   // the held card is coming back (HeldForPlayback false): FocusCard takes the focus over any other
 
         /// <summary>The event the card shows, or null when every pending event has a queued answer.</summary>
         public GameEvent? Shown { get; private set; }
@@ -375,7 +385,7 @@ namespace Statecraft.Game.UI
             if (scrolledFor != e.Id) { scrolledFor = e.Id; scroll.scrollOffset = UnityEngine.Vector2.zero; }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format(open.Count == 2 ? "event.more_one" : "event.more", open.Count - 1) : "";
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
-            if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
+            if (shown && focusedFor != e.Id) FocusCard(e.Id, force: restoring);
         }
 
         string OperationUnitName(string row)
