@@ -161,12 +161,15 @@ namespace Statecraft.Game.UI
                 // #2978 (owner, 9 November 2026: "Enabled + toast (Recommended)"): an order the Attention left cannot pay for
                 // keeps its Train button, as Build does: the bridge refuses the press and says why (order.no_attention,
                 // SimBridge.Queue). The preview above charges Attention, so only Training's own rule is asked, on a copy of the
-                // state the rest of the queue leaves (the press replaces this type's order, so that order is left out too).
+                // state the queue leaves, with the press run last, as End turn would. No Train of this type is queued here:
+                // CanPay refunds a queued order of the same key, and every Train order costs the same, so with one queued the
+                // press can pay. As the preview did, an ended game refuses it (SimBridge.Queue says so; under gdd-0.3
+                // OrderButton disables it anyway).
                 if (!bridge.CanPay(press))
                 {
-                    var rest = bridge.Queued.Where(x => !ReferenceEquals(x, old)).ToList();
-                    var left = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(rest).ToList()).State;
-                    accepted = Training.Start(c, left, id, type.Id, ordered + 1, new System.Collections.Generic.List<Cause>()) == null;
+                    var left = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList()).State;
+                    accepted = s.GameOver == null
+                        && Training.Start(c, left, id, type.Id, ordered + 1, new System.Collections.Generic.List<Cause>()) == null;
                 }
                 // Nor may the press make End turn refuse a queued order it accepts now (its civilians, Arms or anything else).
                 var causesNoNewRefusal = !bridge.Queued.Any(x => preview.Rejected.Any(r => ReferenceEquals(r.Command, x)) && !current.Rejected.Any(r => ReferenceEquals(r.Command, x)));

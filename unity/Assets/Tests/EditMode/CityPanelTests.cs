@@ -1587,6 +1587,7 @@ public class CityPanelTests
             Assert.IsTrue(ui.Q<Button>("city-train-" + track).enabledSelf, track + ": only the Attention is short, so the button stays");
         UiTestKit.Press(ui.Q<Button>("city-train-recruit"));
         Assert.IsEmpty(bridge.Queued, "the bridge refuses the press");
+        Assert.AreEqual(1.0, bridge.AttentionLeft!.Value, 1e-9, "the refused press spends nothing");
         Assert.AreEqual(new[] { t.Format("order.no_attention", bridge.Price(order)!.Value, 1.0) }, refusals);
     }
 
