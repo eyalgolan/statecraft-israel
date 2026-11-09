@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -88,6 +89,15 @@ namespace Statecraft.Sim
                         + " is neither a census city of cities.yaml nor a field host in regions.yaml (R-POP-002).");
             }
         }
+        /// <summary>#1725 PR 7, producer 12 (owner, 8 November 2026: "Start + runtime bind (Rec.)"): these bindings plus
+        /// <paramref name="added"/>, a new instance (bindings stay immutable). The constructor's checks apply: a target id
+        /// already bound, or a target whose region has no bound location, is refused.</summary>
+        internal PopulationBindings WithTargets(IEnumerable<PopulationTarget> added) =>
+            new PopulationBindings(locations, targets.Values.Concat(added), captors, qualifications);
+        /// <summary>The bound target <paramref name="id"/>, or null.</summary>
+        internal PopulationTarget? FindTarget(string id) => targets.TryGetValue(id, out var t) ? t : null;
+        /// <summary>The bound assignment targets, in ordinal id order (#1725 PR 7, the live month snapshot reads them).</summary>
+        internal IEnumerable<PopulationTarget> Targets => targets.Values;
         internal bool HasCaptor(string captor) => captors.Contains(captor);
         internal bool HasQualification(string qualification) => qualification == "" || qualifications.Contains(qualification);
         internal IEnumerable<string> Canonical()
@@ -127,6 +137,12 @@ namespace Statecraft.Sim
         int peoplePerUnit;
         /// <summary>People one record stands for in this ledger (CreateFixture's scale).</summary>
         internal int PeoplePerUnit { get { RequireInitialized(); return peoplePerUnit; } }
+        /// <summary>#1725 PR 7, natural increase (R-CITY-008; owner, 8 November 2026: "Carry the fraction (Recommended)"): the
+        /// records' worth of natural increase owed but not yet a whole record, carried from turn to turn: a double, as the
+        /// aggregate natural increase is, written as its IEEE bits (docs/determinism.md's carry rule).</summary>
+        internal double NaturalIncreaseCarry { get; private set; }
+        /// <summary>The natural-increase records added so far: their split over the cities is Cities.Apportion of this count.</summary>
+        internal int NaturalIncreaseRecords { get; private set; }
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }
         public double TotalPeople => (double)units.Count * peoplePerUnit;
@@ -146,6 +162,8 @@ namespace Statecraft.Sim
         /// <summary>Initialized with mode Historical (the R-POP-004 start's scale). Not written to the canonical text: the
         /// scale it implies already is.</summary>
         internal bool IsHistorical { get; private set; }
+        /// <summary>The ledger's frozen bindings; an uninitialized ledger is refused.</summary>
+        internal PopulationBindings Bindings { get { RequireInitialized(); return bindings!; } }
         internal PopulationLedger(bool enabled) { this.enabled = enabled; }
         internal PopulationLedger Clone()
         {
@@ -205,6 +223,27 @@ namespace Statecraft.Sim
             var candidate = new SortedDictionary<int, PopulationUnit>(units) { [replacement.Id] = replacement };
             Validate(candidate); units = candidate;
         }
+        /// <summary>#1710 (#1725 PR 7), R-POW-005, R-POP-002: the active soldiers <paramref name="ids"/> surrender to
+        /// <paramref name="captor"/>, all or nothing. Each becomes Captured with that captor, no location and no assignment, its
+        /// Home the place it served in (the formation's region; owner, 8 November 2026: "Formation's region (Recommended)"),
+        /// and keeps its id, history and issued item (owner: "Stays on record (Recommended)"). Every record is checked and the
+        /// candidate validated before any is committed, so a refusal changes nothing. Nobody is lost: no loss is written.</summary>
+        internal void Capture(IReadOnlyList<int> ids, string captor)
+        {
+            RequireInitialized();
+            if (captor == null || !bindings!.HasCaptor(captor))
+                throw new ArgumentException("Side '" + captor + "' is not a bound captor of this ledger (R-POP-002).");
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var seen = new HashSet<int>();
+            foreach (var id in ids)
+            {
+                var p = Get(id);
+                if (p.Status != PopulationStatus.ActiveSoldier || !seen.Add(id))
+                    throw new ArgumentException("Only an active soldier can surrender, once (R-POW-005).");
+                candidate[id] = p.WithPlacement(PopulationStatus.Captured, null, PopulationAssignment.Unassigned, captor, p.Location);
+            }
+            Validate(candidate); units = candidate;
+        }
         /// <summary>A manifest item can arrive only once, including after its population id is lost.</summary>
         public int RegisterArrival(string source, int ordinal, PopulationUnit template)
         {
@@ -221,6 +260,65 @@ namespace Statecraft.Sim
             units = candidate; sources.Add(key, id); NextPopulationId = next;
             return id;
         }
+        /// <summary>Whether the manifest item <paramref name="source"/>, <paramref name="ordinal"/> has arrived, even if its
+        /// population id was lost since.</summary>
+        internal bool HasArrived(string source, int ordinal) => sources.ContainsKey(PopulationText.Fields(source, ordinal));
+        /// <summary><see cref="RegisterArrival"/> for several items, in order, all or nothing (#1725 PR 7, Cities.Arrive): every
+        /// record is validated in one candidate before any is committed, so a refused item adds none of the others.</summary>
+        internal IReadOnlyList<int> RegisterArrivals(IReadOnlyList<PopulationInventoryRow> rows)
+        {
+            RequireInitialized();
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var registered = new SortedDictionary<string, int>(sources, StringComparer.Ordinal);
+            var next = NextPopulationId;
+            var ids = new List<int>();
+            foreach (var row in rows)
+            {
+                var key = PopulationText.Fields(row.Source, row.Ordinal);
+                if (registered.ContainsKey(key)) throw new ArgumentException("Source item already registered.");
+                // int.MaxValue is the exhausted next-id sentinel; never overflow after partially inserting a record.
+                var id = next; next = checked(next + 1);
+                candidate[id] = row.Template.WithId(id); registered.Add(key, id); ids.Add(id);
+            }
+            Validate(candidate);
+            units = candidate; sources = registered; NextPopulationId = next;
+            return ids.AsReadOnly();
+        }
+        /// <summary>#1725 PR 7, natural increase: registers <paramref name="rows"/> as <see cref="RegisterArrivals"/> does, all or
+        /// nothing, then counts them in <see cref="NaturalIncreaseRecords"/> and keeps <paramref name="carry"/>, the fraction of a
+        /// record still owed (0 up to 1).</summary>
+        internal void RegisterNaturalIncrease(IReadOnlyList<PopulationInventoryRow> rows, double carry)
+        {
+            RequireInitialized();
+            if (!(carry >= 0 && carry < 1)) throw new ArgumentOutOfRangeException(nameof(carry), "The carried natural increase is a fraction of one record.");
+            var records = checked(NaturalIncreaseRecords + rows.Count);
+            RegisterArrivals(rows);
+            NaturalIncreaseCarry = carry; NaturalIncreaseRecords = records;
+        }
+        /// <summary>The bound target <paramref name="id"/>, or null (#1725 PR 7, producer 12).</summary>
+        internal PopulationTarget? Target(string id) { RequireInitialized(); return bindings!.FindTarget(id); }
+        /// <summary>#1725 PR 7, producer 12. Owner, 8 November 2026, "Start + runtime bind (Rec.)" (#1725 issuecomment-6724941867): the start
+        /// facilities' Course targets are bound at the start, plus one all-or-nothing runtime bind for new formations and
+        /// built camps. Binds <paramref name="target"/>, refusing an id already bound, with the ledger unchanged.</summary>
+        internal void BindTarget(PopulationTarget target) => Commit(Array.Empty<PopulationUnit>(), new[] { target });
+        /// <summary>#1725 PR 7, producer 12: several record replacements and new targets, all or nothing. The new bindings and
+        /// every replaced record are validated as one candidate before anything is committed, so a refused record or target
+        /// changes neither the records nor the bindings. Each record is replaced at most once, and must exist.</summary>
+        internal void Commit(IReadOnlyCollection<PopulationUnit> replacements, IReadOnlyCollection<PopulationTarget> bind)
+        {
+            RequireInitialized();
+            var b = bind.Count == 0 ? bindings! : bindings!.WithTargets(bind);
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var seen = new HashSet<int>();
+            foreach (var r in replacements)
+            {
+                Get(r.Id);
+                if (!seen.Add(r.Id)) throw new ArgumentException("A record is replaced at most once in a commit.");
+                candidate[r.Id] = r;
+            }
+            Validate(candidate, b);
+            units = candidate; bindings = b;
+        }
         public void RegisterCombatLoss(int id, string source)
         {
             RequireInitialized(); Get(id);
@@ -229,12 +327,13 @@ namespace Statecraft.Sim
             var candidate = new SortedDictionary<int, PopulationUnit>(units); candidate.Remove(id);
             Validate(candidate); units = candidate; losses.Add(id, source);
         }
-        void Validate(SortedDictionary<int, PopulationUnit> candidate)
+        void Validate(SortedDictionary<int, PopulationUnit> candidate) => Validate(candidate, bindings!);
+        void Validate(SortedDictionary<int, PopulationUnit> candidate, PopulationBindings bindings)
         {
             var issued = new HashSet<string>(StringComparer.Ordinal);
             foreach (var p in candidate.Values)
             {
-                if (p.ReceptionTicks > receptionLimit || !bindings!.HasQualification(p.Qualification))
+                if (p.ReceptionTicks > receptionLimit || !bindings.HasQualification(p.Qualification))
                     throw new ArgumentException("Invalid reception progress or qualification.");
                 var tierValid = p.Profession switch {
                     CivilianProfession.None => p.Tier == CivilianTier.None && p.WorkXp == 0,
@@ -334,6 +433,14 @@ namespace Statecraft.Sim
         {
             yield return PopulationText.Fields("initialized", IsInitialized, "next", NextPopulationId,
                 "people-per-unit", peoplePerUnit, "reception-limit", receptionLimit);
+            // #1725 PR 7: written only once natural increase has run, so every ledger before it hashes as before. The carry
+            // follows docs/determinism.md's carry rule: a nonzero carry is the 16 hex digits of its IEEE bits, -0.0 as 0.0
+            // (as GameState's Num and GddState's segment carry write theirs), and a zero carry is omitted.
+            if (NaturalIncreaseRecords != 0 || NaturalIncreaseCarry != 0)
+                yield return NaturalIncreaseCarry == 0
+                    ? PopulationText.Fields("natural-increase", "records", NaturalIncreaseRecords)
+                    : PopulationText.Fields("natural-increase", "records", NaturalIncreaseRecords, "carry",
+                        BitConverter.DoubleToInt64Bits(NaturalIncreaseCarry).ToString("X16", CultureInfo.InvariantCulture));
             if (bindings != null) foreach (var b in bindings.Canonical()) yield return b;
             foreach (var p in units.Values) yield return PopulationText.Fields("unit", p.Canonical());
             foreach (var source in sources) yield return PopulationText.Fields("source", source.Key, source.Value);

@@ -718,6 +718,25 @@
                 <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
         </ui:VisualElement>
+        <!-- The Tel Aviv raid card on New game (RaidCardPresenter; owner, 8 Nov 2026): after the opening, before the turn 1
+             advisors. One card in the event-card frame, its silent clip labelled as an AI illustration, and only OK.
+             Editor drafts are labelled; a player build shows it only once it is reviewed. -->
+        <ui:VisualElement name="raid-layer" class="raid-layer">
+            <ui:VisualElement name="raid-card" class="panel event-card raid-card">
+                <ui:Label name="raid-preview" class="muted opening-preview" />
+                <ui:Label name="raid-title" class="title event-title opening-source-en" />
+                <ui:VisualElement name="raid-media" class="raid-media">
+                    <ui:Label name="raid-ai" class="event-photo-credit" />
+                </ui:VisualElement>
+                <ui:ScrollView name="raid-scroll" class="raid-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden">
+                    <ui:Label name="raid-text" class="opening-text opening-source-en" />
+                </ui:ScrollView>
+                <ui:VisualElement class="row raid-actions">
+                    <ui:Button name="raid-ok" />
+                </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <!-- "Report a bug or idea" (#1169, FeedbackPresenter): over everything, the start screen too, with what each GitHub
              form opens with under its button; the game sends nothing itself. Before the toast, which stays readable. -->
         <ui:VisualElement name="feedback-layer" class="feedback-layer">
