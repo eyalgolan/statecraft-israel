@@ -240,10 +240,11 @@ namespace Statecraft.Sim
                 // pioneer records, lowest id first, are the groups that come back; the city's counts are not the ledger's.
                 // Each track prefers its own records, following "Yes, keep the link (Recommended)": Veteran ones for
                 // veteran_halutz, the others for halutz, then the other tier's when it has too few. The training centre's
-                // census teacher, while untouched, comes after every other record ("Takeable, but last (Recommended)", #1689).
+                // census teacher, while untouched, comes after every other record of either tier ("Takeable, but last
+                // (Recommended)", #1689), so a track that falls back takes the other tier's records before the teacher.
                 var teacher = HistoricalPopulation.UntouchedTeacherId(s.PopulationLedger);
                 var free = s.PopulationLedger.Units.Where(p => IsFreePioneer(p) && string.Equals(p.Location?.City, city, StringComparison.Ordinal))
-                    .OrderBy(p => (p.Tier == CivilianTier.Veteran) == veteran ? 0 : 1).ThenBy(p => p.Id == teacher ? 1 : 0).ThenBy(p => p.Id)
+                    .OrderBy(p => p.Id == teacher ? 1 : 0).ThenBy(p => (p.Tier == CivilianTier.Veteran) == veteran ? 0 : 1).ThenBy(p => p.Id)
                     .Select(p => p.Id).ToList();
                 if (count > free.Count) return string.Format(CultureInfo.InvariantCulture, LedgerRefusedFreePioneers, name, free.Count);
                 picked = free.Take(count).ToList();

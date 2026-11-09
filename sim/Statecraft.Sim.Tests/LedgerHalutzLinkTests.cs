@@ -398,13 +398,61 @@ public class LedgerHalutzLinkTests
         s.PopulationLedger.Reconcile();
     }
 
+    // "Takeable, but last (Recommended)": the untouched teacher comes after every other record in the pool, not only after
+    // the records of its own tier. A veteran Reassign in Haifa that falls back to the other tier takes a free returned Novice
+    // pioneer before the teacher. Haifa's counts are set by hand to the shape a Train there would leave after taking a
+    // Veteran record by R-QUAL-006 (no qualified halutz group, one veteran); no Haifa Train exists in the content today.
+    [Fact]
+    public void AVeteranFallbackInHaifaTakesAReturnedNoviceBeforeTheTeacher()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var teacher = Teacher(s);
+        var why = new List<Cause>();
+        var returned = s.PopulationLedger.NextPopulationId;
+        Assert.Null(Qualification.Return(c, s, Unlinked(c, s, "halutz", 1, Haifa), why));
+        Assert.Equal(CivilianTier.Novice, s.PopulationLedger.Get(returned).Tier);
+        var h = s.Cities[Haifa];
+        s.Cities[Haifa] = h.WithQualified(new Qualified(0, 1, Array.Empty<int>()));
+        var id = s.NextId;
+        Assert.Null(Qualification.ReassignPioneers(c, s, Haifa, Projects.VeteranType, 1, why));
+        Assert.Equal(Ids(returned), Ids(s.Units[id].Records!));
+        Assert.Equal(Haifa, s.PopulationLedger.Get(teacher).Location!.City);
+        Assert.False(s.PopulationLedger.TeacherLinked);
+        s.PopulationLedger.Reconcile();
+    }
+
+    // A halutz graduation that links the untouched teacher marks it linked, as a Reassign does. The teacher is placed free
+    // in Tel Aviv by hand (it can reach a city that trains only through a Reassign today, which marks it already); the
+    // Train order and the graduation are ordinary orders.
+    [Fact]
+    public void AHalutzGraduationThatLinksTheTeacherMarksItLinked()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var ledger = s.PopulationLedger;
+        var teacher = ledger.Get(Teacher(s));
+        ledger.Replace(teacher.WithPlacement(teacher.Status, new PopulationLocation(Region(c, TelAviv), city: TelAviv), teacher.Assignment, teacher.Captor, teacher.Home));
+        var why = new List<Cause>();
+        var before = s.Units.Keys.ToHashSet();
+        Assert.Null(Training.Start(c, s, TelAviv, "halutz", Unskilled(s, TelAviv) + 1, why));
+        Assert.Equal(PopulationStatus.Trainee, ledger.Get(teacher.Id).Status);
+        Assert.False(ledger.TeacherLinked);
+        for (int t = 0; t < c.UnitTypes.First(x => x.Id == "halutz").TrainingTurns; t++) Training.Progress(c, s, why);
+        Assert.Single(s.Units.Values, u => !before.Contains(u.Id) && u.Records!.Contains(teacher.Id));
+        Assert.True(ledger.TeacherLinked);
+        Assert.Contains(ledger.Canonical(), line => line.Contains("teacher-linked"));
+        ledger.Reconcile();
+    }
+
     // "Takeable, but last (Recommended)": the census teacher is set apart only while it is untouched. Once a Reassign has
     // linked it to a unit, it is a pioneer like any other: returned, it holds its qualified group, and a Train order that
     // takes only an unskilled civilian lowers nothing. The ledger records the link (hashed only once set), so a replay of
     // the same orders gives the same state.
     // No order in the real content links the teacher today (Haifa has no training facility, and every ascending-id pick
     // reaches the teacher before any later record), so Haifa's qualified veterans are raised by hand to make the Reassign
-    // reach it.
+    // reach it. Later, a Haifa training facility would let a Train take the teacher as a trainee, linked at graduation
+    // (AHalutzGraduationThatLinksTheTeacherMarksItLinked).
     [Fact]
     public void ATeacherOnceLinkedHoldsItsGroupLikeAnyReturnedPioneer()
     {
