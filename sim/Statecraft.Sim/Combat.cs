@@ -206,7 +206,7 @@ namespace Statecraft.Sim
         /// strength, and no retreat when the defenders are all lost; faces equal after that share a band.</summary>
         public static IReadOnlyList<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)> Outcomes(Content c, GameState s, int row, int? unitId = null, int? q = null, int? r = null)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7 (#1706): on a Historical ledger it reads the units' strength, as Fight does
             var mvp = c.RulesAt(s.Date).Mvp!;
             var t = mvp.CombatTable[row];
             var attacker = unitId is int id && s.Units.TryGetValue(id, out var u) ? u : null;
@@ -264,7 +264,7 @@ namespace Statecraft.Sim
         /// Afterwards every attack whose hex is now empty ends.</summary>
         public static void Resolve(Content c, GameState s, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7 (#1706): on a Historical ledger each own loss is a record (Fight)
             var mvp = c.RulesAt(s.Date).Mvp!;
             var done = new HashSet<int>();
             foreach (var id in s.Units.Keys.ToList())   // Units is a SortedList: ascending id
@@ -359,9 +359,10 @@ namespace Statecraft.Sim
             var target = Hex(q, r);
             var ppu = mvp.PeoplePerUnit;
             var removed = new List<Unit>();
+            var source = FormattableString.Invariant($"combat/{s.Date:yyyy-MM-dd}/{target}");   // "Date + battle hex (Recommended)"
             // R-COMBAT-007: the guns fire from behind the line, so the attackers' losses fall on the others only.
-            var attackersLost = Take(s, attackers.Where(x => !Guns(c, x)).Select(x => x.Id).ToList(), row.AttackerLoss[face], removed);
-            var defendersLost = Take(s, defenders.Select(x => x.Id).ToList(), row.DefenderLoss[face], removed);
+            var attackersLost = Take(c, s, attackers.Where(x => !Guns(c, x)).Select(x => x.Id).ToList(), row.AttackerLoss[face], removed, source);
+            var defendersLost = Take(c, s, defenders.Select(x => x.Id).ToList(), row.DefenderLoss[face], removed, source);
             var named = attackers.OrderBy(x => x.Id).Concat(defenders.OrderBy(x => x.Id)).Select(x => new UnitRef(x)).ToList();
             why.Add(new Cause("map", target, 0, FormattableString.Invariant(
                 $"The attack on hex {target} ({Ids(attackers)} against {Ids(defenders)}, strength ratio {ratio}%): the attackers lost {attackersLost * ppu:N0} people and the defenders lost {defendersLost * ppu:N0} people"),
@@ -385,26 +386,39 @@ namespace Statecraft.Sim
                 }
                 else
                 {
-                    // The only way a unit is captured (impact plan section 4.3 item 1; R-POW-001). Its captor is the engagement's
-                    // lowest-id attacker (not attackers[0]: the guns are listed last, R-COMBAT-007), whose side holds the
-                    // player's soldiers (R-POW-005). Take runs before the unit is removed (#1710). On a Historical ledger game
-                    // it may refuse, before it writes anything: InvalidOperationException for a held count that disagrees with
-                    // the Captured records, a unit that is not a units_1948 formation or a strength its records do not number,
-                    // and ArgumentException from PopulationLedger.Capture for an unbound captor or a record that is not an
-                    // active soldier (a synthetic or Open ledger is NotSupportedException). This engagement's draw and losses,
-                    // and any earlier write to s (an earlier engagement, or the Strike's own), stay on s. In the game s is
-                    // always a clone: Strike's caller (Simulation.RunOrders) and Resolve's (TurnResolver) run inside
-                    // Simulation.Step on its clone (Preview and DelegatedTo clone too), so the whole command's or turn's result
-                    // is discarded and the caller's state is unchanged. Today Step refuses a ledger game before it clones, and
-                    // Resolve refuses one at its entry.
-                    // Hand-off to #1706: the defenders' combat losses above have already lowered u.Strength, and no ledger
-                    // loss is written for them, so Take sees records that still number the strength before the losses and
-                    // refuses. When #1706 runs Resolve on a ledger, it must write those losses to the ledger before this call.
-                    var held = Prisoners.Take(c, s, u, attackers.OrderBy(x => x.Id).First());
+                    // The only way a unit is captured (impact plan section 4.3 item 1; R-POW-001). Its captor is the
+                    // engagement's lowest-id attacker (not attackers[0]: the guns are listed last, R-COMBAT-007), whose
+                    // side holds the player's soldiers (R-POW-005). Take runs before the unit is removed (#1710). On a
+                    // Historical ledger game it may refuse, before it writes anything: InvalidOperationException for a held
+                    // count that disagrees with the Captured records, and ArgumentException from PopulationLedger.Capture
+                    // for an unbound captor or a record that is not an active soldier (a synthetic or Open ledger is
+                    // NotSupportedException). A trained formation and a strength its records do not number are not refused
+                    // (owner, 9 November 2026: "Yes, in #1706 (Recommended)" and "Go ahead on strength (Recommended)"):
+                    // Take captures the records on the formation's target, at most its strength of them, the lowest ids
+                    // first, and SoldiersHeld grows by that number. A formation's leftover records, beyond its strength,
+                    // leave service as Send home's do (owner, 9 November 2026: "Sent home (Recommended)"; R-UNIT-005,
+                    // Demobilization.RecordsHome), in the capture's own ledger commit. After the surrender line come Send
+                    // home's own lines, in its order: the people sent home ("Yes, reuse Send home's (Recommended)"), then,
+                    // only when Arms go back, the Arms line. On a ledger the surrender line states the records captured in
+                    // people, not the strength (owner, 9 November 2026: "Records captured (Recommended)"); Take's Held is
+                    // the strength without one, so the aggregate line is unchanged. This engagement's draw and losses, and
+                    // any earlier write to s (an earlier engagement, or the Strike's own), stay on s. In the game s is
+                    // always a clone: Strike's caller (Simulation.cs:268) and Resolve's (TurnResolver.cs:20) run inside
+                    // Simulation.Step on its clone (Simulation.cs:51; Preview and DelegatedTo clone too), so the whole
+                    // command's or turn's result is discarded and the caller's state is unchanged. Today Step refuses a
+                    // ledger game (Simulation.cs:48). On a Historical ledger the losses above already removed this
+                    // formation's lost records (LoseRecord, #1706: "Prisoners #1710 first (Recommended)"), so for a
+                    // formation whose records matched its strength Take finds the records left numbering its strength.
+                    var taken = Prisoners.Take(c, s, u, attackers.OrderBy(x => x.Id).First());
                     s.Units.Remove(u.Id);
                     why.Add(UnitLines.Line(u.Side == Movement.PlayerSide ? WhyKeys.SurrenderedHeld : WhyKeys.SurrenderedPrisoners,   // Prisoners.Take's two cases
-                        FormattableString.Invariant($"Unit {u.Id} surrendered with {u.Strength * ppu:N0} people: it had no hex to retreat to. {held}"),
-                        new[] { u }, (u.Strength * ppu).ToString(CultureInfo.InvariantCulture)));
+                        FormattableString.Invariant($"Unit {u.Id} surrendered with {taken.Held * ppu:N0} people: it had no hex to retreat to. {taken.Text}"),
+                        new[] { u }, (taken.Held * ppu).ToString(CultureInfo.InvariantCulture)));
+                    if (taken.Home != null)   // leftover records went home: Send home's two lines, in its order ("Yes, reuse Send home's (Recommended)")
+                    {
+                        why.Add(Demobilization.SentHomeLine(c, s, u, taken.Sent, taken.Home));
+                        if (taken.ArmsBack > 0) why.Add(Demobilization.ArmsReturnedLine(c, taken.Home, u.Id, taken.ArmsBack));
+                    }
                 }
             }
         }
@@ -414,8 +428,9 @@ namespace Statecraft.Sim
 
         /// <summary>Takes up to <paramref name="loss"/> population units from <paramref name="ids"/>, one at a time from the
         /// strongest unit left (a tie on the lower id; the list is in id order), removing each that reaches 0 (its id is never
-        /// reused: NextId is not touched) and adding it to <paramref name="removed"/>. Returns the units taken.</summary>
-        static int Take(GameState s, List<int> ids, int loss, List<Unit> removed)
+        /// reused: NextId is not touched) and adding it to <paramref name="removed"/>. Each one an own formation loses on a
+        /// Historical ledger also removes one of its serving records (<see cref="LoseRecord"/>). Returns the units taken.</summary>
+        static int Take(Content c, GameState s, List<int> ids, int loss, List<Unit> removed, string source)
         {
             int taken = 0;
             for (; taken < loss; taken++)
@@ -424,10 +439,28 @@ namespace Statecraft.Sim
                 foreach (var id in ids)
                     if (s.Units.TryGetValue(id, out var x) && (top == null || x.Strength > top.Strength)) top = x;
                 if (top == null) break;
+                LoseRecord(c, s, top, source);
                 if (top.Strength <= 1) { s.Units.Remove(top.Id); removed.Add(top); }
                 else s.Units[top.Id] = Lose(top);
             }
             return taken;
+        }
+
+        /// <summary>R-COMBAT-003 and R-POP-001 on a Historical ledger (#1706, #1725 PR 7; owner, 8 November 2026, #1725): the
+        /// own formation <paramref name="u"/> loses one population unit, so one of its serving soldier records (the active
+        /// soldiers on its target, <see cref="Training.FormationTarget"/>: "Yes, after #2964 (Recommended)") leaves the ledger
+        /// as a combat loss, with <paramref name="source"/>, combat/date/hex, as its provenance ("Date + battle hex
+        /// (Recommended)"). "Lowest id first (Recommended)": the lowest id goes. "No, losses are deaths (Recommended)": nothing
+        /// else is written. "Go ahead on strength": the engagement is fought on the unit's strength, and a record goes only
+        /// while one is left. Enemy formations are not own population (R-POP-004) and lose none; any other game has no
+        /// Historical ledger and writes none. Draws nothing.</summary>
+        static void LoseRecord(Content c, GameState s, Unit u, string source)
+        {
+            if (!s.PopulationLedger.IsHistorical || u.Side != Movement.PlayerSide) return;
+            var target = Training.FormationTarget(c, u.Id);
+            var lowest = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier
+                && string.Equals(p.Assignment.Target, target, StringComparison.Ordinal)).OrderBy(p => p.Id).FirstOrDefault();
+            if (lowest != null) s.PopulationLedger.RegisterCombatLoss(lowest.Id, source);
         }
 
         /// <summary>What <see cref="Take"/> returns for <paramref name="loss"/> on units of <paramref name="pool"/> summed
