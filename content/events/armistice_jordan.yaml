@@ -6,6 +6,14 @@ text: 'Negotiators have reached an armistice agreement with Jordan. {prime_minis
 # https://he.wikipedia.org/wiki/הסכמי_שביתת_הנשק_בתום_מלחמת_העצמאות
 title_he: שביתת הנשק עם ירדן
 text_he: 'המשא ומתן הניב הסכם שביתת נשק עם ירדן. על {prime_minister} להחליט אם ישראל תחתום עליו.'
+# R-WAR-008 (owner, 9 November 2026, #1709: "Separate early text (Recommended)", "You approve the words (Recommended)";
+# the English "Approve as written (Recommended)", the Hebrew "Approve with my choices (Recommended)", with "עם" and
+# "התקיימו (Recommended)"): the text when the card is shown before its `from` (the early path), under the
+# "Alternative course" banner. No date: an early card's date is the player's.
+# For the native reviewer (#564): early_text_he is agent-written; the owner approved its exact words (#1709, 9 November
+# 2026). It keeps the card's terms "שביתת נשק" / "הסכם שביתת נשק" (he.wiki, as noted above).
+early_text: 'The front with Jordan has been quiet, and the armistice talks have come sooner than in history: negotiators have reached an armistice agreement with Jordan. {prime_minister} must decide whether Israel signs.'
+early_text_he: 'החזית עם ירדן שקטה, ושיחות שביתת הנשק התקיימו מוקדם יותר מאשר בהיסטוריה: המשא ומתן הניב הסכם שביתת נשק עם ירדן. על {prime_minister} להחליט אם ישראל תחתום עליו.'
 anchor: hard
 front_quiet: jordan
 office: prime_minister
