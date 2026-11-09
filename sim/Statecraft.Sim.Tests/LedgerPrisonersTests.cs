@@ -9,8 +9,8 @@ using Statecraft.Sim;
 /// Captured records with that captor. The prisoners eat and the held soldiers cost Money as today (R-POW-002, R-POW-005).
 /// Owner rulings, 8 November 2026 (#1725): "Yes, as today (Recommended)", "Winning side, set at start (Recommended)",
 /// "Formation's region (Recommended)", "Stays on record (Recommended)", "Keep count + check (Recommended)", "No, keep
-/// count (Recommended)" and "Prisoners #1710 first (Recommended)". Owner rulings, 9 November 2026: "Go ahead on strength (Recommended)" and
-/// "Yes, in #1706 (Recommended)".</summary>
+/// count (Recommended)" and "Prisoners #1710 first (Recommended)". Owner rulings, 9 November 2026: "Go ahead on strength (Recommended)",
+/// "Yes, in #1706 (Recommended)" and "Sent home (Recommended)".</summary>
 public class LedgerPrisonersTests
 {
     static Content Gdd03() => HistoricalPopulationTests.Real(true);
@@ -215,9 +215,13 @@ public class LedgerPrisonersTests
 
     // "Go ahead on strength (Recommended)": a formation with more serving records than its strength surrenders exactly its
     // strength of them, the lowest ids first (as "Lowest id first (Recommended)" and docs/GDD.md's ascending population
-    // ids); the rest stay active soldiers on its target. SoldiersHeld grows by the strength, as in the aggregate game.
+    // ids). SoldiersHeld grows by the strength, as in the aggregate game. "Sent home (Recommended)" (owner, 9 November
+    // 2026): the leftover records leave service as Send home's do (R-UNIT-005: "Nearest city, unemployed (Recommended)",
+    // "Settled in (Recommended)", "Keep both (Recommended)", "Back to Arms stock (Recommended)"): free civilians without an
+    // assignment in the nearest city to the formation's hex, reception ticks reception.turns, qualification and combat XP
+    // kept, the issued item back in the Arms stock once. No record is made or lost.
     [Fact]
-    public void AFormationWithMoreRecordsThanStrengthHasItsLowestRecordsCaptured()
+    public void AFormationWithMoreRecordsThanStrengthHasItsLowestRecordsCapturedAndTheRestSentHome()
     {
         var c = Gdd03();
         var s = Dark(c);
@@ -226,10 +230,35 @@ public class LedgerPrisonersTests
         s.Units[u.Id] = u;
         var serving = Serving(c, s, u);
         Assert.Equal(u.Strength + 2, serving.Count);
+        var leftover = serving.Skip(u.Strength).ToList();
+        Assert.Equal(new[] { serving[u.Strength].Id, serving[u.Strength + 1].Id }, leftover.Select(p => p.Id));
+        Assert.All(leftover, p => Assert.NotNull(p.Equipment.MilitaryId));
+        var city = Demobilization.Nearest(c, u.Q, u.R);
+        var region = c.PlayerRegions.AtLocation(city)!.Id;
+        var received = c.RequirePopulationInteger("reception.turns");
+        var arms = s.Arms; var next = s.PopulationLedger.NextPopulationId; var count = s.PopulationLedger.Units.Count;
+        var cities = string.Join(";", s.Cities.Values.Select(x => x.Canonical()));
         Take(c, s, u, captor);
         foreach (var p in serving.Take(u.Strength))
             Assert.Equal((PopulationStatus.Captured, "egypt"), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
-        Assert.Equal(serving.Skip(u.Strength).Select(p => p.Id), Serving(c, s, u).Select(p => p.Id));
+        Assert.Empty(Serving(c, s, u));
+        var home = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.FreeCivilian && serving.Any(w => w.Id == p.Id))
+            .Select(p => p.Id).OrderBy(x => x).ToList();
+        Assert.Equal(leftover.Select(p => p.Id), home);
+        foreach (var was in leftover)
+        {
+            var p = s.PopulationLedger.Get(was.Id);
+            Assert.Equal(PopulationAssignmentKind.Unassigned, p.Assignment.Kind);
+            Assert.Equal((region, city), (p.Location!.Region, p.Location.City));
+            Assert.Equal(received, p.ReceptionTicks);
+            Assert.Null(p.Captor);
+            Assert.Null(p.Equipment.MilitaryId);
+            Assert.Equal((was.Qualification, was.CombatXp, was.Profession, was.Tier, was.WorkXp, was.Equipment.ToolsId),
+                (p.Qualification, p.CombatXp, p.Profession, p.Tier, p.WorkXp, p.Equipment.ToolsId));
+        }
+        Assert.Equal(arms + leftover.Count, s.Arms);
+        Assert.Equal((next, count), (s.PopulationLedger.NextPopulationId, s.PopulationLedger.Units.Count));
+        Assert.Equal(cities, string.Join(";", s.Cities.Values.Select(x => x.Canonical())));   // "No, records only (Recommended)"
         Assert.Equal(u.Strength, s.SoldiersHeld["egypt"]);
         AssertHeldMatchesRecords(s);
         s.PopulationLedger.Reconcile();
