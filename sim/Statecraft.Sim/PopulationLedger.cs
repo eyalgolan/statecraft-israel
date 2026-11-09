@@ -89,6 +89,13 @@ namespace Statecraft.Sim
                         + " is neither a census city of cities.yaml nor a field host in regions.yaml (R-POP-002).");
             }
         }
+        /// <summary>#1725 PR 7, producer 12 (owner, 8 November 2026: "Start + runtime bind (Rec.)"): these bindings plus
+        /// <paramref name="added"/>, a new instance (bindings stay immutable). The constructor's checks apply: a target id
+        /// already bound, or a target whose region has no bound location, is refused.</summary>
+        internal PopulationBindings WithTargets(IEnumerable<PopulationTarget> added) =>
+            new PopulationBindings(locations, targets.Values.Concat(added), captors, qualifications);
+        /// <summary>The bound target <paramref name="id"/>, or null.</summary>
+        internal PopulationTarget? FindTarget(string id) => targets.TryGetValue(id, out var t) ? t : null;
         internal bool HasCaptor(string captor) => captors.Contains(captor);
         internal bool HasQualification(string qualification) => qualification == "" || qualifications.Contains(qualification);
         internal IEnumerable<string> Canonical()
@@ -263,6 +270,30 @@ namespace Statecraft.Sim
             RegisterArrivals(rows);
             NaturalIncreaseCarry = carry; NaturalIncreaseRecords = records;
         }
+        /// <summary>The bound target <paramref name="id"/>, or null (#1725 PR 7, producer 12).</summary>
+        internal PopulationTarget? Target(string id) { RequireInitialized(); return bindings!.FindTarget(id); }
+        /// <summary>#1725 PR 7, producer 12. Owner, 8 November 2026, "Start + runtime bind (Rec.)" (#1725 issuecomment-6724941867): the start
+        /// facilities' Course targets are bound at the start, plus one all-or-nothing runtime bind for new formations and
+        /// built camps. Binds <paramref name="target"/>, refusing an id already bound, with the ledger unchanged.</summary>
+        internal void BindTarget(PopulationTarget target) => Commit(Array.Empty<PopulationUnit>(), new[] { target });
+        /// <summary>#1725 PR 7, producer 12: several record replacements and new targets, all or nothing. The new bindings and
+        /// every replaced record are validated as one candidate before anything is committed, so a refused record or target
+        /// changes neither the records nor the bindings. Each record is replaced at most once, and must exist.</summary>
+        internal void Commit(IReadOnlyCollection<PopulationUnit> replacements, IReadOnlyCollection<PopulationTarget> bind)
+        {
+            RequireInitialized();
+            var b = bind.Count == 0 ? bindings! : bindings!.WithTargets(bind);
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var seen = new HashSet<int>();
+            foreach (var r in replacements)
+            {
+                Get(r.Id);
+                if (!seen.Add(r.Id)) throw new ArgumentException("A record is replaced at most once in a commit.");
+                candidate[r.Id] = r;
+            }
+            Validate(candidate, b);
+            units = candidate; bindings = b;
+        }
         public void RegisterCombatLoss(int id, string source)
         {
             RequireInitialized(); Get(id);
@@ -271,12 +302,13 @@ namespace Statecraft.Sim
             var candidate = new SortedDictionary<int, PopulationUnit>(units); candidate.Remove(id);
             Validate(candidate); units = candidate; losses.Add(id, source);
         }
-        void Validate(SortedDictionary<int, PopulationUnit> candidate)
+        void Validate(SortedDictionary<int, PopulationUnit> candidate) => Validate(candidate, bindings!);
+        void Validate(SortedDictionary<int, PopulationUnit> candidate, PopulationBindings bindings)
         {
             var issued = new HashSet<string>(StringComparer.Ordinal);
             foreach (var p in candidate.Values)
             {
-                if (p.ReceptionTicks > receptionLimit || !bindings!.HasQualification(p.Qualification))
+                if (p.ReceptionTicks > receptionLimit || !bindings.HasQualification(p.Qualification))
                     throw new ArgumentException("Invalid reception progress or qualification.");
                 var tierValid = p.Profession switch {
                     CivilianProfession.None => p.Tier == CivilianTier.None && p.WorkXp == 0,
