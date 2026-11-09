@@ -270,6 +270,9 @@ event.objective_late_one: "Completed 1 month later than in history."
 # event.alt_origin_no_record. event.rejoin sits under an option that returns the course to the record (R-ALT-009).
 event.alt_origin: "Alternative course. It follows the government's decision: {0} ({1}). In the record: {2}."
 event.alt_origin_no_record: "Alternative course. It follows the government's decision: {0} ({1})."
+# event.alt_early: the banner of an armistice card shown before its date, with its early text (R-WAR-008, #1709; owner,
+# 9 November 2026: "Banner (Recommended)", these words).
+event.alt_early: "Alternative course. These talks came sooner than in the record."
 event.rejoin: "Returns to the recorded course."
 # The capture dialog (GDD Phase 6 PR 10, #802; CaptureDialogPresenter). SENSITIVE: the owner reviews every line here, in
 # both languages, before any shareable build (plan 2026-10-15-gdd-phase-6.md, PR 10's gate). Q-UI-1 (b) (owner, 18 October

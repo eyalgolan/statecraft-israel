@@ -79,9 +79,10 @@ catch (ContentException e) { Console.Error.WriteLine($"Content error: {e.Message
 
 // --release-gate: the sensitivity gate before a build is shared (spec 5.5; tools/package_release.py, Build -shareable).
 // Exit 0 and "RELEASE GATE OK" when every sensitive event is sensitivity-reviewed and (R-ALT-011, Q-ALT-9) every
-// consequence card and every event with variants has a person's reviewed_by, and (R-UNIT-006, Q-START-3) every
-// units_1948.yaml row a new game starts a unit from is fact-checked with no field sourced after its
-// checked_on, and (Q-TGT-3 (b)) every settlement_targets.yaml row is sensitivity-reviewed; else exit 3 naming them.
+// consequence card, every event with variants and every armistice card with an early_text (R-WAR-008) has a person's
+// reviewed_by, and (R-UNIT-006, Q-START-3) every units_1948.yaml row a new game starts a unit from is fact-checked with
+// no field sourced after its checked_on, and (Q-TGT-3 (b)) every settlement_targets.yaml row is sensitivity-reviewed;
+// else exit 3 naming them.
 if (Array.IndexOf(args, "--release-gate") >= 0)
 {
     var open = ReleaseGate.SensitiveUnreviewed(content);

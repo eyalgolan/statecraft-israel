@@ -459,6 +459,8 @@ namespace Statecraft.Sim
             //                              has exactly one option (R-EVT-007)
             //   front_quiet                the front (Prisoners.Fronts) of an armistice_<front> card: under gdd-0.3 it may also
             //                              come early, and again after a refusal, once that front is quiet (R-WAR-008)
+            //   early_text, early_text_he  on a front_quiet card only: its text, and its Hebrew, when it is shown before its
+            //                              `from` (R-WAR-008, #1709); a what-if, so it needs a reviewed_by (R-ALT-011)
             //   armistice_front            a front (Prisoners.Fronts) whose signed armistice ends the card: a pending
             //                              operation lapses once it is signed, and a card with it never first fires after
             //                              it (R-ENEMY-007); on an operation card or a following card only

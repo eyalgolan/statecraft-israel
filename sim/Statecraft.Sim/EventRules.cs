@@ -69,6 +69,25 @@ namespace Statecraft.Sim
                         CheckPlaceholders(c, e, F("late_text_he"), e.LateTextHe, offices);
                     }
                 }
+                // R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)"): early text, only on a
+                // front_quiet card, the only kind the quiet path can show before its `from` (so EventSystem.ShowsEarly, which reads
+                // the date alone, never shows it on another card), in Hebrew exactly when the card's text is. It can be shown from
+                // the first early offer (Armistice.EarliestOffer), so its office placeholders must have a holder from then.
+                if (e.EarlyText != "" || e.EarlyTextHe != "")
+                {
+                    if (e.FrontQuiet == "")
+                        throw new ContentException(e.File, F("early_text"), "only an armistice card with front_quiet, which can be shown before its `from`, has early text");
+                    if (e.EarlyText.Trim() == "") throw new ContentException(e.File, F("early_text"), "required: early_text_he is set but early_text is not");
+                    var earliest = Armistice.EarliestOffer < e.From ? Armistice.EarliestOffer : e.From;
+                    CheckPlaceholders(c, e, F("early_text"), e.EarlyText, offices, earliest);
+                    if (e.TextHe == "" && e.EarlyTextHe != "") throw new ContentException(e.File, F("early_text_he"), "only a card with Hebrew text has early_text_he");
+                    if (e.TextHe != "")
+                    {
+                        if (e.EarlyTextHe == "") throw new ContentException(e.File, F("early_text_he"), "required: the card's text is in Hebrew too");
+                        if (!e.EarlyTextHe.Any(ch => ch >= '\u05D0' && ch <= '\u05EA')) throw new ContentException(e.File, F("early_text_he"), "must be Hebrew, in Hebrew letters");
+                        CheckPlaceholders(c, e, F("early_text_he"), e.EarlyTextHe, offices, earliest);
+                    }
+                }
                 // Chapters design 3.2: an event may only name model records that are active for its whole window.
                 void Active(string field, string id)
                 {
@@ -543,7 +562,10 @@ namespace Statecraft.Sim
             }
         }
 
-        static void CheckPlaceholders(Content c, GameEvent e, string field, string text, HashSet<string> offices)
+        /// <summary>Each office placeholder in <paramref name="text"/> names a known, single-holder office with a holder on every
+        /// day the text can be shown: the event's window, from <paramref name="from"/> when given (an early text, R-WAR-008),
+        /// else from the event's own `from`.</summary>
+        static void CheckPlaceholders(Content c, GameEvent e, string field, string text, HashSet<string> offices, DateTime? from = null)
         {
             if (Offices.Placeholder.Replace(text, "").IndexOfAny(new[] { '{', '}' }) >= 0)
                 throw new ContentException(e.File, field, "stray '{' or '}' outside an {office_id} placeholder");
@@ -553,7 +575,7 @@ namespace Statecraft.Sim
                 if (!offices.Contains(office)) throw new ContentException(e.File, field, $"unknown office placeholder '{m.Value}'");
                 if (c.Offices.Any(o => o.Id == office && o.SeveralHolders))
                     throw new ContentException(e.File, field, $"office '{office}' can have several holders at once, so '{m.Value}' would not name one person");
-                var gap = FirstUncovered(c, office, e.From, e.To);
+                var gap = FirstUncovered(c, office, from ?? e.From, e.To);
                 if (gap.HasValue)
                     throw new ContentException(e.File, field, FormattableString.Invariant($"office '{office}' has no holder on {gap.Value:yyyy-MM-dd}, inside the event window"));
             }

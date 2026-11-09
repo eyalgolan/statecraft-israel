@@ -294,13 +294,18 @@ namespace Statecraft.Game.UI
             var variant = Timeline.Variant(c, s, e);
             string Local(string english, string he) => ContentNames.Fill(text, c, s, date, english, he);
             card.Q<Label>("event-title").text = Local(EventSystem.Title(c, s, e), variant == null || variant.Title == "" ? e.TitleHe : "");
-            var banner = card.Q<Label>("event-alt-banner");   // a consequence card's road (#954); none on any other card
-            banner.text = OriginLine(c, s, e, text);
+            // A consequence card's road (#954), or an armistice card's early path (R-WAR-008, #1709; owner, 9 November 2026:
+            // "Banner (Recommended)"): an alternative course either way. None on any other card.
+            var early = variant == null && EventSystem.ShowsEarly(e, s.Date);
+            var banner = card.Q<Label>("event-alt-banner");
+            banner.text = early ? text["event.alt_early"] : OriginLine(c, s, e, text);
             banner.style.display = banner.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             var office = holder == null ? null : c.Offices.First(o => o.Id == e.Office);
             card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", ContentNames.Of(text, office!, holder, date), ContentNames.Of(text, holder));
-            // R-ENEMY-007: a card shown after its window closed shows its late text, in Hebrew its late_text_he.
-            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e), variant == null ? (EventSystem.ShowsLate(e, s.Date) ? e.LateTextHe : e.TextHe) : "");
+            // R-ENEMY-007: a card shown after its window closed shows its late text, in Hebrew its late_text_he; R-WAR-008: one
+            // shown before its `from` shows its early text, in Hebrew its early_text_he (EventSystem.Render picks the English).
+            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e),
+                variant != null ? "" : early ? e.EarlyTextHe : EventSystem.ShowsLate(e, s.Date) ? e.LateTextHe : e.TextHe);
             var objective = card.Q<Label>("event-objective");   // an objective card's line (#380); none on any other card
             objective.text = ObjectiveLine(c, s, e, text);
             objective.style.display = objective.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
