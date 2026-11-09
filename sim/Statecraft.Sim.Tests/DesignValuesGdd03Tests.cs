@@ -228,6 +228,7 @@ public partial class DesignValuesTests
     [InlineData("military.training_money", "Agreed", "0.5", Keep, Oct30)]
     [InlineData("military.active_money", "Agreed", "0.05", Keep, Oct30)]
     [InlineData("prisoner.return_points", "Agreed", "10", "\"10 per unit, main (Recommended)\"", Nov1)]
+    [InlineData("military.fortify_bonus", "Agreed", "25", "\"+25% (main's 125%; the catalogue's 25 agrees). One turn to set.\"", Nov1)]
     [InlineData("transit.cost", "Default", "0.50", PostMvp, Nov1)]
     [InlineData("reception.queue_cohesion_loss", "Default", "1", PostMvp, Nov1)]
     [InlineData("housing.max_deterioration", "Default", "10", "declined by the owner", Oct30)]

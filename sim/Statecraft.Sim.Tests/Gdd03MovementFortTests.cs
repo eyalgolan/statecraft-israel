@@ -273,38 +273,21 @@ public class Gdd03MovementFortTests
         Assert.Equal("values." + key, error.Field);
         Assert.Contains("must be a whole number >= 0", error.Message);
     }
-    // R-ORDER-002 (#2601): fortify_turns is Agreed; a Default row with the same value is refused, naming the exact file and field.
-    [Fact]
-    public void LoaderRejectsNonAgreedFortifyTurns()
+    // R-ORDER-002: both fortify rows are Agreed, fortify_turns since #2601 and fortify_bonus since the owner's O1 answer
+    // (1 November 2026, #1668) and the #2918 C2 audit. A Default row with the same value is refused, naming the exact
+    // file and field.
+    [Theory]
+    [InlineData("military.fortify_turns", "1")]
+    [InlineData("military.fortify_bonus", "25")]
+    public void LoaderRejectsNonAgreedFortifyRows(string key, string value)
     {
-        const string key = "military.fortify_turns";
         var f = Files();
         f[Gdd03BalanceCatalogue.FileName] = System.Text.RegularExpressions.Regex.Replace(f[Gdd03BalanceCatalogue.FileName],
-            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { basis: Default, values: [1], note: fixture }\n");
+            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { basis: Default, values: [" + value + "], note: fixture }\n");
         var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(f)));
         Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
         Assert.Equal("values." + key, error.Field);
         Assert.Contains("must be Agreed", error.Message);
-        // The same row loads under the gdd-0.1 ruleset: only gdd-0.3 refuses it.
-        f["rules.yaml"] = f["rules.yaml"].Replace("move_cost: { coastal_plain: 1, hills: 2, desert: 3 }",
-            "move_cost: { coastal_plain: 1, lowland: 1, valley: 1, hills: 2, mountains: 3, desert: 3 }")
-            .Replace("combat_terrain_percent: { coastal_plain: 100, hills: 150, desert: 100 }",
-            "combat_terrain_percent: { coastal_plain: 100, lowland: 100, valley: 100, hills: 150, mountains: 150, desert: 100 }");
-        f["eras.yaml"] = f["eras.yaml"].Replace("gdd-0.3", "gdd-0.1");
-        Assert.NotNull(ContentLoader.Load(Fixture.Write(f)));
-    }
-    // R-ORDER-002 (#1725 audit): fortify_bonus is Default; an Agreed row with the same value is refused, naming the exact file and field.
-    [Fact]
-    public void LoaderRejectsNonDefaultFortifyBonus()
-    {
-        const string key = "military.fortify_bonus";
-        var f = Files();
-        f[Gdd03BalanceCatalogue.FileName] = System.Text.RegularExpressions.Regex.Replace(f[Gdd03BalanceCatalogue.FileName],
-            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { basis: Agreed, values: [25], note: fixture }\n");
-        var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(f)));
-        Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
-        Assert.Equal("values." + key, error.Field);
-        Assert.Contains("must be Default", error.Message);
         // The same row loads under the gdd-0.1 ruleset: only gdd-0.3 refuses it.
         f["rules.yaml"] = f["rules.yaml"].Replace("move_cost: { coastal_plain: 1, hills: 2, desert: 3 }",
             "move_cost: { coastal_plain: 1, lowland: 1, valley: 1, hills: 2, mountains: 3, desert: 3 }")
