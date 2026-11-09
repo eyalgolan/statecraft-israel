@@ -66,7 +66,7 @@ namespace Statecraft.Sim
         /// 9 November 2026: "Go ahead on strength (Recommended)"): with more records than its strength, its strength of them
         /// are captured, the lowest ids first; with fewer, all of them are. The leftover records leave service as soldiers sent
         /// home do (owner, 9 November 2026: "Sent home (Recommended)"; R-UNIT-005): Demobilization's
-        /// <see cref="Demobilization.RecordsHome"/> and <see cref="Demobilization.CommitHome"/>, Send home's own ledger code,
+        /// <see cref="Demobilization.RecordsHome"/>, Send home's own ledger code, written in the capture's one ledger commit,
         /// make them settled-in free civilians without an assignment in the nearest city to the formation's hex
         /// (<see cref="Demobilization.Nearest"/>) and return their issued items to the Arms stock (<see
         /// cref="Demobilization.ReturnArms"/>); <paramref name="back"/> is the Arms added, <paramref name="home"/> that city and

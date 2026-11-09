@@ -386,30 +386,29 @@ namespace Statecraft.Sim
                 }
                 else
                 {
-                    // The only way a unit is captured (impact plan section 4.3 item 1; R-POW-001). Its captor is the engagement's
-                    // lowest-id attacker (not attackers[0]: the guns are listed last, R-COMBAT-007), whose side holds the
-                    // player's soldiers (R-POW-005). Take runs before the unit is removed (#1710). On a Historical ledger game
-                    // it may refuse, before it writes anything: InvalidOperationException for a held count that disagrees with
-                    // the Captured records, and ArgumentException from PopulationLedger.Capture for an unbound captor or a
-                    // record that is not an active soldier (a synthetic or Open ledger is NotSupportedException). A trained
-                    // formation and a strength its records do not number are not refused (owner, 9 November 2026: "Yes, in
-                    // #1706 (Recommended)" and "Go ahead on strength (Recommended)"): Take captures the records on the
-                    // formation's target, at most its strength of them, the lowest ids first, and SoldiersHeld grows by
-                    // that number. A formation's leftover records, beyond its strength, leave service as Send home's do
-                    // (owner, 9 November 2026: "Sent home (Recommended)"; R-UNIT-005, Demobilization.RecordsHome), in the
-                    // capture's own ledger commit. After the surrender line come Send home's own lines, in its order: the
-                    // people sent home ("Yes, reuse Send home's (Recommended)"), then, only when Arms go back, the Arms
-                    // line. On a ledger the surrender line
-                    // states the records captured in people, not the strength (owner, 9 November 2026: "Records captured
-                    // (Recommended)"); Take's Held is the strength without one, so the aggregate line is unchanged.
-                    // This engagement's draw and losses,
-                    // and any earlier write to s (an earlier engagement, or the Strike's own), stay on s. In the game s is
+                    // The only way a unit is captured (impact plan section 4.3 item 1; R-POW-001). Its captor is the
+                    // engagement's lowest-id attacker (not attackers[0]: the guns are listed last, R-COMBAT-007), whose
+                    // side holds the player's soldiers (R-POW-005). Take runs before the unit is removed (#1710). On a
+                    // Historical ledger game it may refuse, before it writes anything: InvalidOperationException for a held
+                    // count that disagrees with the Captured records, and ArgumentException from PopulationLedger.Capture
+                    // for an unbound captor or a record that is not an active soldier (a synthetic or Open ledger is
+                    // NotSupportedException). A trained formation and a strength its records do not number are not refused
+                    // (owner, 9 November 2026: "Yes, in #1706 (Recommended)" and "Go ahead on strength (Recommended)"):
+                    // Take captures the records on the formation's target, at most its strength of them, the lowest ids
+                    // first, and SoldiersHeld grows by that number. A formation's leftover records, beyond its strength,
+                    // leave service as Send home's do (owner, 9 November 2026: "Sent home (Recommended)"; R-UNIT-005,
+                    // Demobilization.RecordsHome), in the capture's own ledger commit. After the surrender line come Send
+                    // home's own lines, in its order: the people sent home ("Yes, reuse Send home's (Recommended)"), then,
+                    // only when Arms go back, the Arms line. On a ledger the surrender line states the records captured in
+                    // people, not the strength (owner, 9 November 2026: "Records captured (Recommended)"); Take's Held is
+                    // the strength without one, so the aggregate line is unchanged. This engagement's draw and losses, and
+                    // any earlier write to s (an earlier engagement, or the Strike's own), stay on s. In the game s is
                     // always a clone: Strike's caller (Simulation.cs:268) and Resolve's (TurnResolver.cs:20) run inside
                     // Simulation.Step on its clone (Simulation.cs:51; Preview and DelegatedTo clone too), so the whole
-                    // command's or turn's result is discarded and the caller's state is unchanged. Today Step refuses a ledger
-                    // game (Simulation.cs:48). On a Historical ledger the losses above already removed this formation's lost
-                    // records (LoseRecord, #1706: "Prisoners #1710 first (Recommended)"), so for a formation whose records
-                    // matched its strength Take finds the records left numbering its strength.
+                    // command's or turn's result is discarded and the caller's state is unchanged. Today Step refuses a
+                    // ledger game (Simulation.cs:48). On a Historical ledger the losses above already removed this
+                    // formation's lost records (LoseRecord, #1706: "Prisoners #1710 first (Recommended)"), so for a
+                    // formation whose records matched its strength Take finds the records left numbering its strength.
                     var taken = Prisoners.Take(c, s, u, attackers.OrderBy(x => x.Id).First());
                     s.Units.Remove(u.Id);
                     why.Add(UnitLines.Line(u.Side == Movement.PlayerSide ? WhyKeys.SurrenderedHeld : WhyKeys.SurrenderedPrisoners,   // Prisoners.Take's two cases

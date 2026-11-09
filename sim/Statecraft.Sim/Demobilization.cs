@@ -119,7 +119,9 @@ namespace Statecraft.Sim
         /// goes back to the stock once. "No, records only (Recommended)": no aggregate city field is written. The records are
         /// written in one validated commit; the caller removes the unit after it and, for "Yes, one Why line (Recommended)",
         /// writes one Why line naming the <paramref name="back"/> Arms returned. Null when done, else the reason. The records'
-        /// change is <see cref="RecordsHome"/> then <see cref="CommitHome"/>, shared with a surrender's leftover records.</summary>
+        /// change is <see cref="RecordsHome"/> then <see cref="CommitHome"/>; a surrender's leftover records share
+        /// <see cref="RecordsHome"/> and <see cref="ReturnArms"/>, written in the capture's one ledger commit
+        /// (<see cref="PopulationLedger.Capture"/>).</summary>
         static string? LedgerSendHome(Content c, GameState s, Unit u, string city, out int back)
         {
             back = 0;

@@ -286,7 +286,8 @@ public class LedgerPrisonersTests
         Assert.Equal(unbound, Demobilization.Nearest(c, u.Q, u.R));
         var hash = s.Hash(); var ledger = s.PopulationLedger.Canonical().ToList(); var arms = s.Arms;
         var held = s.SoldiersHeld.ToList();
-        Assert.Throws<ArgumentException>(() => Prisoners.Take(c, s, u, captor));
+        var refused = Assert.Throws<ArgumentException>(() => Prisoners.Take(c, s, u, captor));
+        Assert.Equal("Unknown or inconsistent location.", refused.Message);   // the leftover's home, not some other refusal
         Assert.Equal(ledger, s.PopulationLedger.Canonical());
         Assert.Equal((hash, arms), (s.Hash(), s.Arms));
         Assert.Equal(held, s.SoldiersHeld.ToList());
