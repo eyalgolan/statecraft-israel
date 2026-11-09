@@ -1244,16 +1244,28 @@ public class WorkshopPanelTests
     }
 
     // R-HOUSE-005 (#1722: "Housing capacity, residents, condition and this turn's surcharge for the city, with the sim's
-    // reasons"): on the city's own hex the readout is Cities.HousingOutlook's, word for word in the UI's language. Haifa in no
-    // homes at 0.22: a surcharge (below 50%), the overflow lowers the condition, and below 25% Social cohesion falls.
+    // reasons"): on the city's own hex the readout is Cities.HousingOutlook's, word for word in the UI's language. Haifa with
+    // its opening 99 residents in 80 homes at 0.15 (TEST-ONLY SYNTHETIC values): a surcharge (below 50%) of IL 3.5m, the
+    // overflow of 19 lowers the condition to 14%, and below 25% Social cohesion falls by 0.2% (Haifa is 99 of 532 own
+    // population). Each figure is large enough to show when rounded as the panel rounds it (#1722 review S2), which the
+    // precondition checks; 10 residents would give a cohesion share under 0.05 points, which has no line.
     [Test]
     public void TheHousingReadoutShowsTheSimsSurchargeOverflowAndCohesion_RHouse005([Values] bool hebrew)
     {
+        const double condition = 0.15;
         var t = hebrew ? He : En;
         using var ui = new UiTestKit();
-        var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) => Housing(s, 0, 0.22));
+        var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) =>
+        {
+            var x = s.Cities[City];
+            s.Cities[City] = new City(x.Id, x.HousingCapacity, x.JobSlots, 99, x.Employed, x.Refugees, x.Recruits, x.Condition, x.Craftsmen, x.JobsDefault, x.Qualified);
+            Housing(s, 80, condition);
+        });
         var o = Cities.HousingOutlook(C03, bridge.State, City)!.Value;
-        Assert.IsTrue(o.Surcharge > 0 && o.ConditionAfter < 0.22 && o.CohesionShift < 0, "precondition: all three terms are live");
+        Assert.IsTrue(o.Surcharge > 0 && o.ConditionAfter < condition && o.CohesionShift < 0, "precondition: all three terms are live");
+        Assert.AreNotEqual(PlayerText.Money(C03, "treasury", 0), PlayerText.Money(C03, "treasury", o.Surcharge), "precondition: the surcharge shows when rounded (S2)");
+        Assert.AreNotEqual(PlayerText.Percent(condition), PlayerText.Percent(o.ConditionAfter), "precondition: the overflow moves the rounded condition (S2)");
+        Assert.AreNotEqual(PlayerText.PercentChange(0), PlayerText.PercentChange(o.CohesionShift), "precondition: the cohesion share shows when rounded (S2)");
         using var panel = Panel(ui, bridge, t);
         var (q, r) = Home(C03);
         panel.Show(q, r);
