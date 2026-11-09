@@ -378,7 +378,7 @@
     "values": [1]
   "military.fortify_bonus":
     "basis": "Agreed"
-    "note": "Military and control: percent defence for a settled Fortify order. Owner, 1 November 2026, O1 (#1668 issuecomment-6553884547): \"+25% (main's 125%; the catalogue's 25 agrees). One turn to set.\"; relabelled from Default after the #2918 C2 audit. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: percent defence for a settled Fortify order. The owner-approved answer O1 (1 November 2026, #1668 issuecomment-6553884547): +25%, one turn to set; relabelled from Default after the #2918 C2 audit. Source: #1668 balance.md at 605277df."
     "values": [25]
   "military.stack_limit":
     "basis": "Default"
