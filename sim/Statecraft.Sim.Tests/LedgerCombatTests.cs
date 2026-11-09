@@ -335,7 +335,8 @@ public class LedgerCombatTests
         var twinLine = Assert.Single(twinWhy, x => x.Key == WhyKeys.SurrenderedHeld);   // the aggregate game: its strength, unchanged
         Assert.Equal(new[] { (twin.SoldiersHeld[side] * ppu).ToString(CultureInfo.InvariantCulture) }, twinLine.Args);
         Assert.Equal(FormattableString.Invariant($"Unit {d.Id} surrendered with {twin.SoldiersHeld[side] * ppu:N0} people: it had no hex to retreat to. They are held by the enemy"), twinLine.Message);
-        Assert.DoesNotContain(why, x => x.Key == CauseKeys.SentHomeArmsReturned);   // no leftover record, so none goes home
+        // No leftover record, so none goes home: Take gives no home city, and combat writes neither Send home line.
+        Assert.DoesNotContain(why, x => x.Key == CauseKeys.SentHomeArmsReturned || x.Key == WhyKeys.SentHome);
         var lost = d.Strength - twin.SoldiersHeld[side];
         Assert.Empty(Serving(c, s, d.Id));
         foreach (var p in serving.Skip(lost))
@@ -351,10 +352,13 @@ public class LedgerCombatTests
     // 2. Its losses take its lowest records first; of the rest exactly its strength are Captured, the lowest ids first.
     // SoldiersHeld is the aggregate twin's. "Sent home (Recommended)" (owner, 9 November 2026): the leftover records leave
     // service as Send home's do (R-UNIT-005): settled-in free civilians without an assignment in the nearest city to the
-    // formation's hex, the issued items back in the Arms stock, with Send home's one Arms Why line after the surrender line.
-    // The aggregate twin writes no such line and its stock is unchanged.
-    [Fact]
-    public void AFormationWithMoreRecordsThanStrengthSurrendersItsLowestRecordsAndSendsTheRestHome()
+    // formation's hex, the issued items back in the Arms stock. "Yes, reuse Send home's (Recommended)" (owner, 9 November
+    // 2026): after the surrender line comes Send home's own people line (key sent_home, its wording) for the leftover
+    // people, then, only when Arms go back, Send home's Arms line, in Send home's order. With <paramref name="armed"/>
+    // false the leftovers hold no military item: the people still go home with their line, and no Arms line is written
+    // and the stock is unchanged. The aggregate twin writes neither line and its stock is unchanged.
+    [Theory, InlineData(true), InlineData(false)]
+    public void AFormationWithMoreRecordsThanStrengthSurrendersItsLowestRecordsAndSendsTheRestHome(bool armed)
     {
         var c = Gdd03();
         var d = Own(c, Dark(c))[0];
@@ -368,6 +372,10 @@ public class LedgerCombatTests
             (b, g, why) => why.Any(x => x.Key == WhyKeys.SurrenderedHeld) && g.SoldiersHeld.Values.Sum() >= 1);
         var s = Dark(c); SetUp(s); s.RngState = seed;
         var twin = Aggregate(c); SetUp(twin); twin.RngState = seed;
+        if (!armed)   // the two highest records are the leftovers whatever the losses: take their military items off first
+            s.PopulationLedger.Commit(Serving(c, s, d.Id).Skip(Serving(c, s, d.Id).Count - 2).Select(p => new PopulationUnit(p.Id, p.Status,
+                p.ReceptionTicks, p.Location, p.Assignment, p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp,
+                new PopulationEquipment(p.Equipment.ToolsId, p.Equipment.ToolsPaid), p.Captor, p.Home)).ToList(), Array.Empty<PopulationTarget>());
         var serving = Serving(c, s, d.Id);
         Assert.Equal(s.Units[d.Id].Strength + 2, serving.Count);
         var at = s.Units[d.Id];
@@ -400,18 +408,29 @@ public class LedgerCombatTests
             Assert.Equal((was.Qualification, was.CombatXp), (p.Qualification, p.CombatXp));
         }
         var items = leftover.Count(p => p.Equipment.MilitaryId != null);
-        Assert.Equal(2, items);
+        Assert.Equal(armed ? 2 : 0, items);
         Assert.Equal(arms + items, s.Arms);
         Assert.Equal(twinArms, twin.Arms);
         var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;
         var surrender = Assert.Single(why, x => x.Key == WhyKeys.SurrenderedHeld);
         Assert.Equal(new[] { (held * ppu).ToString(CultureInfo.InvariantCulture) }, surrender.Args);
-        var back = Assert.Single(why, x => x.Key == CauseKeys.SentHomeArmsReturned);
-        Assert.Equal(why.IndexOf(surrender) + 1, why.IndexOf(back));
-        Assert.Equal(("city", "arms", (double)items, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: unit {d.Id} returned {items} Arms")),
-            (back.System, back.Target, back.Delta, back.Message));
-        Assert.Equal(new[] { city, d.Id.ToString(CultureInfo.InvariantCulture) }, back.Args);
-        Assert.DoesNotContain(twinWhy, x => x.Key == CauseKeys.SentHomeArmsReturned);
+        var home = Assert.Single(why, x => x.Key == WhyKeys.SentHome);   // Send home's own line, for the 2 leftover records
+        Assert.Equal(why.IndexOf(surrender) + 1, why.IndexOf(home));
+        Assert.Equal(("map", d.Id.ToString(CultureInfo.InvariantCulture), 2.0,
+                FormattableString.Invariant($"Unit {d.Id} is sent home: its {2 * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now")),
+            (home.System, home.Target, home.Delta, home.Message));
+        Assert.Equal(new[] { (2 * ppu).ToString(CultureInfo.InvariantCulture), city }, home.Args);
+        Assert.Equal(new[] { d.Id }, home.Units.Select(x => x.Id));
+        if (armed)
+        {
+            var back = Assert.Single(why, x => x.Key == CauseKeys.SentHomeArmsReturned);
+            Assert.Equal(why.IndexOf(home) + 1, why.IndexOf(back));
+            Assert.Equal(("city", "arms", (double)items, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: unit {d.Id} returned {items} Arms")),
+                (back.System, back.Target, back.Delta, back.Message));
+            Assert.Equal(new[] { city, d.Id.ToString(CultureInfo.InvariantCulture) }, back.Args);
+        }
+        else Assert.DoesNotContain(why, x => x.Key == CauseKeys.SentHomeArmsReturned);
+        Assert.DoesNotContain(twinWhy, x => x.Key == CauseKeys.SentHomeArmsReturned || x.Key == WhyKeys.SentHome);
         Prisoners.RequireHeldMatchesRecords(s);
         s.PopulationLedger.Reconcile();
     }

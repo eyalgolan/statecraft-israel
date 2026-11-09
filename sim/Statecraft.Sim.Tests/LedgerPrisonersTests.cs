@@ -201,7 +201,8 @@ public class LedgerPrisonersTests
         foreach (var p in serving.Skip(serving.Count - 2)) s.PopulationLedger.RegisterCombatLoss(p.Id, "fixture");
         var left = Serving(c, s, u);
         Assert.Equal(u.Strength - 2, left.Count);
-        Assert.Equal("They are held by the enemy", Take(c, s, u, captor));
+        var taken = Prisoners.Take(c, s, u, captor);   // no leftover: no home city, no Arms back
+        Assert.Equal(("They are held by the enemy", left.Count, 0, (string?)null), (taken.Text, taken.Held, taken.ArmsBack, taken.Home));
         Assert.Empty(Serving(c, s, u));
         foreach (var p in left)
             Assert.Equal((PopulationStatus.Captured, "egypt"), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
@@ -238,7 +239,8 @@ public class LedgerPrisonersTests
         var received = c.RequirePopulationInteger("reception.turns");
         var arms = s.Arms; var next = s.PopulationLedger.NextPopulationId; var count = s.PopulationLedger.Units.Count;
         var cities = string.Join(";", s.Cities.Values.Select(x => x.Canonical()));
-        Take(c, s, u, captor);
+        var taken = Prisoners.Take(c, s, u, captor);
+        Assert.Equal((u.Strength, leftover.Count, city), (taken.Held, taken.ArmsBack, taken.Home));
         foreach (var p in serving.Take(u.Strength))
             Assert.Equal((PopulationStatus.Captured, "egypt"), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
         Assert.Empty(Serving(c, s, u));
@@ -262,6 +264,33 @@ public class LedgerPrisonersTests
         Assert.Equal(u.Strength, s.SoldiersHeld["egypt"]);
         AssertHeldMatchesRecords(s);
         s.PopulationLedger.Reconcile();
+    }
+
+    // R-POW-005, R-POP-002 "refused before mutation": every check, the leftovers' home location binding included, comes
+    // before the first write, so the capture and the leftovers' homecoming are one validated ledger commit. Here the
+    // nearest city to the formation is a region member the ledger does not bind as a location (a content change made
+    // after the start, the only way to reach it), so the leftovers' location is refused and nothing is written: no
+    // record captured, no count, no Arms, the same hash.
+    [Fact]
+    public void ALeftoverWhoseHomeIsNotABoundLocationRefusesBeforeAnyWrite()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var o = Own(c, s)[0]; var captor = Enemy(s, "egypt");
+        var u = new Unit(o.Id, o.Type, o.Q, o.R, o.Service, o.Side, o.Strength - 2, o.Order, o.OrderTarget, o.HomeCity, o.Full, o.CombatXp);
+        s.Units[u.Id] = u;
+        var unbound = c.PlayerRegions.Regions.Values.SelectMany(r => r.MemberLocations.Where(m => c.Cities.All(x => x.Id != m)
+            && r.FieldHosts.All(h => h.Host != m))).OrderBy(x => x, StringComparer.Ordinal).First();
+        c.Cities.Insert(0, new CityStart { Id = unbound });
+        c.SettlementHexes.Insert(0, new SettlementHex { Id = unbound, Q = u.Q, R = u.R });
+        Assert.Equal(unbound, Demobilization.Nearest(c, u.Q, u.R));
+        var hash = s.Hash(); var ledger = s.PopulationLedger.Canonical().ToList(); var arms = s.Arms;
+        var held = s.SoldiersHeld.ToList();
+        Assert.Throws<ArgumentException>(() => Prisoners.Take(c, s, u, captor));
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal((hash, arms), (s.Hash(), s.Arms));
+        Assert.Equal(held, s.SoldiersHeld.ToList());
+        AssertHeldMatchesRecords(s);
     }
 
     // "Yes, in #1706 (Recommended)" (owner, 9 November 2026): a trained formation's soldiers are found as battles find them,
