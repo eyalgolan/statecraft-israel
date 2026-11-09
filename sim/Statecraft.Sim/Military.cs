@@ -39,10 +39,12 @@ namespace Statecraft.Sim
         internal const string VeteranSoldier = "veteran_soldier";
 
         /// <summary>R-UNIT-010: step 7 pays per Israeli military formation, including this turn's graduates. The national
-        /// Treasury borrows a shortfall (R-MONEY-003); upkeep never consumes Arms (Q-UNIT-3).</summary>
+        /// Treasury borrows a shortfall (R-MONEY-003); upkeep never consumes Arms (Q-UNIT-3). It counts formation tokens, not
+        /// soldiers, so it runs on an initialized Historical ledger (the dark start, #1699, #1725 PR 7) and reads no record;
+        /// a synthetic or Open ledger stays refused (R-POP-002).</summary>
         public static void PayUpkeep(Content c, GameState s, MvpRules r, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
             var count = s.Units.Values.Count(u => u.Side == "israel" && c.UnitTypes.Any(t => t.Id == u.Type && t.Side == "israel"));
             var cost = count * r.MilitaryUpkeepPerTurn!.Value;
             if (cost == 0) return;
