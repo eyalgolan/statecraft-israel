@@ -173,13 +173,17 @@ namespace Statecraft.Sim
                 ?? throw new InvalidOperationException("No region in regions.yaml for " + city + " (R-POP-004).");
             var location = new PopulationLocation(region, city: city);
             var received = c.RequirePopulationInteger("reception.turns");
+            // Following "Yes, keep the link (Recommended)" (a returned veteran record counts for the veteran track): a veteran
+            // pioneer unit's record returns a Veteran pioneer, as a new record from one does ("Beginner; veteran stays
+            // (Recommended)"), so ReassignPioneers finds it on the veteran track.
+            var veteran = u.Type == Projects.VeteranType;
             var records = ids.Select(id =>
             {
                 var p = s.PopulationLedger.Get(id);
                 if (!IsFreePioneer(p))
                     throw new InvalidOperationException("Unit " + u.Id.ToString(CultureInfo.InvariantCulture) + "'s record " + id.ToString(CultureInfo.InvariantCulture) + " is not a free pioneer.");
                 return new PopulationUnit(p.Id, PopulationStatus.FreeCivilian, received, location, PopulationAssignment.Unassigned,
-                    p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp, p.Equipment, p.Captor, p.Home);
+                    p.Profession, veteran ? CivilianTier.Veteran : p.Tier, p.WorkXp, p.Qualification, p.CombatXp, p.Equipment, p.Captor, p.Home);
             }).ToList();
             s.PopulationLedger.Commit(records, Array.Empty<PopulationTarget>());
         }
@@ -234,8 +238,13 @@ namespace Statecraft.Sim
             {
                 // #1725 PR 7 (owner, 9 November 2026, "Free pioneers by service (Recommended)"): the city's free, unassigned
                 // pioneer records, lowest id first, are the groups that come back; the city's counts are not the ledger's.
-                var free = s.PopulationLedger.Units.Where(p => IsFreePioneer(p) && string.Equals(p.Location?.City, city, StringComparison.Ordinal))
-                    .Select(p => p.Id).OrderBy(id => id).ToList();
+                // Each track takes its own records, following "Yes, keep the link (Recommended)": Veteran ones for
+                // veteran_halutz, the others for halutz. The training centre's census teacher comes last ("Takeable, but last
+                // (Recommended)", #1689), after every record made later.
+                var teacher = HistoricalPopulation.TeacherId(s.PopulationLedger);
+                var free = s.PopulationLedger.Units.Where(p => IsFreePioneer(p) && string.Equals(p.Location?.City, city, StringComparison.Ordinal)
+                        && (p.Tier == CivilianTier.Veteran) == veteran)
+                    .Select(p => p.Id).OrderBy(id => id == teacher ? 1 : 0).ThenBy(id => id).ToList();
                 if (count > free.Count) return string.Format(CultureInfo.InvariantCulture, LedgerRefusedFreePioneers, name, free.Count);
                 picked = free.Take(count).ToList();
             }

@@ -432,9 +432,11 @@ namespace Statecraft.Sim
             // R-QUAL-006 on the ledger (owner, 9 November 2026, "Yes, lower it (Recommended)"): a returned pioneer record the
             // order takes loses its qualification, so the city's qualified pioneers (City.Qualified) never outnumber its
             // free pioneer records. As the aggregate path counts it, only what the remaining records cannot hold is lost.
+            // The training centre's census teacher (#1689) is not a returned pioneer, so it holds no qualified group.
             var x = s.Cities[city];
+            var teacher = HistoricalPopulation.TeacherId(ledger);
             bool CityPioneer(PopulationUnit p) => p.Status == PopulationStatus.FreeCivilian && p.Profession == CivilianProfession.Pioneer
-                && string.Equals(p.Location?.City, city, StringComparison.Ordinal);
+                && string.Equals(p.Location?.City, city, StringComparison.Ordinal) && p.Id != teacher;
             var pioneers = ledger.Units.Count(CityPioneer) - taken.Count(CityPioneer);
             var lost = Math.Max(0, x.Qualified.Halutzim.Count + x.Qualified.Veterans - pioneers);
             var id = s.NextId;

@@ -214,9 +214,9 @@ public class LedgerHalutzLinkTests
     }
 
     // A pioneer unit with no linked records (one an event grants) at Tel Aviv's settlement hex, not at work.
-    static int Unlinked(Content c, GameState s, string type, int service)
+    static int Unlinked(Content c, GameState s, string type, int service, string city = TelAviv)
     {
-        var hex = c.SettlementHexes.First(h => h.Id == TelAviv);
+        var hex = c.SettlementHexes.First(h => h.Id == city);
         var id = s.NextId++;
         s.Units.Add(id, new Unit(id, type, hex.Q, hex.R, service));
         return id;
@@ -243,7 +243,7 @@ public class LedgerHalutzLinkTests
 
         Assert.Null(Qualification.Return(c, s, halutz, why));
         Assert.Equal((count + 1, next + 1), (ledger.Units.Count, ledger.NextPopulationId));
-        Assert.Equal(people / count * (count + 1), ledger.TotalPeople);   // one more person record, as an arrival adds
+        Assert.Equal(people + ledger.PeoplePerUnit, ledger.TotalPeople);   // one more record's worth of people, as an arrival adds
         Assert.True(ledger.HasArrived(source, 0));
         Assert.False(ledger.HasArrived(source, 1));
         var p = ledger.Get(next);
@@ -286,6 +286,90 @@ public class LedgerHalutzLinkTests
             return (s.Hash(), string.Join("\n", s.PopulationLedger.Canonical()));
         }
         Assert.Equal(Run(), Run());
+    }
+
+    const string Haifa = HistoricalPopulation.TeacherCity;
+
+    // The training centre's veteran pioneer teacher: the dark start's one Pioneer record in Haifa (#1689).
+    static int Teacher(GameState s) => Assert.Single(s.PopulationLedger.Units, p => p.Profession == CivilianProfession.Pioneer
+        && p.Tier == CivilianTier.Veteran && p.Location?.City == Haifa).Id;
+
+    // "Takeable, but last (Recommended)" (#1689 comment 6710877137) with "Add the link first (Recommended)": a Reassign in
+    // Haifa takes the returned pioneer's record before the census teacher, on both tracks, and the teacher stays in Haifa.
+    [Theory]
+    [InlineData("halutz")]
+    [InlineData("veteran_halutz")]
+    public void ReassignInHaifaTakesTheReturnedPioneerBeforeTheTeacher(string track)
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var teacher = Teacher(s);
+        var unit = Unlinked(c, s, track, track == "halutz" ? 1 : c.RulesAt(s.Date).Mvp!.VeteranHalutzService!.Value, Haifa);
+        var returned = s.PopulationLedger.NextPopulationId;
+        var why = new List<Cause>();
+        Assert.Null(Qualification.Return(c, s, unit, why));
+        Assert.True(returned > teacher);
+        var id = s.NextId;
+        Assert.Null(Qualification.ReassignPioneers(c, s, Haifa, track, 1, why));
+        Assert.Equal(Ids(returned), Ids(s.Units[id].Records!));
+        var t = s.PopulationLedger.Get(teacher);
+        Assert.Equal((Haifa, PopulationAssignmentKind.Unassigned, CivilianTier.Veteran), (t.Location!.City, t.Assignment.Kind, t.Tier));
+        s.PopulationLedger.Reconcile();
+    }
+
+    // "Yes, lower it (Recommended)" with "Only as needed (Recommended)": the census teacher is not a returned pioneer, so it
+    // cannot hold a qualified group. The teacher is placed at work in Tel Aviv (on a field target of its region, as a
+    // teaching assignment would hold it; Tel Aviv has the only Hakhshara), so a Train order there takes the one returned
+    // pioneer and leaves the teacher. The count is lowered, and a later Reassign is refused for the count, not for missing
+    // records.
+    [Fact]
+    public void TheTeacherDoesNotHoldAQualifiedGroupWhenTrainTakesTheReturnedPioneer()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var ledger = s.PopulationLedger;
+        var teacher = ledger.Get(Teacher(s));
+        var region = Region(c, TelAviv);
+        var field = ledger.Units.First(p => p.Assignment.Kind == PopulationAssignmentKind.Work && p.Location?.Region == region);
+        ledger.Replace(teacher.WithPlacement(teacher.Status, new PopulationLocation(region, city: TelAviv), field.Assignment, teacher.Captor, teacher.Home));
+        var why = new List<Cause>();
+        var returned = ledger.NextPopulationId;
+        Assert.Null(Qualification.Return(c, s, Unlinked(c, s, "halutz", 2), why));
+        Assert.Equal(new[] { 2 }, s.Cities[TelAviv].Qualified.Halutzim);
+        var unskilled = ledger.Units.Count(p => p.Status == PopulationStatus.FreeCivilian && p.Assignment.Kind == PopulationAssignmentKind.Unassigned
+            && p.Location?.City == TelAviv && p.Profession == CivilianProfession.None);
+        Assert.Null(Training.Start(c, s, TelAviv, "halutz", unskilled + 1, why));
+        Assert.Equal(PopulationStatus.Trainee, ledger.Get(returned).Status);
+        Assert.Equal((PopulationStatus.FreeCivilian, TelAviv), (ledger.Get(teacher.Id).Status, ledger.Get(teacher.Id).Location!.City));
+        Assert.Empty(s.Cities[TelAviv].Qualified.Halutzim);
+        Assert.Equal("Tel Aviv has 0 qualified halutzim", Qualification.ReassignPioneers(c, s, TelAviv, "halutz", 1, why));
+        ledger.Reconcile();
+    }
+
+    // Following "Yes, keep the link (Recommended)" (a returned veteran record counts for the veteran track): a linked veteran
+    // unit's record returns as a Veteran pioneer, as a new record from a veteran unit is ("Beginner; veteran stays
+    // (Recommended)"), and each track takes only its own records: Veteran ones for veteran_halutz, the others for halutz.
+    [Fact]
+    public void TheHalutzAndVeteranTracksTakeTheirOwnRecords()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var why = new List<Cause>();
+        var (records, units) = Graduate(c, s, 2, why);
+        var service = c.RulesAt(s.Date).Mvp!.VeteranHalutzService!.Value;
+        SetService(s, units[0], service, Projects.VeteranType);
+        SetService(s, units[1], 1);
+        Assert.Null(Qualification.Return(c, s, units[0], why));
+        Assert.Null(Qualification.Return(c, s, units[1], why));
+        Assert.Equal((CivilianTier.Veteran, CivilianTier.Novice), (s.PopulationLedger.Get(records[0]).Tier, s.PopulationLedger.Get(records[1]).Tier));
+
+        var halutz = s.NextId;
+        Assert.Null(Qualification.ReassignPioneers(c, s, TelAviv, "halutz", 1, why));
+        Assert.Equal((1, Ids(records[1])), (s.Units[halutz].Service, Ids(s.Units[halutz].Records!)));
+        var veteran = s.NextId;
+        Assert.Null(Qualification.ReassignPioneers(c, s, TelAviv, Projects.VeteranType, 1, why));
+        Assert.Equal((Projects.VeteranType, Ids(records[0])), (s.Units[veteran].Type, Ids(s.Units[veteran].Records!)));
+        s.PopulationLedger.Reconcile();
     }
 
     // "Yes, keep the link": a veteran pioneer unit keeps its record; returned, the record counts for the veteran track, and

@@ -263,6 +263,9 @@ namespace Statecraft.Sim
         /// <summary>Whether the manifest item <paramref name="source"/>, <paramref name="ordinal"/> has arrived, even if its
         /// population id was lost since.</summary>
         internal bool HasArrived(string source, int ordinal) => sources.ContainsKey(PopulationText.Fields(source, ordinal));
+        /// <summary>The population id the manifest item <paramref name="source"/>, <paramref name="ordinal"/> was given, even if
+        /// it was lost since; null if the item never arrived.</summary>
+        internal int? IdOf(string source, int ordinal) => sources.TryGetValue(PopulationText.Fields(source, ordinal), out var id) ? id : (int?)null;
         /// <summary><see cref="RegisterArrival"/> for several items, in order, all or nothing (#1725 PR 7, Cities.Arrive): every
         /// record is validated in one candidate before any is committed, so a refused item adds none of the others.</summary>
         internal IReadOnlyList<int> RegisterArrivals(IReadOnlyList<PopulationInventoryRow> rows)
