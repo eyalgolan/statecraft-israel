@@ -215,7 +215,8 @@ def preflight(cfg: Config, state: State, runner: Runner, gh: GitHub, *, job: Pat
         version = gh.next_version(version)
         if state.open_draft is not None and state.open_draft != tag_for(version):
             raise Refused("version", f"the job's own draft {state.open_draft} from an earlier night is still open; "
-                                     f"run once without --version to clean it before choosing {version}")
+                                     f"remove it first, before choosing {version} (tools/README.md, "
+                                     f"\"Nightly release\")")
     tag = tag_for(version)
     if gh.release_state(tag) == "draft" and state.open_draft == tag:
         if not no_publish:   # --no-publish makes no store write, not even this cleanup

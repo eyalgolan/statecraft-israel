@@ -326,7 +326,8 @@ def test_a_manual_version_refuses_while_an_own_draft_of_another_tag_is_open(env)
     st.open_draft_id = 101
     with pytest.raises(ns.Refused) as e:
         env.pre(st, gh, manual=True, version="0.4.0")
-    assert e.value.gate == "version" and TAG in e.value.detail
+    assert e.value.gate == "version" and TAG in e.value.detail and "Nightly release" in e.value.detail
+    assert "without --version" not in e.value.detail   # a run without it would publish the next patch
     assert "delete_draft" not in [c[0] for c in gh.calls] and st.open_draft == TAG
 
 
