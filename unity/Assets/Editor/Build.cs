@@ -56,8 +56,9 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>Why a shareable build may not be made, or null: every event with a sensitive tag needs the owner's
         /// sensitivity review first (status sensitivity-reviewed; docs/m3-release.md, M3 final review I4), every consequence
-        /// card and event with variants needs a person's reviewed_by (ReleaseGate.AlternateUnsigned; R-ALT-011), every row the
-        /// starting forces come from must be fact-checked (ReleaseGate.StartingForcesUnchecked; R-UNIT-006), every settlement
+        /// card, event with variants and armistice card with an early text (R-WAR-008) needs a person's reviewed_by
+        /// (ReleaseGate.AlternateUnsigned; R-ALT-011), every row the starting forces come from must be fact-checked
+        /// (ReleaseGate.StartingForcesUnchecked; R-UNIT-006), every settlement
         /// target row sensitivity-reviewed (ReleaseGate.SettlementTargetsUnchecked; Q-TGT-3 (b)), and so does every
         /// sensitive event photograph the build would carry (EventImageCatalog; docs/event-images.md), and every sensitive
         /// illustration clip (<paramref name="clips"/>, event-videos.yaml; docs/event-videos.md). See

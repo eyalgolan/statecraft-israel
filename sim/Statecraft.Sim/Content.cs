@@ -1252,6 +1252,13 @@ namespace Statecraft.Sim
         /// an operation shown again while it waits), so its dates do not mislead. "" for none.</summary>
         public string LateText { get; set; } = "";
         public string LateTextHe { get; set; } = "";
+        /// <summary>R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", then "Banner (Recommended)"
+        /// and "Ordinary text (Recommended)"): on a front_quiet armistice card only, the card's text, and its Hebrew, when it is
+        /// shown before its `from` (<see cref="EventSystem.ShowsEarly"/>): the talks came sooner than in history. The card is
+        /// then marked as an alternative course, and the shareable build needs a person's sign-off of it (R-ALT-011). "" for
+        /// none.</summary>
+        public string EarlyText { get; set; } = "";
+        public string EarlyTextHe { get; set; } = "";
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }

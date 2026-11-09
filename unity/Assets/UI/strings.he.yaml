@@ -315,6 +315,8 @@ event.objective_late_one: "הושלם באיחור של חודש אחד לעומ
 # A consequence card's banner and the rejoin line (#954). Native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 event.alt_origin: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1}). בהיסטוריה: {2}."
 event.alt_origin_no_record: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1})."
+# For the native reviewer (#564): agent-drafted, #1709; the owner approves the exact words ("You approve the words (Recommended)")
+event.alt_early: "מסלול חלופי. השיחות האלה הגיעו מוקדם יותר מאשר בהיסטוריה."
 event.rejoin: "חוזר למסלול ההיסטורי."
 # The capture dialog (GDD Phase 6 PR 10, #802). SENSITIVE: the owner reviews every line before any shareable build.
 # Agent-drafted; all 17 keys below: native review: owner, 3 Nov 2026 (HE batch 2: "approved"), "שחרור" included.

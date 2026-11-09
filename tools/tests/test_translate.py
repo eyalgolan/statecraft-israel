@@ -123,6 +123,30 @@ def test_a_late_text_gets_its_hebrew_after_it_and_is_part_of_the_event():
     assert cleared == LATE
 
 
+EARLY = EVENT.replace("anchor: soft\n", "anchor: soft\n# The early text's comment.\nearly_text: 'Sooner than in history: {prime_minister} asks: vote now?'\n")
+
+
+def test_an_early_text_gets_its_hebrew_after_it_and_is_part_of_the_event():
+    """R-WAR-008 (#1709, owner, 9 November 2026: "Separate early text (Recommended)"): early_text_he sits under
+    early_text, and EventRules wants it exactly when the event has Hebrew."""
+    early_he = "מוקדם יותר מאשר בהיסטוריה: {prime_minister} שואל: להצביע עכשיו?"
+    out, _ = translate.set_event(EARLY, changes(early_text_he=early_he))
+    lines = out.split("\n")
+    assert lines[lines.index("early_text: 'Sooner than in history: {prime_minister} asks: vote now?'") + 1] == \
+        f"early_text_he: {translate._scalar(early_he)}"
+    assert yaml12.load(out)["early_text_he"] == early_he
+    assert [line for line in EARLY.split("\n") if line not in lines] == []
+    with pytest.raises(translate.Refused, match="all or none"):
+        translate.set_event(EARLY, changes())
+    with pytest.raises(translate.Refused, match="early text"):
+        translate.set_event(EVENT, changes(early_text_he=early_he))
+    with pytest.raises(translate.Refused, match="placeholders"):
+        translate.set_event(EARLY, changes(early_text_he="מוקדם יותר מאשר בהיסטוריה"))
+    cleared, _ = translate.set_event(out, changes(title_he="", text_he="", early_text_he="",
+                                                  options={"yes_vote": "", "wait": ""}))
+    assert cleared == EARLY
+
+
 UI_EN = 'a.one: "One {0}"\na.two: "Two"\nb.three: "Three"\n'
 UI_HE = '# Hebrew.\na.one: "אחד {0}"\nb.three: "שלוש"\n'
 
@@ -240,6 +264,33 @@ def test_a_late_text_has_its_row_in_every_language(langs):
                                       "options": {"send_delegation": "Envoyer", "decline": "Refuser"},
                                       "review": "agent-checked"}
     assert translate.load("fr")[0]["event:rhodes_talks:late_text"] == "Plus tard, {foreign_minister} décide."
+
+def test_an_early_text_has_its_row_in_every_language(langs, tmp_path, monkeypatch):
+    """R-WAR-008 (#1709): the early text's row, as the late text's above. No real card has one yet (the four armistice
+    texts wait for the owner's approval and sign-off), so a fixture event in a temporary events folder stands in."""
+    events = tmp_path / "events"
+    events.mkdir()
+    early = EARLY.replace("id: sample", "id: early_sample")
+    he = translate.set_event(early, changes(early_text_he="מוקדם יותר מאשר בהיסטוריה: {prime_minister} שואל: להצביע עכשיו?"))[0]
+    (events / "early_sample.yaml").write_text(he, encoding="utf-8")
+    monkeypatch.setattr(translate, "EVENTS", events)
+    r = rows()
+    assert r["event:early_sample:early_text"]["en"].startswith("Sooner than in history")
+    assert r["event:early_sample:early_text"]["unit"] == "event:early_sample"
+    texts, _ = translate.load("he")
+    assert texts["event:early_sample:early_text"].startswith("מוקדם יותר מאשר בהיסטוריה")
+    edits = {"event:early_sample:title": "Le vote", "event:early_sample:text": "{prime_minister} demande.",
+             "event:early_sample:option:yes_vote": "Voter", "event:early_sample:option:wait": "Attendre {foreign_minister}"}
+    assert "all or none" in translate.save("fr", edits, {})["errors"]["event:early_sample"]
+    sooner = {"event:early_sample:early_text": "Plus tôt, {prime_minister} demande."}
+    assert translate.save("fr", {**edits, **sooner}, {})["errors"] == {}
+    saved = yaml12.load((langs / "fr/events.yaml").read_text(encoding="utf-8"))
+    assert saved["early_sample"] == {"title": "Le vote", "text": "{prime_minister} demande.",
+                                     "early_text": "Plus tôt, {prime_minister} demande.",
+                                     "options": {"yes_vote": "Voter", "wait": "Attendre {foreign_minister}"},
+                                     "review": "agent-checked"}
+    assert translate.load("fr")[0]["event:early_sample:early_text"] == "Plus tôt, {prime_minister} demande."
+
 
 FR = {"event:altalena:title": "L'Altalena", "event:altalena:text": "{defense_minister} décide.",
       "event:altalena:option:enforce": "Imposer", "event:altalena:option:compromise": "Céder"}
