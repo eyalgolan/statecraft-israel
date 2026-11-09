@@ -374,7 +374,7 @@
     "values": [50]
   "military.fortify_turns":
     "basis": "Agreed"
-    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Default. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Agreed (O1). Source: #1668 balance.md at 605277df."
     "values": [1]
   "military.fortify_bonus":
     "basis": "Agreed"
