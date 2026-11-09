@@ -23,5 +23,8 @@ formation_combat_xp:
   - { row: kiryati, combat_xp: 1 }       # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
   - { row: givati, combat_xp: 1 }        # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
   - { row: etzioni, combat_xp: 1 }       # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
+  # #1725 PR 7, producer 08: the 7th Brigade arrives on 24 May 1948 (R-UNIT-009) as soldier records, so it is named too.
+  # Owner, 8 November 2026: "1, like the others" (not the recommended option, which was a labelled stand-in of 0).
+  - { row: brigade_7, combat_xp: 1 }     # DESIGN VALUE: owner-set, not a historical figure (#1725 producer 08)
   - { row: harel, combat_xp: 1 }         # DESIGN VALUE: owner-set, not a historical figure (#1689 row 7)
   - { row: negev, combat_xp: 0 }         # DESIGN VALUE: owner's labelled stand-in, no dated fight found (#1689 row 8)
