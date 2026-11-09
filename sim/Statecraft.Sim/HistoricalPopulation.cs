@@ -229,7 +229,7 @@ namespace Statecraft.Sim
             // starts with it done: R-VET-001 gives work XP only to a received free civilian. Soldiers keep 0 (not ruled).
             var received = c.RequirePopulationInteger("reception.turns");
             // #1725 PR 3, the teacher part. Owner, 7 November 2026 (#1689 comment 6704565066), "Yes to all three
-            // (Recommended)": "the training centre's one veteran pioneer teacher is a Haifa census unit"; the count is
+            // (Recommended)": the training centre's one veteran pioneer teacher is a Haifa census unit; the count is
             // start.pioneer_teachers (1, Agreed, "included in population total"), so no record is added and no other count
             // has a ruling. Maintainer call (the coordinator, eyalgolan-30, 7 November 2026): the last census/haifa ordinal.
             // R-TRAIN-005: a free civilian, a veteran of the matching profession (pioneer). Owner, 7 November 2026, relayed
