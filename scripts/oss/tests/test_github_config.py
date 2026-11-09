@@ -235,7 +235,136 @@ def test_merge_workflow_waits_for_every_required_check():
     assert need == EXPECTED_JOBS
 
 
-PLAYER = ROOT / ".github/workflows/player-golden.yml"
+# A stand-in for gh, enough for the merge step: `pr list` prints the numbers in prs.txt, `pr view N --json ... --jq P`
+# runs P on N.json (N.after.json once a merge of N was tried), and `pr merge N` prints N.merge.out to stderr and exits
+# with N.merge.rc (0 when the file is missing). Every call is appended to calls.txt.
+FAKE_GH = r"""#!/usr/bin/env bash
+set -euo pipefail
+d="$FAKE_GH_DIR"
+printf '%s\n' "$*" >> "$d/calls.txt"
+case "$1 $2" in
+  "pr list") cat "$d/prs.txt" ;;
+  "pr view")
+    n="$3"; prog="${@: -1}"; f="$d/$n.json"
+    [ -e "$d/$n.tried" ] && [ -e "$d/$n.after.json" ] && f="$d/$n.after.json"
+    jq -r "$prog" "$f" ;;
+  "pr merge")
+    n="$3"; touch "$d/$n.tried"
+    [ -e "$d/$n.merge.out" ] && cat "$d/$n.merge.out" >&2
+    exit "$(cat "$d/$n.merge.rc" 2>/dev/null || echo 0)" ;;
+  *) echo "fake gh: unexpected call: $*" >&2; exit 99 ;;
+esac
+"""
+
+
+def ready_pr(head: str = "abc", **extra) -> dict:
+    return {"author": {"login": "eyalgolan"}, "body": "", "isDraft": False, "mergeable": "MERGEABLE",
+            "mergeStateStatus": "CLEAN", "headRefOid": head,
+            "reviews": [{"author": {"login": "eyalgolan"}, "state": "APPROVED", "commit": {"oid": head}}],
+            "statusCheckRollup": [{"name": n, "conclusion": "SUCCESS"} for n in sorted(EXPECTED_JOBS)], **extra}
+
+
+def run_merge_step(tmp_path: Path, event: str, prs: dict) -> tuple[subprocess.CompletedProcess, list[str]]:
+    """Runs the workflow's own merge script against the fake gh. prs maps a number to (pr, merge_rc, merge_out, after)."""
+    if shutil.which("jq") is None:
+        assert not os.environ.get("CI"), "jq is on GitHub's ubuntu runners"
+        pytest.skip("jq not installed")
+    wf = yaml.safe_load(MERGE.read_text(encoding="utf-8"))
+    (script,) = [s["run"] for s in steps(wf) if "gh pr merge" in s.get("run", "")]
+    bin_dir, data = tmp_path / "bin", tmp_path / "gh"
+    bin_dir.mkdir()
+    data.mkdir()
+    (bin_dir / "gh").write_text(FAKE_GH, encoding="utf-8")
+    (bin_dir / "gh").chmod(0o755)
+    (data / "calls.txt").write_text("", encoding="utf-8")
+    (data / "prs.txt").write_text("".join(f"{n}\n" for n in prs), encoding="utf-8")
+    for n, (pr, rc, out, after) in prs.items():
+        (data / f"{n}.json").write_text(json.dumps(pr), encoding="utf-8")
+        (data / f"{n}.merge.rc").write_text(str(rc), encoding="utf-8")
+        (data / f"{n}.merge.out").write_text(out, encoding="utf-8")
+        if after is not None:
+            (data / f"{n}.after.json").write_text(json.dumps(after), encoding="utf-8")
+    env = {**os.environ, **{k: str(v) for k, v in wf["jobs"]["merge"]["env"].items() if "${{" not in str(v)},
+           "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}", "FAKE_GH_DIR": str(data),
+           "GITHUB_EVENT_NAME": event, "GH_TOKEN": "fake", "GH_REPO": "owner/repo"}
+    done = subprocess.run(["bash", "-e", "-c", script], env=env, capture_output=True, text=True, timeout=60)
+    calls = (data / "calls.txt").read_text(encoding="utf-8").splitlines()
+    return done, calls
+
+
+READ_ONLY = "GraphQL: Resource not accessible by integration (mergePullRequest)\n"
+
+
+def test_a_merge_that_succeeds_passes(tmp_path):
+    done, calls = run_merge_step(tmp_path, "workflow_run", {7: (ready_pr(), 0, "", None)})
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "pr merge 7 --squash --match-head-commit abc" in calls
+
+
+def test_a_read_only_review_token_is_an_expected_refusal(tmp_path):
+    # GitHub gives a fork's pull_request_review run a read-only token; the next CI or timer run merges.
+    done, _ = run_merge_step(tmp_path, "pull_request_review", {7: (ready_pr(), 1, READ_ONLY, None)})
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "read-only token" in done.stdout
+
+
+@pytest.mark.parametrize("event", ["workflow_run", "schedule", "workflow_dispatch"])
+def test_a_read_only_refusal_fails_the_run_where_the_token_should_write(tmp_path, event):
+    # These runs hold the write token, so "not accessible" means the permissions are wrong, not a fork review.
+    done, _ = run_merge_step(tmp_path, event, {7: (ready_pr(), 1, READ_ONLY, None)})
+    assert done.returncode != 0, done.stdout + done.stderr
+
+
+def test_a_head_that_moved_is_an_expected_refusal(tmp_path):
+    out = "GraphQL: Head branch was modified. Review and try the merge again. (mergePullRequest)\n"
+    done, calls = run_merge_step(tmp_path, "workflow_run", {7: (ready_pr("abc"), 1, out, ready_pr("def"))})
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "head moved" in done.stdout and "pr merge 7 --squash --match-head-commit abc" in calls
+
+
+def test_a_head_moved_message_without_a_new_head_fails_the_run(tmp_path):
+    # The tolerance rests on the head GitHub reports after the refusal, not on the wording.
+    out = "GraphQL: Head branch was modified. Review and try the merge again. (mergePullRequest)\n"
+    done, _ = run_merge_step(tmp_path, "workflow_run", {7: (ready_pr("abc"), 1, out, ready_pr("abc"))})
+    assert done.returncode != 0, done.stdout + done.stderr
+
+
+@pytest.mark.parametrize("out", [
+    "HTTP 401: Bad credentials (https://api.github.com/graphql)\n",
+    "GraphQL: Repository rule violations found\n\nChanges must be made through a pull request. (mergePullRequest)\n",
+    "X Pull request owner/repo#7 is not mergeable: the base branch policy prohibits the merge.\n",
+    "GraphQL: API rate limit exceeded for installation ID 1. (mergePullRequest)\n",
+    "unknown flag: --match-head-commit\n",
+    "",
+])
+def test_any_other_merge_failure_fails_the_run(tmp_path, out):
+    done, _ = run_merge_step(tmp_path, "workflow_run", {7: (ready_pr(), 1, out, None)})
+    assert done.returncode != 0, done.stdout + done.stderr
+
+
+def test_one_failed_merge_does_not_stop_the_next_pull_request(tmp_path):
+    done, calls = run_merge_step(tmp_path, "workflow_run", {
+        7: (ready_pr("abc"), 1, "HTTP 502: Bad Gateway\n", None),
+        8: (ready_pr("def"), 0, "", None)})
+    assert done.returncode != 0, done.stdout + done.stderr
+    assert "pr merge 8 --squash --match-head-commit def" in calls
+
+
+def test_an_approved_pull_request_behind_main_waits_without_a_merge_attempt(tmp_path):
+    # The main ruleset needs branches up to date, so gh refuses a BEHIND pull request before asking GitHub; the run
+    # says so instead of trying (and failing) every ten minutes.
+    done, calls = run_merge_step(tmp_path, "schedule", {7: (ready_pr(mergeStateStatus="BEHIND"), 1, "", None)})
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert not any(c.startswith("pr merge") for c in calls) and "behind main" in done.stdout
+
+
+def test_a_pull_request_that_is_not_ready_is_not_merged(tmp_path):
+    done, calls = run_merge_step(tmp_path, "workflow_run", {7: (ready_pr(isDraft=True), 0, "", None)})
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert not any(c.startswith("pr merge") for c in calls) and "#7: not ready" in done.stdout
+
+
+PLAYER =ROOT / ".github/workflows/player-golden.yml"
 
 
 def test_player_golden_runs_only_the_repositorys_own_released_players():
