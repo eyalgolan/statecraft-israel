@@ -153,10 +153,10 @@ namespace Statecraft.Sim
             Scalar(c, "military.fortify_bonus", false);
             Scalar(c, "military.combat_xp_gain"); Scalar(c, "military.combat_xp_full");   // R-UNIT-011
             if (Scalar(c, "military.fortify_turns") != 1) throw Invalid("military.fortify_turns", "only the existing one-turn settlement is implemented");
-            // R-ORDER-002 (#2601): the rule names this value Agreed; Entry alone would also accept a Default row.
-            if (Entry(c, "military.fortify_turns").Basis != "Agreed") throw Invalid("military.fortify_turns", "must be Agreed (R-ORDER-002)");
-            // R-ORDER-002 (#1725 audit): the rule names this value Default; Entry alone would also accept an Agreed row.
-            if (Entry(c, "military.fortify_bonus").Basis != "Default") throw Invalid("military.fortify_bonus", "must be Default (R-ORDER-002)");
+            // R-ORDER-002: the rule names both fortify rows Agreed (fortify_turns #2601; fortify_bonus O1, owner, 1 November 2026,
+            // #1668, relabelled after #2918 C2); Entry alone would also accept a Default row.
+            foreach (var key in new[] { "military.fortify_turns", "military.fortify_bonus" })
+                if (Entry(c, key).Basis != "Agreed") throw Invalid(key, "must be Agreed (R-ORDER-002)");
             foreach (var biome in new[] { "coastal_plain", "lowland", "valley", "hills", "mountains", "desert" })
             {
                 Terrain(c, biome, "infantry"); Terrain(c, biome, "armour"); Defence(c, biome);
