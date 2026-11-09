@@ -147,7 +147,7 @@ advisor.page.truces.text: "Accept a truce on its card, and our attack orders are
 advisor.page.capture.title: "Capturing a place"
 advisor.page.capture.text: "A military unit that stops on an enemy-held place open to capture takes it at once; passing through does not. The capture dialog then lists its answers in a fixed order, each with what it changes at once or the reason it is refused. Raid and withdraw brings our units out and returns the place to enemy control; Occupy keeps one unit there for a set number of turns, at a Money cost each turn. The choice is yours; it takes effect at End turn, and until it is given, the units stay."
 advisor.page.enemy_phase.title: "The enemy's turn"
-advisor.page.enemy_phase.text: "When you end the turn, every enemy unit receives its orders, by the same rules as ours. In the historical game each Arab force follows its own script toward its historical target. A unit off its script attacks a neighbouring position only when it has a clear edge, and otherwise fortifies. The enemy's attacks are fought as the turn resolves, and none comes inside a truce window."
+advisor.page.enemy_phase.text: "When you end the turn, every enemy unit receives its orders, by the same rules as ours. In the historical game each Arab force follows its own script toward its historical target. A unit off its script attacks a neighbouring position only when it has a clear edge, and otherwise fortifies. The enemy's attacks are fought as the turn resolves, and none comes inside a truce window. After you end the turn, the map plays their moves one at a time; Esc skips them, and Settings can turn them off."
 # The Objectives screen (#1189): every objective in objectives.yaml, done or not, the player's date beside the historical
 # one, and no score (owner, 20 October 2026). The objective card's wording (#380). {0} the player's date,
 # {1} the historical date (objectives.open: {0}). The names are objectives.yaml's (#1208).
@@ -175,6 +175,8 @@ settings.title: "Settings"
 settings.tiltshift: "Blur at the top and bottom of the map"
 settings.on: "On"
 settings.off: "Off"
+# #2202 (owner, 2 November 2026, Q6 a): whether End turn plays the Arab forces' moves on the map.
+settings.enemymoves: "Show the Arab forces' moves on the map"
 # The WebGL companion switch (#1119); the Hebrew awaits native review.
 settings.companion: "Screen reader companion"
 settings.quality: "Quality"
@@ -546,6 +548,23 @@ report.enemy_move: "{0} moved to a new position"
 report.enemy_attack: "{0} launched an attack on one of your units"
 report.enemy_fortify: "{0} fortified its position"
 report.unit: "Force {0}"
+# The footer while the Arab forces' moves play (#2202, EnemyPlaybackBar): the side whose turn it is, by its side id (owner,
+# 8 November 2026: "Flag + name (Recommended)"; playback.title for a side with no key), the beat's place in the turn
+# ({0} of {1}), the folded last beat, and Skip with its tooltip (the spoken text). The beat's actions reuse report.enemy_move
+# and report.enemy_attack.
+playback.title: "The Arab forces' turn"
+playback.turn_egypt: "Egypt's turn"
+playback.turn_jordan: "Jordan's turn"
+playback.turn_syria: "Syria's turn"
+playback.turn_iraq: "Iraq's turn"
+playback.turn_lebanon: "Lebanon's turn"
+playback.turn_ala: "The Arab Liberation Army's turn"
+playback.turn_local_arab_forces: "Local Arab forces' turn"
+# The owner, 9 November 2026: "\"Step n of m\" (Recommended)": an attack also advances the count.
+playback.step: "Step {0} of {1}"
+playback.folded: "The other moves at once"
+playback.skip: "Skip the Arab forces' moves"
+playback.skip_tip: "Skip the Arab forces' moves and return the map to your view (Esc)"
 # The arms workshops' lines (#1701 A1; owner, 2 November 2026: "Yes, in the panel (Recommended)", whose option gave both
 # lines' wording): {0} the city's name. A no-worker pause is on the Why screen only.
 report.workshops: "Arms workshops"

@@ -315,6 +315,9 @@ namespace Statecraft.Game.UI
 
         /// <summary>The open screen's name, or null.</summary>
         public string? Current { get; private set; }
+        /// <summary>Raised with <see cref="Current"/> each time a screen opens or closes (TurnReportPresenter: a report that
+        /// waited for the enemy's moves opens once the player closes the screen they opened meanwhile, #2202).</summary>
+        public event System.Action<string?>? Changed;
 
         public void Toggle(string screen)
         {
@@ -340,6 +343,7 @@ namespace Statecraft.Game.UI
             // After the OnOpened action, which is what builds a screen's rows (CabinetPresenter, DefencePresenter):
             // before it there is nothing in the screen to hand the focus to.
             if (screen != null && presses.ByKeyboard) HandFocusTo(root.Q<VisualElement>("screen-" + screen));
+            Changed?.Invoke(screen);
         }
 
         /// <summary>Gives the keyboard focus to the screen just opened (accessibility audit, #41, the keyboard-only

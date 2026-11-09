@@ -581,6 +581,24 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .end-screen-note { white-space: normal; margin-bottom: 14px; color: var(--ink-dim); }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
+/* #2202: the footer while the Arab forces' moves play (EnemyPlaybackBar). A layer along the window's foot that takes no
+   pointer, and a panel in its middle that does (Skip). The flag is large beside the side's name (owner, 8 November 2026:
+   "Flag + name (Recommended)"), 3:2 as the sourced cloths are near; it never scales past its box. Short-lived and drawn over
+   the info panel and the minimap where they meet it; on a narrow window it takes the width less the 16 px gutters
+   (EnemyPlaybackUiTests.TheSkipBarFitsAndMirrorsInHebrew). In Hebrew the row is mirrored, the flag at the right. */
+.enemy-playback { display: none; position: absolute; left: 16px; right: 16px; bottom: 16px; align-items: center; }
+.enemy-playback-panel { flex-direction: row; align-items: center; max-width: 720px; padding: 10px 14px; background-color: rgb(11, 18, 32); }
+.side-flag { width: 96px; height: 64px; flex-shrink: 0; margin-right: 14px; }
+.enemy-playback-lines { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.enemy-playback-side { white-space: normal; margin: 0; }
+.enemy-playback-step, .enemy-playback-action { white-space: normal; margin: 0; padding: 0; }
+.enemy-playback-skip { flex-shrink: 0; margin-left: 14px; white-space: normal; max-width: 220px; }
+.lang-he .enemy-playback-panel { flex-direction: row-reverse; }
+.lang-he .side-flag { margin-right: 0; margin-left: 14px; }
+.lang-he .enemy-playback-skip { margin-left: 0; margin-right: 14px; }
+.hud-three-row .side-flag { width: 60px; height: 40px; margin-right: 10px; }
+.lang-he.hud-three-row .side-flag { margin-right: 0; margin-left: 10px; }
+.hud-three-row .enemy-playback-skip { max-width: 120px; }
 /* The encyclopedia's button that opens the opening advice again: under the list, never squeezed by it. */
 .encyclopedia-opening { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
 .lang-he .encyclopedia-opening { align-self: flex-end; }

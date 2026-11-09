@@ -456,6 +456,11 @@
                 <ui:Label name="settings-tiltshift-label" text="Blur at the top and bottom of the map" class="settings-name" />
                 <ui:Button name="settings-tiltshift" class="settings-switch" />
             </ui:VisualElement>
+            <!-- #2202: whether End turn plays the Arab forces' moves on the map (EnemyTurnPlayback). -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-enemymoves-label" text="Show the Arab forces' moves on the map" class="settings-name" />
+                <ui:Button name="settings-enemymoves" class="settings-switch" />
+            </ui:VisualElement>
             <!-- Graphics quality (GraphicsQuality): three buttons, the one that is set carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-quality-label" text="Quality" class="settings-name" />
@@ -594,6 +599,20 @@
                     <ui:Button name="end-screen-close" />
                 </ui:VisualElement>
                 <Statecraft.Game.UI.UiFrame />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- #2202: the footer while the Arab forces' moves play (EnemyPlaybackBar): the side's flag (SideFlag, put first in
+             the panel in code), its name, "Step n of m" and the beat's actions in words, and Skip. Not modal: only the panel
+             takes the pointer, and it takes no focus when it opens. After the report and the end screen, before the outcome
+             clip, so a clip is drawn over it. -->
+        <ui:VisualElement name="enemy-playback" class="enemy-playback" picking-mode="Ignore">
+            <ui:VisualElement name="enemy-playback-panel" class="panel enemy-playback-panel">
+                <ui:VisualElement name="enemy-playback-lines" class="enemy-playback-lines" picking-mode="Ignore">
+                    <ui:Label name="enemy-playback-side" class="title enemy-playback-side" picking-mode="Ignore" />
+                    <ui:Label name="enemy-playback-step" class="muted enemy-playback-step" picking-mode="Ignore" />
+                    <ui:VisualElement name="enemy-playback-actions" class="enemy-playback-actions" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Button name="enemy-playback-skip" class="enemy-playback-skip" />
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- The End Turn outcome clip (OutcomePresenter): the historical order the player gave, as a 3.5 s silent clip in the

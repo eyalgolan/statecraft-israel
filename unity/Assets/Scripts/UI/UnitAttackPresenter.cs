@@ -41,14 +41,25 @@ namespace Statecraft.Game.UI
             bridge.CombatResolved += Resolved;
         }
 
+        /// <summary>#2202: an engagement the enemy's playback (EnemyTurnPlayback.Claims) plays on its own beat, so End Turn
+        /// leaves it, and the Destroyed lines after it, for <see cref="Play"/>. Null (no playback, or the playback off): every
+        /// engagement plays at once, as before. A property, not a constructor argument, since the playback is built after it.</summary>
+        public Func<Cause, bool>? Claimed { get; set; }
+
+        /// <summary>#2202: plays these engagement lines and their Destroyed lines now, as End Turn plays a fresh engagement:
+        /// the fire take, the hit, the defenders' reaction and the dust (the playback's attack beat).</summary>
+        public void Play(IReadOnlyList<Cause> lines) => Resolved(lines ?? throw new ArgumentNullException(nameof(lines)));
+
         void Resolved(IReadOnlyList<Cause> lines)
         {
             FireCue? cue = null;   // the timed engagement just before: Combat.Engage adds its Destroyed lines right after it
             float impactS = 0f;    // and when its hit lands after its fire take starts
+            bool claimed = false;  // the engagement just before is the playback's, and so are its Destroyed lines
             foreach (var line in lines)
             {
                 if (line.Key == WhyKeys.Destroyed)
                 {
+                    if (claimed) continue;
                     if (destroyed is Func<int, float, bool> dust && line.Units.Count > 0)
                     {
                         int dead = line.Units[0].Id; float delay = impactS;
@@ -57,6 +68,8 @@ namespace Statecraft.Game.UI
                     continue;
                 }
                 cue = null; impactS = 0f;
+                claimed = line.Key == WhyKeys.Engagement && Claimed?.Invoke(line) == true;
+                if (claimed) continue;
                 var parsed = HitOf(line, IsGuns);
                 if (parsed is CombatHit h && timedPlay != null && Count(line, out int attackerCount))
                 {
