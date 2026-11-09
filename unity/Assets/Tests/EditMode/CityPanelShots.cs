@@ -235,12 +235,15 @@ public class CityPanelShots
     IEnumerator Run(string state, bool gdd03, Action<Content, GameState> shape, Action check, bool hebrew)
     {
         var lang = hebrew ? "he" : "en";
+        Exception? fail = null;   // every size is checked; the first failure is thrown after the last size's stills
         foreach (var (w, h) in new[] { (1024, 768), (1366, 768) })
         {
             yield return Boot(hebrew, gdd03, w, h, shape);
             yield return Both($"{state}-{lang}-{w}x{h}");
-            check();   // after the stills, so a "before" run on main still writes them (its gdd-0.3 checks then fail by design)
+            try { check(); }   // after the stills, so a "before" run on main still writes them (its gdd-0.3 checks then fail by design)
+            catch (Exception e) { fail ??= e; }
         }
+        if (fail != null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(fail).Throw();
     }
 
     [UnityTest] public IEnumerator ProjectsEnglish() { yield return Run("projects", true, Projects3, ProjectLines, false); }
