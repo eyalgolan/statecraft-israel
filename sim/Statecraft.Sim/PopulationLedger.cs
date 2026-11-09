@@ -89,6 +89,13 @@ namespace Statecraft.Sim
                         + " is neither a census city of cities.yaml nor a field host in regions.yaml (R-POP-002).");
             }
         }
+        /// <summary>#1725 PR 7, producer 12 (owner, 8 November 2026: "Start + runtime bind (Rec.)"): these bindings plus
+        /// <paramref name="added"/>, a new instance (bindings stay immutable). The constructor's checks apply: a target id
+        /// already bound, or a target whose region has no bound location, is refused.</summary>
+        internal PopulationBindings WithTargets(IEnumerable<PopulationTarget> added) =>
+            new PopulationBindings(locations, targets.Values.Concat(added), captors, qualifications);
+        /// <summary>The bound target <paramref name="id"/>, or null.</summary>
+        internal PopulationTarget? FindTarget(string id) => targets.TryGetValue(id, out var t) ? t : null;
         /// <summary>The bound assignment targets, in ordinal id order (#1725 PR 7, the live month snapshot reads them).</summary>
         internal IEnumerable<PopulationTarget> Targets => targets.Values;
         internal bool HasCaptor(string captor) => captors.Contains(captor);
@@ -216,6 +223,27 @@ namespace Statecraft.Sim
             var candidate = new SortedDictionary<int, PopulationUnit>(units) { [replacement.Id] = replacement };
             Validate(candidate); units = candidate;
         }
+        /// <summary>#1710 (#1725 PR 7), R-POW-005, R-POP-002: the active soldiers <paramref name="ids"/> surrender to
+        /// <paramref name="captor"/>, all or nothing. Each becomes Captured with that captor, no location and no assignment, its
+        /// Home the place it served in (the formation's region; owner, 8 November 2026: "Formation's region (Recommended)"),
+        /// and keeps its id, history and issued item (owner: "Stays on record (Recommended)"). Every record is checked and the
+        /// candidate validated before any is committed, so a refusal changes nothing. Nobody is lost: no loss is written.</summary>
+        internal void Capture(IReadOnlyList<int> ids, string captor)
+        {
+            RequireInitialized();
+            if (captor == null || !bindings!.HasCaptor(captor))
+                throw new ArgumentException("Side '" + captor + "' is not a bound captor of this ledger (R-POP-002).");
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var seen = new HashSet<int>();
+            foreach (var id in ids)
+            {
+                var p = Get(id);
+                if (p.Status != PopulationStatus.ActiveSoldier || !seen.Add(id))
+                    throw new ArgumentException("Only an active soldier can surrender, once (R-POW-005).");
+                candidate[id] = p.WithPlacement(PopulationStatus.Captured, null, PopulationAssignment.Unassigned, captor, p.Location);
+            }
+            Validate(candidate); units = candidate;
+        }
         /// <summary>A manifest item can arrive only once, including after its population id is lost.</summary>
         public int RegisterArrival(string source, int ordinal, PopulationUnit template)
         {
@@ -267,6 +295,30 @@ namespace Statecraft.Sim
             RegisterArrivals(rows);
             NaturalIncreaseCarry = carry; NaturalIncreaseRecords = records;
         }
+        /// <summary>The bound target <paramref name="id"/>, or null (#1725 PR 7, producer 12).</summary>
+        internal PopulationTarget? Target(string id) { RequireInitialized(); return bindings!.FindTarget(id); }
+        /// <summary>#1725 PR 7, producer 12. Owner, 8 November 2026, "Start + runtime bind (Rec.)" (#1725 issuecomment-6724941867): the start
+        /// facilities' Course targets are bound at the start, plus one all-or-nothing runtime bind for new formations and
+        /// built camps. Binds <paramref name="target"/>, refusing an id already bound, with the ledger unchanged.</summary>
+        internal void BindTarget(PopulationTarget target) => Commit(Array.Empty<PopulationUnit>(), new[] { target });
+        /// <summary>#1725 PR 7, producer 12: several record replacements and new targets, all or nothing. The new bindings and
+        /// every replaced record are validated as one candidate before anything is committed, so a refused record or target
+        /// changes neither the records nor the bindings. Each record is replaced at most once, and must exist.</summary>
+        internal void Commit(IReadOnlyCollection<PopulationUnit> replacements, IReadOnlyCollection<PopulationTarget> bind)
+        {
+            RequireInitialized();
+            var b = bind.Count == 0 ? bindings! : bindings!.WithTargets(bind);
+            var candidate = new SortedDictionary<int, PopulationUnit>(units);
+            var seen = new HashSet<int>();
+            foreach (var r in replacements)
+            {
+                Get(r.Id);
+                if (!seen.Add(r.Id)) throw new ArgumentException("A record is replaced at most once in a commit.");
+                candidate[r.Id] = r;
+            }
+            Validate(candidate, b);
+            units = candidate; bindings = b;
+        }
         public void RegisterCombatLoss(int id, string source)
         {
             RequireInitialized(); Get(id);
@@ -275,12 +327,13 @@ namespace Statecraft.Sim
             var candidate = new SortedDictionary<int, PopulationUnit>(units); candidate.Remove(id);
             Validate(candidate); units = candidate; losses.Add(id, source);
         }
-        void Validate(SortedDictionary<int, PopulationUnit> candidate)
+        void Validate(SortedDictionary<int, PopulationUnit> candidate) => Validate(candidate, bindings!);
+        void Validate(SortedDictionary<int, PopulationUnit> candidate, PopulationBindings bindings)
         {
             var issued = new HashSet<string>(StringComparer.Ordinal);
             foreach (var p in candidate.Values)
             {
-                if (p.ReceptionTicks > receptionLimit || !bindings!.HasQualification(p.Qualification))
+                if (p.ReceptionTicks > receptionLimit || !bindings.HasQualification(p.Qualification))
                     throw new ArgumentException("Invalid reception progress or qualification.");
                 var tierValid = p.Profession switch {
                     CivilianProfession.None => p.Tier == CivilianTier.None && p.WorkXp == 0,
