@@ -72,6 +72,12 @@ namespace Statecraft.Sim
         internal static IEnumerable<StartingForce> OpeningFormations(Content c) => c.StartingForces
             .Where(f => f.Side == Movement.PlayerSide && f.Arrives == null && f.Strength > 0);
 
+        /// <summary>#1725 PR 7, producer 08: the own brigades dated after the start (R-UNIT-009), Israeli, with a strength, in
+        /// <c>Content.StartingForces</c>' order (today the 7th Brigade). Not in the start inventory (R-POP-004): each arrives
+        /// on its day as new soldier records (owner, 8 November 2026: "Soldiers of brigade (Recommended)").</summary>
+        internal static IEnumerable<StartingForce> DatedFormations(Content c) => c.StartingForces
+            .Where(f => f.Side == Movement.PlayerSide && f.Arrives != null && f.Strength > 0);
+
         /// <summary>The row ids of <see cref="OpeningFormations"/>.</summary>
         internal static IEnumerable<string> OpeningFormationRows(Content c) => OpeningFormations(c).Select(f => f.Row);
 
@@ -172,11 +178,16 @@ namespace Statecraft.Sim
             var inventory = Inventory(c);
             if (s.Mode != Mode.Historical) throw new InvalidOperationException("The Historical ledger needs a Historical game (R-POP-004).");
             var sources = new HashSet<string>(inventory.Select(r => r.Source), StringComparer.Ordinal);   // only sources with records
+            // #1725 PR 7, producer 08. Coordinator call, 8 November 2026 (Q5 (a)): each own dated brigade (R-UNIT-009) is bound
+            // at the start, its service target in its arrival region and its soldiers' qualification, with no record, as its
+            // unit id is reserved at the start; StartingForces.Arrive then only registers its records.
+            var dated = new HashSet<string>(DatedFormations(c).Select(f => FormationPrefix + f.Row), StringComparer.Ordinal);
+            bool Bound(StartingForce f) => sources.Contains(FormationPrefix + f.Row) || dated.Contains(FormationPrefix + f.Row);
             var regions = new SortedDictionary<string, string>(StringComparer.Ordinal);
             foreach (var city in c.Cities)
                 if (sources.Contains(CensusPrefix + city.Id)) regions[CensusPrefix + city.Id] = c.PlayerRegions.AtLocation(city.Id)?.Id ?? "";
             foreach (var f in c.StartingForces)
-                if (sources.Contains(FormationPrefix + f.Row)) regions[FormationPrefix + f.Row] = c.PlayerRegions.AtHex(f.Q, f.R)?.Id ?? "";
+                if (Bound(f)) regions[FormationPrefix + f.Row] = c.PlayerRegions.AtHex(f.Q, f.R)?.Id ?? "";
             // #1725 PR 4: a farmer lives in its field's host, a member location of the field's region (Q27).
             var farmer = new Dictionary<string, (string Host, string Field, CivilianTier Tier)>(StringComparer.Ordinal);
             foreach (var h in FieldFarmerHosts(c))
@@ -198,23 +209,9 @@ namespace Statecraft.Sim
                 .Select(x => new PopulationTarget(x.Key, PopulationAssignmentKind.ActiveService, x.Value))
                 // A field is its farmer's Work target in the field's region (Gdd03FieldFixture.Targets' ids, field/q,r).
                 .Concat(farmer.Select(x => new PopulationTarget(x.Value.Field, PopulationAssignmentKind.Work, regions[x.Key])));
-            // #1689 rows 5 to 8. Owner, 7 November 2026 (comment 6704389240): "Veteran for all 8 (Recommended)" and "1 each,
-            // Negev 0 (Recommended)", Negev's 0 a labelled stand-in. Maintainer call, eyalgolan-30's coordinator, 7 November
-            // 2026: the veteran level lives on the formation (a veteran_soldier, R-UNIT-006, each soldier's ActiveService
-            // target), so a soldier's qualification is its formation type's unit_types.yaml class, the source
-            // Gdd03BasicTrainingFixture's graduates use; its combat XP is gdd03-start.yaml's formation_combat_xp, no fallback.
-            var xp = c.Gdd03FormationCombatXp
-                ?? throw new InvalidOperationException("The Historical ledger fixture needs gdd03-start.yaml's formation_combat_xp; no fallback (#1689).");
+            // #1689 rows 5 to 8 and the 7th Brigade's combat XP: see SoldierValues.
             var soldier = new Dictionary<string, (string Qualification, int CombatXp)>(StringComparer.Ordinal);
-            foreach (var f in c.StartingForces.Where(f => sources.Contains(FormationPrefix + f.Row)))
-            {
-                var cls = c.UnitTypes.FirstOrDefault(t => string.Equals(t.Id, f.Type, StringComparison.Ordinal))?.Class;
-                if (string.IsNullOrWhiteSpace(cls))
-                    throw new InvalidOperationException("No unit_types.yaml class for formation " + f.Row + "'s type " + f.Type + " (#1689).");
-                if (!xp.TryGetValue(f.Row, out var combatXp))
-                    throw new InvalidOperationException("No gdd03-start.yaml formation_combat_xp for formation " + f.Row + "; no fallback (#1689).");
-                soldier[FormationPrefix + f.Row] = (cls!, combatXp);
-            }
+            foreach (var f in c.StartingForces.Where(Bound)) soldier[FormationPrefix + f.Row] = SoldierValues(c, f);
             var bindings = new PopulationBindings(locations.Values.Concat(placed.Values.Where(l => l.City != null)
                 .GroupBy(l => l.Canonical(), StringComparer.Ordinal).Select(g => g.First())), targets,
                 Array.Empty<string>(), soldier.Values.Select(x => x.Qualification).Distinct(StringComparer.Ordinal));
@@ -258,6 +255,49 @@ namespace Statecraft.Sim
                     ? new PopulationEquipment(militaryId: r.Source + "/" + r.Ordinal.ToString(CultureInfo.InvariantCulture), militaryPaid: true)
                     : PopulationEquipment.None)));
             s.PopulationLedger.Initialize(c, bindings, rows, 0, Mode.Historical);
+        }
+
+        /// <summary>#1689 rows 5 to 8. Owner, 7 November 2026 (comment 6704389240): "Veteran for all 8 (Recommended)" and "1
+        /// each, Negev 0 (Recommended)", Negev's 0 a labelled stand-in; for the 7th Brigade, which arrives later (R-UNIT-009),
+        /// owner, 8 November 2026: "1, like the others". Maintainer call, eyalgolan-30's coordinator, 7 November 2026: the
+        /// veteran level lives on the formation (a veteran_soldier, R-UNIT-006, each soldier's ActiveService target), so a
+        /// soldier's qualification is its formation type's unit_types.yaml class, the source Gdd03BasicTrainingFixture's
+        /// graduates use; its combat XP is gdd03-start.yaml's formation_combat_xp, no fallback.</summary>
+        static (string Qualification, int CombatXp) SoldierValues(Content c, StartingForce f)
+        {
+            var xp = c.Gdd03FormationCombatXp
+                ?? throw new InvalidOperationException("The Historical ledger fixture needs gdd03-start.yaml's formation_combat_xp; no fallback (#1689).");
+            var cls = c.UnitTypes.FirstOrDefault(t => string.Equals(t.Id, f.Type, StringComparison.Ordinal))?.Class;
+            if (string.IsNullOrWhiteSpace(cls))
+                throw new InvalidOperationException("No unit_types.yaml class for formation " + f.Row + "'s type " + f.Type + " (#1689).");
+            if (!xp.TryGetValue(f.Row, out var combatXp))
+                throw new InvalidOperationException("No gdd03-start.yaml formation_combat_xp for formation " + f.Row + "; no fallback (#1689).");
+            return (cls!, combatXp);
+        }
+
+        /// <summary>#1725 PR 7, producer 08 (R-UNIT-009 on the ledger): the records an own dated brigade brings when it arrives,
+        /// one per strength unit, as a starting formation's soldiers are (R-POP-004). Owner, 8 November 2026: "Soldiers of
+        /// brigade (Recommended)": each is an active soldier serving in the brigade (source key <see cref="FormationPrefix"/>
+        /// plus its row, ordinals from 0), with its type's class and its formation_combat_xp ("1, like the others"); "New
+        /// people (Recommended)": new records, none taken from the civilians; "Apart from Arms (Recommended)": one issued
+        /// military item each, <c>units_1948/&lt;row&gt;/&lt;ordinal&gt;</c>, owned and recorded as paid, as at the start, with
+        /// the Arms stock untouched. Coordinator call, 8 November 2026 (Q6 (a)): located in the region of its arrival anchor's
+        /// hex, region-only, as a starting formation's records are. Reception 0 and no profession, as a starting soldier.</summary>
+        internal static IReadOnlyList<PopulationInventoryRow> ArrivalRows(Content c, StartingForce f)
+        {
+            if (!(f.Side == Movement.PlayerSide && f.Arrives != null && f.Strength > 0))
+                throw new InvalidOperationException("Formation " + f.Row + " is not an own brigade dated after the start (R-UNIT-009).");
+            var region = c.PlayerRegions.AtHex(f.Q, f.R)?.Id
+                ?? throw new InvalidOperationException("No region in regions.yaml for " + FormationPrefix + f.Row + " (R-POP-004).");
+            var v = SoldierValues(c, f);
+            var source = FormationPrefix + f.Row;
+            var rows = new List<PopulationInventoryRow>();
+            for (int i = 0; i < f.Strength; i++)
+                rows.Add(new PopulationInventoryRow(source, i, new PopulationUnit(0, PopulationStatus.ActiveSoldier, 0,
+                    new PopulationLocation(region), new PopulationAssignment(PopulationAssignmentKind.ActiveService, source),
+                    CivilianProfession.None, CivilianTier.None, 0, v.Qualification, v.CombatXp,
+                    new PopulationEquipment(militaryId: source + "/" + i.ToString(CultureInfo.InvariantCulture), militaryPaid: true))));
+            return rows.AsReadOnly();
         }
     }
 }
