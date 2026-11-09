@@ -61,7 +61,7 @@ public class PopulationLedgerBoundaryTests
                 case "combat.outcomes": Combat.Outcomes(c,s,0); break;
                 case "prisoners.upkeep": Prisoners.Upkeep(c,s,rules,why); break;
                 case "prisoners.return": Prisoners.Return(c,s,"missing",why); break;
-                case "prisoners.take": Prisoners.Take(s,new Unit(1,"missing",0,0,side:"missing",strength:1),new Unit(2,"missing",0,0,side:Movement.PlayerSide)); break;
+                case "prisoners.take": Prisoners.Take(c,s,new Unit(1,"missing",0,0,side:"missing",strength:1),new Unit(2,"missing",0,0,side:Movement.PlayerSide)); break;
                 case "events.trigger": EventSystem.Trigger(c,s,why); break;
                 case "events.choose": EventSystem.Choose(c,s,"missing","missing",why); break;
                 case "events.delegate": EventSystem.Delegate(c,s,why); break;

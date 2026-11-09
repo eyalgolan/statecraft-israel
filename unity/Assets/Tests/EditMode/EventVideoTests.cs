@@ -47,13 +47,15 @@ public class EventVideoTests
         var problems = EventVideoMapping.Problems(rows, C, id => Photos.Find(id) != null, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
         Assert.IsNotEmpty(EventVideoMapping.Load(), "the game finds the mapping in Resources");
-        // Every file in the folder has a row (no stray clip ships): here, or an opening panel's clip (OpeningClipTests).
+        // Every file in the folder has a row (no stray clip ships): here, an opening panel's clip (OpeningClipTests) or the
+        // raid card's on New game (RaidCardTests).
         var files = Directory.GetFiles(EventVideoMapping.ClipFolder, "*.mp4").Select(Path.GetFileName).OrderBy(x => x).ToArray();
         var outcomes = EventVideoMapping.ParseOutcomes(File.ReadAllText(EventVideoMapping.Path));   // the End Turn clips (OutcomeClipTests)
         var mapped = rows.Concat(outcomes).Select(r => r.File).ToList();
         var openingOnly = AssetDatabase.LoadAssetAtPath<OpeningContent>("Assets/Resources/OpeningContent.asset").Read().Panels
             .Where(p => p.Clip != null).Select(p => p.Clip!.File).Except(mapped);   // law_of_return and iraqi_exodus are card rows
-        CollectionAssert.AreEqual(mapped.Concat(openingOnly).OrderBy(x => x).ToArray(), files);
+        var raid = RaidCardContent.Parse(File.ReadAllText(RaidCardContent.SourcePath)).Clip.File;
+        CollectionAssert.AreEqual(mapped.Concat(openingOnly).Append(raid).OrderBy(x => x).ToArray(), files);
     }
 
     [Test]

@@ -94,7 +94,9 @@ namespace Statecraft.Sim
         /// the job slots or above the civilians and craftsmen. Step has already refused it in the legacy loop.</summary>
         public static string? Assign(Content c, GameState s, string city, string role, int count, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            // #1725 PR 7, producer 07 (owner, 8 November 2026, Q2 "Keep existing order (Rec.)"): on a Historical ledger game
+            // only the "workshop" role runs (Workshops.Staff picks the records); every other role is still refused (R-POP-002).
+            if (!(s.PopulationLedger.IsHistorical && role == Workshops.Role)) PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             // R-ARMS-005: under gdd-0.3 the "workshop" role staffs the city's arms workshops.
             if (role == Workshops.Role && c.Ruleset == SaveGame.Gdd03Ruleset) return Workshops.Staff(c, s, city, count, why);
@@ -143,12 +145,20 @@ namespace Statecraft.Sim
         {
             var held = new HashSet<string>(StringComparer.Ordinal);
             if (c.Ruleset != SaveGame.Gdd03Ruleset) return held;
-            var enemy = new HashSet<(int Q, int R)>();
-            foreach (var u in s.Units.Values)
-                if (u.Side != "" && u.Side != Movement.PlayerSide) enemy.Add((u.Q, u.R));
+            var enemy = EnemyHexes(s);
             foreach (var h in c.SettlementHexes)
                 if (s.Cities.ContainsKey(h.Id) && enemy.Contains((h.Q, h.R))) held.Add(h.Id);
             return held;
+        }
+
+        /// <summary>The hexes an enemy military unit stands on (a halutz has no side, R-UNIT-001), <see cref="Held"/>'s
+        /// test; the ledger harvest reads it for fields (#1694).</summary>
+        internal static HashSet<(int Q, int R)> EnemyHexes(GameState s)
+        {
+            var enemy = new HashSet<(int Q, int R)>();
+            foreach (var u in s.Units.Values)
+                if (u.Side != "" && u.Side != Movement.PlayerSide) enemy.Add((u.Q, u.R));
+            return enemy;
         }
 
         /// <summary>R-MONEY-002: annual Money upkeep for the civilian places that exist at the start of step 7. Only completed

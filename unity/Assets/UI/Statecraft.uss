@@ -1296,3 +1296,14 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .film-label { flex-shrink: 1; font-size: 15px; white-space: normal; }
 .film-skip { flex-shrink: 0; min-height: 44px; }
 .loading .film-layer { display: none; }
+/* The Tel Aviv raid card on New game (RaidCardPresenter): the opening's card frame over a dim backdrop, so the map of
+   Tel Aviv shows around it; the HUD under it is hidden as under the opening. The clip keeps 16:9 inside its frame
+   (contain) and gives way first on a short window; OK stays outside the scrolling text. */
+.raid-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; padding: 16px; background-color: rgba(5, 9, 18, 0.72); }
+.raid-layer > .raid-card { display: flex; max-height: 100%; padding: 12px 24px; }
+.raid-layer > .raid-card > .raid-scroll { flex-shrink: 1; min-height: 48px; }
+.raid-media { height: 400px; max-height: 45%; min-height: 0; flex-shrink: 1000; margin: 4px 0; justify-content: flex-end; background-size: contain; background-position-x: center; background-position-y: center; background-repeat: no-repeat; background-color: var(--navy-deep); border-width: 1px; border-color: var(--gold); }
+.raid-actions { flex-wrap: wrap; justify-content: center; flex-shrink: 0; }
+.raid-actions > Button { min-height: 44px; min-width: 160px; margin: 4px 6px; }
+.raid-open .top-bar, .raid-open .left-column, .raid-open .community-column, .raid-open .right-column, .raid-open .event-layer, .raid-open .info-panel, .raid-open .screen, .raid-open .map-labels, .raid-open .start-screen, .raid-open .advisor-layer { display: none; }
+.loading .raid-layer { display: none; }

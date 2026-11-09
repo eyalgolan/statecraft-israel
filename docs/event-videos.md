@@ -155,8 +155,8 @@ on-screen AI label, and whether the picture is bundled under the 10 MiB file lim
   played by `AdvisorMedia` as the advisors' clips are: neither starts until both are ready, the sound's clock drives the
   captions, and the picture is seeked back when it drifts. Sound in the `<video>` element is still unverified in the
   Web player, so it is not used.
-- **Where it plays.** Before the stills on a new game (either route) and on "Replay the opening", then the stills as before.
-  Continue plays neither. It never plays in the automated runs: it needs a video player (`CardVideo.ForcedOff`).
+- **Where it plays.** Before the stills on a new game (either route) and on "Replay the opening", then the stills as before;
+  on a new game the stills' close goes on to the raid card and then the advisors (On New game, below). Continue plays neither. It never plays in the automated runs: it needs a video player (`CardVideo.ForcedOff`).
 - **The opening is the fallback.** No picture file, a load that fails or times out, or a skip all go on to the stills. A
   missing picture file logs one plain line, not a warning, and is not asked for again that session. Only the picture
   is checked first: a missing or broken sound file is a failed load, one `ADVISOR MEDIA failed` warning. A player build
@@ -168,6 +168,34 @@ on-screen AI label, and whether the picture is bundled under the 10 MiB file lim
 - **Captions.** Live text under the picture, never burned in: `film.cue.<n>` in both strings files, one per cue in
   `film.yaml`. Until the new film's script is agreed, the two cues and their lines are placeholders. The Hebrew shows
   once `he_review: approved`; until then the Hebrew UI shows the English captions.
+
+## On New game
+
+Owner, 8 Nov 2026: "show the bombing of tel aviv differently - as the game starts, show the player the planes coming from
+egypt and bombing tel aviv, and then flying back. then show an event card with an explanation about the bombing and how
+many were killed, with the video we have of people running from the bombing from what we did for the opening video. the
+player only has an option of clicking ok". The owner chose "15 May dawn raid (Recommended)" and "Film, raid, card,
+advisors (Recommended)". For the clip, owner, 8 Nov 2026: "only use the first video and dont cut it after 0.4 seconds",
+then "Yes, V19c whole (Recommended)"; these replace the earlier "V19c 0.45 s, then A1+B1 (Recommended)". For the toll,
+owner, 8 Nov 2026: "show the total number of killed accross all the egyptian raids on tel aviv", so the card gives the
+war's total for all the Egyptian air raids on Tel Aviv, with every figure found on its source list.
+
+- **When.** Only on New game (the start screen's or the top bar's): after the opening (the film, when there is one, then
+  the stills), before the turn 1 advisor chain.
+  Continue, a loaded game, the tools' `Begin` and the automated runs never show it (`GameRoot.PlayNewGameIntro`).
+- **The card.** One card in the event-card frame: title, text, the clip and only OK. Esc is the same OK. OK hands over to
+  the advisors. It reads no sim state and changes no number, so the goldens and the content hash cannot move for it.
+- **The content.** `unity/Assets/Resources/RaidIntro/raid-intro.yaml`, read strictly by `RaidCardContent.Parse`: every
+  fact has its source, the claim it supports and the date it was checked, and the Hebrew comes complete or not at all.
+- **The clip.** `tlv_raid_intro.mp4`: the opening film's shot V19c, whole (4.0 s), people running from a bombed street,
+  an AI-only clip (CC0, no photograph in it, so no credit line), looping silently in the card's frame with the cards'
+  `event.ai_label`. No card uses it, so it has no `event-videos.yaml` row; it is encoded with
+  `tools/encode_event_videos.py`'s `encode_command()`, and its `ASSETS.yaml` row records the whole recipe. A clip that fails
+  drops the frame and keeps the text and OK; with video off there is no frame.
+- **The gate.** A player build shows the card only when `status` is `sensitivity-reviewed`, every source is checked, the
+  Hebrew is `he_review: approved` and the clip is `sensitivity_reviewed: true` (`RaidCardContent.MayPresent`). The Editor
+  shows the draft with the opening's preview label. `tools/tests/test_raid_intro_sources.py` checks the sources, the
+  `ASSETS.yaml` row (AI-generated, CC0, verified), the `docs/ai-disclosure.md` line and that the card has no credit line.
 
 ## Where things are
 

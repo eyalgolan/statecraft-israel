@@ -33,8 +33,9 @@ import unity_postmerge
 from nightly_publish import (GitHub, Itch, demo_serves, itch_build_frame_url, release_notes, sha256_lines, sha256_of,
                              unzip_to)
 from nightly_state import (JOB, TZ, Config, LatestRecovery, Missed, Published, Refused, Runner, Skipped, State, Stop,
-                           enable_itch, late_start, load_config, load_state, log_line, missed_days, night_of,
-                           notify, record, run_lock, save_state, savetest_lock, tag_for, write_refusal_log)
+                           check_version_form, enable_itch, late_start, load_config, load_state, log_line,
+                           missed_days, night_of, notify, record, run_lock, save_state, savetest_lock, tag_for,
+                           write_refusal_log)
 from web_check import find_chrome
 
 HOLDER_ENV = unity_postmerge.machine_lock.HOLDER_ENV
@@ -169,7 +170,9 @@ BASELINE_NIGHTS = 5
 
 
 def preflight(cfg: Config, state: State, runner: Runner, gh: GitHub, *, job: Path, now: datetime, manual: bool,
-              free_gb: Callable[[Path], float], no_publish: bool = False) -> Night:
+              free_gb: Callable[[Path], float], no_publish: bool = False, version: str | None = None) -> Night:
+    if version is not None and not manual:   # main refuses this too; the 03:00 job never passes a version
+        raise Refused("version", "a version given by hand needs a --manual run")
     day = night_of(now)
     if late_start(now, cfg.window_end) and not manual:
         raise Missed(f"started after {cfg.window_end}")
@@ -206,7 +209,14 @@ def preflight(cfg: Config, state: State, runner: Runner, gh: GitHub, *, job: Pat
         raise Refused("unity-editor", f"{editor} is missing")
     if not cfg.unity_slots.is_file():
         raise Refused("unity-slots", f"{cfg.unity_slots} is missing")
-    version = gh.next_version()
+    if version is None:
+        version = gh.next_version()
+    else:   # checked against the same release list: above every published vX.Y.Z
+        version = gh.next_version(version)
+        if state.open_draft is not None and state.open_draft != tag_for(version):
+            raise Refused("version", f"the job's own draft {state.open_draft} from an earlier night is still open; "
+                                     f"remove it first, before choosing {version} (tools/README.md, "
+                                     f"\"Nightly release\")")
     tag = tag_for(version)
     if gh.release_state(tag) == "draft" and state.open_draft == tag:
         if not no_publish:   # --no-publish makes no store write, not even this cleanup
@@ -1015,7 +1025,7 @@ def _try_save(state_path: Path, state: State) -> bool:
 def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitHub | None, itch, *, now: datetime,
               manual: bool, no_publish: bool, client_error: Refused | None = None,
               free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9,
-              no_steam: bool = False) -> str:
+              no_steam: bool = False, version: str | None = None) -> str:
     outcome, gate, detail = "REFUSED", "internal", ""
     state: State | None = None
     night: Night | None = None
@@ -1042,7 +1052,7 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
                 if not recovered:
                     raise Refused("github-latest", recovery_note)
             night = preflight(cfg, state, runner, gh, job=job, now=now, manual=manual, free_gb=free_gb,
-                              no_publish=no_publish)
+                              no_publish=no_publish, version=version)
             published = run_stages(night, state, runner, gh, itch, no_publish=no_publish, free_gb=free_gb,
                                    save=lambda: _try_save(state_path, state), no_steam=no_steam)
             outcome, gate = ("PUBLISHED" if published else "NO-PUBLISH"), "-"
@@ -1364,9 +1374,19 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--manual", action="store_true")
     run.add_argument("--no-publish", action="store_true")
     run.add_argument("--no-steam", action="store_true", help="skip the Steam stage after the web publish")
+    run.add_argument("--version", dest="release_version", metavar="X.Y.Z",
+                     help="with --manual only: tonight's version instead of the next patch; it must be above "
+                          "every published vX.Y.Z")
     test = sub.add_parser("savetest", help="the two-upload itch.io save test: pushes twice to the separate test page, never the public one")
     test.add_argument("--tag", required=True, help="a published nightly release tag")
     args = parser.parse_args(argv)
+    if getattr(args, "release_version", None) is not None:   # refused before any work, lock or record
+        if not args.manual:
+            parser.error("--version needs --manual (the 03:00 job always takes the next patch)")
+        try:
+            check_version_form(args.release_version)
+        except Refused as e:
+            parser.error(f"--version: {e.detail}")
     job = JOB
     now = datetime.now(TZ)
     try:
@@ -1406,7 +1426,7 @@ def main(argv: list[str] | None = None) -> int:
                     client_error = e
                 outcome = run_night(cfg, job / "state.json", job, ProcRunner(), gh, itch, now=now,
                                     manual=args.manual, no_publish=args.no_publish, client_error=client_error,
-                                    no_steam=args.no_steam)
+                                    no_steam=args.no_steam, version=args.release_version)
             operation_finished = True
     except Refused as e:
         if operation_finished:
