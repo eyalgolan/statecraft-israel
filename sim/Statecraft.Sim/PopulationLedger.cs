@@ -235,7 +235,7 @@ namespace Statecraft.Sim
         /// Home the place it served in (the formation's region; owner, 8 November 2026: "Formation's region (Recommended)"),
         /// and keeps its id, history and issued item (owner: "Stays on record (Recommended)"). Every record is checked and the
         /// candidate validated before any is committed, so a refusal changes nothing. Nobody is lost: no loss is written.</summary>
-        internal void Capture(IReadOnlyList<int> ids, string captor)
+        internal void Capture(IReadOnlyList<int> ids, string captor, IReadOnlyCollection<PopulationUnit>? alsoReplace = null)
         {
             RequireInitialized();
             if (captor == null || !bindings!.HasCaptor(captor))
@@ -248,6 +248,15 @@ namespace Statecraft.Sim
                 if (p.Status != PopulationStatus.ActiveSoldier || !seen.Add(id))
                     throw new ArgumentException("Only an active soldier can surrender, once (R-POW-005).");
                 candidate[id] = p.WithPlacement(PopulationStatus.Captured, null, PopulationAssignment.Unassigned, captor, p.Location);
+            }
+            // R-POW-005 (owner, 9 November 2026: "Sent home (Recommended)"): a surrendering formation's leftover records,
+            // replaced in the same candidate as Commit replaces records, so the capture and their homecoming are validated
+            // together and written all or nothing.
+            foreach (var r in alsoReplace ?? Array.Empty<PopulationUnit>())
+            {
+                Get(r.Id);
+                if (!seen.Add(r.Id)) throw new ArgumentException("A record is replaced at most once in a commit.");
+                candidate[r.Id] = r;
             }
             Validate(candidate); units = candidate;
         }

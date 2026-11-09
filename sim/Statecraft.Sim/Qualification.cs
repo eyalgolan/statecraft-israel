@@ -76,6 +76,13 @@ namespace Statecraft.Sim
             RefusedNotPioneer = "Only a pioneer unit takes that order", RefusedPioneerBusy = "That unit is at work; stop the work first",
             RefusedNoQualification = "There is no such qualification";
 
+        // #1725: the refusal only a Historical ledger game gives. Internal, not a Refused* constant: no player reaches it yet
+        // (Simulation.Step still refuses a ledger game, R-POP-002), and the UI string follows when it does.
+        /// <summary>Owner, 9 November 2026, "Refuse for now (Recommended)": ReturnCraftsmen and ReassignCraftsmen are refused
+        /// with a plain reason until #2476 makes craftsmen exist on the ledger (the Historical start has none, and the craftsman
+        /// course is refused until then, Training.LedgerRefusedCraftsman).</summary>
+        internal const string LedgerRefusedCraftsmen = "Craftsmen are not on the population ledger yet (#2476)";
+
         /// <summary>#1725 PR 7 (owner, 9 November 2026, "Own heading (Recommended)"): the source heading of a person record made
         /// when a pioneer unit with no linked records returns (<see cref="LedgerReturn"/>): this prefix and the city
         /// (<c>returned_pioneer_unit/&lt;city&gt;</c>, ordinals from 0), kept apart from the census, the natural increase
@@ -94,9 +101,10 @@ namespace Statecraft.Sim
         /// untouched, for an unknown city, a count below 1 or more than the city's craftsmen.</summary>
         public static string? ReturnCraftsmen(Content c, GameState s, string city, int count, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725: on a Historical ledger the order is refused with a reason
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             if (count < 1) return RefusedReturnCount;
+            if (s.PopulationLedger.IsHistorical) return LedgerRefusedCraftsmen;   // owner, 9 November 2026: "Refuse for now (Recommended)"
             var name = PlayerText.Settlement(c, city);
             if (count > x.Craftsmen) return FormattableString.Invariant($"{name} has {x.Craftsmen} craftsmen");
             s.Cities[city] = x.WithCraftsmen(x.Craftsmen - count).WithCounts(x.Civilians + count, x.Employed, x.Refugees)
@@ -111,9 +119,10 @@ namespace Statecraft.Sim
         /// not idle, R-ARMS-005, R-CITY-011; #2730).</summary>
         public static string? ReassignCraftsmen(Content c, GameState s, string city, int count, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725: on a Historical ledger the order is refused with a reason
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             if (count < 1) return RefusedReassignCount;
+            if (s.PopulationLedger.IsHistorical) return LedgerRefusedCraftsmen;   // owner, 9 November 2026: "Refuse for now (Recommended)"
             var name = PlayerText.Settlement(c, city);
             if (count > x.Qualified.Craftsmen) return FormattableString.Invariant($"{name} has {x.Qualified.Craftsmen} qualified craftsmen");
             var idle = Training.Idle(s, x);   // R-ARMS-005, R-CITY-011: as Train and ReassignPioneers count it

@@ -319,6 +319,12 @@ namespace Statecraft.Game.UI
             [EventSystem.RefusedOperationUnitsNotInPlace] = "event.operation_refused",
             [EventSystem.RefusedOperationArmisticeFirst] = "event.operation_refused_armistice_first",
             [EventSystem.RefusedOperationArmisticeSigned] = "event.operation_refused_armistice_signed",
+            // #2707 batch 4: an appointment End turn refuses, as the Cabinet screen words it (CabinetPresenter.ReasonText)
+            [Cabinet.RefusedOfficeUnknown] = "cabinet.reason.office_unknown",
+            [Cabinet.RefusedPrimeMinister] = "cabinet.reason.prime_minister",
+            [Cabinet.RefusedPresident] = "cabinet.reason.president",
+            [Cabinet.RefusedPersonUnknown] = "cabinet.reason.person_unknown",
+            [Cabinet.RefusedNoGovernment] = "cabinet.reason.no_government",
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -358,14 +364,27 @@ namespace Statecraft.Game.UI
             (SettlementControl.RefusedWithdrawNeedsUnit, "capture.refusal.needs_unit"),
             (SettlementControl.RefusedNoFreeHex, "capture.refusal.no_free_hex"),
             (Cities.RefusedAlreadyCity, "capture.refusal.already_city"),
+            // #2707 batch 4: the appointment refusals with a name or a date in them (ReasonValue words each in Hebrew)
+            (Cabinet.RefusedHistoricalOffice, "cabinet.reason.historical_office"),
+            (Cabinet.RefusedAbolished, "cabinet.reason.abolished"),
+            (Cabinet.RefusedNotEstablished, "cabinet.reason.not_established"),
+            (Cabinet.RefusedSeveralHolders, "cabinet.reason.several_holders"),
+            (Cabinet.RefusedDied, "cabinet.reason.died"),
+            (Cabinet.RefusedIsPresident, "cabinet.reason.is_president"),
+            (Cabinet.RefusedIsChiefOfStaff, "cabinet.reason.is_chief_of_staff"),
+            (Cabinet.RefusedAlreadyHolds, "cabinet.reason.already_holds"),
+            (Cabinet.RefusedNotCareerOfficer, "cabinet.reason.not_career_officer"),
+            (Cabinet.RefusedPartyNotCoalition, "cabinet.reason.party_not_coalition"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+(?::[^}]*)?\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
         /// else the sim's English as given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's
         /// (ToastPresenter) go through it. With <paramref name="c"/> a value that is a settlement's name reads as the UI names the
         /// town (its Hebrew name from <paramref name="townsHe"/> in Hebrew), a course's English as why.cause.course.* and a money
-        /// amount in the content's format.</summary>
-        public static string ReasonText(UiText text, string reason, Content? c = null, IReadOnlyDictionary<string, string>? townsHe = null)
+        /// amount in the content's format; in Hebrew a cabinet refusal's person, party and date too, and its office with
+        /// <paramref name="date"/> (the turn's, for the title's days).</summary>
+        public static string ReasonText(UiText text, string reason, Content? c = null, IReadOnlyDictionary<string, string>? townsHe = null,
+                                        DateTime? date = null)
         {
             if (ReasonKeys.TryGetValue(reason, out var key))
             {
@@ -374,8 +393,12 @@ namespace Statecraft.Game.UI
             }
             foreach (var (pattern, format) in ReasonFormats)
                 if (pattern.Match(reason) is { Success: true } m)
+                {
+                    // An office's Hebrew title takes its holder's form: in "{0} already holds the office of {1}" that is {0}.
+                    var holder = format == "cabinet.reason.already_holds" ? c?.People.FirstOrDefault(p => p.Name == m.Groups[1].Value) : null;
                     return text.Format(format, CountNoun(text, format,
-                        m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe)).ToArray()));
+                        m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe, date, holder)).ToArray()));
+                }
             return reason;
         }
 
@@ -394,14 +417,24 @@ namespace Statecraft.Game.UI
             return values;
         }
 
-        static string ReasonValue(UiText text, string value, Content? c, IReadOnlyDictionary<string, string>? townsHe)
+        static string ReasonValue(UiText text, string value, Content? c, IReadOnlyDictionary<string, string>? townsHe,
+                                  DateTime? date = null, Person? holder = null)
         {
             if (c == null) return value;
             var town = c.SettlementNames.FirstOrDefault(n => n.Value == value).Key;
             if (town != null)
                 return text["ui.lang"] == UiLanguage.Hebrew && townsHe != null && townsHe.TryGetValue(town, out var he) && !string.IsNullOrWhiteSpace(he) ? he : value;
             var course = c.UnitTypes.FirstOrDefault(t => t.Facility != "" && Training.Course(t) == value);
-            return course != null ? text["why.cause.course." + Training.CourseId(course)] : value;
+            if (course != null) return text["why.cause.course." + Training.CourseId(course)];
+            // #2707 batch 4: a cabinet refusal's person, party, office and date, in Hebrew as CabinetPresenter.ReasonText gives
+            // them. An office's Hebrew title depends on the day (TitleHeOn), so with no date it keeps the English, as the UI
+            // does outside a title's days. English keeps the sim's own words.
+            if (text["ui.lang"] != UiLanguage.Hebrew) return value;
+            if (c.People.FirstOrDefault(p => p.Name == value) is Person person) return ContentNames.Of(text, person);
+            if (c.Parties.FirstOrDefault(p => p.Name == value) is Party party) return ContentNames.Of(text, party);
+            if (date != null && c.Offices.FirstOrDefault(o => o.Title == value) is Office office) return ContentNames.Of(text, office, holder, date.Value);
+            return DateTime.TryParseExact(value, "d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var day)
+                ? Statecraft.Game.Map.Control1948.DateText(day, k => text[k]) : value;
         }
 
         /// <summary>Each settlement's Hebrew name (name_he), by id, for <see cref="Refuse"/>'s Hebrew (#2072): GameRoot sets it, as
