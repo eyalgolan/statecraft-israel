@@ -266,7 +266,7 @@ namespace Statecraft.Sim
                     moved.Clear();
                     return new CaptureRefusal(CaptureRefusal.NoFreeHex, string.Format(CultureInfo.InvariantCulture, RefusedNoFreeHex, name));
                 }
-                var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
+                var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp, u.Records);
                 s.Units[u.Id] = w;
                 moved.Add((u, w));
             }
