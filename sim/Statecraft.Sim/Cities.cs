@@ -145,12 +145,20 @@ namespace Statecraft.Sim
         {
             var held = new HashSet<string>(StringComparer.Ordinal);
             if (c.Ruleset != SaveGame.Gdd03Ruleset) return held;
-            var enemy = new HashSet<(int Q, int R)>();
-            foreach (var u in s.Units.Values)
-                if (u.Side != "" && u.Side != Movement.PlayerSide) enemy.Add((u.Q, u.R));
+            var enemy = EnemyHexes(s);
             foreach (var h in c.SettlementHexes)
                 if (s.Cities.ContainsKey(h.Id) && enemy.Contains((h.Q, h.R))) held.Add(h.Id);
             return held;
+        }
+
+        /// <summary>The hexes an enemy military unit stands on (a halutz has no side, R-UNIT-001), <see cref="Held"/>'s
+        /// test; the ledger harvest reads it for fields (#1694).</summary>
+        internal static HashSet<(int Q, int R)> EnemyHexes(GameState s)
+        {
+            var enemy = new HashSet<(int Q, int R)>();
+            foreach (var u in s.Units.Values)
+                if (u.Side != "" && u.Side != Movement.PlayerSide) enemy.Add((u.Q, u.R));
+            return enemy;
         }
 
         /// <summary>R-MONEY-002: annual Money upkeep for the civilian places that exist at the start of step 7. Only completed
