@@ -183,6 +183,51 @@ public class GameRootEscapeLayerTests : SharedCameraActionsFixture
         finally { field.SetValue(root, own); }
     }
 
+    /// <summary>#3000: the Escape that skips New game's raid flight shows the raid card in the same frame (the flight's finish).
+    /// The press was the flight's: GameRoot's poll of it finds the flight closed this frame (RaidFlightPresenter.ClosedThisFrame)
+    /// and leaves the card it just showed open, whether the press reached the flight as the focused layer's Cancel first or only
+    /// through the poll. The next Escape closes the card. Booted as RaidFlightRoutingTests boots it, with a flight of its own.</summary>
+    [Test]
+    public void EscapeThatSkipsTheRaidFlightLeavesTheRaidCardItShowedOpen([Values(false, true)] bool focusedCancel)
+    {
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Settings = new SettingsStore(Path.Combine(saveDir, "settings")); root.Language = "en";
+        root.RaidCardInEditMode = true; root.RaidFlightInEditMode = true;
+        int stops = 0;
+        root.RaidFlightForTests = ended => () => stops++;              // flies until skipped: EditMode has no frame clock
+        root.Begin(inputs, 0, startScreen: true);
+        keyboard = InputSystem.AddDevice<Keyboard>();
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.IsTrue(HudRoot.ClassListContains(RaidFlightPresenter.OpenClass), "precondition: New game flies the raid");
+        Assert.IsFalse(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "precondition: the card waits for the flight");
+
+        if (focusedCancel)
+        {
+            var layer = Ui.Q("raid-flight-layer");
+            using (var e = NavigationCancelEvent.GetPooled()) { e.target = layer; layer.SendEvent(e); }
+            Assert.IsFalse(HudRoot.ClassListContains(RaidFlightPresenter.OpenClass), "precondition: the Cancel skipped the flight");
+            Press(keyboard.escapeKey);                                 // the same press, as GameRoot's poll reads it
+            Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
+            typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+            Release(keyboard.escapeKey);
+        }
+        else Escape(root);
+        Assert.IsFalse(HudRoot.ClassListContains(RaidFlightPresenter.OpenClass), "the Escape skips the flight");
+        Assert.AreEqual(1, stops, "the Dakotas are stopped once");
+        Assert.IsTrue(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "and only the flight: the card it showed stays open");
+
+        // A later frame: the flight's close counts as this press's only in the frame it happened (ClosedThisFrame), and an
+        // EditMode test cannot advance Time.frameCount between two presses.
+        var flight = typeof(GameRoot).GetField("raidFlight", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(root)!;
+        typeof(RaidFlightPresenter).GetField("closedFrame", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(flight, -1);
+        Escape(root);
+        Assert.IsFalse(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "the next Escape closes the card");
+    }
+
     /// <summary>An ended autosave opens the end screen before the start screen goes up over it. Escape on the start screen
     /// is the start screen's: it withdraws an armed New Game, and never closes the hidden end screen under it.</summary>
     [Test]
