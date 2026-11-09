@@ -120,29 +120,71 @@ namespace Statecraft.Sim
             return null;
         }
 
+        /// <summary>R-QUAL-003's order (<see cref="CheckReturn"/>'s refusals). On a Historical ledger game (#1725 PR 7) the unit's
+        /// own record returns too (<see cref="LedgerReturn"/>), and the city's civilian count is the records', so only
+        /// <see cref="City.Qualified"/> is written (owner, 9 November 2026, "City counts, as today (Recommended)").</summary>
         internal static string? Return(Content c, GameState s, int unitId, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: on a Historical ledger the unit's record returns
             var refused = CheckReturn(s, unitId);
             if (refused != null) return refused;
             var u = s.Units[unitId];
             var city = Demobilization.Nearest(c, u.Q, u.R);
+            var ledger = s.PopulationLedger.IsHistorical;
+            if (ledger) LedgerReturn(c, s, u, city);
             s.Units.Remove(unitId);
             var x = s.Cities[city];
             var q = u.Type == Projects.VeteranType ? x.Qualified.WithVeterans(x.Qualified.Veterans + 1) : x.Qualified.AddHalutz(u.Service);
-            s.Cities[city] = x.WithCounts(x.Civilians + 1, x.Employed, x.Refugees).WithQualified(q);
+            s.Cities[city] = (ledger ? x : x.WithCounts(x.Civilians + 1, x.Employed, x.Refugees)).WithQualified(q);
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 1,
                 $"Unit {unitId} returned to civilian life in {PlayerText.Settlement(c, city)} and keeps its training", key: CauseKeys.PioneerReturned, args: new[] { city }));
             return null;
         }
 
+        /// <summary>#1725 PR 7 (owner, 9 November 2026, "Add the link first (Recommended)"): R-QUAL-003 on a Historical ledger
+        /// game moves exactly the record of <paramref name="u"/> (<see cref="Unit.Records"/>, one per group). "Nearest city,
+        /// settled (Recommended)": it becomes a free civilian without an assignment located in <paramref name="city"/> (its
+        /// region plus the city), with reception ticks = reception.turns, as Send home does; its profession, tier, work XP,
+        /// qualification, combat XP and items stay. "City counts, as today (Recommended)": the service is the caller's, in
+        /// <see cref="City.Qualified"/>. One validated commit; a pioneer unit without its one free pioneer record is a broken
+        /// invariant, not a refusal.</summary>
+        static void LedgerReturn(Content c, GameState s, Unit u, string city)
+        {
+            var ids = u.Records ?? throw new InvalidOperationException("Unit " + u.Id.ToString(CultureInfo.InvariantCulture) + " has no pioneer records on the ledger.");
+            if (ids.Count != 1)
+                throw new InvalidOperationException("Unit " + u.Id.ToString(CultureInfo.InvariantCulture) + " is one group but has " + ids.Count.ToString(CultureInfo.InvariantCulture) + " records.");
+            var region = c.PlayerRegions.AtLocation(city)?.Id
+                ?? throw new InvalidOperationException("No region in regions.yaml for " + city + " (R-POP-004).");
+            var location = new PopulationLocation(region, city: city);
+            var received = c.RequirePopulationInteger("reception.turns");
+            var records = ids.Select(id =>
+            {
+                var p = s.PopulationLedger.Get(id);
+                if (!IsFreePioneer(p))
+                    throw new InvalidOperationException("Unit " + u.Id.ToString(CultureInfo.InvariantCulture) + "'s record " + id.ToString(CultureInfo.InvariantCulture) + " is not a free pioneer.");
+                return new PopulationUnit(p.Id, PopulationStatus.FreeCivilian, received, location, PopulationAssignment.Unassigned,
+                    p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp, p.Equipment, p.Captor, p.Home);
+            }).ToList();
+            s.PopulationLedger.Commit(records, Array.Empty<PopulationTarget>());
+        }
+
+        /// <summary>A free civilian pioneer without an assignment: a halutz graduate ("Free pioneer, not housed (Rec.)"), or one
+        /// returned to a city.</summary>
+        static bool IsFreePioneer(PopulationUnit p) => p.Status == PopulationStatus.FreeCivilian
+            && p.Assignment.Kind == PopulationAssignmentKind.Unassigned && p.Profession == CivilianProfession.Pioneer;
+
+        /// <summary>#1725 PR 7: R-QUAL-005's refusal on a Historical ledger game when the city has fewer free pioneer records
+        /// than the groups asked for. Internal, as Training's ledger refusals are: no player reaches it yet (R-POP-002).</summary>
+        internal const string LedgerRefusedFreePioneers = "{0} has {1} free pioneers without work";
+
         /// <summary>R-QUAL-005: <paramref name="count"/> of the city's qualified halutz groups (<paramref name="track"/>
         /// `halutz`) or veteran pioneers (`veteran_halutz`), without a job, reappear as units at its settlement hex. Refused,
         /// state untouched, for an unknown city, another track, a count below 1, more than the city's qualified ones, or more
-        /// than its civilians without work.</summary>
+        /// than its civilians without work. On a Historical ledger game (#1725 PR 7) the groups are the city's free pioneer records
+        /// (refused with <see cref="LedgerRefusedFreePioneers"/> when it has fewer), and only <see cref="City.Qualified"/> is written.</summary>
         public static string? ReassignPioneers(Content c, GameState s, string city, string track, int count, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: on a Historical ledger the groups are pioneer records
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             var veteran = track == Projects.VeteranType;
             if (!veteran && track != "halutz") return RefusedNoQualification;
@@ -150,20 +192,47 @@ namespace Statecraft.Sim
             var name = PlayerText.Settlement(c, city);
             var have = veteran ? x.Qualified.Veterans : x.Qualified.Halutzim.Count;
             if (count > have) return FormattableString.Invariant($"{name} has {have} qualified {(veteran ? "veteran pioneers" : "halutzim")}");
-            var idle = Training.Idle(s, x);   // R-ARMS-005: a staffed workshop's worker is not idle
-            if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
+            var ledger = s.PopulationLedger.IsHistorical;
+            List<int>? picked = null;
+            if (ledger)
+            {
+                // #1725 PR 7 (owner, 9 November 2026, "Free pioneers by service (Recommended)"): the city's free, unassigned
+                // pioneer records, lowest id first, are the groups that come back; the city's counts are not the ledger's.
+                var free = s.PopulationLedger.Units.Where(p => IsFreePioneer(p) && string.Equals(p.Location?.City, city, StringComparison.Ordinal))
+                    .Select(p => p.Id).OrderBy(id => id).ToList();
+                if (count > free.Count) return string.Format(CultureInfo.InvariantCulture, LedgerRefusedFreePioneers, name, free.Count);
+                picked = free.Take(count).ToList();
+            }
+            else
+            {
+                var idle = Training.Idle(s, x);   // R-ARMS-005: a staffed workshop's worker is not idle
+                if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
+            }
             var hex = c.SettlementHexes.First(h => h.Id == city);   // every settlement has one (ValidateMap)
             var q = x.Qualified;
             // R-QUAL-005: the most service first (owner, 24 October 2026: "Accept all as built", https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6375597377). A veteran comes back with the service
-            // that made it one (R-VET-001).
+            // that made it one (R-VET-001). On a ledger the i-th most served group is the i-th lowest record id ("Free
+            // pioneers by service (Recommended)"), and its unit is linked to that record ("Add the link first (Recommended)").
             var served = veteran ? new int[count] : q.Halutzim.Skip(q.Halutzim.Count - count).Reverse().ToArray();
+            if (picked != null)
+            {
+                // "Free pioneers by service (Recommended)": the records go back to region-only with no city, as at graduation.
+                var region = c.PlayerRegions.AtLocation(city)?.Id
+                    ?? throw new InvalidOperationException("No region in regions.yaml for " + city + " (R-POP-004).");
+                s.PopulationLedger.Commit(picked.Select(id =>
+                {
+                    var p = s.PopulationLedger.Get(id);
+                    return p.WithPlacement(p.Status, new PopulationLocation(region), p.Assignment, p.Captor, p.Home);
+                }).ToList(), Array.Empty<PopulationTarget>());
+            }
             for (int i = 0; i < count; i++)
             {
                 var id = s.NextId++;
-                s.Units.Add(id, new Unit(id, track, hex.Q, hex.R, veteran ? c.RulesAt(s.Date).Mvp!.VeteranHalutzService!.Value : served[i]));
+                s.Units.Add(id, new Unit(id, track, hex.Q, hex.R, veteran ? c.RulesAt(s.Date).Mvp!.VeteranHalutzService!.Value : served[i],
+                    records: picked == null ? null : new[] { picked[i] }));
             }
-            s.Cities[city] = x.WithCounts(x.Civilians - count, x.Employed, x.Refugees)
-                .WithQualified(veteran ? q.WithVeterans(q.Veterans - count) : q.TakeHalutzim(count));
+            var left = veteran ? q.WithVeterans(q.Veterans - count) : q.TakeHalutzim(count);
+            s.Cities[city] = (ledger ? x : x.WithCounts(x.Civilians - count, x.Employed, x.Refugees)).WithQualified(left);
             why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} of qualified {(veteran ? "veteran pioneers" : "halutzim")} are units again", key: CauseKeys.PioneersReassigned, args: new[] { CauseKeys.Number(count), veteran ? "veteran" : "halutz" }));
             return null;
         }

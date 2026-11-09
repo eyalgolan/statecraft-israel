@@ -126,7 +126,7 @@ namespace Statecraft.Sim
             var refused = Check(c, s, unitId, q, r, enemy);
             if (refused != null) return refused;
             var u = s.Units[unitId]; var target = Hex(q!.Value, r!.Value);
-            s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity, u.Full, u.CombatXp);
+            s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity, u.Full, u.CombatXp, u.Records);
             var line = UnitLines.Line(WhyKeys.AttackOrdered, $"Unit {unitId} will attack hex {target}", new[] { u }, target);
             // #2534: the enemy's attack order names itself for the turn report's enemy-orders row, as an engagement's does (#1297).
             // UnitLines.Line's system is always "map" (UnitLines.cs); name it as a literal so the Why-screen scan sees it.
@@ -148,7 +148,7 @@ namespace Statecraft.Sim
             var mvp = c.RulesAt(s.Date).Mvp!;
             var u = s.Units[unitId];
             if (SpendsArms(c)) s.Arms -= Need(c, mvp, u);
-            var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
+            var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp, u.Records);
             s.Units[unitId] = attacker;
             if (u.Order == Orders.Fortify)
                 why.Add(UnitLines.Line(WhyKeys.FortifyLost,
@@ -313,7 +313,7 @@ namespace Statecraft.Sim
 
         static void End(GameState s, Unit u, string key, string line, List<Cause> why, params string[] args)
         {
-            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
+            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp, u.Records);
             why.Add(UnitLines.Line(key, line, new[] { u }, args));
         }
 
@@ -340,7 +340,7 @@ namespace Statecraft.Sim
             {
                 if (!s.Units.TryGetValue(id, out var u) || u.Type == Statecraft.Sim.Military.VeteranSoldier) continue;
                 var xp = (int)Math.Min(full, (long)u.CombatXp + gain);
-                var gained = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, xp);
+                var gained = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, xp, u.Records);
                 s.Units[id] = xp == full && Statecraft.Sim.Military.Promotes(u) ? Statecraft.Sim.Military.Promote(gained, why) : gained;
             }
         }
@@ -379,7 +379,7 @@ namespace Statecraft.Sim
                 if (!s.Units.TryGetValue(d.Id, out var u)) continue;
                 if (Retreat(c, s, mvp, u) is (int, int) to)
                 {
-                    s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
+                    s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp, u.Records);
                     var hex = Hex(to.Item1, to.Item2);
                     why.Add(UnitLines.Line(WhyKeys.Retreated, $"Unit {u.Id} retreated to hex {hex}", new[] { u }, hex));
                 }
@@ -439,7 +439,7 @@ namespace Statecraft.Sim
         /// strength it had as its Full, the most replacements refill it to; no rule reads an enemy's, so it stores none.</summary>
         internal static Unit Lose(Unit u) =>
             new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity,
-                u.Full == 0 && u.Side == Movement.PlayerSide ? u.Strength : u.Full, u.CombatXp);
+                u.Full == 0 && u.Side == Movement.PlayerSide ? u.Strength : u.Full, u.CombatXp, u.Records);
 
         /// <summary>R-COMBAT-003: the first neighbour of the unit's hex, in the fixed order (R-MOVE-002), that is land, holds no
         /// unit of the other team, has room under mvp.stack_limit for the unit's side (R-MOVE-003) and, for the player's unit,
