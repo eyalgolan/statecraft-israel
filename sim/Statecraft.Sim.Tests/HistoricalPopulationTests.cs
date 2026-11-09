@@ -101,7 +101,11 @@ public class HistoricalPopulationTests
             .Where(x => x.StartsWith(HistoricalPopulation.FormationPrefix, StringComparison.Ordinal))
             .Select(x => x.Substring(HistoricalPopulation.FormationPrefix.Length)).Distinct(StringComparer.Ordinal).OrderBy(r => r, StringComparer.Ordinal);
         Assert.Equal(opening, sources);
-        Assert.Equal(opening, c.Gdd03FormationCombatXp!.Keys);
+        // #1725 PR 7, producer 08: formation_combat_xp also names each own dated brigade (R-UNIT-009), and only those.
+        var dated = HistoricalPopulation.DatedFormations(c).Select(f => f.Row).ToList();
+        Assert.Equal(new[] { "brigade_7" }, dated);
+        Assert.All(HistoricalPopulation.DatedFormations(c), f => Assert.True(f.Side == Movement.PlayerSide && f.Arrives != null && f.Strength > 0));
+        Assert.Equal(opening.Concat(dated).OrderBy(r => r, StringComparer.Ordinal), c.Gdd03FormationCombatXp!.Keys);
         Assert.Equal(opening, HistoricalPopulation.OpeningFormationRows(c).OrderBy(r => r, StringComparer.Ordinal));
     }
 
@@ -529,13 +533,14 @@ public class HistoricalPopulationTests
         Assert.All(s.Units.Values, u => Assert.Equal(0, u.CombatXp));
     }
 
-    // The shipped gdd03-start.yaml names each own opening formation once, with the owner's values.
+    // The shipped gdd03-start.yaml names each own opening formation once, with the owner's values, and the 7th Brigade, which
+    // arrives later (R-UNIT-009), with 1 (owner, 8 November 2026: "1, like the others").
     [Fact]
     public void ShippedStartGivesEachOpeningFormationItsCombatXp()
     {
         var c = Real(true);
-        Assert.Equal(new[] { ("alexandroni", 1), ("carmeli", 1), ("etzioni", 1), ("givati", 1), ("golani", 1), ("harel", 1),
-            ("kiryati", 1), ("negev", 0) }, c.Gdd03FormationCombatXp!.Select(x => (x.Key, x.Value)));
+        Assert.Equal(new[] { ("alexandroni", 1), ("brigade_7", 1), ("carmeli", 1), ("etzioni", 1), ("givati", 1), ("golani", 1),
+            ("harel", 1), ("kiryati", 1), ("negev", 0) }, c.Gdd03FormationCombatXp!.Select(x => (x.Key, x.Value)));
     }
 
     // R-POP-004, 27M-24: the issued items are distinct, one per population unit of each own starting formation, so their

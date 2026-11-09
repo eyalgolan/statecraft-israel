@@ -563,26 +563,29 @@ namespace Statecraft.Sim
         /// <summary>#1689 rows 7 and 8 (owner, 7 November 2026, comment 6704389240: "1 each, Negev 0 (Recommended)"): each own
         /// opening formation's combat XP in the Historical ledger fixture, once each, from 0 to military.combat_xp_full. Read
         /// after the starting forces. An absent list leaves the value unset; the ledger fixture then refuses (no fallback).
-        /// Ledger fixture only (maintainer call, eyalgolan-30's coordinator, 7 November 2026): NewGame's units keep 0.</summary>
+        /// Ledger fixture only (maintainer call, eyalgolan-30's coordinator, 7 November 2026): NewGame's units keep 0.
+        /// #1725 PR 7, producer 08: each own dated brigade (R-UNIT-009) is named too, since it arrives as soldier records
+        /// (owner, 8 November 2026, for the 7th Brigade: "1, like the others").</summary>
         static void ApplyGdd03FormationCombatXp(List<StartFormationCombatXp> rows, Content c)
         {
             const string file = "gdd03-start.yaml";
             var full = Gdd03Military.Scalar(c, "military.combat_xp_full");
-            var opening = new HashSet<string>(HistoricalPopulation.OpeningFormationRows(c), StringComparer.Ordinal);
+            var own = new HashSet<string>(HistoricalPopulation.OpeningFormationRows(c)
+                .Concat(HistoricalPopulation.DatedFormations(c).Select(f => f.Row)), StringComparer.Ordinal);
             var xp = new SortedDictionary<string, int>(StringComparer.Ordinal);
             for (int i = 0; i < rows.Count; i++)
             {
                 var row = rows[i];
                 var at = FormattableString.Invariant($"formation_combat_xp[{i}]");
-                if (row == null || !opening.Contains(row.Row))
-                    throw new ContentException(file, at + ".row", "must name an own opening formation of map/units_1948.yaml");
+                if (row == null || !own.Contains(row.Row))
+                    throw new ContentException(file, at + ".row", "must name an own opening or dated formation of map/units_1948.yaml");
                 if (xp.ContainsKey(row.Row)) throw new ContentException(file, at + ".row", "duplicate formation");
                 if (!(row.CombatXp is int value) || value < 0 || value > full)
                     throw new ContentException(file, at + ".combat_xp", FormattableString.Invariant($"required: an integer from 0 to military.combat_xp_full {full}"));
                 xp.Add(row.Row, value);
             }
-            var missing = opening.Where(r => !xp.ContainsKey(r)).OrderBy(r => r, StringComparer.Ordinal).ToList();
-            if (missing.Count > 0) throw new ContentException(file, "formation_combat_xp", "missing opening formation " + string.Join(", ", missing));
+            var missing = own.Where(r => !xp.ContainsKey(r)).OrderBy(r => r, StringComparer.Ordinal).ToList();
+            if (missing.Count > 0) throw new ContentException(file, "formation_combat_xp", "missing own formation " + string.Join(", ", missing));
             c.Gdd03FormationCombatXp = xp;
         }
 

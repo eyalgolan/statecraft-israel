@@ -31,17 +31,55 @@ namespace Statecraft.Sim
 
         /// <summary>R-POW-001, R-POW-005: unit <paramref name="u"/> surrendered to <paramref name="captor"/>'s side. An enemy unit's
         /// people become prisoners under its own side; the player's soldiers are counted under the captor's side. Called only by
-        /// Combat's surrender, the one way a unit is captured.</summary>
-        internal static string Take(GameState s, Unit u, Unit captor)
+        /// Combat's surrender, the one way a unit is captured. With an initialized Historical ledger (the dark start, #1710,
+        /// #1725 PR 7) the player's surrendering formation's serving soldier records also become Captured under the captor's
+        /// side (<see cref="CaptureRecords"/>), checked in full before anything is written; enemy prisoners stay a count per
+        /// side (owner, 8 November 2026: "No, keep count (Recommended)"). A synthetic or Open ledger is still refused. A refusal
+        /// throws before Take writes anything; what the throw leaves in combat is set out at Combat.Fight's call.</summary>
+        internal static string Take(Content c, GameState s, Unit u, Unit captor)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
+            if (s.PopulationLedger.IsInitialized) RequireHeldMatchesRecords(s);
             if (u.Side == Movement.PlayerSide)
             {
+                if (s.PopulationLedger.IsInitialized) CaptureRecords(c, s, u, captor.Side);
                 Add(s.SoldiersHeld, captor.Side, u.Strength);
                 return "They are held by the enemy";
             }
             Add(s.PrisonersHeld, u.Side, u.Strength);
             return "They are held as prisoners";
+        }
+
+        /// <summary>R-POW-005, R-POP-002 on the dark start: the opening formation <paramref name="u"/>'s serving soldier records
+        /// (active soldiers on its units_1948 target; unit id i is c.StartingForces[i], StartingForces.Init) become Captured
+        /// under <paramref name="side"/>, in one validated ledger commit. Refused before any write when the unit is not a
+        /// units_1948 formation (a trained formation's soldiers serve a target this ledger does not have yet) or when its
+        /// records do not number its strength (R-POP-004).</summary>
+        static void CaptureRecords(Content c, GameState s, Unit u, string side)
+        {
+            if (u.Id < 0 || u.Id >= c.StartingForces.Count || c.StartingForces[u.Id].Side != Movement.PlayerSide)
+                throw new InvalidOperationException(FormattableString.Invariant(
+                    $"Unit {u.Id} is not a formation of units_1948.yaml, so its soldiers have no ledger records to capture (R-POP-002)."));
+            var key = HistoricalPopulation.FormationPrefix + c.StartingForces[u.Id].Row;
+            var ids = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier
+                    && p.Assignment.Kind == PopulationAssignmentKind.ActiveService && p.Assignment.Target == key)
+                .Select(p => p.Id).OrderBy(x => x).ToList();
+            if (ids.Count != u.Strength)
+                throw new InvalidOperationException(FormattableString.Invariant(
+                    $"Unit {u.Id} has strength {u.Strength} but the population ledger serves it with {ids.Count} (R-POP-004)."));
+            s.PopulationLedger.Capture(ids, side);
+        }
+
+        /// <summary>The owner's ruling of 8 November 2026, "Keep count + check (Recommended)": on an initialized ledger,
+        /// SoldiersHeld per captor side equals the Captured records with that captor. Read only; a mismatch is refused.</summary>
+        internal static void RequireHeldMatchesRecords(GameState s)
+        {
+            var records = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.Captured)
+                .GroupBy(p => p.Captor!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+            foreach (var side in records.Keys.Union(s.SoldiersHeld.Keys, StringComparer.Ordinal))
+                if ((records.TryGetValue(side, out var n) ? n : 0) != (s.SoldiersHeld.TryGetValue(side, out var m) ? m : 0))
+                    throw new InvalidOperationException(FormattableString.Invariant(
+                        $"Our soldiers held by {side} number {m} but the population ledger has {n} captured records with that captor (R-POW-005)."));
         }
 
         static IEnumerable<string> Sides(string front) => FrontOf.Where(kv => kv.Value == front).Select(kv => kv.Key).OrderBy(x => x, StringComparer.Ordinal);
@@ -55,10 +93,14 @@ namespace Statecraft.Sim
         /// <summary>R-POW-002, R-POW-005, step 7 after the nation eats and the import: the prisoners eat food_per_prisoner_unit a
         /// unit from the stock, as far as it goes; each Food unit it cannot give costs prisoner_shortfall_cohesion of Social
         /// cohesion and never a prisoner (Q-POW-5). Then the Treasury pays held_soldier_cost_per_turn for each unit of the
-        /// player's soldiers held, borrowing what it lacks (Q-POW-4; R-MONEY-003).</summary>
+        /// player's soldiers held, borrowing what it lacks (Q-POW-4; R-MONEY-003). On an initialized Historical ledger (#1710,
+        /// #1725 PR 7) it runs as written, from the same counts: the held soldiers keep their Money cost (owner, 8 November
+        /// 2026: "Yes, as today (Recommended)"), the captured own records are not fed here (they eat the national ration), and
+        /// no record is read or written beyond <see cref="RequireHeldMatchesRecords"/>'s check, made before any write.</summary>
         public static void Upkeep(Content c, GameState s, MvpRules r, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
+            if (s.PopulationLedger.IsInitialized) RequireHeldMatchesRecords(s);
             var need = (long)s.PrisonersHeld.Values.Sum() * r.FoodPerPrisonerUnit!.Value;
             if (need > 0)
             {
