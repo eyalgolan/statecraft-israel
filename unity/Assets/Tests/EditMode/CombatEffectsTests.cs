@@ -426,10 +426,11 @@ public class CombatEffectsTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>A rebuild while a defender shakes from a hit (another unit destroyed by the same attack) hands the shake to
-    /// the defender's new token, as an attack is handed on (ContinueAttack): the survivor never moved, so it does not slide
-    /// from where the shake had put it and raises no march dust, and the shake plays on to its end. A hit still on its way
-    /// (HitPending) is handed on too.</summary>
+    /// <summary>A rebuild while a defender shakes from a hit (another unit destroyed by the same attack) leaves the shake
+    /// playing: the survivors did not change, so their tokens are kept (#3055) with their motions. The survivor never moved,
+    /// so it does not slide from where the shake had put it and raises no march dust, and the shake plays on to its end. A
+    /// hit still on its way (HitPending) still lands. AChangedDefenderMidShakeKeepsItsShakeOnItsRebuiltToken covers the hand-over
+    /// to a token built again.</summary>
     [Test]
     public void ARebuildMidShakeKeepsTheShakeAndSlidesNothing()
     {
@@ -461,6 +462,57 @@ public class CombatEffectsTests
             Assert.AreEqual(dust, layer.Combat.MoveDust.Busy, "no march dust from a unit that did not march");
             Assert.IsFalse(after.Reacting, "the shake ends");
             Assert.AreEqual(Vector3.zero, after.transform.position, "back on its spot");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>#3055: a defender whose own strength changes mid-shake is built again on the same root. Its motion is reset
+    /// (UnitTokenMotion.Restart) and handed the shake it was showing (ContinueHit with the time left), not a new one from
+    /// the start; a second defender whose strength changes while its hit is on its way gets the rest of that delay.</summary>
+    [Test]
+    public void AChangedDefenderMidShakeKeepsItsShakeOnItsRebuiltToken()
+    {
+        var map = BuildMap();
+        try
+        {
+            var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical).Clone();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            layer.Show(C, s);
+            var drawn = s.Units.Values.Where(u => u.Side == Movement.PlayerSide && layer.Tokens.Any(t => t.Token.StateUnit?.Id == u.Id)).Take(2).ToArray();
+            Assert.AreEqual(2, drawn.Length, "fixture: two player units are drawn");
+            UnitTokenMotion MotionOf(Unit u) => layer.GetComponentsInChildren<UnitTokenMotion>().Single(m => m.SimId == u.Id);
+            var (shaking, waiting) = (drawn[0], drawn[1]);
+            Assert.IsTrue(layer.PlayDefenderHit(new CombatHit(shaking.Q, shaking.R, false, true, 1, new[] { shaking.Id, waiting.Id })));
+            var shaker = MotionOf(shaking); var waiter = MotionOf(waiting);
+            float shook = 0.1f;
+            shaker.Tick(CombatBursts.VolleyS + shook);   // the hit landed `shook` s ago: that much of the shake has played
+            Assert.IsTrue(shaker.Reacting, "fixture: the first defender shakes");
+            float half = 0.5f * CombatBursts.VolleyS;
+            waiter.Tick(half);   // half of the second's delay has passed
+            Assert.IsTrue(waiter.HitPending, "fixture: the second still waits for the hit");
+            var roots = (shaker.gameObject, waiter.gameObject);
+
+            foreach (var u in drawn)
+            {
+                Assert.Greater(u.Strength, 1, $"fixture: unit {u.Id} can lose strength");
+                s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp, u.Records);
+            }
+            Assert.IsTrue(layer.Show(C, s), "fixture: the strengths change the roster");
+            Assert.AreSame(roots.Item1, MotionOf(shaking).gameObject, "the shaking defender's root is kept");
+            Assert.AreSame(roots.Item2, MotionOf(waiting).gameObject, "and the waiting one's");
+            Assert.AreSame(shaker, MotionOf(shaking), "with its motion, reset and handed on");
+            Assert.IsFalse(shaker.Moving, "it never moved, so it does not slide");
+            Assert.IsTrue(shaker.Reacting, "its shake goes on on the rebuilt pieces");
+            Assert.IsTrue(waiter.HitPending, "the second's hit is still on its way");
+
+            float left = UnitTokenMotion.HitDurationS - shook;
+            shaker.Tick(left + 0.01f);
+            Assert.IsFalse(shaker.Reacting, "the shake ends when its time left runs out, not a full shake later");
+            Assert.AreEqual(Vector3.zero, shaker.transform.position, "back on its spot");
+            waiter.Tick(CombatBursts.VolleyS - half + 0.01f);
+            Assert.IsFalse(waiter.HitPending, "the hit lands after the rest of its delay, not a full delay later");
+            Assert.IsTrue(waiter.Reacting, "and the second defender shakes");
         }
         finally { Object.DestroyImmediate(map.gameObject); }
     }
