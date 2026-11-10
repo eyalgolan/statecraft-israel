@@ -29,7 +29,65 @@ public class OfficeHolderNamesTests
     /// <summary>Every place a card names the holder of a game office during its window, one line each.</summary>
     internal static List<string> Offenders(Content c)
     {
-        return new List<string>();
+        var offices = c.Offices.Where(o => !o.HistoricalOnly).Select(o => o.Id).ToList();
+        var found = new List<string>();
+        foreach (var e in c.Events)
+        {
+            var early = Armistice.EarliestOffer < e.From ? Armistice.EarliestOffer : e.From;
+            var texts = new List<(string Field, string Text, DateTime From)>
+            {
+                ("title", e.Title, e.From), ("text", e.Text, e.From), ("late_text", e.LateText, e.From), ("early_text", e.EarlyText, early),
+                ("title_he", e.TitleHe, e.From), ("text_he", e.TextHe, e.From), ("late_text_he", e.LateTextHe, e.From), ("early_text_he", e.EarlyTextHe, early),
+            };
+            foreach (var o in e.Options)
+            {
+                texts.Add(($"options[{o.Id}].text", o.Text, e.From));
+                texts.Add(($"options[{o.Id}].text_he", o.TextHe, e.From));
+            }
+            foreach (var (field, text, from) in texts.Where(t => t.Text != ""))
+            {
+                var plain = Plain(text);
+                foreach (var (person, office, day) in HoldersIn(c, offices, from, e.To))
+                    if (Names(text, plain, person))
+                        found.Add(FormattableString.Invariant($"{e.Id} {field}: names {person.Id} ({person.Name}), {office} on {day:yyyy-MM-dd}"));
+            }
+        }
+        return found;
+    }
+
+    /// <summary>Each person holding a game office on some day of [from, to), once, with the first such office and day.
+    /// The holders change only at a term's start, end or the holder's death, so a person who holds an office in the window
+    /// holds it on <paramref name="from"/> or on the day one of its terms starts inside the window.</summary>
+    static IEnumerable<(Person Person, string Office, DateTime Day)> HoldersIn(Content c, List<string> offices, DateTime from, DateTime? to)
+    {
+        var seen = new HashSet<string>();
+        foreach (var office in offices)
+        {
+            var days = new SortedSet<DateTime> { from };
+            foreach (var t in c.People.SelectMany(p => p.Offices).Where(t => t.Office == office && t.From > from && (to == null || t.From < to.Value)))
+                days.Add(t.From);
+            foreach (var day in days)
+                foreach (var p in Offices.Holders(c, office, day))
+                    if (seen.Add(p.Id)) yield return (p, office, day);
+        }
+    }
+
+    /// <summary>The text with hyphen, maqaf and space read as one separator, and gershayim and geresh as '"' and '\''.</summary>
+    static string Plain(string text) =>
+        Regex.Replace(text.Replace('\u05F4', '"').Replace('\u05F3', '\''), @"[\-\u05BE\s]+", " ");
+
+    static bool Names(string text, string plain, Person p)
+    {
+        var name = Plain(p.Name).Trim();
+        if (name != "" && plain.Contains(name, StringComparison.Ordinal)) return true;
+        var he = Plain(p.NameHe).Trim();
+        if (he != "" && plain.Contains(he, StringComparison.Ordinal)) return true;
+        // The English surname as a whole word: the last word of `name` as written (a hyphenated surname stays whole), with
+        // no letter, digit or hyphen on either side.
+        var words = p.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length < 2) return false;
+        var surname = words[^1];
+        return Regex.IsMatch(text, @"(?<![\p{L}\p{N}\-\u05BE])" + Regex.Escape(surname) + @"(?![\p{L}\p{N}\-\u05BE])");
     }
 
     // The fixture's people, renamed so a surname is not a common English word ("Pm One"), and given Hebrew names; a
