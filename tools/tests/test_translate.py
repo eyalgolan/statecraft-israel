@@ -103,6 +103,50 @@ def test_refuses_a_stray_brace_in_an_event(value):
         translate.set_event(EVENT, changes(title_he=value))
 
 
+LATE = EVENT.replace("anchor: soft\n", "anchor: soft\n# The late text's comment.\nlate_text: '{prime_minister} asks again: vote now?'\n")
+
+
+def test_a_late_text_gets_its_hebrew_after_it_and_is_part_of_the_event():
+    """R-ENEMY-007: late_text_he sits under late_text, and EventRules wants it exactly when the event has Hebrew."""
+    late_he = "{prime_minister} שואל שוב: להצביע עכשיו?"
+    out, _ = translate.set_event(LATE, changes(late_text_he=late_he))
+    lines = out.split("\n")
+    assert lines[lines.index("late_text: '{prime_minister} asks again: vote now?'") + 1] == f"late_text_he: {translate._scalar(late_he)}"
+    assert yaml12.load(out)["late_text_he"] == late_he
+    assert [line for line in LATE.split("\n") if line not in lines] == []
+    with pytest.raises(translate.Refused, match="all or none"):
+        translate.set_event(LATE, changes())
+    with pytest.raises(translate.Refused, match="late text"):
+        translate.set_event(EVENT, changes(late_text_he=late_he))
+    cleared, _ = translate.set_event(out, changes(title_he="", text_he="", late_text_he="",
+                                                  options={"yes_vote": "", "wait": ""}))
+    assert cleared == LATE
+
+
+EARLY = EVENT.replace("anchor: soft\n", "anchor: soft\n# The early text's comment.\nearly_text: 'Sooner than in history: {prime_minister} asks: vote now?'\n")
+
+
+def test_an_early_text_gets_its_hebrew_after_it_and_is_part_of_the_event():
+    """R-WAR-008 (#1709, owner, 9 November 2026: "Separate early text (Recommended)"): early_text_he sits under
+    early_text, and EventRules wants it exactly when the event has Hebrew."""
+    early_he = "מוקדם יותר מאשר בהיסטוריה: {prime_minister} שואל: להצביע עכשיו?"
+    out, _ = translate.set_event(EARLY, changes(early_text_he=early_he))
+    lines = out.split("\n")
+    assert lines[lines.index("early_text: 'Sooner than in history: {prime_minister} asks: vote now?'") + 1] == \
+        f"early_text_he: {translate._scalar(early_he)}"
+    assert yaml12.load(out)["early_text_he"] == early_he
+    assert [line for line in EARLY.split("\n") if line not in lines] == []
+    with pytest.raises(translate.Refused, match="all or none"):
+        translate.set_event(EARLY, changes())
+    with pytest.raises(translate.Refused, match="early text"):
+        translate.set_event(EVENT, changes(early_text_he=early_he))
+    with pytest.raises(translate.Refused, match="placeholders"):
+        translate.set_event(EARLY, changes(early_text_he="מוקדם יותר מאשר בהיסטוריה"))
+    cleared, _ = translate.set_event(out, changes(title_he="", text_he="", early_text_he="",
+                                                  options={"yes_vote": "", "wait": ""}))
+    assert cleared == EARLY
+
+
 UI_EN = 'a.one: "One {0}"\na.two: "Two"\nb.three: "Three"\n'
 UI_HE = '# Hebrew.\na.one: "אחד {0}"\nb.three: "שלוש"\n'
 
@@ -201,6 +245,73 @@ def test_hebrew_saves_into_the_event_and_the_ui_file(tmp_path, monkeypatch):
     assert [line for line in before.split("\n") if line not in after] == \
         [line for line in before.split("\n") if line.startswith(("title_he:", "text_he_review:"))]
 
+
+
+def test_a_late_text_has_its_row_in_every_language(langs):
+    r = rows()
+    assert r["event:rhodes_talks:late_text"]["en"].startswith("Egypt and Israel have accepted a cease-fire")
+    assert r["event:rhodes_talks:late_text"]["unit"] == "event:rhodes_talks"
+    texts, _ = translate.load("he")
+    assert texts["event:rhodes_talks:late_text"].startswith("מצרים וישראל קיבלו הפסקת אש")
+    edits = {"event:rhodes_talks:title": "Pourparlers à Rhodes", "event:rhodes_talks:text": "{foreign_minister} décide.",
+             "event:rhodes_talks:option:send_delegation": "Envoyer", "event:rhodes_talks:option:decline": "Refuser"}
+    assert "all or none" in translate.save("fr", edits, {})["errors"]["event:rhodes_talks"]
+    late = {"event:rhodes_talks:late_text": "Plus tard, {foreign_minister} décide."}
+    assert translate.save("fr", {**edits, **late}, {})["errors"] == {}
+    events = yaml12.load((langs / "fr/events.yaml").read_text(encoding="utf-8"))
+    assert events["rhodes_talks"] == {"title": "Pourparlers à Rhodes", "text": "{foreign_minister} décide.",
+                                      "late_text": "Plus tard, {foreign_minister} décide.",
+                                      "options": {"send_delegation": "Envoyer", "decline": "Refuser"},
+                                      "review": "agent-checked"}
+    assert translate.load("fr")[0]["event:rhodes_talks:late_text"] == "Plus tard, {foreign_minister} décide."
+
+def test_an_early_text_has_its_row_in_every_language(langs, tmp_path, monkeypatch):
+    """R-WAR-008 (#1709): the early text's row, as the late text's above, on a fixture event in a temporary events
+    folder. Its real-content twin below reads armistice_egypt."""
+    events = tmp_path / "events"
+    events.mkdir()
+    early = EARLY.replace("id: sample", "id: early_sample")
+    he = translate.set_event(early, changes(early_text_he="מוקדם יותר מאשר בהיסטוריה: {prime_minister} שואל: להצביע עכשיו?"))[0]
+    (events / "early_sample.yaml").write_text(he, encoding="utf-8")
+    monkeypatch.setattr(translate, "EVENTS", events)
+    r = rows()
+    assert r["event:early_sample:early_text"]["en"].startswith("Sooner than in history")
+    assert r["event:early_sample:early_text"]["unit"] == "event:early_sample"
+    texts, _ = translate.load("he")
+    assert texts["event:early_sample:early_text"].startswith("מוקדם יותר מאשר בהיסטוריה")
+    edits = {"event:early_sample:title": "Le vote", "event:early_sample:text": "{prime_minister} demande.",
+             "event:early_sample:option:yes_vote": "Voter", "event:early_sample:option:wait": "Attendre {foreign_minister}"}
+    assert "all or none" in translate.save("fr", edits, {})["errors"]["event:early_sample"]
+    sooner = {"event:early_sample:early_text": "Plus tôt, {prime_minister} demande."}
+    assert translate.save("fr", {**edits, **sooner}, {})["errors"] == {}
+    saved = yaml12.load((langs / "fr/events.yaml").read_text(encoding="utf-8"))
+    assert saved["early_sample"] == {"title": "Le vote", "text": "{prime_minister} demande.",
+                                     "early_text": "Plus tôt, {prime_minister} demande.",
+                                     "options": {"yes_vote": "Voter", "wait": "Attendre {foreign_minister}"},
+                                     "review": "agent-checked"}
+    assert translate.load("fr")[0]["event:early_sample:early_text"] == "Plus tôt, {prime_minister} demande."
+
+
+def test_a_real_early_text_has_its_row_in_every_language(langs):
+    """R-WAR-008 (#1709; owner, 9 November 2026, "You approve the words (Recommended)"): the real-content twin of the
+    test above. armistice_egypt's early text has its row, its Hebrew is the approved words, and another language saves
+    it with the rest of the card, all or none."""
+    r = rows()
+    assert r["event:armistice_egypt:early_text"]["en"].startswith("The front with Egypt has been quiet, and the armistice talks")
+    assert r["event:armistice_egypt:early_text"]["unit"] == "event:armistice_egypt"
+    texts, _ = translate.load("he")
+    assert texts["event:armistice_egypt:early_text"].startswith("החזית עם מצרים שקטה, ושיחות שביתת הנשק התקיימו")
+    edits = {"event:armistice_egypt:title": "Armistice avec l'Égypte", "event:armistice_egypt:text": "{prime_minister} décide.",
+             "event:armistice_egypt:option:sign": "Signer", "event:armistice_egypt:option:hold_out": "Refuser"}
+    assert "all or none" in translate.save("fr", edits, {})["errors"]["event:armistice_egypt"]
+    sooner = {"event:armistice_egypt:early_text": "Plus tôt, {prime_minister} décide."}
+    assert translate.save("fr", {**edits, **sooner}, {})["errors"] == {}
+    events = yaml12.load((langs / "fr/events.yaml").read_text(encoding="utf-8"))
+    assert events["armistice_egypt"] == {"title": "Armistice avec l'Égypte", "text": "{prime_minister} décide.",
+                                         "early_text": "Plus tôt, {prime_minister} décide.",
+                                         "options": {"sign": "Signer", "hold_out": "Refuser"},
+                                         "review": "agent-checked"}
+    assert translate.load("fr")[0]["event:armistice_egypt:early_text"] == "Plus tôt, {prime_minister} décide."
 
 FR = {"event:altalena:title": "L'Altalena", "event:altalena:text": "{defense_minister} décide.",
       "event:altalena:option:enforce": "Imposer", "event:altalena:option:compromise": "Céder"}
@@ -330,3 +441,13 @@ def test_a_key_any_yaml_reader_would_type_or_split_is_quoted(key):
 @pytest.mark.parametrize("key", ["alpha", "a.one", "first_truce", "1948-05-15", "v1", "nully", "yes_vote"])
 def test_a_plain_key_stays_plain(key):
     assert translate._yaml_key(key) == key
+
+
+def test_a_malformed_file_is_an_error_naming_the_file_and_line(tmp_path):
+    """#2532: the page shows `Type: message`; a YAML error did not name the file it came from."""
+    bad = tmp_path / "broken.yaml"
+    bad.write_text("id: x\ntitle: [unclosed\n", encoding="utf-8")
+    with pytest.raises(ValueError) as e:
+        translate._parse(bad)
+    message = str(e.value)
+    assert message.startswith(f"{bad}:") and "not valid YAML" in message and "\n" not in message

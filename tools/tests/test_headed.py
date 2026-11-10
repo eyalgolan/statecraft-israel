@@ -137,45 +137,136 @@ def test_wheel_zoom_follows_a_swipe_and_keeps_a_notch_at_one_step():
     assert r["px150,px200,px49"]["px49"][0] == pytest.approx(0.49, abs=0.02)
 
 
+def png(path, varied=True):
+    """A real PNG at `path`: a gradient, or one colour (a blank capture)."""
+    from PIL import Image
+    im = Image.new("RGB", (8, 8), (40, 60, 80))
+    if varied:
+        im.putdata([(x * 30, y * 30, 90) for y in range(8) for x in range(8)])
+    im.save(path)
+
+
+class FakeBrowser:
+    """headed.Browser without Chrome: wait_for returns the queued lines; shot writes the PNG the test queued (a gradient by default)."""
+    waits: list[str] = []
+    console: list[str] = []
+    shots: list = []
+    contents: list = []       # per shot, in order: "varied", "blank" or "garbage"
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        return None
+
+    async def open(self, *args):
+        return "sid"
+
+    def lines(self, sid):
+        return list(FakeBrowser.console)
+
+    async def wait_for(self, *args, **kwargs):
+        line = FakeBrowser.waits.pop(0)
+        FakeBrowser.console.append(line)
+        return line
+
+    async def shot(self, sid, path):
+        FakeBrowser.shots.append(path)
+        kind = FakeBrowser.contents.pop(0) if FakeBrowser.contents else "varied"
+        if kind == "garbage":
+            Path(path).write_bytes(b"not a png")
+        else:
+            png(path, varied=kind == "varied")
+        return path
+
+
 def test_loadshot_exits_1_on_a_boot_failure_before_or_after_loading(monkeypatch, tmp_path, capsys):
     """#2697: loadshot used to take its screenshots and exit 0 after BOOT FAIL. A BOOT FAIL already in the console when
     the first wait returns "player started" (wait_for gives the first match) takes no loading screenshot either."""
-    shots = []
-
-    class FakeBrowser:
-        waits: list[str] = []
-        console: list[str] = []
-
-        def __init__(self, *args, **kwargs):
-            pass
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *args):
-            return None
-
-        async def open(self, *args):
-            return "sid"
-
-        def lines(self, sid):
-            return list(FakeBrowser.console)
-
-        async def wait_for(self, *args, **kwargs):
-            line = FakeBrowser.waits.pop(0)
-            FakeBrowser.console.append(line)
-            return line
-
-        async def shot(self, sid, path):
-            shots.append(path)
-            return path
+    shots = FakeBrowser.shots
 
     monkeypatch.setattr(headed, "Browser", FakeBrowser)
     for waits, buffered, expected_shots in ((["BOOT FAIL content missing"], [], 0),
                                             (["BOOT phase=player started", "BOOT FAIL scene"], [], 1),
                                             (["BOOT phase=player started"], ["BOOT FAIL late"], 0)):
         shots.clear()
-        FakeBrowser.waits, FakeBrowser.console = list(waits), list(buffered)
+        FakeBrowser.waits, FakeBrowser.console, FakeBrowser.contents = list(waits), list(buffered), []
         assert headed.main(["loadshot", "--build", str(tmp_path), "--out", str(tmp_path / "shot")]) == 1
         assert len(shots) == expected_shots
         assert "FAIL: BOOT FAIL" in capsys.readouterr().out
+
+
+def run_loadshot(monkeypatch, tmp_path, contents):
+    """loadshot through headed.main on a healthy boot whose two screenshots hold `contents`."""
+    monkeypatch.setattr(headed, "Browser", FakeBrowser)
+    FakeBrowser.waits = ["BOOT phase=player started", "GAME OK 1948-05-15 turn 0 hash 00"]
+    FakeBrowser.console, FakeBrowser.contents, FakeBrowser.shots = [], list(contents), []
+    return headed.main(["loadshot", "--build", str(tmp_path), "--out", str(tmp_path / "shot")])
+
+
+def test_loadshot_passes_when_both_captures_are_real_and_a_plain_loading_screen_is_fine(monkeypatch, tmp_path):
+    assert run_loadshot(monkeypatch, tmp_path, ["varied", "varied"]) == 0
+    assert run_loadshot(monkeypatch, tmp_path, ["blank", "varied"]) == 0      # the owner's #2700 caution: a plain loading screen
+
+
+def test_loadshot_exits_1_on_a_blank_capture_after_the_game_is_ready(monkeypatch, tmp_path, capsys):
+    """#2697 item 4: a blank screenshot after GAME OK is no capture."""
+    assert run_loadshot(monkeypatch, tmp_path, ["varied", "blank"]) == 1
+    out = capsys.readouterr().out
+    assert "FAIL" in out and "blank" in out
+
+
+def test_loadshot_exits_1_on_a_capture_that_does_not_decode(monkeypatch, tmp_path, capsys):
+    for contents in (["garbage", "varied"], ["varied", "garbage"]):
+        assert run_loadshot(monkeypatch, tmp_path, contents) == 1, contents
+        assert "FAIL" in capsys.readouterr().out
+
+
+def test_profile_exits_1_on_a_partial_profile_and_0_on_a_whole_one(monkeypatch, tmp_path, capsys):
+    """#2697 item 5 through headed.main: the done line alone does not make a profile."""
+    from test_web_check_shots import profile_lines
+    monkeypatch.setattr(headed, "Browser", FakeBrowser)
+    for lines, code in ((profile_lines(), 0), ([profile_lines()[0], "PROFILE visual done"], 1)):
+        FakeBrowser.waits, FakeBrowser.console = ["PROFILE visual done"], list(lines)
+        assert headed.main(["profile", "--build", str(tmp_path)]) == code
+        assert ("FAIL" in capsys.readouterr().out) == (code == 1)
+
+
+def test_new_game_is_clicked_where_the_start_screen_puts_it_in_each_language():
+    """The start screen's New game in the 1568x752 playtest window, derived from Statecraft.uss (refs #3003). A headed
+    capture on 10 Nov 2026 at 0be35a517 (main 59fdd6924 plus #3003) found it at (541, 657) in English and (1026, 657) in
+    Hebrew (?lang=he, the action row mirrored); the old (784, 693) missed it. The derivation agrees within 2 px."""
+    for lang, measured in (("en", (541, 657)), ("he", (1026, 657))):
+        x, y = headed.start_new_game_button(lang)
+        assert abs(x - measured[0]) <= 3 and abs(y - measured[1]) <= 3, (lang, (x, y))
+    assert headed.start_new_game_button("en") == (543, 657)
+    assert headed.start_new_game_button("he") == (1025, 657)
+    assert headed.START_NEW == headed.start_new_game_button("en")
+    assert headed.query_lang("camlog") == "en" and headed.query_lang("camlog&lang=he") == "he"
+    with pytest.raises(ValueError):
+        headed.start_new_game_button("ro")
+
+
+def test_the_new_game_derivation_reads_the_uss_numbers():
+    """Fails when Statecraft.uss moves the start panel's bottom stack or resizes its buttons and headed.py does not follow."""
+    import re
+    uss = (Path(headed.REPO) / "unity/Assets/UI/Statecraft.uss").read_text()
+
+    def rule(selector):
+        m = re.search(r"(?m)^" + re.escape(selector) + r"\s*\{([^}]*)\}", uss)
+        assert m, selector
+        return m.group(1)
+
+    assert re.search(r"padding:\s*0 16px 28px 16px", rule(".start-body"))
+    assert re.search(r"padding:\s*18px 40px 20px 40px", rule(".start-panel"))
+    assert re.search(r"border-width:\s*1px", rule(".panel"))
+    community = rule(".start-community")
+    assert re.search(r"height:\s*40px", community) and re.search(r"margin-top:\s*8px", community)
+    button = rule(".start-button")
+    assert re.search(r"min-width:\s*300px", button) and re.search(r"height:\s*50px", button)
+    assert re.search(r"margin:\s*4px 10px", button)
+    assert re.search(r"\.start-actions, \.lang-he \.start-community \{ flex-direction: row-reverse", uss)
+    assert headed.START_PANEL_BOTTOM == 28 + 1 + 20 + 40 + 8 and headed.START_BUTTON == (300 + 2 * 10, 50 + 2 * 4)

@@ -7,21 +7,31 @@ namespace Statecraft.Sim
     /// <summary>The public entry point the Unity layer calls: start a game, then step it one turn at a time.</summary>
     public static class Simulation
     {
-        public static GameState NewGame(Content c, ulong seed, Mode mode)
+        public static GameState NewGame(Content c, ulong seed, Mode mode) => NewGame(c, seed, mode, darkStart: false);
+
+        /// <summary>#1689, #1725 PR 5: with <paramref name="darkStart"/>, the dark start of an exact gdd-0.3 Historical game,
+        /// internal and fixture-only (the public NewGame passes false): the Historical ledger (R-POP-004) is initialized in
+        /// place before Pools.Init, so the Food stock starts at cover_months of the ledger's need (R-FOOD-001, #2470), and
+        /// the starting forces are placed against its soldiers. EventSystem.Trigger still refuses a ledger (R-POP-002) until
+        /// its producer is integrated, so a dark start fires no opening event. Legacy and gdd-0.1 content refuse it.</summary>
+        internal static GameState NewGame(Content c, ulong seed, Mode mode, bool darkStart)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (mode == Mode.Open) throw new NotSupportedException("Open mode arrives with milestone M4.");
+            if (darkStart && !c.UsesPopulationLedger) throw new InvalidOperationException("A dark start needs exact gdd-0.3 (R-POP-001).");
             var s = new GameState(c) { Date = c.Rules.Start, RngState = seed, Mode = mode };
             var why = new List<Cause>();
             EffectsSystem.Init(c, s);
             EconomySystem.Init(c, s);
             PopulationSystem.Init(c, s);
             Cities.Init(c, s);
+            if (darkStart) HistoricalPopulation.Initialize(c, s);   // before Pools.Init, which reads the ledger's need
+            if (darkStart) HistoricalPopulation.AddFarmerHousing(c, s);   // #1725 PR 4: one housing place per farmer in a census host
             Pools.Init(c, s);
             StartingForces.Init(c, s);   // R-UNIT-006: before any event can grant a unit, so the forces take ids 0 to n-1
             SecuritySystem.Init(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
-            EventSystem.Trigger(c, s, why);
+            if (!darkStart) EventSystem.Trigger(c, s, why);   // R-POP-002: refuses an initialized ledger
             return s;
         }
 
@@ -48,8 +58,11 @@ namespace Statecraft.Sim
             }
 
             var spent = new Dictionary<int, int>();
-            RunOrders(c, s, commands, spent, new Dictionary<int, AttackRecord>(), why, rejected);
-            EventSystem.Delegate(c, s, why, spent, rejected);   // a delegated card's unit orders share the turn's movement (R-ENEMY-005)
+            var attacked = new Dictionary<int, AttackRecord>();
+            var actions = new List<OperationAction>();
+            RunOrders(c, s, commands, spent, attacked, why, rejected, actions);
+            // A delegated card's unit orders share the turn's movement and attacks (R-ENEMY-005, R-ENEMY-008).
+            EventSystem.Delegate(c, s, why, spent, rejected, actions, attacked);
 
             var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
             // The next era's start, or the game's end (the last era's end, or mvp.end in the GDD loop, R-LOOP-004), is a
@@ -78,12 +91,13 @@ namespace Statecraft.Sim
                 why.Add(new Cause("era", s.GameOver, 0, PlayerText.GameOver(s.GameOver), key: CauseKeys.EraEnded));
             }
             ContentWindows.Update(c, s, turnStart);
+            EventSystem.LapseExpiredOperations(c, s, why);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
             if (c.UsesAttention) AttentionSystem.Refill(c, s);
             // A game that just ended raises no new events, but the unfired cards of recorded objectives (R-LOOP-004, R-OBJ-003;
             // the owner's choice "Show the card (Recommended)", 4 November 2026, #2536).
             EventSystem.Trigger(c, s, why, turnStart, endingTurn: s.GameOver != null);
-            return new StepResult(s, why, rejected);
+            return new StepResult(s, why, rejected, actions);
         }
 
         /// <summary>The date the turn starting on <paramref name="s"/>'s date ends on: its turn length from the war state,
@@ -126,10 +140,11 @@ namespace Statecraft.Sim
             var s = state.Clone();
             var why = new List<Cause>(); var rejected = new List<Rejection>(); var spent = new Dictionary<int, int>();
             var attacked = new Dictionary<int, AttackRecord>();
+            var actions = new List<OperationAction>();
             if (s.GameOver != null)
                 foreach (var cmd in commands) rejected.Add(new Rejection(cmd, $"The game is over: {PlayerText.GameOver(s.GameOver)}"));
-            else RunOrders(c, s, commands, spent, attacked, why, rejected);
-            return new PreviewResult(s, spent, attacked, why, rejected);
+            else RunOrders(c, s, commands, spent, attacked, why, rejected, actions);
+            return new PreviewResult(s, spent, attacked, why, rejected, actions);
         }
 
         /// <summary>A move, a go-to, an attack, fortify or hold takes effect at once; Send home and every other order waits
@@ -140,7 +155,8 @@ namespace Statecraft.Sim
         /// Attention first; one that fails validation is refunded and rejected with its reason. Step, DelegatedTo and Preview
         /// share it, so every dry run sees what End Turn will.</summary>
         static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, Dictionary<int, int> spent,
-                              Dictionary<int, AttackRecord> attacked, List<Cause> why, List<Rejection> rejected)
+                              Dictionary<int, AttackRecord> attacked, List<Cause> why, List<Rejection> rejected,
+                              List<OperationAction>? actions = null)
         {
             if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why, rejected);   // R-MOVE-009: the route step, before the turn's orders
             if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);
@@ -158,10 +174,10 @@ namespace Statecraft.Sim
                 if (c.UsesAttention)
                 {
                     var before = s.Attention;
-                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why, priceRung, dollarsAtStart, rejected);
+                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why, priceRung, dollarsAtStart, rejected, actions);
                     if (error != null) s.Attention = before;
                 }
-                else error = Execute(c, s, cmd, spent, attacked, why, priceRung, dollarsAtStart, rejected);
+                else error = Execute(c, s, cmd, spent, attacked, why, priceRung, dollarsAtStart, rejected, actions);
                 if (error != null) rejected.Add(new Rejection(cmd, error));
                 if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);   // R-CTRL-004: only where an order ends
             }
@@ -185,7 +201,7 @@ namespace Statecraft.Sim
         /// the state as it found it (attention is refunded by the caller).</summary>
         static string? Execute(Content c, GameState s, Command cmd, Dictionary<int, int> spent,
                                Dictionary<int, AttackRecord> attacked, List<Cause> why, int startRung, int dollarsAtStart,
-                               List<Rejection> rejected)
+                               List<Rejection> rejected, List<OperationAction>? actions)
         {
             switch (cmd)
             {
@@ -227,7 +243,7 @@ namespace Statecraft.Sim
                     return null;
                 }
                 case ChooseEventOption e:
-                    return EventSystem.Choose(c, s, e.EventId, e.OptionId, why, spent, rejected);   // a refused unit order is rejected on its own (R-ENEMY-005)
+                    return EventSystem.Choose(c, s, e.EventId, e.OptionId, why, spent, rejected, actions, attacked);   // a refused unit order is rejected on its own (R-ENEMY-005)
                 case SetMobilization m:
                     return SecuritySystem.SetMobilization(c, s, m.Level, why);
                 case Appoint a:
@@ -253,13 +269,16 @@ namespace Statecraft.Sim
                 case StopWork w:
                     return Projects.Stop(c, s, w.Unit, why);
                 case UnitOrder o:
-                    if (o.Order == Movement.GoTo) return Movement.GiveGoTo(c, s, o.Unit, o.Q, o.R, spent, why);
-                    if (o.Order == Combat.Attack) return Combat.Strike(c, s, o.Unit, o.Q, o.R, spent, attacked, why);
-                    if (o.Q != null || o.R != null) return Orders.RefusedNamesNoHex;
-                    if (o.Order == Qualification.ReturnOrder) return Qualification.Return(c, s, o.Unit, why);
-                    return o.Order == Demobilization.SendHome
-                        ? Demobilization.Give(c, s, o.Unit, attacked, why)
-                        : Orders.Give(c, s, o.Unit, o.Order, why);
+                {
+                    // R-ENEMY-009 (owner, 4 November 2026; on #2544, "Only remaining orders (Recommended)"): an order that takes a
+                    // unit off its operation's go-to cancels the operation's remaining orders. A refused order cancels nothing.
+                    var operation = EventSystem.OperationOf(c, s, o.Unit);
+                    var bound = operation == null ? null : EventSystem.OperationUnits(c, s, operation);
+                    var error = GiveUnitOrder(c, s, o, spent, attacked, why);
+                    if (error == null && operation != null && EventSystem.OperationOf(c, s, o.Unit) != operation)
+                        EventSystem.CancelOperation(c, s, operation, bound!, why, actions);
+                    return error;
+                }
                 case StartProject p:
                     return Projects.StartCity(c, s, p.ProjectKind, p.City, p.Q, p.R, why);
                 case CancelProject p:
@@ -281,6 +300,17 @@ namespace Statecraft.Sim
                 default:
                     return "That order is not known";
             }
+        }
+
+        static string? GiveUnitOrder(Content c, GameState s, UnitOrder o, Dictionary<int, int> spent, Dictionary<int, AttackRecord> attacked, List<Cause> why)
+        {
+            if (o.Order == Movement.GoTo) return Movement.GiveGoTo(c, s, o.Unit, o.Q, o.R, spent, why);
+            if (o.Order == Combat.Attack) return Combat.Strike(c, s, o.Unit, o.Q, o.R, spent, attacked, why);
+            if (o.Q != null || o.R != null) return Orders.RefusedNamesNoHex;
+            if (o.Order == Qualification.ReturnOrder) return Qualification.Return(c, s, o.Unit, why);
+            return o.Order == Demobilization.SendHome
+                ? Demobilization.Give(c, s, o.Unit, attacked, why)
+                : Orders.Give(c, s, o.Unit, o.Order, why);
         }
 
         /// <summary>True in an era whose legislature is an assembly (eras.yaml systems.legislature): its vote is held but does not bind.</summary>

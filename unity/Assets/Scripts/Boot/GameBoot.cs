@@ -48,7 +48,10 @@ namespace Statecraft.Game.Boot
                 Inputs = await load();
                 if (GoldenCheck.Requested())
                 {
-                    var (ok, lines) = GoldenCheck.Run(Inputs.Content, Inputs.Goldens);
+                    // WebGL yields a frame between goldens so its collector can free each run's garbage (GoldenCheck.RunAsync).
+                    var (ok, lines) = Application.platform == RuntimePlatform.WebGLPlayer
+                        ? await GoldenCheck.RunAsync(Inputs.Content, Inputs.Goldens)
+                        : GoldenCheck.Run(Inputs.Content, Inputs.Goldens);
                     foreach (var line in lines) Debug.Log(line);
                     // Desktop players run the check headless (-batchmode -nographics) and report through the exit code.
                     if (Application.platform != RuntimePlatform.WebGLPlayer) { Application.Quit(ok ? 0 : 1); return; }

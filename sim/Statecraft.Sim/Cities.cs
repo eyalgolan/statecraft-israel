@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -42,6 +43,9 @@ namespace Statecraft.Sim
         public static int NearestUnit(decimal people, int peoplePerUnit) =>
             (int)Math.Round(people / peoplePerUnit, MidpointRounding.AwayFromZero);
 
+        /// <summary><see cref="Annex"/>'s refusal, {0} the place's name: a constant for the UI's string (#2707).</summary>
+        public const string RefusedAlreadyCity = "{0} is already a city";
+
         /// <summary>R-CTRL-016 (OWNER QUESTION 1 (a) on #799, the starting-city rule): a stayed target joins the player's
         /// population as one new city: its approved people in units (R-CITY-007), homes equal to them, jobs equal to the
         /// employed (people times employed_share to the nearest unit), the usual start condition, and no refugees, recruits or
@@ -49,7 +53,7 @@ namespace Statecraft.Sim
         /// reason with the state unchanged (the id is already a city).</summary>
         internal static string? Annex(Content c, GameState s, SettlementTarget t)
         {
-            if (s.Cities.ContainsKey(t.Id)) return $"{c.SettlementNames[t.Id]} is already a city";
+            if (s.Cities.ContainsKey(t.Id)) return string.Format(System.Globalization.CultureInfo.InvariantCulture, RefusedAlreadyCity, c.SettlementNames[t.Id]);
             var r = c.RulesAt(s.Date).Mvp!;
             var people = t.Annexation!.People!.Value;   // the loader requires both values on a stayed row
             var units = StartUnits(people, r.PeoplePerUnit);
@@ -90,7 +94,9 @@ namespace Statecraft.Sim
         /// the job slots or above the civilians and craftsmen. Step has already refused it in the legacy loop.</summary>
         public static string? Assign(Content c, GameState s, string city, string role, int count, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            // #1725 PR 7, producer 07 (owner, 8 November 2026, Q2 "Keep existing order (Rec.)"): on a Historical ledger game
+            // only the "workshop" role runs (Workshops.Staff picks the records); every other role is still refused (R-POP-002).
+            if (!(s.PopulationLedger.IsHistorical && role == Workshops.Role)) PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             // R-ARMS-005: under gdd-0.3 the "workshop" role staffs the city's arms workshops.
             if (role == Workshops.Role && c.Ruleset == SaveGame.Gdd03Ruleset) return Workshops.Staff(c, s, city, count, why);
@@ -139,19 +145,29 @@ namespace Statecraft.Sim
         {
             var held = new HashSet<string>(StringComparer.Ordinal);
             if (c.Ruleset != SaveGame.Gdd03Ruleset) return held;
-            var enemy = new HashSet<(int Q, int R)>();
-            foreach (var u in s.Units.Values)
-                if (u.Side != "" && u.Side != Movement.PlayerSide) enemy.Add((u.Q, u.R));
+            var enemy = EnemyHexes(s);
             foreach (var h in c.SettlementHexes)
                 if (s.Cities.ContainsKey(h.Id) && enemy.Contains((h.Q, h.R))) held.Add(h.Id);
             return held;
         }
 
+        /// <summary>The hexes an enemy military unit stands on (a halutz has no side, R-UNIT-001), <see cref="Held"/>'s
+        /// test; the ledger harvest reads it for fields (#1694).</summary>
+        internal static HashSet<(int Q, int R)> EnemyHexes(GameState s)
+        {
+            var enemy = new HashSet<(int Q, int R)>();
+            foreach (var u in s.Units.Values)
+                if (u.Side != "" && u.Side != Movement.PlayerSide) enemy.Add((u.Q, u.R));
+            return enemy;
+        }
+
         /// <summary>R-MONEY-002: annual Money upkeep for the civilian places that exist at the start of step 7. Only completed
-        /// projects and camp sites count. The six rates are explicit content design values; all are 0 in the MVP.</summary>
+        /// projects and camp sites count. The six rates are explicit content design values; all are 0 in the MVP. It counts
+        /// places, not people, so it runs on an initialized Historical ledger (the dark start, #1725 PR 7) and reads no
+        /// record; a synthetic or Open ledger stays refused (R-POP-002).</summary>
         public static double AnnualUpkeep(Content c, GameState s, MvpRules r)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
             var total = s.Cities.Count * r.CityUpkeepPerYear!.Value;
             foreach (var p in s.CityProjects.Values)
             {
@@ -205,12 +221,37 @@ namespace Statecraft.Sim
         /// in it. Under gdd-0.1 Israeli formations retain their home city's housing after graduation, including when they move
         /// or become veterans. Under gdd-0.3 they do not (#1703; 27M-18, owner-approved 1 November 2026: "Housed = civilians,
         /// craftsmen, recruits and groups in training. Refugees and pioneer units are not housed."). Summed as integers, so the
-        /// order of the training groups and formations cannot change it.</summary>
+        /// order of the training groups and formations cannot change it.
+        /// With an initialized Historical ledger (the dark start, #1725 PR 7) it counts the ledger's records instead of these
+        /// fields: <see cref="LedgerHoused"/>.</summary>
         public static int Housed(GameState s, City x)
         {
+            if (s.PopulationLedger.IsHistorical) return LedgerHoused(s, x.Id);
             var n = x.Civilians + x.Craftsmen + x.Recruits;
             foreach (var k in s.Cohorts.Values) if (k.City == x.Id) n += k.Count;
             return s.Ruleset == SaveGame.Gdd03Ruleset ? n : n + Soldiers(s, x);
+        }
+
+        /// <summary>R-HOUSE-003 on an initialized Historical ledger (#1725 PR 7): the city's housed records, one population unit
+        /// each, located in the city: its free civilians (census people, craftsmen, the opening field farmers in their host and
+        /// the training centre's teacher) and its trainees, the groups in training. Refugees wait for housing and soldiers are
+        /// not housed under gdd-0.3 (27M-18). A record with no city, such as a farmer at Nir Am or Nirim, which have no city
+        /// record, is housed in no city.</summary>
+        static int LedgerHoused(GameState s, string city)
+        {
+            var n = 0;
+            foreach (var u in s.PopulationLedger.Units)
+                if ((u.Status == PopulationStatus.FreeCivilian || u.Status == PopulationStatus.Trainee) && u.Location?.City == city) n++;
+            return n;
+        }
+
+        /// <summary>R-HOUSE-005 on an initialized Historical ledger: the city's refugee records.</summary>
+        static int LedgerRefugees(GameState s, string city)
+        {
+            var n = 0;
+            foreach (var u in s.PopulationLedger.Units)
+                if (u.Status == PopulationStatus.Refugee && u.Location?.City == city) n++;
+            return n;
         }
 
         /// <summary>R-HOUSE-003, R-UNIT-004 (Q-HOUSE-5): the Israeli formations the city houses, their strength summed:
@@ -255,7 +296,7 @@ namespace Statecraft.Sim
         /// rules instead (#1703: the surcharge, 5 pp overflow and the cohesion term).</summary>
         public static void UpdateCondition(Content c, GameState s, MvpRules r, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: R and P are then the ledger's (Housed, OwnPopulation)
             var gdd03 = c.Ruleset == SaveGame.Gdd03Ruleset ? Gdd03HousingFormula.FromCatalogue(c.Gdd03Balance!) : null;
             var people = gdd03 == null ? 0 : OwnPopulation(s);
             double surcharge = 0.0, cohesion = 0.0;
@@ -316,10 +357,19 @@ namespace Statecraft.Sim
         /// strength of every player unit, wherever it stands: the Israeli formations and the halutz units, which have no side
         /// (R-UNIT-001). Summed as integers. The owner was asked: "Should P be the 12 cities' people plus units (the PR today),
         /// or the national population (649,400 at start, which cuts the loss by ~20%)?" and answered, 2 November 2026: "The 12
-        /// cities' people (Recommended)"; the option read: "As built: only the cities whose housing is tracked."</summary>
+        /// cities' people (Recommended)"; the option read: "As built: only the cities whose housing is tracked."
+        /// With an initialized Historical ledger (#1725 PR 7) it is the ledger's: every city's housed and refugee records plus
+        /// the active soldiers, so a record in no tracked city (a farmer at Nir Am or Nirim) is not in it. Halutz units are
+        /// not handled yet on a ledger game: no record is one at the dark start (R-HOUSE-003, R-HOUSE-005).</summary>
         public static int OwnPopulation(GameState s)
         {
             var n = 0;
+            if (s.PopulationLedger.IsHistorical)
+            {
+                foreach (var x in s.Cities.Values) n += LedgerHoused(s, x.Id) + LedgerRefugees(s, x.Id);
+                foreach (var u in s.PopulationLedger.Units) if (u.Status == PopulationStatus.ActiveSoldier) n++;
+                return n;
+            }
             foreach (var x in s.Cities.Values) n += Housed(s, x) + x.Refugees;
             foreach (var u in s.Units.Values) if (u.Side == "" || u.Side == Movement.PlayerSide) n += u.Strength;
             return n;
@@ -341,22 +391,65 @@ namespace Statecraft.Sim
         /// <summary>R-CITY-003 (D-A5, Q-ARRV-1): the turn's immigrants (the CBS series, aliyah.yaml) arrive as refugees, in whole
         /// units, spread over the cities by <see cref="Apportion"/>. The cities count them from mvp.city_arrivals_from, the
         /// census day their start values already include (Q-ARRV-3); PopulationSystem adds every arrival to the national head
-        /// count from the game's start, and the cities are the part of it placed in towns (R-CITY-008, Q-ARRV-2).</summary>
+        /// count from the game's start, and the cities are the part of it placed in towns (R-CITY-008, Q-ARRV-2).
+        /// With an initialized Historical ledger (#1725 PR 7) each arrived unit is one refugee record instead, see
+        /// <see cref="LedgerArrive"/>; the aggregate city fields are not written.</summary>
         public static void Arrive(Content c, GameState s, MvpRules r, DateTime next, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: the ledger's records are then the arrivals
             var units = ArrivedUnits(c, s.Date, next, r.PeoplePerUnit);
             if (units == 0) return;
             var before = UnitsBy(c, s.Date, r.PeoplePerUnit);
             var had = Apportion(c, before);
-            foreach (var kv in Apportion(c, before + units))
+            var share = Apportion(c, before + units);
+            var ledger = s.PopulationLedger.IsHistorical ? LedgerArrive(c, s, r, had, share) : null;
+            foreach (var kv in share)
             {
-                var added = kv.Value - had[kv.Key];
+                var added = ledger == null ? kv.Value - had[kv.Key] : ledger.GetValueOrDefault(kv.Key);
                 if (added == 0) continue;
                 var x = s.Cities[kv.Key];
-                s.Cities[x.Id] = x.WithCounts(x.Civilians, x.Employed, x.Refugees + added);
+                if (ledger == null) s.Cities[x.Id] = x.WithCounts(x.Civilians, x.Employed, x.Refugees + added);
                 why.Add(new Cause("city", x.Id, added, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {Groups(added)} of immigrants arrived and wait for homes"), key: CauseKeys.ImmigrantsWaiting, args: new[] { CauseKeys.Number(added) }));
             }
+        }
+
+        /// <summary>The source key prefix of a CBS arrival record (#1725 PR 7): this prefix plus the city id. Its ordinal is
+        /// the unit's place in the city's cumulative <see cref="Apportion"/> share from mvp.city_arrivals_from, so a unit's key
+        /// depends only on the dates, never on the turn that brings it.</summary>
+        internal const string ArrivalPrefix = "cbs/";
+
+        /// <summary>R-CITY-003 on an initialized Historical ledger (#1725 PR 7; GDD Q11: "arrivals take new ids as refugees in a
+        /// city"): each of the turn's arrived units in <see cref="Apportion"/>'s split is one refugee record located in its city
+        /// (the region that lists it, R-POP-004), reception 0, no assignment, profession or tier. Keys are
+        /// <see cref="ArrivalPrefix"/> plus the city id, ordinals the city's units from <paramref name="had"/> to
+        /// <paramref name="share"/>, in city id order, so a replay of the turn adds nobody twice: an already registered key is
+        /// skipped (R-POP-001: a source stays registered after its id is lost). R-CITY-008: the records are the people, so
+        /// no aggregate city field is written. All or nothing: a refused record, or a city with no city record in the game,
+        /// adds none. Returns the records added per city.</summary>
+        static Dictionary<string, int> LedgerArrive(Content c, GameState s, MvpRules r, SortedDictionary<string, int> had, SortedDictionary<string, int> share)
+        {
+            var ledger = s.PopulationLedger;
+            if (ledger.PeoplePerUnit != r.PeoplePerUnit)
+                throw new InvalidOperationException("A ledger record is " + ledger.PeoplePerUnit.ToString(CultureInfo.InvariantCulture)
+                    + " people but an arrived unit is " + r.PeoplePerUnit.ToString(CultureInfo.InvariantCulture) + " (R-CITY-003, R-POP-001).");
+            var rows = new List<PopulationInventoryRow>();
+            var added = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var kv in share)
+            {
+                for (var ordinal = had[kv.Key]; ordinal < kv.Value; ordinal++)
+                {
+                    if (ledger.HasArrived(ArrivalPrefix + kv.Key, ordinal)) continue;
+                    if (!s.Cities.ContainsKey(kv.Key)) throw new InvalidOperationException("No city record for " + kv.Key + " (R-CITY-003).");
+                    var region = c.PlayerRegions.AtLocation(kv.Key)?.Id
+                        ?? throw new InvalidOperationException("No region in regions.yaml for city " + kv.Key + " (R-POP-004).");
+                    rows.Add(new PopulationInventoryRow(ArrivalPrefix + kv.Key, ordinal, new PopulationUnit(0, PopulationStatus.Refugee, 0,
+                        new PopulationLocation(region, city: kv.Key), PopulationAssignment.Unassigned, CivilianProfession.None,
+                        CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
+                    added[kv.Key] = added.GetValueOrDefault(kv.Key) + 1;
+                }
+            }
+            ledger.RegisterArrivals(rows);
+            return added;
         }
 
         /// <summary>R-CITY-003 (Q-ARRV-1): the cities' shares of their first <paramref name="units"/> arrived units, by id. The

@@ -53,6 +53,10 @@ namespace Statecraft.Game.UI
         /// End Turn only the turn's new ones, not the open turn's attack orders, which the turn runs again first. Never on a
         /// load or a refused turn.</summary>
         public event Action<IReadOnlyList<Cause>>? CombatResolved;
+        /// <summary>#2202: raised at End Turn with the step's result, after the step and before <see cref="Changed"/> redraws the
+        /// map, so the enemy's playback (EnemyTurnPlayback) holds the tokens where they stood. Only on a turn the simulation ran:
+        /// never on a refused turn, a load or a New Game. Its Why lines start with the open turn's own (the player's orders).</summary>
+        public event Action<StepResult>? Stepped;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
         /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
@@ -79,8 +83,8 @@ namespace Statecraft.Game.UI
         public void SeeEndingCard(string id)
         {
             if (!State.PendingEvents.Contains(id) || !IsEndingCard(id) || !endingCardsSeen.Add(id)) return;
-            Notify(Changed);
-            if (!EndingCardWaiting) Notify(EndingCardsSeen);
+            Notify(Changed, nameof(Changed));
+            if (!EndingCardWaiting) Notify(EndingCardsSeen, nameof(EndingCardsSeen));
         }
 
         readonly UiText text;
@@ -167,7 +171,7 @@ namespace Statecraft.Game.UI
         };
 
         /// <summary>Skips the unit for this turn: not an order, not saved, nothing in the game changes (spec 7.2).</summary>
-        public void Skip(int unit) { if (skipped.Add(unit)) Notify(Changed); }
+        public void Skip(int unit) { if (skipped.Add(unit)) Notify(Changed, nameof(Changed)); }
         public bool IsSkipped(int unit) => skipped.Contains(unit);
 
         /// <summary>Null if the id is known, else the player-facing reason. The player sees only the kind of thing (#622: a
@@ -310,6 +314,21 @@ namespace Statecraft.Game.UI
             [EconomySystem.RefusedBudgetSum] = "budget.refused.sum",
             [EconomySystem.RefusedBudgetNegative] = "budget.refused.negative",
             [Orders.RefusedNamesNoHex] = "unit.order_refused.names_no_hex",
+            // #2707, batch 3 (the owner's option (b)): a capture answer the end of turn refuses reads as the capture dialog's
+            // reviewed capture.refusal.* line. "Deport is not built yet" and the two "not awaiting" answers have no reviewed line
+            // that fits (capture.refusal.not_awaiting names the place, these do not), so they stay the sim's English.
+            [SettlementControl.RefusedNoOneToDeport] = "capture.refusal.no_one_to_deport",
+            [SettlementControl.RefusedUnknownOutcome] = "capture.refusal.unknown_outcome",
+            // R-ENEMY-007 (#2543): an operation whose units are not in place, or whose front's armistice comes first or is signed.
+            [EventSystem.RefusedOperationUnitsNotInPlace] = "event.operation_refused",
+            [EventSystem.RefusedOperationArmisticeFirst] = "event.operation_refused_armistice_first",
+            [EventSystem.RefusedOperationArmisticeSigned] = "event.operation_refused_armistice_signed",
+            // #2707 batch 4: an appointment End turn refuses, as the Cabinet screen words it (CabinetPresenter.ReasonText)
+            [Cabinet.RefusedOfficeUnknown] = "cabinet.reason.office_unknown",
+            [Cabinet.RefusedPrimeMinister] = "cabinet.reason.prime_minister",
+            [Cabinet.RefusedPresident] = "cabinet.reason.president",
+            [Cabinet.RefusedPersonUnknown] = "cabinet.reason.person_unknown",
+            [Cabinet.RefusedNoGovernment] = "cabinet.reason.no_government",
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -342,14 +361,34 @@ namespace Statecraft.Game.UI
             (Movement.RefusedFull, "unit.move_refused.full"),
             (AttentionSystem.RefusedAttention, "order.no_attention"),
             (Projects.RefusedRepairCityHex, "city.project_reason.repair_city_hex"),
+            // #2707, batch 3 (option (b)): the capture and end-of-occupation answers that need a unit or a free hex, and an
+            // annexed place that is already a city, as the capture dialog's reviewed lines; {0} is the place.
+            (SettlementControl.RefusedOccupyNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedAnnexNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedWithdrawNeedsUnit, "capture.refusal.needs_unit"),
+            (SettlementControl.RefusedNoFreeHex, "capture.refusal.no_free_hex"),
+            (Cities.RefusedAlreadyCity, "capture.refusal.already_city"),
+            // #2707 batch 4: the appointment refusals with a name or a date in them (ReasonValue words each in Hebrew)
+            (Cabinet.RefusedHistoricalOffice, "cabinet.reason.historical_office"),
+            (Cabinet.RefusedAbolished, "cabinet.reason.abolished"),
+            (Cabinet.RefusedNotEstablished, "cabinet.reason.not_established"),
+            (Cabinet.RefusedSeveralHolders, "cabinet.reason.several_holders"),
+            (Cabinet.RefusedDied, "cabinet.reason.died"),
+            (Cabinet.RefusedIsPresident, "cabinet.reason.is_president"),
+            (Cabinet.RefusedIsChiefOfStaff, "cabinet.reason.is_chief_of_staff"),
+            (Cabinet.RefusedAlreadyHolds, "cabinet.reason.already_holds"),
+            (Cabinet.RefusedNotCareerOfficer, "cabinet.reason.not_career_officer"),
+            (Cabinet.RefusedPartyNotCoalition, "cabinet.reason.party_not_coalition"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+(?::[^}]*)?\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
         /// else the sim's English as given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's
         /// (ToastPresenter) go through it. With <paramref name="c"/> a value that is a settlement's name reads as the UI names the
         /// town (its Hebrew name from <paramref name="townsHe"/> in Hebrew), a course's English as why.cause.course.* and a money
-        /// amount in the content's format.</summary>
-        public static string ReasonText(UiText text, string reason, Content? c = null, IReadOnlyDictionary<string, string>? townsHe = null)
+        /// amount in the content's format; in Hebrew a cabinet refusal's person, party and date too, and its office with
+        /// <paramref name="date"/> (the turn's, for the title's days).</summary>
+        public static string ReasonText(UiText text, string reason, Content? c = null, IReadOnlyDictionary<string, string>? townsHe = null,
+                                        DateTime? date = null)
         {
             if (ReasonKeys.TryGetValue(reason, out var key))
             {
@@ -358,8 +397,12 @@ namespace Statecraft.Game.UI
             }
             foreach (var (pattern, format) in ReasonFormats)
                 if (pattern.Match(reason) is { Success: true } m)
+                {
+                    // An office's Hebrew title takes its holder's form: in "{0} already holds the office of {1}" that is {0}.
+                    var holder = format == "cabinet.reason.already_holds" ? c?.People.FirstOrDefault(p => p.Name == m.Groups[1].Value) : null;
                     return text.Format(format, CountNoun(text, format,
-                        m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe)).ToArray()));
+                        m.Groups.Cast<Group>().Skip(1).Select(v => (object)ReasonValue(text, v.Value, c, townsHe, date, holder)).ToArray()));
+                }
             return reason;
         }
 
@@ -378,14 +421,24 @@ namespace Statecraft.Game.UI
             return values;
         }
 
-        static string ReasonValue(UiText text, string value, Content? c, IReadOnlyDictionary<string, string>? townsHe)
+        static string ReasonValue(UiText text, string value, Content? c, IReadOnlyDictionary<string, string>? townsHe,
+                                  DateTime? date = null, Person? holder = null)
         {
             if (c == null) return value;
             var town = c.SettlementNames.FirstOrDefault(n => n.Value == value).Key;
             if (town != null)
                 return text["ui.lang"] == UiLanguage.Hebrew && townsHe != null && townsHe.TryGetValue(town, out var he) && !string.IsNullOrWhiteSpace(he) ? he : value;
             var course = c.UnitTypes.FirstOrDefault(t => t.Facility != "" && Training.Course(t) == value);
-            return course != null ? text["why.cause.course." + Training.CourseId(course)] : value;
+            if (course != null) return text["why.cause.course." + Training.CourseId(course)];
+            // #2707 batch 4: a cabinet refusal's person, party, office and date, in Hebrew as CabinetPresenter.ReasonText gives
+            // them. An office's Hebrew title depends on the day (TitleHeOn), so with no date it keeps the English, as the UI
+            // does outside a title's days. English keeps the sim's own words.
+            if (text["ui.lang"] != UiLanguage.Hebrew) return value;
+            if (c.People.FirstOrDefault(p => p.Name == value) is Person person) return ContentNames.Of(text, person);
+            if (c.Parties.FirstOrDefault(p => p.Name == value) is Party party) return ContentNames.Of(text, party);
+            if (date != null && c.Offices.FirstOrDefault(o => o.Title == value) is Office office) return ContentNames.Of(text, office, holder, date.Value);
+            return DateTime.TryParseExact(value, "d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var day)
+                ? Statecraft.Game.Map.Control1948.DateText(day, k => text[k]) : value;
         }
 
         /// <summary>Each settlement's Hebrew name (name_he), by id, for <see cref="Refuse"/>'s Hebrew (#2072): GameRoot sets it, as
@@ -396,20 +449,29 @@ namespace Statecraft.Game.UI
 
         static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement || x.Key == WhyKeys.Destroyed).ToList();
 
-        static void Notify(Action? handlers)
+        // Under ?turnlog, during End turn, each handler is timed (TurnProbe, #2905); otherwise Start is 0 and Handler returns.
+        static void Notify(Action? handlers, string evt)
         {
             if (handlers == null) return;
             foreach (Action handler in handlers.GetInvocationList())
+            {
+                var t = Boot.TurnProbe.Start();
                 try { handler(); }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); }
+                Boot.TurnProbe.Handler(evt, handler, t);
+            }
         }
 
-        static void Notify<T>(Action<T>? handlers, T value)
+        static void Notify<T>(Action<T>? handlers, T value, string evt)
         {
             if (handlers == null) return;
             foreach (Action<T> handler in handlers.GetInvocationList())
+            {
+                var t = Boot.TurnProbe.Start();
                 try { handler(value); }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); }
+                Boot.TurnProbe.Handler(evt, handler, t);
+            }
         }
 
         /// <summary>Queues an order (replacing one with the same key). Returns null, or why it was refused here: an id
@@ -427,16 +489,17 @@ namespace Statecraft.Game.UI
                 var before = Session.Now.Why.Count;
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
-                Notify(Changed);
+                WithdrawUnmetOperations();
+                Notify(Changed, nameof(Changed));
                 var added = Session.Now.Why.Skip(before).ToList();
-                Notify(Committed, added);
-                Notify(CombatResolved, Engagements(added));
+                Notify(Committed, added, nameof(Committed));
+                Notify(CombatResolved, Engagements(added), nameof(CombatResolved));
                 return null;
             }
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
             if (Content.UsesAttention && !CanPay(c))
             {
-                Notify(RefusedForAttention);                            // presentation only: a failing listener never changes the refusal
+                Notify(RefusedForAttention, nameof(RefusedForAttention));   // presentation only: a failing listener never changes the refusal
                 return Refuse(text.Format("order.no_attention", Price(c)!.Value, LeftFor(c)));
             }
             // Send home takes the unit's place in the queue: an order queued for it earlier (a reinforcement) is withdrawn, and
@@ -445,13 +508,27 @@ namespace Statecraft.Game.UI
             if (IsSendHome(c)) deferred.RemoveAll(x => UnitOf(x) == UnitOf(c) && Key(x) != Key(c));
             var old = QueuedLike(c);
             if (old != null) deferred[deferred.IndexOf(old)] = c; else deferred.Add(c);
-            Notify(Changed);
+            Notify(Changed, nameof(Changed));
             return null;
+        }
+
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Re-show the card (Recommended)"): after an instant order, a queued
+        /// operation choice whose required units are no longer in place in the state the card shows (<see cref="State"/>) is
+        /// withdrawn, which refunds its Attention, so its card shows again with the missing unit's "Move ... before" line
+        /// instead of End Turn refusing the choice and handing the card to its minister. The caller notifies.</summary>
+        void WithdrawUnmetOperations()
+        {
+            foreach (var q in deferred.OfType<ChooseEventOption>().ToList())
+            {
+                var option = Content.Events.FirstOrDefault(e => e.Id == q.EventId)?.Options.FirstOrDefault(o => o.Id == q.OptionId);
+                if (option != null && option.RequiresUnitRegions.Count != 0 && !EventSystem.OperationStatus(Content, State, option).Met)
+                    deferred.Remove(q);
+            }
         }
 
         public void Withdraw(Command c)
         {
-            if (deferred.Remove(c)) Notify(Changed);
+            if (deferred.Remove(c)) Notify(Changed, nameof(Changed));
         }
 
         /// <summary>Runs the turn with the committed then deferred orders, clears the deferred queue, and notifies. If the
@@ -465,6 +542,8 @@ namespace Statecraft.Game.UI
             int replayed = Session.Now.Why.Count;
             var batch = Session.Committed.Concat(deferred).ToList();
             var date = TurnStart.Date;
+            Boot.TurnProbe.BeginTurn(TurnStart.Turn, date);   // ?turnlog (#2905): this call's sim step and handlers, one line
+            var stepFrom = Boot.TurnProbe.Start();
             try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
             catch (Exception e)   // any exception (M3 final review M7): never leave a queue that fails on every End Turn
             {
@@ -475,15 +554,19 @@ namespace Statecraft.Game.UI
                 LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
                 var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
                 var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
-                Notify(Changed);
-                Notify(TurnEnded, failed.Rejected);
+                Notify(Changed, nameof(Changed));
+                Notify(TurnEnded, failed.Rejected, nameof(TurnEnded));
+                Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log);
                 return failed;
             }
+            Boot.TurnProbe.Step(stepFrom);
             LastBatch = batch; LastBatchDate = date;
             deferred.Clear(); skipped.Clear();
-            Notify(Changed);
-            Notify(CombatResolved, Engagements(r.Why.Skip(replayed)));
-            Notify(TurnEnded, r.Rejected);
+            Notify(Stepped, r, nameof(Stepped));
+            Notify(Changed, nameof(Changed));
+            Notify(CombatResolved, Engagements(r.Why.Skip(replayed)), nameof(CombatResolved));
+            Notify(TurnEnded, r.Rejected, nameof(TurnEnded));
+            Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log);
             return r;
         }
 
@@ -493,7 +576,7 @@ namespace Statecraft.Game.UI
             Session = session ?? throw new ArgumentNullException(nameof(session));
             LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
             deferred.Clear(); skipped.Clear(); endingCardsSeen.Clear();
-            Notify(Changed);
+            Notify(Changed, nameof(Changed));
         }
     }
 }

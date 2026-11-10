@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -15,6 +16,187 @@ public class EventCardTests
     const string CatalogPath = "Assets/UI/Portraits/PortraitCatalog.asset";
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+
+    // R-ENEMY-007: every operation card names the sourced unit and allowed regions, disables only the operation option
+    // while a required unit is elsewhere, and enables it once all required units are in place. Both language catalogues
+    // use the same structured requirement rather than embedding prose in the event content.
+    [Test]
+    public void AnOperationCardExplainsAndEnforcesItsUnitPlacementInBothLanguages()
+    {
+        var unitRows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        foreach (var local in new[] { Text, He })
+        {
+            var c = ContentLoader.Load(Paths.Content);
+            var e = c.Events.Single(x => x.Id == "operation_horev");
+            var option = e.Options.Single(x => x.Id == "launch");
+            var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+            g.State.Date = e.From;
+            g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+            using var ui = new UiTestKit();
+            using var card = new EventCardPresenter(ui.Root, new SimBridge(g, local), local, null) { Units = unitRows };
+            card.Render();
+
+            Assert.IsFalse(ui.Q<Button>("option-launch").enabledSelf, "Golani begins outside Horev's regions");
+            Assert.IsTrue(ui.Q<Button>("option-hold").enabledSelf, "the non-operation option remains available");
+            var required = ui.Root.Query<Label>(className: EventCardPresenter.RequirementClass).ToList();
+            var missing = ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList();
+            // One line per unit: Golani is elsewhere, so it has only the "Move ... before" line, naming both regions.
+            Assert.AreEqual(0, required.Count); Assert.AreEqual(1, missing.Count);
+            StringAssert.Contains(local["ui.lang"] == UiLanguage.Hebrew ? "חטיבת גולני" : "Golani Brigade", missing[0].text);
+            StringAssert.Contains(local["operation.region.negev"], missing[0].text);
+            StringAssert.Contains(local["operation.region.southern_coast"], missing[0].text);
+
+            var id = c.StartingForces.FindIndex(x => x.Row == "golani");
+            var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+            var unit = g.State.Units[id];
+            g.State.Units[id] = new Unit(unit.Id, unit.Type, at.Q, at.R, unit.Service, unit.Side, unit.Strength,
+                unit.Order, unit.OrderTarget, unit.HomeCity, unit.Full, unit.CombatXp);
+            card.Render();
+            Assert.IsTrue(ui.Q<Button>("option-launch").enabledSelf);
+            Assert.AreEqual(0, ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList().Count);
+            var inPlace = ui.Root.Query<Label>(className: EventCardPresenter.RequirementClass).ToList();
+            Assert.AreEqual(1, inPlace.Count);
+            StringAssert.Contains(local["ui.lang"] == UiLanguage.Hebrew ? "חטיבת גולני" : "Golani Brigade", inPlace[0].text);
+            StringAssert.Contains(local["operation.region.negev"], inPlace[0].text);
+        }
+    }
+
+    // Review item 6 and Q3 (owner, 7 November 2026): a required unit no longer on the board gets "no longer on the board", not
+    // a "Move" line it could never follow; and while the front's armistice card is pending, the operation option is disabled
+    // with a red line naming that armistice, even with its units in place. Red without them: a Move line, an enabled option.
+    [Test]
+    public void AnOperationCardSaysWhenItsUnitIsGoneOrItsArmisticeComesFirst()
+    {
+        var unitRows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.Single(x => x.Id == "operation_horev");
+        var option = e.Options.Single(x => x.Id == "launch");
+        var id = c.StartingForces.FindIndex(x => x.Row == "golani");
+
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = e.From; g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+        g.State.Units.Remove(id);
+        using (var ui = new UiTestKit())
+        using (var card = new EventCardPresenter(ui.Root, new SimBridge(g, Text), Text, null) { Units = unitRows })
+        {
+            card.Render();
+            var missing = ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList();
+            Assert.AreEqual(1, missing.Count);
+            StringAssert.Contains("no longer on the board", missing[0].text);
+            StringAssert.DoesNotContain("Move", missing[0].text);
+        }
+
+        var h = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        h.State.Date = new System.DateTime(1949, 2, 15); h.State.PendingEvents.Clear();
+        h.State.PendingEvents.Add(e.Id); h.State.PendingEvents.Add("armistice_egypt");
+        var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+        var u = h.State.Units[id];
+        h.State.Units[id] = new Unit(u.Id, u.Type, at.Q, at.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
+        foreach (var local in new[] { Text, He })
+        {
+            using var ui = new UiTestKit();
+            var bridge = new SimBridge(h, local);
+            using var card = new EventCardPresenter(ui.Root, bridge, local, null) { Units = unitRows };
+            card.Render();
+            Assert.AreEqual("armistice_egypt", card.Shown?.Id, "the armistice Horev waits for is shown first (Q3)");
+            Assert.IsNull(bridge.Queue(new ChooseEventOption("armistice_egypt", "hold_out")), "the player answers it, for End Turn");
+            card.Render();
+            Assert.AreEqual(e.Id, card.Shown?.Id, "then Horev's card shows");
+            Assert.IsFalse(ui.Q<Button>("option-launch").enabledSelf, "the armistice is decided first");
+            var why = ui.Root.Query<Label>(className: EventCardPresenter.ArmisticeClass).ToList();
+            Assert.AreEqual(1, why.Count);
+            StringAssert.Contains(local["map.front_egypt"], why[0].text);
+        }
+        Assert.AreEqual(EventSystem.RefusedOperationArmisticeFirst, EventSystem.ArmisticeBlock(c, h.State, e, option));
+    }
+
+    // R-ENEMY-007 (owner, 7 November 2026: "Re-show the card (Recommended)"): an operation chosen while its units stood in
+    // place is withdrawn, its Attention refunded, when a later instant move takes a required unit out of the regions, and the
+    // card shows again with that unit's red "Move ... before" line, rather than End Turn refusing the choice and the minister
+    // deciding it. Red without SimBridge's re-check: the choice stays queued and the card stays hidden.
+    [Test]
+    public void MovingARequiredUnitAwayWithdrawsTheQueuedOperationAndShowsTheCardAgain()
+    {
+        var unitRows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.Single(x => x.Id == "operation_horev");
+        var option = e.Options.Single(x => x.Id == "launch");
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = e.From;
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+        var id = c.StartingForces.FindIndex(x => x.Row == "golani");
+        var u = g.State.Units[id];
+        bool InPlace((int Q, int R) h) => c.PlayerRegions.AtHex(h.Q, h.R) is { } r && option.RequiresUnitRegions.Contains(r.Id);
+        // A member hex of Horev's regions with a hex outside them in one move.
+        (int Q, int R) away = default;   // Golani is left on the member hex the loop stops at
+        foreach (var h in option.RequiresUnitRegions.SelectMany(r => c.PlayerRegions.Regions[r].MemberHexes))
+        {
+            g.State.Units[id] = new Unit(u.Id, u.Type, h.Q, h.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full, u.CombatXp);
+            var outside = Movement.Reachable(c, g.State, id).Keys.Where(k => !InPlace(k)).OrderBy(k => k.Q).ThenBy(k => k.R).ToList();
+            if (outside.Count > 0) { away = outside[0]; break; }
+        }
+        Assert.AreNotEqual(default((int, int)), away, "a hex outside Horev's regions is one move away");
+        var bridge = new SimBridge(g, Text);
+        using var ui = new UiTestKit();
+        using var card = new EventCardPresenter(ui.Root, bridge, Text, null) { Units = unitRows };
+        card.Render();
+        var left = bridge.AttentionLeft!.Value;
+        Assert.IsNull(bridge.Queue(new ChooseEventOption(e.Id, option.Id)), "Golani stands in place, so the choice is queued");
+        card.Render();
+        Assert.IsNull(card.Shown, "a queued choice hides its card");
+
+        Assert.IsNull(bridge.Queue(new Move(id, away.Q, away.R)), "the move is the player's own");
+        card.Render();
+        Assert.IsNull(bridge.QueuedLike(new ChooseEventOption(e.Id, "")), "the choice is withdrawn");
+        Assert.AreEqual(left, bridge.AttentionLeft!.Value, 1e-9, "and its Attention refunded");
+        Assert.AreEqual(e.Id, card.Shown?.Id, "the card shows again");
+        var missing = ui.Root.Query<Label>(className: EventCardPresenter.MissingRequirementClass).ToList();
+        Assert.AreEqual(1, missing.Count);
+        StringAssert.Contains("Golani Brigade", missing[0].text);
+        Assert.IsFalse(ui.Q<Button>("option-launch").enabledSelf);
+    }
+
+    // R-ENEMY-007 (owner, 7 November 2026: "Dateless variants (Recommended)", then "All approved (Recommended)"): a card shown
+    // after its own window has closed shows its late text, in Hebrew its late_text_he, and inside its window its own text.
+    // Rhodes Talks, which a late Horev brings. Red without it: the dated text shows after the window.
+    [Test]
+    public void ACardShownAfterItsWindowShowsItsLateTextInBothLanguages()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.Single(x => x.Id == "rhodes_talks");
+        foreach (var local in new[] { Text, He })
+        {
+            var hebrew = local["ui.lang"] == UiLanguage.Hebrew;
+            foreach (var late in new[] { false, true })
+            {
+                var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+                g.State.Date = late ? e.To!.Value : e.From;
+                g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+                using var ui = new UiTestKit();
+                using var card = new EventCardPresenter(ui.Root, new SimBridge(g, local), local, null);
+                card.Render();
+                var body = ui.Q<Label>("event-text").text;
+                var want = late ? (hebrew ? "השיחות עומדות להיפתח ברודוס" : "The talks are to open at Rhodes") : (hebrew ? "עד 6 בינואר" : "By 6 January");
+                StringAssert.Contains(want, body, $"{(hebrew ? "he" : "en")} late={late}");
+                if (late) StringAssert.DoesNotContain(hebrew ? "בינואר" : "January", body);
+            }
+        }
+    }
+
+    // R-ENEMY-007: every region an operation names has its operation.region.* string in both catalogues, Hebrew in Hebrew, so
+    // a region added to an operation but not to the strings fails here, not as a card that throws on a missing key.
+    [Test]
+    public void EveryRequiredOperationRegionHasItsNameInBothLanguages()
+    {
+        var ids = C.Events.SelectMany(e => e.Options).SelectMany(o => o.RequiresUnitRegions).Distinct(System.StringComparer.Ordinal).ToList();
+        Assert.IsNotEmpty(ids);
+        foreach (var id in ids)
+        {
+            Assert.IsTrue(Text.Has("operation.region." + id), "strings.en.yaml: operation.region." + id);
+            Assert.IsTrue(He.Has("operation.region." + id), "strings.he.yaml: operation.region." + id);
+            StringAssert.IsMatch("[א-ת]", He["operation.region." + id], id + " is Hebrew in Hebrew");
+        }
+    }
 
     /// <summary>The historical game on the turn the Egyptian armistice first waits for a decision (February 1949).</summary>
     static SimBridge AtArmistice()
@@ -50,7 +232,11 @@ public class EventCardTests
         StringAssert.Contains("David Ben-Gurion must decide whether Israel signs.", ui.Q<Label>("event-text").text);
         Assert.AreEqual(catalog.Get("ben_gurion"), ui.Q<VisualElement>("event-image").style.backgroundImage.value.texture);
         Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("event-draft").style.display.value);
-        Assert.AreEqual("Sign the armistice (costs 2.0 Attention)", ui.Q<Button>("option-sign").text);   // its price shows (#1034)
+        // Its price shows (#1034), at the turn's rung: 1 x (1 + 0.25 x (rung - 1)). This run gives no orders, so under
+        // R-ENEMY-007 (#2543) the operations after the second truce (set_rung 4) postpone and lapse, none of their set_rung 5
+        // applies, and the war is at rung 4: 1.75, shown as 1.8. Before R-ENEMY-007 they launched, and it was 2.0 at rung 5.
+        Assert.AreEqual(4, bridge.State.Rung);
+        Assert.AreEqual("Sign the armistice (costs 1.8 Attention)", ui.Q<Button>("option-sign").text);
     }
 
     [Test]
@@ -680,6 +866,54 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         var banner = ui.Q<Label>("event-alt-banner");
         Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value);
         Assert.AreEqual("Alternative course. It follows the government's decision: Hold the course (After the road).", banner.text);
+    }
+
+    // R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", "Banner (Recommended)", "Ordinary text
+    // (Recommended)"): an armistice card shown before its `from` shows its early text, in Hebrew its early_text_he, under
+    // the event.alt_early banner; the same card on its date shows its ordinary text and no banner. The early texts are the
+    // real card's, in the words the owner approved (#1709, 9 November 2026); each is checked up to its first placeholder,
+    // since the card fills {prime_minister} with the minister's name.
+    [Test]
+    public void AnEarlyArmisticeCardShowsItsEarlyTextUnderTheWhatIfBannerInBothLanguages()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.Single(x => x.Id == "armistice_egypt");
+        static string UpToPlaceholder(string t) => t.IndexOf('{') is var i and >= 0 ? t.Substring(0, i) : t;
+        var earlyEn = UpToPlaceholder(e.EarlyText);
+        var earlyHe = UpToPlaceholder(e.EarlyTextHe);
+        Assert.That(earlyEn.Length, Is.GreaterThan(40), "precondition: the real card has its English early text");
+        Assert.That(earlyHe.Length, Is.GreaterThan(40), "precondition: the real card has its Hebrew early text");
+        foreach (var local in new[] { Text, He })
+        {
+            var hebrew = local["ui.lang"] == UiLanguage.Hebrew;
+            foreach (var early in new[] { true, false })
+            {
+                var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+                g.State.Date = early ? new System.DateTime(1948, 12, 15) : e.From;
+                g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+                using var ui = new UiTestKit();
+                using var card = new EventCardPresenter(ui.Root, new SimBridge(g, local), local, null);
+                card.Render();
+                var banner = ui.Q<Label>("event-alt-banner");
+                var body = ui.Q<Label>("event-text").text;
+                var where = $"{(hebrew ? "he" : "en")} early={early}";
+                if (early)
+                {
+                    Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value, where);
+                    Assert.AreEqual(local["event.alt_early"], banner.text, where);
+                    StringAssert.StartsWith(hebrew ? "מסלול חלופי." : "Alternative course.", banner.text, where);
+                    Assert.IsTrue(body.StartsWith(hebrew ? earlyHe : earlyEn, System.StringComparison.Ordinal), $"{where}: {body}");
+                    Assert.IsFalse(body.Contains('{'), $"{where}: a placeholder is left: {body}");
+                }
+                else
+                {
+                    Assert.AreEqual(DisplayStyle.None, banner.style.display.value, where);
+                    Assert.AreEqual("", banner.text, where);
+                    Assert.IsFalse(body.Contains(hebrew ? earlyHe : earlyEn, System.StringComparison.Ordinal), $"{where}: {body}");
+                    StringAssert.Contains(hebrew ? "מצרים" : "Egypt", body, where);
+                }
+            }
+        }
     }
 
     [Test]

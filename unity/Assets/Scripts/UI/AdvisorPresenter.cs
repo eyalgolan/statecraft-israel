@@ -174,6 +174,9 @@ namespace Statecraft.Game.UI
             {
                 openingGame = bridge.Session;
                 adopted = session.Chain.PutBack; session.Chain.PutBack = null;
+                // A language switch onto a step that is pending in Hebrew goes on to the next approved one; with none left
+                // the step stays and hides.
+                if (!chain[session.Chain.Step].ApprovedIn(hebrew) && NextChainStep(session.Chain.Step) is int next and >= 0) session.Chain.Step = next;
                 if (chain[session.Chain.Step].ApprovedIn(hebrew) && this.hooks.Card?.Shown != null && !this.hooks.Card.Collapsed)
                     this.hooks.Card.Collapse(takeFocus: false);
                 RenderChain();
@@ -194,11 +197,11 @@ namespace Statecraft.Game.UI
         /// Covered(hudRoot) alone misses Settings, and Next's focus would steal the screen's own (#1915).</summary>
         bool ScreenOpen() => Covered(hudRoot) || hudRoot.ClassListContains(ScreenNav.ScreenOpenClass);
 
-        /// <summary>A modal layer is open (spec 4.2): the start screen, the opening (#530), the open decision card, the capture
+        /// <summary>A modal layer is open (spec 4.2): the start screen, the opening (#530), the raid card on New game, the open decision card, the capture
         /// dialog, the turn report, an outcome clip, the end screen; and, on the two-row HUD, any side screen (it takes the full width).</summary>
         public static bool Covered(VisualElement hudRoot) =>
             hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(OpeningPresenter.OpenClass)
-            || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
+            || hudRoot.ClassListContains(RaidCardPresenter.OpenClass) || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
             || hudRoot.ClassListContains(CaptureDialogPresenter.OpenClass) || hudRoot.ClassListContains(TurnReportPresenter.OpenClass)
             || hudRoot.ClassListContains(OutcomePresenter.OpenClass) || hudRoot.ClassListContains(EndScreenPresenter.OpenClass)
             || (hudRoot.ClassListContains(HudPresenter.TwoRowClass) && hudRoot.ClassListContains(ScreenNav.ScreenOpenClass));
@@ -228,6 +231,11 @@ namespace Statecraft.Game.UI
                 && !hudRoot.ClassListContains(StartScreenPresenter.OpenClass) && chain.Any(InTour))
             {
                 session.Settings.MarkOpeningSeen();
+                // Owner ruling on #2942, "Off silences it": above the new level the chain does not open by itself and
+                // still counts as seen, so it never comes later; no course opens either. The encyclopedia can reopen it.
+                if (session.Settings.LevelRank > 0) return;
+                session.Settings.MarkCourseOpen();
+                Evaluate();                                 // course_open holds from here: its rows wait behind the chain
                 OpenChain();
             }
         }
@@ -392,7 +400,7 @@ namespace Statecraft.Game.UI
                 var ctx = Context();
                 var holding = AdvisorSignals.Holding(ctx, session);
                 if (budgetUnsubmitted) holding.Add(AdvisorSignals.BudgetUnsubmitted);   // as in Evaluate's Prune
-                if (!(holding.Contains(m.Signal) && AdvisorSignals.When(ctx, m.When)))
+                if (!(m.Holds(holding) && AdvisorSignals.When(ctx, m.When)))
                     session.Queue.Drop(m, Turn, bridge.State.Date);
             }
             Render();
@@ -446,7 +454,7 @@ namespace Statecraft.Game.UI
         }
 
         // Original catalogue position, retained for existing callers; runtime routing uses message identity.
-        public const int EventStep = 5;
+        public const int EventStep = 8;
         public IReadOnlyList<AdvisorCatalog.Message> Chain => chain;
         public bool InChain => session.Chain.Step >= 0 && IsOpen;
         public int ChainStep => InChain ? session.Chain.Step : -1;
@@ -556,7 +564,14 @@ namespace Statecraft.Game.UI
         void RenderChain()
         {
             if (session.Chain.Step < 0) return;
-            if (Turn != session.Chain.OpenTurn) { CloseChain(hooks.Card?.Shown?.Id == session.Chain.CardEvent); return; }
+            if (Turn != session.Chain.OpenTurn)
+            {
+                // End turn on a step that would come back as a queue row: it was read, on the turn it showed.
+                var step = chain[session.Chain.Step];
+                if (step.Fallback != "" && ReferenceEquals(Shown, step)) session.Queue.Done(step, session.Chain.OpenTurn, bridge.State.Date);
+                CloseChain(hooks.Card?.Shown?.Id == session.Chain.CardEvent);
+                return;
+            }
             if (!IncludedInTour(chain[session.Chain.Step])) { ShowStep(session.Chain.Step); return; }
             if (!chain[session.Chain.Step].ApprovedIn(hebrew)) { Shown = null; Hide(); return; }
             if (Covered(hudRoot)) { Hide(); return; }
@@ -637,7 +652,7 @@ namespace Statecraft.Game.UI
         }
 
         bool HardMediaCover() => hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(OpeningPresenter.OpenClass)
-            || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
+            || hudRoot.ClassListContains(RaidCardPresenter.OpenClass) || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
             || hudRoot.ClassListContains(CaptureDialogPresenter.OpenClass) || hudRoot.ClassListContains(TurnReportPresenter.OpenClass)
             || hudRoot.ClassListContains(OutcomePresenter.OpenClass) || hudRoot.ClassListContains(EndScreenPresenter.OpenClass)
             || hudRoot.ClassListContains(FeedbackPresenter.OpenClass) || hudRoot.ClassListContains(SharePresenter.OpenClass);

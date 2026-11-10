@@ -72,6 +72,21 @@ namespace Statecraft.Game.UI
                 case CauseKeys.EventDelegatedPartial:
                     return text.Format(key, cause.Args[2] == "" ? text["why.cause.cabinet"] : Local(cause.Args[2], cause.Args[3], text),
                         Local(cause.Args[0], cause.Args[1], text));
+                case CauseKeys.OperationPostponed:
+                case CauseKeys.OperationLapsed:
+                    // CauseTextTests' sim-only English compatibility path has no presentation unit catalogue. The sim's
+                    // Message is still the exact pre-localization report in that case; GameRoot supplies rows and gets the
+                    // player-facing unit and region names below. Hebrew always uses the localized structured arguments.
+                    if (text["ui.lang"] == UiLanguage.English && rows.Count == 0) return cause.Message;
+                    return text.Format(key, Local(cause.Args[0], cause.Args[1], text), OperationMoves(cause, rows, text));
+                case CauseKeys.OperationLapsedSigned:
+                case CauseKeys.OperationWaitsForArmistice:
+                    // R-ENEMY-007: the front is the third argument, named from the map's front strings.
+                    if (text["ui.lang"] == UiLanguage.English && rows.Count == 0) return cause.Message;
+                    return text.Format(key, Local(cause.Args[0], cause.Args[1], text), text["map.front_" + cause.Args[2]]);
+                case CauseKeys.OperationLapsedUnitLost:
+                    if (text["ui.lang"] == UiLanguage.English && rows.Count == 0) return cause.Message;
+                    return text.Format(key, Local(cause.Args[0], cause.Args[1], text), OperationUnits(cause, rows, text));
                 case CauseKeys.EventAmount:
                 case CauseKeys.EventStock:
                 case CauseKeys.EventGrant:
@@ -86,10 +101,36 @@ namespace Statecraft.Game.UI
             }
         }
 
+        /// <summary>R-ENEMY-007: the units a lapsed operation lost, in the player's language, from the cause's unit arguments.</summary>
+        static string OperationUnits(Cause cause, IReadOnlyList<UnitEntry> rows, UiText text)
+        {
+            var units = new List<string>();
+            for (int i = 2; i + 1 < cause.Args.Count; i += 2)
+            {
+                var row = rows.FirstOrDefault(x => x.Id == cause.Args[i]);
+                units.Add(row == null ? cause.Args[i] : text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrEmpty(row.NameHe) ? row.NameHe : row.Name);
+            }
+            return string.Join(", ", units);
+        }
+
+        static string OperationMoves(Cause cause, IReadOnlyList<UnitEntry> rows, UiText text)
+        {
+            var moves = new List<string>();
+            for (int i = 2; i + 1 < cause.Args.Count; i += 2)
+            {
+                var row = rows.FirstOrDefault(x => x.Id == cause.Args[i]);
+                var unit = row == null ? cause.Args[i]
+                    : text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrEmpty(row.NameHe) ? row.NameHe : row.Name;
+                var regions = string.Join(" / ", cause.Args[i + 1].Split('|').Select(id => text["operation.region." + id]));
+                moves.Add(text.Format("event.operation_move", unit, regions));
+            }
+            return string.Join("; ", moves);
+        }
+
         // #1682: these branches use captured ids, values and resident flags, never the live GameState.
         static readonly HashSet<string> RemainingKeys = new HashSet<string>
         {
-            CauseKeys.WorkersAssigned, CauseKeys.WagesPaid, CauseKeys.ImmigrantsHoused, CauseKeys.HousingShortage, CauseKeys.ImmigrantsWaiting, CauseKeys.RecruitsVeteran, CauseKeys.CorridorStarted, CauseKeys.CorridorCancelled, CauseKeys.CorridorCompleted, CauseKeys.PioneersVeteran, CauseKeys.MapBorrowed, CauseKeys.MapBuilt, CauseKeys.LandWorkStarted, CauseKeys.SiteStarted, CauseKeys.SiteCancelled, CauseKeys.SiteCompleted, CauseKeys.ProjectStarted, CauseKeys.ProjectCancelled, CauseKeys.ProjectCompleted, CauseKeys.ProjectBuilder, CauseKeys.ProjectBuilderFreed, CauseKeys.ProjectWaiting, CauseKeys.ArmsBought, CauseKeys.WorkshopWorkers, CauseKeys.WorkshopArms, CauseKeys.WorkshopPaused, CauseKeys.DollarsConverted, CauseKeys.DollarsConvertedFx, CauseKeys.FoodHarvest, CauseKeys.FoodShortage, CauseKeys.FoodWithoutImports, CauseKeys.FoodImported, CauseKeys.PrisonerFood, CauseKeys.PrisonerFoodShortage, CauseKeys.CraftsmenReturned, CauseKeys.CraftsmenReassigned, CauseKeys.PioneerReturned, CauseKeys.PioneersReassigned, CauseKeys.TrainingStarted, CauseKeys.TrainingArms, CauseKeys.TrainingCancelled, CauseKeys.TrainingArmsReturned, CauseKeys.ReplacementsStopped, CauseKeys.ReplacementsJoined, CauseKeys.MilitaryTrained, CauseKeys.PioneersTrained, CauseKeys.CraftsmenTrained, CauseKeys.Appointed, CauseKeys.Reshuffle, CauseKeys.AppointmentsEnded, CauseKeys.ApprovalStability, CauseKeys.CoalitionCollapsed, CauseKeys.LegislatureConvened, CauseKeys.GovernmentTookOffice, CauseKeys.CoalitionChanged, CauseKeys.EraEnded, CauseKeys.AdvisoryPolicyRejected, CauseKeys.PolicyRejected, CauseKeys.PolicySet, CauseKeys.AdvisoryBudgetRejected, CauseKeys.BudgetRejected, CauseKeys.PlaceCaptured, CauseKeys.EnemyRegained, CauseKeys.PlaceAnnexed, CauseKeys.PlaceWithdrawn, CauseKeys.PlaceDeported, CauseKeys.DeportEffect, CauseKeys.DeportCost, CauseKeys.OccupationStarted, CauseKeys.PendingBecameRaid, CauseKeys.OccupationLostUnit, CauseKeys.OccupationCountdown, CauseKeys.DepopulationSupport, CauseKeys.CityHeld
+            CauseKeys.WorkersAssigned, CauseKeys.WagesPaid, CauseKeys.ImmigrantsHoused, CauseKeys.HousingShortage, CauseKeys.ImmigrantsWaiting, CauseKeys.RecruitsVeteran, CauseKeys.CorridorStarted, CauseKeys.CorridorCancelled, CauseKeys.CorridorCompleted, CauseKeys.PioneersVeteran, CauseKeys.MapBorrowed, CauseKeys.MapBuilt, CauseKeys.LandWorkStarted, CauseKeys.SiteStarted, CauseKeys.SiteCancelled, CauseKeys.SiteCompleted, CauseKeys.ProjectStarted, CauseKeys.ProjectCancelled, CauseKeys.ProjectCompleted, CauseKeys.ProjectBuilder, CauseKeys.ProjectBuilderFreed, CauseKeys.ProjectWaiting, CauseKeys.ArmsBought, CauseKeys.WorkshopWorkers, CauseKeys.WorkshopArms, CauseKeys.WorkshopPaused, CauseKeys.DollarsConverted, CauseKeys.DollarsConvertedFx, CauseKeys.FoodHarvest, CauseKeys.FoodShortage, CauseKeys.FoodWithoutImports, CauseKeys.FoodImported, CauseKeys.PrisonerFood, CauseKeys.PrisonerFoodShortage, CauseKeys.CraftsmenReturned, CauseKeys.CraftsmenReassigned, CauseKeys.PioneerReturned, CauseKeys.PioneersReassigned, CauseKeys.TrainingStarted, CauseKeys.TrainingArms, CauseKeys.TrainingCancelled, CauseKeys.TrainingArmsReturned, CauseKeys.ReplacementsStopped, CauseKeys.ReplacementsJoined, CauseKeys.MilitaryTrained, CauseKeys.PioneersTrained, CauseKeys.CraftsmenTrained, CauseKeys.Appointed, CauseKeys.Reshuffle, CauseKeys.AppointmentsEnded, CauseKeys.ApprovalStability, CauseKeys.CoalitionCollapsed, CauseKeys.LegislatureConvened, CauseKeys.GovernmentTookOffice, CauseKeys.CoalitionChanged, CauseKeys.EraEnded, CauseKeys.AdvisoryPolicyRejected, CauseKeys.PolicyRejected, CauseKeys.PolicySet, CauseKeys.AdvisoryBudgetRejected, CauseKeys.BudgetRejected, CauseKeys.PlaceCaptured, CauseKeys.EnemyRegained, CauseKeys.PlaceLost, CauseKeys.PlaceRetaken, CauseKeys.PlaceAnnexed, CauseKeys.PlaceWithdrawn, CauseKeys.PlaceDeported, CauseKeys.DeportEffect, CauseKeys.DeportCost, CauseKeys.OccupationStarted, CauseKeys.PendingBecameRaid, CauseKeys.OccupationLostUnit, CauseKeys.OccupationCountdown, CauseKeys.DepopulationSupport, CauseKeys.CityHeld
         };
 
         static string Remaining(Cause cause, Content c, UiText text, IReadOnlyDictionary<string, string>? namesHe)
@@ -245,6 +286,9 @@ namespace Statecraft.Game.UI
                     return text.Format(key, Settlement(cause.Target), A(0) == "1" ? text["why.cause.fled_capture"] : "");
                 case CauseKeys.EnemyRegained:
                     return text.Format(key, Settlement(cause.Target), A(0) == "1" ? ". " + Residents(A(0)) : "");
+                case CauseKeys.PlaceLost:   // R-CTRL-006 (#1305)
+                case CauseKeys.PlaceRetaken:
+                    return text.Format(key, Settlement(cause.Target));
                 case CauseKeys.PlaceAnnexed:
                     return text.Format(key, Settlement(cause.Target), text["why.cause.annexed." + A(0)]);
                 case CauseKeys.PlaceWithdrawn:

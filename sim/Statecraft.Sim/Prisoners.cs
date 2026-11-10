@@ -31,17 +31,81 @@ namespace Statecraft.Sim
 
         /// <summary>R-POW-001, R-POW-005: unit <paramref name="u"/> surrendered to <paramref name="captor"/>'s side. An enemy unit's
         /// people become prisoners under its own side; the player's soldiers are counted under the captor's side. Called only by
-        /// Combat's surrender, the one way a unit is captured.</summary>
-        internal static string Take(GameState s, Unit u, Unit captor)
+        /// Combat's surrender, the one way a unit is captured. With an initialized Historical ledger (the dark start, #1710,
+        /// #1725 PR 7) the player's surrendering formation's serving soldier records also become Captured under the captor's
+        /// side (<see cref="CaptureRecords"/>), and SoldiersHeld grows by the records captured, so the count per captor stays
+        /// the Captured records with that captor (owner, 8 November 2026: "Keep count + check (Recommended)"). Without a
+        /// ledger it grows by the unit's strength, as before. Enemy prisoners stay a count per side (owner, 8 November 2026:
+        /// "No, keep count (Recommended)"). A synthetic or Open ledger, an unbound captor and a held count that already
+        /// disagrees with the records are refused; a refusal throws before Take writes anything, and what the throw leaves in
+        /// combat is set out at Combat.Fight's call. Returns the Why line's last sentence; Held, the population units taken
+        /// (the records captured on a ledger, owner, 9 November 2026: "Records captured (Recommended)"; else the unit's
+        /// strength), which the surrender Why line states in people; and, when a formation's leftover records went home
+        /// ("Sent home (Recommended)"), their city (Home), their number (Sent) and the Arms they returned to the stock
+        /// (ArmsBack), else null, 0 and 0.</summary>
+        internal static (string Text, int Held, int ArmsBack, string? Home, int Sent) Take(Content c, GameState s, Unit u, Unit captor)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
+            if (s.PopulationLedger.IsInitialized) RequireHeldMatchesRecords(s);
             if (u.Side == Movement.PlayerSide)
             {
-                Add(s.SoldiersHeld, captor.Side, u.Strength);
-                return "They are held by the enemy";
+                int back = 0, sent = 0; string? home = null;
+                var held = s.PopulationLedger.IsInitialized ? CaptureRecords(c, s, u, captor.Side, out back, out home, out sent) : u.Strength;
+                Add(s.SoldiersHeld, captor.Side, held);
+                return ("They are held by the enemy", held, back, home, sent);
             }
             Add(s.PrisonersHeld, u.Side, u.Strength);
-            return "They are held as prisoners";
+            return ("They are held as prisoners", u.Strength, 0, null, 0);
+        }
+
+        /// <summary>R-POW-005, R-POP-002 on the dark start: the serving soldier records of the player's formation
+        /// <paramref name="u"/> become Captured under <paramref name="side"/>, in one validated ledger commit, and the number
+        /// captured is returned. They are the active soldiers on its ActiveService target, found as battles find them
+        /// (<see cref="Training.FormationTarget"/>: an opening formation's units_1948 target, a trained one's formation/&lt;id&gt;;
+        /// owner, 9 November 2026: "Yes, in #1706 (Recommended)"). A strength its records do not number is not refused (owner,
+        /// 9 November 2026: "Go ahead on strength (Recommended)"): with more records than its strength, its strength of them
+        /// are captured, the lowest ids first; with fewer, all of them are. The leftover records leave service as soldiers sent
+        /// home do (owner, 9 November 2026: "Sent home (Recommended)"; R-UNIT-005): Demobilization's
+        /// <see cref="Demobilization.RecordsHome"/>, Send home's own ledger code, written in the capture's one ledger commit,
+        /// make them settled-in free civilians without an assignment in the nearest city to the formation's hex
+        /// (<see cref="Demobilization.Nearest"/>) and return their issued items to the Arms stock (<see
+        /// cref="Demobilization.ReturnArms"/>); <paramref name="back"/> is the Arms added, <paramref name="home"/> that city and
+        /// <paramref name="sent"/> their number (0, null and 0 with no leftover). The captives and the leftovers change in
+        /// one validated ledger commit (PopulationLedger.Capture with the leftovers as replacements), so every check comes
+        /// before any write: a missing region or reception.turns in RecordsHome, then an unbound captor, a record that is not
+        /// an active soldier, or a leftover location the ledger does not bind, all refused with nothing written. The Arms go
+        /// back after that commit.</summary>
+        static int CaptureRecords(Content c, GameState s, Unit u, string side, out int back, out string? home, out int sent)
+        {
+            var key = Training.FormationTarget(c, u.Id);
+            var serving = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier
+                    && p.Assignment.Kind == PopulationAssignmentKind.ActiveService && p.Assignment.Target == key)
+                .OrderBy(p => p.Id).ToList();
+            var take = Math.Max(0, u.Strength);
+            var ids = serving.Take(take).Select(p => p.Id).ToList();
+            var leftover = serving.Skip(take).ToList();
+            back = 0; home = null; sent = 0;
+            List<PopulationUnit>? civilians = null; var items = 0;
+            if (leftover.Count > 0)
+            {
+                home = Demobilization.Nearest(c, u.Q, u.R);
+                civilians = Demobilization.RecordsHome(c, leftover, home, out items);
+            }
+            s.PopulationLedger.Capture(ids, side, civilians);
+            if (civilians != null) { sent = civilians.Count; back = Demobilization.ReturnArms(s, items); }
+            return ids.Count;
+        }
+
+        /// <summary>The owner's ruling of 8 November 2026, "Keep count + check (Recommended)": on an initialized ledger,
+        /// SoldiersHeld per captor side equals the Captured records with that captor. Read only; a mismatch is refused.</summary>
+        internal static void RequireHeldMatchesRecords(GameState s)
+        {
+            var records = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.Captured)
+                .GroupBy(p => p.Captor!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+            foreach (var side in records.Keys.Union(s.SoldiersHeld.Keys, StringComparer.Ordinal))
+                if ((records.TryGetValue(side, out var n) ? n : 0) != (s.SoldiersHeld.TryGetValue(side, out var m) ? m : 0))
+                    throw new InvalidOperationException(FormattableString.Invariant(
+                        $"Our soldiers held by {side} number {m} but the population ledger has {n} captured records with that captor (R-POW-005)."));
         }
 
         static IEnumerable<string> Sides(string front) => FrontOf.Where(kv => kv.Value == front).Select(kv => kv.Key).OrderBy(x => x, StringComparer.Ordinal);
@@ -55,10 +119,14 @@ namespace Statecraft.Sim
         /// <summary>R-POW-002, R-POW-005, step 7 after the nation eats and the import: the prisoners eat food_per_prisoner_unit a
         /// unit from the stock, as far as it goes; each Food unit it cannot give costs prisoner_shortfall_cohesion of Social
         /// cohesion and never a prisoner (Q-POW-5). Then the Treasury pays held_soldier_cost_per_turn for each unit of the
-        /// player's soldiers held, borrowing what it lacks (Q-POW-4; R-MONEY-003).</summary>
+        /// player's soldiers held, borrowing what it lacks (Q-POW-4; R-MONEY-003). On an initialized Historical ledger (#1710,
+        /// #1725 PR 7) it runs as written, from the same counts: the held soldiers keep their Money cost (owner, 8 November
+        /// 2026: "Yes, as today (Recommended)"), the captured own records are not fed here (they eat the national ration), and
+        /// no record is read or written beyond <see cref="RequireHeldMatchesRecords"/>'s check, made before any write.</summary>
         public static void Upkeep(Content c, GameState s, MvpRules r, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
+            if (s.PopulationLedger.IsInitialized) RequireHeldMatchesRecords(s);
             var need = (long)s.PrisonersHeld.Values.Sum() * r.FoodPerPrisonerUnit!.Value;
             if (need > 0)
             {

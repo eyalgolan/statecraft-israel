@@ -2,6 +2,35 @@
 
 Researched 2026-10-10. All URLs were checked on that date.
 
+## Still open
+
+The [GAP] points below are the ones this note leaves open, each with the lines where it stands. The convention line
+(line 40) is not one. Line numbers are for this file as it now stands. The section "Open gaps to close with print sources"
+at the end of the note gives the historian-review view of the same points.
+
+- **First truce (section 1):** no minister for or against accepting is named (lines 93, 94, 96).
+- **Altalena (section 2):** who of the ten ministers present did not vote on 20 June (line 123); whether Fishman's and
+  Shapira's resignation was formally accepted, and when or whether either returned (line 126); anything outside the pages
+  listed (line 130).
+- **Generals' Revolt (section 3b):** the day the Committee of Five's report was finished or handed over (lines 155,
+  156); the day Galili left his post (lines 161, 162).
+- **Second truce (section 5):** the day of the government's own decision to accept, between the Council's vote of
+  15 July and the cable of 16 July (line 211); the cabinet positions and internal debate (lines 213, 214; table row
+  line 514).
+- **Israeli pound (sections 5 and 13e):** no sourced debate or alternative (lines 229, 491).
+- **Lehi amnesty (section 6):** the Herut item of 13 February 1949 on the release was blocked and not read (line 256).
+- **Horev (section 9):** whether the Israeli withdrawal order answered the British note itself or the US representation
+  that carried it (lines 329, 330); a direct British note to Israel, with the FO 371 files not reached (lines 331, 332;
+  table row line 513).
+- **Population registration (section 10):** no debated alternative (line 363); no Provisional Government minute on
+  deciding to hold it (lines 368, 384); which ministry the Statistics Department sat under in 1948 (line 383).
+- **Elections (section 11):** the deciding body and day of the first postponement (lines 395, 396); the day the
+  25 January date was decided (line 404); any debate inside the government or the Council on holding them in wartime
+  (line 416; table row line 517).
+- **First US loan (section 13d):** the Israeli debate, where the 1948 application and the Council and Knesset records of
+  1948-49 stay open after the second pass (line 478); whether the loan in the 26 May 1949 diary entry is the
+  Export-Import Bank credit (line 479); the four points (a) to (d) listed after the second pass (line 484).
+
 **Purpose.** The game has no events between `start: 1948-05-15` and `armistice_egypt` (`from: 1949-02-24`), which leaves about 40 weekly turns (rung 5) with no decision. These notes collect sourced candidates for that period.
 
 **Conventions** (the same as `facts.md`)
@@ -482,7 +511,7 @@ See section 3b. A real PM crisis: Ben-Gurion threatened to resign during the fir
 | 4 | `latrun_proposal` | 26 Sep 1948 | V primary (BG diary); vote count C (7–5 vs majority of one) | High; real cabinet vote |
 | 5 | `operation_yoav` | 6–15 Oct 1948 | V (cabinet 6 Oct) | Medium-high; real Hebron alternative |
 | 6 | `sinai_withdrawal` (Horev) | 31 Dec 1948 – 2 Jan 1949 | V (FRUS d341); British note 30 Dec (FRUS 1948 d857, to the US); a direct note to Israel GAP; RAF date C (6/7 Jan) | High |
-| 7 | `second_truce` | 15–18 Jul 1948 | V (Res 54); Israeli acceptance GAP | Medium |
+| 7 | `second_truce` | 15–18 Jul 1948 | V (Res 54); Israeli acceptance cabled 16 Jul V (S/903; a person's check pending); cabinet positions GAP | Medium |
 | 8 | `ten_days` | 8–10 Jul 1948 | V; alternative weak (S) | Medium; sensitive |
 | 9 | `operation_hiram` | 24–29 Oct 1948 | V; start date C (28/29 Oct) | Medium; sensitive |
 | 10 | `elections_1949` | 5 Nov 1948 – 25 Jan 1949 | V facts; wartime debate GAP | Medium |
@@ -509,7 +538,7 @@ Gaps remain in the second half of August and in early December.
 
 ## Open gaps to close with print sources (historian review)
 - Names of Israeli ministers or generals who argued for refusing the first truce, if any. Sources: Gelber, Bar-Zohar.
-- The date and terms of Israel's acceptance of the second truce.
+- Second truce: Israel's acceptance and its terms are recorded in section 5 (the cable of 16 July 1948, UN doc S/903, [V, agent read 2026-10-23; a person's check pending]). Still open: the day of the government's own decision to accept, between the Council's vote of 15 July and the cable of 16 July ([GAP]), and the cabinet positions and internal debate ([GAP]) (section 5).
 - Whether Britain also sent a note directly to Israel, and the FO 371 reference for the 30 Dec 1948 Note Verbale (section 9).
 - Generals' Revolt: the day the Committee of Five's report was finished, its text, and the day Galili left his post (section 3b). The other steps are dated from the committee's protocol and the Palmach site.
 - 8 Nov registration: which ministry the Statistics Department sat under in 1948, any Provisional Government minute on deciding to hold it, and the Gazette scan of the regulations and of their extension ordinance (the minister, the office, the regulations' text as printed in the Council's annex and the 25th-sitting vote are sourced in section 10).

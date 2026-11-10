@@ -12,6 +12,8 @@ namespace Statecraft.Sim
     public sealed class StartingForce
     {
         public string Row { get; set; } = "";
+        /// <summary>Player-facing names from the same units_1948.yaml row, used when a sim report names a required brigade.</summary>
+        public string Name { get; set; } = "";
         /// <summary>The anchor's place, as the row names it.</summary>
         public string Anchor { get; set; } = "";
         public string Type { get; set; } = "";
@@ -104,7 +106,7 @@ namespace Statecraft.Sim
                 if (!hex.Land) throw new ContentException(FileName, $"{at}.anchors[{k}]", FormattableString.Invariant($"hex q={q} r={r} is not a land hex in {ContentLoader.HexesFile}"));
                 var force = new StartingForce
                 {
-                    Row = id, Anchor = Text(anchor, "place"), Type = TypeFor(c, side, at), Side = side,
+                    Row = id, Name = Text(row, "name"), Anchor = Text(anchor, "place"), Type = TypeFor(c, side, at), Side = side,
                     Strength = units, Q = q, R = r, Status = Text(row, "status"), Arrives = day == start ? (DateTime?)null : asOf,
                     CheckedOn = Text(row, "checked_on"),
                 };
@@ -150,10 +152,12 @@ namespace Statecraft.Sim
 
         /// <summary>Adds the starting forces to a new game, in the content's order, taking the next ids: the unit with id i
         /// of a new game is <c>c.StartingForces[i]</c>. An arriving row's id is taken too, so it is free when it arrives
-        /// (R-UNIT-009).</summary>
+        /// (R-UNIT-009). With an initialized gdd-0.3 ledger (the dark start, #1725 PR 5), each own starting formation's
+        /// strength must be its active-soldier records serving in it (R-POP-004), or nothing is added. Any other initialized
+        /// ledger (synthetic or Open) is refused, with nothing added (R-POP-002).</summary>
         public static void Init(Content c, GameState s)
         {
-            PopulationLedger.RefuseAggregate(s);
+            if (s.PopulationLedger.IsInitialized) { PopulationLedger.RefuseUnlessHistorical(s); RequireLedgerSoldiers(c, s); }
             foreach (var f in c.StartingForces)
             {
                 var id = s.NextId++;
@@ -161,22 +165,62 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>R-POP-004: an own formation in the start inventory gives its strength as active soldiers whose service
+        /// target is its source key (HistoricalPopulation.FormationPrefix plus its row), so the formations the game places and
+        /// the ledger's soldiers are the same people.</summary>
+        static void RequireLedgerSoldiers(Content c, GameState s)
+        {
+            var serving = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier && p.Assignment.Target != null)
+                .GroupBy(p => p.Assignment.Target!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+            foreach (var f in HistoricalPopulation.OpeningFormations(c))
+            {
+                var key = HistoricalPopulation.FormationPrefix + f.Row;
+                if ((serving.TryGetValue(key, out var n) ? n : 0) != f.Strength)
+                    throw new InvalidOperationException($"Starting formation '{f.Row}' has strength {f.Strength} but the population ledger serves it with {n} (R-POP-004).");
+            }
+        }
+
         /// <summary>R-UNIT-009 (#1241, owner, 21 October 2026, answer 1(a)): resolver step 9b. A row dated after the start
         /// arrives in the resolution of the turn from s.Date to <paramref name="next"/> that reaches its day, once, as unit
         /// <c>c.StartingForces[i]</c>'s id i, on its anchor's hex with its strength. Like a starting force it ignores the stack
-        /// limit and what else stands on the hex.</summary>
+        /// limit and what else stands on the hex.
+        /// With an initialized Historical ledger (#1725 PR 7, producer 08) the brigade also brings its strength as new
+        /// active-soldier records serving in it (<see cref="HistoricalPopulation.ArrivalRows"/>; owner, 8 November 2026:
+        /// "Soldiers of brigade (Recommended)", "New people (Recommended)"), registered all or nothing before its unit is added.
+        /// A brigade whose records are already registered adds nothing, so a replay of the turn adds nobody twice (coordinator
+        /// call, 8 November 2026, Q7 (a)); its records are registered together, so its first ordinal marks the arrival. A
+        /// synthetic or Open ledger is still refused (R-POP-002).</summary>
         public static void Arrive(Content c, GameState s, DateTime next)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: a Historical ledger's records are then the soldiers
             bool Due(StartingForce f) => f.Arrives is DateTime day && s.Date < day && day <= next;
             // Every due force is checked before any is added, so a refusal leaves the state unchanged.
             foreach (var f in c.StartingForces)
                 if (Due(f) && f.Side != Movement.PlayerSide)
                     throw new InvalidOperationException($"Enemy-side starting force '{f.Row}' may not arrive after the game starts (R-ENEMY-004)");
+            var ledger = s.PopulationLedger.IsInitialized ? s.PopulationLedger : null;
+            var arriving = new List<int>();
+            var rows = new List<PopulationInventoryRow>();
             for (int i = 0; i < c.StartingForces.Count; i++)
             {
                 var f = c.StartingForces[i];
-                if (Due(f)) s.Units.Add(i, new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
+                if (!Due(f)) continue;
+                if (ledger != null)
+                {
+                    if (ledger.HasArrived(HistoricalPopulation.FormationPrefix + f.Row, 0)) continue;
+                    rows.AddRange(HistoricalPopulation.ArrivalRows(c, f));
+                }
+                arriving.Add(i);
+            }
+            // All or nothing: an id already taken would refuse at Add, so it is refused before the records are registered.
+            foreach (var i in arriving)
+                if (s.Units.ContainsKey(i))
+                    throw new InvalidOperationException($"Unit {i} of starting force '{c.StartingForces[i].Row}' is already in the game (R-UNIT-009)");
+            if (ledger != null && rows.Count > 0) ledger.RegisterArrivals(rows);
+            foreach (var i in arriving)
+            {
+                var f = c.StartingForces[i];
+                s.Units.Add(i, new Unit(i, f.Type, f.Q, f.R, side: f.Side, strength: f.Strength));
             }
         }
 

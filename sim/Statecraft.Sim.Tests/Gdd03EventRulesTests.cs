@@ -542,13 +542,13 @@ public class Gdd03EventRulesTests
     static readonly string[] SourceBytes =
     {
         "absorb_immigrants:95682d1835e8de59e3e69f56a9beb13ddf91447270a672d23eaff2523898fea1", // re-pinned for #1065 (reviewer comment matches the text), then for the stale reviewer comment (comment-only)
-        "altalena:83f547759e5a991e78c32240c2ee3551b9b8ad9acdad8c135621b56805895f8d", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
-        "armistice_egypt:253a579e5de78fd3648b582b3f2329ca2947100df5568db74ff2a1819442a782", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
-        "armistice_jordan:fe65c03057dc670b096a8385478738b76fd7ebd200b4f5e7c281b94b0c48a8c4", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment), then for `order: 1` and its comment (R-EVT-006: after Lebanon's card)
-        "armistice_lebanon:5ce3ba85f056294691be4ac345896a3222a8898042491bbb989a281b8bc6a882", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
-        "armistice_syria:b552b74029c98058bd6b7f8b4a62f815539cc766023fa99efb4c01adbcb06824", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
+        "altalena:83a6ebf59b5c64c489056ce3e4b17f14cc93d16f35a6fa8ebcffb788f04be1a7", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only), then for #2531 (compromise's arms: -2 and comments on both options; no title, text or option text changed), then for the owner's approval of both values in #2995 (comment-only), then for #2537 (HE-06: straight quote to gershayim U+05F4 in Hebrew acronyms; no word changed)
+        "armistice_egypt:843e8697ec7a45b015edc9d0d81856b2b6330b462cdbe574805a240b7dbb2ee4", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment), then for #1709 PR 2 (R-WAR-008: early_text and early_text_he in the words the owner approved on 9 November 2026, "You approve the words (Recommended)", and their comments; no text, date, option, effect or review line changed), then for the owner's own sign-off after it (41f8b9e89: reviewed_by eyalgolan, reviewed_on 2026-11-10)
+        "armistice_jordan:319f6f337d8ffba53ab5fd5aafa94ce251a231e5159ce24715f1d39d59614867", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment), then for `order: 1` and its comment (R-EVT-006: after Lebanon's card), then for #1709 PR 2 (R-WAR-008: early_text and early_text_he in the words the owner approved on 9 November 2026, "You approve the words (Recommended)", and their comments; no text, date, option, effect or review line changed), then for the owner's own sign-off after it (41f8b9e89: reviewed_by eyalgolan, reviewed_on 2026-11-10)
+        "armistice_lebanon:9bdca83d89dbd9f5f4b237904c54c5cfeb0457b09f16056a174de7c3e6dc72a6", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment), then for #1709 PR 2 (R-WAR-008: early_text and early_text_he in the words the owner approved on 9 November 2026, "You approve the words (Recommended)", and their comments; no text, date, option, effect or review line changed), then for the owner's own sign-off after it (41f8b9e89: reviewed_by eyalgolan, reviewed_on 2026-11-10)
+        "armistice_syria:b9ce4b1983c84e965742f923cb2b0f4f5ebbbd2c00284c2a2bc40c65cccb8c63", // re-pinned for #1065 (Beri's native Hebrew read), then for #2478's front_quiet key (no text, date, option or effect changed), then for #2551 (R-TURN-002: `from` a turn earlier and its comment), then for #1709 PR 2 (R-WAR-008: early_text and early_text_he in the words the owner approved on 9 November 2026, "You approve the words (Recommended)", and their comments; no text, date, option, effect or review line changed), then for the owner's own sign-off after it (41f8b9e89: reviewed_by eyalgolan, reviewed_on 2026-11-10)
         "austerity_1949:94454d82815b0507236a206d1f834a0af25e2483990bb842f6085e04327ed928", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
-        "bernadotte_assassination:3b7bce0f1707180fffdd254a6848efbb095cdf38dd70c7b31e83475c34623ec2", // re-pinned for #1065 (Beri's native Hebrew read), then for the stale reviewer comment (comment-only)
+        "bernadotte_assassination:03bce3e407874fa619899beb75bd4fa8a2b7d89b5f48ff33f38e0087291001ce", // re-pinned for #1065 (Beri's native Hebrew read), then for the stale reviewer comment (comment-only), then for #2537 (HE-06: straight quote to gershayim U+05F4 in Hebrew acronyms; no word changed)
         "burma_road_complete:6c49179b3844761c6f580c1436596cbace6932cbb6b620a9ea2872b6e0342ba2", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "clothing_rationing_1950:ce2d24a8a98ad86a1670e62094d18fca9da71b5cd11f437cd5314a09f4a1d562", // re-pinned for #1065 (Beri's native Hebrew read)
         "degania_defence:f915a42f050777ddffd7e7e26090b51c6cf922dade41a98fe7174b1c50a62c6e", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026), then for #1065 (Beri's native Hebrew read)
@@ -557,12 +557,12 @@ public class Gdd03EventRulesTests
         "education_registration_1951:d0d21344c5c198f3477f1736b402ddd3d3444423198f66f8bb97f3d72f2d72df", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "elections_1949:962bd8064e8b98d4919be9b4ff4fab68cb9bd3d15213ea43917caa4432f42116", // re-pinned for #1065 (Beri's native Hebrew read)
         "first_new_yishuv:0c75e086931ddbd0d356b8691afffb914ba1e657475d9295375baa3ee32c66b9", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
-        "first_truce:51240c2fc8b3b944b4698cf15840652c4b3e15efe37ca14fcd398d4acec0fcb8", // re-pinned for #1065 (Beri's native Hebrew read), then for the stale reviewer comment (comment-only)
+        "first_truce:94cb57f5ddf55ab7787d8b0dc09d727ca8e73093f3095470e20b570bb7a530b1", // re-pinned for #1065 (Beri's native Hebrew read), then for the stale reviewer comment (comment-only), then for #2537 (HE-06: straight quote to gershayim U+05F4 in Hebrew acronyms; no word changed)
         "forex_crisis_1951:8a200332ee0788ca8f32b40091eb9b8c6460c7b7f6a02234a4a9c9eba0a5a1fd", // re-pinned for #1065 (Beri's native Hebrew read), then for #2833 (R-TURN-002: `from` a turn earlier and its comment)
         "frumkin_commission:c7bfb21991dc41bfcbaaf4778c47c5226913a8289ba208474c87128768ba622c", // re-pinned for #1065 (Beri's native Hebrew read)
         "hula_drainage:b7ec7159b5cb6ecc009e1ff7e12a7f2426ee1c4b992b8c91c4675c8df3cc1bf5", // re-pinned for #1065 (Beri's native Hebrew read)
-        "idf_founding:caad7affcf0309a41c56956c10dd15936ec319ac996ddff6f2cd85efbcebc51e", // re-pinned for #1065 (Beri's native Hebrew read)
-        "iraqi_exodus:7a94f2e5edc36a272323bf1702e74b3ee8a7e6da709d2effda14c55a7ae6de70", // re-pinned for #1065 (Beri's native Hebrew read), then for #2833 (R-TURN-002: `from` a turn earlier and its comment), then for the text before the 10 March 1951 law (the 1 March emigration deadline, JTA 19 January 1951) and its source row
+        "idf_founding:b1bccb780a838ef965c07fff162cd871fd10576e307d9817bbe4c63b7d599f58", // re-pinned for #1065 (Beri's native Hebrew read), then for #2537 (HE-06: straight quote to gershayim U+05F4 in Hebrew acronyms; no word changed)
+        "iraqi_exodus:136490e31bb73a3d1c3c7b0074d3984bd3a98b95ac10d131b05bb64ab9ec38d8", // re-pinned for #1065 (Beri's native Hebrew read), then for #2833 (R-TURN-002: `from` a turn earlier and its comment), then for the text before the 10 March 1951 law (the 1 March emigration deadline, JTA 19 January 1951) and its source row, then for #2531 (both option texts reworded to match their unchanged effects, and their comment)
         "israel_bonds:db9b8cf0754fd62166effed2ee3b563aa06bfdba7cf6d43f4965cab44997786a", // re-pinned for #1065 (Beri's native Hebrew read), then for #2457 (R-EFX-009: launch's debt_dollars: 52 and its comment; owner, 2 November 2026, #2224, "Add equal Debt"), then for the donations-only wording and pending Hebrew review marker
         "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
         "jerusalem_demilitarisation_guard:a9693784deafaad901268afd8a0c47a2f5b7d5f75eba33d6180f94b62913fb53", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
@@ -571,46 +571,42 @@ public class Gdd03EventRulesTests
         "law_of_return:d5d7f352eaa63e8f57a0f3fcdcbba82791e4ea3cd267afd8adee9d6b01a2f052", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "maabarot_policy:12e53e14fe3b045f7c18b75ac7af68acf079c17968baf6c82df2435675eb0884", // re-pinned for #1065 (Beri's native Hebrew read)
         "ministry_supply_crisis:2de253de7bafb65f0168bdc151dc0b47fec94843ad6f13bf3ac092d7015b55f9", // re-pinned for #1065 (Beri's native Hebrew read)
-        "operation_hiram:e7c661e53f93576d8a135008e0d1e623430967a36729b58b67a4af195165bccf", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
-        "operation_horev:373bf144ad21c326eed5895d7bf57b2d73e922c8589bab47da812e2f96f5fb45", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py; review status unchanged), then re-pinned for the Horev garrison line (owner, 2 November 2026, "Add the line (Recommended)", #2087)
-        "operation_yoav:c4af1976488006f26f06cddaa6a9e3379d0193f5c5c22c8e789ccff64dabfefc", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
-        "rafah_force_pressure:37ca577e1b93f241035d8bf322810f311a084427307c5722f4122238aa9ec6b8", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
+        "operation_hiram:1c377312e7a71cd88e8ad943789259f8b0a6b146a2fa75843ac43a5fd4a0ea57", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Carmeli to Manara, the 7th Brigade to al-Malikiyya; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged), then for #2621 (the owner's "Add real orders", 7 November 2026: advance_into_lebanon's comment "No unit orders" goes, its new R-ENEMY-007 lines are left out of the pin), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he)
+        "operation_horev:c1849834d9b34509fb96e22cc77c5a8c60167d5bf91b630ef96577621866e130", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py; review status unchanged), then re-pinned for the Horev garrison line (owner, 2 November 2026, "Add the line (Recommended)", #2087), then for #2621 (the owner's "Reword it (Recommended)" and "All approved (Recommended)", 7 November 2026: the Nazareth sentence reworded for R-ENEMY-007, EN and HE)
+        "operation_yoav:068b82fc97ed355e96225fd03bb5eec98e198e3a47c9bedf2a02f7f3f3d019e7", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Negev to Beersheba, Givati to Huleiqat; owner rulings, 1 and 2 November 2026, order targets; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he)
+        "rafah_force_pressure:7375565a957129cb27c12d464806207e3b00196cde2759748f5692f4cc917036", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he), then for the owner's own re-sign after it (9665aac34: reviewed_on 2026-11-07)
         "railway_complete:98d06d62c88d889e3e4a98f954fb04727695c37f58c6ccef94449fc16e88bd04", // re-pinned for #1065 (owner's native read; flag removed in 8fbcb2aff), then for the stale reviewer comment (comment-only)
         "reparations_claim:0aa053313d9385bc8746fa1d7318883aab3d1d6706318ad978fc4cd97d98d898", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
-        "rhodes_talks:c5c9cdf906f75e2672e5eedaeadab7f224df96f666a3097813903b81ec06f4f6", // re-pinned for #1065 (Beri's native Hebrew read)
+        "rhodes_talks:7692663150c6348e1ad889e38af30440948c54e5414a270eb35e25fbe111ee45", // re-pinned for #1065 (Beri's native Hebrew read), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he)
         "second_truce:22eeb171849bac248d58cec944c03bac6aee56c96a192aabf0aba2b7e02b19f6", // re-pinned for #1065 (Beri's native Hebrew read)
-        "sinai_withdrawal:4abcd39e509c3d404523f7a5609bdb8e1e5180c19524367790ba7adf0af9e06b", // re-pinned for #1065 (Beri's native Hebrew read)
+        "sinai_withdrawal:f62d48c5e16f2c4805805e769b956bbe5e4f9037c3fa8fafa74758bbe870fc6a", // re-pinned for #1065 (Beri's native Hebrew read), then for #2621 (the owner's "Dateless variants (Recommended)" and "All approved (Recommended)", 7 November 2026: late_text and late_text_he)
         "ten_days:0be9dc54863d46b935428e7a6fd1c9d8fe21194960c976d3ed4283b9e1088962", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit orders: Kiryati to Ramle replaces Yiftach to Lydda, sent to Ramla's capture target; owner rulings, 1 and 2 November 2026, order target; hexes re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
     };
-    // R-ENEMY-005 (owner, 31 October 2026, #749: "GDD 0.1 only"): the operation cards' unit orders apply under gdd-0.1; under
-    // gdd-0.3 the cards stay effect-free for units until a 0.3 accounting contract exists (R-EFX-001/005).
+    // R-ENEMY-005, R-ENEMY-007: operation orders apply under both GDD identities once the required unit is in place.
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void OperationCardOrdersApplyUnderGdd01Only(bool modern)
+    public void OperationCardOrdersApplyUnderBothRulesetsWhenUnitsAreInPlace(bool modern)
     {
         var c = Real(modern);
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         Assert.Equal("golani", c.StartingForces[0].Row);
-        var before = s.Units[0];
+        var before = s.Units[0]; var option = c.Events.First(e => e.Id == "operation_horev").Options.First(o => o.Id == "launch");
+        var at = c.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+        s.Units[0] = new Unit(before.Id, before.Type, at.Q, at.R, before.Service, before.Side, before.Strength,
+            before.Order, before.OrderTarget, before.HomeCity, before.Full, before.CombatXp);
         s.PendingEvents.Add("operation_horev");
         Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>()));
         var after = s.Units[0];
-        Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
+        Assert.Equal((Movement.GoTo, "-8,28"), (after.Order, after.OrderTarget));
     }
-    // R-ENEMY-005, R-CTRL-013 (owner, 2 November 2026, #2087: "Keep a garrison in Nazareth (Recommended)"; owner, 31 October
-    // 2026, #749: "GDD 0.1 only"): Golani alone on Nazareth in the `occupied` state, its timer still running (the EnemyAITests
-    // cases are all `awaiting_end`), and Horev launched. Under gdd-0.1 the order is held back with Orders.RefusedLastGarrison
-    // and Golani stays; under gdd-0.3 the card gives no unit order, so nothing is refused, RefusedLastGarrison never appears,
-    // and Golani is untouched.
-    // Red without the rule's `occupied` half (SettlementControl.LastGarrison reading only `awaiting_end`): under gdd-0.1 the
-    // order is given, or refused with another reason, so no RefusedLastGarrison names unit 0. Red for a check made outside
-    // the gdd-0.3 guard (EventSystem.Resolve): under gdd-0.3 a RefusedLastGarrison would appear.
+    // R-ENEMY-005, R-CTRL-013: once the placement precondition is isolated, Golani alone on occupied Nazareth is held back
+    // with RefusedLastGarrison under both GDD identities and the occupation continues.
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void TheLastGarrisonRuleHoldsForAnOccupiedPlaceUnderGdd01Only(bool modern)
+    public void TheLastGarrisonRuleHoldsForAnOccupiedPlaceUnderBothRulesets(bool modern)
     {
         var c = Real(modern);
         Assert.Equal(modern, c.Ruleset == SaveGame.Gdd03Ruleset);
@@ -621,15 +617,46 @@ public class Gdd03EventRulesTests
         s.Units[0] = new Unit(g.Id, g.Type, nazareth.Q, nazareth.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full, g.CombatXp);
         Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (nazareth.Q, nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
         s.Settlements["nazareth"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Occupied, s.Date, turns: 3);
+        var option = c.Events.First(e => e.Id == "operation_horev").Options.First(o => o.Id == "launch");
+        var nazarethRegion = c.PlayerRegions.AtHex(nazareth.Q, nazareth.R)!.Id;
+        if (!option.RequiresUnitRegions.Contains(nazarethRegion)) option.RequiresUnitRegions.Add(nazarethRegion);   // isolate R-CTRL-013
         s.PendingEvents.Add("operation_horev");
         var rejected = new List<Rejection>();
         Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>(), rejected: rejected));
-        Assert.Equal(modern ? Array.Empty<string>() : new[] { Orders.RefusedLastGarrison },
+        Assert.Equal(new[] { Orders.RefusedLastGarrison },
             rejected.Where(j => j.Command is UnitOrder { Unit: 0 }).Select(j => j.Reason));
-        if (modern) Assert.DoesNotContain(rejected, j => j.Reason == Orders.RefusedLastGarrison);
         Assert.Equal((nazareth.Q, nazareth.R, "", ""), (s.Units[0].Q, s.Units[0].R, s.Units[0].Order, s.Units[0].OrderTarget));
         Assert.False(s.CardOrders.ContainsKey(0));
         Assert.Equal(SettlementControl.Occupied, s.Settlements["nazareth"].State);
+    }
+    // R-ENEMY-005, R-CTRL-013, R-CTRL-016: the last-garrison rule guards only an occupied place. Once Nazareth is annexed it
+    // is held for good with no garrison (R-CTRL-016), so Horev's order takes Golani away from it under both GDD identities.
+    // mvp-annex-nazareth covered this before R-ENEMY-007; there Golani is now outside Horev's regions, so the placement
+    // precondition is isolated as in the test above. Red without the Occupied/AwaitingEnd condition in
+    // SettlementControl.LastGarrison: the order is refused with RefusedLastGarrison and Golani stays.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HorevsOrderTakesGolaniFromAnAnnexedNazarethUnderBothRulesets(bool modern)
+    {
+        var c = Real(modern);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("golani", c.StartingForces[0].Row);
+        var nazareth = c.SettlementTargets.Single(t => t.Id == "nazareth");
+        var g = s.Units[0];
+        s.Units[0] = new Unit(g.Id, g.Type, nazareth.Q, nazareth.R, g.Service, g.Side, g.Strength, "", "", g.HomeCity, g.Full, g.CombatXp);
+        Assert.Equal(new[] { 0 }, s.Units.Values.Where(u => (u.Q, u.R) == (nazareth.Q, nazareth.R) && u.Side == Movement.PlayerSide).Select(u => u.Id));
+        s.Settlements["nazareth"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Annexed, s.Date, turns: 3);
+        var option = c.Events.First(e => e.Id == "operation_horev").Options.First(o => o.Id == "launch");
+        var nazarethRegion = c.PlayerRegions.AtHex(nazareth.Q, nazareth.R)!.Id;
+        if (!option.RequiresUnitRegions.Contains(nazarethRegion)) option.RequiresUnitRegions.Add(nazarethRegion);   // isolate R-CTRL-013
+        s.PendingEvents.Add("operation_horev");
+        var rejected = new List<Rejection>();
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>(), rejected: rejected));
+        Assert.DoesNotContain(rejected, j => j.Command is UnitOrder { Unit: 0 });
+        Assert.Equal((Movement.GoTo, "-8,28"), (s.Units[0].Order, s.Units[0].OrderTarget));
+        Assert.True(s.CardOrders.ContainsKey(0));
+        Assert.Equal(SettlementControl.Annexed, s.Settlements["nazareth"].State);
     }
     // Review of #2087, optional 2: under gdd-0.3 the loader still checks the cards' orders (owner, 31 October 2026, #749), so
     // a Horev order to a hex that is not one of golani's anchors is refused there too.
@@ -655,7 +682,11 @@ public class Gdd03EventRulesTests
         Assert.Equal(SourceBytes.Select(x => x.Split(':')[0]), files.Select(Path.GetFileNameWithoutExtension));
         for (int i = 0; i < files.Length; i++)
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(File.ReadAllText(files[i]).Replace("\r\n", "\n"));
+            // #2543 adds sourced operation-region metadata without changing the historical prose or its review record.
+            // Preserve this byte pin over the pre-existing record by stripping only those rule-tagged lines.
+            var sourceRecord = string.Join("\n", File.ReadAllText(files[i]).Replace("\r\n", "\n").Split('\n')
+                .Where(line => !line.Contains("# R-ENEMY-007") && !line.TrimStart().StartsWith("requires_unit_regions:", StringComparison.Ordinal)));
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sourceRecord);
             Assert.Equal(SourceBytes[i].Split(':')[1], Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
         }
     }

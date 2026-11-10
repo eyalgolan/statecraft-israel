@@ -661,6 +661,18 @@ namespace Statecraft.Sim
         /// <summary>A minister whose loyalty is below this carries a delegated decision out half-heartedly (R-EVT-003; #107,
         /// owner, 18 October 2026). Required in the GDD loop, 0 to 10 (0: nobody is below it).</summary>
         public int? DelegationLoyaltyFloor { get; set; }
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Wait, with a limit (Recommended)", "6 turns (Recommended)"): how many
+        /// turns after its first postponement a postponed operation card is shown again while it waits for its units; at the
+        /// end of the last it lapses. Required in the GDD loop, at least 1.</summary>
+        public int? OperationWaitTurns { get; set; }
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026, Q8: "All five -0.01 (Recommended)"): the Security change a lapsed
+        /// operation card costs, whatever ended its wait: Horev's Hold. Required in the GDD loop, finite and at most 0.</summary>
+        public double? OperationLapseSecurity { get; set; }
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026, on a late Ten Days during the truce: "Same as Latrun, -0.10
+        /// (Recommended)"): the International Support a late operation costs when it launches while a truce the player accepted
+        /// is in force (Combat.TruceInForce). Not charged on an option whose own effects already cost International Support
+        /// (Latrun's offensive). Required in the GDD loop, finite and at most 0.</summary>
+        public double? OperationTruceBreakStanding { get; set; }
         /// <summary>The movement points it costs to enter a hex of each land biome of map/hexes.json (R-MOVE-001; Q-MOVE-1).
         /// Lake and sea have none: they are impassable. The loader requires one for every land biome in the GDD loop.</summary>
         public Dictionary<string, int> MoveCost { get; set; } = new Dictionary<string, int>();
@@ -1096,6 +1108,9 @@ namespace Statecraft.Sim
         public List<string> UnlockProjects { get; set; } = new List<string>();
         /// <summary>R-ENEMY-005: go-to orders this option gives to units of map/units_1948.yaml rows, in list order (Q-ENEMY-5).</summary>
         public List<UnitOrderEffect> UnitOrders { get; set; } = new List<UnitOrderEffect>();
+        /// <summary>R-ENEMY-007: the authored player regions in any one of which every <see cref="UnitOrders"/> row's
+        /// starting unit must stand before this military-operation option can resolve. Empty when this is not an operation.</summary>
+        public List<string> RequiresUnitRegions { get; set; } = new List<string>();
         /// <summary>R-EFX-009 (#2457): US$ millions this option also adds to Debt, under gdd-0.3 only, in IL millions at the
         /// mvp.il_per_dollar rate in force on the event's date. Null when absent.</summary>
         public double? DebtDollars { get; set; }
@@ -1115,11 +1130,13 @@ namespace Statecraft.Sim
         public string At { get; set; } = "";
     }
 
-    /// <summary>An option's go-to order (R-ENEMY-005) for the unit of the map/units_1948.yaml row <see cref="Unit"/>, toward
-    /// hex (<see cref="Q"/>, <see cref="R"/>), which must be one of that row's anchor or order target hexes (map/unit_anchor_hexes.yaml).</summary>
+    /// <summary>An option's order for the unit of the map/units_1948.yaml row <see cref="Unit"/>: a go-to (R-ENEMY-005) toward,
+    /// or an attack (R-ENEMY-008) on, hex (<see cref="Q"/>, <see cref="R"/>), which must be one of that row's anchor or order
+    /// target hexes (map/unit_anchor_hexes.yaml). <see cref="Order"/> is go_to unless the card says attack.</summary>
     public sealed class UnitOrderEffect
     {
         public string Unit { get; set; } = "";
+        public string Order { get; set; } = Movement.GoTo;
         public int Q { get => q ?? 0; set => q = value; }
         public int R { get => r ?? 0; set => r = value; }
         [YamlIgnore] public bool QGiven => q.HasValue;
@@ -1224,6 +1241,26 @@ namespace Statecraft.Sim
         /// that front, before its hard-anchor date and again after a refusal, and then takes the first soft slot (R-EVT-002).
         /// Empty for every other event.</summary>
         public string FrontQuiet { get; set; } = "";
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Signing wins (Recommended)" and the front rulings): the front whose
+        /// signed armistice ends this card. A pending operation lapses when it is signed; "" for none.</summary>
+        public string ArmisticeFront { get; set; } = "";
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Follow the launch (Recommended)"; Rafah: "Shift by the delay
+        /// (Recommended)" and "Shift with Sinai (Recommended)"): under the GDD loop the card follows the decision its `requires`
+        /// waits for. Once that is met it fires at the next turn's end even when its own window has closed, so a late
+        /// operation still brings it, on the turn after. False for every other card.</summary>
+        public bool Follows { get; set; }
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Dateless variants (Recommended)", then "All approved (Recommended)"): the
+        /// card's text, and its Hebrew, when it is shown after its own window has closed (a following card that came late, or
+        /// an operation shown again while it waits), so its dates do not mislead. "" for none.</summary>
+        public string LateText { get; set; } = "";
+        public string LateTextHe { get; set; } = "";
+        /// <summary>R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", then "Banner (Recommended)"
+        /// and "Ordinary text (Recommended)"): on a front_quiet armistice card only, the card's text, and its Hebrew, when it is
+        /// shown before its `from` (<see cref="EventSystem.ShowsEarly"/>): the talks came sooner than in history. The card is
+        /// then marked as an alternative course, and the shareable build needs a person's sign-off of it (R-ALT-011). "" for
+        /// none.</summary>
+        public string EarlyText { get; set; } = "";
+        public string EarlyTextHe { get; set; } = "";
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }
@@ -1481,6 +1518,9 @@ namespace Statecraft.Sim
         public List<SettlementTarget> SettlementTargets = new List<SettlementTarget>();
         /// <summary>The display name of each settlement id (map/settlements_1948.yaml name), for text the player reads.</summary>
         public Dictionary<string, string> SettlementNames = new Dictionary<string, string>();
+        /// <summary>The ids of the arab_town rows of map/settlements_1948.yaml. Every other row that is not enemy-held is a
+        /// player's locality (R-CTRL-006; #796 default 3).</summary>
+        public HashSet<string> ArabTowns = new HashSet<string>(StringComparer.Ordinal);
         /// <summary>The GDD cities' start values (cities.yaml), in file order. Empty in the legacy loop.</summary>
         public List<CityStart> Cities = new List<CityStart>();
         /// <summary>The GDD population and unit types (unit_types.yaml). Empty in the legacy loop.</summary>
@@ -1488,6 +1528,10 @@ namespace Statecraft.Sim
         /// <summary>The forces a Historical game starts with (map/units_1948.yaml; R-UNIT-006), in file order: the unit with id i
         /// of a new game is the i-th. Empty in the legacy loop.</summary>
         public List<StartingForce> StartingForces = new List<StartingForce>();
+        /// <summary>Exact gdd-0.3 only: gdd03-start.yaml's formation_combat_xp, each own opening formation's combat XP in the
+        /// Historical ledger fixture (#1689 rows 7 and 8), and each own dated brigade's (#1725 PR 7, producer 08), by row id.
+        /// Null when the file or the list is absent.</summary>
+        public SortedDictionary<string, int>? Gdd03FormationCombatXp { get; internal set; }
         /// <summary>Every anchor's hex of map/unit_anchor_hexes.yaml by (row id, anchor index), the only hexes an operation
         /// card may order a row's unit to (R-ENEMY-005). Empty in the legacy loop.</summary>
         public Dictionary<(string Row, int Anchor), (int Q, int R)> UnitAnchorHexes = new Dictionary<(string Row, int Anchor), (int Q, int R)>();

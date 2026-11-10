@@ -8,7 +8,7 @@ fail on a failure line or a timeout. Uses Chrome for Testing from the Playwright
 --enable-logging=stderr --v=1 as INFO:CONSOLE... "text", source: ...
 
 Usage (from the repo root):
-  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 d53edcd56e05f661e3617d680814913e2c42f05f18c6b4317875ea08213c1fa8" --expect "GOLDEN OK hash1952 25fbfb8fd3e5109d0e2e39f7d3af50322083e144ba137cf4304f4331b954dcc7"
+  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 832e8ccc38e3fb36228826816b452477fbbd6ab667ee30cdaef40e5b1b2fe869" --expect "GOLDEN OK hash1952 841f05536a49b68cd10d3f1ca548e559098415119284d483620f14bb6a4bb44e"
   uv run tools/web_check.py unity/Builds/Web-disabled --query "smoke-orders" --expect "SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78"
   (the smoke-orders golden: one Move given through the unit card, docs/determinism.md)
 Every run needs a positive check: a nonblank --expect, --startscreen, --persistence or --first-save (#2690).
@@ -93,14 +93,37 @@ def res_error(text: str, expected: str) -> str | None:
     return None if m is None or m.group(1) == expected else f"res={m.group(1)}, expected res={expected}: {text}"
 
 
+PROFILE_RUN = re.compile(r"PROFILE visual=(\S+) pose=(\S+) ")
+PROFILE_SUMMARY = re.compile(r"PROFILE summary visual=(\S+) pose=(\S+) runs=(\d+)")
+
+
 def profile_errors(lines, expected: str) -> list[str]:
-    """What is wrong with a ?vprofile run's console lines: no PROFILE run lines, a run at another size, no done line."""
+    """What is wrong with a ?vprofile run's console lines: no PROFILE run lines, a run at another size, no done line, or a
+    partial profile (#2697): a pose that lacks a configuration another pose has, no "all" or "none" configuration, or a
+    configuration whose summary line is missing or counts other runs than the run lines logged."""
     runs = [l for l in lines if l.startswith("PROFILE visual=")]
     errors = [e for e in (res_error(l, expected) for l in runs) if e]
     if not runs:
         errors.append("no PROFILE visual= lines")
     if "PROFILE visual done" not in lines:
         errors.append("no 'PROFILE visual done' line")
+    counts, summarised = {}, {}
+    for l in lines:
+        if m := PROFILE_RUN.match(l):
+            counts[(m[2], m[1])] = counts.get((m[2], m[1]), 0) + 1
+        elif m := PROFILE_SUMMARY.match(l):
+            summarised[(m[2], m[1])] = int(m[3])
+    labels = {label for _, label in counts}
+    for label in ("all", "none"):
+        if runs and label not in labels:
+            errors.append(f"no PROFILE run of the '{label}' configuration")
+    for (pose, label), n in sorted(counts.items()):
+        if summarised.get((pose, label)) != n:
+            errors.append(f"pose {pose} visual {label}: {n} run lines, summary says {summarised.get((pose, label), 'nothing')}")
+    for pose in sorted({pose for pose, _ in counts}):
+        missing = sorted(labels - {label for p, label in counts if p == pose})
+        if missing:
+            errors.append(f"pose {pose} has no run of {', '.join(missing)}")
     return errors
 
 

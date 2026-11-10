@@ -23,12 +23,17 @@ namespace Statecraft.HexTiles.Prototypes
     /// 0.38 S), not to the hex centre, so two like hexes continue one field grid across their shared edge. The crop of a
     /// block comes from its lattice indices (a planned rotation, not random), so a block cut by an edge gets the same crop
     /// on both sides. North-south lines alternate between farm roads and irrigation channels; the channel lines carry
-    /// windbreaks (cypress and eucalyptus alternating), and every third east-west line carries a eucalyptus windbreak.
+    /// windbreaks (cypress and eucalyptus alternating). The single eucalyptus sits on the first free channel slot, so the
+    /// east-west lines get none.
     /// Tall pieces keep out of ctx.InUnitSpot and off the farmstead yard.
     ///
+    /// The eucalyptus is Tal Heuberger's shipped railway-halt tree (tiles:railway_halt/eucalyptus): one eucalyptus
+    /// everywhere, the owner's "all your picks", 7 November 2026 (#1952). Until the hex-props bundle arrives it is a Tree stand-in.
+    ///
     /// Triangle budget by arithmetic (hard caps below; FlatSurface refuses nothing): 14 cypress x 1,600 = 22,400;
-    /// 50 eucalyptus stand-ins x under 100 = under 5,000; barn and water tower, 2 x 1,400 = 2,800. Worst case under 30,200
-    /// of 34,000.</summary>
+    /// 1 eucalyptus x 6,423 (measured) = 6,423; barn and water tower, 2 x 1,400 = 2,800. Worst case under 31,700 of 34,000.
+    /// A second tree would break the budget (38,046), so the windbreaks keep one eucalyptus of the 7 to 11 the lines
+    /// placed on the israel board's hexes (#1952); the other eucalyptus spots stay open.</summary>
     [HexPrototype("jezreel_valley", Kind = "nature", Region = "north")]
     public sealed class JezreelValley : IHexPrototype
     {
@@ -37,9 +42,9 @@ namespace Statecraft.HexTiles.Prototypes
         public string Ground => "plains";
         public int TriangleBudget => 34000;
 
-        const string Cypress = "sandbox:cypress_lite", Eucalyptus = "tiles:jezreel_valley/eucalyptus",
+        const string Cypress = "sandbox:cypress_lite", Eucalyptus = "tiles:railway_halt/eucalyptus",
             Barn = "sandbox:kit_moshava_3", Tower = "sandbox:kit_kibbutz_4";
-        const int MaxCypress = 14, MaxEucalyptus = 50;
+        const int MaxCypress = 14, MaxEucalyptus = 1;
         const float BlockW = 0.62f, BlockD = 0.34f, PitchX = 0.66f, PitchZ = 0.38f, TreeStep = 0.11f;
 
         // A planned rotation: the crop of block (i, j) is Rotation[(2i + j) mod 5].
@@ -91,7 +96,7 @@ namespace Statecraft.HexTiles.Prototypes
             }
 
             // 4. Windbreaks on world-anchored spots: along each north-south channel line (cypress and eucalyptus in turn),
-            //    and along every third east-west line (eucalyptus). Out of the unit spot, the yard and the crossings.
+            //    and, only if no channel slot took the one eucalyptus, along an east-west line. Out of the unit spot, the yard and the crossings.
             int cypress = 0, eucalyptus = 0;
             for (int i = i0; i <= i1; i++)
             {

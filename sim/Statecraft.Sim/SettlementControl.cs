@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -24,9 +25,10 @@ namespace Statecraft.Sim
             var enemyHeld = new HashSet<string>(c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities, StringComparer.Ordinal);
             foreach (var t in c.SettlementTargets.Where(x => enemyHeld.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal))
             {
-                // An ownerless, non-depopulated record marks a place returned to enemy control and can be taken again.
+                // An ownerless, non-depopulated record marks a place returned to enemy control and can be taken again. An
+                // ownerless annexed record is an annexed target enemy units took (R-CTRL-006): retaking it is no new capture.
                 if (Holder(s, t.Q, t.R) != Movement.PlayerSide
-                    || (s.Settlements.TryGetValue(t.Id, out var old) && !(old.Owner == "" && !old.Depopulated))) continue;
+                    || (s.Settlements.TryGetValue(t.Id, out var old) && !(old.Owner == "" && !old.Depopulated && old.State != Annexed))) continue;
                 var fled = t.Residents == ContentLoader.Fled;
                 s.Settlements[t.Id] = new SettlementControl(Movement.PlayerSide, AwaitingChoice, fled: fled);
                 why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is captured: Israeli units hold it and no enemy unit is there. "
@@ -46,7 +48,8 @@ namespace Statecraft.Sim
         }
 
         /// <summary>Resolver step 3, after enemy combat: perform any remaining player capture, stamp its date, then return
-        /// an awaiting-choice target held by enemy military units alone to enemy control. No resident field or RNG changes.</summary>
+        /// an awaiting-choice target held by enemy military units alone to enemy control, then take or give back the player's
+        /// localities (R-CTRL-006). No resident field or RNG changes.</summary>
         public static void Capture(Content c, GameState s, DateTime next, List<Cause> why)
         {
             CaptureHeld(c, s, why);
@@ -59,7 +62,46 @@ namespace Statecraft.Sim
                 why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is under enemy control again: enemy units hold it and no Israeli unit is there"
                     + (record.Fled ? ". " + FledLine : ""), key: CauseKeys.EnemyRegained, args: new[] { record.Fled ? "1" : "0" }));
             }
+            // R-CTRL-006 (Q-TGT-2 (c); #796 default 3): enemy military units alone on a player's locality take it, with no
+            // choice, as an ownerless record dated the turn's end (the lost marker); Israeli military units alone on it again
+            // give it back by removing that record. An annexed target is taken the same way, on its target's hex (the owner on
+            // #2955, "Can be taken"): its record loses only its owner, and a retake gives the owner back, so it is annexed again
+            // with nothing added a second time. In ordinal id; a record of any other shape is left alone.
+            var annexed = c.SettlementTargets.Where(t => s.Settlements.TryGetValue(t.Id, out var a) && a.State == Annexed).Select(t => (t.Id, t.Q, t.R));
+            foreach (var (id, q, r) in PlayerLocalities(c, s).Select(h => (h.Id, h.Q, h.R)).Concat(annexed).OrderBy(x => x.Id, StringComparer.Ordinal).ToList())
+            {
+                var holder = Holder(s, q, r);
+                var has = s.Settlements.TryGetValue(id, out var x);
+                var isAnnexed = has && x!.State == Annexed;
+                if (holder == Enemy && (isAnnexed ? x!.Owner == Movement.PlayerSide : !has))
+                {
+                    s.Settlements[id] = isAnnexed ? WithOwner(x!, "") : new SettlementControl(since: next);
+                    why.Add(new Cause("map", id, 0, $"{c.SettlementNames[id]} is lost: enemy units hold it and no Israeli unit is there", key: CauseKeys.PlaceLost));
+                }
+                else if (holder == Movement.PlayerSide && has && (isAnnexed ? x!.Owner == "" : IsLost(x!)))
+                {
+                    if (isAnnexed) s.Settlements[id] = WithOwner(x!, Movement.PlayerSide);
+                    else s.Settlements.Remove(id);
+                    why.Add(new Cause("map", id, 0, $"{c.SettlementNames[id]} is retaken: Israeli units hold it again and no enemy unit is there", key: CauseKeys.PlaceRetaken));
+                }
+            }
         }
+
+        /// <summary>R-CTRL-006 (#796 default 3, owner, 21 October 2026): the player's localities, every map/settlements_1948.yaml
+        /// row that is not an arab_town and not on mvp.enemy_held_localities, in file order. An annexed target is an arab_town,
+        /// so it is not one of them; <see cref="Capture"/> adds the annexed targets itself (#2955).</summary>
+        internal static IEnumerable<SettlementHex> PlayerLocalities(Content c, GameState s)
+        {
+            var enemyHeld = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities;
+            return c.SettlementHexes.Where(h => !c.ArabTowns.Contains(h.Id) && !enemyHeld.Contains(h.Id));
+        }
+
+        /// <summary>R-CTRL-006 for an annexed target: the same record with <paramref name="owner"/>.</summary>
+        static SettlementControl WithOwner(SettlementControl x, string owner) =>
+            new SettlementControl(owner, x.State, x.Since, x.Depopulated, x.Combatants, x.Buildings, x.Turns, x.Fled);
+
+        /// <summary>R-CTRL-006: the lost marker of a player's locality, an ownerless, inhabited record with no state.</summary>
+        static bool IsLost(SettlementControl x) => x.Owner == "" && x.State == "" && !x.Depopulated;
 
         /// <summary>The kind of <see cref="ResolveCapture"/>: one attention_cost key for every outcome, so none is cheaper (Q-TECH-3).</summary>
         public const string ResolveKind = "resolve_capture";
@@ -120,22 +162,31 @@ namespace Statecraft.Sim
                     if (!c.RulesAt(s.Date).Mvp!.DeportInPlay) return new CaptureRefusal(CaptureRefusal.NotInPlay, "Deport is not built yet");
                     // R-CTRL-018, OWNER QUESTION 4 (a) on #799: a fled town has no one left to deport, so Deport stays listed
                     // third but is refused with this reason, which the options helper shows on its button.
-                    return s.Settlements[id].Fled ? new CaptureRefusal(CaptureRefusal.NoOneToDeport, NoOneToDeport) : Depopulate(c, s, id, why);
+                    return s.Settlements[id].Fled ? new CaptureRefusal(CaptureRefusal.NoOneToDeport, RefusedNoOneToDeport) : Depopulate(c, s, id, why);
                 default: return UnknownOutcome;
             }
         }
 
         /// <summary>Deport's refusal for a fled town (OWNER QUESTION 4 (a) on #799; in the owner's sensitivity packet).</summary>
-        const string NoOneToDeport = "Its residents fled when it was captured, so there is no one to deport";
+        public const string RefusedNoOneToDeport = "Its residents fled when it was captured, so there is no one to deport";
 
-        static CaptureRefusal UnknownOutcome => new CaptureRefusal(CaptureRefusal.UnknownOutcome, "That outcome is not known");
+        /// <summary>The capture and end-of-occupation refusals the end of turn reports that the UI shows as a reviewed
+        /// capture.refusal.* line, as constants (#2707). {0} is the place's name.</summary>
+        public const string RefusedUnknownOutcome = "That outcome is not known",
+            RefusedOccupyNeedsUnit = "Occupy needs an Israeli military unit on {0}",
+            RefusedAnnexNeedsUnit = "Annex needs an Israeli military unit on {0}",
+            RefusedWithdrawNeedsUnit = "Withdraw needs an Israeli military unit on {0}",
+            RefusedNoFreeHex = "A unit has no free hex next to {0} to withdraw to";
+
+        static CaptureRefusal UnknownOutcome => new CaptureRefusal(CaptureRefusal.UnknownOutcome, RefusedUnknownOutcome);
 
         /// <summary>The kind of <see cref="EndOccupation"/>, with one attention_cost key (R-CTRL-014).</summary>
         public const string EndKind = "end_occupation";
         /// <summary>The outcomes of EndOccupation (R-CTRL-015; Q-PUP-1 (c): no puppet regime).</summary>
         public const string Annex = "annex";
         public const string WithdrawOutcome = "withdraw";
-        /// <summary>The <see cref="State"/> of an annexed place: Israeli for good, no timer, upkeep or garrison (R-CTRL-016).</summary>
+        /// <summary>The <see cref="State"/> of an annexed place: no timer, upkeep or garrison (R-CTRL-016). Israeli while its owner
+        /// is; enemy units can take it, which clears only the owner, and a retake gives it back (R-CTRL-006; the owner on #2955).</summary>
         public const string Annexed = "annexed";
 
         /// <summary>R-CTRL-015: the end outcomes in their one fixed order, the ruling's words "annex or withdraw".</summary>
@@ -172,7 +223,7 @@ namespace Statecraft.Sim
                 case WithdrawOutcome:
                     // R-CTRL-014: withdrawing needs the unit that holds the place too, as annexing does.
                     if (!Garrisoned(s, c.SettlementTargets.First(x => x.Id == id)))
-                        return new CaptureRefusal(CaptureRefusal.NeedsUnit, $"Withdraw needs an Israeli military unit on {c.SettlementNames[id]}");
+                        return new CaptureRefusal(CaptureRefusal.NeedsUnit, string.Format(CultureInfo.InvariantCulture, RefusedWithdrawNeedsUnit, c.SettlementNames[id]));
                     return Withdraw(c, s, id, why, false);
                 default: return UnknownOutcome;
             }
@@ -190,7 +241,7 @@ namespace Statecraft.Sim
         {
             var t = c.SettlementTargets.First(x => x.Id == id);   // only a target gets a record (R-CTRL-004)
             var name = c.SettlementNames[id];
-            if (!Garrisoned(s, t)) return new CaptureRefusal(CaptureRefusal.NeedsUnit, $"Annex needs an Israeli military unit on {name}");
+            if (!Garrisoned(s, t)) return new CaptureRefusal(CaptureRefusal.NeedsUnit, string.Format(CultureInfo.InvariantCulture, RefusedAnnexNeedsUnit, name));
             var x = s.Settlements[id];
             // Cities.Annex's one refusal: the id is already a city.
             if (!x.Fled && Cities.Annex(c, s, t) is string refused) return new CaptureRefusal(CaptureRefusal.AlreadyCity, refused);
@@ -255,9 +306,9 @@ namespace Statecraft.Sim
                 {
                     foreach (var x in moved) s.Units[x.From.Id] = x.From;   // back as it was
                     moved.Clear();
-                    return new CaptureRefusal(CaptureRefusal.NoFreeHex, $"A unit has no free hex next to {name} to withdraw to");
+                    return new CaptureRefusal(CaptureRefusal.NoFreeHex, string.Format(CultureInfo.InvariantCulture, RefusedNoFreeHex, name));
                 }
-                var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
+                var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp, u.Records);
                 s.Units[u.Id] = w;
                 moved.Add((u, w));
             }
@@ -311,7 +362,7 @@ namespace Statecraft.Sim
         {
             var t = c.SettlementTargets.First(x => x.Id == id);   // only a target gets a record (R-CTRL-004)
             var name = c.SettlementNames[id];
-            if (!Garrisoned(s, t)) return new CaptureRefusal(CaptureRefusal.NeedsUnit, $"Occupy needs an Israeli military unit on {name}");
+            if (!Garrisoned(s, t)) return new CaptureRefusal(CaptureRefusal.NeedsUnit, string.Format(CultureInfo.InvariantCulture, RefusedOccupyNeedsUnit, name));
             var x = s.Settlements[id];
             var turns = c.RulesAt(s.Date).Mvp!.OccupationTurns!.Value;
             s.Settlements[id] = new SettlementControl(x.Owner, Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, turns, x.Fled);

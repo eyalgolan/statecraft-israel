@@ -29,8 +29,10 @@ namespace Statecraft.Game.UI
         public const string EnemyRow = "enemy";
         /// <summary>The row after the stocks that lists the arms workshops' Arms and ceiling pauses this turn (#1701 A1).</summary>
         public const string WorkshopRow = "workshops";
-        /// <summary>The row after the workshops' that lists the cities the enemy holds this turn (R-CITY-010, #1711).</summary>
+        /// <summary>The row after the workshops' and the operations' that lists the cities the enemy holds this turn (R-CITY-010, #1711).</summary>
         public const string HeldRow = "held";
+        /// <summary>The row of the turn's postponed and lapsed operations (R-ENEMY-007, #2543).</summary>
+        public const string OperationsRow = "operations";
 
         /// <summary>The units_1948.yaml rows, which name the enemy's units in that row (GameRoot sets them once the map has read
         /// them); without a row a unit is named by its id (report.unit).</summary>
@@ -42,6 +44,7 @@ namespace Statecraft.Game.UI
         readonly ScreenNav nav; readonly Button close, all;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly Action onChanged;
+        readonly Action<string?> onScreen;
         GameSession session;   // the session the open report belongs to
         readonly EventCallback<NavigationCancelEvent> onCancel;
         /// <summary>The turn last reported (or the session's last turn when this was made: a loaded game reports nothing).</summary>
@@ -79,6 +82,11 @@ namespace Statecraft.Game.UI
                     var last = bridge.Session.Last;
                     if (last == null || ReferenceEquals(last, seen)) return;
                     seen = last;
+                    // #2202: it opens when the enemy playback ends (Held). End turn still closes an open screen, as Show does
+                    // without a playback, so the moves play on the open map (#2967 review, S1); a screen opened while they
+                    // play stays (ShowWhenFree waits for it).
+                    if (held) { nav.Close(); wantsShow = true; return; }
+                    wantsShow = false;   // this turn's report replaces one that waited for a screen
                     Show();
                 }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
@@ -87,14 +95,53 @@ namespace Statecraft.Game.UI
             // Only a replaced session (New Game, a load: SimBridge.Replace) makes the report stale. Other changes keep it:
             // answering the ending turn's card (SimBridge.SeeEndingCard) changes nothing and leaves it under the end screen.
             session = bridge.Session;
-            onChanged = () => { if (ReferenceEquals(bridge.Session, session)) return; session = bridge.Session; Hide(); };
+            onChanged = () => { if (ReferenceEquals(bridge.Session, session)) return; session = bridge.Session; wantsShow = false; Hide(); };
             bridge.Changed += onChanged;
+            onScreen = screen => { if (screen == null) ShowWhenFree(); };
+            nav.Changed += onScreen;
             Hide();
         }
 
         /// <summary>Raised with the turn being reported when the report opens, and with null when it closes (#1878: the map
         /// shows the under-attack look on the hexes the turn attacked for as long as the report is up).</summary>
         public event Action<StepResult?>? Showing;
+
+        bool held, wantsShow;
+        /// <summary>#2202: true while End turn's enemy playback runs (EnemyTurnPlayback.Holding; owner, Q1 a: the report waits
+        /// for it). A turn that ends meanwhile is reported when it turns false; another game drops the wait.</summary>
+        public bool Held
+        {
+            get => held;
+            set
+            {
+                if (held == value) return;
+                held = value;
+                ShowWhenFree();
+            }
+        }
+
+        /// <summary>#2202: true while a turn's report waits to open: for the enemy playback (<see cref="Held"/>), or for a
+        /// screen the player opened while it played, which the report does not close under them (#2967 review, S3).</summary>
+        public bool Waiting => wantsShow;
+
+        /// <summary>#2202: the session's last turn is reported once nothing holds it (GameRoot's language switch: the rebuilt
+        /// report takes over a wait the old one had, #2967 review, S2).</summary>
+        public void Wait()
+        {
+            var last = bridge.Session.Last;
+            if (last == null) return;
+            seen = last;
+            wantsShow = true;
+            ShowWhenFree();
+        }
+
+        void ShowWhenFree()
+        {
+            if (held || !wantsShow || nav.Current != null) return;
+            wantsShow = false;
+            try { Show(); }
+            catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
+        }
 
         /// <summary>True while the report shows.</summary>
         public bool IsOpen => hudRoot.ClassListContains(OpenClass);
@@ -113,7 +160,8 @@ namespace Statecraft.Game.UI
 
         /// <summary>The report's lines for the session's last turn: each top-bar meter whose shown change is not empty, in
         /// the bar's order (the meters have different units, so no order by size is given without a rule); then national stocks; under
-        /// <see cref="WorkshopRow"/>, the arms workshops' lines (#1701); under <see cref="HeldRow"/>, the held cities (#1711); under
+        /// <see cref="WorkshopRow"/>, the arms workshops' lines (#1701); under <see cref="OperationsRow"/>, the postponed and lapsed
+        /// operations (R-ENEMY-007); under <see cref="HeldRow"/>, the held cities (#1711); under
         /// <see cref="EnemyRow"/>, the enemy's orders (#1293).</summary>
         public static IReadOnlyList<Line> Lines(SimBridge bridge, UiText text, IReadOnlyList<UnitEntry>? units = null,
             IReadOnlyDictionary<string, string>? townNamesHe = null)
@@ -133,6 +181,12 @@ namespace Statecraft.Game.UI
             lines.AddRange(StockLines(bridge, text, units, townNamesHe));
             var workshops = WorkshopLines(bridge, text, townNamesHe);
             if (workshops.Count > 0) lines.Add(new Line(WorkshopRow, text["report.workshops"], workshops));
+            // R-ENEMY-007 (#2543): a postponed or lapsed operation changes no number either, and the rule says the turn report
+            // names the units and why, so its lines have their own row, in the sim's order.
+            var operations = bridge.Session.Last?.Why.Where(w => w.Key == CauseKeys.OperationPostponed || w.Key == CauseKeys.OperationLapsed
+                    || w.Key == CauseKeys.OperationLapsedSigned || w.Key == CauseKeys.OperationLapsedUnitLost || w.Key == CauseKeys.OperationWaitsForArmistice)
+                .Select(w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text, townNamesHe)).ToList();
+            if (operations != null && operations.Count > 0) lines.Add(new Line(OperationsRow, text["report.operations"], operations));
             // R-CITY-010 (#1711): a held city's line changes no number (Delta 0), so HudModel.Causes leaves it out and it has
             // its own row; the sim writes it under gdd-0.3 only, in s.Cities' order.
             var held = bridge.Session.Last?.Why.Where(w => w.Key == CauseKeys.CityHeld)
@@ -291,6 +345,7 @@ namespace Statecraft.Game.UI
         {
             bridge.Changed -= onChanged;
             bridge.TurnEnded -= onTurn;
+            nav.Changed -= onScreen;
             close.clicked -= OnClose;
             all.clicked -= SeeAll;
             report.UnregisterCallback(onCancel);

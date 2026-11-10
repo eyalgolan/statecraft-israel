@@ -14,5 +14,12 @@ vote:
 late:
   title: "מאוחר"
   text: "מאוחר יותר."
+  late_text: "מאוחר עוד יותר."
   options:
     continue: "להמשיך"
+early:
+  title: "מוקדם"
+  text: "מוקדם יותר."
+  early_text: "מוקדם יותר מאשר בהיסטוריה."
+  options:
+    sign: "לחתום"

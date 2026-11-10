@@ -540,18 +540,21 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
     // war has 10 turns at rung 4 or 5, not 11. One war turn less costs IL 3.75m less debt (IL 36.79m on 15 April 1949 and
     // IL 174.99m at the end); the conversion is $40m, IL 13.32m less debt (IL 23.47m and IL 161.67m), and with $4m more
     // foreign currency kept the converting run's crisis comes on 15 April 1951. The no-lever crisis is unchanged.
+    // R-ENEMY-007 (#2543) changes it deliberately again: this no-orders run leaves required formations out of place, so its
+    // operations postpone and lapse. With both changes the run ends at IL 28.94m on 15 April 1949 and IL 168.79m, the
+    // conversion at IL 15.62m and IL 155.47m (still $40m, IL 13.32m less debt); both crisis dates are as with #2551 alone.
     [Fact]
     public void TheWarOnlyRunReproducesThePrototypeAtTheSourcedRate()
     {
         var none = Prototype(0);
-        Assert.Equal((36.79, 174.99), (Math.Round(none.April1949, 2), Math.Round(none.End.Debt, 2)));
+        Assert.Equal((28.94, 168.79), (Math.Round(none.April1949, 2), Math.Round(none.End.Debt, 2)));
         Assert.Equal(new DateTime(1951, 12, 15), none.Crisis);
         var sold = Prototype(4);
         Assert.Equal(40, sold.Converted);
         var saved = 40 * 0.333;
         Assert.Equal(none.April1949 - saved, sold.April1949, 9);
         Assert.Equal(none.End.Debt - saved, sold.End.Debt, 9);
-        Assert.Equal((23.47, 161.67), (Math.Round(sold.April1949, 2), Math.Round(sold.End.Debt, 2)));
+        Assert.Equal((15.62, 155.47), (Math.Round(sold.April1949, 2), Math.Round(sold.End.Debt, 2)));
         Assert.Equal(new DateTime(1951, 4, 15), sold.Crisis);
     }
 }

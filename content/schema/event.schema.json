@@ -110,7 +110,13 @@
     "site": { "$ref": "#/definitions/id", "description": "A swamp site (sites.yaml) whose works this event is about. In the GDD loop it fires only while that site is being worked; the legacy loop ignores it." },
     "prisoners": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "The front whose prisoners this exchange card returns (R-POW-004). It fires only while that front holds prisoners or the player's soldiers, and has exactly one option. Jordan's card also returns the Iraqi prisoners." },
     "deported": { "$ref": "#/definitions/id", "description": "A settlement target (settlement_targets.yaml) whose residents stayed. This Deport follow-up card fires only once the player's Deport has depopulated that place, carries the displacement tag and has exactly one option (R-EVT-007)." },
-    "front_quiet": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "The front of this armistice_<front> card, on that card only. Under gdd-0.3 the card may also come before its from, and again after a refusal, once that front is quiet (Armistice.MayOfferEarly), and then it takes the first soft slot (R-WAR-008, R-EVT-002)." },
+    "front_quiet": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "The front of this armistice_<front> card, on that card only. Under gdd-0.3 the card may also come before its from, and again after a refusal, once that front is quiet (Armistice.MayOfferEarly), and then it takes the first soft slot (R-WAR-008, R-EVT-002). Shown before its from, it shows its early_text when it has one." },
+    "armistice_front": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "On an operation card or a following card only: the front whose signed armistice ends the card. A pending operation lapses once it is signed, and the card never first fires after it (R-ENEMY-007)." },
+    "follows": { "type": "boolean", "description": "Under the GDD loop: the card follows the decision its requires waits for, and fires on the turn after that decision even when its own window has closed, so a late operation still brings it (R-ENEMY-007). Needs requires." },
+    "late_text": { "type": "string", "description": "On a following card or an operation card only: the text shown when the card is shown after its own window has closed (a late follow-up, or an operation shown again while it waits), with no dates that would mislead (R-ENEMY-007)." },
+    "late_text_he": { "type": "string", "description": "late_text in Hebrew; required exactly when the card has Hebrew text (R-ENEMY-007)." },
+    "early_text": { "type": "string", "description": "On a front_quiet armistice card only: the text shown when the card is shown before its from (the early path), saying the talks came sooner than in history. The card is then marked as an alternative course, and a shareable build needs the card's reviewed_by (R-WAR-008, R-ALT-011). Its office placeholders need a holder from 15 December 1948, the first early offer." },
+    "early_text_he": { "type": "string", "description": "early_text in Hebrew; required exactly when the card has Hebrew text (R-WAR-008)." },
     "order": { "type": "integer", "description": "Default 0. Among the cards that fire on the same turn with the same from, a lower order comes first, then the id (R-EVT-006). Set it only to put one card after another on purpose." },
     "from": { "$ref": "#/definitions/date", "description": "First day of the window." },
     "to": { "$ref": "#/definitions/date", "description": "End of the window (exclusive). Leave out for an open window." },
@@ -190,17 +196,25 @@
           },
           "unit_orders": {
             "type": "array",
-            "description": "R-ENEMY-005 (GDD loop only, applied under gdd-0.1 only): go-to orders for the unit of a map/units_1948.yaml row, toward one of that row's anchor hexes in map/unit_anchor_hexes.yaml, through the player's own go-to.",
+            "description": "R-ENEMY-005, R-ENEMY-008 (GDD loop, both gdd-0.1 and gdd-0.3): go-to or attack orders for the unit of a map/units_1948.yaml row, toward or on one of that row's anchor or order target hexes in map/unit_anchor_hexes.yaml, through the player's own go-to or attack.",
             "items": {
               "type": "object",
               "additionalProperties": false,
               "required": ["unit", "q", "r"],
               "properties": {
                 "unit": { "type": "string", "minLength": 1 },
+                "order": { "enum": ["go_to", "attack"], "description": "go_to when left out (R-ENEMY-008)." },
                 "q": { "type": "integer" },
                 "r": { "type": "integer" }
               }
             }
+          },
+          "requires_unit_regions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "R-ENEMY-007: player-region ids. Every unit_orders row's starting unit must be in any one listed region before this military-operation option can resolve.",
+            "items": { "type": "string", "minLength": 1 }
           },
           "unlock_projects": {
             "type": "array",
@@ -243,6 +257,7 @@
         { "not": { "required": ["title_he"] } },
         { "not": { "required": ["text_he"] } },
         { "not": { "required": ["text_he_review"] } },
+        { "not": { "required": ["early_text_he"] } },
         {
           "properties": {
             "options": {

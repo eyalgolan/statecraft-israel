@@ -374,11 +374,11 @@
     "values": [50]
   "military.fortify_turns":
     "basis": "Agreed"
-    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Default. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Agreed (O1). Source: #1668 balance.md at 605277df."
     "values": [1]
   "military.fortify_bonus":
-    "basis": "Default"
-    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Default. Source: #1668 balance.md at 605277df."
+    "basis": "Agreed"
+    "note": "Military and control: percent defence for a settled Fortify order. The owner-approved answer O1 (1 November 2026, #1668 issuecomment-6553884547): +25%, one turn to set; relabelled from Default after the #2918 C2 audit. Source: #1668 balance.md at 605277df."
     "values": [25]
   "military.stack_limit":
     "basis": "Default"
@@ -511,7 +511,7 @@
     "values": [60]
   "absorption.population_target":
     "basis": "Agreed"
-    "note": "Objectives: people, not population units (about 1,000 units at D2's 1,000 people a unit); threshold must be exceeded. Owner, 1 November 2026: \"Main's base x 0.3's tiers (Recommended)\". Retained approved baseline, a labelled design value. Source: #1668 balance.md at 605277df."
+    "note": "Objectives: people, not population units (about 1,000 units at D2's 1,000 people a unit); the target is reached at or above it (owner, 9 November 2026, #1714: \"At or above, both (Recommended)\"). Owner, 1 November 2026: \"Main's base x 0.3's tiers (Recommended)\". Retained approved baseline, a labelled design value. Source: #1668 balance.md at 605277df."
     "values": [1000000]
   "absorption.max_overflow":
     "basis": "Agreed"

@@ -7,11 +7,11 @@ using UnityEngine;
 namespace Statecraft.Game.UI
 {
     /// <summary>The advisors' lines in the settings file (spec 15; SettingsStore: presentation only, never the sim or the
-    /// save): the help level, the messages seen (one line, advisor_seen=a,b,c) and the opening chain's mark. The marks
+    /// save): the help level, the messages seen (one line, advisor_seen=a,b,c), the opening chain's mark and the new-player course's. The marks
     /// are also kept in memory, so a failed write (logged) or no file at all (automated runs) only costs persistence.</summary>
     public sealed class AdvisorSettings
     {
-        public const string LevelKey = "advisor_level", SeenKey = "advisor_seen", OpeningKey = "advisor_opening";
+        public const string LevelKey = "advisor_level", SeenKey = "advisor_seen", OpeningKey = "advisor_opening", CourseKey = "advisor_course";
         /// <summary>The legacy first-turn guide's saved line (spec 9.3: honoured, so a player who saw the guide gets no chain by itself).</summary>
         public const string GuideSeenKey = "first_turn_guide";
         /// <summary>Spec 6, from the chattiest; a message shows when its level's index (AdvisorCatalog.Levels) is at least this one's.</summary>
@@ -19,7 +19,7 @@ namespace Statecraft.Game.UI
 
         readonly SettingsStore? store;
         readonly SortedSet<string> seen = new SortedSet<string>(StringComparer.Ordinal);
-        bool openingSeen;
+        bool openingSeen, courseOpen;
 
         public AdvisorSettings(SettingsStore? store)
         {
@@ -28,6 +28,7 @@ namespace Statecraft.Game.UI
             Level = Array.IndexOf(Levels, stored) >= 0 ? stored! : Levels[0];
             foreach (var id in (store?.Read(SeenKey) ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)) seen.Add(id);
             openingSeen = store?.Read(OpeningKey) == "seen" || store?.Read(GuideSeenKey) == "seen";
+            courseOpen = store?.Read(CourseKey) == "open";
         }
 
         /// <summary>A settings file exists to remember the marks in (none in automated runs and EditMode tests).</summary>
@@ -60,6 +61,16 @@ namespace Statecraft.Game.UI
         {
             openingSeen = true;
             Write(OpeningKey, "seen");
+        }
+
+        /// <summary>The chain opened by itself on this player's first game (#2933), so the course's rows may show; a returning
+        /// player, whose chain mark predates this line, has none.</summary>
+        public bool CourseOpen => courseOpen;
+
+        public void MarkCourseOpen()
+        {
+            courseOpen = true;
+            Write(CourseKey, "open");
         }
 
         void Write(string key, string value)

@@ -317,6 +317,154 @@ options:
         Assert.Equal(new[] { "after_road", "a1", "a2" }, Fire(c, s));
     }
 
+    // ---- R-WAR-008's early text (#1709; owner, 9 November 2026: "Separate early text (Recommended)", then "Ordinary text
+    // (Recommended)": no new saved state). A fixture text, never a real card's: the four real texts wait for the owner's
+    // approval of the words and their sign-off ("You approve the words (Recommended)", "You, before they land (Recommended)").
+
+    internal const string Early = "The talks came sooner. {prime_minister} must decide.";
+    const string EarlyHe = "השיחות הגיעו מוקדם יותר. על {prime_minister} להחליט.";
+
+    static string WithEarly(string card, string text = Early) => card.Replace("office: prime_minister", $"early_text: '{text}'\noffice: prime_minister");
+
+    internal static Content LoadEarly(string ruleset = SaveGame.Gdd03Ruleset)
+    {
+        var f = Gdd03MovementFortTests.Files(ruleset);
+        f["events/armistice_egypt.yaml"] = WithEarly(Card("egypt", "1949-12-01"));
+        f["events/armistice_jordan.yaml"] = WithEarly(Card("jordan", "1950-01-01"));
+        return ContentLoader.Load(Fixture.Write(f));
+    }
+
+    static string Filled(Content c, GameState s, string text) => Cabinet.Fill(c, s, text, s.Date);
+
+    // R-WAR-008: a card shown before its `from`, which only the quiet path can do, shows its early text, its placeholder filled.
+    // Red without it: the loader refused early_text, and Render gave the ordinary text.
+    [Fact]
+    public void R_WAR_008_AnEarlyCardShowsItsEarlyText()
+    {
+        var c = LoadEarly();
+        var s = At(c, December15, 2, 0);
+        Assert.Equal(new[] { "armistice_egypt" }, Fire(c, s));
+        var e = c.Events.Single(x => x.Id == "armistice_egypt");
+        Assert.Equal(Filled(c, s, Early), EventSystem.Render(c, s, e));
+        Assert.DoesNotContain("{", EventSystem.Render(c, s, e));
+    }
+
+    // R-WAR-008: the hard-anchor path. A front that never turns quiet gets its card on its `from`, with its ordinary text.
+    [Fact]
+    public void R_WAR_008_TheCardOnItsDateShowsItsOrdinaryText()
+    {
+        var c = LoadEarly();
+        var s = At(c, new DateTime(1949, 12, 15), 0, 0);
+        Assert.Equal(new[] { "armistice_egypt" }, Fire(c, s));
+        var e = c.Events.Single(x => x.Id == "armistice_egypt");
+        Assert.Equal(Filled(c, s, "Israel decides whether to sign."), EventSystem.Render(c, s, e));
+    }
+
+    // R-WAR-008, "Ordinary text (Recommended)": a card refused on its date and brought back by the quiet path after its
+    // `from` shows its ordinary text: the talks are no longer early. Nothing saved records the path.
+    [Fact]
+    public void R_WAR_008_ACardRefusedOnItsDateReturnsWithItsOrdinaryText()
+    {
+        var c = LoadEarly();
+        var s = At(c, new DateTime(1950, 2, 15), 2, 2);
+        s.FiredEvents.Add("armistice_egypt"); s.ChosenOptions["armistice_egypt"] = "sign";
+        s.FiredEvents.Add("armistice_jordan"); s.ChosenOptions["armistice_jordan"] = "hold_out";
+        Assert.Equal(new[] { "armistice_jordan" }, Fire(c, s));
+        var e = c.Events.Single(x => x.Id == "armistice_jordan");
+        Assert.Equal(Filled(c, s, "Israel decides whether to sign."), EventSystem.Render(c, s, e));
+    }
+
+    // R-WAR-008, R-WAR-006: a card refused early comes back after two full quiet turns, still before its `from`, with its
+    // early text again.
+    [Fact]
+    public void R_WAR_008_AnEarlyRefusalReturnsEarlyWithTheEarlyText()
+    {
+        var c = LoadEarly();
+        var s = CombatTests.With(c, new Unit(1, "recruit", 0, 1, side: "israel", strength: 6));
+        s.Date = December15;
+        s.QuietTurns["jordan"] = 5;
+        s.FiredEvents.Add("armistice_egypt");
+        s.ChosenOptions["armistice_egypt"] = "sign";
+        Assert.Equal(new[] { "armistice_jordan" }, Fire(c, s));
+        var e = c.Events.Single(x => x.Id == "armistice_jordan");
+        Assert.Equal(Filled(c, s, Early), EventSystem.Render(c, s, e));
+
+        s = Turn(c, s, new ChooseEventOption("armistice_jordan", "hold_out"));
+        s = Turn(c, s);
+        s = Turn(c, s);
+        Assert.Equal(new[] { "armistice_jordan" }, s.PendingEvents);
+        Assert.True(s.Date < e.From);
+        Assert.Equal(Filled(c, s, Early), EventSystem.Render(c, s, e));
+    }
+
+    // R-WAR-008 is gdd-0.3 only: under gdd-0.1 the card never comes before its `from`, so its early text is never shown.
+    [Fact]
+    public void Gdd01NeverShowsTheEarlyText()
+    {
+        var c = LoadEarly(SaveGame.GddRuleset);
+        Assert.Empty(Fire(c, At(c, December15, 5, 5)));
+        var s = At(c, new DateTime(1949, 12, 15), 5, 5);
+        Assert.Equal(new[] { "armistice_egypt" }, Fire(c, s));
+        Assert.Equal(Filled(c, s, "Israel decides whether to sign."), EventSystem.Render(c, s, c.Events.Single(x => x.Id == "armistice_egypt")));
+    }
+
+    // The loader (R-WAR-008): early text only on a `front_quiet` card, the only kind the quiet path can show before its
+    // `from` (so EventSystem.ShowsEarly, which reads the date alone, never fires on a card that is never early); its Hebrew
+    // exactly when the card has Hebrew, in Hebrew letters; its placeholders held from the first early offer
+    // (Armistice.EarliestOffer, 15 December 1948), not only from the card's `from`.
+    [Theory]
+    [InlineData("no_front_quiet", "early_text", "front_quiet")]
+    [InlineData("he_without_en", "early_text", "required: early_text_he is set but early_text is not")]
+    [InlineData("he_missing", "early_text_he", "required: the card's text is in Hebrew too")]
+    [InlineData("he_not_hebrew", "early_text_he", "must be Hebrew")]
+    [InlineData("he_on_english_card", "early_text_he", "only a card with Hebrew text has early_text_he")]
+    [InlineData("office_gap", "early_text", "has no holder on 1948-12-15")]
+    public void TheLoaderRefusesAMisplacedOrIncompleteEarlyText(string fault, string field, string message)
+    {
+        var f = Gdd03MovementFortTests.Files();
+        var card = Card("jordan", "1950-01-01");
+        const string hebrew = "title_he: שביתת נשק עם ירדן\ntext_he: 'ישראל מחליטה אם לחתום.'\n";
+        card = fault switch
+        {
+            "no_front_quiet" => WithEarly(card).Replace("front_quiet: jordan\n", ""),
+            "he_without_en" => card.Replace("office: prime_minister", $"early_text_he: '{EarlyHe}'\noffice: prime_minister"),
+            "he_missing" => WithHebrew(WithEarly(card)),
+            "he_not_hebrew" => WithHebrew(WithEarly(card)).Replace("office: prime_minister", "early_text_he: 'Not Hebrew {prime_minister}.'\noffice: prime_minister"),
+            "he_on_english_card" => WithEarly(card).Replace("office: prime_minister", $"early_text_he: '{EarlyHe}'\noffice: prime_minister"),
+            "office_gap" => WithEarly(card, "The talks came sooner. {finance_minister} must decide."),
+            _ => throw new ArgumentException(fault),
+        };
+        if (fault == "office_gap")   // a holder from 1949-01-01 only: inside the early window, before the card's `from`
+            f["people.yaml"] = Fixture.Files["people.yaml"].Replace("      - office: finance_minister\n        from: 1948-05-14", "      - office: finance_minister\n        from: 1949-01-01");
+        f["events/armistice_jordan.yaml"] = card;
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(f)));
+        Assert.Equal($"events[armistice_jordan].{field}", ex.Field);
+        Assert.Contains(message, ex.Message);
+
+        static string WithHebrew(string yaml) => yaml.Replace("office: prime_minister", hebrew + "office: prime_minister")
+            .Replace("    text: Sign the armistice\n", "    text: Sign the armistice\n    text_he: לחתום על שביתת הנשק\n")
+            .Replace("    text: Refuse and keep fighting\n", "    text: Refuse and keep fighting\n    text_he: לסרב ולהמשיך להילחם\n");
+    }
+
+    // The same card with every early-text rule met loads: the guard on each refusal above is the fault, not the shape.
+    [Fact]
+    public void TheLoaderTakesAFrontQuietCardWithItsEarlyTextInBothLanguages()
+    {
+        var f = Gdd03MovementFortTests.Files();
+        f["events/armistice_jordan.yaml"] = WithEarly(Card("jordan", "1950-01-01")).Replace("office: prime_minister",
+            $"title_he: שביתת נשק עם ירדן\ntext_he: 'ישראל מחליטה אם לחתום.'\nearly_text_he: '{EarlyHe}'\noffice: prime_minister")
+            .Replace("    text: Sign the armistice\n", "    text: Sign the armistice\n    text_he: לחתום על שביתת הנשק\n")
+            .Replace("    text: Refuse and keep fighting\n", "    text: Refuse and keep fighting\n    text_he: לסרב ולהמשיך להילחם\n");
+        var c = ContentLoader.Load(Fixture.Write(f));
+        // The Hebrew overlay (#1618) carries it: the snapshot writes it, and a cleared card gets it back from the set.
+        var events = Translations.Write(HebrewOverlay.Snapshot(c)).Events;
+        Assert.Contains("early_text: \"" + EarlyHe + "\"", events);
+        HebrewOverlay.Clear(c);
+        Assert.DoesNotContain("early_text", Translations.Write(HebrewOverlay.Snapshot(c)).Events);
+        HebrewOverlay.Apply(c, Translations.Parse(Translations.Hebrew, null, events, null));
+        Assert.Equal(events, Translations.Write(HebrewOverlay.Snapshot(c)).Events);
+    }
+
     // The loader: `front_quiet` names one of Prisoners.Fronts, and only on that front's own card (armistice_<front>), whose
     // refusal resets that front's count (R-WAR-006).
     [Theory]

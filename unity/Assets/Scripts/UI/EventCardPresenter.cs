@@ -1,5 +1,7 @@
 #nullable enable
 using System.Linq;
+using System.Collections.Generic;
+using Statecraft.Game.Map.Units;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
 
@@ -34,6 +36,13 @@ namespace Statecraft.Game.UI
         public const string RejoinClass = "event-rejoin";
         /// <summary>One line under an option for one of its effects, from the sim's preview (#1125, R-EVT-005; Statecraft.uss).</summary>
         public const string EffectClass = "event-effect";
+        public const string RequirementClass = "event-requirement";
+        public const string MissingRequirementClass = "event-requirement-unmet";
+        /// <summary>The red line under an operation option that waits for, or is ended by, its front's armistice (Q3).</summary>
+        public const string ArmisticeClass = "event-requirement-armistice";
+
+        /// <summary>The map's sourced unit rows, supplied by GameRoot after map parsing, for operation requirement names.</summary>
+        public IReadOnlyList<UnitEntry> Units { get; set; } = System.Array.Empty<UnitEntry>();
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly EventImageCatalog? photos;
@@ -47,6 +56,7 @@ namespace Statecraft.Game.UI
         /// <summary>Tests: the card is waiting for the start screen to close before it looks up its photograph.</summary>
         internal bool PhotoWaits => photoWaits;
         readonly VisualElement band, head, options, layer, hudRoot; readonly Label credit, delegateLine;
+        readonly VisualElement? toast; float toastDefaultTop = float.NaN;
         /// <summary>The body: the text and the options with their effect lines, which scroll together only when they overflow
         /// the card (#1853); the head above it and the foot with Hide below it stay pinned.</summary>
         readonly ScrollView scroll;
@@ -114,7 +124,7 @@ namespace Statecraft.Game.UI
                 // A cover has closed: render the first visible cue too; a start-screen photograph waits until now (#592).
                 photoWaits = false;
                 if (Shown != null) Render();
-                focusedFor = null; if (!hiddenInCapture && Shown != null && !Collapsed) FocusCard(Shown.Id, force: true);
+                focusedFor = null; if (!hiddenInCapture && !heldForPlayback && Shown != null && !Collapsed) FocusCard(Shown.Id, force: true);
             };
             onHidePointer = _ => hideByPointer = true;
             onHideSubmit = _ => hideByPointer = false;
@@ -134,6 +144,9 @@ namespace Statecraft.Game.UI
             illustrationSwitch.clicked += onSwitch;
             foreach (var e in new[] { band, credit, head, scroll, options }) e.RegisterCallback<GeometryChangedEvent>(OnPhotoGeometry);
             layer.RegisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            toast = hudRoot.Q("toast");
+            toast?.RegisterCallback<GeometryChangedEvent>(OnToastGeometry);
+            card.RegisterCallback<GeometryChangedEvent>(OnToastGeometry);
             card.RegisterCallback<GeometryChangedEvent>(OnCardGeometry);
             presses = new PressSource(options);
             bridge.Changed += Render;
@@ -159,6 +172,8 @@ namespace Statecraft.Game.UI
             video?.Stop();
             foreach (var e in new[] { band, credit, head, scroll, options }) e.UnregisterCallback<GeometryChangedEvent>(OnPhotoGeometry);
             layer.UnregisterCallback<GeometryChangedEvent>(OnColumnGeometry);
+            toast?.UnregisterCallback<GeometryChangedEvent>(OnToastGeometry);
+            card.UnregisterCallback<GeometryChangedEvent>(OnToastGeometry);
             card.UnregisterCallback<GeometryChangedEvent>(OnCardGeometry);
             presses.Dispose();
             card.Q<VisualElement>("event-options")?.Clear(); card.style.display = DisplayStyle.None;
@@ -206,6 +221,26 @@ namespace Statecraft.Game.UI
             Render();
         }
 
+        bool heldForPlayback;
+        /// <summary>#2202: true while End turn's enemy playback runs (EnemyTurnPlayback.Holding; owner, Q1 a: the card waits for
+        /// it). The card and "Decision waiting" stay out of view and a new card raises <see cref="Opened"/>, with its cue,
+        /// only once the playback ends. Nothing is answered or queued here: the card is the same card, shown later.</summary>
+        public bool HeldForPlayback
+        {
+            get => heldForPlayback;
+            set
+            {
+                if (heldForPlayback == value) return;
+                heldForPlayback = value;
+                if (value) { Render(); return; }
+                // Back in view: it takes the focus as from under a cover (#2967 review, N1), whatever had it before the hold.
+                focusedFor = null; restoring = true;
+                try { Render(); }
+                finally { restoring = false; }
+            }
+        }
+        bool restoring;   // the held card is coming back (HeldForPlayback false): FocusCard takes the focus over any other
+
         /// <summary>The event the card shows, or null when every pending event has a queued answer.</summary>
         public GameEvent? Shown { get; private set; }
 
@@ -227,14 +262,20 @@ namespace Statecraft.Game.UI
         {
             var c = bridge.Content; var s = bridge.State;
             var pending = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id)).ToList();
-            var open = pending.Where(e => bridge.QueuedLike(new ChooseEventOption(e.Id, "")) == null && !bridge.EndingCardSeen(e.Id)).ToList();
+            var open = pending.Where(e => bridge.QueuedLike(new ChooseEventOption(e.Id, "")) == null && !bridge.EndingCardSeen(e.Id))
+                // R-ENEMY-007: an operation card that waits (postponed, for its units) is shown after the turn's other cards, and one
+                // that waits for its front's pending armistice after that armistice (Q3, owner, 7 November 2026: "Decide armistice
+                // first (Recommended)"), so the cards the player can decide now come first. A stable sort: otherwise as before.
+                .OrderBy(e => s.PostponedOperations.ContainsKey(e.Id)
+                    || e.Options.Any(o => EventSystem.ArmisticeBlock(c, s, e, o) == EventSystem.RefusedOperationArmisticeFirst) ? 1 : 0)
+                .ToList();
             Shown = open.FirstOrDefault();
             if (Shown == null) { collapsedFor = null; openedFor = null; scrolledFor = null; }
             if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; openedFor = null; scrolledFor = null; }
-            var shown = !hiddenInCapture && Shown != null && !Collapsed;
+            var shown = !hiddenInCapture && !heldForPlayback && Shown != null && !Collapsed;
             ScreenNav.Show(card, shown);   // #1106: grows in, shrinks away
             card.SetEnabled(shown);   // a child of an undisplayed element can still take the focus (#400): a collapsed card's options must not
-            reopen.style.display = !hiddenInCapture && Collapsed ? DisplayStyle.Flex : DisplayStyle.None;
+            reopen.style.display = !hiddenInCapture && !heldForPlayback && Collapsed ? DisplayStyle.Flex : DisplayStyle.None;
             hudRoot.EnableInClassList(OpenClass, shown);
             ScreenNav.DisableCovered(hudRoot);
             // An answer is an order and costs Attention (choose_event_option): the bridge prices it and checks it as Queue
@@ -273,12 +314,18 @@ namespace Statecraft.Game.UI
             var variant = Timeline.Variant(c, s, e);
             string Local(string english, string he) => ContentNames.Fill(text, c, s, date, english, he);
             card.Q<Label>("event-title").text = Local(EventSystem.Title(c, s, e), variant == null || variant.Title == "" ? e.TitleHe : "");
-            var banner = card.Q<Label>("event-alt-banner");   // a consequence card's road (#954); none on any other card
-            banner.text = OriginLine(c, s, e, text);
+            // A consequence card's road (#954), or an armistice card's early path (R-WAR-008, #1709; owner, 9 November 2026:
+            // "Banner (Recommended)"): an alternative course either way. None on any other card.
+            var early = variant == null && EventSystem.ShowsEarly(e, s.Date);
+            var banner = card.Q<Label>("event-alt-banner");
+            banner.text = early ? text["event.alt_early"] : OriginLine(c, s, e, text);
             banner.style.display = banner.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             var office = holder == null ? null : c.Offices.First(o => o.Id == e.Office);
             card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", ContentNames.Of(text, office!, holder, date), ContentNames.Of(text, holder));
-            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e), variant == null ? e.TextHe : "");
+            // R-ENEMY-007: a card shown after its window closed shows its late text, in Hebrew its late_text_he; R-WAR-008: one
+            // shown before its `from` shows its early text, in Hebrew its early_text_he (EventSystem.Render picks the English).
+            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e),
+                variant != null ? "" : early ? e.EarlyTextHe : EventSystem.ShowsLate(e, s.Date) ? e.LateTextHe : e.TextHe);
             var objective = card.Q<Label>("event-objective");   // an objective card's line (#380); none on any other card
             objective.text = ObjectiveLine(c, s, e, text);
             objective.style.display = objective.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
@@ -288,14 +335,43 @@ namespace Statecraft.Game.UI
             delegateLine.style.display = unpaid ? DisplayStyle.Flex : DisplayStyle.None;
             var options = card.Q<VisualElement>("event-options");
             options.Clear();
+            // R-ENEMY-007 (owner, 7 November 2026: "show each unit once on operation cards"): a unit two options need in the same
+            // regions gets its line once, under the first of them.
+            var shownRequirements = new HashSet<string>(System.StringComparer.Ordinal);
             foreach (var o in e.Options)
             {
                 var option = o;
+                var requirement = EventSystem.OperationStatus(c, s, o);
                 var label = Local(Cabinet.Fill(c, s, o.Text, date), o.TextHe);
                 var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = price is double cost && cost > 0 ? text.Format("event.option_cost", label, cost) : label };
                 b.AddToClassList(OptionClass);
-                b.SetEnabled(!unpaid);
+                // Q3 (owner, 7 November 2026: "Decide armistice first (Recommended)"): while the front's armistice card is pending,
+                // or once that armistice is signed, the operation option is disabled and a red line says why.
+                var armistice = EventSystem.ArmisticeBlock(c, s, e, o);
+                b.SetEnabled(!unpaid && requirement.Met && armistice == null);
                 options.Add(b);
+                if (armistice != null)
+                {
+                    var front = text["map.front_" + e.ArmisticeFront];
+                    var why = new Label(text.Format(armistice == EventSystem.RefusedOperationArmisticeFirst ? "event.operation_armistice_first" : "event.operation_armistice_signed", front));
+                    why.AddToClassList(MissingRequirementClass); why.AddToClassList(ArmisticeClass); options.Add(why);
+                }
+                // R-ENEMY-007: one line per required unit, in the requirement's ordinal order. A unit in place gets the muted
+                // "must be in" line; a unit elsewhere gets only the "Move ... before" line, which names the same regions.
+                foreach (var need in requirement.Required)
+                {
+                    if (!shownRequirements.Add(need.Unit + ":" + string.Join("|", need.Regions))) continue;
+                    var regions = string.Join(" / ", need.Regions.Select(id => text["operation.region." + id]));
+                    bool away = requirement.Missing.Any(x => x.Unit == need.Unit);
+                    // Review item 6: a required unit no longer on the board cannot be moved, so the card says that instead; the card
+                    // lapses at its next consideration ("Lapse at once (Recommended)").
+                    bool lost = away && EventSystem.Lost(c, s, o).Contains(need.Unit);
+                    var line = new Label(lost ? text.Format("event.operation_lost", OperationUnitName(need.Unit))
+                        : text.Format(away ? "event.operation_missing" : "event.operation_requirement", OperationUnitName(need.Unit), regions));
+                    if (away) line.AddToClassList(MissingRequirementClass);
+                    else { line.AddToClassList("muted"); line.AddToClassList(RequirementClass); }
+                    options.Add(line);
+                }
                 // What the option does, one line per effect, from the sim's preview (#1125, R-EVT-005): Unity only words it. Under
                 // the option like the rejoin line, so a Label takes no Tab stop. The rejoin effect has that line already, below.
                 foreach (var preview in EventSystem.OptionEffectPreviews(c, s, o))
@@ -314,7 +390,14 @@ namespace Statecraft.Game.UI
             if (scrolledFor != e.Id) { scrolledFor = e.Id; scroll.scrollOffset = UnityEngine.Vector2.zero; }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format(open.Count == 2 ? "event.more_one" : "event.more", open.Count - 1) : "";
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
-            if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
+            if (shown && focusedFor != e.Id) FocusCard(e.Id, force: restoring);
+        }
+
+        string OperationUnitName(string row)
+        {
+            var unit = Units.FirstOrDefault(x => x.Id == row);
+            if (unit == null) return row;
+            return text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrEmpty(unit.NameHe) ? unit.NameHe : unit.Name;
         }
 
         /// <summary>One option-effect row in the UI's language. An indicator, money or policy is named as the top bar and the Why
@@ -513,6 +596,35 @@ namespace Statecraft.Game.UI
             var h = band.layout.height; var needs = PhotoNeeds;
             if (float.IsNaN(h) || float.IsNaN(needs)) return;
             if (h < needs - 0.5f) SetPhotoShown(false);
+        }
+
+        /// <summary>R-ENEMY-007 (owner, 7 November 2026: "Smaller lines, then toast moves (Recommended)"): over an open card the toast
+        /// sits at the top middle, over the photograph and clear of its credit (Statecraft.uss, `.event-modal .toast`). When the
+        /// photograph band is too short to hold it above the credit (a tall card on a short window), it moves below the band,
+        /// under the office line, over the top of the body, still clear of the title and the options; when even that has no
+        /// room, it stays put. Only a changed value is written, so its own geometry event settles at once.</summary>
+        void OnToastGeometry(GeometryChangedEvent evt) => PlaceToast();
+
+        void PlaceToast()
+        {
+            if (toast == null || toast.parent == null) return;
+            // An inline top set by this method has keyword Undefined; unset (the stylesheet's place) is Null.
+            var moved = toast.style.top.keyword == StyleKeyword.Undefined;
+            if (!moved) toastDefaultTop = toast.worldBound.yMin;
+            var open = Shown != null && !Collapsed && toast.resolvedStyle.display == DisplayStyle.Flex && PhotoAlt != null;
+            float? want = null;
+            if (open && !float.IsNaN(toastDefaultTop))
+            {
+                var height = toast.worldBound.height;
+                if (toastDefaultTop + height > credit.worldBound.yMin - 2)
+                {
+                    var below = card.Q<Label>("event-office").worldBound.yMax + 6;
+                    if (below + height < options.worldBound.yMin - 2)
+                        want = below - toast.parent.worldBound.yMin - toast.resolvedStyle.marginTop;
+                }
+            }
+            if (want == null) { if (moved) toast.style.top = StyleKeyword.Null; }
+            else if (!moved || System.Math.Abs(toast.style.top.value.value - want.Value) > 0.5f) toast.style.top = want.Value;
         }
 
         void OnPhotoGeometry(GeometryChangedEvent evt)

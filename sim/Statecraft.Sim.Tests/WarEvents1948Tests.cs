@@ -132,6 +132,19 @@ public class WarEvents1948Tests
         s.Date = e.From;
         SecuritySystem.SetRung(C, s, 3, new List<Cause>());   // a level no option sets, so any change is visible
         s.PendingEvents.Add(id);
+        if (option.RequiresUnitRegions.Count != 0)
+        {
+            var at = C.PlayerRegions.Regions[option.RequiresUnitRegions[0]].MemberHexes[0];
+            foreach (var order in option.UnitOrders)
+            {
+                int unitId = C.StartingForces.FindIndex(f => f.Row == order.Unit);
+                var force = C.StartingForces[unitId];
+                var unit = s.Units.TryGetValue(unitId, out var present) ? present
+                    : new Unit(unitId, force.Type, force.Q, force.R, side: force.Side, strength: force.Strength);
+                s.Units[unitId] = new Unit(unit.Id, unit.Type, at.Q, at.R, unit.Service, unit.Side, unit.Strength,
+                    unit.Order, unit.OrderTarget, unit.HomeCity, unit.Full, unit.CombatXp);
+            }
+        }
         var before = C.Indicators.ToDictionary(i => i.Id, i => s.Indicators[i.Id]);
         Assert.Null(EventSystem.Choose(C, s, id, option.Id, new List<Cause>()));
         Assert.Equal(row.Rung ?? 3, s.Rung);
@@ -214,23 +227,30 @@ public class WarEvents1948Tests
         Assert.Equal(new[] { new DateTime(1948, 11, 15) }, Run.Where(t => t.Rejected.Any(IsTheMalkiyaRefusal)).Select(t => t.Start));
     }
 
-    /// <summary>A game played with no commands at all, as Unity's CityPanelTests play the site's build turns (#2087, their
-    /// EditMode failure on round 4): every unanswered card is delegated (R-EVT-003), and the one refusal is the delegated Hiram
-    /// card's order to the 7th Brigade, on the 15 November 1948 turn, the seventh. A turn with no card order refuses nothing.</summary>
+    /// <summary>A game played with no commands at all: under R-ENEMY-007 the untouched player never puts the operation
+    /// brigades in place, so each delegated operation is postponed (keyed, naming the units to move) and, after its wait,
+    /// lapses (keyed), none is launched, and no card order is ever given, so none is refused. Ten Days, postponed on the
+    /// 15 July 1948 turn, waits mvp.operation_wait_turns turns and lapses inside these 12 turns.</summary>
     [Fact]
-    public void AnUntouchedGameRefusesOnlyHiramsOrderToTheSeventhBrigade()
+    public void AnUntouchedGamePostponesOperationsWithoutIssuingTheirOrders()
     {
         var s = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
         var refused = new List<(int Turn, DateTime Start, Rejection X)>();
+        var why = new List<Cause>();
         for (int turn = 1; turn <= 12; turn++)
         {
             var r = Simulation.Step(C, s, new Command[0]);
             refused.AddRange(r.Rejected.Select(x => (turn, s.Date, x)));
+            why.AddRange(r.Why);
             s = r.State;
         }
-        var only = Assert.Single(refused);
-        Assert.Equal((7, new DateTime(1948, 11, 15)), (only.Turn, only.Start));
-        Assert.True(IsTheMalkiyaRefusal(only.X), only.X.Reason);
+        Assert.Empty(refused);
+        foreach (var op in new[] { "ten_days", "operation_yoav", "operation_hiram" })
+        {
+            Assert.Contains(why, x => x.Key == CauseKeys.OperationPostponed && x.Target == op);
+            Assert.DoesNotContain(op, s.ChosenOptions.Keys);
+        }
+        Assert.Contains(why, x => x.Key == CauseKeys.OperationLapsed && x.Target == "ten_days");
     }
 
     /// <summary>Operation Hiram's refused card order: the 7th Brigade (unit 13, R-UNIT-009) to al-Malikiyya (14,4).</summary>
@@ -313,5 +333,26 @@ public class WarEvents1948Tests
         var e = Get("bernadotte_assassination");
         Assert.All(e.Options, o => Assert.Contains(o.Effects, f => f.Target == "intl_standing" && f.Delta == -0.05));
         Assert.All(e.Options, o => Assert.True(o.Effects.Where(f => f.Target == "intl_standing").Sum(f => f.Delta) < 0, $"{o.Id} raises standing"));
+    }
+
+    /// <summary>R-EFX-001, R-EFX-002 (#2531; owner, 9 November 2026, "Costs only (Recommended)", issuecomment-6741172155):
+    /// the Altalena options are
+    /// about where the ship's arms go, so the Arms stock answers them, with costs only on this war-casualties card.
+    /// Arming Irgun battalions inside the IDF costs 2 Arms; enforcing leaves the stock as it was.</summary>
+    [Theory]
+    [InlineData("compromise", -2)]
+    [InlineData("enforce", 0)]
+    public void TheAltalenaOptionsMoveTheArmsStockByCostsOnly(string option, int change)
+    {
+        var e = Get("altalena");
+        Assert.All(e.Options, o => Assert.True(o.Effects.Where(f => f.Target == "arms").Sum(f => f.Delta) <= 0, $"{o.Id} raises Arms"));
+        Assert.Equal(change, e.Options.Single(o => o.Id == option).Effects.Where(f => f.Target == "arms").Sum(f => f.Delta));
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        s.Date = e.From; s.Arms = 10; s.PendingEvents.Add("altalena");
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(C, s, "altalena", option, why));
+        Assert.Equal(10 + change, s.Arms);
+        if (change == 0) Assert.DoesNotContain(why, w => w.Target == "arms");
+        else Assert.Contains(why, w => w.Target == "arms" && w.Delta == change);
     }
 }

@@ -171,6 +171,9 @@ namespace Statecraft.Game.Map.Units
         internal CombatBursts? Combat => combat;
         /// <summary>A rebuild slides a moved unit's token from where it was drawn (true in play; tests set it).</summary>
         internal bool AnimateMoves;
+        /// <summary>The sim units whose tokens wait where they were drawn until <see cref="Release"/> (#2202): a rebuild
+        /// stands a held unit's token at its old place instead of sliding it.</summary>
+        readonly HashSet<int> held = new HashSet<int>();
 
         /// <summary>The GDD loop's anchors for units that moved off their starting hex (UnitRoster.FromState), one per row and
         /// sim hex, and their spots: placed once, the first time a unit stands there, so a rebuild after a move places only
@@ -414,6 +417,7 @@ namespace Statecraft.Game.Map.Units
         /// (New Game) reuses the sim ids, so its tokens are drawn where they stand.</summary>
         public bool Show(Content content, GameState state, bool slide = true)
         {
+            if (!slide) ReleaseAll(snap: true);   // another game: nothing waits from the last one
             shownContent = content; shownState = state;
             PrepareMapOnlySpots(content);
             // The GDD loop draws the army from the sim's units (GDD Phase 5 PR 14); the legacy loop keeps the rows and the call-up.
@@ -433,7 +437,9 @@ namespace Statecraft.Game.Map.Units
             roster = now;
             PlaceMoved(now);
             placed = UnitPlacer.Place(now, drawSpots ?? DisplaySpots);
+            var probe = Boot.TurnProbe.Start();   // ?turnlog (#2905): the token rebuild alone
             Rebuild(slide);
+            Boot.TurnProbe.Lap("UnitLayer.Rebuild", probe);
             ScheduleSatisfiedPrefetchRetirement();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             seenAvailability = UnitFigures.AvailabilityVersion;
@@ -670,9 +676,15 @@ namespace Statecraft.Game.Map.Units
 
         Vector3 Centre(AnchorSpot s) => UnitShowcase.Ground(map, new Vector3((float)s.X, 0f, (float)s.Z));
 
-        /// <summary>The ground the units are placed on (footprints, routes, land) for a built map.</summary>
+        /// <summary>The ground the units are placed on (footprints, routes, land, and the water a ship's hull must lie in) for a
+        /// built map.</summary>
         public static UnitGround Ground(MapScene map, IReadOnlyList<MapHex> hexes) =>
-            new UnitGround(map.SettlementFootprints, map.RouteCorridors, hexes, XZ(map), map.Hexes.hex_size_km * 1000f);
+            new UnitGround(map.SettlementFootprints, map.RouteCorridors, hexes, XZ(map), map.Hexes.hex_size_km * 1000f, Water(map));
+
+        /// <summary>The built map's drawn water (KitGround.Water over its terrain: the sea is the heightmap's 0 m), which a ship's
+        /// whole hull must lie in (issue #3038); null before the terrain is built.</summary>
+        public static Func<float, float, bool>? Water(MapScene map) =>
+            map.Terrain == null ? null : new Kits.KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM).Water;
 
         static Func<double, double, Vector2> XZ(MapScene map) => (lon, lat) => { var w = map.Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); };
 
@@ -909,11 +921,46 @@ namespace Statecraft.Game.Map.Units
                 motions.Add(motion);
                 // With the units hidden the token cannot be seen, and it would slide only once they are shown again.
                 if (tokensRoot.gameObject.activeInHierarchy && drawnAt.TryGetValue(Key(motion.SimId, token.name), out var was))
-                    motion.Begin(was - trios[i].centre);
+                {
+                    if (motion.SimId >= 0 && held.Contains(motion.SimId)) motion.Hold(was - trios[i].centre);   // waits for its beat
+                    else motion.Begin(was - trios[i].centre);
+                }
                 if (firing.TryGetValue(Key(motion.SimId, token.name), out var played)) motion.ContinueAttack(played);
                 if (hits.TryGetValue(Key(motion.SimId, token.name), out var hit)) motion.ContinueHit(hit.left, hit.delay);
             }
         }
+
+        /// <summary>Holds the tokens of <paramref name="simIds"/> where they are drawn now (#2202): the next rebuilds stand
+        /// each at that place, its unit already moved by the sim, until <see cref="Release"/> or <see cref="ReleaseAll"/>.
+        /// A token mid-slide stops where it is. Ids the layer does not draw are kept, and hold nothing.</summary>
+        public void Hold(IEnumerable<int> simIds)
+        {
+            foreach (int id in simIds)
+            {
+                if (id < 0 || !held.Add(id)) continue;
+                foreach (var m in motions) if (m != null && m.SimId == id) { m.Hold(m.SlideOffset); break; }
+            }
+        }
+
+        /// <summary>Lets the held token of <paramref name="simId"/> slide from where it waits to its place, as any move.
+        /// False when it was not held, or no token of it waits.</summary>
+        public bool Release(int simId)
+        {
+            if (!held.Remove(simId)) return false;
+            foreach (var m in motions)
+                if (m != null && m.SimId == simId && m.Held) { m.Unhold(slide: true); return true; }
+            return false;
+        }
+
+        /// <summary>Releases every held token: each slides (<paramref name="snap"/> false) or stands on its place at once.</summary>
+        public void ReleaseAll(bool snap)
+        {
+            held.Clear();
+            foreach (var m in motions) if (m != null && m.Held) m.Unhold(slide: !snap);
+        }
+
+        /// <summary>Whether a token draws sim unit <paramref name="simId"/> now.</summary>
+        public bool Draws(int simId) => simId >= 0 && drawnSims.Contains(simId);
 
         /// <summary>Plays the attack take of sim unit <paramref name="simId"/>'s figures (#1867). False when no token draws
         /// that unit or none of its figures can play one now (a far zoom, the units hidden, or no fire take).</summary>

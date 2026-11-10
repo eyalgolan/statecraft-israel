@@ -25,21 +25,54 @@ namespace Statecraft.Game.Boot
         /// empty manifest fails: a full-set pass needs every line.</summary>
         public static (bool ok, List<string> lines) Run(Content c, GoldenData data)
         {
+            var goldens = Manifest(data, out var fail);
+            if (goldens == null) return (false, new List<string> { fail });
             var lines = new List<string>();
             bool ok = true;
-            IReadOnlyList<(string name, string hash)> goldens;
-            try { goldens = GoldenData.Parse(data.Manifest); }
-            catch (Exception e) { return (false, new List<string> { $"GOLDEN FAIL manifest {e.Message}" }); }
-            if (goldens.Count == 0) return (false, new List<string> { "GOLDEN FAIL manifest has no goldens" });
+            foreach (var (name, expected) in goldens) ok &= Check(name, expected, c, data, lines);
+            return (ok, lines);
+        }
+
+        /// <summary><see cref="Run"/> with a frame between goldens, for the WebGL player: its garbage collector runs only
+        /// between frames, so one call that plays every golden keeps all their garbage until the call ends (the 8 Nov 2026
+        /// nightly's OOM at the 2048 MB heap cap). The lines and the verdict are Run's.</summary>
+        public static async Awaitable<(bool ok, List<string> lines)> RunAsync(Content c, GoldenData data)
+        {
+            var goldens = Manifest(data, out var fail);
+            if (goldens == null) return (false, new List<string> { fail });
+            var lines = new List<string>();
+            bool ok = true;
             foreach (var (name, expected) in goldens)
             {
-                string hash;
-                try { hash = Play(name, c, data).Hash(); }
-                catch (Exception e) { ok = false; lines.Add($"GOLDEN FAIL {name} {e.GetType().Name}: {e.Message}"); continue; }
-                if (hash == expected) lines.Add($"GOLDEN OK {name} {hash}");
-                else { ok = false; lines.Add($"GOLDEN FAIL {name} {hash} expected {expected}"); }
+                await Awaitable.NextFrameAsync();
+                ok &= Check(name, expected, c, data, lines);
             }
             return (ok, lines);
+        }
+
+        /// <summary>The manifest's goldens, or null with the FAIL line when it cannot be read or pins none.</summary>
+        static IReadOnlyList<(string name, string hash)>? Manifest(GoldenData data, out string fail)
+        {
+            fail = "";
+            try
+            {
+                var goldens = GoldenData.Parse(data.Manifest);
+                if (goldens.Count != 0) return goldens;
+                fail = "GOLDEN FAIL manifest has no goldens";
+            }
+            catch (Exception e) { fail = $"GOLDEN FAIL manifest {e.Message}"; }
+            return null;
+        }
+
+        /// <summary>Plays one golden and adds its OK or FAIL line; true when it matched.</summary>
+        static bool Check(string name, string expected, Content c, GoldenData data, List<string> lines)
+        {
+            string hash;
+            try { hash = Play(name, c, data).Hash(); }
+            catch (Exception e) { lines.Add($"GOLDEN FAIL {name} {e.GetType().Name}: {e.Message}"); return false; }
+            if (hash == expected) { lines.Add($"GOLDEN OK {name} {hash}"); return true; }
+            lines.Add($"GOLDEN FAIL {name} {hash} expected {expected}");
+            return false;
         }
 
         /// <summary>The run a manifest name pins (docs/determinism.md): hash1950 and hash1952 (GoldenRun.Play), mvp-end
