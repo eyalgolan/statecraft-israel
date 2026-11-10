@@ -37,8 +37,9 @@ Numeric parameters the owner did not set are not made Agreed by these rulings. T
 | 1 November 2026, O7, "10 per unit, main (Recommended)" | `prisoner.return_points` | Agreed `10` per returned population unit (`R-POW-004`). |
 | 1 November 2026, post-MVP, "Approve all 79 (Recommended)" | `transit.cost`, `reception.queue_cohesion_loss` | Values kept; Default and not operative in the MVP. |
 | 30 October 2026, Upkeep conflict, option A (declined) | `housing.max_deterioration` | Value kept as post-MVP design; Default. |
+| 10 November 2026, S3, "Default, not operative (Recommended)" and "Same answer for all 4 (Recommended)" ([#2918](https://github.com/eyalgolan/statecraft-israel/issues/2918#issuecomment-6766460488)) | `military.strength`, `military.refugee_multiplier`, `food.shortage_combat_slope`, `food.shortage_cohesion_max` | Values kept (`1 / 2 / 3`, `0.75`, `1`, `10`); Default and not operative in the MVP. |
 
-Other post-MVP rows (for example `reception.turns`, `reception.capacity`, `reception.basic_credit`, `military.refugee_multiplier`) stay Agreed for now: inactive fixtures read several of them as Agreed (`Content.RequirePopulationInteger`, `Gdd03ReceptionFixture`). `combat.enemy_attack_ratio` (O4) and the per-unit rates at 1,000 people a unit (`industry.income`, `farmer.output`, `military.camp_capacity`) are changed in their own issues (#2114, #2112).
+Other post-MVP rows (for example `reception.turns`, `reception.capacity`, `reception.basic_credit`) stay Agreed for now: inactive fixtures read several of them as Agreed (`Content.RequirePopulationInteger`, `Gdd03ReceptionFixture`). `combat.enemy_attack_ratio` (O4) and the per-unit rates at 1,000 people a unit (`industry.income`, `farmer.output`, `military.camp_capacity`) are changed in their own issues (#2114, #2112).
 
 ## #1706 slices 0/1: inactive combat catalogue foundation
 
