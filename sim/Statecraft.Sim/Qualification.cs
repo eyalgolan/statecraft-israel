@@ -77,7 +77,7 @@ namespace Statecraft.Sim
             RefusedNoQualification = "There is no such qualification";
 
         // #1725: the refusal only a Historical ledger game gives. Internal, not a Refused* constant: no player reaches it yet
-        // (Simulation.Step still refuses a ledger game, R-POP-002), and the UI string follows when it does.
+        // (the turn, TurnResolver.Resolve, still refuses a ledger game, R-POP-002), and the UI string follows when it does.
         /// <summary>Owner, 9 November 2026, "Refuse for now (Recommended)": ReturnCraftsmen and ReassignCraftsmen are refused
         /// with a plain reason until #2476 makes craftsmen exist on the ledger (the Historical start has none, and the craftsman
         /// course is refused until then, Training.LedgerRefusedCraftsman).</summary>
