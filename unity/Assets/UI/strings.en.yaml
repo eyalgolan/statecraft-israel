@@ -147,7 +147,7 @@ advisor.page.truces.text: "Accept a truce on its card, and our attack orders are
 advisor.page.capture.title: "Capturing a place"
 advisor.page.capture.text: "A military unit that stops on an enemy-held place open to capture takes it at once; passing through does not. The capture dialog then lists its answers in a fixed order, each with what it changes at once or the reason it is refused. Raid and withdraw brings our units out and returns the place to enemy control; Occupy keeps one unit there for a set number of turns, at a Money cost each turn. The choice is yours; it takes effect at End turn, and until it is given, the units stay."
 advisor.page.enemy_phase.title: "The enemy's turn"
-advisor.page.enemy_phase.text: "When you end the turn, every enemy unit receives its orders, by the same rules as ours. In the historical game each Arab force follows its own script toward its historical target. A unit off its script attacks a neighbouring position only when it has a clear edge, and otherwise fortifies. The enemy's attacks are fought as the turn resolves, and none comes inside a truce window."
+advisor.page.enemy_phase.text: "When you end the turn, every enemy unit receives its orders, by the same rules as ours. In the historical game each Arab force follows its own script toward its historical target. A unit off its script attacks a neighbouring position only when it has a clear edge, and otherwise fortifies. The enemy's attacks are fought as the turn resolves, and none comes inside a truce window. After you end the turn, the map plays their moves one at a time; Esc skips them, and Settings can turn them off."
 # The Objectives screen (#1189): every objective in objectives.yaml, done or not, the player's date beside the historical
 # one, and no score (owner, 20 October 2026). The objective card's wording (#380). {0} the player's date,
 # {1} the historical date (objectives.open: {0}). The names are objectives.yaml's (#1208).
@@ -175,6 +175,8 @@ settings.title: "Settings"
 settings.tiltshift: "Blur at the top and bottom of the map"
 settings.on: "On"
 settings.off: "Off"
+# #2202 (owner, 2 November 2026, Q6 a): whether End turn plays the Arab forces' moves on the map.
+settings.enemymoves: "Show the Arab forces' moves on the map"
 # The WebGL companion switch (#1119); the Hebrew awaits native review.
 settings.companion: "Screen reader companion"
 settings.quality: "Quality"
@@ -270,6 +272,9 @@ event.objective_late_one: "Completed 1 month later than in history."
 # event.alt_origin_no_record. event.rejoin sits under an option that returns the course to the record (R-ALT-009).
 event.alt_origin: "Alternative course. It follows the government's decision: {0} ({1}). In the record: {2}."
 event.alt_origin_no_record: "Alternative course. It follows the government's decision: {0} ({1})."
+# event.alt_early: the banner of an armistice card shown before its date, with its early text (R-WAR-008, #1709; owner,
+# 9 November 2026: "Banner (Recommended)", these words).
+event.alt_early: "Alternative course. These talks came sooner than in the record."
 event.rejoin: "Returns to the recorded course."
 # The capture dialog (GDD Phase 6 PR 10, #802; CaptureDialogPresenter). SENSITIVE: the owner reviews every line here, in
 # both languages, before any shareable build (plan 2026-10-15-gdd-phase-6.md, PR 10's gate). Q-UI-1 (b) (owner, 18 October
@@ -543,6 +548,23 @@ report.enemy_move: "{0} moved to a new position"
 report.enemy_attack: "{0} launched an attack on one of your units"
 report.enemy_fortify: "{0} fortified its position"
 report.unit: "Force {0}"
+# The footer while the Arab forces' moves play (#2202, EnemyPlaybackBar): the side whose turn it is, by its side id (owner,
+# 8 November 2026: "Flag + name (Recommended)"; playback.title for a side with no key), the beat's place in the turn
+# ({0} of {1}), the folded last beat, and Skip with its tooltip (the spoken text). The beat's actions reuse report.enemy_move
+# and report.enemy_attack.
+playback.title: "The Arab forces' turn"
+playback.turn_egypt: "Egypt's turn"
+playback.turn_jordan: "Jordan's turn"
+playback.turn_syria: "Syria's turn"
+playback.turn_iraq: "Iraq's turn"
+playback.turn_lebanon: "Lebanon's turn"
+playback.turn_ala: "The Arab Liberation Army's turn"
+playback.turn_local_arab_forces: "Local Arab forces' turn"
+# The owner, 9 November 2026: "\"Step n of m\" (Recommended)": an attack also advances the count.
+playback.step: "Step {0} of {1}"
+playback.folded: "The other moves at once"
+playback.skip: "Skip the Arab forces' moves"
+playback.skip_tip: "Skip the Arab forces' moves and return the map to your view (Esc)"
 # The arms workshops' lines (#1701 A1; owner, 2 November 2026: "Yes, in the panel (Recommended)", whose option gave both
 # lines' wording): {0} the city's name. A no-worker pause is on the Why screen only.
 report.workshops: "Arms workshops"
@@ -969,6 +991,11 @@ advisor.opening.cities.text: "Your cities hold your people, jobs and training, a
 advisor.opening.move_how.text: "To move, select a brigade, press Move, then click a lit hex. Click a farther hex and the brigade goes there over several turns."
 advisor.opening.orders.text: "A brigade with no order holds up End turn. Fortify and Hold stay until you change them, and a route carries on by itself. Skip this turn lasts one turn."
 advisor.opening.end_turn.text: "When no unit needs orders, press End turn. If the button says a unit needs orders, pressing it takes you to that unit. The month then plays out and a report follows."
+# The later lessons (#2933 section 3): the issue's words.
+advisor.lesson.report.text: "That report shows what moved and what was fought. If the truce was accepted, your brigades cannot attack until it ends."
+advisor.lesson.attack.text: "The truce period is over. Select a brigade next to an enemy to see Attack and its odds. An attack can force the enemy back."
+advisor.lesson.stakes.text: "Your score counts objectives, how early you reach them, and prisoners returned. Battles wear brigades down. If Money and Food stay exhausted, the game ends."
+advisor.lesson.combat.text: "When fighting breaks out, the report shows losses and who fell back. Select a brigade next to an enemy to see Attack and its odds."
 advisor.next: "Next"
 advisor.done: "Done"
 # {0} the step, {1} the steps in the chain now.
@@ -1046,7 +1073,9 @@ advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs shor
 
 # Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
 city.workers_ordered: "At End turn: {0}"
-city.workers_cost: "At End turn · Order cost: {0:0.0} Attention"
+city.workers_cost: "At End turn · Workers change: {0:0.0} Attention"
+# Where the city trains, the workers line {0} adds the Train order's Attention price (every Train order costs the same).
+city.train_cost: "{0} · Each Train order: {1:0.0} Attention"
 
 share.site_picture: "Picture copied: paste it into the post"
 share.site_text: "Only the text was copied. Use Share or Download the picture."
@@ -1257,6 +1286,9 @@ why.cause.advisory_budget_rejected: "{0} voted against the budget, but its vote 
 why.cause.budget_rejected: "{0} voted the budget down"
 why.cause.place_captured: "{0} is captured: Israeli units hold it and no enemy unit is there. {1}It awaits a decision"
 why.cause.enemy_regained: "{0} is under enemy control again: enemy units hold it and no Israeli unit is there{1}"
+# R-CTRL-006 (#1305): enemy units took a player's locality; Israeli units took it back.
+why.cause.place_lost: "{0} is lost: enemy units hold it and no Israeli unit is there"
+why.cause.place_retaken: "{0} is retaken: Israeli units hold it again and no enemy unit is there"
 why.cause.place_annexed: "{0} is annexed. {1}"
 why.cause.place_withdrawn: "{0}{1} {2}"
 why.cause.place_deported: "{0}: Deport. Its residents are displaced and the place is depopulated"

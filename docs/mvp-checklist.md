@@ -91,7 +91,7 @@ PRs 1 to 12 have their owner answers recorded in the Phase 6 plan (#1060, #1069)
 - [x] **Done: `docs/rules/mvp.md`, R-CTRL-001.** PR 1 target-list research (#977, #1046, #1299, #1333; #793 closed). The owner sensitivity-reviewed the later residents fields on 24 October 2026 (#1569), so all six target rows are `sensitivity-reviewed` (`content/settlement_targets.yaml:7-10`); Deport activation and the phase close remain with #802 and #804.
 - [x] **Done: `docs/rules/mvp.md`, R-EFX-007 and R-GATE-001.** PR 2 `displacement` tag and release gate (#1070; #794).
 - [x] **Done: `docs/rules/mvp.md`, R-CTRL-001 to R-CTRL-003.** PR 3 target list and settlement state (#1077; #795).
-- [x] **Done: `docs/rules/mvp.md`, R-CTRL-004 and R-CTRL-005.** PR 4 capture, resolver step 3 (#1239; #796 closed). Enemy captures of the player's localities, R-CTRL-006, remain #1305; player units entering enemy-held targets are done (#1314 merged; #1304 closed).
+- [x] **Done: `docs/rules/mvp.md`, R-CTRL-004 and R-CTRL-005.** PR 4 capture, resolver step 3 (#1239; #796 closed). Enemy captures of the player's localities, R-CTRL-006: the state change is in #1305's PR 1, the sourced and what-if cards are its PR 2; player units entering enemy-held targets are done (#1314 merged; #1304 closed).
 - [x] **Done: `docs/rules/mvp.md`, R-CTRL-007 to R-CTRL-010.** PR 5 `ResolveCapture`, the options helper, and Raid and withdraw (#1257; #797 closed).
 - [x] **Done: `docs/rules/mvp.md`, R-CTRL-011 to R-CTRL-013.** PR 6 Occupy, the occupation timer and withdrawal (#1324 merged; #798 closed).
 - [x] **Done: `docs/rules/mvp.md`, R-CTRL-014 to R-CTRL-017.** PR 7 annex or withdraw (Q-PUP-1: no puppet regime in the MVP; #1526 merged; #799 closed).

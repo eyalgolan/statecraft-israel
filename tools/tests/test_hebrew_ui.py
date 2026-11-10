@@ -134,17 +134,17 @@ def test_every_cabinet_refusal_has_both_strings_and_the_english_is_the_sims_word
     (its interpolations as {0}, {1}, ... in order), so the English player sees what the sim says."""
     en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
     src = (ROOT / 'sim/Statecraft.Sim/Cabinet.cs').read_text(encoding='utf-8')
-    paths = re.findall(r'new CabinetReason\("(\w+)",\s*(\$?)"((?:[^"\\]|\\.)*)"', src)
+    # #2707: each path's English is a Refused* constant, already in {0}, {1}, ... form (Say formats it).
+    consts = dict(re.findall(r'public const string (Refused\w+) = "((?:[^"\\]|\\.)*)";', src))
+    paths = re.findall(r'new CabinetReason\("(\w+)",\s*(?:Say\()?(Refused\w+)', src)
     assert len(paths) == 15
-    assert len({kind for kind, _, _ in paths}) == len(paths)   # one kind per return path
-    for kind, interpolated, english in paths:
+    assert len({kind for kind, _ in paths}) == len(paths)   # one kind per return path
+    for kind, const in paths:
         key = 'cabinet.reason.' + kind
         assert key in en and key in he, key
-        n = iter(range(10))
-        template = re.sub(r'\{[^{}]+\}', lambda _: '{%d}' % next(n), english) if interpolated else english
-        assert en[key] == template, key
+        assert en[key] == consts[const], key
         assert not re.search('[A-Za-z]', he[key]), key
-    assert sorted(k for k in en if k.startswith('cabinet.reason.')) == sorted('cabinet.reason.' + k for k, _, _ in paths)
+    assert sorted(k for k in en if k.startswith('cabinet.reason.')) == sorted('cabinet.reason.' + k for k, _ in paths)
 
 
 def test_the_cause_line_names_are_contents_names_in_english_and_hebrew_without_latin():

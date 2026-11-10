@@ -69,6 +69,25 @@ namespace Statecraft.Sim
                         CheckPlaceholders(c, e, F("late_text_he"), e.LateTextHe, offices);
                     }
                 }
+                // R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)"): early text, only on a
+                // front_quiet card, the only kind the quiet path can show before its `from` (so EventSystem.ShowsEarly, which reads
+                // the date alone, never shows it on another card), in Hebrew exactly when the card's text is. It can be shown from
+                // the first early offer (Armistice.EarliestOffer), so its office placeholders must have a holder from then.
+                if (e.EarlyText != "" || e.EarlyTextHe != "")
+                {
+                    if (e.FrontQuiet == "")
+                        throw new ContentException(e.File, F("early_text"), "only an armistice card with front_quiet, which can be shown before its `from`, has early text");
+                    if (e.EarlyText.Trim() == "") throw new ContentException(e.File, F("early_text"), "required: early_text_he is set but early_text is not");
+                    var earliest = Armistice.EarliestOffer < e.From ? Armistice.EarliestOffer : e.From;
+                    CheckPlaceholders(c, e, F("early_text"), e.EarlyText, offices, earliest);
+                    if (e.TextHe == "" && e.EarlyTextHe != "") throw new ContentException(e.File, F("early_text_he"), "only a card with Hebrew text has early_text_he");
+                    if (e.TextHe != "")
+                    {
+                        if (e.EarlyTextHe == "") throw new ContentException(e.File, F("early_text_he"), "required: the card's text is in Hebrew too");
+                        if (!e.EarlyTextHe.Any(ch => ch >= '\u05D0' && ch <= '\u05EA')) throw new ContentException(e.File, F("early_text_he"), "must be Hebrew, in Hebrew letters");
+                        CheckPlaceholders(c, e, F("early_text_he"), e.EarlyTextHe, offices, earliest);
+                    }
+                }
                 // Chapters design 3.2: an event may only name model records that are active for its whole window.
                 void Active(string field, string id)
                 {
@@ -158,10 +177,36 @@ namespace Statecraft.Sim
                     CheckStructured(c, e, o, e.Tags.Any(SensitiveTags.Contains), field => $"events[{e.Id}].{field}");
                     CheckOrders(c, e, o, field => $"events[{e.Id}].{field}");
                 }
+            CheckOperationHexes(c);
         }
 
-        /// <summary>R-ENEMY-005 (Q-ENEMY-5): an option's go-to orders name a map/units_1948.yaml row and one of that row's own
-        /// anchor or order target hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026,
+        /// <summary>R-ENEMY-009: the operation a unit is in is the card whose decided option sent its row to the hex it is going
+        /// to (<see cref="EventSystem.OperationOf"/>), so no two cards send one row to one hex. The options of one card may: only
+        /// one of them is decided. GDD only, as <see cref="CheckOrders"/>'s hex checks are.</summary>
+        static void CheckOperationHexes(Content c)
+        {
+            if (!c.IsGdd) return;
+            var sent = new Dictionary<(string Row, int Q, int R), string>();
+            foreach (var e in c.Events)
+            {
+                var mine = new HashSet<(string Row, int Q, int R)>();
+                foreach (var o in e.Options)
+                    for (int i = 0; i < o.UnitOrders.Count; i++)
+                    {
+                        var x = o.UnitOrders[i];
+                        if (x.Order != Movement.GoTo) continue;
+                        var key = (x.Unit, x.Q, x.R);
+                        if (sent.TryGetValue(key, out var other) && other != e.Id)
+                            throw new ContentException(e.File, FormattableString.Invariant($"events[{e.Id}].options[{o.Id}].unit_orders[{i}]"),
+                                FormattableString.Invariant($"events[{other}] already sends '{x.Unit}' to hex q={x.Q} r={x.R}: a unit's operation is found from its order (R-ENEMY-009)"));
+                        mine.Add(key);
+                    }
+                foreach (var key in mine) sent[key] = e.Id;
+            }
+        }
+
+        /// <summary>R-ENEMY-005 (Q-ENEMY-5), R-ENEMY-008: an option's go-to and attack orders name a map/units_1948.yaml row and
+        /// one of that row's own anchor or order target hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026,
         /// #749: sourced anchors only; 2 November 2026, #2087: order targets, option 1). They are checked and applied under
         /// both GDD identities. R-ENEMY-007 also requires every operation option to author its allowed player regions. The legacy loop reads the
         /// same real cards but no units file, so it has nothing to check them against and no unit to order.</summary>
@@ -174,6 +219,8 @@ namespace Statecraft.Sim
                 if (x.Unit.Trim() == "") throw new ContentException(e.File, at + ".unit", "required");
                 if (!x.QGiven) throw new ContentException(e.File, at + ".q", "required");
                 if (!x.RGiven) throw new ContentException(e.File, at + ".r", "required");
+                if (x.Order != Movement.GoTo && x.Order != Combat.Attack)   // R-ENEMY-008
+                    throw new ContentException(e.File, at + ".order", $"'{x.Order}' is not an operation order: go_to or attack");
             }
             if (!c.IsGdd) return;
             var requirementField = F(FormattableString.Invariant($"options[{o.Id}].requires_unit_regions"));
@@ -193,19 +240,21 @@ namespace Statecraft.Sim
                 if (!regions.Add(id)) throw new ContentException(e.File, at, "duplicate region id");
                 if (!c.PlayerRegions.Regions.ContainsKey(id)) throw new ContentException(e.File, at, $"unknown player region '{id}' ({PlayerRegionCatalogue.FileName})");
             }
-            var rows = new HashSet<string>(StringComparer.Ordinal);
+            // R-ENEMY-008: a row may move and then attack, so a row may appear once per order.
+            var rows = new HashSet<(string Row, string Order)>();
             for (int i = 0; i < o.UnitOrders.Count; i++)
             {
                 var x = o.UnitOrders[i];
                 var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
-                if (!rows.Add(x.Unit)) throw new ContentException(e.File, at + ".unit", "duplicate operation unit row");
+                if (!rows.Add((x.Unit, x.Order))) throw new ContentException(e.File, at + ".unit", "duplicate operation unit row");
                 if (!c.UnitAnchorHexes.Keys.Any(k => k.Row == x.Unit))
                     throw new ContentException(e.File, at + ".unit", $"unknown unit row '{x.Unit}' ({StartingForces.FileName})");
                 if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R))
                     && !c.UnitOrderTargets.Any(k => k.Key.Row == x.Unit && (k.Value.Q, k.Value.R) == (x.Q, x.R)))
                     throw new ContentException(e.File, at, FormattableString.Invariant($"hex q={x.Q} r={x.R} is not an anchor or an order target of '{x.Unit}' in {StartingForces.HexesFileName}"));
-                // The order ends with its anchor's window (the owner's answer 1 on #2087), so the anchor needs an end.
-                if (EventSystem.OrderEnds(c, x) == null)
+                // The order ends with its anchor's window (the owner's answer 1 on #2087), so the anchor needs an end. An attack
+                // is fought when the card is decided (R-ENEMY-008) and outlasts nothing.
+                if (x.Order == Movement.GoTo && EventSystem.OrderEnds(c, x) == null)
                     throw new ContentException(e.File, at, FormattableString.Invariant($"the anchor of '{x.Unit}' on hex q={x.Q} r={x.R} has no 'to' date in {StartingForces.FileName}"));
             }
         }
@@ -543,7 +592,10 @@ namespace Statecraft.Sim
             }
         }
 
-        static void CheckPlaceholders(Content c, GameEvent e, string field, string text, HashSet<string> offices)
+        /// <summary>Each office placeholder in <paramref name="text"/> names a known, single-holder office with a holder on every
+        /// day the text can be shown: the event's window, from <paramref name="from"/> when given (an early text, R-WAR-008),
+        /// else from the event's own `from`.</summary>
+        static void CheckPlaceholders(Content c, GameEvent e, string field, string text, HashSet<string> offices, DateTime? from = null)
         {
             if (Offices.Placeholder.Replace(text, "").IndexOfAny(new[] { '{', '}' }) >= 0)
                 throw new ContentException(e.File, field, "stray '{' or '}' outside an {office_id} placeholder");
@@ -553,7 +605,7 @@ namespace Statecraft.Sim
                 if (!offices.Contains(office)) throw new ContentException(e.File, field, $"unknown office placeholder '{m.Value}'");
                 if (c.Offices.Any(o => o.Id == office && o.SeveralHolders))
                     throw new ContentException(e.File, field, $"office '{office}' can have several holders at once, so '{m.Value}' would not name one person");
-                var gap = FirstUncovered(c, office, e.From, e.To);
+                var gap = FirstUncovered(c, office, from ?? e.From, e.To);
                 if (gap.HasValue)
                     throw new ContentException(e.File, field, FormattableString.Invariant($"office '{office}' has no holder on {gap.Value:yyyy-MM-dd}, inside the event window"));
             }

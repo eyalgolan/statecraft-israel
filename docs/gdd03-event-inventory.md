@@ -51,6 +51,7 @@ first-slice availability") describes; this file changes no exclusion.
 | `altalena` | `enforce` | `effects[1].morale` | -0.05 | `effects[1].morale` (same) | -0.05 | no |
 | `altalena` | `compromise` | `effects[0].security` | -0.025 | `effects[0].security` (same) | -0.025 | no |
 | `altalena` | `compromise` | `effects[1].intl_standing` | -0.02 | `effects[1].intl_standing` (same) | -0.02 | no |
+| `altalena` | `compromise` | `effects[2].arms` | -2 | `effects[2].arms` (same) | -2 | no |
 | `armistice_egypt` | `sign` | `set_rung` | set 2 | `set_rung` (same) | set 2 | no |
 | `armistice_egypt` | `sign` | `effects[0].intl_standing` | 0.05 | `effects[0].intl_standing` (same) | 0.05 | no |
 | `armistice_egypt` | `hold_out` | `set_rung` | set 4 | `set_rung` (same) | set 4 | no |
@@ -186,7 +187,7 @@ first-slice availability") describes; this file changes no exclusion.
 | `ten_days` | `southern_front` | `unit_orders[0].kiryati` | go to (-3, 24) | `unit_orders[0].kiryati` (same, once its units are in place: R-ENEMY-007) | go to (-3, 24) | no |
 | `ten_days` | `southern_front` | `unit_orders[1].carmeli` | go to (14, 6) | `unit_orders[1].carmeli` (same, once its units are in place: R-ENEMY-007) | go to (14, 6) | no |
 
-138 rows: 41 cards under gdd-0.1, 41 under gdd-0.3.
+139 rows: 41 cards under gdd-0.1, 41 under gdd-0.3.
 
 | Excluded card | gdd-0.3 loader with only this exclusion removed |
 |---|---|

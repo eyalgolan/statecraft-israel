@@ -30,7 +30,8 @@ namespace Statecraft.Sim
     /// <summary>
     /// A save is seed + command log + content hash + schema version (spec section 3); loading replays it. Text format,
     /// one item per line:
-    ///   statecraft-save 5          every ruleset (#2605); earlier: 3 for legacy and gdd-0.1, 4 for gdd-0.3, 1 with no ruleset line (legacy)
+    ///   statecraft-save 6          every ruleset (#2544); earlier: 5 for every ruleset (#2605), before that 3 for legacy and
+    ///                              gdd-0.1, 4 for gdd-0.3, 1 with no ruleset line (legacy)
     ///   content &lt;hex&gt;             Content.Hash of the content it was played with
     ///   seed &lt;ulong&gt;  /  mode Historical
     ///   ruleset legacy|gdd-0.1|gdd-0.3  the rules it was played under (Content.Ruleset); another ruleset refuses it (R-SAVE-001),
@@ -47,10 +48,15 @@ namespace Statecraft.Sim
     /// </summary>
     public sealed class SaveGame
     {
-        /// <summary>The schema every new save is written in, whatever its ruleset (#2605: the state now records the soft events
-        /// the cap left waiting, so a replay of an older save can end elsewhere; GameSession.Load says so instead of refusing).</summary>
-        public const int SchemaVersion = 5;
-        /// <summary>The last schema written before <see cref="SchemaVersion"/>: legacy and gdd-0.1 wrote 3, gdd-0.3 wrote 4 (#1687).</summary>
+        /// <summary>The schema every new save is written in, whatever its ruleset. #2605 made it 5 (the state records the soft
+        /// events the cap left waiting); #2544 made it 6 (a player's order to a unit in an operation cancels the operation's
+        /// remaining orders, R-ENEMY-009). Either way a replay of an older save can end elsewhere, and GameSession.Load says so
+        /// instead of refusing (R-SAVE-005, R-SAVE-006).</summary>
+        public const int SchemaVersion = 6;
+        /// <summary>The schema #2605 introduced and every ruleset wrote until <see cref="SchemaVersion"/>. A save in it or later
+        /// always has its ending cards (#2536) and lost markers (#2542), so GameSession.Load allows those differences only below it.</summary>
+        public const int SoftEventCapSchemaVersion = 5;
+        /// <summary>The last schema written before <see cref="SoftEventCapSchemaVersion"/>: legacy and gdd-0.1 wrote 3, gdd-0.3 wrote 4 (#1687).</summary>
         const int LegacyPreviousSchemaVersion = 3, Gdd03PreviousSchemaVersion = 4;
         /// <summary>The ruleset of the legacy loop (Content.Ruleset).</summary>
         public const string LegacyRuleset = "legacy";
@@ -209,10 +215,10 @@ namespace Statecraft.Sim
                     throw new SaveException(5, $"This save was made with a newer version of the game (ruleset '{ruleset}').", SaveException.NewerVersion);
                 first = 5;
             }
-            // #1687, #2605, R-SAVE-001/002: before schema 5, schema 4 belonged only to the isolated gdd-0.3 envelope, legacy
-            // wrote 1 to 3 and gdd-0.1 2 to 3 (schema 1 has no ruleset line, so it is legacy). No build wrote another pairing,
-            // so such a save was edited: damage, not older or newer rules.
-            if (version < SchemaVersion && (ruleset == Gdd03Ruleset ? version != Gdd03PreviousSchemaVersion : version > LegacyPreviousSchemaVersion))
+            // #1687, #2605, R-SAVE-001/002: every ruleset wrote schema 5 (#2605) and now 6 (#2544). Before schema 5, schema 4
+            // belonged only to the isolated gdd-0.3 envelope, legacy wrote 1 to 3 and gdd-0.1 2 to 3 (schema 1 has no ruleset
+            // line, so it is legacy). No build wrote another pairing, so such a save was edited: damage, not older or newer rules.
+            if (version < SoftEventCapSchemaVersion && (ruleset == Gdd03Ruleset ? version != Gdd03PreviousSchemaVersion : version > LegacyPreviousSchemaVersion))
                 throw new SaveException(1, FormattableString.Invariant($"no version of the game wrote a {ruleset} save in schema {version}"));
             // Check compatibility before replay, including gdd-0.1 -> gdd-0.3 as earlier rules.
             if (expectedRuleset != null && ruleset != expectedRuleset)

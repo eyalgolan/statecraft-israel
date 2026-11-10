@@ -19,7 +19,7 @@ namespace Statecraft.Sim
             foreach (var u in s.Units.Values.ToList())
             {
                 if (!Promotes(u)) continue;
-                var served = new Unit(u.Id, u.Type, u.Q, u.R, u.Service + 1, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
+                var served = new Unit(u.Id, u.Type, u.Q, u.R, u.Service + 1, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp, u.Records);
                 s.Units[u.Id] = byService && served.Service >= r.VeteranSoldierService!.Value ? Promote(served, why) : served;
             }
         }
@@ -32,7 +32,7 @@ namespace Statecraft.Sim
         internal static Unit Promote(Unit u, List<Cause> why)
         {
             why.Add(new Cause("city", "units", u.Strength, "Recruits became veteran soldiers", key: CauseKeys.RecruitsVeteran));
-            return new Unit(u.Id, VeteranSoldier, u.Q, u.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp);
+            return new Unit(u.Id, VeteranSoldier, u.Q, u.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp, u.Records);
         }
 
         /// <summary>The Israeli veteran infantry type the loader requires when recruits exist (R-UNIT-004).</summary>

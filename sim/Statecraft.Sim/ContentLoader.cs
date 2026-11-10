@@ -427,6 +427,7 @@ namespace Statecraft.Sim
             var settlements = ReadSettlements(readFile);
             var settlementIds = settlements.Select(x => x.id).ToList();
             foreach (var (id, name, _) in settlements) c.SettlementNames[id] = name;   // a duplicate id fails in ValidateMap
+            c.ArabTowns = new HashSet<string>(settlements.Where(x => x.type == ArabTown).Select(x => x.id), StringComparer.Ordinal);
             c.SettlementTargets = Read<SettlementTargetsFile>(readFile, SettlementTargetsFileName).Targets;
             ValidateSettlementTargets(c, settlements.Where(x => x.type == ArabTown).Select(x => x.id));
             // Event files (content/events/*.yaml), one GameEvent each. Keys, for content authors:
@@ -445,7 +446,7 @@ namespace Statecraft.Sim
             //   options: [{ id, text, historical, recommended, effects: [{ target, delta }], set_rung, set_policy,
             //              grant_units: [{ type, n, at }], city_effects: [{ city, field, delta }],
             //              unlock_projects: [<projects.yaml id of a locked kind>],
-            //              unit_orders: [{ unit, q, r }] (R-ENEMY-005) }]
+            //              unit_orders: [{ unit, order, q, r }] (R-ENEMY-005; order go_to or attack, R-ENEMY-008) }]
             //   sources: [{ url, checked }], status
             //   objective                  the objective (objectives.yaml) whose completion card this is: it fires only once
             //                              that objective is recorded, and has exactly one option
@@ -458,6 +459,8 @@ namespace Statecraft.Sim
             //                              has exactly one option (R-EVT-007)
             //   front_quiet                the front (Prisoners.Fronts) of an armistice_<front> card: under gdd-0.3 it may also
             //                              come early, and again after a refusal, once that front is quiet (R-WAR-008)
+            //   early_text, early_text_he  on a front_quiet card only: its text, and its Hebrew, when it is shown before its
+            //                              `from` (R-WAR-008, #1709); a what-if, so it needs a reviewed_by (R-ALT-011)
             //   armistice_front            a front (Prisoners.Fronts) whose signed armistice ends the card: a pending
             //                              operation lapses once it is signed, and a card with it never first fires after
             //                              it (R-ENEMY-007); on an operation card or a following card only
