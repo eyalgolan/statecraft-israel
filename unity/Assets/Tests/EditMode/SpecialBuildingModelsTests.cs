@@ -1350,8 +1350,7 @@ namespace Statecraft.Game.Tests
         /// <summary>A workshop built on Jerusalem's or Tel Aviv's own hex, which the town's footprint covers, gets its b21 at the
         /// city's edge (owner, 6 November 2026, verbatim: "make the workshop at the edge of the city", which replaces "Among the
         /// houses" of 2 November 2026 for the major cities; <see cref="AtTheCitysEdge"/>), outside the Old City's walls, clear of
-        /// the routes and the tokens, upright, and on the same spot when placed again; one plan with both walks each city's edge once
-        /// and tests a bounded number of points there (#3058: counted, not timed).</summary>
+        /// the routes and the tokens, upright, and on the same spot when placed again; one plan with both stays under 50 ms.</summary>
         [Test]
         public void AWorkshopInJerusalemOrTelAvivStandsAtTheCitysEdge()
         {
@@ -1397,9 +1396,18 @@ namespace Statecraft.Game.Tests
             // The load gate's rebuild line: one full plan (the sourced buildings and both workshops at their city's edge), as
             // each Rebuild computes it.
             var wants = SpecialBuildingModels.Placements(After).Concat(SpecialBuildingModels.ArmsWorkshops(c, projects)).ToList();
-            // #3058: the plan's edge walk counted, not timed (as #1680 did for the map labels). A wall-clock bound failed under
-            // machine load (#2957, 51.7 ms against 50 ms at load 7-10). The plan reads only the map, the date and the wants, so
-            // its work is the same every time: two plans must count the same, and the counts have the bounds below.
+            SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false);   // warm
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            const int Runs = 5;
+            for (int i = 0; i < Runs; i++) SpecialBuildingModels.Plan(map, After, wants, _ => true, log: false);
+            double ms = clock.Elapsed.TotalMilliseconds / Runs;
+            TestContext.WriteLine($"PLAN-TIMING Jerusalem+Tel Aviv workshops: {ms:0.0} ms per plan");
+            // A design bound, not a budget: a plan runs on a prefab answer or a change of date or workshops, never per frame.
+            Assert.Less(ms, 50.0, "one plan with two workshops at their city's edge");
+            // #3058: the plan's edge walk counted as well as timed (as #1680 did for the map labels). The plan reads only the
+            // map, the date and the wants, so its work is the same every time: two plans must count the same, and the counts
+            // have the bounds below. The counts catch a slower walk whatever the machine's load; the time above still catches
+            // a slower check or a slower search elsewhere in the plan.
             (long bearings, long points, long tests) Work()
             {
                 long b0 = SpecialBuildingModels.EdgeBearingsForTests, p0 = SpecialBuildingModels.EdgePointsForTests,
@@ -1409,14 +1417,9 @@ namespace Statecraft.Game.Tests
                     SpecialBuildingModels.EdgeTestsForTests - t0);
             }
             var warm = Work();
-            var clock = System.Diagnostics.Stopwatch.StartNew();
             var work = Work();
-            clock.Stop();
             TestContext.WriteLine(FormattableString.Invariant(
                 $"PLAN-WORK Jerusalem+Tel Aviv workshops: {work.bearings} bearings, {work.points} edge points, {work.tests} point tests"));
-            // Logged only, never asserted: the time depends on the machine's load (#3058).
-            TestContext.WriteLine(FormattableString.Invariant(
-                $"PLAN-TIMING Jerusalem+Tel Aviv workshops: {clock.Elapsed.TotalMilliseconds:0.0} ms per plan"));
             Assert.AreEqual(warm, work, "two plans of the same map, date and wants do the same edge work");
             // The bounds, from the code as it stands (literals, so a change to the walk's constants cannot move them):
             // - bearings: each workshop in a major city walks its edge once (Plan calls EdgeSpot once per workshop, and every
