@@ -31,12 +31,15 @@ namespace Statecraft.Game.Map.Units
         readonly (List<Vector2> line, float half, Rect bounds)[] corridors;
         readonly IReadOnlyList<MapHex> hexes;
         readonly Vector2[] hexXZ;
+        readonly Func<float, float, bool>? water;
         public readonly float HexSizeM;
 
+        /// <param name="water">(x, z): true where the drawn map is water (KitGround.Water over the map's terrain). With it, a
+        /// ship's whole drawn hull must lie in water (<see cref="HullInWater"/>); null: a ship needs only its sea hex.</param>
         public UnitGround(IReadOnlyList<(Vector2 centre, float radius)> footprints, IReadOnlyList<(List<Vector2> line, float halfWidth)> routeCorridors,
-            IReadOnlyList<MapHex> hexes, Func<double, double, Vector2> toXZ, float hexSizeM)
+            IReadOnlyList<MapHex> hexes, Func<double, double, Vector2> toXZ, float hexSizeM, Func<float, float, bool>? water = null)
         {
-            this.footprints = footprints; this.hexes = hexes; HexSizeM = hexSizeM;
+            this.footprints = footprints; this.hexes = hexes; HexSizeM = hexSizeM; this.water = water;
             hexXZ = hexes.Select(h => toXZ(h.Lon, h.Lat)).ToArray();
             corridors = routeCorridors.Where(c => c.line.Count > 0).Select(c =>
             {
@@ -80,11 +83,12 @@ namespace Statecraft.Game.Map.Units
         /// town (the full parked-aircraft span for air, the ring for other services), except an army token in
         /// <paramref name="inTown"/> may enter the town its <paramref name="anchor"/> stands in (the kits then keep a clearing
         /// for it there, never in a neighbouring town), and its figures (an army token's trio, a parked
-        /// aircraft's centre) on land and off the railways and roads. A ship needs only the sea hex the placer already
-        /// checked.</summary>
+        /// aircraft's centre) on land and off the railways and roads. A ship needs its sea hex (the placer checks it) and,
+        /// when this ground knows the water, its whole drawn hull in the water (issue #3038: INS Haganah stood on Mount
+        /// Carmel's headland at the centre of a hex that is more than half sea).</summary>
         public bool Clear(string service, Vector2 centre, bool compact, bool inTown, Vector2 anchor)
         {
-            if (service == UnitData.Navy) return true;
+            if (service == UnitData.Navy) return water == null || HullInWater(centre, water);
             float disc = ClearanceRadius(service, compact);
             foreach (var (fc, fr) in footprints)
             {
@@ -102,6 +106,35 @@ namespace Statecraft.Game.Map.Units
                         for (int i = 0; i + 1 < line.Count; i++)
                             if (DistanceToSegment(p, line[i], line[i + 1]) < half + FigureClearanceM) return false;
             }
+            return true;
+        }
+
+        /// <summary>The drawn ship's length and beam on the map (m): UnitModels.Corvette's 63.4 m hull, 10.1 m across at its
+        /// waterline band (radius 5.0 m, widened 1.01), at <see cref="UnitShowcase.ShipScale"/>. Every navy token draws that
+        /// mesh (UnitLayer).</summary>
+        public const float ShipLengthM = 63.4f * UnitShowcase.ShipScale, ShipBeamM = 10.1f * UnitShowcase.ShipScale;
+
+        /// <summary>The spacing (m) of the hull's samples: under the heightmap's finer sample spacing (about 79 m east-west,
+        /// 210 m north-south), so no strip of land as wide as a sample slips between two of them.</summary>
+        public const float HullSampleM = 75f;
+
+        /// <summary>The points of the drawn hull's rectangle (<see cref="ShipLengthM"/> by <see cref="ShipBeamM"/>, its bow
+        /// turned <see cref="UnitShowcase.ShipHeadingDegrees"/> about the vertical as UnitLayer draws it, from +z towards +x),
+        /// at most <see cref="HullSampleM"/> apart along and across it, its edges and corners included.</summary>
+        public static IEnumerable<Vector2> HullPoints(Vector2 centre)
+        {
+            float a = UnitShowcase.ShipHeadingDegrees * Mathf.Deg2Rad;
+            var bow = new Vector2(Mathf.Sin(a), Mathf.Cos(a)); var side = new Vector2(bow.y, -bow.x);
+            int n = Mathf.CeilToInt(ShipLengthM / HullSampleM), m = Mathf.CeilToInt(ShipBeamM / HullSampleM);
+            for (int i = 0; i <= n; i++)
+                for (int j = 0; j <= m; j++)
+                    yield return centre + bow * ShipLengthM * (i / (float)n - 0.5f) + side * ShipBeamM * (j / (float)m - 0.5f);
+        }
+
+        /// <summary>True when every point of the drawn hull (<see cref="HullPoints"/>) is water.</summary>
+        public static bool HullInWater(Vector2 centre, Func<float, float, bool> water)
+        {
+            foreach (var p in HullPoints(centre)) if (!water(p.x, p.y)) return false;
             return true;
         }
 
