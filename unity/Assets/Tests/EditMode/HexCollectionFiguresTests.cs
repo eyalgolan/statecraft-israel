@@ -69,7 +69,8 @@ public sealed class HexCollectionFiguresTests
         using var models = new HexCollectionFigures(() => {});
         models.Prefab(id);
         Assert.That(pending.Select(r => (r.id, r.detail)), Is.EqualTo(new[] { (figure, CollectionDetail.Far) }));
-        Assert.That(CollectionCatalog.BundleOf(figure), Is.EqualTo(CollectionCatalog.People));
+        // Every Collection model streams in a bundle of its own (CollectionCatalog.Bundles), the original's here.
+        Assert.That(CollectionCatalog.BundleOf(figure), Is.EqualTo("collection-" + figure));
     }
 
     // Tal Heuberger's khaki canvas tent on the hex tiles (#1955; owner, 10 November 2026: "Where it fits + one per tile
@@ -100,9 +101,15 @@ public sealed class HexCollectionFiguresTests
     public void TheDesertTilesKeepTheirBoxTents(string tile)
     {
         string id = "tiles:" + tile + "/tent";
-        var ctx = new HexTileContext(2, -1, new FlatSurface(), 1948);
-        HexPrototypes.Create(tile).Build(ctx);
-        Assert.That(ctx.Placements.Count(p => p.Model == id), Is.GreaterThan(0), tile + " places " + id);
+        // A judean_desert hex puts its tent only where a rim edge is clear of the seeded wadis, so look for a hex that does.
+        int placed = 0;
+        for (int i = 0; i < 64 && placed == 0; i++)
+        {
+            var ctx = new HexTileContext(i % 8 - 4, i / 8 - 4, new FlatSurface(), 1948);
+            HexPrototypes.Create(tile).Build(ctx);
+            placed = ctx.Placements.Count(p => p.Model == id);
+        }
+        Assert.That(placed, Is.GreaterThan(0), tile + " places " + id + " on some hex");
         Assert.That(HexCollectionFigures.Streams(id), Is.False, id);
         Assert.That(HexModels.Prefab(id), Is.Null, id + " draws its Box stand-in");
     }
