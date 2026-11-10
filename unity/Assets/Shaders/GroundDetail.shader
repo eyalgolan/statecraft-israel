@@ -130,8 +130,9 @@ Shader "Statecraft/GroundDetail"
                 half3 c = 1.0 + _GrainGain * cls.b * ((a.r + b.r) - 1.0);
             #ifdef SC_FURROWS
                 // Two sets: one 6 pixels apart at the gameplay pose, a finer at a third of that, which fades in closer; on the
-                // crop's strength (the bake's).
-                half furrow = SAMPLE_TEXTURE2D(_FurrowTex, sampler_FurrowTex, uv).r * smoothstep(ScFurrowOffEdge.x, ScFurrowOffEdge.y, rows.y);
+                // crop's strength (the bake's), and, as the scrub, not on the towns, the routes or the units' clearings.
+                half furrow = SAMPLE_TEXTURE2D(_FurrowTex, sampler_FurrowTex, uv).r * smoothstep(ScFurrowOffEdge.x, ScFurrowOffEdge.y, rows.y)
+                    * (1.0 - SAMPLE_TEXTURE2D_LOD(_ScDetailKeepOutTex, sampler_ScDetailKeepOutTex, uv, 0.0).r);
                 c *= 1.0 + _FurrowGain * furrow * (ScFurrowLines(rows.x, _FurrowM, px) + 0.6 * ScFurrowLines(rows.x, _FurrowM / 3.0, px));
             #endif
                 c *= 1.0 + _StoneGain * stone;

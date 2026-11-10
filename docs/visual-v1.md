@@ -3706,28 +3706,43 @@ strength: 1.0 on ploughland, 0.6 on green crops, 0.35 on stubble, none on fallow
 hedges and tracks. `fieldblocks.png` (34 x 85, RGBA8, read texel by texel) holds each block's angle and strip offset as
 16 bits. The bake's angle comes from a 64-bit hash that a shader cannot repeat, but the wobble and the row coordinate can
 be repeated exactly. So `GroundDetail.shader` recomputes them from the world position and reads only the block's two
-values, and the furrows run along each parcel's own rows and stop at its edges.
+values, and the furrows run along each parcel's own rows. They stop exactly at strip and block edges. Where one parcel
+ends and the next begins along a strip, the shader has no edge to stop at (the bake places those ends with its hash); the
+furrows fade there through `furrows.png`'s 158 x 211 m texels, so they can reach about one texel into a fallow neighbour.
 `test_the_block_table_rebuilds_the_bakes_rows` checks the Python mirror of that formula against the bake at 200,000
-points, to within 0.5 m.
+points, to within 0.5 m. `test_the_shader_holds_the_bakes_constants` reads the shader's own copies (the block and strip
+size, the angle range, the pad, the wobble's numbers and the table's 16-bit decoding) and fails if they leave the bake's.
+As the scrub does, the furrows give way to the keep-out mask (`_ScDetailKeepOutTex`: the towns, the routes and the units'
+clearings), so no lines show through a unit token's clearing or along a route corridor.
 
 **Why in the ground detail pass.** As with #2878, the terrain function sits at the frame-time cliff of issue #391. The
 furrows are a variant of `GroundDetail.shader` (`SC_FURROWS`) behind the `furrows` visual toggle, so the profile prices
-them alone.
+them alone. `GroundDetailTests.BothShadersCompileForWebGL2` compiles that variant for GLES3 too.
+
+**Low tier.** `GroundDetail` is not one of `QualityFallback`'s steps, so the furrows have no fallback: they were priced on
+the desktop headless build only. If a mobile profile shows them costly, the `furrows` toggle is the hook a fallback step
+would turn off.
 
 **Symbolic size.** At gameplay03 a pixel covers 35 to 46 m of ground, so real furrows (under 1 m apart) cannot show. The
 lines are 240 m apart, with a finer set at 80 m weighted 0.6, gain 0.30, and both fade out once a line is under about 4
 pixels apart. Each is an odd wave around zero, so the ground keeps its brightness and colour; GradeTests' warmth margin
 (0.266 against a bar of 0.265) is unchanged.
 
-**Measured (EditMode, `GroundDetailTests.TheFurrowsLineTheFieldsAndKeepTheirColour`, on against off).** Mean gradient
-+4.6% on the coastal plain at 12 km, +4.7% at 31 km, +2.3% at gameplay03 (the frame is mostly towns, trees and hills);
-brightness and saturation within 0.0003; no change on the unfarmed Judean hills or at diorama02.
+**Measured (EditMode, `GroundDetailTests.TheFurrowsLineTheFieldsAndKeepTheirColour`, on against off, kits and trees
+off).** Mean gradient +3.2% on the coastal plain at 12 km, +3.2% at 31 km, +1.45% at gameplay03 (the frame is mostly towns,
+trees and hills); brightness and saturation within 0.0003; no change on the unfarmed Judean hills or at diorama02. Before
+the keep-out mask (the PR's first round) the same frames gave +4.6%, +4.7% and +2.3%: the difference is the furrows that
+lay inside town discs, clearings and route corridors, most of which the kits cover in play.
 
 **Frame time** (headless WebGL `?vprofile`, 1920x1080, DPR 1, `machine_lock.py --exclusive --wait-unity`). The full
 round of 10 November 2026: gameplay03 `all` 22.46 ms, `-furrows` 23.04 ms, so furrows cost -0.58 ms (spreads 0.59 and
 0.94 ms); diorama02 `all` 23.33 ms, `-furrows` 23.20 ms, +0.13 ms (spreads 0.20 and 0.80 ms). An earlier round on
 8 November gave +0.62 ms at gameplay03 (load average 7.1, spread 1.53 ms) and stopped partway through diorama02 on a
 `res=1920x880` line. So the cost is within the noise, at most about 0.6 ms, under the 2.5 ms budget.
+With the keep-out sample added (review of #3070, 10 November 2026, a new build): gameplay03 `all` 23.20 ms, `-furrows`
+23.28 ms, -0.08 ms (spreads 1.68 and 0.74 ms, load average about 5); diorama02 24.07 and 24.02 ms, +0.05 ms (spreads 0.94
+and 0.76 ms). A round just before it, which started at load average 42, gave +0.64 ms at gameplay03 with spreads of 4.6 and
+5.6 ms (noise) and +0.12 ms at diorama02 (spreads 0.13 and 0.10 ms).
 
 **Boot** (`?bootlog`, `screens ready`, three headless boots each, alternated, exclusive window, 10 November 2026): 4997,
 5033 and 5067 ms against 5069, 5054 and 5103 ms for the v0.3.9 release (gunzipped to load as this build does), medians

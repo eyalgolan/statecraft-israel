@@ -29,7 +29,9 @@ namespace Statecraft.Game.EditorTools
             terrain.SetTexture("_ScAoTex", Tex(Statecraft.Game.Map.MapTexturePaths.Ao));
             terrain.SetTexture("_ScLandTex", Tex(Statecraft.Game.Map.MapTexturePaths.Land));   // land use (tools/land_bake.py)
             // The ground detail pass's furrows (#2917): its material is in Resources, GroundDetail.Build copies it.
-            var detail = AssetDatabase.LoadAssetAtPath<Material>("Assets/Resources/" + Statecraft.Game.Map.GroundDetail.MaterialResource + ".mat");
+            var detailPath = "Assets/Resources/" + Statecraft.Game.Map.GroundDetail.MaterialResource + ".mat";
+            var detail = AssetDatabase.LoadAssetAtPath<Material>(detailPath)
+                ?? throw new System.IO.FileNotFoundException("ground detail material missing (GroundDetail.MaterialResource)", detailPath);
             detail.SetTexture("_FurrowTex", Tex(Statecraft.Game.Map.MapTexturePaths.Furrows));
             detail.SetTexture("_FieldBlockTex", Tex(Statecraft.Game.Map.MapTexturePaths.FieldBlocks));
             EditorUtility.SetDirty(detail);

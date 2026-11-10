@@ -77,7 +77,7 @@ public class FurrowShots
     {
         var tag = Environment.GetEnvironmentVariable("SHOTS_TAG");
         var dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", ".superpowers", "shots-2917", string.IsNullOrEmpty(tag) ? "untagged" : tag));
-        Directory.CreateDirectory(dir); Directory.CreateDirectory(CivMovementShots.ShotDir);
+        Directory.CreateDirectory(dir);
         yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
         yield return Frames(5);
         // CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3 (GroundDetailShots).

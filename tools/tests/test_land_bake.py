@@ -1,3 +1,7 @@
+import math
+import re
+from pathlib import Path
+
 import numpy as np
 import pytest
 from PIL import Image
@@ -106,6 +110,36 @@ def test_the_block_table_rebuilds_the_bakes_rows():
     assert np.abs(lx - f["lx"]).max() < 0.5
     d = np.abs(phase - np.mod(f["sx"], 1.0))
     assert np.minimum(d, 1 - d).max() * lb.STRIP_M < 0.5
+
+
+SHADER = Path(__file__).resolve().parents[2] / "unity/Assets/Shaders/GroundDetail.shader"
+NUMBER = r"(-?[\d.]+)"
+
+
+def test_the_shader_holds_the_bakes_constants():
+    # #2917: GroundDetail.shader keeps its own copies of the farm blocks' constants and of block_wobble's formula (ScFieldRows),
+    # and of the table's 16-bit encodings. If one side changes alone, the furrows leave the bake's parcels; this fails instead.
+    src = SHADER.read_text()
+    consts = re.search(rf"static const float ScBlockM = {NUMBER}, ScStripM = {NUMBER}, ScAngleMin = {NUMBER}, "
+                       rf"ScAngleSpan = {NUMBER} \+ {NUMBER};", src)
+    assert consts, "ScFieldRows' constants line changed shape: update this test with it"
+    block_m, strip_m, angle_min, span_a, span_b = map(float, consts.groups())
+    assert (block_m, strip_m, angle_min) == (lb.BLOCK_M, lb.STRIP_M, lb.ANGLE_MIN)
+    assert span_a + span_b == pytest.approx(lb.ANGLE_SPAN, abs=1e-6)
+    assert lb.ANGLE_SPAN == 0.7 + math.pi / 2               # block_angle's range: 0.7 wide, a quarter turn on top
+    pad = re.search(r"static const int ScBlockPad = (\d+);", src)
+    assert pad and int(pad.group(1)) == lb.BLOCK_PAD
+    wobble = re.search(rf"float2 bp = p / ScBlockM \+ {NUMBER} \* float2\(sin\(p\.y / {NUMBER} \+ sin\(p\.x / {NUMBER}\)\), "
+                       rf"sin\(p\.x / {NUMBER} \+ sin\(p\.y / {NUMBER}\)\)\);", src)
+    assert wobble, "ScFieldRows' wobble line changed shape: update this test with it"
+    a, py1, px1, px2, py2 = map(float, wobble.groups())
+    rng = np.random.default_rng(2917)
+    x, y = rng.uniform(0, 161530, 10000), rng.uniform(0, 431220, 10000)
+    bpx, bpy = lb.block_wobble(x, y)
+    assert np.abs(bpx - (x / block_m + a * np.sin(y / py1 + np.sin(x / px1)))).max() < 1e-9
+    assert np.abs(bpy - (y / block_m + a * np.sin(x / px2 + np.sin(y / py2)))).max() < 1e-9
+    # block_table's encodings, as the shader decodes them: the angle over 65535, the strip offset over 65536.
+    assert "(b.r * 256.0 + b.g) / 65535.0 * ScAngleSpan" in src and "(b.b * 256.0 + b.a) / 65536.0" in src
 
 
 @pytest.fixture(scope="module")

@@ -58,6 +58,38 @@ public class GroundDetailTests
         Assert.IsFalse(renderer.sharedMaterial.IsKeywordEnabled(GroundDetail.FurrowKeyword), "the toggle drops the variant, so the profile prices it");
     }
 
+    /// <summary>#2917: the furrows are a variant of their own (SC_FURROWS), which the default variants do not cover, so it
+    /// is compiled too, on its own and with the main-light-shadow keyword the web tier draws with.</summary>
+    [Test]
+    public void BothShadersCompileForWebGL2()
+    {
+        CollectionAssert.IsEmpty(ShaderChecks.Gles3Errors(Shader.Find("Statecraft/GroundDetail"),
+            new[] { GroundDetail.FurrowKeyword }, new[] { GroundDetail.FurrowKeyword, "_MAIN_LIGHT_SHADOWS" }));
+        CollectionAssert.IsEmpty(ShaderChecks.Gles3Errors(Shader.Find("Statecraft/GroundScrub")));
+    }
+
+    [UnityTest]
+    public IEnumerator TheHillsGainDetailAndTheSeaAndTheOverviewDoNot()
+    {
+        var map = OpenMap();
+        RenderSample.TiltShift(false);
+        yield return null;
+        var cam = Camera.main;
+        foreach (var n in new[] { "kits", "trees" }) if (VisualToggles.Names.Contains(n)) VisualToggles.Set(n, false);
+        var hills = At(map, cam, 35.05, 31.85, 31000f);
+        var sea = At(map, cam, 34.45, 32.40, 31000f);
+        var overview = At(map, cam, PromoPose.Diorama02.Lon, PromoPose.Diorama02.Lat, PromoPose.Diorama02.Distance);
+        VisualToggles.Set(GroundDetail.Toggle, false); VisualToggles.Set(GroundDetail.ScrubToggle, false);
+        var bareHills = At(map, cam, 35.05, 31.85, 31000f);
+        var bareSea = At(map, cam, 34.45, 32.40, 31000f);
+        var bareOverview = At(map, cam, PromoPose.Diorama02.Lon, PromoPose.Diorama02.Lat, PromoPose.Diorama02.Distance);
+        TestContext.WriteLine($"gradient {bareHills.GradientEnergy(0.25f, 0.75f):0.0000} -> {hills.GradientEnergy(0.25f, 0.75f):0.0000}");
+        Assert.Greater(hills.GradientEnergy(0.25f, 0.75f), 1.3f * bareHills.GradientEnergy(0.25f, 0.75f), "the land between the towns gains texture at the opening zoom");
+        Assert.AreEqual(bareHills.MeanSaturation(), hills.MeanSaturation(), 0.03f, "detail, not a new colour");
+        Assert.AreEqual(bareSea.MeanLuma(0.3f, 0.3f, 0.7f, 0.7f), sea.MeanLuma(0.3f, 0.3f, 0.7f, 0.7f), 0.01f, "not on the open sea");
+        Assert.AreEqual(bareOverview.MeanSaturation(), overview.MeanSaturation(), 0.002f, "gone by the overview");
+    }
+
     /// <summary>#2917: the shader reads fieldblocks.png texel by texel and decodes 16 bits from two bytes, so the bytes must
     /// arrive as land_bake.py wrote them; furrows.png is one linear channel. The pass's material carries both.</summary>
     [Test]
@@ -79,8 +111,9 @@ public class GroundDetailTests
     /// <summary>#2917: the furrows add line detail to the farmed coastal plain at 12 km, at the opening zoom and at the
     /// gameplay pose (at 1920 x 1080: the lines are symbolic, sized for that frame), and leave its colour and brightness (they
     /// darken as much as they lighten, so GradeTests' thin warmth margin holds); the unfarmed Judean hills and the overview do
-    /// not change. Measured at 240 m furrows and gain 0.30: +4.6% gradient at 12 km, +4.7% at 31 km, +2.3% at gameplay03 (the
-    /// frame is mostly towns, trees and hills), brightness within 0.0003. Shaders compile synchronously: the furrows are a
+    /// not change. Measured at 240 m furrows and gain 0.30, off the keep-out mask (the town discs, the units' clearings and
+    /// the kit routes' corridors, which the kits switched off here leave bare): +3.2% gradient at 12 km, +3.2% at 31 km, +1.45%
+    /// at gameplay03 (the frame is mostly towns, trees and hills), brightness within 0.0003. Shaders compile synchronously: the furrows are a
     /// variant of their own, which the editor would otherwise draw only once compiled.</summary>
     [UnityTest]
     public IEnumerator TheFurrowsLineTheFieldsAndKeepTheirColour()
@@ -108,9 +141,9 @@ public class GroundDetailTests
             for (int k = 0; k < names.Length; k++)
                 TestContext.WriteLine($"{names[k]}: gradient {off[k].GradientEnergy(0.25f, 0.75f):0.00000} -> {on[k].GradientEnergy(0.25f, 0.75f):0.00000}, " +
                     $"luma {off[k].MeanLuma(0, 0, 1, 1):0.0000} -> {on[k].MeanLuma(0, 0, 1, 1):0.0000}, saturation {off[k].MeanSaturation():0.0000} -> {on[k].MeanSaturation():0.0000}");
-            Assert.Greater(on[0].GradientEnergy(0.25f, 0.75f), 1.03f * off[0].GradientEnergy(0.25f, 0.75f), "furrows on the plain at 12 km");
-            Assert.Greater(on[1].GradientEnergy(0.25f, 0.75f), 1.03f * off[1].GradientEnergy(0.25f, 0.75f), "at the opening zoom");
-            Assert.Greater(on[2].GradientEnergy(0.25f, 0.75f), 1.015f * off[2].GradientEnergy(0.25f, 0.75f), "and still at the gameplay pose");
+            Assert.Greater(on[0].GradientEnergy(0.25f, 0.75f), 1.02f * off[0].GradientEnergy(0.25f, 0.75f), "furrows on the plain at 12 km");
+            Assert.Greater(on[1].GradientEnergy(0.25f, 0.75f), 1.02f * off[1].GradientEnergy(0.25f, 0.75f), "at the opening zoom");
+            Assert.Greater(on[2].GradientEnergy(0.25f, 0.75f), 1.01f * off[2].GradientEnergy(0.25f, 0.75f), "and still at the gameplay pose");
             for (int k = 0; k < 3; k++)
             {
                 Assert.AreEqual(off[k].MeanLuma(0, 0, 1, 1), on[k].MeanLuma(0, 0, 1, 1), 0.004f, names[k] + ": as bright");
