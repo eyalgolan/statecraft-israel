@@ -233,3 +233,40 @@ def test_profile_exits_1_on_a_partial_profile_and_0_on_a_whole_one(monkeypatch, 
         FakeBrowser.waits, FakeBrowser.console = ["PROFILE visual done"], list(lines)
         assert headed.main(["profile", "--build", str(tmp_path)]) == code
         assert ("FAIL" in capsys.readouterr().out) == (code == 1)
+
+
+def test_new_game_is_clicked_where_the_start_screen_puts_it_in_each_language():
+    """The start screen's New game in the 1568x752 playtest window, derived from Statecraft.uss (refs #3003). A headed
+    capture on 10 Nov 2026 at 0be35a517 (main 59fdd6924 plus #3003) found it at (541, 657) in English and (1026, 657) in
+    Hebrew (?lang=he, the action row mirrored); the old (784, 693) missed it. The derivation agrees within 2 px."""
+    for lang, measured in (("en", (541, 657)), ("he", (1026, 657))):
+        x, y = headed.start_new_game_button(lang)
+        assert abs(x - measured[0]) <= 3 and abs(y - measured[1]) <= 3, (lang, (x, y))
+    assert headed.start_new_game_button("en") == (543, 657)
+    assert headed.start_new_game_button("he") == (1025, 657)
+    assert headed.START_NEW == headed.start_new_game_button("en")
+    assert headed.query_lang("camlog") == "en" and headed.query_lang("camlog&lang=he") == "he"
+    with pytest.raises(ValueError):
+        headed.start_new_game_button("ro")
+
+
+def test_the_new_game_derivation_reads_the_uss_numbers():
+    """Fails when Statecraft.uss moves the start panel's bottom stack or resizes its buttons and headed.py does not follow."""
+    import re
+    uss = (Path(headed.REPO) / "unity/Assets/UI/Statecraft.uss").read_text()
+
+    def rule(selector):
+        m = re.search(r"(?m)^" + re.escape(selector) + r"\s*\{([^}]*)\}", uss)
+        assert m, selector
+        return m.group(1)
+
+    assert re.search(r"padding:\s*0 16px 28px 16px", rule(".start-body"))
+    assert re.search(r"padding:\s*18px 40px 20px 40px", rule(".start-panel"))
+    assert re.search(r"border-width:\s*1px", rule(".panel"))
+    community = rule(".start-community")
+    assert re.search(r"height:\s*40px", community) and re.search(r"margin-top:\s*8px", community)
+    button = rule(".start-button")
+    assert re.search(r"min-width:\s*300px", button) and re.search(r"height:\s*50px", button)
+    assert re.search(r"margin:\s*4px 10px", button)
+    assert re.search(r"\.start-actions, \.lang-he \.start-community \{ flex-direction: row-reverse", uss)
+    assert headed.START_PANEL_BOTTOM == 28 + 1 + 20 + 40 + 8 and headed.START_BUTTON == (300 + 2 * 10, 50 + 2 * 4)

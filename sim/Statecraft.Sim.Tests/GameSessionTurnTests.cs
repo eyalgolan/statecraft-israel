@@ -116,14 +116,25 @@ public class GameSessionTurnTests
         Assert.Throws<InvalidOperationException>(() => session.Step(new Command[0]));
     }
 
-    // R-SAVE-004: a schema 2 GDD save with a player attack (a standing order then) is refused as older rules.
+    // R-SAVE-004: a schema 2 GDD save with a player attack (a standing order then) is refused as older rules. Its final hash
+    // matches its replay, so only the attack guard (GameSession.Load, R-SAVE-004) can refuse it (#2733 item 8).
     [Fact]
     public void ASchema2SaveWithAnAttackIsRefusedAsOlderRules()
     {
         var session = Fresh();
-        var text = session.Save.Write().Replace("statecraft-save 6", "statecraft-save 2")
-            .Replace("end ", "turn\norder 0 attack 10 10\nend ");
-        var e = Assert.Throws<SaveException>(() => GameSession.Load(C, text, out _));
+        var (unit, q, r) = FirstAttack(session);
+        var ended = session.Step(new Command[] { new UnitOrder(unit, Combat.Attack, q, r) });
+        Assert.Empty(ended.Rejected);
+        var current = session.Save.Write();
+        Assert.Contains(FormattableString.Invariant($"order {unit} attack {q} {r}"), current);
+        // Control: the same save in schema 3 (R-SAVE-003, R-SAVE-005) replays to its saved hash and loads with no warning.
+        var three = current.Replace($"statecraft-save {SaveGame.SchemaVersion}\n", "statecraft-save 3\n");
+        Assert.Equal(3, SaveGame.Parse(three).Version);
+        GameSession.Load(C, three, out var w3);
+        Assert.Empty(w3);
+        var two = current.Replace($"statecraft-save {SaveGame.SchemaVersion}\n", "statecraft-save 2\n");
+        Assert.Equal(2, SaveGame.Parse(two).Version);
+        var e = Assert.Throws<SaveException>(() => GameSession.Load(C, two, out _));
         Assert.Equal(SaveException.OlderRules, e.Code);
     }
 
