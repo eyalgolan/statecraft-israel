@@ -19,7 +19,7 @@ using Statecraft.Sim;
 ///    staffed workshop in ascending project id; unstaffing releases the workers of the higher project ids.
 /// Q8 "Keep tier field (Rec.)": Workshop.WorkerTier is the priced tier, set from the record at staffing and at each new
 ///    cycle; no new field.
-/// The tests call Workshops and Cities directly: Simulation.Step and TurnResolver.Resolve still refuse a ledger game.</summary>
+/// The tests call Workshops and Cities directly: the turn (TurnResolver.Resolve) still refuses a ledger game.</summary>
 public class LedgerArmsWorkshopTests
 {
     const string Haifa = "haifa";

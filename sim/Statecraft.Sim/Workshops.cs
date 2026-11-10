@@ -140,7 +140,7 @@ namespace Statecraft.Sim
                 key: CauseKeys.WorkshopWorkers, args: new[] { CauseKeys.Number(count) });
 
         // #1725 PR 7, producer 07: the refusal only a Historical ledger game gives. Internal, not a Refused* constant: no
-        // player reaches it yet (Simulation.Step still refuses a ledger game, R-POP-002), and the UI string follows when it does.
+        // player reaches it yet (the turn, TurnResolver.Resolve, still refuses a ledger game, R-POP-002), and the UI string follows when it does.
         /// <summary>Owner, 8 November 2026, Q7 "Unassigned, lowest id (Rec.)": more newly staffed workshops than the city's
         /// unassigned free-civilian records.</summary>
         internal const string LedgerRefusedFree = "{0} has {1} free civilians without an assignment";
