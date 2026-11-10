@@ -138,6 +138,23 @@ def test_a_partial_profile_is_an_error_even_with_the_done_line():
     assert any("2 run lines, summary says 3" in e for e in wc.profile_errors(dropped, "1920x1080"))
 
 
+def test_a_configuration_missing_from_every_pose_is_an_error():
+    """#3043 item 2: the per-pose check compares poses with each other, so a run that drops one toggle's configuration
+    (or a pose) everywhere passed. The expected toggles and poses are web_check's lists, checked against the C# Register
+    calls by test_visual_toggles.py; the flag-only toggles and the vclose poses may be there or not."""
+    full = ("all", *(f"-{t}" for t in wc.VISUAL_TOGGLES), "none")
+    assert wc.profile_errors(profile_lines(labels=full, poses=wc.PROFILE_POSES), "1920x1080") == []
+    for gone in ("-borders", "-labels", f"-{wc.VISUAL_TOGGLES[0]}"):
+        errors = wc.profile_errors(profile_lines(labels=[l for l in full if l != gone], poses=wc.PROFILE_POSES), "1920x1080")
+        assert any(f"'{gone}'" in e for e in errors), (gone, errors)
+    errors = wc.profile_errors(profile_lines(labels=full, poses=wc.PROFILE_POSES[1:]), "1920x1080")
+    assert any(f"pose {wc.PROFILE_POSES[0]}" in e for e in errors), errors
+    extra = (*full[:-1], *(f"-{t}" for t in wc.OPTIONAL_VISUAL_TOGGLES), "none")
+    assert wc.profile_errors(profile_lines(labels=extra, poses=(*wc.PROFILE_POSES, *wc.OPTIONAL_PROFILE_POSES)), "1920x1080") == []
+    moving = tuple(f"{p}-moving" for p in wc.PROFILE_POSES)       # a ?vmoving run's poses (FrameProfile.cs)
+    assert wc.profile_errors(profile_lines(labels=full, poses=moving), "1920x1080") == []
+
+
 def test_measurement_windows_are_kept_awake():
     flags = wc.chrome_flags("/tmp/p", swiftshader=False)
     for flag in ("--disable-backgrounding-occluded-windows", "--disable-renderer-backgrounding",
