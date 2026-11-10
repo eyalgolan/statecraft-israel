@@ -131,6 +131,40 @@ public class TurnProbeTests
         Assert.IsEmpty(logged);
     }
 
+    /// <summary>#3057 (item 2 of #2957's review): a step that throws is still timed, so a refused turn's line shows the
+    /// step's time, not step_ms=0.00.</summary>
+    [Test]
+    public void On_a_step_that_throws_is_still_timed()
+    {
+        TurnProbe.On = true;
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En, (s, orders) =>
+        {
+            Thread.Sleep(20);
+            throw new ArgumentException("refused for the test");
+        });
+        UnityEngine.TestTools.LogAssert.Expect(LogType.Warning, "End Turn refused: refused for the test");
+        bridge.EndTurn();
+        Assert.AreEqual(1, logged.Count, "the refused turn writes its line");
+        var line = logged[0];
+        StringAssert.IsMatch(LineFormat.ToString(), line);
+        Assert.GreaterOrEqual(double.Parse(Fields(line)["step_ms"], CultureInfo.InvariantCulture), 10, "the failed step's 20 ms: " + line);
+        Assert.IsFalse(TurnProbe.Active, "the turn is closed");
+    }
+
+    /// <summary>#3057 (item 1): an exception in End turn outside the step's own try (here a step result of null, which the
+    /// combat line reads after the step) still reaches the caller, and the probed turn is closed, so nothing after it is
+    /// timed until the next End turn.</summary>
+    [Test]
+    public void On_an_exception_after_the_step_still_closes_the_turn()
+    {
+        TurnProbe.On = true;
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En, (s, orders) => null!);
+        Assert.Throws<NullReferenceException>(() => bridge.EndTurn(), "the exception still reaches the caller");
+        Assert.IsFalse(TurnProbe.Active, "the turn is closed");
+        Assert.AreEqual(1, logged.Count, "its line is written");
+        Assert.AreEqual(0, TurnProbe.Start(), "nothing after it is timed");
+    }
+
     [Test]
     public void On_the_game_runs_as_it_does_off()
     {
