@@ -451,14 +451,15 @@ public class UnitsInPlayTests
         var map = BuildMap();
         try
         {
-            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            var units = Units;   // one parse: the layer's spots are keyed by these anchors (UnitAnchor has reference equality)
+            var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
             var ground = new Statecraft.Game.Map.Kits.KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM);
             var mesh = UnitModels.Corvette("hull-test");
             var size = mesh.bounds.size * UnitShowcase.ShipScale; var mid = mesh.bounds.center * UnitShowcase.ShipScale;
             UnityEngine.Object.DestroyImmediate(mesh);
             var turn = Quaternion.Euler(0f, UnitShowcase.ShipHeadingDegrees, 0f);
             int ships = 0;
-            foreach (var u in Units.Where(u => UnitRoster.OnMap(u) && u.Service == UnitData.Navy))
+            foreach (var u in units.Where(u => UnitRoster.OnMap(u) && u.Service == UnitData.Navy))
                 foreach (var a in u.Anchors)
                 {
                     Assert.IsTrue(layer.Spots.TryGetValue(a, out var s), $"{u.Id} {a.Place}: no spot");
