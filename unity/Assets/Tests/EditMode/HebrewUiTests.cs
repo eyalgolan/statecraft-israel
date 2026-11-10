@@ -406,6 +406,142 @@ public class HebrewUiTests
         Assert.AreEqual(He["report.title"], Ui.Q<Label>("turn-report-title").text, "in Hebrew");
     }
 
+    /// <summary>#2202: with the Arab forces' moves on (the default), the turn report opens when they end (Holding false).
+    /// Its lines are new labels with their words set before they join the panel, so no text change reaches UiDirection, and
+    /// End turn's own pass ran before they existed. A line that mixes Hebrew with a value ("כסף (נטו): שינוי של IL -6.1m")
+    /// must still read right to left. GameRoot plays no moves in EditMode (Application.isPlaying), so the test raises its
+    /// playback's Holding, which runs GameRoot's own holding handler. Red-first: nothing walked the tree after the release,
+    /// and the lines stayed Inherit (laid out left to right).</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheReportThatOpensAfterTheEnemyMovesReadsRightToLeft()
+    {
+        var restore = OnTexture(1920, 1080);
+        try
+        {
+            var game = BootHebrewForTheHold();
+            for (int i = 0; i < 2; i++) yield return null;
+            RaiseHolding(game, true);
+            game.Bridge!.EndTurn();
+            Assert.IsTrue(HeldReport(game).Waiting, "precondition: the report waits for the moves");
+            for (int i = 0; i < 2; i++) yield return null;             // End turn's own pass runs before any report line exists
+            Assert.IsFalse(HeldReport(game).IsOpen, "precondition: the report is still held");
+
+            RaiseHolding(game, false);                                 // the moves end
+            Assert.IsTrue(HeldReport(game).IsOpen, "precondition: the report opens when the moves end");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            ReportLinesDirected("the report opened when the Arab forces' moves ended");
+        }
+        finally { restore(); }
+    }
+
+    /// <summary>#2202: as above, when the player opened a screen while the moves played: the report waits for it
+    /// (TurnReportPresenter.ShowWhenFree) and opens when it closes. Closed here by ScreenNav.Close, as Escape's Cancel closes
+    /// it, with no click or submit that would make UiDirection walk the tree. Red-first: the report built on that close
+    /// kept Inherit, as did one built at the release.</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheReportThatWaitedForAScreenAfterTheEnemyMovesReadsRightToLeft()
+    {
+        var restore = OnTexture(1920, 1080);
+        try
+        {
+            var game = BootHebrewForTheHold();
+            for (int i = 0; i < 2; i++) yield return null;
+            RaiseHolding(game, true);
+            game.Bridge!.EndTurn();
+            for (int i = 0; i < 2; i++) yield return null;
+            UiTestKit.Press(Ui.Q<Button>("nav-settings"));             // opened while the moves play
+            Assert.IsTrue(ScreenNav.IsOpen(Ui.Q("screen-settings")), "precondition: Settings is open");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            RaiseHolding(game, false);                                 // the moves end under Settings
+            Assert.IsFalse(HeldReport(game).IsOpen, "precondition: the report waits for Settings");
+            Assert.IsTrue(HeldReport(game).Waiting, "precondition: the report still waits");
+            for (int i = 0; i < 2; i++) yield return null;             // any pass the release scheduled runs now
+            var nav = (ScreenNav)typeof(GameRoot).GetField("nav", Private)!.GetValue(game)!;
+            Assert.IsTrue(nav.Close(), "the player closes Settings (Escape)");
+            Assert.IsTrue(HeldReport(game).IsOpen, "precondition: the report opens when Settings closes");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            ReportLinesDirected("the report opened when Settings closed after the Arab forces' moves");
+        }
+        finally { restore(); }
+    }
+
+    /// <summary>#2202: the event card held while the moves play renders again when they end (HeldForPlayback false), which
+    /// builds new option buttons with their words already set. Every option's text carries its Attention price
+    /// (event.option_cost, "{0} (עולה {1:0.0} תשומת לב)"; rules.yaml choose_event_option: 1), so it mixes Hebrew with a number.
+    /// The opening card (idf_founding) is the card here: it is open on every new game, while the card after a given End turn
+    /// depends on the turn's draws; the release path is the same. Red-first: the rebuilt options stayed Inherit.</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheCardThatComesBackAfterTheEnemyMovesReadsRightToLeft()
+    {
+        var restore = OnTexture(1920, 1080);
+        try
+        {
+            var game = BootHebrewForTheHold();
+            for (int i = 0; i < 2; i++) yield return null;
+            Assert.IsNotNull(game.Card?.Shown, "precondition: the opening card is open");
+            RaiseHolding(game, true);
+            Assert.IsTrue(game.Card!.HeldForPlayback, "precondition: GameRoot's holding handler holds the card");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            RaiseHolding(game, false);                                 // the moves end: the card renders again
+            Assert.IsFalse(game.Card.HeldForPlayback, "precondition: the card is back");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            var options = Ui.Q("event-options").Query<Button>().ToList()
+                .Where(b => b.name.StartsWith("option-", StringComparison.Ordinal)).ToList();
+            Assert.IsNotEmpty(options, $"precondition: the card ({game.Card.Shown?.Id}) has option buttons");
+            Assert.IsTrue(options.Any(b => UiDirection.RightToLeft(b.text) && b.text.Any(char.IsDigit)),
+                "precondition: an option mixes Hebrew with its price: " + string.Join(" | ", options.Select(b => b.text)));
+            foreach (var b in options)
+                Assert.AreEqual(LanguageDirection.RTL, b.languageDirection,
+                    $"after the Arab forces' moves the card's option '{b.name}' must read right to left: {b.text}");
+        }
+        finally { restore(); }
+    }
+
+    const System.Reflection.BindingFlags Private = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+
+    /// <summary>A new game in Hebrew on the panel OnTexture set up (settings in the test's folder).</summary>
+    GameRoot BootHebrewForTheHold()
+    {
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        game.Language = UiLanguage.Hebrew;
+        game.Begin(Inputs, 0);
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "precondition: the UI is in Hebrew");
+        return game;
+    }
+
+    static TurnReportPresenter HeldReport(GameRoot game) => (TurnReportPresenter)typeof(GameRoot).GetField("report", Private)!.GetValue(game)!;
+
+    /// <summary>Raises GameRoot's own playback's Holding, as EnemyTurnPlayback does when its moves start (true) and end
+    /// (false): its subscriber is GameRoot's holding handler.</summary>
+    static void RaiseHolding(GameRoot game, bool held)
+    {
+        var playback = typeof(GameRoot).GetField("playback", Private)!.GetValue(game);
+        Assert.IsNotNull(playback, "precondition: GameRoot built its playback");
+        var holding = (Action<bool>?)typeof(EnemyTurnPlayback).GetField("Holding", Private)!.GetValue(playback);
+        Assert.IsNotNull(holding, "precondition: GameRoot listens to its playback's Holding");
+        holding!(held);
+    }
+
+    /// <summary>Every heading and cause line of the open report has the direction of its own text, and at least one heading
+    /// mixes Hebrew with a number (no vacuous pass).</summary>
+    static void ReportLinesDirected(string after)
+    {
+        var headings = Ui.Query<Label>(className: "turn-report-heading").ToList();
+        Assert.IsTrue(headings.Any(l => UiDirection.RightToLeft(l.text) && l.text.Any(char.IsDigit)),
+            "precondition: a report heading mixes Hebrew with a number: " + string.Join(" | ", headings.Select(l => l.text)));
+        foreach (var l in headings.Where(l => UiDirection.RightToLeft(l.text)))
+            Assert.AreEqual(LanguageDirection.RTL, l.languageDirection, $"after {after}: the heading '{l.name}' must read right to left: {l.text}");
+        var lines = headings.Concat(Ui.Query<Label>(className: "turn-report-cause").ToList()).Cast<TextElement>().ToList();
+        Directed(lines, after);
+    }
+
     /// <summary>The language switch in Settings (#1036): a press rebuilds the UI in the other language at once, over the same
     /// game (this turn's orders kept), with Settings still open on the new choice; the choice is kept in settings.txt, so
     /// the next start (Language unset, as a reload leaves it) comes up in it.</summary>
