@@ -157,6 +157,6 @@ flowchart RL
 
 שאלות ורעיונות ב־[דיונים](https://github.com/eyalgolan/statecraft-israel/discussions); באגים וטעויות היסטוריות ב־[issues](https://github.com/eyalgolan/statecraft-israel/issues). על בעיות אבטחה מדווחים באופן פרטי, ראו [<span dir="ltr">SECURITY.md</span>](SECURITY.md). [<span dir="ltr">CODE_OF_CONDUCT.md</span>](CODE_OF_CONDUCT.md) חל בכל מקום.
 
-יצר: <span dir="ltr">Eyal Golan</span>. מודלים מקוריים: <span dir="ltr">Tal Heuberger</span> (#507, #336). נעימת הנושא: <span dir="ltr">Afik Faerman</span>. הקרדיטים למקורות נמצאים ליד כל עובדה ב־<span dir="ltr">`content`</span>, קרדיטי הפורטרטים ב־<span dir="ltr">`content/people.yaml`</span>, וקרדיטים של צד שלישי ב־[<span dir="ltr">THIRD-PARTY-NOTICES.md</span>](THIRD-PARTY-NOTICES.md).
+יצר: <span dir="ltr">Eyal Golan</span>. מודלים מקוריים: טל הויברגר (#507, #336). נעימת הנושא: <span dir="ltr">Afik Faerman</span>. הקרדיטים למקורות נמצאים ליד כל עובדה ב־<span dir="ltr">`content`</span>, קרדיטי הפורטרטים ב־<span dir="ltr">`content/people.yaml`</span>, וקרדיטים של צד שלישי ב־[<span dir="ltr">THIRD-PARTY-NOTICES.md</span>](THIRD-PARTY-NOTICES.md).
 
 </div>
