@@ -10,17 +10,20 @@
 # a native read and the clip has the owner's sensitivity review (RaidCardContent.MayPresent); the Editor shows the
 # draft with the opening's preview label.
 # For the native reviewer (#564): agent-drafted Hebrew. Names as the game and he.wiki write them: שדה דב (he.wiki
-# "נמל התעופה דב הוז"), ספיטפייר and נ״מ (he.wiki, with the typographic gershayim of HE-06), התחנה המרכזית הישנה (the
-# NLI records' own title), dates as date.day_month_year ("15 במאי 1948"); no parentheses or quotation marks, and no
+# "נמל התעופה דב הוז"), ספיטפייר and נ״מ (he.wiki, with the typographic gershayim of HE-06), dates
+# as date.day_month_year ("15 במאי 1948"); no parentheses or quotation marks, and no
 # Latin letters (HE-09).
 # Owner review, 10 November 2026 (asked with the full English and Hebrew text, the 172 toll and its source, and the
 # clip's camouflage trousers from about 0.5 s): "Approve text, HE, clip" for the card, and "Approve as is" for the
 # Hebrew title and text (the native read, #564). So status, he_review and the clip's sensitivity_reviewed below are set.
+# Owner, 10 November 2026, asked with the bus-station date dispute (#3021: the NLI records say 15 May; the NLI blog,
+# en.wiki, Nicolle and JTA say 18 May): "Drop the line (Recommended)". The card no longer names the bus station, in
+# English or Hebrew, and the two NLI photo records that supported it are removed from the sources.
 status: sensitivity-reviewed
 title: "Egyptian planes bomb Tel Aviv"
 title_he: "מטוסים מצריים מפציצים את תל אביב"
-text: "Early on the morning of 15 May 1948, the day after independence was declared, Egyptian Spitfires attacked Tel Aviv. They bombed the Sde Dov airfield in the north of the city and damaged aircraft and buildings there. Anti-aircraft fire brought down one of the attackers, and its pilot was taken prisoner. Bombs also hit the old Central Bus Station, and more raids followed that day. Across all the Egyptian air raids on Tel Aviv in the war, 172 people were killed, most of them civilians."
-text_he: "בשעות הבוקר המוקדמות של 15 במאי 1948, יום לאחר הכרזת העצמאות, תקפו מטוסי ספיטפייר מצריים את תל אביב. הם הפציצו את שדה התעופה שדה דב בצפון העיר וגרמו שם נזק למטוסים ולמבנים. אש נ״מ הפילה את אחד המטוסים התוקפים, וטייסו נלקח בשבי. פצצות פגעו גם בתחנה המרכזית הישנה, ובמהלך היום באו פשיטות נוספות. בכל הפשיטות האוויריות המצריות על תל אביב במהלך המלחמה נהרגו 172 בני אדם, רובם אזרחים."
+text: "Early on the morning of 15 May 1948, the day after independence was declared, Egyptian Spitfires attacked Tel Aviv. They bombed the Sde Dov airfield in the north of the city and damaged aircraft and buildings there. Anti-aircraft fire brought down one of the attackers, and its pilot was taken prisoner. More raids followed that day. Across all the Egyptian air raids on Tel Aviv in the war, 172 people were killed, most of them civilians."
+text_he: "בשעות הבוקר המוקדמות של 15 במאי 1948, יום לאחר הכרזת העצמאות, תקפו מטוסי ספיטפייר מצריים את תל אביב. הם הפציצו את שדה התעופה שדה דב בצפון העיר וגרמו שם נזק למטוסים ולמבנים. אש נ״מ הפילה את אחד המטוסים התוקפים, וטייסו נלקח בשבי. במהלך היום באו פשיטות נוספות. בכל הפשיטות האוויריות המצריות על תל אביב במהלך המלחמה נהרגו 172 בני אדם, רובם אזרחים."
 he_review: approved
 # The toll (owner: the total across all the Egyptian raids on Tel Aviv): 172 killed, from Naor (2008), the one read
 # source with a footnote, which cites the Civil Guard's comprehensive summary of the bombings in Tel Aviv (Tel Aviv
@@ -47,12 +50,6 @@ sources:
     checked: 2026-11-08
   - url: "https://www.upi.com/Archives/1948/05/15/Arab-nations-Attack-Israel/6118818754330"
     supports: "UPI, 15 May 1948: 'The first Egyptian air raid on Tel Aviv came early today.'; a second attack 'within two hours' bombed 'the airport just north of this new Jewish capital'; a third raid before noon; 'one Egyptian pilot was taken prisoner'. It reports no casualties ('Little damage resulted.')"
-    checked: 2026-11-08
-  - url: "https://commons.wikimedia.org/wiki/File:Tel_Aviv-Yafo_(997008136796305171).jpg"
-    supports: "NLI record 997008136796305171, taken on 15 May 1948 (Benno Rothenberg): 'אוטובוס מפויח של חברת דן בתחנה המרכזית הישנה בת\"א לאחר שהופגזה ע\"י מטוסים מצריים בעקבות הכרזת העצמאות'. The NLI blog and en.wiki put the bus-station raid on 18 May; owner, 7 Nov 2026: keep, go by the record"
-    checked: 2026-11-08
-  - url: "https://commons.wikimedia.org/wiki/File:Tel_Aviv-Yafo_(997008136796105171).jpg"
-    supports: "NLI record 997008136796105171, taken on 15 May 1948 (Benno Rothenberg): 'עשן מיתמר מהתחנה המרכזית הישנה בת\"א לאחר שהופגזה ע\"י מטוסים מצריים בעקבות הכרזת העצמאות'"
     checked: 2026-11-08
 # The clip: the opening film's shot V19c, whole (0 to 4.0 s), an AI-only clip (CC0; ASSETS.yaml has the recipe). It
 # loops silently in the card's frame, labelled with the cards' "AI-generated illustration" string; with no photograph
