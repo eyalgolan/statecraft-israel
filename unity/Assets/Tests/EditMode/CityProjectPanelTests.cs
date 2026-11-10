@@ -1098,7 +1098,8 @@ public class WorkshopPanelTests
     }
 
     // R-CITY-011 with R-HOUSE-006 (#2477 review): a housing repair being built has no hex of its own, so it shows on its city's
-    // own hex, where it is offered: its line, whether it has a builder, and its city's stepper, also when it is the city's only
+    // own hex, where it is offered: its line and whether it has a builder (since #1722, the city's project list's row: owner,
+    // 8 November 2026, "Drop the old lines here (Recommended)"), and its city's stepper, also when it is the city's only
     // project being built. + there queues the build order and End turn gives the repair its builder.
     [Test]
     public void ARepairBeingBuiltShowsItsBuilderOnItsCitysOwnHex_RCity011([Values] bool hebrew)
@@ -1115,10 +1116,10 @@ public class WorkshopPanelTests
         });
         using var panel = Panel(ui, bridge, t);
         panel.Show(home.Q, home.R);
-        var kind = PlayerText.Capitalised(ContentNames.Of(t, C03.ProjectKinds.First(k => k.Id == Projects.HousingRepair)));
-        Assert.AreEqual(t.Format("city.project_building", kind, (hebrew ? TownsHe : Towns)[City],
-            GddHexPanel.Turns(t, Projects.CityTurnsToBuild(C03, bridge.State, Projects.HousingRepair, 2, 0))), ui.Q<Label>("city-repair-state").text);
-        Assert.AreEqual(t["city.project_no_builder"], ui.Q<Label>("city-repair-builder").text);
+        var k = C03.ProjectKinds.First(x => x.Id == Projects.HousingRepair);
+        var kind = PlayerText.Capitalised(ContentNames.Of(t, k));
+        string Row(bool builder) => t.Format("city.list_building", kind, k.Turns - 2, k.Turns, PlayerText.Money(C03, "treasury", k.Cost), t[builder ? "city.list_builder" : "city.list_no_builder"]);
+        Assert.AreEqual(Row(false), ui.Q<Label>($"city-list-project-{repair}").text);
         Assert.AreEqual(t.Format("city.builders", 0, 1), ui.Q<Label>("city-builders").text, "the repair is the one project the count counts");
         Assert.IsTrue(ui.Q<Button>("city-builders-more").enabledSelf, "4 people without a job, 1 project");
         ui.Press("city-builders-more");
@@ -1126,26 +1127,75 @@ public class WorkshopPanelTests
         Assert.IsEmpty(turn.Rejected, "the sim accepts the order the panel queued");
         Assert.IsTrue(turn.State.CityProjects[repair].Builder);
         panel.Show(home.Q, home.R);
-        Assert.AreEqual(t["city.project_builder"], ui.Q<Label>("city-repair-builder").text);
+        var left = turn.State.CityProjects[repair].TurnsLeft;
+        Assert.AreEqual(t.Format("city.list_building", kind, k.Turns - left, k.Turns, PlayerText.Money(C03, "treasury", k.Cost), t["city.list_builder"]),
+            ui.Q<Label>($"city-list-project-{repair}").text);
+    }
+
+    // R-HOUSE-006 with #1722 (owner, 8 November 2026: "Drop the old lines here (Recommended)", on the repair that showed
+    // twice): on its city's own hex a repair being built shows once, as its row in the city's project list. The old repair
+    // line and its builder line (the projects part's Repairs) are gone there; the city's one builder stepper stays. On a hex
+    // that is not a city's, a project being built keeps its state line, its builder line and the stepper, as before.
+    [Test]
+    public void ARepairBeingBuiltShowsOnceOnItsCitysOwnHex_RHouse006([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var (hq, hr) = Home(C03);
+        var repair = 0;
+        using var ui = new UiTestKit();
+        var (bridge, project) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) =>
+        {
+            repair = s.NextId++;
+            s.CityProjects.Add(repair, new CityProject(repair, Projects.HousingRepair, City, hq, hr, 1));
+        });
+        using var panel = Panel(ui, bridge, t);
+        panel.Show(hq, hr);
+        var k = C03.ProjectKinds.First(x => x.Id == Projects.HousingRepair);
+        var kind = PlayerText.Capitalised(ContentNames.Of(t, k));
+        var oldLine = t.Format("city.project_building", kind, (hebrew ? TownsHe : Towns)[City],
+            GddHexPanel.Turns(t, Projects.CityTurnsToBuild(C03, bridge.State, Projects.HousingRepair, 1, 0)));
+        var row = t.Format("city.list_building", kind, k.Turns - 1, k.Turns, PlayerText.Money(C03, "treasury", k.Cost), t["city.list_no_builder"]);
+        var labels = ui.Root.Query<Label>().ToList();
+        Assert.AreEqual(1, labels.Count(l => string.Equals(l.text, row, StringComparison.Ordinal)), "the list's row, once");
+        Assert.AreEqual(0, labels.Count(l => string.Equals(l.text, oldLine, StringComparison.Ordinal)), "no old repair line");
+        Assert.IsNull(ui.Root.Q("city-repair-state"));
+        Assert.IsNull(ui.Root.Q("city-repair-builder"));
+        Assert.AreEqual(1, ui.Root.Query("city-builders-row").ToList().Count, "the city's builder stepper stays, once");
+        Assert.AreEqual(t.Format("city.builders", 0, 2), ui.Q<Label>("city-builders").text);
+
+        // Not a city's hex: the housing project being built there shows as it did (city-project-state, its builder line, the stepper).
+        var (q, r) = Hex(C03);
+        panel.Show(q, r);
+        var housing = C03.ProjectKinds.First(x => x.Id == "housing");
+        Assert.AreEqual(t.Format("city.project_building", PlayerText.Capitalised(ContentNames.Of(t, housing)), (hebrew ? TownsHe : Towns)[City],
+            GddHexPanel.Turns(t, Projects.CityTurnsToBuild(C03, bridge.State, "housing", 2, 0))), ui.Q<Label>("city-project-state").text);
+        Assert.AreEqual(t["city.project_no_builder"], ui.Q<Label>("city-project-builder").text);
+        Assert.AreEqual(1, ui.Root.Query("city-builders-row").ToList().Count);
+        Assert.IsNull(ui.Root.Q("city-list-header"), "no city block, so no list, on a hex that is not a city's");
+        Assert.IsNull(ui.Root.Q("city-repair-state"));
+        Assert.AreEqual(project, Projects.CityProjectAt(bridge.State, q, r)?.Id, "precondition: the project is this hex's");
     }
 
     // R-CITY-011 (#2477 review): a city's own hex with its project being built and a repair being built shows both builder
-    // lines and one stepper for the city, whose count is the two projects on screen.
+    // lines and one stepper for the city, whose count is the two projects on screen. Since #1722 the repair's builder is
+    // said in its row of the city's project list (owner, 8 November 2026: "Drop the old lines here (Recommended)").
     [Test]
     public void ACitysOwnHexWithAProjectAndARepairShowsOneStepper_RCity011()
     {
         var home = C03.SettlementHexes.First(x => x.Id == City);
+        var repair = 0;
         using var ui = new UiTestKit();
         var (bridge, _) = Game(C03, En, "housing", turnsLeft: 2, edit: (s, id) =>
         {
             s.CityProjects[id] = new CityProject(id, "housing", City, home.Q, home.R, 2);
-            var repair = s.NextId++;
+            repair = s.NextId++;
             s.CityProjects.Add(repair, new CityProject(repair, Projects.HousingRepair, City, home.Q, home.R, 2).WithBuilder(true));
         });
         using var panel = Panel(ui, bridge, En);
         panel.Show(home.Q, home.R);
         Assert.AreEqual(En["city.project_no_builder"], ui.Q<Label>("city-project-builder").text);
-        Assert.AreEqual(En["city.project_builder"], ui.Q<Label>("city-repair-builder").text);
+        StringAssert.EndsWith(En["city.list_builder"], ui.Q<Label>($"city-list-project-{repair}").text);
+        Assert.IsNull(ui.Root.Q("city-repair-builder"), "the repair's builder is said once, in the list");
         Assert.AreEqual(1, ui.Root.Query("city-builders-row").ToList().Count, "one stepper for the city");
         Assert.AreEqual(En.Format("city.builders", 1, 2), ui.Q<Label>("city-builders").text);
     }
@@ -1179,5 +1229,220 @@ public class WorkshopPanelTests
         Assert.IsFalse(ui.Q<Button>("city-builders-more").enabledSelf);
         Assert.AreEqual(SimBridge.ReasonText(t, broken!.Reason, C03, TownsHe), ui.Q<Label>("city-builders-reason").text);
         if (hebrew) Assert.AreNotEqual(broken.Reason, ui.Q<Label>("city-builders-reason").text, "the Hebrew string, not the sim's English");
+    }
+
+    // ---- #1722: the city panel's project list and housing readout, per city, gdd-0.3 only ----
+
+    static (int q, int r) Home(Content c) { var h = c.SettlementHexes.Single(x => x.Id == City); return (h.Q, h.R); }
+
+    /// <summary>Haifa with <paramref name="capacity"/> homes and housing condition <paramref name="condition"/>
+    /// (TEST-ONLY SYNTHETIC values); its other counts are left as they are.</summary>
+    static void Housing(GameState s, int capacity, double condition)
+    {
+        var x = s.Cities[City];
+        s.Cities[City] = new City(x.Id, capacity, x.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, condition, x.Craftsmen, x.JobsDefault, x.Qualified);
+    }
+
+    // R-HOUSE-005 (#1722: "Housing capacity, residents, condition and this turn's surcharge for the city, with the sim's
+    // reasons"): on the city's own hex the readout is Cities.HousingOutlook's, word for word in the UI's language. Haifa with
+    // its opening 99 residents in 80 homes at 0.15 (TEST-ONLY SYNTHETIC values): a surcharge (below 50%) of IL 3.5m, the
+    // overflow of 19 lowers the condition to 14%, and below 25% Social cohesion falls by 0.2% (Haifa is 99 of 532 own
+    // population). Each figure is large enough to show when rounded as the panel rounds it (#1722 review S2), which the
+    // precondition checks; 10 residents would give a cohesion share under 0.05 points, which has no line.
+    [Test]
+    public void TheHousingReadoutShowsTheSimsSurchargeOverflowAndCohesion_RHouse005([Values] bool hebrew)
+    {
+        const double condition = 0.15;
+        var t = hebrew ? He : En;
+        using var ui = new UiTestKit();
+        var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) =>
+        {
+            var x = s.Cities[City];
+            s.Cities[City] = new City(x.Id, x.HousingCapacity, x.JobSlots, 99, x.Employed, x.Refugees, x.Recruits, x.Condition, x.Craftsmen, x.JobsDefault, x.Qualified);
+            Housing(s, 80, condition);
+        });
+        var o = Cities.HousingOutlook(C03, bridge.State, City)!.Value;
+        Assert.IsTrue(o.Surcharge > 0 && o.ConditionAfter < condition && o.CohesionShift < 0, "precondition: all three terms are live");
+        Assert.AreNotEqual(PlayerText.Money(C03, "treasury", 0), PlayerText.Money(C03, "treasury", o.Surcharge), "precondition: the surcharge shows when rounded (S2)");
+        Assert.AreNotEqual(PlayerText.Percent(condition), PlayerText.Percent(o.ConditionAfter), "precondition: the overflow moves the rounded condition (S2)");
+        Assert.AreNotEqual(PlayerText.PercentChange(0), PlayerText.PercentChange(o.CohesionShift), "precondition: the cohesion share shows when rounded (S2)");
+        using var panel = Panel(ui, bridge, t);
+        var (q, r) = Home(C03);
+        panel.Show(q, r);
+        Assert.AreEqual(t.Format("city.housing_surcharge", PlayerText.Money(C03, "treasury", o.Surcharge), PlayerText.Percent(o.MoneyThreshold)), ui.Q<Label>("city-surcharge").text);
+        Assert.AreEqual(t.Format("city.housing_falls", PlayerText.Percent(o.ConditionAfter)), ui.Q<Label>("city-housing-falls").text);
+        Assert.AreEqual(t.Format("city.housing_cohesion", PlayerText.PercentChange(o.CohesionShift), PlayerText.Percent(o.CohesionThreshold)), ui.Q<Label>("city-housing-cohesion").text);
+        Assert.AreEqual("50%", PlayerText.Percent(o.MoneyThreshold), "the catalogue's threshold, through the sim's formatter");
+    }
+
+    // R-HOUSE-005: at or above both thresholds in enough homes, the readout says there is no surcharge and shows no
+    // overflow or cohesion line; under gdd-0.1 (no surcharge, no cohesion term) there is no readout at all.
+    [Test]
+    public void AWellHousedCityHasNoSurchargeAndGdd01HasNoReadout_RHouse005([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        foreach (var c in new[] { C03, C01 })
+        {
+            using var ui = new UiTestKit();
+            var (bridge, _) = Game(c, t, "housing", turnsLeft: 2, edit: (s, _) => Housing(s, 100000, 0.60));
+            using var panel = Panel(ui, bridge, t);
+            var (q, r) = Home(c);
+            panel.Show(q, r);
+            Assert.IsNotNull(ui.Root.Q("city-housing"), $"{c.Ruleset}: precondition, the city's block shows");
+            if (c == C03) Assert.AreEqual(t.Format("city.housing_no_surcharge", "50%"), ui.Q<Label>("city-surcharge").text);
+            else Assert.IsNull(ui.Root.Q("city-surcharge"), "gdd-0.1 has no surcharge");
+            Assert.IsNull(ui.Root.Q("city-housing-falls"), c.Ruleset);
+            Assert.IsNull(ui.Root.Q("city-housing-cohesion"), c.Ruleset);
+        }
+    }
+
+    // R-HOUSE-005 (#1722 review S2): a housing line shows only when its figure, as the panel rounds it, says something. A
+    // surcharge under IL 0.05m would read "IL 0.0m a turn" (and "none" is not true), an overflow that leaves the rounded
+    // condition where it is would repeat the housing line's percentage, and a cohesion share under 0.05 points would read
+    // "0.0% a turn": none of the three has a line. Each case is shaped from the sim's own readout (TEST-ONLY SYNTHETIC values).
+    [Test]
+    public void AHousingTermTooSmallToShowHasNoLine_RHouse005([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var (q, r) = Home(C03);
+        Cities.HousingReadout Outlook(GameState s) => Cities.HousingOutlook(C03, s, City)!.Value;
+
+        // A surcharge of IL 0.02m: just under 50%, in enough homes (the surcharge is linear in the points below 50%).
+        using (var ui = new UiTestKit())
+        {
+            var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) =>
+            {
+                Housing(s, 100000, 0.40);
+                Housing(s, 100000, 0.50 - 0.02 * 0.10 / Outlook(s).Surcharge);
+            });
+            var o = Outlook(bridge.State);
+            Assert.IsTrue(o.Surcharge > 0 && PlayerText.Money(C03, "treasury", o.Surcharge) == PlayerText.Money(C03, "treasury", 0), "precondition: a surcharge that rounds to nothing");
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(q, r);
+            Assert.IsNotNull(ui.Root.Q("city-housing"), "precondition: the city's block shows");
+            Assert.IsNull(ui.Root.Q("city-surcharge"), "no \"IL 0.0m a turn\" and no \"none\"");
+        }
+
+        // One person over capacity at 60.4%: the overflow lowers the condition by less than the half point that would move "60%".
+        using (var ui = new UiTestKit())
+        {
+            var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) => Housing(s, Cities.Housed(s, s.Cities[City]) - 1, 0.604));
+            var o = Outlook(bridge.State);
+            Assert.IsTrue(o.ConditionAfter < 0.604 && PlayerText.Percent(o.ConditionAfter) == PlayerText.Percent(0.604), "precondition: an overflow that leaves the rounded condition");
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(q, r);
+            Assert.AreEqual(t.Format("city.housing_no_surcharge", "50%"), ui.Q<Label>("city-surcharge").text, "precondition: the readout shows");
+            Assert.IsNull(ui.Root.Q("city-housing-falls"), "the condition is not said twice");
+        }
+
+        // At 24.99% in enough homes: Social cohesion's share is far under 0.05 points.
+        using (var ui = new UiTestKit())
+        {
+            var (bridge, _) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) => Housing(s, 100000, 0.2499));
+            var o = Outlook(bridge.State);
+            Assert.IsTrue(o.CohesionShift < 0 && PlayerText.PercentChange(o.CohesionShift) == PlayerText.PercentChange(0), "precondition: a cohesion share that rounds to nothing");
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(q, r);
+            Assert.IsNotNull(ui.Root.Q("city-surcharge"), "precondition: the readout shows");
+            Assert.IsNull(ui.Root.Q("city-housing-cohesion"), "no \"0.0% a turn\"");
+        }
+    }
+
+    // R-PROJ-001 to R-PROJ-003, R-CITY-011, R-HOUSE-006 (#1722: "Project list with builders, work done and cost"): the city's
+    // block lists every project of the city in id order, wherever it stands, the repair (no hex of its own) included: a
+    // housing project with 2 of its 6 turns of work left is "work 4 of 6", cost IL 6.0m (content/projects.yaml), no builder; a
+    // repair with its builder; a built industry project with the day it was finished. Only the projects being built have Cancel.
+    [Test]
+    public void TheCityListsEveryProjectWithWorkDoneCostAndBuilder_RProj003([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        using var ui = new UiTestKit();
+        int repair = 0, industry = 0;
+        var (bridge, housing) = Game(C03, t, "housing", turnsLeft: 2, edit: (s, _) =>
+        {
+            var (hq, hr) = Home(C03);
+            repair = s.NextId++;
+            s.CityProjects.Add(repair, new CityProject(repair, Projects.HousingRepair, City, hq, hr, 1, builder: true));
+            industry = SecondWorkshop(C03, s);
+            var w = s.CityProjects[industry];
+            s.CityProjects[industry] = new CityProject(w.Id, "industry", City, w.Q, w.R, 0).Built(s.Date);
+        });
+        using var panel = Panel(ui, bridge, t);
+        var (q, r) = Home(C03);
+        panel.Show(q, r);
+        string Kind(string id) => PlayerText.Capitalised(ContentNames.Of(t, C03.ProjectKinds.First(x => x.Id == id)));
+        Assert.AreEqual(t.Format("city.list_header", 3), ui.Q<Label>("city-list-header").text);
+        Assert.AreEqual(t.Format("city.list_building", Kind("housing"), 4, 6, PlayerText.Money(C03, "treasury", 6), t["city.list_no_builder"]),
+            ui.Q<Label>($"city-list-project-{housing}").text);
+        Assert.AreEqual(t.Format("city.list_building", Kind(Projects.HousingRepair), 0, 1, PlayerText.Money(C03, "treasury", 0.5), t["city.list_builder"]),
+            ui.Q<Label>($"city-list-project-{repair}").text);
+        var date = t.Format("date.day_month_year", bridge.State.Date.Day, t["date.month_" + bridge.State.Date.Month], bridge.State.Date.Year);
+        Assert.AreEqual(t.Format("city.list_built", Kind("industry"), date, PlayerText.Money(C03, "treasury", 2)), ui.Q<Label>($"city-list-project-{industry}").text);
+        var names = ui.Root.Q("city-part-" + City).Query<Label>().ToList().Select(l => l.name).Where(n => n.StartsWith("city-list-project-", StringComparison.Ordinal)).ToList();
+        CollectionAssert.AreEqual(new[] { housing, repair, industry }.OrderBy(x => x).Select(x => $"city-list-project-{x}"), names, "id order");
+        Assert.IsNotNull(ui.Root.Q<Button>($"city-list-project-{housing}-cancel"));
+        Assert.IsNotNull(ui.Root.Q<Button>($"city-list-project-{repair}-cancel"));
+        Assert.IsNull(ui.Root.Q($"city-list-project-{industry}-cancel"), "a built project cannot be cancelled (R-PROJ-002)");
+    }
+
+    // R-PROJ-002: the list's Cancel queues CancelProject for that project (a repair too, which has no Cancel elsewhere), reads
+    // "Cancel ordered" and is off once queued; the sim accepts it at End turn: the project is gone and the Money is not returned.
+    [Test]
+    public void TheListsCancelQueuesTheSimsCancelProject_RProj002()
+    {
+        using var ui = new UiTestKit();
+        int repair = 0;
+        var (bridge, _) = Game(C03, En, "housing", turnsLeft: 2, edit: (s, _) =>
+        {
+            var (hq, hr) = Home(C03);
+            repair = s.NextId++;
+            s.CityProjects.Add(repair, new CityProject(repair, Projects.HousingRepair, City, hq, hr, 1));
+        });
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = Home(C03);
+        panel.Show(q, r);
+        ui.Press($"city-list-project-{repair}-cancel");
+        Assert.AreEqual(repair, bridge.Queued.OfType<CancelProject>().Single().Project);
+        var button = ui.Q<Button>($"city-list-project-{repair}-cancel");
+        Assert.AreEqual(En["city.cancel_ordered"], button.text);
+        Assert.IsFalse(button.enabledSelf);
+        var end = bridge.EndTurn();
+        Assert.IsEmpty(end.Rejected);
+        Assert.IsFalse(end.State.CityProjects.ContainsKey(repair), "the sim cancelled the repair");
+    }
+
+    // R-PROJ-001: no list without projects, and none under gdd-0.1, whose city panel is unchanged by #1722.
+    [Test]
+    public void NoListWithoutProjectsOrUnderGdd01()
+    {
+        foreach (var (c, projects) in new[] { (C03, false), (C01, true) })
+        {
+            using var ui = new UiTestKit();
+            var (bridge, _) = Game(c, En, "housing", turnsLeft: 2, edit: (s, id) => { if (!projects) s.CityProjects.Remove(id); });
+            using var panel = Panel(ui, bridge, En);
+            var (q, r) = Home(c);
+            panel.Show(q, r);
+            Assert.IsNotNull(ui.Root.Q("city-housing"), $"{c.Ruleset}: precondition, the city's block shows");
+            Assert.IsNull(ui.Root.Q("city-list-header"), c.Ruleset);
+        }
+    }
+
+    // #1722: the housing readout prices nothing itself. The surcharge, overflow and cohesion arithmetic and the catalogue's
+    // thresholds stay in the sim (Cities.HousingOutlook over Gdd03HousingFormula), so what the panel shows and what the turn
+    // charges cannot differ. Every UI script is scanned, comments stripped first.
+    [Test]
+    public void TheCityPanelHoldsNoHousingRule_RHouse005()
+    {
+        var files = Directory.GetFiles(Path.Combine(Application.dataPath, "Scripts/UI"), "*.cs", SearchOption.AllDirectories);
+        var panel = files.SingleOrDefault(f => Path.GetFileName(f) == "GddHexPanel.cs");
+        Assert.IsNotNull(panel, "not vacuous: the scan reads the city panel's source");
+        foreach (var file in files)
+        {
+            var code = System.Text.RegularExpressions.Regex.Replace(File.ReadAllText(file), @"//[^\n]*|/\*.*?\*/", "",
+                System.Text.RegularExpressions.RegexOptions.Singleline);
+            if (file == panel) StringAssert.Contains("Cities.HousingOutlook", code, "not vacuous: the panel reads the sim's readout");
+            foreach (var rule in new[] { "Gdd03HousingFormula", "money_threshold", "money_slope", "cohesion_threshold", "overflow_deterioration", "max_cohesion_loss" })
+                Assert.AreEqual(-1, code.IndexOf(rule, StringComparison.Ordinal), $"{Path.GetFileName(file)} reads the housing rules ({rule}) itself");
+        }
     }
 }

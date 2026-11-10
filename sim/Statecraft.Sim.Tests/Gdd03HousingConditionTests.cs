@@ -258,4 +258,87 @@ public class Gdd03HousingConditionTests
         Assert.Empty(UpdateCondition(Real01, low));
         Assert.Equal((t, m), (low.Treasury, low.Indicators["morale"]));
     }
+
+    // R-HOUSE-005, #1722 (the city panel's housing readout): Cities.HousingOutlook reads, without changing the state, what
+    // UpdateCondition would settle for one city on the same state: the surcharge priced before deterioration, the condition
+    // after the 5 pp overflow and the cohesion shift on morale. 10 housed in no housing at 0.27: 0.23 Money, 0.22, -0.0024.
+    [Fact]
+    public void HousingOutlookReadsWhatUpdateConditionSettles()
+    {
+        var s = OneCity(Real03, civilians: 10, capacity: 0, condition: 0.27);
+        s.Treasury = 100;
+        var id = s.Cities.Keys.Single();
+        var hash = s.Hash();
+        var o = Cities.HousingOutlook(Real03, s, id)!.Value;
+        Assert.Equal(hash, s.Hash());   // a read: no state change
+        var why = UpdateCondition(Real03, s);
+        Assert.Equal(-Assert.Single(why, w => w.Key == CauseKeys.HousingSurcharge).Delta, o.Surcharge, 12);
+        Assert.Equal(s.Cities[id].Condition!.Value, o.ConditionAfter, 12);
+        Assert.Equal(Assert.Single(why, w => w.Key == CauseKeys.HousingCohesion).Delta, o.CohesionShift, 12);
+        Assert.Equal((0.50, 0.25), (o.MoneyThreshold, o.CohesionThreshold));   // content/gdd03-balance.yaml housing.*
+    }
+
+    // R-HOUSE-005: at or above both thresholds with no overflow there is nothing to read but the condition itself.
+    [Fact]
+    public void HousingOutlookIsZeroForAWellHousedCity()
+    {
+        var s = OneCity(Real03, civilians: 10, capacity: 10, condition: 0.60);
+        var o = Cities.HousingOutlook(Real03, s, s.Cities.Keys.Single())!.Value;
+        Assert.Equal((0.0, 0.60, 0.0), (o.Surcharge, o.ConditionAfter, o.CohesionShift));
+    }
+
+    // gdd-0.1 has no surcharge or cohesion term (R-HOUSE-005 is gdd-0.3 only), and an unknown city or one with no condition
+    // has no readout.
+    [Fact]
+    public void HousingOutlookIsNullOutsideGdd03AndForACityWithNoCondition()
+    {
+        var legacy = OneCity(Real01, civilians: 10, capacity: 10, condition: 0.10);
+        Assert.Null(Cities.HousingOutlook(Real01, legacy, legacy.Cities.Keys.Single()));
+        var s = OneCity(Real03, civilians: 10, capacity: 10, condition: 0.10);
+        Assert.Null(Cities.HousingOutlook(Real03, s, "no_such_city"));
+        var id = s.Cities.Keys.Single();
+        s.Cities[id] = new City(id, 10, 0, 10, 0, 0);
+        Assert.Null(Cities.HousingOutlook(Real03, s, id));
+    }
+    // R-HOUSE-003, R-HOUSE-005 (#1722 review S3): on the dark start (an initialized Historical ledger) R and P come from the
+    // ledger's records, and the readout is still what UpdateCondition settles: every city's condition after the step, the
+    // Treasury's fall by the cities' surcharges and Social cohesion's by their shifts. Haifa is put in no housing at 0.22
+    // (TEST-ONLY SYNTHETIC values) so that all three terms are live.
+    [Fact]
+    public void HousingOutlookOnTheDarkStartReadsWhatUpdateConditionSettles()
+    {
+        var c = HistoricalPopulationTests.Real(true);
+        var s = Simulation.NewGame(c, 1, Mode.Historical, darkStart: true);
+        Assert.True(s.PopulationLedger.IsInitialized && s.PopulationLedger.IsHistorical, "precondition: the dark start's ledger");
+        var x = s.Cities["haifa"];
+        s.Cities["haifa"] = new City(x.Id, 0, x.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, 0.22, x.Craftsmen, x.JobsDefault, x.Qualified);
+        s.Treasury = 1000; s.Debt = 0;
+        var hash = s.Hash();
+        var outlook = s.Cities.Values.Where(y => y.Condition != null).OrderBy(y => y.Id, StringComparer.Ordinal)
+            .Select(y => (y.Id, O: Cities.HousingOutlook(c, s, y.Id)!.Value)).ToList();
+        Assert.Equal(hash, s.Hash());
+        var haifa = outlook.Single(o => o.Id == "haifa").O;
+        Assert.True(haifa.Surcharge > 0 && haifa.ConditionAfter < 0.22 && haifa.CohesionShift < 0, "precondition: all three terms are live");
+        var t = s.Treasury; var m = s.Indicators[Cities.CohesionIndicator];
+        UpdateCondition(c, s);
+        foreach (var (id, o) in outlook) Assert.Equal(s.Cities[id].Condition!.Value, o.ConditionAfter, 12);
+        Assert.Equal(t - outlook.Sum(o => o.O.Surcharge), s.Treasury, 9);
+        Assert.Equal(m + outlook.Sum(o => o.O.CohesionShift), s.Indicators[Cities.CohesionIndicator], 9);
+    }
+
+    // R-POP-002 (#1722 review S3): on an initialized ledger that is not Historical (here an Open one) UpdateCondition refuses
+    // to run, so the readout is null; the same city on a game with no ledger has one.
+    [Fact]
+    public void HousingOutlookIsNullOnALedgerThatIsNotHistorical()
+    {
+        var plain = OneCity(Real03, civilians: 10, capacity: 0, condition: 0.22);
+        var id = plain.Cities.Keys.Single();
+        Assert.NotNull(Cities.HousingOutlook(Real03, plain, id));
+        var open = PopulationLedger.CreateFixture(Real03, PopulationLedgerTests.Bindings(),
+            new[] { new PopulationInventoryRow("fixture", 0, PopulationLedgerTests.Person()) }, mode: Mode.Open);
+        Assert.Equal((true, false), (open.PopulationLedger.IsInitialized, open.PopulationLedger.IsHistorical));
+        open.Cities[id] = plain.Cities[id];
+        Assert.Throws<NotSupportedException>(() => UpdateCondition(Real03, open));
+        Assert.Null(Cities.HousingOutlook(Real03, open, id));
+    }
 }
