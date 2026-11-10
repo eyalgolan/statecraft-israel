@@ -240,9 +240,11 @@ public class HebrewUiTests
     }
 
     // #3020 (#2964 Q4, owner, 8 November 2026: "With the UI PR (Recommended)"; #2986): each of the nine refusals only a
-    // Historical ledger game gives (the sim's LedgerRefused* constants) maps to its own key. Each format is filled with
-    // distinct values as the sim fills it: the English is the sim's own text, the Hebrew is its line with the Hebrew town in
-    // its slot, its placeholders in the English's order, and no Latin letter left.
+    // Historical ledger game gives maps to its own key. Their constants stay internal; PopulationLedger.Refusals names each
+    // (the sim's PopulationLedgerTests.RefusalsHoldsEveryLedgerRefusalConstantByName proves it holds every LedgerRefused*
+    // constant and only them). Each format is filled with distinct values as the sim fills it: the English is the sim's own
+    // text, the Hebrew is its line with the Hebrew town in its slot, its placeholders in the English's order, and no Latin
+    // letter left.
     [Test]
     public void EveryLedgerRefusalHasItsOwnKeyInBothLanguages()
     {
@@ -252,27 +254,26 @@ public class HebrewUiTests
         object townSlot = new object();
         var filled = new Dictionary<string, (string key, object[] values)>
         {
-            [Statecraft.Sim.Training.LedgerRefusedCraftsman] = ("unit.reinforce_refused.ledger_craftsman", new object[0]),
-            [Statecraft.Sim.Training.LedgerRefusedCampFull] = ("unit.reinforce_refused.ledger_camp_full", new object[] { townSlot, 7, 50 }),
-            [Statecraft.Sim.Training.LedgerRefusedStrength] = ("unit.reinforce_refused.ledger_strength", new object[] { 41, 3, 5 }),
-            [Statecraft.Sim.Training.LedgerRefusedCarried] = ("unit.reinforce_refused.ledger_carried", new object[] { townSlot }),
-            [Statecraft.Sim.Training.LedgerRefusedHalutzTrade] = ("unit.reinforce_refused.ledger_halutz_trade", new object[] { townSlot }),
-            [Statecraft.Sim.Workshops.LedgerRefusedFree] = ("workshop.refused_ledger_free", new object[] { townSlot, 6 }),
-            [Statecraft.Sim.Workshops.LedgerRefusedBuilders] = ("workshop.refused_ledger_builders", new object[] { townSlot }),
-            [Statecraft.Sim.Qualification.LedgerRefusedCraftsmen] = ("city.qualification_refused.ledger_craftsmen", new object[0]),
-            [Statecraft.Sim.Qualification.LedgerRefusedFreePioneers] = ("city.qualification_refused.ledger_free_pioneers", new object[] { townSlot, 6 }),
+            ["Training.LedgerRefusedCraftsman"] = ("unit.reinforce_refused.ledger_craftsman", new object[0]),
+            ["Training.LedgerRefusedCampFull"] = ("unit.reinforce_refused.ledger_camp_full", new object[] { townSlot, 7, 50 }),
+            ["Training.LedgerRefusedStrength"] = ("unit.reinforce_refused.ledger_strength", new object[] { 41, 3, 5 }),
+            ["Training.LedgerRefusedCarried"] = ("unit.reinforce_refused.ledger_carried", new object[] { townSlot }),
+            ["Training.LedgerRefusedHalutzTrade"] = ("unit.reinforce_refused.ledger_halutz_trade", new object[] { townSlot }),
+            ["Workshops.LedgerRefusedFree"] = ("workshop.refused_ledger_free", new object[] { townSlot, 6 }),
+            ["Workshops.LedgerRefusedBuilders"] = ("workshop.refused_ledger_builders", new object[] { townSlot }),
+            ["Qualification.LedgerRefusedCraftsmen"] = ("city.qualification_refused.ledger_craftsmen", new object[0]),
+            ["Qualification.LedgerRefusedFreePioneers"] = ("city.qualification_refused.ledger_free_pioneers", new object[] { townSlot, 6 }),
         };
-        var formats = typeof(Statecraft.Sim.Orders).Assembly.GetTypes()
-            .SelectMany(t => t.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
-            .Where(f => f.IsLiteral && f.FieldType == typeof(string) && f.Name.StartsWith("LedgerRefused", StringComparison.Ordinal))
-            .Select(f => (string)f.GetRawConstantValue()).ToList();
-        CollectionAssert.AreEquivalent(filled.Keys, formats, "every LedgerRefused* constant is filled here");
+        CollectionAssert.AreEquivalent(filled.Keys, Statecraft.Sim.PopulationLedger.Refusals.Keys, "every ledger refusal is filled here");
         object English(object v) => v == townSlot ? place.Value : v;
         object Hebrew(object v) => v == townSlot ? namesHe[place.Key] : v;
         string Slots(string line) => string.Join(",", Regex.Matches(line, @"\{\d+\}").Cast<Match>().Select(m => m.Value));
         Assert.AreEqual(filled.Count, filled.Values.Select(v => v.key).Distinct().Count(), "each refusal has its own key");
-        foreach (var (format, (key, values)) in filled.Select(x => (x.Key, x.Value)))
+        foreach (var entry in filled)
         {
+            var (key, values) = entry.Value;
+            var format = Statecraft.Sim.PopulationLedger.Refusals[entry.Key];
+            Assert.AreEqual(Regex.Matches(format, @"\{\d+\}").Count, values.Length, entry.Key + ": one value a slot");
             var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values.Select(English).ToArray());
             Assert.IsTrue(string.Equals(reason, SimBridge.ReasonText(En, reason, c, namesHe), StringComparison.Ordinal), "the English string is the sim's own: " + reason);
             var he = SimBridge.ReasonText(He, reason, c, namesHe);

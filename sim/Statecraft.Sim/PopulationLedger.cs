@@ -186,6 +186,22 @@ namespace Statecraft.Sim
             if (state.PopulationLedger.IsInitialized)
                 throw new NotSupportedException("Population-ledger fixtures cannot run aggregate systems; gdd-0.3 integration is held.");
         }
+        /// <summary>#3020: the refusals only a Historical ledger game gives, each internal constant's English (a format with
+        /// its values in {0}, {1}...) by its name, "Class.Constant". The constants stay internal (#2964 Q4, owner, 8 November
+        /// 2026: "With the UI PR (Recommended)"); the UI words each in its language (SimBridge.ReasonText).</summary>
+        public static readonly IReadOnlyDictionary<string, string> Refusals = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>
+        {
+            ["Training.LedgerRefusedCraftsman"] = Training.LedgerRefusedCraftsman,
+            ["Training.LedgerRefusedCampFull"] = Training.LedgerRefusedCampFull,
+            ["Training.LedgerRefusedStrength"] = Training.LedgerRefusedStrength,
+            ["Training.LedgerRefusedCarried"] = Training.LedgerRefusedCarried,
+            ["Training.LedgerRefusedHalutzTrade"] = Training.LedgerRefusedHalutzTrade,
+            ["Workshops.LedgerRefusedFree"] = Workshops.LedgerRefusedFree,
+            ["Workshops.LedgerRefusedBuilders"] = Workshops.LedgerRefusedBuilders,
+            ["Qualification.LedgerRefusedCraftsmen"] = Qualification.LedgerRefusedCraftsmen,
+            ["Qualification.LedgerRefusedFreePioneers"] = Qualification.LedgerRefusedFreePioneers,
+        });
+
         /// <summary>#1725 PR 5 (review S5-3): Pools.Init and StartingForces.Init read an initialized ledger only in the dark
         /// start's shape, a Historical one (R-POP-004); a synthetic or Open ledger is refused as by <see cref="RefuseAggregate"/>.</summary>
         internal static void RefuseUnlessHistorical(GameState state)

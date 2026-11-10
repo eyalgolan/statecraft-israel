@@ -329,9 +329,10 @@ namespace Statecraft.Game.UI
             [Cabinet.RefusedPresident] = "cabinet.reason.president",
             [Cabinet.RefusedPersonUnknown] = "cabinet.reason.person_unknown",
             [Cabinet.RefusedNoGovernment] = "cabinet.reason.no_government",
-            // #3020: the refusals only a Historical ledger game gives (#1725 PR 7), with no values.
-            [Training.LedgerRefusedCraftsman] = "unit.reinforce_refused.ledger_craftsman",
-            [Qualification.LedgerRefusedCraftsmen] = "city.qualification_refused.ledger_craftsmen",
+            // #3020: the refusals only a Historical ledger game gives (#1725 PR 7), with no values. Their constants stay internal
+            // (#2964 Q4), so they are read by name from PopulationLedger.Refusals.
+            [PopulationLedger.Refusals["Training.LedgerRefusedCraftsman"]] = "unit.reinforce_refused.ledger_craftsman",
+            [PopulationLedger.Refusals["Qualification.LedgerRefusedCraftsmen"]] = "city.qualification_refused.ledger_craftsmen",
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -383,14 +384,14 @@ namespace Statecraft.Game.UI
             (Cabinet.RefusedNotCareerOfficer, "cabinet.reason.not_career_officer"),
             (Cabinet.RefusedPartyNotCoalition, "cabinet.reason.party_not_coalition"),
             // #3020: the refusals only a Historical ledger game gives (#1725 PR 7) that carry values: Train's and Reinforce's
-            // (Training.LedgerRefusedStrength is Send home's too), a workshop staffing order's and a pioneer reassignment's.
-            (Training.LedgerRefusedCampFull, "unit.reinforce_refused.ledger_camp_full"),
-            (Training.LedgerRefusedStrength, "unit.reinforce_refused.ledger_strength"),
-            (Training.LedgerRefusedCarried, "unit.reinforce_refused.ledger_carried"),
-            (Training.LedgerRefusedHalutzTrade, "unit.reinforce_refused.ledger_halutz_trade"),
-            (Workshops.LedgerRefusedFree, "workshop.refused_ledger_free"),
-            (Workshops.LedgerRefusedBuilders, "workshop.refused_ledger_builders"),
-            (Qualification.LedgerRefusedFreePioneers, "city.qualification_refused.ledger_free_pioneers"),
+            // (LedgerRefusedStrength is Send home's too), a workshop staffing order's and a pioneer reassignment's.
+            (PopulationLedger.Refusals["Training.LedgerRefusedCampFull"], "unit.reinforce_refused.ledger_camp_full"),
+            (PopulationLedger.Refusals["Training.LedgerRefusedStrength"], "unit.reinforce_refused.ledger_strength"),
+            (PopulationLedger.Refusals["Training.LedgerRefusedCarried"], "unit.reinforce_refused.ledger_carried"),
+            (PopulationLedger.Refusals["Training.LedgerRefusedHalutzTrade"], "unit.reinforce_refused.ledger_halutz_trade"),
+            (PopulationLedger.Refusals["Workshops.LedgerRefusedFree"], "workshop.refused_ledger_free"),
+            (PopulationLedger.Refusals["Workshops.LedgerRefusedBuilders"], "workshop.refused_ledger_builders"),
+            (PopulationLedger.Refusals["Qualification.LedgerRefusedFreePioneers"], "city.qualification_refused.ledger_free_pioneers"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+(?::[^}]*)?\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
