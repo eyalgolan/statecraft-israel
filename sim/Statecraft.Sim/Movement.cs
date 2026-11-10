@@ -171,6 +171,15 @@ namespace Statecraft.Sim
             why.Add(UnitLines.Line(key, line, new[] { u }, hex));
         }
 
+        /// <summary>R-ENEMY-009: an operation's remaining go-to for unit <paramref name="id"/> is cancelled (EventSystem.CancelOperation):
+        /// the unit stops where it stands, with the line of a card order that has ended.</summary>
+        internal static void Withdraw(GameState s, int id, List<Cause> why)
+        {
+            var u = s.Units[id];
+            var hex = u.OrderTarget;
+            Stop(s, u, WhyKeys.CardOrderEnded, $"Unit {id} stopped: the operation's order to hex {hex} has ended", hex, why);
+        }
+
         /// <summary>Takes the unit's go-to away where it stands.</summary>
         static void Clear(GameState s, Unit u)
         {

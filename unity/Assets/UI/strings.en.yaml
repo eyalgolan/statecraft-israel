@@ -991,6 +991,11 @@ advisor.opening.cities.text: "Your cities hold your people, jobs and training, a
 advisor.opening.move_how.text: "To move, select a brigade, press Move, then click a lit hex. Click a farther hex and the brigade goes there over several turns."
 advisor.opening.orders.text: "A brigade with no order holds up End turn. Fortify and Hold stay until you change them, and a route carries on by itself. Skip this turn lasts one turn."
 advisor.opening.end_turn.text: "When no unit needs orders, press End turn. If the button says a unit needs orders, pressing it takes you to that unit. The month then plays out and a report follows."
+# The later lessons (#2933 section 3): the issue's words.
+advisor.lesson.report.text: "That report shows what moved and what was fought. If the truce was accepted, your brigades cannot attack until it ends."
+advisor.lesson.attack.text: "The truce period is over. Select a brigade next to an enemy to see Attack and its odds. An attack can force the enemy back."
+advisor.lesson.stakes.text: "Your score counts objectives, how early you reach them, and prisoners returned. Battles wear brigades down. If Money and Food stay exhausted, the game ends."
+advisor.lesson.combat.text: "When fighting breaks out, the report shows losses and who fell back. Select a brigade next to an enemy to see Attack and its odds."
 advisor.next: "Next"
 advisor.done: "Done"
 # {0} the step, {1} the steps in the chain now.
@@ -1068,7 +1073,9 @@ advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs shor
 
 # Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
 city.workers_ordered: "At End turn: {0}"
-city.workers_cost: "At End turn · Order cost: {0:0.0} Attention"
+city.workers_cost: "At End turn · Workers change: {0:0.0} Attention"
+# Where the city trains, the workers line {0} adds the Train order's Attention price (every Train order costs the same).
+city.train_cost: "{0} · Each Train order: {1:0.0} Attention"
 
 share.site_picture: "Picture copied: paste it into the post"
 share.site_text: "Only the text was copied. Use Share or Download the picture."

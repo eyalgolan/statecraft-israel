@@ -38,8 +38,9 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "10.0.401"
+      # VSTest exits 0 when it finds no tests; TreatNoTestsAsError makes a break in test discovery fail (#2532).
       - name: Simulation and content tests
-        run: dotnet test sim/Statecraft.sln -c Release
+        run: dotnet test sim/Statecraft.sln -c Release --nologo -- RunConfiguration.TreatNoTestsAsError=true
 
   tools:
     name: Tools (pytest)

@@ -42,7 +42,8 @@ options:
       # (https://github.com/eyalgolan/statecraft-israel/issues/2531#issuecomment-6741172155): this war-casualties card may
       # not raise Arms (R-EFX-002). The rest of the cargo going to the IDF would be a gain, which the rule forbids, and the
       # text states no loss (force is only "if necessary"), so the smaller of the two allowed choices, 0, is kept.
-      # Unsourced design value, proposed for the owner's approval.
+      # Unsourced design value, approved by the owner on 9 November 2026 ("No Arms effect (Recommended)",
+      # https://github.com/eyalgolan/statecraft-israel/pull/2995#issuecomment-6742730390).
   - id: compromise
     # Begin's second request, put on the table and rejected (en.wiki "Altalena Affair"; the Etzel account; the Izkor page
     # records the dispute over whether the arms went to the IDF as a whole or mainly to Irgun units).
@@ -65,7 +66,8 @@ options:
       # Owner, 9 November 2026: "Costs only (Recommended)" (#2531,
       # https://github.com/eyalgolan/statecraft-israel/issues/2531#issuecomment-6741172155; R-EFX-002 allows a cost only).
       # Game assumption, not a sourced fact: arming the Irgun battalions draws on the national stock. -2 is an unsourced
-      # design value, proposed for the owner's approval; no source on this card gives a quantity.
+      # design value, approved by the owner on 9 November 2026 ("-2 Arms (Recommended)",
+      # https://github.com/eyalgolan/statecraft-israel/pull/2995#issuecomment-6742730390); no source on this card gives a quantity.
       - { target: arms, delta: -2 }
 sources:
   # Also the 15 June meeting and Ben-Gurion's diary of 16 June, for the window: en.wiki gives no footnote for them, and its

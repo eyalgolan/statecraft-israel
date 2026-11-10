@@ -132,7 +132,7 @@ public class PopulationLedgerTests
     }
 
     // R-POP-001, R-POP-003, R-LOOP-002, R-CITY-001, R-CITY-008: old identities neither gain state nor accept helpers. Their
-    // saves differ from gdd-0.3's only by the ruleset line (every ruleset writes schema 5 since #2605).
+    // saves differ from gdd-0.3's only by the ruleset line (every ruleset writes schema 6 since #2544).
     [Theory] [InlineData("legacy")] [InlineData("gdd-0.1")]
     public void OldIdentitiesKeepCanonicalTextAndSaveBytes(string identity)
     {
@@ -141,7 +141,7 @@ public class PopulationLedgerTests
         Assert.Throws<InvalidOperationException>(()=>s.PopulationLedger.RegisterArrival("ship",0,Person()));
         Assert.Equal(before,s.Describe()); Assert.Equal(before,s.Clone().Describe());
         var save = new SaveGame(new string('a',64),1,Mode.Historical,identity,new string('b',64));
-        Assert.Equal($"statecraft-save 5\ncontent {new string('a',64)}\nseed 1\nmode Historical\nruleset {identity}\nend {new string('b',64)}\n",save.Write());
+        Assert.Equal($"statecraft-save 6\ncontent {new string('a',64)}\nseed 1\nmode Historical\nruleset {identity}\nend {new string('b',64)}\n",save.Write());
     }
 
     // R-POP-001, R-LOOP-005: no numeric fallback from the old common scale or Deferred start.army.

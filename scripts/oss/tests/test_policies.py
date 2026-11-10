@@ -62,6 +62,42 @@ def test_check_script_runs_every_ci_command():
     assert f'UV_PYTHON:-{ci["env"]["UV_PYTHON"]}' in script
 
 
+def test_a_test_step_that_runs_zero_tests_fails():
+    # #2532: a break in test discovery (or a filter that matches nothing) must not pass. VSTest exits 0 on zero tests
+    # unless RunConfiguration.TreatNoTestsAsError is set; pytest already exits 5 (no tests collected), so the guard there
+    # is that nothing hides its exit code.
+    import yaml
+    ci = yaml.safe_load(read(".github/workflows/ci.yml"))
+    script = read("scripts/check.sh")
+    steps = [s for job in ci["jobs"].values() for s in job["steps"] if "run" in s]
+    script_lines = [l for l in script.splitlines() if not l.lstrip().startswith("#")]
+    # The release gate collects failures with `|| fail=1` and refuses at the end; that keeps the exit code.
+    gate_lines = [l.removesuffix(" || fail=1") for l in read("scripts/oss/release_gate.sh").splitlines()
+                  if not l.lstrip().startswith("#")]
+    dotnet = [s["run"] for s in steps if "dotnet test" in s["run"]] + [
+        l for l in script_lines + gate_lines if "dotnet test" in l]
+    pytest_steps = [s for s in steps if "pytest " in s["run"]]
+    pytest_lines = [l for l in script_lines + gate_lines if "pytest " in l]
+    assert len(dotnet) == 3 and len(pytest_steps) == 2 and len(pytest_lines) == 4
+    for cmd in dotnet:
+        assert cmd.rstrip().endswith(" -- RunConfiguration.TreatNoTestsAsError=true"), cmd
+    for step in pytest_steps:
+        assert not step.get("continue-on-error"), step["name"]
+    for cmd in [s["run"] for s in pytest_steps] + pytest_lines:
+        assert "|| true" not in cmd and "suppress-no-test-exit-code" not in cmd and "; exit 0" not in cmd, cmd
+
+
+def test_pytest_fails_when_it_collects_no_tests(tmp_path):
+    # The guard the CI pytest steps rely on: pytest's own exit code 5 when nothing is collected.
+    import subprocess
+    import sys
+    import pytest
+    (tmp_path / "test_nothing.py").write_text("# no tests here\n", encoding="utf-8")
+    done = subprocess.run([sys.executable, "-m", "pytest", str(tmp_path), "-q", "-p", "no:cacheprovider"],
+                          cwd=tmp_path, capture_output=True, text=True, timeout=120)
+    assert done.returncode == pytest.ExitCode.NO_TESTS_COLLECTED == 5, done.stdout + done.stderr
+
+
 def test_changelog_has_unreleased_on_top():
     text = read("CHANGELOG.md")
     assert text.index("## [Unreleased]") == text.index("## [")
