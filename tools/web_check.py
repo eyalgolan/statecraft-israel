@@ -93,6 +93,16 @@ def res_error(text: str, expected: str) -> str | None:
     return None if m is None or m.group(1) == expected else f"res={m.group(1)}, expected res={expected}: {text}"
 
 
+# What a ?vprofile run prices (#3043): FrameProfile.Run's "-<name>" configuration for each VisualToggles name and its
+# PromoPose.All poses. test_visual_toggles.py checks these against the C# Register calls and PromoPose. The optional ones
+# may be there or not: the train (a train mode or its service date) and the unit showcase (?units) register only then,
+# and "opening" and PromoPose.CloseUps are priced only under vclose.
+VISUAL_TOGGLES = ("armisticelines", "borders", "foam", "grade", "grid", "grounddetail", "groundscrub", "haze", "kits",
+                  "labels", "land", "routes", "seacalm", "seatexture", "shadows", "siteground", "tiltshift", "trees",
+                  "units", "water")
+OPTIONAL_VISUAL_TOGGLES = ("train", "unitshowcase")
+PROFILE_POSES = ("gameplay03", "diorama02")
+OPTIONAL_PROFILE_POSES = ("opening", "tel_aviv30", "jaffa12")
 PROFILE_RUN = re.compile(r"PROFILE visual=(\S+) pose=(\S+) ")
 PROFILE_SUMMARY = re.compile(r"PROFILE summary visual=(\S+) pose=(\S+) runs=(\d+)")
 
@@ -100,7 +110,8 @@ PROFILE_SUMMARY = re.compile(r"PROFILE summary visual=(\S+) pose=(\S+) runs=(\d+
 def profile_errors(lines, expected: str) -> list[str]:
     """What is wrong with a ?vprofile run's console lines: no PROFILE run lines, a run at another size, no done line, or a
     partial profile (#2697): a pose that lacks a configuration another pose has, no "all" or "none" configuration, or a
-    configuration whose summary line is missing or counts other runs than the run lines logged."""
+    configuration whose summary line is missing or counts other runs than the run lines logged; or (#3043) a run missing
+    a VISUAL_TOGGLES configuration or a PROFILE_POSES pose from every pose (a ?vmoving run's poses end in "-moving")."""
     runs = [l for l in lines if l.startswith("PROFILE visual=")]
     errors = [e for e in (res_error(l, expected) for l in runs) if e]
     if not runs:
@@ -114,9 +125,12 @@ def profile_errors(lines, expected: str) -> list[str]:
         elif m := PROFILE_SUMMARY.match(l):
             summarised[(m[2], m[1])] = int(m[3])
     labels = {label for _, label in counts}
-    for label in ("all", "none"):
+    for label in ("all", *(f"-{t}" for t in VISUAL_TOGGLES), "none"):
         if runs and label not in labels:
             errors.append(f"no PROFILE run of the '{label}' configuration")
+    for pose in PROFILE_POSES:
+        if runs and not any(p in (pose, f"{pose}-moving") for p, _ in counts):
+            errors.append(f"pose {pose} has no PROFILE run")
     for (pose, label), n in sorted(counts.items()):
         if summarised.get((pose, label)) != n:
             errors.append(f"pose {pose} visual {label}: {n} run lines, summary says {summarised.get((pose, label), 'nothing')}")

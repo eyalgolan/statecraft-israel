@@ -106,7 +106,8 @@ def test_a_profile_line_at_another_resolution_is_an_error():
     assert "1920x937" in wc.res_error(good.replace("1920x1080", "1920x937"), "1920x1080")
 
 
-def profile_lines(poses=("gameplay03", "diorama02"), labels=("all", "-labels", "none"), reps=3, res="1920x1080", done=True):
+def profile_lines(poses=wc.PROFILE_POSES, labels=("all", *(f"-{t}" for t in wc.VISUAL_TOGGLES), "none"), reps=3,
+                  res="1920x1080", done=True):
     """The console lines of a whole ?vprofile run as FrameProfile.Run logs them: per pose and configuration `reps` run
     lines, then a summary line; then the done line."""
     lines = []
