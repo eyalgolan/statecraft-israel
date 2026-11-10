@@ -694,6 +694,11 @@ end.population: "אוכלוסייה: {0}"
 end.population_history: "אוכלוסייה: {0}; האוכלוסייה היהודית לפי הלמ״ס ב־{1}: {2}"
 # For the native reviewer (#564): the end screen's end date (#2545).
 end.date: "הסתיים ב־{0}"
+# For the native reviewer (#564): the score's parts on the end screen (#812); "ניקוד" as hud.score, "שבויים שהוחזרו" as
+# defence.prisoners_returned, "השלמה מוקדמת" for the months-early bonus.
+end.score_objectives: "ניקוד מיעדים: {0:N0}"
+end.score_timing: "ניקוד מהשלמה מוקדמת: {0:N0}"
+end.score_prisoners: "ניקוד משבויים שהוחזרו: {0:N0}"
 
 # For the native reviewer (#564)
 cabinet.coalition: "קואליציה: {0} מתוך {1} {3} · יציבות {2}"
