@@ -22,9 +22,10 @@ name: Merge approved
 # so gh would refuse it. The run says it waits, and it merges once it is updated (#2698).
 # GitHub does not start other workflows from a merge made with this token, so CI on main is not re-run by it.
 #
-# A refused merge is tolerated only when it is expected (#2698): the head moved after this run read it (GitHub then
-# reports a head other than the approved SHA). Any other failure is printed, the remaining pull requests are still
-# tried, and the run fails.
+# A refused merge is tolerated only when it is expected. After a refusal the run re-reads the pull request, and passes
+# when GitHub reports it MERGED (someone merged it by hand after this run read it, #3027) or a head other than the
+# approved SHA (the head moved, #2698). Any other failure is printed, the remaining pull requests are still tried, and
+# the run fails.
 
 on:
   workflow_run:
@@ -85,8 +86,11 @@ jobs:
               continue
             fi
             printf '%s\n' "$out"
-            now=$(gh pr view "$n" --json headRefOid --jq '.headRefOid')
-            if [ "$now" != "$ready" ]; then
+            after=$(gh pr view "$n" --json state,headRefOid --jq '"\(.state) \(.headRefOid)"')
+            read -r state now <<<"$after"
+            if [ "$state" = MERGED ]; then
+              echo "#$n: merge refused, GitHub reports it already merged (by hand during this run)"
+            elif [ "$now" != "$ready" ]; then
               echo "#$n: merge refused, the head moved to $now; a later run checks the new head"
             else
               echo "::error::#$n: merge failed for a reason this workflow does not expect; see the gh output above"

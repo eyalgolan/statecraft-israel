@@ -333,6 +333,32 @@ def test_a_head_moved_message_without_a_new_head_fails_the_run(tmp_path):
     assert done.returncode != 0, done.stdout + done.stderr
 
 
+def test_a_pull_request_merged_by_hand_mid_run_passes(tmp_path):
+    # Owner decision on #3027 (10 Nov): "Log and skip if MERGED (Recommended)". Someone merged it between gh's read
+    # and the mutation, so gh refused; GitHub now reports it MERGED on the same head.
+    out = "GraphQL: Pull request is not mergeable (mergePullRequest)\n"
+    done, _ = run_merge_step(tmp_path, "workflow_run", {7: (ready_pr("abc"), 1, out, ready_pr("abc", state="MERGED"))})
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "#7: merge refused, GitHub reports it already merged" in done.stdout
+
+
+def test_a_failed_re_read_after_a_refusal_fails_the_run(tmp_path):
+    # If gh cannot re-read the pull request, the run must not read the empty answer as a moved head.
+    out = "HTTP 502: Bad Gateway\n"
+    done, _ = run_merge_step(tmp_path, "workflow_run", {7: (ready_pr("abc"), 1, out, "not json")})
+    assert done.returncode != 0, done.stdout + done.stderr
+    assert "head moved" not in done.stdout
+
+
+@pytest.mark.parametrize("state", ["OPEN", "CLOSED"])
+def test_a_refusal_on_a_pull_request_that_did_not_merge_fails_the_run(tmp_path, state):
+    # Only MERGED is tolerated; a pull request closed mid-run, or still open on the same head, fails as before.
+    out = "GraphQL: Pull request is not mergeable (mergePullRequest)\n"
+    done, _ = run_merge_step(tmp_path, "workflow_run", {7: (ready_pr("abc"), 1, out, ready_pr("abc", state=state))})
+    assert done.returncode != 0, done.stdout + done.stderr
+    assert "::error::#7" in done.stdout
+
+
 @pytest.mark.parametrize("out", [
     "HTTP 401: Bad credentials (https://api.github.com/graphql)\n",
     "GraphQL: Repository rule violations found\n\nChanges must be made through a pull request. (mergePullRequest)\n",
