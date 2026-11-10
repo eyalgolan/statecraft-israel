@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Statecraft.Cli;
@@ -14,6 +15,30 @@ public class BriefingCliTests
         var output = new StringWriter();
         Briefing.Write(c, s, output);
         return output.ToString().Replace("\r\n", "\n").Split('\n').Single(x => x.StartsWith($"  EVENT {id}: ", StringComparison.Ordinal));
+    }
+
+    static string OptionLine(Content c, GameState s, string optionId)
+    {
+        var output = new StringWriter();
+        Briefing.Write(c, s, output);
+        return output.ToString().Replace("\r\n", "\n").Split('\n').Single(x => x.StartsWith($"    {optionId}: ", StringComparison.Ordinal));
+    }
+
+    // #3031: an option line names an office's holder as the game does (Cabinet.Fill with the state, EventCardPresenter),
+    // so the player's appointee and not the historical holder. CabinetTests' fixture: Loy Alist replaces Def Two.
+    // Red without it: the option line named Def Two.
+    [Fact]
+    public void AnOptionLineNamesThePlayersAppointee()
+    {
+        var c = CabinetTests.Load(new Dictionary<string, string>
+        {
+            ["drought.yaml"] = ValidationTests.Event.Replace("text: Wait for rain", "text: Ask {finance_minister} to wait for rain")
+        });
+        var s = Simulation.NewGame(c, 42, Mode.Historical);
+        s.Date = new DateTime(1948, 6, 1);
+        Assert.Null(Cabinet.Appoint(c, s, "finance_minister", "loyalist", new List<Cause>()));
+        s.PendingEvents.Add("drought");
+        Assert.Equal("    wait: Ask Loy Alist to wait for rain", OptionLine(c, s, "wait"));
     }
 
     // R-ENEMY-007: a card shown after its window prints its late text. Real content, rhodes_talks on its `to`.
