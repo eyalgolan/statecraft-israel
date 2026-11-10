@@ -83,9 +83,11 @@ namespace Statecraft.Sim
         /// warning (spec section 7), and a second warning if the replay then differs from the saved game. The warnings are
         /// kinds (<see cref="ContentChanged"/>, <see cref="ReplayDiffers"/>), not display text: the UI says each in the
         /// player's language, as it does SaveException.Code (#637). A finished game whose replay differs only by the ending
-        /// turn's objective cards (#2536) is not a difference: it loads with no warning. A save older than schema 5 was played
-        /// before the soft-event cap kept a left-out event waiting (#2605), so with the same content a different replay is
-        /// the rules' change, not damage: it loads with <see cref="ReplayDiffers"/>.</summary>
+        /// turn's objective cards (#2536) is not a difference: it loads with no warning. A save older than the current schema
+        /// was played under earlier rules (before schema 5, the soft-event cap did not keep a left-out event waiting, #2605;
+        /// before schema 6, a player's order to a unit in an operation did not cancel the operation's remaining orders,
+        /// #2544), so with the same content a different replay is the rules' change, not damage: it loads with
+        /// <see cref="ReplayDiffers"/>.</summary>
         public static GameSession Load(Content c, string saveText, out IReadOnlyList<string> warnings)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
@@ -98,7 +100,7 @@ namespace Statecraft.Sim
             var list = new List<string>();
             bool sameContent = saved.ContentHash == c.Hash;
             if (!sameContent) list.Add(ContentChanged);
-            // #2605: only a current-schema save with the same content must replay exactly; an older one may differ.
+            // #2605, #2544: only a current-schema save with the same content must replay exactly; an older one may differ.
             bool mustMatch = sameContent && saved.Version >= SaveGame.SchemaVersion;
             var session = New(c, saved.Seed, saved.Mode);
             int turnNo = 0;
@@ -107,13 +109,13 @@ namespace Statecraft.Sim
             catch (Exception e) { throw new SaveException(FormattableString.Invariant($"turn {turnNo + 1}: {e.Message}"), e); }
             // #2536: a game finished before the ending turn fired objective cards replays with those cards added, and only
             // them: the same game, so it loads as saved, with no warning, and shows its ending card(s).
-            // Only an older save can be from before #2536: a current-schema save always has its ending cards (#2605 review).
+            // Only a save older than schema 5 can be from before #2536: a later one always has its ending cards (#2605 review).
             // #2542: a save made before stayed losses left a marker replays with only those markers added. It is the same
             // game, so accept that exact same-content difference; every other replay mismatch keeps the existing handling.
-            // Only an older save can be from before the markers: a current-schema save always has them, so one without them
-            // was edited (Codex review of 47da9b207).
-            if (session.State.Hash() != saved.FinalHash && !(saved.Version < SaveGame.SchemaVersion && OnlyEndingCardsAdded(c, session.State, saved.FinalHash))
-                && !(saved.Version < SaveGame.SchemaVersion && sameContent && OnlyLostMarkersAdded(session.State, saved.FinalHash)))
+            // Only a save older than schema 5 can be from before the markers: a later one always has them, so one without them
+            // was edited (Codex review of 47da9b207). Both stay at schema 5 when the schema moves on (#2544).
+            if (session.State.Hash() != saved.FinalHash && !(saved.Version < SaveGame.SoftEventCapSchemaVersion && OnlyEndingCardsAdded(c, session.State, saved.FinalHash))
+                && !(saved.Version < SaveGame.SoftEventCapSchemaVersion && sameContent && OnlyLostMarkersAdded(session.State, saved.FinalHash)))
             {
                 if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset)
                     throw new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);

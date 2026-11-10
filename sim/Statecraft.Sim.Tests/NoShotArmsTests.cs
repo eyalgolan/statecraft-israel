@@ -311,7 +311,7 @@ public class NoShotArmsTests
 public class NoShotArmsSessionTests
 {
     [Fact]
-    public void AZeroStockInstantAttackReplaysInSchemaFiveAndIsNotRepeatedAtEndTurn()
+    public void AZeroStockInstantAttackReplaysInSchemaSixAndIsNotRepeatedAtEndTurn()
     {
         var root = RealContentTests.ContentRoot();
         var c = ContentLoader.Load(rel =>
@@ -333,7 +333,7 @@ public class NoShotArmsSessionTests
         Assert.Single(game.Now.Why, w => w.Key == WhyKeys.Engagement);
 
         var text = game.Save.Write();
-        Assert.StartsWith("statecraft-save 5", text);
+        Assert.StartsWith("statecraft-save 6", text);
         var replay = GameSession.Load(c, text, out _);
         Assert.Equal(game.Now.State.Hash(), replay.Now.State.Hash());
         Assert.Single(replay.Committed);
