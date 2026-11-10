@@ -17,7 +17,13 @@ name: Merge approved
 #   still waiting for approval has no results, so it waits);
 # - unless the maintainer opened it, its body ticks the template's licence line ("[x] I contribute this under the terms
 #   in `CONTRIBUTING.md`", [x] or [X]); an unticked or waived pull request waits for the maintainer to merge it by hand.
+# A pull request that passes all of these but is behind main is not tried: the main ruleset needs branches up to date,
+# so gh would refuse it. The run says it waits, and it merges once it is updated (#2698).
 # GitHub does not start other workflows from a merge made with this token, so CI on main is not re-run by it.
+#
+# A refused merge is tolerated only when it is expected (#2698): the head moved after this run read it (GitHub then
+# reports a head other than the approved SHA), or a review run met "Resource not accessible by integration" (the fork's
+# read-only token above). Any other failure is printed, the remaining pull requests are still tried, and the run fails.
 
 on:
   workflow_run:
@@ -51,8 +57,10 @@ jobs:
       - name: Merge every pull request that is approved and green
         run: |
           set -euo pipefail
-          gh pr list --state open --base main --limit 100 --json number --jq '.[].number' | while read -r n; do
-            ready=$(gh pr view "$n" --json author,body,isDraft,mergeable,headRefOid,reviews,statusCheckRollup --jq '
+          failed=0
+          prs=$(gh pr list --state open --base main --limit 100 --json number --jq '.[].number')
+          for n in $prs; do
+            ready=$(gh pr view "$n" --json author,body,isDraft,mergeable,mergeStateStatus,headRefOid,reviews,statusCheckRollup --jq '
               . as $p
               | ([$p.reviews[] | select(.author.login == env.MAINTAINER)] | last) as $r
               | (env.REQUIRED_CHECKS | split("|")) as $need
@@ -63,11 +71,29 @@ jobs:
                                  | length > 0 and all(.conclusion == "SUCCESS")))
                 and ($p.author.login == env.MAINTAINER
                      or ($p.body // "" | test("\\[[xX]\\] I contribute this under the terms in")))
-              | if . then $p.headRefOid else "no" end')
+              | if . | not then "no" elif $p.mergeStateStatus == "BEHIND" then "behind" else $p.headRefOid end')
             if [ "$ready" = "no" ]; then
               echo "#$n: not ready"
+              continue
+            fi
+            if [ "$ready" = "behind" ]; then
+              echo "#$n: approved and green but behind main; it waits until it is updated"
+              continue
+            fi
+            echo "#$n: approved and green at $ready, merging"
+            if out=$(gh pr merge "$n" --squash --match-head-commit "$ready" 2>&1); then
+              echo "#$n: merged"
+              continue
+            fi
+            printf '%s\n' "$out"
+            now=$(gh pr view "$n" --json headRefOid --jq '.headRefOid')
+            if [ "$now" != "$ready" ]; then
+              echo "#$n: merge refused, the head moved to $now; a later run checks the new head"
+            elif [ "$GITHUB_EVENT_NAME" = pull_request_review ] && grep -qF 'Resource not accessible by integration' <<<"$out"; then
+              echo "#$n: merge refused, a review run for a fork's pull request has a read-only token; the next CI or timer run merges"
             else
-              echo "#$n: approved and green at $ready, merging"
-              gh pr merge "$n" --squash --match-head-commit "$ready" || echo "#$n: merge refused (read-only token or head moved); a later run retries"
+              echo "::error::#$n: merge failed for a reason this workflow does not expect; see the gh output above"
+              failed=1
             fi
           done
+          exit "$failed"
