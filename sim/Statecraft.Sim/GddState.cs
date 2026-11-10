@@ -204,9 +204,22 @@ namespace Statecraft.Sim
         /// Always 0 under every other ruleset.</summary>
         public int CombatXp { get; }
 
-        public Unit(int id, string type, int q, int r, int service = 0, string side = "", int strength = 0, string order = "", string orderTarget = "", string homeCity = "", int full = 0, int combatXp = 0)
+        /// <summary>#1725 PR 7 (owner, 9 November 2026, "Add the link first (Recommended)" and "List on the unit (Recommended)"):
+        /// on a Historical ledger game, the population ids of the pioneer records that form this halutz or veteran pioneer
+        /// unit, ascending, hashed only when set, like a cohort's members; null on any other game and for any other unit. A
+        /// promotion keeps it ("Yes, keep the link (Recommended)"), as every change of a unit does (R-UNIT-002).</summary>
+        public IReadOnlyList<int>? Records { get; }
+
+        public Unit(int id, string type, int q, int r, int service = 0, string side = "", int strength = 0, string order = "", string orderTarget = "", string homeCity = "", int full = 0, int combatXp = 0, IEnumerable<int>? records = null)
         {
             Id = id; Type = type; Q = q; R = r; Service = service; Side = side; Strength = strength; Order = order; OrderTarget = orderTarget; HomeCity = homeCity; Full = full; CombatXp = combatXp;
+            if (records != null)
+            {
+                var sorted = records.OrderBy(x => x).ToArray();
+                if (sorted.Length == 0 || sorted.Distinct().Count() != sorted.Length)
+                    throw new ArgumentException("A unit's records are one or more distinct population ids.", nameof(records));
+                Records = Array.AsReadOnly(sorted);
+            }
         }
 
         /// <summary>The record as the state hash writes it. Each field after the hex is written only when it is not at its
@@ -220,7 +233,8 @@ namespace Statecraft.Sim
             + (OrderTarget == "" ? "" : "|target=" + OrderTarget)
             + (HomeCity == "" ? "" : "|home=" + HomeCity)
             + (Full == 0 ? "" : "|full=" + Full.ToString(CultureInfo.InvariantCulture))
-            + (CombatXp == 0 ? "" : "|xp=" + CombatXp.ToString(CultureInfo.InvariantCulture));
+            + (CombatXp == 0 ? "" : "|xp=" + CombatXp.ToString(CultureInfo.InvariantCulture))
+            + (Records == null ? "" : "|records=" + string.Join(",", Records.Select(x => x.ToString(CultureInfo.InvariantCulture))));
     }
 
     /// <summary>A group of a city's people in training (GDD "Progression"; R-TRAIN-001): <see cref="Count"/> population units

@@ -334,4 +334,25 @@ public class WarEvents1948Tests
         Assert.All(e.Options, o => Assert.Contains(o.Effects, f => f.Target == "intl_standing" && f.Delta == -0.05));
         Assert.All(e.Options, o => Assert.True(o.Effects.Where(f => f.Target == "intl_standing").Sum(f => f.Delta) < 0, $"{o.Id} raises standing"));
     }
+
+    /// <summary>R-EFX-001, R-EFX-002 (#2531; owner, 9 November 2026, "Costs only (Recommended)", issuecomment-6741172155):
+    /// the Altalena options are
+    /// about where the ship's arms go, so the Arms stock answers them, with costs only on this war-casualties card.
+    /// Arming Irgun battalions inside the IDF costs 2 Arms; enforcing leaves the stock as it was.</summary>
+    [Theory]
+    [InlineData("compromise", -2)]
+    [InlineData("enforce", 0)]
+    public void TheAltalenaOptionsMoveTheArmsStockByCostsOnly(string option, int change)
+    {
+        var e = Get("altalena");
+        Assert.All(e.Options, o => Assert.True(o.Effects.Where(f => f.Target == "arms").Sum(f => f.Delta) <= 0, $"{o.Id} raises Arms"));
+        Assert.Equal(change, e.Options.Single(o => o.Id == option).Effects.Where(f => f.Target == "arms").Sum(f => f.Delta));
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        s.Date = e.From; s.Arms = 10; s.PendingEvents.Add("altalena");
+        var why = new List<Cause>();
+        Assert.Null(EventSystem.Choose(C, s, "altalena", option, why));
+        Assert.Equal(10 + change, s.Arms);
+        if (change == 0) Assert.DoesNotContain(why, w => w.Target == "arms");
+        else Assert.Contains(why, w => w.Target == "arms" && w.Delta == change);
+    }
 }

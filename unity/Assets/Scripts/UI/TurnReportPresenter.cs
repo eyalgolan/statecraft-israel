@@ -44,6 +44,7 @@ namespace Statecraft.Game.UI
         readonly ScreenNav nav; readonly Button close, all;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly Action onChanged;
+        readonly Action<string?> onScreen;
         GameSession session;   // the session the open report belongs to
         readonly EventCallback<NavigationCancelEvent> onCancel;
         /// <summary>The turn last reported (or the session's last turn when this was made: a loaded game reports nothing).</summary>
@@ -81,6 +82,11 @@ namespace Statecraft.Game.UI
                     var last = bridge.Session.Last;
                     if (last == null || ReferenceEquals(last, seen)) return;
                     seen = last;
+                    // #2202: it opens when the enemy playback ends (Held). End turn still closes an open screen, as Show does
+                    // without a playback, so the moves play on the open map (#2967 review, S1); a screen opened while they
+                    // play stays (ShowWhenFree waits for it).
+                    if (held) { nav.Close(); wantsShow = true; return; }
+                    wantsShow = false;   // this turn's report replaces one that waited for a screen
                     Show();
                 }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
@@ -89,14 +95,53 @@ namespace Statecraft.Game.UI
             // Only a replaced session (New Game, a load: SimBridge.Replace) makes the report stale. Other changes keep it:
             // answering the ending turn's card (SimBridge.SeeEndingCard) changes nothing and leaves it under the end screen.
             session = bridge.Session;
-            onChanged = () => { if (ReferenceEquals(bridge.Session, session)) return; session = bridge.Session; Hide(); };
+            onChanged = () => { if (ReferenceEquals(bridge.Session, session)) return; session = bridge.Session; wantsShow = false; Hide(); };
             bridge.Changed += onChanged;
+            onScreen = screen => { if (screen == null) ShowWhenFree(); };
+            nav.Changed += onScreen;
             Hide();
         }
 
         /// <summary>Raised with the turn being reported when the report opens, and with null when it closes (#1878: the map
         /// shows the under-attack look on the hexes the turn attacked for as long as the report is up).</summary>
         public event Action<StepResult?>? Showing;
+
+        bool held, wantsShow;
+        /// <summary>#2202: true while End turn's enemy playback runs (EnemyTurnPlayback.Holding; owner, Q1 a: the report waits
+        /// for it). A turn that ends meanwhile is reported when it turns false; another game drops the wait.</summary>
+        public bool Held
+        {
+            get => held;
+            set
+            {
+                if (held == value) return;
+                held = value;
+                ShowWhenFree();
+            }
+        }
+
+        /// <summary>#2202: true while a turn's report waits to open: for the enemy playback (<see cref="Held"/>), or for a
+        /// screen the player opened while it played, which the report does not close under them (#2967 review, S3).</summary>
+        public bool Waiting => wantsShow;
+
+        /// <summary>#2202: the session's last turn is reported once nothing holds it (GameRoot's language switch: the rebuilt
+        /// report takes over a wait the old one had, #2967 review, S2).</summary>
+        public void Wait()
+        {
+            var last = bridge.Session.Last;
+            if (last == null) return;
+            seen = last;
+            wantsShow = true;
+            ShowWhenFree();
+        }
+
+        void ShowWhenFree()
+        {
+            if (held || !wantsShow || nav.Current != null) return;
+            wantsShow = false;
+            try { Show(); }
+            catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
+        }
 
         /// <summary>True while the report shows.</summary>
         public bool IsOpen => hudRoot.ClassListContains(OpenClass);
@@ -300,6 +345,7 @@ namespace Statecraft.Game.UI
         {
             bridge.Changed -= onChanged;
             bridge.TurnEnded -= onTurn;
+            nav.Changed -= onScreen;
             close.clicked -= OnClose;
             all.clicked -= SeeAll;
             report.UnregisterCallback(onCancel);

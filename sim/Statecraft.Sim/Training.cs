@@ -289,7 +289,7 @@ namespace Statecraft.Sim
                 {
                     var first = s.NextId;
                     s.NextId += k.Count;
-                    Halutzim(c, s, k, type, name, first, why);
+                    Halutzim(c, s, k, type, name, first, null, why);
                 }
                 else if (type.Id == Craftsman)
                 {
@@ -310,7 +310,7 @@ namespace Statecraft.Sim
             var target = s.Units[unit];
             var strength = target.Strength + k.Count;
             s.Units[target.Id] = new Unit(target.Id, target.Type, target.Q, target.R, target.Service, target.Side, strength,
-                target.Order, target.OrderTarget, target.HomeCity, strength >= target.Full ? 0 : target.Full, target.CombatXp);
+                target.Order, target.OrderTarget, target.HomeCity, strength >= target.Full ? 0 : target.Full, target.CombatXp, target.Records);
             why.Add(new Cause("city", k.City, k.Count, FormattableString.Invariant($"{name}: {Groups(k.Count)} finished {Course(type)} and joined unit {target.Id}"), key: CauseKeys.ReplacementsJoined, args: new[] { CauseKeys.Number(k.Count), CourseId(type), CauseKeys.Number(target.Id) }));
         }
 
@@ -322,11 +322,15 @@ namespace Statecraft.Sim
             why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type)} and are {Trained(type)}", key: CauseKeys.MilitaryTrained, args: new[] { CauseKeys.Number(k.Count), CourseId(type), type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : "recruit" }));
         }
 
-        /// <summary>R-TRAIN-003: finished halutzim are one map unit per group, ids <paramref name="first"/> on.</summary>
-        static void Halutzim(Content c, GameState s, Cohort k, UnitType type, string name, int first, List<Cause> why)
+        /// <summary>R-TRAIN-003: finished halutzim are one map unit per group, ids <paramref name="first"/> on. On a Historical
+        /// ledger game <paramref name="records"/> are the cohort's records, ascending, one per group, and unit
+        /// <c>first + i</c> is linked to record i (owner, 9 November 2026, "Add the link first (Recommended)" and "List on
+        /// the unit (Recommended)"); null on any other game.</summary>
+        static void Halutzim(Content c, GameState s, Cohort k, UnitType type, string name, int first, IReadOnlyList<int>? records, List<Cause> why)
         {
             var hex = c.SettlementHexes.First(h => h.Id == k.City);   // every settlement has one (ValidateMap)
-            for (int i = 0; i < k.Count; i++) s.Units.Add(first + i, new Unit(first + i, type.Id, hex.Q, hex.R));
+            for (int i = 0; i < k.Count; i++)
+                s.Units.Add(first + i, new Unit(first + i, type.Id, hex.Q, hex.R, records: records == null ? null : new[] { records[i] }));
             why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type)} and are halutzim", key: CauseKeys.PioneersTrained, args: new[] { CauseKeys.Number(k.Count), CourseId(type) }));
         }
 
@@ -395,7 +399,8 @@ namespace Statecraft.Sim
         /// facility's course in the same place (27M-7), keeping their profession dormant (owner, 8 November 2026, "Unskilled
         /// first, keep (Rec.)"), and are validated as one candidate with any Course target a built camp still needs
         /// (owner, "Start + runtime bind (Rec.)"). The Money, the cohort's id and the Why lines are the aggregate game's; no
-        /// city field is written.</summary>
+        /// city field is written, but for City.Qualified when the order takes a returned pioneer (R-QUAL-006; owner, 9 November
+        /// 2026, "Yes, lower it (Recommended)").</summary>
         static string? LedgerStart(Content c, GameState s, string city, UnitType type, int count, List<Cause> why, int? unit, string name)
         {
             var ledger = s.PopulationLedger;
@@ -424,6 +429,17 @@ namespace Statecraft.Sim
             if (per > 0 && taken.Any(p => p.Equipment.MilitaryId != null)) return Refused(LedgerRefusedCarried, name);
             if (type.Side == "" && taken.Any(p => p.Profession == CivilianProfession.Farmer || p.Profession == CivilianProfession.Craftsman))
                 return Refused(LedgerRefusedHalutzTrade, name);
+            // R-QUAL-006 on the ledger (owner, 9 November 2026, "Yes, lower it (Recommended)"): a returned pioneer record the
+            // order takes loses its qualification, so the city's qualified pioneers (City.Qualified) never outnumber its
+            // free pioneer records. As the aggregate path counts it, only what the remaining records cannot hold is lost.
+            // The training centre's census teacher (#1689), while untouched, is not a returned pioneer, so it holds no
+            // qualified group; once linked to a unit it is a pioneer like any other (HistoricalPopulation.UntouchedTeacherId).
+            var x = s.Cities[city];
+            var teacher = HistoricalPopulation.UntouchedTeacherId(ledger);
+            bool CityPioneer(PopulationUnit p) => p.Status == PopulationStatus.FreeCivilian && p.Profession == CivilianProfession.Pioneer
+                && string.Equals(p.Location?.City, city, StringComparison.Ordinal) && p.Id != teacher;
+            var pioneers = ledger.Units.Count(CityPioneer) - taken.Count(CityPioneer);
+            var lost = Math.Max(0, x.Qualified.Halutzim.Count + x.Qualified.Veterans - pioneers);
             var id = s.NextId;
             var course = new PopulationAssignment(PopulationAssignmentKind.Course, target);
             var bind = ledger.Target(target) == null
@@ -435,6 +451,7 @@ namespace Statecraft.Sim
                     p.WorkXp, p.Qualification, p.CombatXp, per > 0 ? new PopulationEquipment(e.ToolsId, e.ToolsPaid, IssuedId(id, p.Id), true) : e,
                     p.Captor, p.Home);
             }).ToList(), bind);
+            if (lost > 0) s.Cities[city] = x.WithQualified(x.Qualified.LosePioneers(lost));
             Open(c, s, city, name, type, count, arms, (int)(arms - (per > 0 ? count : 0)), unit, taken.Select(p => p.Id), why);
             return null;
         }
@@ -487,7 +504,7 @@ namespace Statecraft.Sim
         /// records changed as its outcome says. A cohort with turns to go counts one course tick on each record; replacements
         /// whose unit is gone are released as <see cref="Cancel"/> releases them; replacements that finish serve their
         /// formation; a recruit or crew cohort that finishes serves a new formation target bound for its new map unit (owner,
-        /// 8 November 2026, "New unit at graduation (Rec.)"); halutzim become free pioneers (<see cref="Pioneer"/>). Every
+        /// 8 November 2026, "New unit at graduation (Rec.)"); halutzim become free pioneers (<see cref="Pioneer"/>), each map unit linked to its record (<see cref="Unit.Records"/>). Every
         /// record change and new target of the turn is validated as one candidate before any write; the state's writes then
         /// follow in cohort order, taking the same ids as the aggregate step.</summary>
         static void LedgerProgress(Content c, GameState s, List<Cause> why)
@@ -545,7 +562,8 @@ namespace Statecraft.Sim
                     records.AddRange(members.Select(p => Pioneer(p, region)));
                     var first = next;
                     next = checked(next + k.Count);
-                    apply.Add(() => { s.Cohorts.Remove(k.Id); Halutzim(c, s, k, type, name, first, why); });
+                    var linked = members.Select(p => p.Id).ToList();   // ascending id, one per group (Members, Cohort)
+                    apply.Add(() => { s.Cohorts.Remove(k.Id); Halutzim(c, s, k, type, name, first, linked, why); HistoricalPopulation.NoteLinked(ledger, linked); });
                 }
                 else throw new InvalidOperationException("Cohort " + k.Id.ToString(CultureInfo.InvariantCulture) + " of type " + k.Type + " does not run on the population ledger.");
             }

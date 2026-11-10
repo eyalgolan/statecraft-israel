@@ -273,14 +273,17 @@ public class Gdd03MovementFortTests
         Assert.Equal("values." + key, error.Field);
         Assert.Contains("must be a whole number >= 0", error.Message);
     }
-    // R-ORDER-002 (#2601): fortify_turns is Agreed; a Default row with the same value is refused, naming the exact file and field.
-    [Fact]
-    public void LoaderRejectsNonAgreedFortifyTurns()
+    // R-ORDER-002: both fortify rows are Agreed, fortify_turns since #2601 and fortify_bonus since the owner's O1 answer
+    // (1 November 2026, #1668) and the #2918 C2 audit. A Default row with the same value is refused, naming the exact
+    // file and field.
+    [Theory]
+    [InlineData("military.fortify_turns", "1")]
+    [InlineData("military.fortify_bonus", "25")]
+    public void LoaderRejectsNonAgreedFortifyRows(string key, string value)
     {
-        const string key = "military.fortify_turns";
         var f = Files();
         f[Gdd03BalanceCatalogue.FileName] = System.Text.RegularExpressions.Regex.Replace(f[Gdd03BalanceCatalogue.FileName],
-            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { basis: Default, values: [1], note: fixture }\n");
+            "(?m)^  \"" + System.Text.RegularExpressions.Regex.Escape(key) + "\":\\n(?:    .*\\n)*", "  \"" + key + "\": { basis: Default, values: [" + value + "], note: fixture }\n");
         var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(f)));
         Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
         Assert.Equal("values." + key, error.Field);

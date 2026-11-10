@@ -21,10 +21,11 @@ namespace Statecraft.Sim
             c.Events.Where(e => e.Tags.Any(EventRules.SensitiveTags.Contains) && e.Status != ReviewedStatus)
                 .Select(e => e.Id).OrderBy(x => x, StringComparer.Ordinal).ToList();
 
-        /// <summary>R-ALT-011 (Q-ALT-9): every consequence card and every event with variants that no person has signed off
-        /// (no reviewed_by), in id order. A shareable build refuses while it is not empty.</summary>
+        /// <summary>R-ALT-011 (Q-ALT-9): every consequence card, every event with variants and (R-WAR-008, #1709; owner,
+        /// 9 November 2026: "Separate early text (Recommended)") every armistice card with an early text that no person has
+        /// signed off (no reviewed_by), in id order. A shareable build refuses while it is not empty.</summary>
         public static IReadOnlyList<string> AlternateUnsigned(Content c) =>
-            c.Events.Where(e => (e.Kind == EventKinds.Consequence || e.Variants.Count > 0) && e.ReviewedBy == "")
+            c.Events.Where(e => (e.Kind == EventKinds.Consequence || e.Variants.Count > 0 || e.EarlyText != "") && e.ReviewedBy == "")
                 .Select(e => e.Id).OrderBy(x => x, StringComparer.Ordinal).ToList();
 
         /// <summary>R-UNIT-006, Q-START-3 (owner, 15 October 2026; #743, owner, 20 October 2026): the units_1948.yaml rows a

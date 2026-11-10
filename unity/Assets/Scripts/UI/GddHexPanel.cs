@@ -129,9 +129,22 @@ namespace Statecraft.Game.UI
             OrderButton(workers, bridge, "city-workers-more", "+", target < max, () => Workers(bridge, id, city.Employed, target + 1));
             // The Assign order's Attention price (the queue's, at this turn's start) and when it applies (playtest B7): the
             // Jobs line stays the sim's actual count until End turn. Changing a queued target does not buy another order.
-            Line(host, "city-workers-cost", bridge.Content.UsesAttention
+            // The line names the workers change, and where the city trains it adds the Train order's price: every Train order
+            // costs the same, by its kind (AttentionSystem.Price), and at security level 5 it is 2.0 to the workers change's 1.0
+            // (each kind's cost is R-GOV-002's; content/rules.yaml's rung_attention_step raises it by a quarter a level above
+            // the first, AttentionSystem.Cost), so the one price no longer reads as Train's. On the existing line, as a new
+            // line or a price on each Train button would push the city panel into the top bar in short windows
+            // (InfoPanelLayoutTests). gdd-0.3 has no Attention.
+            // The unit types the city can train (Training.HasFacility: its own facility, D-D5, or a built camp site's,
+            // R-CAMP-001): the Train price shows where the Train buttons below show.
+            var trainTypes = c.UnitTypes.Where(t => t.Facility != "" && Training.HasFacility(c, s, id, t.Facility)).ToList();
+            var trainType = trainTypes.FirstOrDefault();
+            var workersCost = bridge.Content.UsesAttention
                 ? text.Format("city.workers_cost", bridge.Price(new AssignWorkers(id, "job", target))!.Value)
-                : text.Format("city.workers_ordered", Groups(text, target)));
+                : text.Format("city.workers_ordered", Groups(text, target));
+            if (trainType != null && bridge.Price(new Train(id, trainType.Id, 1)) is double trainPrice)
+                workersCost = text.Format("city.train_cost", workersCost, trainPrice);
+            Line(host, "city-workers-cost", workersCost);
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
             // each press orders one more group. The exact preview below asks whether End turn would refuse that order, and
@@ -143,7 +156,7 @@ namespace Statecraft.Game.UI
             // counts. The old order's own count is in the queue, so one more group needs one free.
             var current = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
             var free = Training.Available(s, id, bridge.Queued.Where(x => !current.Rejected.Any(r => ReferenceEquals(r.Command, x))));
-            foreach (var type in c.UnitTypes.Where(t => t.Facility != "" && Training.HasFacility(c, s, id, t.Facility)))
+            foreach (var type in trainTypes)
             {
                 var old = bridge.QueuedLike(new Train(id, type.Id, 1));
                 var ordered = (old as Train)?.Count ?? 0;

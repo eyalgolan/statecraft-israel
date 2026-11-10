@@ -1254,6 +1254,13 @@ namespace Statecraft.Sim
         /// an operation shown again while it waits), so its dates do not mislead. "" for none.</summary>
         public string LateText { get; set; } = "";
         public string LateTextHe { get; set; } = "";
+        /// <summary>R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", then "Banner (Recommended)"
+        /// and "Ordinary text (Recommended)"): on a front_quiet armistice card only, the card's text, and its Hebrew, when it is
+        /// shown before its `from` (<see cref="EventSystem.ShowsEarly"/>): the talks came sooner than in history. The card is
+        /// then marked as an alternative course, and the shareable build needs a person's sign-off of it (R-ALT-011). "" for
+        /// none.</summary>
+        public string EarlyText { get; set; } = "";
+        public string EarlyTextHe { get; set; } = "";
         /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
         /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
         public int Order { get; set; }
@@ -1511,6 +1518,9 @@ namespace Statecraft.Sim
         public List<SettlementTarget> SettlementTargets = new List<SettlementTarget>();
         /// <summary>The display name of each settlement id (map/settlements_1948.yaml name), for text the player reads.</summary>
         public Dictionary<string, string> SettlementNames = new Dictionary<string, string>();
+        /// <summary>The ids of the arab_town rows of map/settlements_1948.yaml. Every other row that is not enemy-held is a
+        /// player's locality (R-CTRL-006; #796 default 3).</summary>
+        public HashSet<string> ArabTowns = new HashSet<string>(StringComparer.Ordinal);
         /// <summary>The GDD cities' start values (cities.yaml), in file order. Empty in the legacy loop.</summary>
         public List<CityStart> Cities = new List<CityStart>();
         /// <summary>The GDD population and unit types (unit_types.yaml). Empty in the legacy loop.</summary>

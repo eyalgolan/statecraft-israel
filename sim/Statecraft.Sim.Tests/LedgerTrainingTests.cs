@@ -290,7 +290,12 @@ public class LedgerTrainingTests
         var turns = c.UnitTypes.First(t => t.Id == "halutz").TrainingTurns;
         for (int t = 0; t < turns; t++) { Training.Progress(c, s, why); Training.Progress(c, twin, twinWhy); }
         Assert.Equal(Lines(twinWhy), Lines(why));
-        Assert.Equal(twin.Units.Values.Select(x => x.Canonical()), s.Units.Values.Select(x => x.Canonical()));
+        // Owner, 9 November 2026, "List on the unit (Recommended)": each new unit also lists its record, ascending id in unit
+        // id order; otherwise the units are the aggregate game's.
+        var made = s.Units.Keys.Where(k => s.Units[k].Records != null).OrderBy(k => k).ToList();
+        Assert.Equal(picked.OrderBy(x => x).Select(x => new[] { x }), made.Select(k => s.Units[k].Records!.ToArray()));
+        Assert.Equal(twin.Units.Values.Select(x => x.Canonical() + (s.Units[x.Id].Records is { } r ? "|records=" + string.Join(",", r) : "")),
+            s.Units.Values.Select(x => x.Canonical()));
         Assert.Equal(twin.NextId, s.NextId);
         foreach (var id in picked)
         {

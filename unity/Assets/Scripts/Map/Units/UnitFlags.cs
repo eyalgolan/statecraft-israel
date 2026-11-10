@@ -117,12 +117,22 @@ namespace Statecraft.Game.Map.Units
         /// no colour of any side, and not white.</summary>
         public const float PennantHeight = 0.36f;
 
+        /// <summary>The pennant cloth's shade row in the palette (<see cref="UnitPalette.Shade"/>).</summary>
+        public const float PennantShade = 0.9f;
+
+        /// <summary>The pennant's cloth outline in figure units (x along the cloth from the pole, y up): the one definition
+        /// <see cref="BuildPennant"/> plates and the enemy playback's footer draws (#2202, SideFlag).</summary>
+        public static IReadOnlyList<Vector2> PennantCloth() =>
+            new[] { new Vector2(FlagLeft, FlagTop - PennantHeight), new Vector2(FlagLeft + FlagWidth, FlagTop - PennantHeight / 2f), new Vector2(FlagLeft, FlagTop) };
+
+        /// <summary>The pennant cloth's colour as its plate is painted: the palette's neutral grey at <see cref="PennantShade"/>.</summary>
+        public static Color PennantColour => P.Shade(P.HullGrey, PennantShade);
+
         /// <summary>The pole and the neutral pennant, one submesh in the units' palette.</summary>
         public static Mesh BuildPennant()
         {
             var m = Pole();
-            var cloth = new List<Vector2> { new Vector2(FlagLeft, FlagTop - PennantHeight), new Vector2(FlagLeft + FlagWidth, FlagTop - PennantHeight / 2f), new Vector2(FlagLeft, FlagTop) };
-            m.Plate(Plane(0f), cloth, P.HullGrey, shade: 0.9f);
+            m.Plate(Plane(0f), PennantCloth(), P.HullGrey, shade: PennantShade);
             return m.Build(PennantMeshName);
         }
 

@@ -230,7 +230,9 @@ public class Gdd03CombatXpTests
                     else if (source[end] == ')' && --depth == 0) break;
                 }
                 var call = source.Substring(m.Index, end - m.Index + 1);
-                if (Path.GetFileName(file) == "Combat.cs" && call.EndsWith("u.Full, xp)")) { awards++; continue; }
+                // #1725 PR 7 (owner, 9 November 2026, "Yes, keep the link (Recommended)"): every copy also passes the unit's records.
+                Assert.True(call.EndsWith(m.Groups[1].Value + ".Records)"), Path.GetFileName(file) + " drops Records: " + call);
+                if (Path.GetFileName(file) == "Combat.cs" && call.EndsWith("u.Full, xp, u.Records)")) { awards++; continue; }
                 Assert.True(call.Contains(m.Groups[1].Value + ".CombatXp"), Path.GetFileName(file) + " drops CombatXp: " + call);
                 copies++;
             }
