@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Statecraft.Sim.Tests;
 
-/// <summary>#1682's 68 source producers plus city_held (#1711), 69 in all, including rare branches. The pre-key constructor expressions are pinned to
+/// <summary>#1682's 68 source producers plus city_held (#1711) and R-CTRL-006's place_lost and place_retaken (#1305), 71 in all, including rare branches. The pre-key constructor expressions are pinned to
 /// c7851de so Message, Target and Delta cannot drift while metadata is added. This is not runtime branch coverage.</summary>
 public class RemainingCauseKeysTests
 {
@@ -74,6 +74,8 @@ public class RemainingCauseKeysTests
         yield return new object[] { "TurnResolver.cs", "EraEnded", "new Cause(\"era\", s.GameOver, u.Id, PlayerText.GameOver(s.GameOver)" };
         yield return new object[] { "SettlementControl.cs", "PlaceCaptured", "new Cause(\"map\", t.Id, 0, $\"{c.SettlementNames[t.Id]} is captured: Israeli units hold it and no enemy unit is there. \"\n                    + (fled ? \"Its residents fled. \" : \"\") + \"It awaits a decision\"" };
         yield return new object[] { "SettlementControl.cs", "EnemyRegained", "new Cause(\"map\", t.Id, 0, $\"{c.SettlementNames[t.Id]} is under enemy control again: enemy units hold it and no Israeli unit is there\"\n                    + (record.Fled ? \". \" + FledLine : \"\")" };
+        yield return new object[] { "SettlementControl.cs", "PlaceLost", "new Cause(\"map\", id, 0, $\"{c.SettlementNames[id]} is lost: enemy units hold it and no Israeli unit is there\"" };   // R-CTRL-006 (#1305)
+        yield return new object[] { "SettlementControl.cs", "PlaceRetaken", "new Cause(\"map\", id, 0, $\"{c.SettlementNames[id]} is retaken: Israeli units hold it again and no enemy unit is there\"" };   // R-CTRL-006 (#1305)
         yield return new object[] { "SettlementControl.cs", "PlaceAnnexed", "new Cause(\"map\", id, 0, x.Fled\n                ? $\"{name} is annexed. Its residents fled when it was captured, so no people, homes or jobs are added\"\n                : $\"{name} is annexed. Its residents join the population\"" };
         yield return new object[] { "SettlementControl.cs", "PlaceWithdrawn", "new Cause(\"map\", id, 0, moved.Count > 0\n                ? $\"{name}: Israeli units withdrew and it is under enemy control again. {residents}\"\n                : $\"{name} is under enemy control again. {residents}\"" };
         yield return new object[] { "SettlementControl.cs", "PlaceDeported", "new Cause(\"map\", id, 0, $\"{name}: Deport. Its residents are displaced and the place is depopulated\"" };
@@ -98,9 +100,9 @@ public class RemainingCauseKeysTests
     }
 
     [Fact]
-    public void InventoryContainsExactly69ProducerSites()
+    public void InventoryContainsExactly71ProducerSites()
     {
-        Assert.Equal(69, Producers().Count());
+        Assert.Equal(71, Producers().Count());
     }
 
     [Fact]
@@ -116,7 +118,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(129, sites);   // 129 with R-ENEMY-007's truce-break line (a late operation inside an accepted truce, #2543); 128 with R-ENEMY-007's lapse cost (Q8, the event-amount Security line of a lapsed operation, #2543); 127 with R-ENEMY-007's keyed postponed/lapsed operation producer (#2543); 126 with #2558: EconomySystem.MoneyLine, the event Debt line worded for the Money row; 125 with #1711's CityHeld (R-CITY-010); 124 with #2534's enemy attack-order line (Combat.Give marks the order's own cause); 123 with #2471's gdd-0.3 field Food line (R-FIELD-002); 122 with #2527's FoodImported and the conversion's fx_reserves line; 120 with #2457's event Debt line (R-EFX-009); 119 with #1700 slice B's ProjectBuilderFreed; 118 with #1700's builders (R-CITY-011: two ProjectBuilder lines, ProjectWaiting, the build order's job-default line); 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
+        Assert.Equal(133, sites);   // 133 with R-CTRL-006's place_lost and place_retaken lines (#1305); 131 with #1694's ledger harvest field Food line (R-FIELD-002, Pools.Harvest given a month, #1725 PR 7); 130 with R-UNIT-005's ledger Send home Arms line (owner, 8 November 2026, "Yes, one Why line (Recommended)", #1725 PR 7); 129 with R-ENEMY-007's truce-break line (a late operation inside an accepted truce, #2543); 128 with R-ENEMY-007's lapse cost (Q8, the event-amount Security line of a lapsed operation, #2543); 127 with R-ENEMY-007's keyed postponed/lapsed operation producer (#2543); 126 with #2558: EconomySystem.MoneyLine, the event Debt line worded for the Money row; 125 with #1711's CityHeld (R-CITY-010); 124 with #2534's enemy attack-order line (Combat.Give marks the order's own cause); 123 with #2471's gdd-0.3 field Food line (R-FIELD-002); 122 with #2527's FoodImported and the conversion's fx_reserves line; 120 with #2457's event Debt line (R-EFX-009); 119 with #1700 slice B's ProjectBuilderFreed; 118 with #1700's builders (R-CITY-011: two ProjectBuilder lines, ProjectWaiting, the build order's job-default line); 114 with #1703's gdd-0.3 housing surcharge and housing cohesion lines; 112 with the arms workshops' five (R-ARMS-005 with its job-default line, R-ARMS-006; #1701); 107 with R-MONEY-004's DollarsConverted (#813); 106 since #2212: EconomySystem.OtherMoney's line (105 since #2199: PayOrBorrow's Paid line)
     }
 
     [Fact]

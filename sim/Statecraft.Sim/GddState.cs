@@ -204,9 +204,22 @@ namespace Statecraft.Sim
         /// Always 0 under every other ruleset.</summary>
         public int CombatXp { get; }
 
-        public Unit(int id, string type, int q, int r, int service = 0, string side = "", int strength = 0, string order = "", string orderTarget = "", string homeCity = "", int full = 0, int combatXp = 0)
+        /// <summary>#1725 PR 7 (owner, 9 November 2026, "Add the link first (Recommended)" and "List on the unit (Recommended)"):
+        /// on a Historical ledger game, the population ids of the pioneer records that form this halutz or veteran pioneer
+        /// unit, ascending, hashed only when set, like a cohort's members; null on any other game and for any other unit. A
+        /// promotion keeps it ("Yes, keep the link (Recommended)"), as every change of a unit does (R-UNIT-002).</summary>
+        public IReadOnlyList<int>? Records { get; }
+
+        public Unit(int id, string type, int q, int r, int service = 0, string side = "", int strength = 0, string order = "", string orderTarget = "", string homeCity = "", int full = 0, int combatXp = 0, IEnumerable<int>? records = null)
         {
             Id = id; Type = type; Q = q; R = r; Service = service; Side = side; Strength = strength; Order = order; OrderTarget = orderTarget; HomeCity = homeCity; Full = full; CombatXp = combatXp;
+            if (records != null)
+            {
+                var sorted = records.OrderBy(x => x).ToArray();
+                if (sorted.Length == 0 || sorted.Distinct().Count() != sorted.Length)
+                    throw new ArgumentException("A unit's records are one or more distinct population ids.", nameof(records));
+                Records = Array.AsReadOnly(sorted);
+            }
         }
 
         /// <summary>The record as the state hash writes it. Each field after the hex is written only when it is not at its
@@ -220,7 +233,8 @@ namespace Statecraft.Sim
             + (OrderTarget == "" ? "" : "|target=" + OrderTarget)
             + (HomeCity == "" ? "" : "|home=" + HomeCity)
             + (Full == 0 ? "" : "|full=" + Full.ToString(CultureInfo.InvariantCulture))
-            + (CombatXp == 0 ? "" : "|xp=" + CombatXp.ToString(CultureInfo.InvariantCulture));
+            + (CombatXp == 0 ? "" : "|xp=" + CombatXp.ToString(CultureInfo.InvariantCulture))
+            + (Records == null ? "" : "|records=" + string.Join(",", Records.Select(x => x.ToString(CultureInfo.InvariantCulture))));
     }
 
     /// <summary>A group of a city's people in training (GDD "Progression"; R-TRAIN-001): <see cref="Count"/> population units
@@ -238,17 +252,32 @@ namespace Statecraft.Sim
         /// <summary>The formation these replacements join when they finish (R-TRAIN-004), or null for a cohort that becomes
         /// something new (R-TRAIN-003).</summary>
         public int? Unit { get; }
+        /// <summary>#1725 PR 7, producer 12 (owner, 8 November 2026, "Cohorts stay main (Rec.)" (#1725 issuecomment-6724941867): the cohort keeps a
+        /// sorted list of its members' ids, hashed only when set): on a Historical ledger game, the population ids of the cohort's trainee
+        /// records, ascending, one per <see cref="Count"/>; null on any other game.</summary>
+        public IReadOnlyList<int>? Members { get; }
 
-        public Cohort(int id, string type, string city, int count, int turnsLeft, int arms = 0, int? unit = null) { Id = id; Type = type; City = city; Count = count; TurnsLeft = turnsLeft; Arms = arms; Unit = unit; }
+        public Cohort(int id, string type, string city, int count, int turnsLeft, int arms = 0, int? unit = null, IEnumerable<int>? members = null)
+        {
+            Id = id; Type = type; City = city; Count = count; TurnsLeft = turnsLeft; Arms = arms; Unit = unit;
+            if (members != null)
+            {
+                var sorted = members.OrderBy(x => x).ToArray();
+                if (sorted.Length != count || sorted.Distinct().Count() != sorted.Length)
+                    throw new ArgumentException("A cohort's members are its count of distinct population ids.", nameof(members));
+                Members = Array.AsReadOnly(sorted);
+            }
+        }
 
         /// <summary>The same cohort with <paramref name="turnsLeft"/> turns to go.</summary>
-        public Cohort WithTurnsLeft(int turnsLeft) => new Cohort(Id, Type, City, Count, turnsLeft, Arms, Unit);
+        public Cohort WithTurnsLeft(int turnsLeft) => new Cohort(Id, Type, City, Count, turnsLeft, Arms, Unit, Members);
 
-        /// <summary>The record as the state hash writes it. Arms only when the cohort holds some, and the target unit only when
-        /// it has one, so other cohorts hash as before.</summary>
+        /// <summary>The record as the state hash writes it. Arms only when the cohort holds some, the target unit only when
+        /// it has one, and the members only when set, so other cohorts hash as before.</summary>
         public string Canonical() => string.Format(CultureInfo.InvariantCulture, "{0}:{1}@{2}x{3}/{4}", Id, Type, City, Count, TurnsLeft)
             + (Arms == 0 ? "" : "|arms=" + Arms.ToString(CultureInfo.InvariantCulture))
-            + (Unit is int u ? "|unit=" + u.ToString(CultureInfo.InvariantCulture) : "");
+            + (Unit is int u ? "|unit=" + u.ToString(CultureInfo.InvariantCulture) : "")
+            + (Members == null ? "" : "|members=" + string.Join(",", Members.Select(m => m.ToString(CultureInfo.InvariantCulture))));
     }
 
     /// <summary>Pioneer work at a designated site (sites.yaml; R-SITE-001 to R-SITE-003): <see cref="Unit"/> building it with

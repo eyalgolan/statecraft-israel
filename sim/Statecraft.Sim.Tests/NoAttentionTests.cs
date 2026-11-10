@@ -141,7 +141,7 @@ public class NoAttentionTests
         g.State.Units[99]=new Unit(99,"recruit",1,0,side:"israel",strength:1);g.State.NextId=100;
         Assert.Null(g.Commit(new Move(99,2,0)));Assert.Equal(55,g.Now.State.Attention);
         g.EndTurn(Array.Empty<Command>());Assert.Equal(55,g.State.Attention);
-        var text=g.Save.Write();Assert.Equal(5,SaveGame.Parse(text,c.Ruleset).Version);
+        var text=g.Save.Write();Assert.Equal(6,SaveGame.Parse(text,c.Ruleset).Version);
         // Use a fresh session without injected units for actual replay of an authored deferred command.
         var clean=GameSession.New(c,1,Mode.Historical);clean.Step(new[]{new AssignWorkers("town_a","job",1)});
         Assert.Equal(clean.State.Hash(),GameSession.Load(c,clean.Save.Write(),out _).State.Hash());

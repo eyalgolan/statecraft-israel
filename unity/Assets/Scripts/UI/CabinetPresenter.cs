@@ -362,7 +362,7 @@ namespace Statecraft.Game.UI
             if (rejection.Command is Appoint a && Cabinet.CheckReason(c, preview.State, a.Office, a.Person) is CabinetReason reason
                 && reason.Text == rejection.Reason)
                 return ReasonText(c, reason);
-            return SimBridge.ReasonText(text, rejection.Reason, c, bridge.TownNamesHe);
+            return SimBridge.ReasonText(text, rejection.Reason, c, bridge.TownNamesHe, bridge.State.Date);
         }
 
         string ReasonText(Content c, CabinetReason reason)

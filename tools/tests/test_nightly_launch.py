@@ -233,3 +233,88 @@ def test_no_nightly_module_pushes_merges_or_deletes_tags():
     src = "".join((TOOLS / n).read_text() for n in ("nightly.py", "nightly_publish.py", "nightly_state.py", "nightly_checks.py", "nightly_launch.py"))
     for banned in ("git push", "\"push\", \"--force\"", "--cleanup-tag", "\"tag\", \"-d\"", "pr merge", "push --force"):
         assert banned not in src
+
+
+# #2694 item 5: a launcher refusal is a night that ran, so the next night must not record that day as MISSED.
+
+def _seed_state(home):
+    home.mkdir(parents=True, exist_ok=True)
+    ns.save_state(home / "state.json", ns.State(boot_baseline=[8000.0], last_run_day="2026-10-26",
+                                                 site_pending="0.3.1"))
+
+
+def _assert_night_marked(home):
+    state = ns.load_state(home / "state.json")
+    assert state.last_run_day == "2026-10-28"
+    assert state.boot_baseline == [8000.0] and state.site_pending == "0.3.1"   # the rest of the state is kept
+    assert ns.missed_days(state.last_run_day, ns.night_of(NOW).replace(day=29)) == []
+
+
+def _save_checking_the_lock(home, seen):
+    real = ns.save_state
+
+    def save(path, state):
+        with (home / "run.lock").open("a") as fh:   # a second open file: flock conflicts unless nobody holds it
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(fh, fcntl.LOCK_UN)
+                seen.append(False)
+            except BlockingIOError:
+                seen.append(True)
+        real(path, state)
+    return save
+
+
+@pytest.mark.parametrize("failure", ["clone", "launch"])
+def test_a_launcher_refusal_marks_the_night_as_run_under_the_lock(tmp_path, monkeypatch, failure):
+    home = tmp_path / "job"
+    cfg = cfg_for(tmp_path, clone=failure != "clone")
+    write_config(home, cfg)
+    _seed_state(home)
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    seen: list[bool] = []
+    monkeypatch.setattr(nl, "save_state", _save_checking_the_lock(home, seen), raising=False)
+    rec = Recorder()
+
+    def call(cmd):
+        raise OSError("uv would not start")
+
+    assert nl.main(["--uv", "/opt/uv", "--home", str(home)], git=rec.git, copy=rec.copy, call=call, now=NOW) == 1
+    assert f"gate={failure}" in (home / "LOG.md").read_text()
+    _assert_night_marked(home)
+    assert seen == [True]   # the state was written while run.lock was held
+
+
+def test_a_corrupt_config_refusal_marks_the_night_as_run(tmp_path, monkeypatch):
+    home = tmp_path / "job"
+    _seed_state(home)
+    (home / "config.json").write_text("{not json")
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    monkeypatch.setattr(nl, "Config", lambda: ns.Config(handoff=tmp_path / "HANDOFF.md"))
+    rec, ran = Recorder(), []
+    assert nl.main(["--uv", "/opt/uv", "--home", str(home)], git=rec.git, copy=rec.copy, call=ran.append, now=NOW) == 1
+    assert "gate=config" in (home / "LOG.md").read_text()
+    _assert_night_marked(home)
+
+
+def test_a_launcher_refusal_leaves_a_corrupt_state_file_alone(tmp_path, monkeypatch, capsys):
+    home = tmp_path / "job"
+    cfg = cfg_for(tmp_path, clone=False)
+    write_config(home, cfg)
+    (home / "state.json").write_text("{not json")
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    rec, ran = Recorder(), []
+    assert nl.main(["--uv", "/opt/uv", "--home", str(home)], git=rec.git, copy=rec.copy, call=ran.append, now=NOW) == 1
+    assert "gate=clone" in (home / "LOG.md").read_text()   # the refusal is still recorded
+    assert (home / "state.json").read_text() == "{not json"   # nightly.py refuses it itself, as gate=state
+    assert "could not mark" in capsys.readouterr().err
+
+
+def test_a_launcher_refusal_with_no_state_file_starts_one(tmp_path, monkeypatch):
+    home = tmp_path / "job"
+    cfg = cfg_for(tmp_path, clone=False)
+    write_config(home, cfg)
+    monkeypatch.setattr(nl, "notify", lambda *a, **k: None)
+    rec, ran = Recorder(), []
+    assert nl.main(["--uv", "/opt/uv", "--home", str(home)], git=rec.git, copy=rec.copy, call=ran.append, now=NOW) == 1
+    assert ns.load_state(home / "state.json").last_run_day == "2026-10-28"

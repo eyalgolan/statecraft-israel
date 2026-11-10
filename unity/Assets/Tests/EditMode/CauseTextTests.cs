@@ -590,6 +590,8 @@ public class CauseTextTests
             new Cause("draft", "budget", 0, "Body voted the budget down", key: CauseKeys.BudgetRejected, args: new[] { "leg" }),
             new Cause("draft", "town", 0, "Town is captured: Israeli units hold it and no enemy unit is there. Its residents fled. It awaits a decision", key: CauseKeys.PlaceCaptured, args: new[] { "1" }),
             new Cause("draft", "town", 0, "Town is under enemy control again: enemy units hold it and no Israeli unit is there. Its residents fled when it was captured", key: CauseKeys.EnemyRegained, args: new[] { "1" }),
+            new Cause("draft", "town", 0, "Town is lost: enemy units hold it and no Israeli unit is there", key: CauseKeys.PlaceLost),   // R-CTRL-006 (#1305)
+            new Cause("draft", "town", 0, "Town is retaken: Israeli units hold it again and no enemy unit is there", key: CauseKeys.PlaceRetaken),
             new Cause("draft", "town", 0, "Town is annexed. Its residents fled when it was captured, so no people, homes or jobs are added", key: CauseKeys.PlaceAnnexed, args: new[] { "1" }),
             new Cause("draft", "town", 0, "Town: Israeli units withdrew and it is under enemy control again. Its residents fled when it was captured", key: CauseKeys.PlaceWithdrawn, args: new[] { "1", "1" }),
             new Cause("draft", "town", 0, "Town: Deport. Its residents are displaced and the place is depopulated", key: CauseKeys.PlaceDeported),
@@ -645,7 +647,7 @@ public class CauseTextTests
             CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
             CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
             CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned,
-            CauseKeys.FieldFood }), rows.Select(x => x.Key).Distinct(), "all remaining keys");   // FieldFood (#2471): only the gdd-0.3 field fixture makes it, no turn yet, so no wording yet
+            CauseKeys.FieldFood, CauseKeys.SentHomeArmsReturned }), rows.Select(x => x.Key).Distinct(), "all remaining keys");   // FieldFood (#2471): only the gdd-0.3 field fixture makes it, no turn yet, so no wording yet; SentHomeArmsReturned (#1725 PR 7): only a Historical ledger game's Send home makes it, no turn yet, so no wording yet
         var appointed = rows.Single(x => x.Key == CauseKeys.Appointed);
         StringAssert.Contains("התפקיד שנשמר", CauseText.Line(appointed, c, NoRows, he, names), "historical title, not current title");
     }

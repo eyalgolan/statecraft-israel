@@ -61,6 +61,7 @@ namespace Statecraft.Game.UI
         NavigationGuard? navGuard;
         StartScreenPresenter? start;
         OpeningPresenter? opening;
+        RaidCardPresenter? raid;
         EventCardPresenter? card;
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
@@ -88,6 +89,7 @@ namespace Statecraft.Game.UI
         string? hoveredCity;   // the city HoverCity lit (#1063)
         readonly Dictionary<(int q, int r), List<string>> citiesByHex = new Dictionary<(int, int), List<string>>();
         OutcomePresenter? outcomes;
+        EnemyTurnPlayback? playback;
         TurnReportPresenter? report;
         EndScreenPresenter? end;
         /// <summary>Set by SwitchLanguage for its Begin: the player had closed the end screen, so the rebuilt one stays closed.</summary>
@@ -142,6 +144,9 @@ namespace Statecraft.Game.UI
         /// <summary>The opening (#530) outside Play mode: off by default, so EditMode tests that press New Game meet the advisors
         /// as a player's first game does; the opening's own tests set it.</summary>
         internal bool OpeningInEditMode { get; set; }
+        /// <summary>The Tel Aviv raid card on New game outside Play mode: off by default, as OpeningInEditMode; its own tests
+        /// set it.</summary>
+        internal bool RaidCardInEditMode { get; set; }
         /// <summary>The start menu's music (#39) outside Play mode: off by default, so EditMode tests stay silent and fetch
         /// nothing; its wiring test sets it.</summary>
         internal bool MenuMusicInEditMode { get; set; }
@@ -286,6 +291,9 @@ namespace Statecraft.Game.UI
             // where a test asks for it with the start screen (OpeningInEditMode).
             bool enableOpening = smoke == 0 && !StartScreenPresenter.Skipped()
                 && (Application.isPlaying || startScreen && OpeningInEditMode);
+            // The raid card on New game, likewise (RaidCardInEditMode).
+            bool enableRaid = smoke == 0 && !StartScreenPresenter.Skipped()
+                && (Application.isPlaying || startScreen && RaidCardInEditMode);
             // A companion this Begin runs again keeps the page's panel until its replacement publishes (WebCompanion.Dispose).
             Shutdown(keepCompanionPage: companion != null && CompanionWanted());
             smokeRun = smoke > 0;
@@ -413,7 +421,7 @@ namespace Statecraft.Game.UI
                 music = new MenuMusic(root, Application.platform == RuntimePlatform.WebGLPlayer);
             if (music != null) music.Duck = null;
             Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings,
-                companion: companionSwitch, music: music));
+                companion: companionSwitch, music: music, enemyMoves: on => { if (!on) playback?.Skip(); }));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -446,6 +454,7 @@ namespace Statecraft.Game.UI
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {
+                var probe = TurnProbe.Start();   // ?turnlog (#2905)
                 var live = bridge.State.Settlements.OrderBy(kv => kv.Key, StringComparer.Ordinal)
                     .Join(bridge.Content.SettlementHexes, kv => kv.Key, h => h.Id,
                         (kv, h) => (h.Q, h.R, player: SettlementControlView.PlayerHolds(kv.Value)))
@@ -454,6 +463,7 @@ namespace Statecraft.Game.UI
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
                     ?? regions.Label(bridge.State.Date, text.Format, text["ui.lang"] == UiLanguage.Hebrew);
                 ShowLayerLabel();
+                TurnProbe.Lap("GameRoot.regions", probe);
             };
             // The caption names the borders while they are drawn: by date, and not while the minimap's button hides them.
             void ShowLayerLabel() => layerLabel.style.display = regions.Shown && minimap?.BordersShown != false ? DisplayStyle.Flex : DisplayStyle.None;
@@ -483,18 +493,22 @@ namespace Statecraft.Game.UI
             Action showUnits = () =>
             {
                 // New Game replaces the session, and its sim ids are the old game's: its tokens are drawn where they stand.
+                var probe = TurnProbe.Start();   // ?turnlog (#2905)
                 unitLayer.Show(bridge.Content, bridge.State, slide: ReferenceEquals(shownSession, bridge.Session));
+                probe = TurnProbe.Lap("UnitLayer.Show", probe);
                 shownSession = bridge.Session;
                 unitLayer.Dim(unitLayer.Tokens.Where(t => t.Token.Unit.Side == Statecraft.Game.Map.Units.UnitData.Israel)
                     .Where(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token) is int id
                         && Movement.ActionsLeft(bridge.Content, bridge.State, id, bridge.Spent) == 0)
                     .Select(t => t.Token.Unit.Id).ToList());
+                TurnProbe.Lap("GameRoot.unitsDim", probe);
             };
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
-            owned.Add(new UnitAttackPresenter(bridge, unitLayer.PlayAttack, unitLayer.PlayHit, unitLayer.PlayDestroyed,
-                unitLayer.PlayDefenderHit, unitLayer.PlayAttack));   // after showUnits: the map is redrawn first
+            var attacks = new UnitAttackPresenter(bridge, unitLayer.PlayAttack, unitLayer.PlayHit, unitLayer.PlayDestroyed,
+                unitLayer.PlayDefenderHit, unitLayer.PlayAttack);   // after showUnits: the map is redrawn first
+            owned.Add(attacks);
             DiagLog.BootPhase("units layer built");
             // #1878: the turn report is up, the hexes the turn attacked show the under-attack look; closing it clears them.
             var underAttack = new Statecraft.Game.Map.UnderAttackLayer(map);
@@ -533,7 +547,7 @@ namespace Statecraft.Game.UI
             if (smoke == 0) Own(new AchievementReporter(bridge, () => PlatformServices.Current));
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
-            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
+            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || raid?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
             var terrain = map.Terrain;
             var size = terrain.terrainData.size;
             var oldBounds = cameraController.Bounds;
@@ -590,6 +604,20 @@ namespace Statecraft.Game.UI
             };
             pointer.PillHex = pillHex;
             var camRig = rig = cameraController.GetComponent<CameraRig>();
+            // #2202: after End turn the map plays the Arab forces' moves, the camera going to each, and the footer names the side
+            // (EnemyTurnPlayback, EnemyPlaybackBar). Never in a smoke run or EditMode; the Settings switch is read at each End
+            // turn. It starts once an outcome clip (or the opening) has gone, and the report and the card wait for it (Q1 a).
+            var play = playback = Own(new EnemyTurnPlayback(bridge, new UnitLayerPlaybackMap(unitLayer, attacks, map, bridge),
+                new RigPlaybackCamera(camRig, cameraController, () => labels?.Refresh()),
+                enabled: () => Application.isPlaying && !smokeRun && SettingsPresenter.EnemyMovesOn(SettingsFile()),
+                waiting: () => outcomes?.Showing != null || opening?.HoldsThePointer == true));
+            attacks.Claimed = play.Claims;
+            // The card first, then the report, as at an End turn with no playback: the card comes into view with its cue, then
+            // the report covers it.
+            Action<bool> holding = held => { if (card != null) card.HeldForPlayback = held; if (report != null) report.Held = held; };
+            play.Holding += holding;
+            owned.Add(new Undo(() => play.Holding -= holding));   // disposed before the playback: its last release touches neither
+            Own(new EnemyPlaybackBar(root, text, play, bridge)).Units = unitData;
             Own(new TopBarInset(root, camRig));                            // the map is framed below the top bar
             Own(new SafeAreaFit(root));                                    // the HUD keeps clear of the phone's notch
             // the map's keyboard stop (#41 B1b): Enter or Space picks the hex under the look-at point, as a click there would
@@ -666,7 +694,7 @@ namespace Statecraft.Game.UI
                     // the start screen. Closing the scene disposes it after the camera is gone, hence the null check.
                     opening = Own(new OpeningPresenter(root, openingSource, openingData, text,
                         shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
-                        replay => { if (!replay) advisor?.NewGame(); },
+                        replay => { if (!replay) PlayNewGameIntro(); },
                         video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
                     replayOpening.text = text["opening.replay"];
                     replayOpening.style.display = DisplayStyle.Flex;
@@ -674,6 +702,22 @@ namespace Statecraft.Game.UI
                     replayOpening.clicked += replayClick;
                     owned.Add(new Undo(() => replayOpening.clicked -= replayClick));
                 }
+            }
+            // The Tel Aviv raid card (owner, 8 Nov 2026, "Film, raid, card, advisors (Recommended)"): on New game only, after
+            // the opening and before the turn 1 advisor chain, which its OK starts (PlayNewGameIntro). It reads no sim state.
+            // A player build shows it only once it is reviewed (RaidCardContent.MayPresent); the Editor shows the labelled draft.
+            if (enableRaid && RaidCardContent.Load() is RaidCardContent.Document raidData)
+            {
+#if UNITY_EDITOR
+                const bool raidPreview = true;
+#else
+                const bool raidPreview = false;
+#endif
+                if (RaidCardContent.MayPresent(raidData, raidPreview))
+                    raid = Own(new RaidCardPresenter(root, raidData, text,
+                        shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
+                        () => advisor?.NewGame(),
+                        video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
             }
             // The start screen goes up in the same frame the loading state ends, so the HUD never flashes before it. While it
             // shows, the camera keys are off (keyboard pan would otherwise move the hidden map; plan amendment A4).
@@ -686,7 +730,7 @@ namespace Statecraft.Game.UI
                 {
                     if (cam != null) cam.enabled = !shown;
                     music?.Show(shown);                                            // loops on the menu, fades out as a game starts
-                    if (!shown) { if (start?.Resumed != false) advisor?.Resume(); else if (opening == null) advisor?.NewGame(); }
+                    if (!shown) { if (start?.Resumed != false) advisor?.Resume(); else if (opening == null) PlayNewGameIntro(); }
                 }, recording, text, SettingsFile(), switchLanguage));
                 start.Show();
             }
@@ -779,7 +823,7 @@ namespace Statecraft.Game.UI
             {
                 // The start screen's no-save New Game has no Started; its closing already starts the advisors when there
                 // is no opening, so that route only plays the opening.
-                Action freshGame = () => { if (opening != null) opening.Show(replay: false); else advisor?.NewGame(); };
+                Action freshGame = () => { if (opening != null) opening.Show(replay: false); else PlayNewGameIntro(); };
                 Action freshOpened = () => opening?.Show(replay: false);
                 // #2712: a New Game keeps the map, so the camera goes back to the opening view here, as MapScene.Build sets it
                 // at boot: Tel Aviv and Jaffa in frame at the start zoom.
@@ -853,6 +897,9 @@ namespace Statecraft.Game.UI
             // #2340: the card or capture dialog the player hid; the rebuilt presenters would open it again.
             var hiddenCard = card?.Collapsed == true ? card.Shown!.Id : null;
             var hiddenCapture = capture?.Collapsed == true ? capture.Shown : null;
+            // #2202: a turn report waiting for the enemy's moves (or for the screen opened over them). The rebuild ends the
+            // moves, and the rebuilt report would never hear of the turn (#2967 review, S2).
+            bool reportWaiting = report?.Waiting == true;
             // Cleared even if Begin throws, so the next ordinary Begin (a New game, a load) never picks it up.
             try { Begin(inputs, 0, startScreen: fromStart, keep: Bridge); }
             finally { keptBudgetDraft = null; }
@@ -873,6 +920,7 @@ namespace Statecraft.Game.UI
                 }
             }
             if (!fromStart) nav?.Open("settings");
+            if (reportWaiting) report?.Wait();   // after Settings is open again: the report opens when it closes
             // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
             // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
             if (document.rootVisualElement.Q<Button>((fromStart ? "start-language-" : "settings-language-") + language) is Button choice)
@@ -1056,6 +1104,16 @@ namespace Statecraft.Game.UI
         internal static void ConfigureCameraHeading(CameraController controller, string ruleset) =>
             controller.SetFixedNorth(CameraHeadingPolicy.IsFixedNorth(ruleset));
 
+        /// <summary>What a new game plays after its opening, or at once without one (owner, 8 Nov 2026, "Film, raid, card,
+        /// advisors (Recommended)"): the raid card, whose OK starts the turn 1 advisor chain; the chain at once when there is no
+        /// card. Never on Continue or a load (the start screen's close calls Resume then). New game can report one game twice
+        /// (the start screen's close and Started); RaidCardPresenter.Show and AdvisorPresenter.NewGame both ignore the second.</summary>
+        void PlayNewGameIntro()
+        {
+            if (raid != null) raid.Show();
+            else advisor?.NewGame();
+        }
+
         /// <summary>Disposes every presenter, the autosave and the camera/pointer hooks (newest first). Safe to call twice.</summary>
         /// <param name="keepCompanionPage">A rebuild whose next companion replaces the page's panel: the old one goes without
         /// clearing it, so the panel does not blink, the canvas is not resized twice and the status is not read again.</param>
@@ -1074,7 +1132,7 @@ namespace Statecraft.Game.UI
             owned.Clear();
             savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; card = null; outcomes = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; raid = null; card = null; outcomes = null; playback = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1115,46 +1173,61 @@ namespace Statecraft.Game.UI
         void RenderPlacementsIfChanged()
         {
             if (Bridge == null) return;
+            // ?turnlog (#2905): each layer's time during End turn, as one "@Layer" section each; otherwise no clock is read.
+            var probe = TurnProbe.Start();
             // Dated routes (the Burma Road from June 1948); in the GDD loop the corridors by their built segments (#792).
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date,
                 Bridge.Content.IsGdd ? Statecraft.Game.Map.Routes.RouteLayer.BuiltSegments(Bridge.Content, Bridge.State) : null);
+            probe = TurnProbe.Lap("RouteLayer", probe);
             // The true armistice lines (#237; on unless "noarmisticelines" turns them off, #196), each from its own date.
             ArmisticeLines.ShowAt(map, Bridge.State.Date);
+            probe = TurnProbe.Lap("ArmisticeLines", probe);
             // Tal Heuberger's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
             // The camps and housing built as city projects bring theirs too, as the placement layer draws them (#1275).
             Statecraft.Game.Map.Collection.TownLandmarks.ShowAt(map, Bridge.State.Date,
                 PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values), Bridge.Content);
+            probe = TurnProbe.Lap("TownLandmarks", probe);
             // Tal Heuberger's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
+            probe = TurnProbe.Lap("WildlifeLayer", probe);
             // Tal Heuberger's papyrus at the Hula swamp's sourced site, close up only, streamed on the first close view, gone
             // once the swamp is drained (#2082; owner, 2 November 2026: "Hula + Arava, map and boards").
             Statecraft.Game.Map.Collection.HulaPapyrusLayer.ShowAt(map, Bridge.Content,
                 Statecraft.Game.Map.Collection.HulaPapyrusLayer.Drained(Bridge.State));
+            probe = TurnProbe.Lap("HulaPapyrusLayer", probe);
             // A plowed field's or drained swamp's ground on its hex (#2877): from the sites, so a loaded save shows its own.
             SiteGroundLayer.ShowAt(map, Bridge.Content, Bridge.State.Sites.Values);
+            probe = TurnProbe.Lap("SiteGroundLayer", probe);
             // Tal Heuberger's civilian figures at towns, villages, transit camps and building sites, ambience only and streamed
             // after the first frame (#666, #708, #886): the residents follow the settlement state, the builders the projects.
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content,
                 Bridge.State.Settlements, Bridge.State.CityProjects.Values);
+            probe = TurnProbe.Lap("CivilianPeople", probe);
             // Tal Heuberger's period-generic farm and village scenery, streamed after the first frame (#667); never game units.
             Statecraft.Game.Map.Collection.RuralLife.Show(map);
+            probe = TurnProbe.Lap("RuralLife", probe);
             // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707);
             // under gdd-0.3 their artisan workshop (b21) on each built arms workshop's hex (#1701 slice F).
             var workshops = Statecraft.Game.Map.Collection.SpecialBuildingModels.ArmsWorkshops(Bridge.Content, Bridge.State.CityProjects.Values);
             special = Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date, workshops);
+            probe = TurnProbe.Lap("SpecialBuildingModels", probe);
             // Tal Heuberger's hex-tile props (owner, 27 October 2026: "2+3"; 2 November 2026: "Every zoom" for the landmarks): their
             // minarets, belfries and Jaffa's clock tower in place of the kit's at every zoom, so the bundle streams after the first
             // frame; the stations, camp tents, village hedges and hill scatter close up only, built at the first close camera.
             // After the layers they keep clear of (the built arms workshops' b21 too, #1701 slice F).
             Statecraft.Game.Map.Collection.HexPropModels.ShowAt(map, Bridge.State.Date, workshops);
+            probe = TurnProbe.Lap("HexPropModels", probe);
             // Tal Heuberger's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
             seaAir = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
+            probe = TurnProbe.Lap("SeaAirCollection", probe);
             RenderSitesIfChanged();
+            probe = TurnProbe.Lap("Sites", probe);
             var shown = PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values);
             var now = shown.Select(p => (p.Action, p.Q, p.R, p.Date)).ToList();
-            if (drawn != null && drawn.SequenceEqual(now)) return;
+            if (drawn != null && drawn.SequenceEqual(now)) { TurnProbe.Lap("Placements", probe); return; }
             drawn = now;
             placements.Render(shown, Bridge.Content, map);
+            TurnProbe.Lap("Placements", probe);
         }
 
         /// <summary>Draws the designated sites (#381) only when a site's state differs from what was drawn: being built, or
@@ -1220,6 +1293,9 @@ namespace Statecraft.Game.UI
             // A reviewed opening is part of the normal media path: the instrument uses its actual Skip control.
             if (hud.ClassListContains(OpeningPresenter.OpenClass)
                 && !Press(root.Q<Button>("opening-skip"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
+            // So is the raid card after it (RaidCardPresenter): its only control, OK.
+            if (hud.ClassListContains(RaidCardPresenter.OpenClass)
+                && !Press(root.Q<Button>("raid-ok"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
             while (now() - began <= FirstCardBudgetSeconds)
             {
                 var option = root.Q<VisualElement>("event-options")?.Q<Button>();
@@ -1260,11 +1336,12 @@ namespace Statecraft.Game.UI
             // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
-            // Nor does the opening's (#530), over all but those two, in the frame it closes too.
+            // Nor does the opening's (#530), over all but those two, in the frame it closes too; nor the raid card's after it (its OK).
             // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
             if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true
                 && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true
-                && opening?.ClosedThisFrame != true && opening?.Escape() != true)
+                && opening?.ClosedThisFrame != true && opening?.Escape() != true
+                && raid?.ClosedThisFrame != true && raid?.Escape() != true)
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;
@@ -1277,6 +1354,9 @@ namespace Statecraft.Game.UI
                 // Escape in the Cabinet's candidate list goes back to the seat, not out of the screen (#2340 M2). A screen the
                 // focused element's Cancel already closed this frame took the press too (ClosedThisFrame), as for end and report.
                 if (!done) done = cabinet?.Escape() == true || nav?.Close() == true || nav?.ClosedThisFrame == true;
+                // #2202: the Arab forces' moves play on the map, under every screen and overlay: with nothing above them left
+                // to close, Escape ends them, and nothing else (#2967 review, S1).
+                if (!done) done = playback?.Skip() == true;
                 // With nothing above it to close, Escape withdraws a New Game request armed from the top bar too, the start
                 // screen closed (#2340 L2, #2521), and is used up there, so it does not also clear the map selection. A
                 // decision card or capture dialog open over it is above it (the top bar stays usable under them): that
@@ -1306,6 +1386,7 @@ namespace Statecraft.Game.UI
                 if (report?.IsOpen != true && end?.IsOpen != true && (keys.upArrowKey.wasPressedThisFrame || keys.downArrowKey.wasPressedThisFrame))
                     navGuard?.Step(keys.upArrowKey.wasPressedThisFrame);
             }
+            playback?.Tick(Time.deltaTime);   // #2202
             SyncMinimap();
             if (!logCamera || rig == null || (rig.Distance == loggedDistance && rig.Yaw == loggedYaw)) return;
             loggedDistance = rig.Distance; loggedYaw = rig.Yaw;

@@ -162,7 +162,10 @@ advisor.page.truces.text: "אם מקבלים הפוגה בכרטיס שלה, פ�
 advisor.page.capture.title: "כיבוש מקום"
 advisor.page.capture.text: "יחידה צבאית שעוצרת במקום שבידי האויב ושאפשר לכבוש אותו, כובשת אותו מיד; מעבר דרכו אינו כובש אותו. אז חלון הכיבוש מציג את התשובות בסדר קבוע, ולצד כל אחת מה היא משנה מיד או למה היא נדחית. ״פשיטה ונסיגה״ מוציאה את הכוחות שלנו ומחזירה את המקום לשליטת האויב; ״שחרור״ משאיר שם יחידה אחת מספר קבוע של תורות, בעלות כספית בכל תור. הבחירה שלכם; היא נכנסת לתוקף בסיום התור, ועד שהיא ניתנת, הכוחות נשארים."
 advisor.page.enemy_phase.title: "התור של האויב"
-advisor.page.enemy_phase.text: "בסיום התור כל יחידת אויב מקבלת את הפקודות שלה, לפי אותם כללים שחלים עלינו. במשחק ההיסטורי כל כוח ערבי פועל לפי תסריט משלו, לעבר היעד ההיסטורי שלו. יחידה שיצאה מהתסריט תוקפת עמדה סמוכה רק כשיש לה יתרון ברור, ואחרת היא מתבצרת. ההתקפות של האויב נערכות כשהתור מוכרע, ואף אחת מהן אינה מגיעה בזמן הפוגה."
+# #2202: the last sentence, on the playback, is the plan's proposed Hebrew (docs/superpowers/plans/2026-11-02-enemy-move-playback.md,
+# Strings), which the owner answered "Q8 yes" (2 November 2026). Agent-drafted; the page stays he_review: approved
+# (advisor-messages.yaml), so this sentence asks the native reviewer to confirm it (#564).
+advisor.page.enemy_phase.text: "בסיום התור כל יחידת אויב מקבלת את הפקודות שלה, לפי אותם כללים שחלים עלינו. במשחק ההיסטורי כל כוח ערבי פועל לפי תסריט משלו, לעבר היעד ההיסטורי שלו. יחידה שיצאה מהתסריט תוקפת עמדה סמוכה רק כשיש לה יתרון ברור, ואחרת היא מתבצרת. ההתקפות של האויב נערכות כשהתור מוכרע, ואף אחת מהן אינה מגיעה בזמן הפוגה. אחרי סיום התור המפה מציגה את המהלכים שלהם אחד אחרי השני; Esc מדלג עליהם, ואפשר לכבות אותם בהגדרות."
 # The Objectives screen (#1189). Native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
@@ -190,6 +193,9 @@ settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
 settings.on: "מופעל"
 settings.off: "כבוי"
+# #2202: whether End turn plays the Arab forces' moves on the map. Agent-drafted Hebrew: native-review-pending (#564).
+# native-review-pending
+settings.enemymoves: "הצגת המהלכים של הכוחות הערביים במפה"
 # The WebGL companion switch (#1119); native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
 settings.companion: "מלווה לקוראי מסך"
 # The graphics quality choice (#40). Adjectives in the feminine, agreeing with "איכות". Approved by Beri, a native
@@ -315,6 +321,8 @@ event.objective_late_one: "הושלם באיחור של חודש אחד לעומ
 # A consequence card's banner and the rejoin line (#954). Native review: owner, 3 Nov 2026 (HE batch 2: "approved").
 event.alt_origin: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1}). בהיסטוריה: {2}."
 event.alt_origin_no_record: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1})."
+# For the native reviewer (#564): agent-drafted, #1709; the owner approves the exact words ("You approve the words (Recommended)")
+event.alt_early: "מסלול חלופי. השיחות האלה התקיימו מוקדם יותר מאשר בהיסטוריה."
 event.rejoin: "חוזר למסלול ההיסטורי."
 # The capture dialog (GDD Phase 6 PR 10, #802). SENSITIVE: the owner reviews every line before any shareable build.
 # Agent-drafted; all 17 keys below: native review: owner, 3 Nov 2026 (HE batch 2: "approved"), "שחרור" included.
@@ -631,6 +639,32 @@ report.enemy_move: "{0} עבר לעמדה חדשה"
 report.enemy_attack: "{0} פתח בהתקפה על אחת היחידות שלכם"
 report.enemy_fortify: "{0} התבצר בעמדתו"
 report.unit: "כוח {0}"
+# The footer while the Arab forces' moves play (#2202, EnemyPlaybackBar). "התור של X" needs no agreement with the side's
+# gender; the names are the map's (map.front_*, control.holder_ala). Agent-drafted Hebrew, all: native-review-pending (#564).
+# native-review-pending
+playback.title: "התור של הכוחות הערביים"
+# native-review-pending
+playback.turn_egypt: "התור של מצרים"
+# native-review-pending
+playback.turn_jordan: "התור של ירדן"
+# native-review-pending
+playback.turn_syria: "התור של סוריה"
+# native-review-pending
+playback.turn_iraq: "התור של עיראק"
+# native-review-pending
+playback.turn_lebanon: "התור של לבנון"
+# native-review-pending
+playback.turn_ala: "התור של צבא ההצלה"
+# native-review-pending
+playback.turn_local_arab_forces: "התור של הכוחות הערביים המקומיים"
+# native-review-pending
+playback.step: "שלב {0} מתוך {1}"
+# native-review-pending
+playback.folded: "שאר המהלכים בבת אחת"
+# native-review-pending
+playback.skip: "דילוג על המהלכים של הכוחות הערביים"
+# native-review-pending
+playback.skip_tip: "דילוג על המהלכים של הכוחות הערביים וחזרה לתצוגה שלך במפה (Esc)"
 # The arms workshops' lines (#1701 A1), {0} the city's name, in brackets so no prefix joins a name that may fall back to
 # English (HE-07); the Arms count as "Label: N" (HE-04). Agent-drafted Hebrew; native review: owner, 3 Nov 2026
 # (HE batch 3: "Approve all as they are").
@@ -851,11 +885,15 @@ unit.service.navy: "חיל הים"
 # native review: owner, 3 Nov 2026 (HE batch 4: "Approve all as they are").
 unit.type.veteran_soldier: "חיילים ותיקים"
 unit.strength: "כוח: {0}"
+# For the native reviewer (#564): agent-drafted (#2432), as unit.points' "{0} מתוך {1}".
+unit.strength_of: "כוח: {0} מתוך {1}"
 unit.home_city: "עיר הבית: {0}"
 # Agent-checked; native review pending (#564).
 unit.position: "מיקום: {0}, מאז {1}"
 unit.position_plain: "מיקום: {0}"
 unit.formed: "הוקמה: {0}"
+# For the native reviewer (#564): agent-drafted (#2432), as unit.subtitle's "{0} · {1}".
+unit.formed_strength: "{0} · {1}"
 unit.commander: "מפקד ראשון: {0}"
 unit.aircraft.s199: "אוויה S-199"
 unit.aircraft.spitfire: "ספיטפייר LF Mk IXe"
@@ -1137,6 +1175,21 @@ advisor.opening.training.text: "אימון והכשרה דורשים אזרחי�
 advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משבצת. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאות."
 advisor.opening.event.text: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
 advisor.opening.objectives.text: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
+# #2933's steps, agent-drafted: native review: owner, 8 Nov 2026 ("Approve all six"; step 10's report named by the screen
+# title, "Use the screen title"; step 2 keeps its date, "Keep date, add exception (Recommended)", HE-08; step 2's
+# maqaf, "Use maqaf ב־15 (Recommended)", HE-07).
+advisor.opening.invasion.text: "ב־15 במאי 1948 שלחו מצרים, סוריה ועיראק צבאות אל הארץ. הלגיון הערבי של עבר הירדן, המסומן במפה ״ירדן״, עמד ברמאללה וליד שער הגיא. החטיבות שלכם צריכות לעצור אותם."
+advisor.opening.units.text: "צבא לבנון עמד על הגבול, ומתנדבי הליגה הערבית כבר היו כאן. בחרו יחידה כלשהי במפה כדי לראות של מי היא."
+advisor.opening.cities.text: "בערים שלכם נמצאים האנשים, המשרות וההכשרה, והעבודה בהן מכניסה כסף. בחרו עיר כדי לראות אותם."
+advisor.opening.move_how.text: "כדי לנוע, בחרו חטיבה, לחצו על ״תנועה״ ואז על משבצת מוארת. לחיצה על משבצת רחוקה יותר שולחת אליה את החטיבה במשך כמה תורות."
+advisor.opening.orders.text: "חטיבה ללא הוראה מעכבת את ״סיום התור״. ״ביצור״ ו״החזקה״ נשארים עד שתשנו אותם, ומסלול ממשיך מעצמו. ״דילוג על התור״ חל על תור אחד."
+advisor.opening.end_turn.text: "כשאף יחידה לא ממתינה להוראות, לחצו על ״סיום התור״. אם הכפתור מציג ״יחידה ממתינה להוראות״, לחיצה עליו תביא אתכם אל היחידה. אחר כך החודש מתנהל, ואחריו מוצג ״מה קרה בתור הזה״."
+# The later lessons (#2933 section 3), agent-drafted: native review: owner, 9 Nov 2026 ("Approve all four
+# (Recommended)"). The report is named by its screen title, as step 10's is.
+advisor.lesson.report.text: "המסך ״מה קרה בתור הזה״ מראה מה נע ואילו קרבות נערכו. אם ההפוגה התקבלה, החטיבות שלכם אינן יכולות לתקוף עד שהיא נגמרת."
+advisor.lesson.attack.text: "תקופת ההפוגה נגמרה. בחרו חטיבה הסמוכה לאויב כדי לראות את ״התקפה״ ואת יחס הכוחות. התקפה יכולה להדוף את האויב לאחור."
+advisor.lesson.stakes.text: "הניקוד שלכם סופר יעדים, כמה מוקדם השגתם אותם, ושבויים שהוחזרו. קרבות שוחקים את החטיבות. אם הכסף והמזון אוזלים ונשארים כך, המשחק נגמר."
+advisor.lesson.combat.text: "כשפורץ קרב, המסך ״מה קרה בתור הזה״ מראה את האבדות ומי נסוג. בחרו חטיבה הסמוכה לאויב כדי לראות את ״התקפה״ ואת יחס הכוחות."
 advisor.next: "הבא"
 advisor.done: "סיום"
 advisor.step: "שלב {0} מתוך {1}"
@@ -1219,9 +1272,14 @@ advisor.dayan.arms_out.cue.1: "אימון צבאי דורש נשק, ונשק נ�
 advisor.dayan.arms_out.cue.2: "קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."
 
 # Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
-# Approved: owner, 25 Oct 2026 (recommendations page, item 5); the price in one decimal, as the HUD and the cards show Attention.
+# Approved: owner, 25 Oct 2026 (recommendations page, item 5), for city.workers_ordered and city.workers_cost's earlier wording
+# ("עלות ההוראה"), not its rewording below; the price in one decimal, as the HUD and the cards show Attention.
 city.workers_ordered: "בסיום התור: {0}"
-city.workers_cost: "בסיום התור · עלות ההוראה: {0:0.0} תשומת לב"
+# city.workers_cost reworded to name the workers change: agent-drafted Hebrew, native-review-pending (#564).
+city.workers_cost: "בסיום התור · שינוי מספר העובדים: {0:0.0} תשומת לב"
+# Where the city trains, the workers line {0} adds the Train order's Attention price (every Train order costs the same).
+# It names both words the Train buttons use, אימון and הכשרה. Agent-drafted Hebrew, native-review-pending (#564).
+city.train_cost: "{0} · כל הוראת אימון או הכשרה: {1:0.0} תשומת לב"
 
 # #1653 Hebrew drafts (#564), review state per key.
 # Agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted).
@@ -1487,6 +1545,9 @@ why.cause.advisory_budget_rejected: "הצבעת {0} נגד התקציב, אך ה
 why.cause.budget_rejected: "דחיית התקציב בהצבעת {0}"
 why.cause.place_captured: "{0}: המקום נכבש ומוחזק בידי יחידות ישראליות ללא יחידת אויב. {1}המקום ממתין להחלטה"
 why.cause.enemy_regained: "{0}: המקום שוב בשליטת האויב ומוחזק בידי יחידות אויב ללא יחידה ישראלית{1}"
+# For the native reviewer (#564): agent-drafted, #1305 (R-CTRL-006), in the words of place_captured and enemy_regained.
+why.cause.place_lost: "{0}: המקום אבד ומוחזק בידי יחידות אויב ללא יחידה ישראלית"
+why.cause.place_retaken: "{0}: המקום נכבש מחדש ומוחזק שוב בידי יחידות ישראליות ללא יחידת אויב"
 why.cause.place_annexed: "{0}: המקום סופח. {1}"
 why.cause.place_withdrawn: "{0}{1} {2}"
 why.cause.place_deported: "{0}: גירוש. התושבים נעקרו והמקום התרוקן מתושביו"
@@ -1553,6 +1614,10 @@ opening.begin: "המשך למפה"
 opening.return: "חזרה למסך הפתיחה"
 opening.count: "שלב {0} מתוך {1}"
 opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת המקורות בידי אדם ממתינה."
+
+# The Tel Aviv raid card on New game. For the native reviewer (#564): agent-drafted; "אישור" as the Hebrew UI's OK
+# buttons commonly say it. The card's text is in Resources/RaidIntro/raid-intro.yaml, with its own he_review.
+raid.ok: "אישור"
 
 # #813 (R-MONEY-004): the Defence screen's dollar conversion. Agent-drafted Hebrew; every line below is
 # native-review-pending (#564).

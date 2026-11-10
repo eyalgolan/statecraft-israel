@@ -169,7 +169,7 @@ Retreat without a legal destination becomes surrender. Result bands and loss gra
 | --- | --- | --- | --- |
 | `objective.base_points` | `100` | points per completed core objective group | Retained approved baseline |
 | `objective.early_per_month` / `objective.early_cap` | `5 / 60` | points per calendar month early / maximum per dated group or part | Retained approved baseline |
-| `absorption.population_target` | `1000000` | people represented; threshold must be exceeded | Retained approved baseline |
+| `absorption.population_target` | `1000000` | people represented; reached at or above it (owner ruling on #1714: "At or above, both (Recommended)") | Retained approved baseline |
 | `absorption.max_overflow` / `absorption.min_employment` | `10 / 40` | percent ordinary-housing overflow / eligible civilian employment | Retained approved baseline; apply per the retained city objective |
 
 

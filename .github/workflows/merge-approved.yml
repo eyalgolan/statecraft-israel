@@ -2,11 +2,12 @@ name: Merge approved
 
 # Squash-merges an open pull request into main once the maintainer has approved its latest commit and every check
 # on that commit has passed (owner ruling, 2026-10-11). Outside contributors get no write access; this job merges for
-# them. It runs from main's copy of this file and never checks out, builds or runs pull-request code, so the write
-# token never meets outside code. It starts when CI finishes (workflow_run runs in this repository's context with a
-# write token, also for forks), when a review is submitted (for a fork's pull request GitHub gives that run a read-only
-# token, so its merge is refused and the next CI or timer run merges), on a timer as a fallback (GitHub runs
-# schedules late or not at all under load), and by hand. It reads only numbers, SHAs and states from the API, never titles;
+# them. Every trigger runs main's copy of this file, and the job never checks out, builds or runs pull-request code,
+# so the write token never meets outside code. It starts when CI finishes (workflow_run runs in this repository's
+# context with a write token, also for forks), on a timer as a fallback (GitHub runs schedules late or not at all
+# under load), and by hand. A submitted review does not start it (#3026): GitHub would run that from the pull
+# request's merge ref, so a branch that edits this file would choose what its run does. An approval merges on the next
+# CI or timer run. It reads only numbers, SHAs and states from the API, never titles;
 # the body is read only inside jq, for the licence tick, and never reaches the shell.
 #
 # A pull request merges only when all of these hold on its current head commit:
@@ -17,14 +18,19 @@ name: Merge approved
 #   still waiting for approval has no results, so it waits);
 # - unless the maintainer opened it, its body ticks the template's licence line ("[x] I contribute this under the terms
 #   in `CONTRIBUTING.md`", [x] or [X]); an unticked or waived pull request waits for the maintainer to merge it by hand.
+# A pull request that passes all of these but is behind main is not tried: the main ruleset needs branches up to date,
+# so gh would refuse it. The run says it waits, and it merges once it is updated (#2698).
 # GitHub does not start other workflows from a merge made with this token, so CI on main is not re-run by it.
+#
+# A refused merge is tolerated only when it is expected. After a refusal the run re-reads the pull request, and passes
+# when GitHub reports it MERGED (someone merged it by hand after this run read it, #3027) or a head other than the
+# approved SHA (the head moved, #2698). Any other failure is printed, the remaining pull requests are still tried, and
+# the run fails.
 
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-  pull_request_review:
-    types: [submitted]
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
@@ -51,8 +57,10 @@ jobs:
       - name: Merge every pull request that is approved and green
         run: |
           set -euo pipefail
-          gh pr list --state open --base main --limit 100 --json number --jq '.[].number' | while read -r n; do
-            ready=$(gh pr view "$n" --json author,body,isDraft,mergeable,headRefOid,reviews,statusCheckRollup --jq '
+          failed=0
+          prs=$(gh pr list --state open --base main --limit 100 --json number --jq '.[].number')
+          for n in $prs; do
+            ready=$(gh pr view "$n" --json author,body,isDraft,mergeable,mergeStateStatus,headRefOid,reviews,statusCheckRollup --jq '
               . as $p
               | ([$p.reviews[] | select(.author.login == env.MAINTAINER)] | last) as $r
               | (env.REQUIRED_CHECKS | split("|")) as $need
@@ -63,11 +71,30 @@ jobs:
                                  | length > 0 and all(.conclusion == "SUCCESS")))
                 and ($p.author.login == env.MAINTAINER
                      or ($p.body // "" | test("\\[[xX]\\] I contribute this under the terms in")))
-              | if . then $p.headRefOid else "no" end')
+              | if . | not then "no" elif $p.mergeStateStatus == "BEHIND" then "behind" else $p.headRefOid end')
             if [ "$ready" = "no" ]; then
               echo "#$n: not ready"
+              continue
+            fi
+            if [ "$ready" = "behind" ]; then
+              echo "#$n: approved and green but behind main; it waits until it is updated"
+              continue
+            fi
+            echo "#$n: approved and green at $ready, merging"
+            if out=$(gh pr merge "$n" --squash --match-head-commit "$ready" 2>&1); then
+              echo "#$n: merged"
+              continue
+            fi
+            printf '%s\n' "$out"
+            after=$(gh pr view "$n" --json state,headRefOid --jq '"\(.state) \(.headRefOid)"')
+            read -r state now <<<"$after"
+            if [ "$state" = MERGED ]; then
+              echo "#$n: merge refused, GitHub reports it already merged (by hand during this run)"
+            elif [ "$now" != "$ready" ]; then
+              echo "#$n: merge refused, the head moved to $now; a later run checks the new head"
             else
-              echo "#$n: approved and green at $ready, merging"
-              gh pr merge "$n" --squash --match-head-commit "$ready" || echo "#$n: merge refused (read-only token or head moved); a later run retries"
+              echo "::error::#$n: merge failed for a reason this workflow does not expect; see the gh output above"
+              failed=1
             fi
           done
+          exit "$failed"

@@ -131,20 +131,22 @@ public class AdvisorGameTests
 
 public class AdvisorGameNoAttentionTests
 {
+    static void PastCities(AdvisorPresenter advisor) { for (int i = 0; i < AdvisorTour1688Fixture.PastCities; i++) advisor.NextStep(); }
+
     // R-GOV-002: replacement on the same bridge consults the current session ruleset.
     [TestCase(Statecraft.Sim.SaveGame.LegacyRuleset)] [TestCase(Statecraft.Sim.SaveGame.GddRuleset)]
     public void NewSessionRestoresOldTourWithoutLeakingSkippedSeenState(string olderRuleset)
     {
-        using var rig = new AdvisorTour1688Fixture.Rig(); rig.Advisor.OpenChain(); rig.Advisor.NextStep();
-        Assert.AreEqual("opening.city", rig.Advisor.Shown?.Id);
+        using var rig = new AdvisorTour1688Fixture.Rig(); rig.Advisor.OpenChain(); PastCities(rig.Advisor);
+        Assert.AreEqual("opening.move_how", rig.Advisor.Shown?.Id);
         rig.Bridge.Replace(Statecraft.Sim.GameSession.New(AdvisorTour1688Fixture.Content(olderRuleset), 1, Statecraft.Sim.Mode.Historical));
-        rig.Advisor.NewGame(); rig.Advisor.OpenChain(); rig.Advisor.NextStep();
+        rig.Advisor.NewGame(); rig.Advisor.OpenChain(); PastCities(rig.Advisor);
         Assert.AreEqual("opening.attention", rig.Advisor.Shown?.Id);
         Assert.IsFalse(rig.Session.Settings.Seen("opening.attention"));
         rig.Advisor.NextStep(); Assert.IsTrue(rig.Session.Settings.Seen("opening.attention"));
         rig.Bridge.Replace(Statecraft.Sim.GameSession.New(AdvisorTour1688Fixture.Content(), 1, Statecraft.Sim.Mode.Historical));
-        rig.Advisor.NewGame(); rig.Advisor.OpenChain(); rig.Advisor.NextStep();
-        Assert.AreEqual("opening.city", rig.Advisor.Shown?.Id);
+        rig.Advisor.NewGame(); rig.Advisor.OpenChain(); PastCities(rig.Advisor);
+        Assert.AreEqual("opening.move_how", rig.Advisor.Shown?.Id);
         Assert.IsEmpty(System.Linq.Enumerable.Where(rig.Session.Queue.History, e => e.Id == "opening.attention"));
     }
 
@@ -156,12 +158,12 @@ public class AdvisorGameNoAttentionTests
         var save = game.Save.Write();
         using (var first = new AdvisorTour1688Fixture.Rig(game: game))
         {
-            first.Advisor.OpenChain(); first.Advisor.NextStep(); Assert.AreEqual("opening.city", first.Advisor.Shown?.Id);
+            first.Advisor.OpenChain(); PastCities(first.Advisor); Assert.AreEqual("opening.move_how", first.Advisor.Shown?.Id);
         }
         var loaded = Statecraft.Sim.GameSession.Load(c, save, out var warnings); Assert.IsEmpty(warnings);
         using var rig = new AdvisorTour1688Fixture.Rig(game: loaded);
         rig.Advisor.Resume(); Assert.IsFalse(rig.Advisor.InChain);
-        rig.Advisor.OpenChain(); rig.Advisor.NextStep(); Assert.AreEqual("opening.city", rig.Advisor.Shown?.Id);
+        rig.Advisor.OpenChain(); PastCities(rig.Advisor); Assert.AreEqual("opening.move_how", rig.Advisor.Shown?.Id);
         rig.Advisor.CloseChain(); Assert.IsFalse(rig.Session.Settings.Seen("opening.attention"));
         Assert.AreEqual(save, loaded.Save.Write()); Assert.IsEmpty(rig.Bridge.Queued);
     }

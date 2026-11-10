@@ -7,7 +7,7 @@ text: 'The Altalena, a ship carrying arms for the Irgun, is due off the coast wi
 # writes them (אלטלנה, אצ"ל, צה"ל, בגין; its "חמישית מהנשק" for the fifth). "ההחלטה בידי" keeps the sentence the same
 # for a minister of either gender.
 title_he: אלטלנה
-text_he: 'אלטלנה, אונייה המובילה נשק לאצ"ל, צפויה להגיע לחוף בתוך מספר ימים. בגין מבקש שחמישית מהנשק תועבר לגדוד האצ"ל בירושלים והשאר לגדודי האצ"ל בתוך צה"ל. ההחלטה בידי {defense_minister}.'
+text_he: 'אלטלנה, אונייה המובילה נשק לאצ״ל, צפויה להגיע לחוף בתוך מספר ימים. בגין מבקש שחמישית מהנשק תועבר לגדוד האצ״ל בירושלים והשאר לגדודי האצ״ל בתוך צה״ל. ההחלטה בידי {defense_minister}.'
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister
@@ -32,17 +32,23 @@ to: 1948-06-23
 options:
   - id: enforce
     text: Grant the Jerusalem share, demand the rest for the IDF, and use force if necessary
-    text_he: 'לאשר את החלק לירושלים, לדרוש את השאר לצה"ל ולהשתמש בכוח אם יהיה צורך'
+    text_he: 'לאשר את החלק לירושלים, לדרוש את השאר לצה״ל ולהשתמש בכוח אם יהיה צורך'
     historical: true
     recommended: true
     effects:
       - { target: security, delta: 0.015 }
       - { target: morale, delta: -0.05 }
+      # No Arms effect (#2531). Owner, 9 November 2026: "Costs only (Recommended)"
+      # (https://github.com/eyalgolan/statecraft-israel/issues/2531#issuecomment-6741172155): this war-casualties card may
+      # not raise Arms (R-EFX-002). The rest of the cargo going to the IDF would be a gain, which the rule forbids, and the
+      # text states no loss (force is only "if necessary"), so the smaller of the two allowed choices, 0, is kept.
+      # Unsourced design value, approved by the owner on 9 November 2026 ("No Arms effect (Recommended)",
+      # https://github.com/eyalgolan/statecraft-israel/pull/2995#issuecomment-6742730390).
   - id: compromise
     # Begin's second request, put on the table and rejected (en.wiki "Altalena Affair"; the Etzel account; the Izkor page
     # records the dispute over whether the arms went to the IDF as a whole or mainly to Irgun units).
     text: Grant both requests, arming Irgun battalions inside the IDF
-    text_he: 'לאשר את שתי הבקשות ולחמש את גדודי האצ"ל בתוך צה"ל'
+    text_he: 'לאשר את שתי הבקשות ולחמש את גדודי האצ״ל בתוך צה״ל'
     # Who proposed it: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
     alternative:
       basis: debated
@@ -57,6 +63,12 @@ options:
       # Owner decision of 15 October 2026 (Q-EFX-3, "Add a real cost"; #375): a cost in another resource, a design value.
       # Arms landed for a private force while the first truce forbade bringing in war material (first_truce.yaml).
       - { target: intl_standing, delta: -0.02 }
+      # Owner, 9 November 2026: "Costs only (Recommended)" (#2531,
+      # https://github.com/eyalgolan/statecraft-israel/issues/2531#issuecomment-6741172155; R-EFX-002 allows a cost only).
+      # Game assumption, not a sourced fact: arming the Irgun battalions draws on the national stock. -2 is an unsourced
+      # design value, approved by the owner on 9 November 2026 ("-2 Arms (Recommended)",
+      # https://github.com/eyalgolan/statecraft-israel/pull/2995#issuecomment-6742730390); no source on this card gives a quantity.
+      - { target: arms, delta: -2 }
 sources:
   # Also the 15 June meeting and Ben-Gurion's diary of 16 June, for the window: en.wiki gives no footnote for them, and its
   # text matches the Etzel account below word for word.

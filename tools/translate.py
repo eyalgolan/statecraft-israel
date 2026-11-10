@@ -8,7 +8,7 @@ the translation on the right.
 
 Usage: uv run tools/translate.py [--port 8765] [--no-open]   (serves http://127.0.0.1:PORT; Ctrl+C stops it)
 
-Hebrew is written where the game reads it: the events' title_he / text_he / late_text_he / options' text_he (#1064) and
+Hebrew is written where the game reads it: the events' title_he / text_he / late_text_he / early_text_he / options' text_he (#1064) and
 unity/Assets/UI/strings.he.yaml (#12), changing only the edited lines so comments and layout stay. Hebrew content names
 are shown but not edited here: they carry their own sources. Any other language is written to
 translations/<lang>/{events,ui,content}.yaml, which the game does not read yet. Every language keeps the Hebrew rules
@@ -89,11 +89,15 @@ _PARSED: dict[Path, tuple[tuple[int, int], object]] = {}
 
 def _parse(path: Path):
     """The file's YAML, parsed again only when the file changes (the page re-checks on every keystroke). Callers do not
-    change what it returns."""
+    change what it returns. Text that is not YAML is a ValueError naming the file and line."""
     stat = path.stat()
     stamp = (stat.st_mtime_ns, stat.st_size)
     if path not in _PARSED or _PARSED[path][0] != stamp:
-        _PARSED[path] = (stamp, yaml12.load(_read(path)))
+        try:
+            data = yaml12.load(_read(path))
+        except yaml12.yaml.YAMLError as e:   # the page shows only the message: name the file (#2532)
+            raise ValueError(yaml12.not_yaml(str(path), e)) from e
+        _PARSED[path] = (stamp, data)
     return _PARSED[path][1]
 
 
@@ -162,8 +166,8 @@ def _put(lines: list[str], key: str, value: str, indent: int, after: int, lo: in
 
 
 def set_event(text: str, changes: dict) -> tuple[str, list[str]]:
-    """changes: title_he, text_he, late_text_he (optional), options {id: text_he}, native_read. Returns the new file text
-    and its warnings."""
+    """changes: title_he, text_he, late_text_he and early_text_he (optional), options {id: text_he}, native_read. Returns
+    the new file text and its warnings."""
     data = yaml12.load(text)
     options = {o["id"]: o for o in data.get("options") or []}
     if set(changes["options"]) - set(options):
@@ -172,9 +176,14 @@ def set_event(text: str, changes: dict) -> tuple[str, list[str]]:
     has_late = isinstance(data.get("late_text"), str)
     if late_he and not has_late:
         raise Refused("a late text in Hebrew needs the event's late_text (R-ENEMY-007)")
+    early_he = changes.get("early_text_he", "").strip()
+    has_early = isinstance(data.get("early_text"), str)
+    if early_he and not has_early:
+        raise Refused("an early text in Hebrew needs the event's early_text (R-WAR-008)")
     fields = [("title", "title_he", changes["title_he"].strip(), data.get("title", "")),
               ("text", "text_he", changes["text_he"].strip(), data.get("text", ""))]
     fields += [("late text", "late_text_he", late_he, data["late_text"])] if has_late else []
+    fields += [("early text", "early_text_he", early_he, data["early_text"])] if has_early else []
     fields += [(f"option {oid}", oid, changes["options"].get(oid, "").strip(), o.get("text", ""))
                for oid, o in options.items()]
     warnings = check_unit([(name, v, en) for name, _, v, en in fields], hebrew=True)
@@ -185,9 +194,10 @@ def set_event(text: str, changes: dict) -> tuple[str, list[str]]:
     title_he, text_he = fields[0][2], fields[1][2]
     review = REVIEW if filled and not changes.get("native_read") else ""
     keys = (("title_he", title_he), ("text_he", text_he), ("text_he_review", review)) + \
-        ((("late_text_he", late_he),) if has_late else ())
+        ((("late_text_he", late_he),) if has_late else ()) + ((("early_text_he", early_he),) if has_early else ())
     for key, value in keys:
-        prev = {"title_he": "text", "text_he": "title_he", "text_he_review": "text_he", "late_text_he": "late_text"}[key]
+        prev = {"title_he": "text", "text_he": "title_he", "text_he_review": "text_he", "late_text_he": "late_text",
+                "early_text_he": "early_text"}[key]
         after = _find(lines, prev, 0)
         _put(lines, key, value, 0, _find(lines, "text", 0) if after is None else after)
         expected.pop(key, None)
@@ -233,8 +243,8 @@ def check_unit(fields: list[tuple[str, str, str]], hebrew: bool) -> list[str]:
     """fields: (name, value, English) of one event. All or none, then each value's own checks; returns the warnings."""
     filled = [f for f in fields if f[1]]
     if filled and len(filled) != len(fields):
-        raise Refused("all or none: the title, the body, the late text when the event has one, and every option's text "
-                      "(docs/WRITING_EVENTS.md)")
+        raise Refused("all or none: the title, the body, the late and early texts when the event has them, and every "
+                      "option's text (docs/WRITING_EVENTS.md)")
     return [w for name, value, english in filled for w in _check(name, value, english, hebrew, event=True)]
 
 
@@ -289,6 +299,8 @@ def catalog() -> list[dict]:
         rows.append({"key": f"{unit}:text", "label": "Body", "en": d.get("text", ""), **group})
         if isinstance(d.get("late_text"), str):
             rows.append({"key": f"{unit}:late_text", "label": "Late text", "en": d["late_text"], **group})
+        if isinstance(d.get("early_text"), str):
+            rows.append({"key": f"{unit}:early_text", "label": "Early text", "en": d["early_text"], **group})
         rows += [{"key": f"{unit}:option:{o['id']}", "label": f"Option · {o['id']}", "en": o.get("text", ""), **group}
                  for o in d.get("options") or []]
     for k, v in _parse(UI_EN).items():
@@ -337,6 +349,8 @@ def load(lang: str) -> tuple[dict[str, str], set[str]]:
                 texts[f"{unit}:title"], texts[f"{unit}:text"] = d["title_he"], d.get("text_he", "")
             if d.get("late_text_he"):
                 texts[f"{unit}:late_text"] = d["late_text_he"]
+            if d.get("early_text_he"):
+                texts[f"{unit}:early_text"] = d["early_text_he"]
             texts.update({f"{unit}:option:{o['id']}": o["text_he"] for o in d.get("options") or [] if o.get("text_he")})
             if d.get("text_he_review"):
                 flagged.add(unit)
@@ -349,7 +363,7 @@ def load(lang: str) -> tuple[dict[str, str], set[str]]:
         return texts, flagged
     for eid, e in _lang_data(lang, "events").items():
         unit = f"event:{eid}"
-        texts.update({f"{unit}:{k}": e[k] for k in ("title", "text", "late_text") if e.get(k)})
+        texts.update({f"{unit}:{k}": e[k] for k in ("title", "text", "late_text", "early_text") if e.get(k)})
         texts.update({f"{unit}:option:{oid}": t for oid, t in (e.get("options") or {}).items() if t})
         if e.get("review"):
             flagged.add(unit)
@@ -401,6 +415,8 @@ def inline_hebrew(content: Path, ui_en: Path, ui_he: Path) -> tuple[str, str, st
         e = {"title": d["title_he"], "text": d.get("text_he") if isinstance(d.get("text_he"), str) else ""}
         if isinstance(d.get("late_text_he"), str) and d["late_text_he"]:
             e["late_text"] = d["late_text_he"]
+        if isinstance(d.get("early_text_he"), str) and d["early_text_he"]:
+            e["early_text"] = d["early_text_he"]
         e |= {"options": {o["id"]: o["text_he"] for o in d.get("options") or []
                           if isinstance(o, dict) and isinstance(o.get("id"), str) and isinstance(o.get("text_he"), str) and o["text_he"]}}
         if isinstance(d.get("text_he_review"), str) and d["text_he_review"]:
@@ -485,6 +501,7 @@ def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = 
             path, d = events[unit[6:]]
             changes = {"title_he": new.get(f"{unit}:title", ""), "text_he": new.get(f"{unit}:text", ""),
                        "late_text_he": new.get(f"{unit}:late_text", ""),
+                       "early_text_he": new.get(f"{unit}:early_text", ""),
                        "native_read": read(unit),
                        "options": {o["id"]: new.get(f"{unit}:option:{o['id']}", "") for o in d.get("options") or []}}
             try:
@@ -502,10 +519,11 @@ def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = 
         for unit in units:
             eid, keys = unit[6:], [r["key"] for r in rows.values() if r["unit"] == unit]
             entry = {k: v for k, v in events.get(eid, {}).items()
-                     if k not in ("title", "text", "late_text", "options", "review")}
+                     if k not in ("title", "text", "late_text", "early_text", "options", "review")}
             if new.get(f"{unit}:title"):
                 late = {"late_text": new[f"{unit}:late_text"]} if f"{unit}:late_text" in keys else {}
-                entry = {"title": new[f"{unit}:title"], "text": new[f"{unit}:text"], **late,
+                early = {"early_text": new[f"{unit}:early_text"]} if f"{unit}:early_text" in keys else {}
+                entry = {"title": new[f"{unit}:title"], "text": new[f"{unit}:text"], **late, **early,
                          "options": {k.split(":")[-1]: new[k] for k in keys if k.startswith(f"{unit}:option:")}, **entry}
                 if not read(unit):
                     entry["review"] = REVIEW

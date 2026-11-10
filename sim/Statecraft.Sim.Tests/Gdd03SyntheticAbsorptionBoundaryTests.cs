@@ -8,11 +8,13 @@ public class Gdd03SyntheticAbsorptionBoundaryTests
         ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!;
 
     // All counts here are test-only synthetic settled facts, not population/region initialization.
-    // 100/101 follows the strict target/scale in gdd03-balance.yaml `population.people_per_unit` and `absorption.population_target`.
+    // 99/100/101 follow the target/scale in gdd03-balance.yaml `population.people_per_unit` and `absorption.population_target`:
+    // exactly the target reaches it (owner, 9 November 2026, #1714: "At or above, both (Recommended)").
     [Theory]
-    [InlineData(100, false)]
+    [InlineData(99, false)]
+    [InlineData(100, true)]
     [InlineData(101, true)]
-    public void RepresentedOwnPopulationMustExceedTheTarget(long own, bool expected)
+    public void RepresentedOwnPopulationMustReachTheTarget(long own, bool expected)
     {
         Assert.Equal(expected, Gdd03SyntheticAbsorptionBoundary.HoldsForSyntheticSettledFacts(
             Catalogue(), own, false, 0, 0, 0, 0));
@@ -28,7 +30,7 @@ public class Gdd03SyntheticAbsorptionBoundaryTests
         Assert.True(Gdd03SyntheticAbsorptionBoundary.HoldsForSyntheticSettledFacts(
             Catalogue(), 101, waiting, 0, 0, 0, 0));
         Assert.False(Gdd03SyntheticAbsorptionBoundary.HoldsForSyntheticSettledFacts(
-            Catalogue(), 100, waiting, 0, 0, 0, 0)); // the population gate still decides
+            Catalogue(), 99, waiting, 0, 0, 0, 0)); // the population gate still decides
     }
 
     // Synthetic demand 100 and free civilians 10; source percentages are 10 and 40.

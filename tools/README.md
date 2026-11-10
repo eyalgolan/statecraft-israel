@@ -236,6 +236,10 @@ and what is public are in `docs/RELEASING.md`, "Nightly builds". It runs on the 
   pass, it turns `itch_enabled` on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off. A night pushes to itch
   only while `savetest_itch_target` names a separate project and `itch_evidence` records that PASS; otherwise its log line says
   `itch: skipped (<reason>)`, naming the missing key or the problem (#2056).
+- A night that `main()` refuses before `run_night` starts (a corrupt `config.json`, or a lock-system failure) still
+  sets `last_run_day` in `state.json` while it can take `run.lock` again, so the next night does not also record it as
+  MISSED (#3010). A refused `savetest` run does not set it: the save test is not the 03:00 run, so its refusal says
+  nothing about whether that night ran (owner, 10 Nov 2026, #3024).
 - The boot-time baseline is the median headless boot of the first 5 PUBLISHED nights; later nights must stay within
   the spread of those 5. To measure it again (a new machine, a new Chrome), delete `boot_baseline` from `state.json`;
   the next 5 published nights record it.
@@ -272,6 +276,13 @@ run it again. Then:
 ```bash
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.statecraft.nightly.plist
 ```
+
+A by-hand night can choose its version instead of the next patch, for a minor bump such as
+`uv run tools/nightly.py run --manual --version 0.4.0` from the clone. `--version` is refused without `--manual`, when
+it is not plain X.Y.Z, and when it is not above every published vX.Y.Z; the launchd job never passes it, so the next
+scheduled night is one patch above whatever was published last (v0.4.1 after v0.4.0). It is also refused while the
+job's own draft of another version from an earlier night is open (`open_draft` in `state.json`): delete that draft
+release by hand, then set `open_draft` and `open_draft_id` to `null` in `state.json`.
 
 A change to `nightly_launch.py` or `nightly_state.py` needs the `cp` again; a change to `nightly.py` does not.
 

@@ -31,6 +31,42 @@ def test_next_version_compares_only_exact_release_tags_numerically(tags, expecte
     assert ns.next_version(rows) == expected
 
 
+@pytest.mark.parametrize("tags,version", [
+    (["v0.3.9", "v0.3.1"], "0.4.0"),
+    (["v0.3.9"], "0.3.10"),
+    (["v0.3.9"], "1.0.0"),
+    (["v0.03.9"], "0.4.0"),
+])
+def test_a_manual_version_above_every_published_tag_is_accepted(tags, version):
+    rows = [{"tag_name": tag, "draft": False} for tag in tags]
+    rows.append({"tag_name": "v99.99.99", "draft": True})   # a draft never blocks a version
+    assert ns.next_version(rows, override=version) == version
+
+
+@pytest.mark.parametrize("version", ["0.3.9", "0.3.8", "0.2.99", "0.3.0", "0.0.0"])
+def test_a_manual_version_at_or_below_the_highest_published_tag_is_refused(version):
+    rows = [{"tag_name": "v0.3.9", "draft": False}, {"tag_name": "v0.3.1", "draft": False}]
+    with pytest.raises(ns.Refused) as e:
+        ns.next_version(rows, override=version)
+    assert e.value.gate == "version" and "v0.3.9" in e.value.detail
+
+
+@pytest.mark.parametrize("version", ["v0.4.0", "0.4", "0.4.0.1", "0.4.0-rc1", "0.4.0\n", " 0.4.0", "", "a.b.c",
+                                     "0.04.0", "00.4.0"])
+def test_a_manual_version_in_the_wrong_form_is_refused(version):
+    with pytest.raises(ns.Refused) as e:
+        ns.check_version_form(version)
+    assert e.value.gate == "version"
+    with pytest.raises(ns.Refused):
+        ns.next_version([{"tag_name": "v0.3.9", "draft": False}], override=version)
+
+
+def test_a_manual_version_still_needs_a_published_tag_to_compare_with():
+    with pytest.raises(ns.Refused) as e:
+        ns.next_version([{"tag_name": "v0.3.9", "draft": True}], override="0.4.0")
+    assert e.value.gate == "version"
+
+
 @pytest.mark.parametrize("rows", [[], [{"tag_name": "v0.3.1-nightly.20261028", "draft": False}],
                                    [{"tag_name": "v0.3.1", "draft": True}]])
 def test_next_version_refuses_without_a_published_exact_tag(rows):
