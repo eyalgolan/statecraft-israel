@@ -160,6 +160,69 @@ public class SaveGameTests
         Assert.Equal("The replay does not match the saved game: the save is damaged or was edited, or the game has a bug.", ex.Message);
     }
 
+    /// <summary>#2733 item 19 (R-SAVE-005): a finished game saved before both #2536 and #2542 lacks its ending card and its
+    /// stayed lost marker, so its replay differs by both. Removing both gives its saved hash: the same game, so it loads
+    /// with no warning, as a save that lacks only one of them does. The fixture's one-turn game takes town_a, raids it
+    /// and ends on its first turn's boundary with an objective recorded then; its card is the ending card.</summary>
+    [Fact]
+    public void AFinishedOldSaveWithoutItsEndingCardAndLostMarkerLoads()
+    {
+        const string card = "id: first_card\ntitle: Done\ntext: Done.\nfrom: 1948-05-15\nto: 1957-01-01\nobjective: first_goal\n"
+            + "options:\n  - id: continue\n    text: Continue\n    historical: true\nsources: [{ url: https://example.org/event, checked: 2026-10-18 }]\n";
+        var c = CaptureTests.Load(files =>
+        {
+            files["map/units_1948.yaml"] = "units:\n- id: starter\n  service: army\n  side: israel\n  status: draft\n  strength: { value: 20, as_of: '1948-05-15' }\n  anchors:\n  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n";
+            files["map/unit_anchor_hexes.yaml"] = "anchors:\n  - { id: starter, anchor: 0, q: 0, r: 1 }\n";
+            files["objectives.yaml"] = "objectives:\n  - { id: first_goal, name: First goal, completes_when: { site_built: site_a }, reference_date: 1949-06-12, card: first_card }\n";
+            files["events/first_card.yaml"] = card;
+        }, CaptureTests.AllTargets);
+        var probe = Simulation.NewGame(c, 1, Mode.Historical);
+        c.Rules.Mvp!.End = Simulation.TurnEnd(c, probe);
+        c.Objectives.Single().CompletesWhen = new ObjectiveCondition
+        {
+            Absorbed = new AbsorbCondition { PopulationAtLeast = 0, OverflowAtMost = 1m, EmployedAtLeast = 0m },
+        };
+        var played = GameSession.New(c, 1, Mode.Historical);
+        var result = played.Step(new Command[] { new Move(0, 1, 0), new ResolveCapture("town_a", SettlementControl.Raid) });
+        Assert.Empty(result.Rejected);
+        Assert.Equal(GameOverCodes.MvpEnded, played.State.GameOver);
+        Assert.Equal(new[] { "first_card" }, played.State.PendingEvents);
+        var lost = played.State.Settlements["town_a"];
+        Assert.Equal(("", "", false), (lost.Owner, lost.State, lost.Fled));
+
+        var noCard = played.State.Clone(); noCard.FiredEvents.Remove("first_card"); noCard.PendingEvents.Clear();
+        var noMarker = played.State.Clone(); noMarker.Settlements.Remove("town_a");
+        var neither = noCard.Clone(); neither.Settlements.Remove("town_a");
+        var text = played.Save.Write();
+        var endLine = "end " + played.State.Hash();
+        Assert.Contains(endLine + "\n", text);
+        Assert.StartsWith(FormattableString.Invariant($"statecraft-save {SaveGame.SchemaVersion}\n"), text);
+        // gdd-0.1 wrote schema 3 before the soft-event cap (R-SAVE-005).
+        string Old(GameState end) => text.Replace(endLine, "end " + end.Hash())
+            .Replace(FormattableString.Invariant($"statecraft-save {SaveGame.SchemaVersion}\n"), "statecraft-save 3\n");
+
+        // Controls: lacking only one of them loads as before.
+        GameSession.Load(c, Old(noCard), out var w1);
+        Assert.Empty(w1);
+        GameSession.Load(c, Old(noMarker), out var w2);
+        Assert.Empty(w2);
+        // Lacking both: the same game, loaded as saved and over, with its card waiting.
+        var loaded = GameSession.Load(c, Old(neither), out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(played.State.Hash(), loaded.State.Hash());
+        Assert.Equal(new[] { "first_card" }, loaded.State.PendingEvents);
+
+        // Only exactly both: one more difference is the older rules' replay_differs, and a current save without them is damaged.
+        var other = neither.Clone(); other.Treasury += 1;
+        GameSession.Load(c, Old(other), out var w3);
+        Assert.Equal(new[] { GameSession.ReplayDiffers }, w3);
+        Assert.Null(Assert.Throws<SaveException>(() => GameSession.Load(c, text.Replace(endLine, "end " + neither.Hash()), out _)).Code);
+        // With other content the ending-card exception alone applies (as for #2536), and lost markers need the same content.
+        c.Hash = new string('c', 64);
+        GameSession.Load(c, Old(neither), out var w4);
+        Assert.Equal(new[] { GameSession.ContentChanged, GameSession.ReplayDiffers }, w4);
+    }
+
     [Fact]
     // R-ALT-009
     public void ARejoinedRoadRoundTripsThroughASave()
