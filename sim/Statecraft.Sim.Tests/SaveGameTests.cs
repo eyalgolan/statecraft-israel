@@ -246,6 +246,22 @@ public class SaveGameTests
         Assert.Equal(GoldenRun.Hash1952, loaded.State.Hash());
     }
 
+    // #2526 (R-ORDER-001, R-SAVE-003): a hold that names a full hex is refused live and written with its hex, so the
+    // save replays the same refusal and ends on the same hash. A half hex can no longer be built (UnitOrderHalfHexTests).
+    [Fact]
+    public void AFullHexHoldReplaysAsItWasRefusedLive()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var g = GameSession.New(c, 1, Mode.Historical);
+        var r = g.Step(new Command[] { new UnitOrder(0, Orders.Hold, 2, 0) });
+        Assert.Equal(Orders.RefusedNamesNoHex, Assert.Single(r.Rejected).Reason);
+        var text = g.Save.Write();
+        Assert.Contains("\norder 0 hold 2 0\n", text);
+        var loaded = GameSession.Load(c, text, out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(g.State.Hash(), loaded.State.Hash());
+    }
+
     [Fact]
     public void OtherContentLoadsWithAWarning()
     {
