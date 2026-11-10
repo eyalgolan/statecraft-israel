@@ -252,3 +252,60 @@ def test_a_moved_hebrew_flag_is_listed_with_its_english_records_row_and_sources(
                      ("translations/he/events.yaml", 6, "truce", "text_he", "הפוגה.", ["https://example.org/truce"])]
     assert all(e.checked_by == "an AI agent (the `agent-checked` flag)" for e in entries if e.file.startswith("translations/"))
     assert "| example | name_he | איש לדוגמה | <https://example.org/hebrew-name> |" in rq.page(entries, 0, "0123456789abcdef")
+
+
+def _one_line_error(capsys) -> str:
+    err = capsys.readouterr().err
+    assert "Traceback" not in err and err.count("\n") == 1, err
+    return err
+
+
+def test_a_malformed_content_file_is_a_clear_error_naming_the_file_and_line(tmp_path, capsys):
+    """#2532: one bad content file stopped the whole queue with a traceback that did not name the file."""
+    repo = make_repo(tmp_path)
+    (repo / "content" / "offices.yaml").write_text("offices:\n  - id: pm\n    title: [unclosed\n", encoding="utf-8")
+    assert rq.run(repo, write=False) == 2
+    err = _one_line_error(capsys)
+    assert err.startswith("review_queue: content/offices.yaml:") and "not valid YAML" in err
+
+
+def test_a_malformed_translation_file_is_a_clear_error_naming_the_file_and_line(tmp_path, capsys):
+    """#2532: the same for translations/he/ and the content and event files it reads for sources."""
+    repo = make_repo(tmp_path)
+    he = repo / "translations" / "he"
+    he.mkdir(parents=True)
+    (he / "content.yaml").write_text('"offices.yaml#offices.fm.title":\n  text: "x\n', encoding="utf-8")
+    assert rq.run(repo, write=False) == 2
+    assert _one_line_error(capsys) == ("review_queue: translations/he/content.yaml:3: not valid YAML: found unexpected end of "
+                                       "stream (while scanning a quoted scalar from line 2)\n")
+
+
+def test_a_malformed_record_file_read_for_a_translation_is_a_clear_error(tmp_path, capsys):
+    """#2532: the English record file a translations/he/content.yaml flag points at."""
+    repo = make_repo(tmp_path)
+    he = repo / "translations" / "he"
+    he.mkdir(parents=True)
+    (he / "content.yaml").write_text('"broken.yaml#rows.a.name":\n  text: "x"\n  review: "agent-checked"\n', encoding="utf-8")
+    (repo / "content" / "broken.yaml").write_text("rows: {a: [\n", encoding="utf-8")
+    entries = []
+    try:
+        entries = rq.scan_translations(repo, "translations/he/content.yaml")
+    except rq.QueueError as e:
+        assert str(e).startswith("content/broken.yaml:") and "not valid YAML" in str(e)
+    else:
+        raise AssertionError(f"no error: {entries}")
+
+
+def test_a_malformed_event_read_for_a_translation_is_a_clear_error(tmp_path):
+    """#2532: the event files a translations/he/events.yaml flag reads for its sources."""
+    repo = make_repo(tmp_path)
+    he = repo / "translations" / "he"
+    he.mkdir(parents=True)
+    (he / "events.yaml").write_text('truce:\n  text: "x"\n  review: "agent-checked"\n', encoding="utf-8")
+    (repo / "content" / "events" / "zz_broken.yaml").write_text("id: zz\ntitle: 'open\n", encoding="utf-8")
+    try:
+        rq.scan_translations(repo, "translations/he/events.yaml")
+    except rq.QueueError as e:
+        assert str(e).startswith("content/events/zz_broken.yaml:") and "not valid YAML" in str(e)
+    else:
+        raise AssertionError("no error")

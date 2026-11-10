@@ -22,6 +22,7 @@ keeps the game's YAML free of both kinds (dates excepted, which every reader her
 - hazards(text): the plain scalars that safe_load reads differently from load(), with line and key path.
 - ambiguous(text): the plain scalars a YamlDotNet bool or int read accepts beyond YAML 1.2 (y, yes, off, 017, 1_000,
   1:30, 0b101, 0o17).
+- not_yaml(name, error): a one-line message for a YAMLError, naming the file and the line (#2532).
 `uv run tools/yaml12.py FILE...` prints both lists.
 
 Use these instead of yaml.safe_load in tools/, scripts/ and .github/; tools/tests/test_yaml12_guard.py fails on a new
@@ -136,6 +137,18 @@ def load_path(path: Path | str) -> Any:
 def load_raw(text: str) -> Any:
     """Parse keeping every scalar as its text."""
     return yaml.load(text, Loader=RawLoader)  # noqa: S506 (a SafeLoader subclass)
+
+
+def not_yaml(name: str, error: yaml.YAMLError) -> str:
+    """One line for a parse error in file <name>: "<name>:<line>: not valid YAML: <problem>". The line is 1-based, from
+    where the parser stopped; PyYAML's own message spans several lines and, given text, names no file."""
+    mark = getattr(error, "problem_mark", None) or getattr(error, "context_mark", None)
+    problem = getattr(error, "problem", None) or next(iter(str(error).splitlines()), "") or type(error).__name__
+    context, start = getattr(error, "context", None), getattr(error, "context_mark", None)
+    if context and start is not None and start is not mark:
+        context += f" from line {start.line + 1}"
+    where = f"{name}:{mark.line + 1}" if mark is not None else name
+    return f"{where}: not valid YAML: {problem}" + (f" ({context})" if context else "")
 
 
 @dataclass(frozen=True)

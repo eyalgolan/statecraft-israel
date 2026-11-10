@@ -66,6 +66,32 @@ namespace Statecraft.Sim
         /// comment 6704565066: "the training centre's one veteran pioneer teacher is a Haifa census unit").</summary>
         internal const string TeacherCity = "haifa";
 
+        /// <summary>The population id of the training centre's veteran pioneer teacher on a Historical ledger: the last
+        /// census/haifa record, as the start makes it (#1689), or null when the ledger has no census/haifa record. Owner, 7
+        /// November 2026, relayed: "Takeable, but last (Recommended)": the rules that pick by ascending id take it last, so
+        /// a rule whose pool also holds records made later (#1725 PR 7, ReassignPioneers) orders it last by this id.</summary>
+        internal static int? TeacherId(PopulationLedger ledger)
+        {
+            var source = CensusPrefix + TeacherCity;
+            var last = -1;
+            while (ledger.HasArrived(source, last + 1)) last = checked(last + 1);
+            return last < 0 ? null : ledger.IdOf(source, last);
+        }
+
+        /// <summary><see cref="TeacherId"/> while the teacher is untouched, never linked to a map unit since the start
+        /// (PopulationLedger.TeacherLinked); null once it has been. An untouched teacher holds no qualified group and comes last
+        /// in ReassignPioneers' pool; a linked one is a pioneer like any other.</summary>
+        internal static int? UntouchedTeacherId(PopulationLedger ledger) => ledger.TeacherLinked ? null : TeacherId(ledger);
+
+        /// <summary>Marks the teacher linked (PopulationLedger.MarkTeacherLinked) when <paramref name="records"/>, the records a
+        /// map unit is now linked to, hold it.</summary>
+        internal static void NoteLinked(PopulationLedger ledger, IEnumerable<int> records)
+        {
+            if (ledger.TeacherLinked) return;
+            var teacher = TeacherId(ledger);
+            if (teacher is int t && records.Contains(t)) ledger.MarkTeacherLinked();
+        }
+
         /// <summary>The own opening formations, the one predicate for them (review S2-2): the map/units_1948.yaml rows that
         /// give the start inventory soldiers, Israeli, in the start (no dated arrival), with a strength. The inventory, the
         /// loader's formation_combat_xp check and StartingForces.Init's ledger check all read it.</summary>

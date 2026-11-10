@@ -271,6 +271,75 @@ public class HebrewUiTests
             Assert.AreEqual(reason, SimBridge.ReasonText(He, reason, c, namesHe), "no reviewed line fits, so the sim's English");
     }
 
+    // #2707 item 2, batch 4: a cabinet appointment the End turn refuses reads in the toast as the Cabinet screen words it
+    // (cabinet.reason.*), with the person, the party, the office (for its holder, on the turn's date) and the date in Hebrew.
+    // Real content: a sitting minister ordered into the office they hold, through the real toast; then a death, an abolished
+    // office and a party outside the coalition through ReasonText, each with no Latin letter left.
+    [Test]
+    public void TheCabinetRefusalsReadInHebrewWithTheirNamesAndDates()
+    {
+        var game = Boot(UiLanguage.Hebrew);
+        var bridge = game.Bridge!;
+        var c = bridge.Content;
+        var seat = Statecraft.Sim.Cabinet.Lineup(c, bridge.State)
+            .Where(x => x.Holder != null && x.Holder.NameHe != "" && !x.Office.SeveralHolders && x.Office.Id != "prime_minister" && x.Office.Id != "president"
+                        && x.Office.TitleHeOn(x.Holder, bridge.State.Date) != "")
+            .OrderByDescending(x => x.Holder!.TitleHeForm == Statecraft.Sim.TitleHeForms.Feminine).First();
+        Assert.IsNull(bridge.Queue(new Statecraft.Sim.Appoint(seat.Office.Id, seat.Holder!.Id)), "precondition: the appointment is queued");
+        bridge.EndTurn();
+        var holds = He.Format("cabinet.reason.already_holds", ContentNames.Of(He, seat.Holder!), ContentNames.Of(He, seat.Office, seat.Holder, bridge.State.Date));
+        StringAssert.Contains(He.Format("toast.refused", holds), Ui.Q<Label>("toast").text, "the toast names the minister and the office in Hebrew");
+        StringAssert.DoesNotMatch("[A-Za-z]", holds);
+
+        string Date(DateTime d) => Control1948.DateText(d, k => He[k]);
+        string Say(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
+        var date = bridge.State.Date;
+        var dead = c.People.First(p => p.Died.HasValue && p.NameHe != "" && p.Name.Contains(' '));
+        var office = c.Offices.First(o => o.Until.HasValue && o.TitleHeOn(null, date) != "");
+        var party = c.Parties.First(p => p.NameHe != "" && p.Name.Contains(' '));
+        var minister = c.People.First(p => p.NameHe != "" && p != dead);
+        foreach (var (reason, expected) in new[]
+        {
+            (Say(Statecraft.Sim.Cabinet.RefusedDied, dead.Name, Statecraft.Sim.PlayerText.Date(dead.Died!.Value)),
+                He.Format("cabinet.reason.died", dead.NameHe, Date(dead.Died!.Value))),
+            (Say(Statecraft.Sim.Cabinet.RefusedAbolished, office.Title, Statecraft.Sim.PlayerText.Date(office.Until!.Value)),
+                He.Format("cabinet.reason.abolished", ContentNames.Of(He, office, null, date), Date(office.Until!.Value))),
+            (Say(Statecraft.Sim.Cabinet.RefusedPartyNotCoalition, minister.Name, party.Name),
+                He.Format("cabinet.reason.party_not_coalition", minister.NameHe, party.NameHe)),
+        })
+        {
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason, c, null, date), "the English string is the sim's own");
+            Assert.AreEqual(expected, SimBridge.ReasonText(He, reason, c, null, date), reason);
+            StringAssert.DoesNotMatch("[A-Za-z]", expected, reason);
+        }
+    }
+
+    // #2707 batch 4 review: the Cabinet queue preview's fallback (a refusal the screen's own CheckReason does not give back,
+    // CabinetPresenter.PreviewReason) passes the turn's date, so an office in it reads by its Hebrew title. Red-first at
+    // 582c108fc: no date, so the office kept its English title. The refusal is a queued appointment's "already holds", as the
+    // press could break it; private, so it is reached by reflection, like CabinetPreviewShots reaches the screen.
+    [Test]
+    public void TheCabinetPreviewsFallbackRefusalNamesTheOfficeInHebrew()
+    {
+        using var ui = new UiTestKit();
+        var c = Inputs.Content;
+        var bridge = new SimBridge(Statecraft.Sim.GameSession.New(c, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical), He);
+        using var cabinet = new CabinetPresenter(ui.Root, bridge, He, null);
+        var date = bridge.State.Date;
+        var seat = Statecraft.Sim.Cabinet.Lineup(c, bridge.State)
+            .First(x => x.Holder != null && x.Holder.NameHe != "" && !x.Office.SeveralHolders && x.Office.TitleHeOn(x.Holder, date) != "");
+        var holder = seat.Holder!;
+        var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, Statecraft.Sim.Cabinet.RefusedAlreadyHolds, holder.Name, seat.Office.Title);
+        var preview = Statecraft.Sim.Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.ToList());
+        var other = c.People.First(p => Statecraft.Sim.Cabinet.Check(c, preview.State, seat.Office.Id, p.Id) != reason);   // so the fallback runs
+        var rejection = new Statecraft.Sim.Rejection(new Statecraft.Sim.Appoint(seat.Office.Id, other.Id), reason);
+        var method = typeof(CabinetPresenter).GetMethod("PreviewReason", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var text = (string)method!.Invoke(cabinet, new object[] { c, rejection, preview });
+        Assert.AreEqual(He.Format("cabinet.reason.already_holds", ContentNames.Of(He, holder), ContentNames.Of(He, seat.Office, holder, date)), text);
+        StringAssert.Contains(seat.Office.TitleHeOn(holder, date), text, "the office by its Hebrew title");
+        StringAssert.DoesNotMatch("[A-Za-z]", text);
+    }
+
     [Test]
     public void TheGameIsEnglishUnlessHebrewIsAskedFor()
     {
@@ -299,6 +368,42 @@ public class HebrewUiTests
         Assert.AreEqual(En.Format("hud.turn", game.Bridge!.State.Turn), Ui.Q<Label>("turn").text);
         Assert.IsTrue(Ui.Query<TextElement>().ToList().All(t => t.ClassListContains("start-he") || t.languageDirection == LanguageDirection.Inherit));
         TheDeclarationStaysRightToLeft("an English restart");
+    }
+
+    /// <summary>#2202: the turn report waits while the Arab forces' moves play, and the player may switch the language in
+    /// Settings meanwhile. The rebuild ends the moves; the rebuilt report takes over the wait, and opens in the new language
+    /// once Settings (open again on the new choice) closes (#2967 review, S2). GameRoot plays no moves in EditMode
+    /// (Application.isPlaying), so the test holds the report as the playback does (EnemyTurnPlayback.Holding).</summary>
+    [Test]
+    public void AReportWaitingForTheEnemyMovesOpensAfterTheLanguageSwitch()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        game.Begin(Inputs, 0);
+        var field = typeof(GameRoot).GetField("report", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        TurnReportPresenter Report() => (TurnReportPresenter)field.GetValue(game)!;
+        Report().Held = true;
+        game.Bridge!.EndTurn();
+        var turn = game.Bridge.Session.Last;
+        Assert.IsTrue(Report().Waiting, "precondition: the report waits for the moves");
+        Assert.IsFalse(Report().IsOpen);
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        var old = Report();
+
+        UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "precondition: the UI was rebuilt in Hebrew");
+        Assert.AreNotSame(old, Report(), "precondition: a new report");
+        Assert.AreSame(turn, game.Bridge!.Session.Last, "the same turn");
+        Assert.IsTrue(ScreenNav.IsOpen(Ui.Q("screen-settings")), "Settings stays open");
+        Assert.IsTrue(Report().Waiting, "the rebuilt report waits for the turn");
+        Assert.IsFalse(Report().IsOpen, "and does not close Settings under the player");
+        var nav = (ScreenNav)typeof(GameRoot).GetField("nav", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(game)!;
+        Assert.IsTrue(nav.Close(), "the player closes Settings");
+        Assert.IsTrue(Report().IsOpen, "the turn's report opens");
+        Assert.AreEqual(He["report.title"], Ui.Q<Label>("turn-report-title").text, "in Hebrew");
     }
 
     /// <summary>The language switch in Settings (#1036): a press rebuilds the UI in the other language at once, over the same
@@ -906,6 +1011,7 @@ public class HebrewUiTests
         ("settings-music-low", "settings.music.low"), ("settings-music-high", "settings.music.high"),
         ("settings-advisors-label", "settings.advisors"), ("settings-language-label", "settings.language"),
         ("settings-uiscale-label", "settings.uiscale"), ("settings-companion-label", "settings.companion"),   // #1119
+        ("settings-enemymoves-label", "settings.enemymoves"),   // #2202
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
         ("settings-report", "feedback.open"), ("start-report", "feedback.open"), ("feedback-title", "feedback.open"),   // #1169
         ("hud-star", "community.star"), ("hud-report", "feedback.open"), ("hud-share", "share.open"),   // #1236

@@ -124,7 +124,7 @@ namespace Statecraft.Game.UI
                 // A cover has closed: render the first visible cue too; a start-screen photograph waits until now (#592).
                 photoWaits = false;
                 if (Shown != null) Render();
-                focusedFor = null; if (!hiddenInCapture && Shown != null && !Collapsed) FocusCard(Shown.Id, force: true);
+                focusedFor = null; if (!hiddenInCapture && !heldForPlayback && Shown != null && !Collapsed) FocusCard(Shown.Id, force: true);
             };
             onHidePointer = _ => hideByPointer = true;
             onHideSubmit = _ => hideByPointer = false;
@@ -221,6 +221,26 @@ namespace Statecraft.Game.UI
             Render();
         }
 
+        bool heldForPlayback;
+        /// <summary>#2202: true while End turn's enemy playback runs (EnemyTurnPlayback.Holding; owner, Q1 a: the card waits for
+        /// it). The card and "Decision waiting" stay out of view and a new card raises <see cref="Opened"/>, with its cue,
+        /// only once the playback ends. Nothing is answered or queued here: the card is the same card, shown later.</summary>
+        public bool HeldForPlayback
+        {
+            get => heldForPlayback;
+            set
+            {
+                if (heldForPlayback == value) return;
+                heldForPlayback = value;
+                if (value) { Render(); return; }
+                // Back in view: it takes the focus as from under a cover (#2967 review, N1), whatever had it before the hold.
+                focusedFor = null; restoring = true;
+                try { Render(); }
+                finally { restoring = false; }
+            }
+        }
+        bool restoring;   // the held card is coming back (HeldForPlayback false): FocusCard takes the focus over any other
+
         /// <summary>The event the card shows, or null when every pending event has a queued answer.</summary>
         public GameEvent? Shown { get; private set; }
 
@@ -252,10 +272,10 @@ namespace Statecraft.Game.UI
             Shown = open.FirstOrDefault();
             if (Shown == null) { collapsedFor = null; openedFor = null; scrolledFor = null; }
             if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; openedFor = null; scrolledFor = null; }
-            var shown = !hiddenInCapture && Shown != null && !Collapsed;
+            var shown = !hiddenInCapture && !heldForPlayback && Shown != null && !Collapsed;
             ScreenNav.Show(card, shown);   // #1106: grows in, shrinks away
             card.SetEnabled(shown);   // a child of an undisplayed element can still take the focus (#400): a collapsed card's options must not
-            reopen.style.display = !hiddenInCapture && Collapsed ? DisplayStyle.Flex : DisplayStyle.None;
+            reopen.style.display = !hiddenInCapture && !heldForPlayback && Collapsed ? DisplayStyle.Flex : DisplayStyle.None;
             hudRoot.EnableInClassList(OpenClass, shown);
             ScreenNav.DisableCovered(hudRoot);
             // An answer is an order and costs Attention (choose_event_option): the bridge prices it and checks it as Queue
@@ -294,13 +314,18 @@ namespace Statecraft.Game.UI
             var variant = Timeline.Variant(c, s, e);
             string Local(string english, string he) => ContentNames.Fill(text, c, s, date, english, he);
             card.Q<Label>("event-title").text = Local(EventSystem.Title(c, s, e), variant == null || variant.Title == "" ? e.TitleHe : "");
-            var banner = card.Q<Label>("event-alt-banner");   // a consequence card's road (#954); none on any other card
-            banner.text = OriginLine(c, s, e, text);
+            // A consequence card's road (#954), or an armistice card's early path (R-WAR-008, #1709; owner, 9 November 2026:
+            // "Banner (Recommended)"): an alternative course either way. None on any other card.
+            var early = variant == null && EventSystem.ShowsEarly(e, s.Date);
+            var banner = card.Q<Label>("event-alt-banner");
+            banner.text = early ? text["event.alt_early"] : OriginLine(c, s, e, text);
             banner.style.display = banner.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             var office = holder == null ? null : c.Offices.First(o => o.Id == e.Office);
             card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", ContentNames.Of(text, office!, holder, date), ContentNames.Of(text, holder));
-            // R-ENEMY-007: a card shown after its window closed shows its late text, in Hebrew its late_text_he.
-            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e), variant == null ? (EventSystem.ShowsLate(e, s.Date) ? e.LateTextHe : e.TextHe) : "");
+            // R-ENEMY-007: a card shown after its window closed shows its late text, in Hebrew its late_text_he; R-WAR-008: one
+            // shown before its `from` shows its early text, in Hebrew its early_text_he (EventSystem.Render picks the English).
+            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e),
+                variant != null ? "" : early ? e.EarlyTextHe : EventSystem.ShowsLate(e, s.Date) ? e.LateTextHe : e.TextHe);
             var objective = card.Q<Label>("event-objective");   // an objective card's line (#380); none on any other card
             objective.text = ObjectiveLine(c, s, e, text);
             objective.style.display = objective.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
@@ -365,7 +390,7 @@ namespace Statecraft.Game.UI
             if (scrolledFor != e.Id) { scrolledFor = e.Id; scroll.scrollOffset = UnityEngine.Vector2.zero; }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format(open.Count == 2 ? "event.more_one" : "event.more", open.Count - 1) : "";
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
-            if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
+            if (shown && focusedFor != e.Id) FocusCard(e.Id, force: restoring);
         }
 
         string OperationUnitName(string row)
