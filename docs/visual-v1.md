@@ -3697,3 +3697,48 @@ is not expected to change its balance (hypothesis).
 
 **Tests that now switch the layers off.** `BorderTests.Open` and `TerrainShaderTests.TheBakesCarveTheRelief` measure bare
 stripes and bakes, so they switch both new toggles off, as they do the kits and trees. Their thresholds are unchanged.
+
+## Issue #2917: furrows on the worked fields
+
+**What draws them.** `land_bake.py` lays its parcels on a wobbled 5.2 km block grid, each block turned by a hashed angle,
+with 1,000 m strips along its rows. It now writes two more textures. `furrows.png` (1024 x 2048, R8) holds the furrows'
+strength: 1.0 on ploughland, 0.6 on green crops, 0.35 on stubble, none on fallow, grass or groves, and none on the rims,
+hedges and tracks. `fieldblocks.png` (34 x 85, RGBA8, read texel by texel) holds each block's angle and strip offset as
+16 bits. The bake's angle comes from a 64-bit hash that a shader cannot repeat, but the wobble and the row coordinate can
+be repeated exactly. So `GroundDetail.shader` recomputes them from the world position and reads only the block's two
+values, and the furrows run along each parcel's own rows and stop at its edges.
+`test_the_block_table_rebuilds_the_bakes_rows` checks the Python mirror of that formula against the bake at 200,000
+points, to within 0.5 m.
+
+**Why in the ground detail pass.** As with #2878, the terrain function sits at the frame-time cliff of issue #391. The
+furrows are a variant of `GroundDetail.shader` (`SC_FURROWS`) behind the `furrows` visual toggle, so the profile prices
+them alone.
+
+**Symbolic size.** At gameplay03 a pixel covers 35 to 46 m of ground, so real furrows (under 1 m apart) cannot show. The
+lines are 240 m apart, with a finer set at 80 m weighted 0.6, gain 0.30, and both fade out once a line is under about 4
+pixels apart. Each is an odd wave around zero, so the ground keeps its brightness and colour; GradeTests' warmth margin
+(0.266 against a bar of 0.265) is unchanged.
+
+**Measured (EditMode, `GroundDetailTests.TheFurrowsLineTheFieldsAndKeepTheirColour`, on against off).** Mean gradient
++4.6% on the coastal plain at 12 km, +4.7% at 31 km, +2.3% at gameplay03 (the frame is mostly towns, trees and hills);
+brightness and saturation within 0.0003; no change on the unfarmed Judean hills or at diorama02.
+
+**Frame time** (headless WebGL `?vprofile`, 1920x1080, DPR 1, `machine_lock.py --exclusive --wait-unity`). The full
+round of 10 November 2026: gameplay03 `all` 22.46 ms, `-furrows` 23.04 ms, so furrows cost -0.58 ms (spreads 0.59 and
+0.94 ms); diorama02 `all` 23.33 ms, `-furrows` 23.20 ms, +0.13 ms (spreads 0.20 and 0.80 ms). An earlier round on
+8 November gave +0.62 ms at gameplay03 (load average 7.1, spread 1.53 ms) and stopped partway through diorama02 on a
+`res=1920x880` line. So the cost is within the noise, at most about 0.6 ms, under the 2.5 ms budget.
+
+**Boot** (`?bootlog`, `screens ready`, three headless boots each, alternated, exclusive window, 10 November 2026): 4997,
+5033 and 5067 ms against 5069, 5054 and 5103 ms for the v0.3.9 release (gunzipped to load as this build does), medians
+5033 and 5069 ms. v0.3.9 is this branch's base plus 16 commits, so it is a near neighbour, not an exact A/B.
+
+**Size.** `furrows.png` adds 2.8 MB to the data file uncompressed (R8 with mips), about 0.33 MB gzipped; `fieldblocks.png`
+adds 11.6 KB. The build's data, wasm and framework files gzip to about 42.7 MB, so the nightly's 2% tolerance (about 0.85
+MB) covers it without a budget line.
+
+**Colour** (`tools/art_compare.py`, HUD masked, editor renders at 1920x1080 with `furrows` off and on, 10 November 2026).
+gameplay03 against promo 03: saturation 0.4350 both, contrast 0.1585 both, warmth 0.0945 and 0.0944, palette distance
+0.3775 and 0.3773. diorama02: identical to four places (0.4249, 0.2237, 0.1680, 0.5220); sand and sea warmth pass their
+bands. The web build after: gameplay03 0.4220, 0.1765, 0.0884, 0.3050; diorama02 0.4203, 0.2341, 0.1707, 0.4923. The
+furrows add lines, not colour.

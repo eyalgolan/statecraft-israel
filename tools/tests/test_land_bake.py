@@ -63,14 +63,73 @@ def test_the_land_reaches_into_the_water_and_avoids_the_rock():
     assert w_flat.mean() > 0.5 and w_cliff.max() < 0.01
 
 
+def test_furrows_follow_the_crop_and_keep_off_the_rims_hedges_and_groves():
+    x, y = np.meshgrid(np.arange(0, 20000, 50.0), np.arange(0, 20000, 50.0))
+    zero, one = np.zeros_like(x), np.ones_like(x)
+    _, _, none = lb.paint_samples(x, y, zero, zero, zero, zero + 50.0, zero, furrows=True)
+    assert none.max() == 0.0, "no fields, no furrows"
+    _, _, fs = lb.paint_samples(x, y, one, zero, zero, zero + 50.0, zero, furrows=True)
+    f = lb.field_layout(x, y)
+    inner = np.minimum(f["across_m"], f["along_m"]) > 150.0
+    plough, fallow = (f["ph"] >= 0.50) & (f["ph"] < 0.67), f["ph"] >= 0.67
+    assert np.median(fs[plough & inner]) > 0.9, "ploughland furrows fully inside the parcel"
+    assert fs[fallow].max() == 0.0, "fallow and grass have none"
+    assert fs[np.minimum(f["across_m"], f["along_m"]) < 30.0].max() == 0.0, "none on the parcels' rims"
+    _, _, groves = lb.paint_samples(x, y, one, one, zero, zero + 50.0, zero, furrows=True)
+    assert groves.mean() < 0.6 * fs.mean(), "the citrus belt's groves have none"
+
+
+def rows_from_table(x, y, table):
+    """What GroundDetail.shader does with fieldblocks.png (ScFieldRows): the point's block from the wobbled grid, that
+    block's angle and strip offset from its texel, then its across-the-strips coordinate lx and its strip phase."""
+    bpx, bpy = lb.block_wobble(x, y)
+    bix, biy = np.floor(bpx).astype(int), np.floor(bpy).astype(int)
+    t = table[table.shape[0] - 1 - (biy + lb.BLOCK_PAD), bix + lb.BLOCK_PAD].astype(np.int64)
+    ang = lb.ANGLE_MIN + (t[..., 0] * 256 + t[..., 1]) / 65535 * lb.ANGLE_SPAN
+    off = (t[..., 2] * 256 + t[..., 3]) / 65536
+    qx, qy = (bpx - bix - 0.5) * lb.BLOCK_M, (bpy - biy - 0.5) * lb.BLOCK_M
+    lx = np.cos(ang) * qx - np.sin(ang) * qy
+    return lx, np.mod(lx / lb.STRIP_M + off, 1.0)
+
+
+def test_the_block_table_rebuilds_the_bakes_rows():
+    # #2917: the shader cannot repeat the 64-bit hash, so it reads each block's angle and strip offset from the table. With
+    # them it must put every point where the bake does: the same distance across the strips (to well under a furrow) and
+    # the same place in its strip, everywhere on the map, the wobbled edges included.
+    meta = {"width_km": 161.53, "length_km": 431.22}
+    table = lb.block_table(meta)
+    assert table.shape == lb.blocks_size(meta)[::-1] + (4,)
+    rng = np.random.default_rng(2917)
+    x, y = rng.uniform(0, meta["width_km"] * 1000, 200000), rng.uniform(0, meta["length_km"] * 1000, 200000)
+    lx, phase = rows_from_table(x, y, table)
+    f = lb.field_layout(x, y)
+    assert np.abs(lx - f["lx"]).max() < 0.5
+    d = np.abs(phase - np.mod(f["sx"], 1.0))
+    assert np.minimum(d, 1 - d).max() * lb.STRIP_M < 0.5
+
+
 @pytest.fixture(scope="module")
 def baked():
     return lb.bake()
 
 
 def test_the_committed_texture_is_the_bake(baked):
-    # Review M11: the committed PNG must be what tools/land_bake.py makes from today's inputs (about 20 s).
-    assert np.array_equal(np.asarray(Image.open(lb.OUT)), baked), "landuse.png is stale: run uv run tools/land_bake.py"
+    # Review M11: the committed PNGs must be what tools/land_bake.py makes from today's inputs (about 30 s).
+    land, furrows, blocks = baked
+    assert np.array_equal(np.asarray(Image.open(lb.OUT)), land), "landuse.png is stale: run uv run tools/land_bake.py"
+    assert np.array_equal(np.asarray(Image.open(lb.FURROWS_OUT)), furrows), "furrows.png is stale: run uv run tools/land_bake.py"
+    assert np.array_equal(np.asarray(Image.open(lb.BLOCKS_OUT)), blocks), "fieldblocks.png is stale: run uv run tools/land_bake.py"
+
+
+def test_the_furrows_lie_on_the_farmed_plains():
+    furrows = np.asarray(Image.open(lb.FURROWS_OUT))
+    assert furrows.shape == (lb.FURROW_H, lb.FURROW_W)
+
+    def strength(lon, lat):
+        r, c = int((33.35 - lat) / 3.9 * furrows.shape[0]), int((lon - 34.2) / 1.7 * furrows.shape[1])
+        return furrows[r - 6:r + 7, c - 6:c + 7].mean() / 255
+    assert strength(34.84, 31.92) > 0.1 and strength(35.30, 32.62) > 0.1   # the coastal plain and the Jezreel valley
+    assert strength(34.90, 30.60) == 0 and strength(35.50, 31.50) == 0      # the central Negev and the Dead Sea
 
 
 def test_the_committed_texture_has_its_size_and_follows_the_ground():
