@@ -6,14 +6,14 @@ using UnityEngine.Video;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>A silent clip player (decision videos, 2026-10-13): one VideoPlayer, made the first time a clip is asked for
-    /// (never at boot), playing a clip from StreamingAssets by URL (the only source the Web player takes) into one reused
-    /// 960x540 RenderTexture, which the target element shows as its background. The decision card has one, for its looping
-    /// illustration; the End Turn outcome clips have their own (OutcomePresenter), which plays each clip once. No audio is
-    /// output (the clips have no audio track). A clip that fails (errorReceived) or is not prepared within its timeout is
-    /// stopped and reported once. The texture is cleared at each Play, so a new clip never opens on the last frame of the
-    /// previous one. Each Play gets a fresh VideoPlayer (the old one is destroyed), so a prepare or error the previous clip's
-    /// player sends late is told apart by its sender and ignored (issue #2564). Presentation only.</summary>
+    /// <summary>A silent clip player (decision videos, 2026-10-13): a VideoPlayer per clip, the first made when a clip is
+    /// first asked for (never at boot), playing a clip from StreamingAssets by URL (the only source the Web player takes)
+    /// into one reused 960x540 RenderTexture, which the target element shows as its background. The decision card has one,
+    /// for its looping illustration; the End Turn outcome clips have their own (OutcomePresenter), which plays each clip
+    /// once. No audio is output (the clips have no audio track). A clip that fails (errorReceived) or is not prepared within
+    /// its timeout is stopped and reported once. The texture is cleared at each Play, so a new clip never opens on the last
+    /// frame of the previous one. Each Play gets a fresh VideoPlayer (the old one is destroyed), so a prepare, end or error
+    /// the previous clip's player sends late is told apart by its sender and ignored (issue #2564). Presentation only.</summary>
     public sealed class CardVideo : IDisposable
     {
         public const int Width = 960, Height = 540;
@@ -128,7 +128,7 @@ namespace Statecraft.Game.UI
             player.skipOnDrop = true;
             player.waitForFirstFrame = true;
             player.prepareCompleted += OnPrepared;
-            player.loopPointReached += _ => { var told = onEnded; if (told == null) return; Stop(); told(); };   // a once-only clip ended
+            player.loopPointReached += OnEnded;
             player.errorReceived += OnError;
         }
 
@@ -148,6 +148,12 @@ namespace Statecraft.Game.UI
             Showing = true;
             player.Play();
             Debug.Log("VIDEO playing " + Current);
+        }
+
+        void OnEnded(VideoPlayer p)
+        {
+            if (!ReferenceEquals(p, player)) return;   // a late end from the previous clip's player
+            var told = onEnded; if (told == null) return; Stop(); told();   // a once-only clip ended
         }
 
         void OnError(VideoPlayer p, string message)
