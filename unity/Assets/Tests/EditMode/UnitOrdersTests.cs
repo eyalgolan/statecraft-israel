@@ -459,6 +459,51 @@ public class UnitOrdersTests
         Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("info-reinforce").style.display.value);
     }
 
+    // #2714 (a): the Arms half of ReinforceQueuesTheMissingStrengthFromTheCityTheUnitStandsIn. Golani has lost one group in
+    // Tel Aviv, with civilians without work to spare and Arms for exactly one recruit group. A queued recruit Train takes those
+    // Arms when End turn runs it, so End turn would refuse the reinforcement (R-ARMS-003): the card offers no Reinforce and
+    // shows the sim's Arms reason, in English and Hebrew. Red-first prediction at 54d62e801^ (reasoned, not run): the card
+    // ran the sim's Reinforce on a copy of the displayed state, which the deferred Train has not touched, so it was offered.
+    [Test]
+    public void AQueuedTrainThatLeavesTooFewArmsHidesReinforceAndShowsWhy()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        foreach (var (t, arms) in new[] { (Text, "not enough Arms"), (he, "אין די כלי נשק") })
+        {
+            using var ui = new UiTestKit();
+            var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            var bridge = new SimBridge(g, t);
+            var token = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+            var u = g.State.Units[id];
+            var city = C.SettlementHexes.Single(h => h.Id == "tel_aviv");
+            g.State.Units[id] = new Unit(u.Id, u.Type, city.Q, city.R, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity, u.Strength);
+            var telAviv = g.State.Cities[city.Id];
+            g.State.Cities[city.Id] = telAviv.WithCounts(50, 47, telAviv.Refugees);
+            var group = C.RulesAt(g.State.Date).Mvp!.ArmsPerRecruitGroup!.Value;
+            Assert.Greater(group, 0, "precondition: a recruit group takes Arms");
+            g.State.Arms = group;
+            Assert.IsNull(Training.Reinforce(C, g.State.Clone(), id, city.Id, 1, new List<Cause>()),
+                "precondition: on the displayed state alone, the one-group Reinforce is accepted");
+
+            var train = new Train(city.Id, "recruit", 1);
+            Assert.IsNull(bridge.Queue(train), "precondition: the recruit Train is queued");
+            Assert.GreaterOrEqual(Training.Available(g.State, city.Id, bridge.Queued), 1, "precondition: a civilian without work is left after the Train");
+            Assert.AreEqual(group, bridge.State.Arms, "precondition: the deferred Train has not taken its Arms yet");
+            var candidate = new Reinforce(id, city.Id, 1);
+            var preview = Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).Append(candidate).ToList());
+            Assert.IsFalse(preview.Rejected.Any(x => ReferenceEquals(x.Command, train)), "precondition: End turn accepts the Train");
+            StringAssert.Contains("not enough Arms", preview.Rejected.Single(x => ReferenceEquals(x.Command, candidate)).Reason,
+                "precondition: after the Train, the exact End-turn preview refuses Reinforce for its Arms");
+
+            PlacedToken? selected = new PlacedToken(token, new AnchorSpot(0, 0, 0, 0, false));
+            using var info = new InfoPanelPresenter(ui.Root, bridge, t, new Dictionary<string, string>(), selectedUnit: () => selected);
+            info.ShowUnit();
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("info-reinforce").style.display.value, "the queued Train leaves too few Arms");
+            StringAssert.Contains(arms, ui.Q<Label>("info-reason").text, "the sim's Arms reason shows, in the UI's language");
+        }
+    }
+
     /// <summary>#2072, owner review item 1: a Reinforce the sim refuses for Arms ("Tel Aviv: not enough Arms for basic training
     /// (need ..)") reaches the player through SimBridge, in Hebrew whole: the town and the course in Hebrew too, no Latin
     /// letter. The bridge queues it (a Reinforce waits for End turn) and End turn raises the sim's refusal, which the toast
