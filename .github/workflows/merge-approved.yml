@@ -2,11 +2,12 @@ name: Merge approved
 
 # Squash-merges an open pull request into main once the maintainer has approved its latest commit and every check
 # on that commit has passed (owner ruling, 2026-10-11). Outside contributors get no write access; this job merges for
-# them. It runs from main's copy of this file and never checks out, builds or runs pull-request code, so the write
-# token never meets outside code. It starts when CI finishes (workflow_run runs in this repository's context with a
-# write token, also for forks), when a review is submitted (for a fork's pull request GitHub gives that run a read-only
-# token, so its merge is refused and the next CI or timer run merges), on a timer as a fallback (GitHub runs
-# schedules late or not at all under load), and by hand. It reads only numbers, SHAs and states from the API, never titles;
+# them. Every trigger runs main's copy of this file, and the job never checks out, builds or runs pull-request code,
+# so the write token never meets outside code. It starts when CI finishes (workflow_run runs in this repository's
+# context with a write token, also for forks), on a timer as a fallback (GitHub runs schedules late or not at all
+# under load), and by hand. A submitted review does not start it (#3026): GitHub would run that from the pull
+# request's merge ref, so a branch that edits this file would choose what its run does. An approval merges on the next
+# CI or timer run. It reads only numbers, SHAs and states from the API, never titles;
 # the body is read only inside jq, for the licence tick, and never reaches the shell.
 #
 # A pull request merges only when all of these hold on its current head commit:
@@ -21,16 +22,15 @@ name: Merge approved
 # so gh would refuse it. The run says it waits, and it merges once it is updated (#2698).
 # GitHub does not start other workflows from a merge made with this token, so CI on main is not re-run by it.
 #
-# A refused merge is tolerated only when it is expected (#2698): the head moved after this run read it (GitHub then
-# reports a head other than the approved SHA), or a review run met "Resource not accessible by integration" (the fork's
-# read-only token above). Any other failure is printed, the remaining pull requests are still tried, and the run fails.
+# A refused merge is tolerated only when it is expected. After a refusal the run re-reads the pull request, and passes
+# when GitHub reports it MERGED (someone merged it by hand after this run read it, #3027) or a head other than the
+# approved SHA (the head moved, #2698). Any other failure is printed, the remaining pull requests are still tried, and
+# the run fails.
 
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-  pull_request_review:
-    types: [submitted]
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
@@ -86,11 +86,12 @@ jobs:
               continue
             fi
             printf '%s\n' "$out"
-            now=$(gh pr view "$n" --json headRefOid --jq '.headRefOid')
-            if [ "$now" != "$ready" ]; then
+            after=$(gh pr view "$n" --json state,headRefOid --jq '"\(.state) \(.headRefOid)"')
+            read -r state now <<<"$after"
+            if [ "$state" = MERGED ]; then
+              echo "#$n: merge refused, GitHub reports it already merged (by hand during this run)"
+            elif [ "$now" != "$ready" ]; then
               echo "#$n: merge refused, the head moved to $now; a later run checks the new head"
-            elif [ "$GITHUB_EVENT_NAME" = pull_request_review ] && grep -qF 'Resource not accessible by integration' <<<"$out"; then
-              echo "#$n: merge refused, a review run for a fork's pull request has a read-only token; the next CI or timer run merges"
             else
               echo "::error::#$n: merge failed for a reason this workflow does not expect; see the gh output above"
               failed=1
