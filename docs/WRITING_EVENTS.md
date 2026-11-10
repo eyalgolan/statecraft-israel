@@ -60,11 +60,15 @@ schema too, or that test fails. Keep the comment when you copy a file.
 
 ### id, title, text and placeholders
 
-Never type a real person's name into `title`, `text` or an option's `text`. Write an office id in braces, such as
-`{prime_minister}`, and the game replaces it with whoever holds that office on the day the event fires (and with the
-player's own appointment, if the player changed the cabinet). In the example, `{prime_minister} must decide.` becomes
-the name of the Prime Minister on the day. Office ids are in `content/offices.yaml`; who held them is in
-`content/people.yaml`.
+Never type the name of a game office's holder into `title`, `text` or an option's `text`. Write the office id in
+braces, such as `{prime_minister}`, and the game replaces it with whoever holds that office on the day the event fires
+(and with the player's own appointment, if the player changed the cabinet). In the example, `{prime_minister} must
+decide.` becomes the name of the Prime Minister on the day. Office ids are in `content/offices.yaml`; who held them is
+in `content/people.yaml`.
+
+Naming a historical figure who holds no game office during the card's window is fine (Count Folke Bernadotte in
+`bernadotte_assassination`, for example). Check their terms in `content/people.yaml` first: the loader does not check
+names, only placeholders.
 
 Rules the loader enforces:
 
@@ -250,7 +254,7 @@ Each option has:
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
 | `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
-| `unit_orders` | no | GDD loop, both GDD identities. A list of `{ unit, q, r }`: see "unit_orders". |
+| `unit_orders` | no | GDD loop, both GDD identities. A list of `{ unit, order, q, r }` (`order`: `go_to`, the default, or `attack`): see "unit_orders". |
 | `requires_unit_regions` | with `unit_orders` | A non-empty list of existing `regions.yaml` ids in any one of which every ordered unit must stand: see "unit_orders". |
 | `debt_dollars` | no | Applied under gdd-0.3 only. US$ millions, more than 0, that the option also adds to Debt, in IL at the `mvp.il_per_dollar` rate in force on the event's date (R-EFX-009). |
 | `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
@@ -330,6 +334,13 @@ An event with a sensitive tag may carry no grant, no positive `city_effects` del
   a comment. The order goes through the player's own go-to: one the player could not give changes nothing, and the
   player is told so. The order ends on the `to` date of the anchor, or of the order target (the loader refuses a hex with none), and its march
   goes round every enemy-held place but its hex.
+- `{ unit: golani, order: attack, q: -7, r: 24 }` makes the row's unit attack hex (`q`, `r`) when the option is decided
+  (R-ENEMY-008); `order` is `go_to` when left out. The hex is again one of the row's anchors or order targets, so add
+  an attack only where a source states it (cite it), never from the card's prose. It needs no `to` date. The attack is the
+  player's own: from where the unit stands after the rows before it (a row may move and then attack, once each), with its
+  checks; one the player could not make changes nothing, and the rows after it still run.
+- Two cards never send one row to the same hex: the operation a unit is in is found from its go-to, and a player's order
+  that takes a unit off it cancels the rest of that operation's orders (R-ENEMY-009).
 - Every option with `unit_orders` also has `requires_unit_regions`. The required units are exactly the distinct rows in
   `unit_orders`; before the option resolves, each row's starting unit must be on the board and on a hex in any listed
   region (R-ENEMY-007). Cite the operation objective or target supporting every region in the option's comment.

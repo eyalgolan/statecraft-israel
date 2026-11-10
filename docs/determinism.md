@@ -53,7 +53,10 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
 ## Combat draws
 
 A player engagement draws `Combat.DrawsPerEngagement` (1) when its order runs in `RunOrders`, after the route step and any
-earlier committed order, before every waiting order. The enemy's engagements draw in resolver step 2, in ascending attacker id.
+earlier committed order, before every waiting order. An operation card's attack (R-ENEMY-008) draws the same way when the card
+is decided: in its option's list order when its choice runs in `RunOrders`, or, when the card is delegated, after that
+delegation's own draws (`EventSystem.Delegate` hands the stream to the attack and keeps its draw). The enemy's engagements
+draw in resolver step 2, in ascending attacker id.
 
 ## Golden playthroughs
 

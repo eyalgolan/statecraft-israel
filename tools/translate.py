@@ -89,11 +89,15 @@ _PARSED: dict[Path, tuple[tuple[int, int], object]] = {}
 
 def _parse(path: Path):
     """The file's YAML, parsed again only when the file changes (the page re-checks on every keystroke). Callers do not
-    change what it returns."""
+    change what it returns. Text that is not YAML is a ValueError naming the file and line."""
     stat = path.stat()
     stamp = (stat.st_mtime_ns, stat.st_size)
     if path not in _PARSED or _PARSED[path][0] != stamp:
-        _PARSED[path] = (stamp, yaml12.load(_read(path)))
+        try:
+            data = yaml12.load(_read(path))
+        except yaml12.yaml.YAMLError as e:   # the page shows only the message: name the file (#2532)
+            raise ValueError(yaml12.not_yaml(str(path), e)) from e
+        _PARSED[path] = (stamp, data)
     return _PARSED[path][1]
 
 

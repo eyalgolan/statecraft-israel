@@ -454,6 +454,7 @@ namespace Statecraft.Game.UI
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {
+                var probe = TurnProbe.Start();   // ?turnlog (#2905)
                 var live = bridge.State.Settlements.OrderBy(kv => kv.Key, StringComparer.Ordinal)
                     .Join(bridge.Content.SettlementHexes, kv => kv.Key, h => h.Id,
                         (kv, h) => (h.Q, h.R, player: SettlementControlView.PlayerHolds(kv.Value)))
@@ -462,6 +463,7 @@ namespace Statecraft.Game.UI
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
                     ?? regions.Label(bridge.State.Date, text.Format, text["ui.lang"] == UiLanguage.Hebrew);
                 ShowLayerLabel();
+                TurnProbe.Lap("GameRoot.regions", probe);
             };
             // The caption names the borders while they are drawn: by date, and not while the minimap's button hides them.
             void ShowLayerLabel() => layerLabel.style.display = regions.Shown && minimap?.BordersShown != false ? DisplayStyle.Flex : DisplayStyle.None;
@@ -491,12 +493,15 @@ namespace Statecraft.Game.UI
             Action showUnits = () =>
             {
                 // New Game replaces the session, and its sim ids are the old game's: its tokens are drawn where they stand.
+                var probe = TurnProbe.Start();   // ?turnlog (#2905)
                 unitLayer.Show(bridge.Content, bridge.State, slide: ReferenceEquals(shownSession, bridge.Session));
+                probe = TurnProbe.Lap("UnitLayer.Show", probe);
                 shownSession = bridge.Session;
                 unitLayer.Dim(unitLayer.Tokens.Where(t => t.Token.Unit.Side == Statecraft.Game.Map.Units.UnitData.Israel)
                     .Where(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token) is int id
                         && Movement.ActionsLeft(bridge.Content, bridge.State, id, bridge.Spent) == 0)
                     .Select(t => t.Token.Unit.Id).ToList());
+                TurnProbe.Lap("GameRoot.unitsDim", probe);
             };
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
@@ -1168,46 +1173,61 @@ namespace Statecraft.Game.UI
         void RenderPlacementsIfChanged()
         {
             if (Bridge == null) return;
+            // ?turnlog (#2905): each layer's time during End turn, as one "@Layer" section each; otherwise no clock is read.
+            var probe = TurnProbe.Start();
             // Dated routes (the Burma Road from June 1948); in the GDD loop the corridors by their built segments (#792).
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date,
                 Bridge.Content.IsGdd ? Statecraft.Game.Map.Routes.RouteLayer.BuiltSegments(Bridge.Content, Bridge.State) : null);
+            probe = TurnProbe.Lap("RouteLayer", probe);
             // The true armistice lines (#237; on unless "noarmisticelines" turns them off, #196), each from its own date.
             ArmisticeLines.ShowAt(map, Bridge.State.Date);
+            probe = TurnProbe.Lap("ArmisticeLines", probe);
             // Tal Heuberger's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
             // The camps and housing built as city projects bring theirs too, as the placement layer draws them (#1275).
             Statecraft.Game.Map.Collection.TownLandmarks.ShowAt(map, Bridge.State.Date,
                 PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values), Bridge.Content);
+            probe = TurnProbe.Lap("TownLandmarks", probe);
             // Tal Heuberger's ibex and striped hyena, sparse in their sourced terrain zones and visible only at close zoom (#670).
             Statecraft.Game.Map.Collection.WildlifeLayer.Show(map);
+            probe = TurnProbe.Lap("WildlifeLayer", probe);
             // Tal Heuberger's papyrus at the Hula swamp's sourced site, close up only, streamed on the first close view, gone
             // once the swamp is drained (#2082; owner, 2 November 2026: "Hula + Arava, map and boards").
             Statecraft.Game.Map.Collection.HulaPapyrusLayer.ShowAt(map, Bridge.Content,
                 Statecraft.Game.Map.Collection.HulaPapyrusLayer.Drained(Bridge.State));
+            probe = TurnProbe.Lap("HulaPapyrusLayer", probe);
             // A plowed field's or drained swamp's ground on its hex (#2877): from the sites, so a loaded save shows its own.
             SiteGroundLayer.ShowAt(map, Bridge.Content, Bridge.State.Sites.Values);
+            probe = TurnProbe.Lap("SiteGroundLayer", probe);
             // Tal Heuberger's civilian figures at towns, villages, transit camps and building sites, ambience only and streamed
             // after the first frame (#666, #708, #886): the residents follow the settlement state, the builders the projects.
             Statecraft.Game.Map.Collection.CivilianPeople.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content,
                 Bridge.State.Settlements, Bridge.State.CityProjects.Values);
+            probe = TurnProbe.Lap("CivilianPeople", probe);
             // Tal Heuberger's period-generic farm and village scenery, streamed after the first frame (#667); never game units.
             Statecraft.Game.Map.Collection.RuralLife.Show(map);
+            probe = TurnProbe.Lap("RuralLife", probe);
             // Tal Heuberger's Tegart fort, barracks and factory at their sourced places and dates, close up only, streamed (#707);
             // under gdd-0.3 their artisan workshop (b21) on each built arms workshop's hex (#1701 slice F).
             var workshops = Statecraft.Game.Map.Collection.SpecialBuildingModels.ArmsWorkshops(Bridge.Content, Bridge.State.CityProjects.Values);
             special = Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, Bridge.State.Date, workshops);
+            probe = TurnProbe.Lap("SpecialBuildingModels", probe);
             // Tal Heuberger's hex-tile props (owner, 27 October 2026: "2+3"; 2 November 2026: "Every zoom" for the landmarks): their
             // minarets, belfries and Jaffa's clock tower in place of the kit's at every zoom, so the bundle streams after the first
             // frame; the stations, camp tents, village hedges and hill scatter close up only, built at the first close camera.
             // After the layers they keep clear of (the built arms workshops' b21 too, #1701 slice F).
             Statecraft.Game.Map.Collection.HexPropModels.ShowAt(map, Bridge.State.Date, workshops);
+            probe = TurnProbe.Lap("HexPropModels", probe);
             // Tal Heuberger's ships off Haifa, Jaffa, Acre and (on the Altalena's turn) Tel Aviv, and the C-54 at Lod, streamed after the first frame (#669).
             seaAir = Statecraft.Game.Map.Collection.SeaAirCollection.ShowAt(map, Bridge.State.Date, Bridge.State.Placements, Bridge.Content);
+            probe = TurnProbe.Lap("SeaAirCollection", probe);
             RenderSitesIfChanged();
+            probe = TurnProbe.Lap("Sites", probe);
             var shown = PlacementLayer.Drawn(Bridge.State.Placements, Bridge.State.CityProjects.Values);
             var now = shown.Select(p => (p.Action, p.Q, p.R, p.Date)).ToList();
-            if (drawn != null && drawn.SequenceEqual(now)) return;
+            if (drawn != null && drawn.SequenceEqual(now)) { TurnProbe.Lap("Placements", probe); return; }
             drawn = now;
             placements.Render(shown, Bridge.Content, map);
+            TurnProbe.Lap("Placements", probe);
         }
 
         /// <summary>Draws the designated sites (#381) only when a site's state differs from what was drawn: being built, or

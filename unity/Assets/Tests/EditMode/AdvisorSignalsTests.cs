@@ -213,6 +213,15 @@ public class AdvisorSignalsTests
     public void ACourseStepsApprovedHebrewIsTheTextTheOwnerRead(string id, string hebrew) =>
         AnApprovedHebrewLineIsTheTextTheOwnerRead(id, hebrew);
 
+    /// <summary>#2933's four later lessons, approved by the owner word for word (9 November 2026: "Approve all four
+    /// (Recommended)"). A different text needs a new approval, so it must also set he_review back to pending.</summary>
+    [TestCase("lesson.report", "המסך ״מה קרה בתור הזה״ מראה מה נע ואילו קרבות נערכו. אם ההפוגה התקבלה, החטיבות שלכם אינן יכולות לתקוף עד שהיא נגמרת.")]
+    [TestCase("lesson.attack", "תקופת ההפוגה נגמרה. בחרו חטיבה הסמוכה לאויב כדי לראות את ״התקפה״ ואת יחס הכוחות. התקפה יכולה להדוף את האויב לאחור.")]
+    [TestCase("lesson.stakes", "הניקוד שלכם סופר יעדים, כמה מוקדם השגתם אותם, ושבויים שהוחזרו. קרבות שוחקים את החטיבות. אם הכסף והמזון אוזלים ונשארים כך, המשחק נגמר.")]
+    [TestCase("lesson.combat", "כשפורץ קרב, המסך ״מה קרה בתור הזה״ מראה את האבדות ומי נסוג. בחרו חטיבה הסמוכה לאויב כדי לראות את ״התקפה״ ואת יחס הכוחות.")]
+    public void ACourseLessonsApprovedHebrewIsTheTextTheOwnerRead(string id, string hebrew) =>
+        AnApprovedHebrewLineIsTheTextTheOwnerRead(id, hebrew);
+
     [Test]
     public void TheEconomySignalsReadTheShownState()
     {

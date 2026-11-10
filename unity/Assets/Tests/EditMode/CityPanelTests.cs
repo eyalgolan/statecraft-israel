@@ -1550,7 +1550,9 @@ public class CityPanelTests
         var city = bridge.State.Cities["tel_aviv"]; int before = city.Employed;
         Assert.Greater(before, 0, "precondition: there is a worker to remove");
         Assert.IsNotNull(ui.Q<Label>("city-workers-cost"), "the order price and timing are visible, not only in a tooltip");
-        Assert.AreEqual(text.Format("city.workers_cost", bridge.Price(new AssignWorkers("tel_aviv", "job", before))!.Value), ui.Q<Label>("city-workers-cost").text);
+        // Tel Aviv trains, so the line also carries the Train order's price (TheWorkersLineAlsoPricesATrainOrder).
+        Assert.AreEqual(text.Format("city.train_cost", text.Format("city.workers_cost", bridge.Price(new AssignWorkers("tel_aviv", "job", before))!.Value),
+            bridge.Price(new Train("tel_aviv", "recruit", 1))!.Value), ui.Q<Label>("city-workers-cost").text);
         UiTestKit.Press(ui.Q<Button>("city-workers-less"));
         Assert.AreEqual(before, city.Employed, "queued work does not pretend the simulation already ran");
         Assert.AreEqual(text.Format("city.workers_ordered", GddHexPanel.Groups(text, before - 1)), ui.Q<Label>("city-workers").text);
@@ -1615,6 +1617,63 @@ public class CityPanelTests
         panel.Show(CityHex.q, CityHex.r);
         foreach (var track in new[] { "recruit", "halutz" })
             Assert.IsFalse(ui.Q<Button>("city-train-" + track).enabledSelf, track + ": no civilian is free to train");
+    }
+
+    [Test]
+    public void TheWorkersLineAlsoPricesATrainOrder([Values] bool hebrew)
+    {
+        // Playtest: at security level 5 the only price on the panel was the Assign order's (0.5 x 2 = 1.0), right above the
+        // Train buttons, though a Train order costs 1 x 2 = 2.0 (R-GOV-002's cost of 1, doubled at level 5 by
+        // content/rules.yaml's rung_attention_step through AttentionSystem.Cost): with 1.0 left the Train buttons were
+        // disabled with nothing on the panel to say why. The workers line now names the change it prices and adds the Train order's
+        // price, which every Train button shares. It stays one line of the panel, so the panel still fits short windows.
+        var t = hebrew ? He : En; var bridge = Bridge(t);
+        Assert.AreEqual(5, bridge.TurnStart.Rung, "precondition: the game starts at security level 5");
+        using var ui = new UiTestKit(); using var panel = Panel(ui, bridge, t);
+        panel.Show(CityHex.q, CityHex.r);
+        var train = bridge.Price(new Train(City, "recruit", 1))!.Value;
+        Assert.AreEqual(2.0, train, 1e-9, "precondition: train costs 1, doubled at level 5");
+        foreach (var track in new[] { "halutz", "artillery", "armoured_car", "craftsman" })
+            Assert.AreEqual(train, bridge.Price(new Train(City, track, 1))!.Value, 1e-9, "precondition: every Train order costs the same: " + track);
+        var employed = bridge.State.Cities[City].Employed;
+        var workers = bridge.Price(new AssignWorkers(City, "job", employed))!.Value;
+        Assert.AreEqual(1.0, workers, 1e-9, "precondition: assign_workers costs 0.5, doubled at level 5");
+        var line = t.Format("city.train_cost", t.Format("city.workers_cost", workers), train);
+        Assert.AreEqual(line, ui.Q<Label>("city-workers-cost").text);
+        Assert.IsNull(ui.Root.Q<Label>("city-train-cost"), "no extra line: the price is on the workers line");
+        UiTestKit.Press(ui.Q<Button>("city-train-recruit"));
+        Assert.AreEqual(line, ui.Q<Label>("city-workers-cost").text, "a queued Train order keeps the line");
+        UiTestKit.Press(ui.Q<Button>("city-workers-less"));
+        Assert.AreEqual(line, ui.Q<Label>("city-workers-cost").text, "a queued workers change keeps the line");
+    }
+
+    [Test]
+    public void ACityThatCannotTrainShowsOnlyTheWorkersPrice([Values] bool hebrew)
+    {
+        // The Train price belongs where the panel offers Train: a city with no training facility shows the workers price alone.
+        var t = hebrew ? He : En;
+        var start = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
+        var hex = C.SettlementHexes.Where(h => start.Cities.ContainsKey(h.Id) && C.SettlementHexes.Count(x => x.Q == h.Q && x.R == h.R) == 1)
+            .FirstOrDefault(h => !C.UnitTypes.Any(u => u.Facility != "" && Training.HasFacility(C, start, h.Id, u.Facility)));
+        Assert.IsNotNull(hex, "precondition: some city alone on its hex has no training facility");
+        var bridge = Bridge(t);
+        using var ui = new UiTestKit(); using var panel = Panel(ui, bridge, t);
+        panel.Show(hex!.Q, hex.R);
+        Assert.IsNull(ui.Root.Query<Button>().Where(b => b.name.StartsWith("city-train-", StringComparison.Ordinal)).First(), "precondition: no Train button");
+        var workers = bridge.Price(new AssignWorkers(hex.Id, "job", bridge.State.Cities[hex.Id].Employed))!.Value;
+        Assert.AreEqual(t.Format("city.workers_cost", workers), ui.Q<Label>("city-workers-cost").text);
+    }
+
+    [Test]
+    public void WithoutAttentionTheWorkersLineHasNoTrainPrice([Values] bool hebrew)
+    {
+        // gdd-0.3 has no Attention (#1688, #1750): the workers line keeps its timing only, with no price of either order.
+        var t = hebrew ? He : En; var c = Gdd03Content();
+        Assert.IsFalse(c.UsesAttention, "precondition: gdd-0.3 has no Attention");
+        var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), t);
+        using var ui = new UiTestKit(); using var panel = Panel(ui, bridge, t);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.AreEqual(t.Format("city.workers_ordered", GddHexPanel.Groups(t, bridge.State.Cities[City].Employed)), ui.Q<Label>("city-workers-cost").text);
     }
 
 }

@@ -45,7 +45,7 @@ public class CabinetTests
     offices: []
 ";
 
-    static Content Load(Dictionary<string, string>? events = null) =>
+    internal static Content Load(Dictionary<string, string>? events = null) =>
         ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["people.yaml"] = Fixture.Files["people.yaml"] + ExtraPeople }, events));
 
     static readonly Content C = Load();

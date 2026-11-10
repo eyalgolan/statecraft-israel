@@ -610,8 +610,10 @@ namespace Statecraft.Game.Map.Collection
         void Show(IReadOnlyList<Want> wants)
         {
             this.wants = wants;
+            var probe = Boot.TurnProbe.Start();   // ?turnlog (#2905): the replan and the residency apart
             Replan(log: true);
-            if (residencyView != null) { RefreshResidency(); return; }
+            probe = Boot.TurnProbe.Lap("SpecialBuildingModels.Replan", probe);
+            if (residencyView != null) { RefreshResidency(); Boot.TurnProbe.Lap("SpecialBuildingModels.Residency", probe); return; }
             foreach (var w in wants)
                 if (asked.Add(w.Model)) { string model = w.Model; Request(model, CollectionDetail.Near, p => { if (this == null) return; prefabs[model] = p; if (p == null) { FailedOpen = true; Debug.LogWarning($"BUILDINGS: {model} did not stream; it stays off the map."); } Rebuild(); }); }
             Rebuild();

@@ -437,7 +437,9 @@ namespace Statecraft.Game.Map.Units
             roster = now;
             PlaceMoved(now);
             placed = UnitPlacer.Place(now, drawSpots ?? DisplaySpots);
+            var probe = Boot.TurnProbe.Start();   // ?turnlog (#2905): the token rebuild alone
             Rebuild(slide);
+            Boot.TurnProbe.Lap("UnitLayer.Rebuild", probe);
             ScheduleSatisfiedPrefetchRetirement();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             seenAvailability = UnitFigures.AvailabilityVersion;

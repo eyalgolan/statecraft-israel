@@ -420,3 +420,13 @@ def test_a_key_any_yaml_reader_would_type_or_split_is_quoted(key):
 @pytest.mark.parametrize("key", ["alpha", "a.one", "first_truce", "1948-05-15", "v1", "nully", "yes_vote"])
 def test_a_plain_key_stays_plain(key):
     assert translate._yaml_key(key) == key
+
+
+def test_a_malformed_file_is_an_error_naming_the_file_and_line(tmp_path):
+    """#2532: the page shows `Type: message`; a YAML error did not name the file it came from."""
+    bad = tmp_path / "broken.yaml"
+    bad.write_text("id: x\ntitle: [unclosed\n", encoding="utf-8")
+    with pytest.raises(ValueError) as e:
+        translate._parse(bad)
+    message = str(e.value)
+    assert message.startswith(f"{bad}:") and "not valid YAML" in message and "\n" not in message

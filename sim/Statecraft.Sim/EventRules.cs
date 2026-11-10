@@ -177,10 +177,36 @@ namespace Statecraft.Sim
                     CheckStructured(c, e, o, e.Tags.Any(SensitiveTags.Contains), field => $"events[{e.Id}].{field}");
                     CheckOrders(c, e, o, field => $"events[{e.Id}].{field}");
                 }
+            CheckOperationHexes(c);
         }
 
-        /// <summary>R-ENEMY-005 (Q-ENEMY-5): an option's go-to orders name a map/units_1948.yaml row and one of that row's own
-        /// anchor or order target hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026,
+        /// <summary>R-ENEMY-009: the operation a unit is in is the card whose decided option sent its row to the hex it is going
+        /// to (<see cref="EventSystem.OperationOf"/>), so no two cards send one row to one hex. The options of one card may: only
+        /// one of them is decided. GDD only, as <see cref="CheckOrders"/>'s hex checks are.</summary>
+        static void CheckOperationHexes(Content c)
+        {
+            if (!c.IsGdd) return;
+            var sent = new Dictionary<(string Row, int Q, int R), string>();
+            foreach (var e in c.Events)
+            {
+                var mine = new HashSet<(string Row, int Q, int R)>();
+                foreach (var o in e.Options)
+                    for (int i = 0; i < o.UnitOrders.Count; i++)
+                    {
+                        var x = o.UnitOrders[i];
+                        if (x.Order != Movement.GoTo) continue;
+                        var key = (x.Unit, x.Q, x.R);
+                        if (sent.TryGetValue(key, out var other) && other != e.Id)
+                            throw new ContentException(e.File, FormattableString.Invariant($"events[{e.Id}].options[{o.Id}].unit_orders[{i}]"),
+                                FormattableString.Invariant($"events[{other}] already sends '{x.Unit}' to hex q={x.Q} r={x.R}: a unit's operation is found from its order (R-ENEMY-009)"));
+                        mine.Add(key);
+                    }
+                foreach (var key in mine) sent[key] = e.Id;
+            }
+        }
+
+        /// <summary>R-ENEMY-005 (Q-ENEMY-5), R-ENEMY-008: an option's go-to and attack orders name a map/units_1948.yaml row and
+        /// one of that row's own anchor or order target hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026,
         /// #749: sourced anchors only; 2 November 2026, #2087: order targets, option 1). They are checked and applied under
         /// both GDD identities. R-ENEMY-007 also requires every operation option to author its allowed player regions. The legacy loop reads the
         /// same real cards but no units file, so it has nothing to check them against and no unit to order.</summary>
@@ -193,6 +219,8 @@ namespace Statecraft.Sim
                 if (x.Unit.Trim() == "") throw new ContentException(e.File, at + ".unit", "required");
                 if (!x.QGiven) throw new ContentException(e.File, at + ".q", "required");
                 if (!x.RGiven) throw new ContentException(e.File, at + ".r", "required");
+                if (x.Order != Movement.GoTo && x.Order != Combat.Attack)   // R-ENEMY-008
+                    throw new ContentException(e.File, at + ".order", $"'{x.Order}' is not an operation order: go_to or attack");
             }
             if (!c.IsGdd) return;
             var requirementField = F(FormattableString.Invariant($"options[{o.Id}].requires_unit_regions"));
@@ -212,19 +240,21 @@ namespace Statecraft.Sim
                 if (!regions.Add(id)) throw new ContentException(e.File, at, "duplicate region id");
                 if (!c.PlayerRegions.Regions.ContainsKey(id)) throw new ContentException(e.File, at, $"unknown player region '{id}' ({PlayerRegionCatalogue.FileName})");
             }
-            var rows = new HashSet<string>(StringComparer.Ordinal);
+            // R-ENEMY-008: a row may move and then attack, so a row may appear once per order.
+            var rows = new HashSet<(string Row, string Order)>();
             for (int i = 0; i < o.UnitOrders.Count; i++)
             {
                 var x = o.UnitOrders[i];
                 var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
-                if (!rows.Add(x.Unit)) throw new ContentException(e.File, at + ".unit", "duplicate operation unit row");
+                if (!rows.Add((x.Unit, x.Order))) throw new ContentException(e.File, at + ".unit", "duplicate operation unit row");
                 if (!c.UnitAnchorHexes.Keys.Any(k => k.Row == x.Unit))
                     throw new ContentException(e.File, at + ".unit", $"unknown unit row '{x.Unit}' ({StartingForces.FileName})");
                 if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R))
                     && !c.UnitOrderTargets.Any(k => k.Key.Row == x.Unit && (k.Value.Q, k.Value.R) == (x.Q, x.R)))
                     throw new ContentException(e.File, at, FormattableString.Invariant($"hex q={x.Q} r={x.R} is not an anchor or an order target of '{x.Unit}' in {StartingForces.HexesFileName}"));
-                // The order ends with its anchor's window (the owner's answer 1 on #2087), so the anchor needs an end.
-                if (EventSystem.OrderEnds(c, x) == null)
+                // The order ends with its anchor's window (the owner's answer 1 on #2087), so the anchor needs an end. An attack
+                // is fought when the card is decided (R-ENEMY-008) and outlasts nothing.
+                if (x.Order == Movement.GoTo && EventSystem.OrderEnds(c, x) == null)
                     throw new ContentException(e.File, at, FormattableString.Invariant($"the anchor of '{x.Unit}' on hex q={x.Q} r={x.R} has no 'to' date in {StartingForces.FileName}"));
             }
         }
