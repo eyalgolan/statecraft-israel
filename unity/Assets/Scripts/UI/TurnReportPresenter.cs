@@ -139,6 +139,9 @@ namespace Statecraft.Game.UI
         {
             if (held || !wantsShow || nav.Current != null) return;
             wantsShow = false;
+            // #3004: the hold can end inside End turn (End turn again mid-playback, on a turn with no moves to play), after
+            // the step and before TurnEnded: the report shown here is the new turn's, so TurnEnded finds it reported.
+            seen = bridge.Session.Last ?? seen;
             try { Show(); }
             catch (Exception e) { UnityEngine.Debug.LogException(e); Hide(); }
         }
