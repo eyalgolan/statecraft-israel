@@ -56,6 +56,8 @@ namespace Statecraft.Game.UI
         readonly EventCallback<GeometryChangedEvent> onMediaGeometry;
         string watchScreens = "";
         VisualElement? mediaOpener;
+        /// <summary>The control that had the focus when the player opened the tour: closing it gives the focus back there (#3028).</summary>
+        VisualElement? chainOpener;
         bool watchStoppedOnPress;
         int overlayClosedAt = -1;
         internal bool OverlayClosedThisFrame => overlayClosedAt == Time.frameCount;
@@ -224,7 +226,7 @@ namespace Statecraft.Game.UI
             if (session.Chain.Step >= 0 && ReferenceEquals(openingGame, bridge.Session)) return;
             session.Queue.Reset(); session.Fired.Clear(); session.FiredTurn = Turn;
             Shown = null; covered = null;
-            session.Chain.Step = -1; session.Chain.PutBack = null; adopted = null;
+            session.Chain.Step = -1; session.Chain.PutBack = null; adopted = null; chainOpener = null;
             ClearTarget();
             Notice(AdvisorSignals.NewGame);
             if (session.AutoShow && session.Settings.HasFile && !session.Settings.OpeningSeen
@@ -368,7 +370,9 @@ namespace Statecraft.Game.UI
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
             var focused = layer.focusController?.focusedElement as VisualElement;
-            if (focused != null && layer.Contains(focused)) { focused.Blur(); FocusReturn.To(hudRoot.Q<Button>("end-turn")); }
+            // Back to the tour's opener; End turn when there is none or it cannot take the focus now, and for a queue row the
+            // player reached by Tab (#3028).
+            if (focused != null && layer.Contains(focused)) { focused.Blur(); FocusReturn.ToOrWithin(chainOpener, hudRoot.Q<Button>("end-turn")); }
             if (!ScreenNav.Moves()) { hudRoot.RemoveFromClassList(OpenClass); return; }
             popup.AddToClassList(ScreenNav.ClosingClass);
             fading?.Pause();
@@ -504,6 +508,9 @@ namespace Statecraft.Game.UI
             session.Chain.Step = first;
             if (hooks.Card?.Shown != null && !hooks.Card.Collapsed) hooks.Card.Collapse(takeFocus: false);
             ShowStep(first);
+            // After CloseScreens: a focus that was in a screen is on its rail button by now (ScreenNav.Close), as from the
+            // Encyclopedia's button. A focus already in the popup keeps the first opener.
+            if (hudRoot.focusController?.focusedElement is VisualElement had && !layer.Contains(had)) chainOpener = had;
             FocusReturn.To(gotIt);                          // the player opens it, so Enter goes on (spec 16)
         }
 
@@ -525,6 +532,7 @@ namespace Statecraft.Game.UI
             Shown = null; covered = null;
             ClearTarget();
             Hide();
+            chainOpener = null;
             if (restoreCard && hooks.Card?.Shown != null)
             {
                 if (session.Chain.CardWasOpen && hooks.Card.Collapsed) hooks.Card.Reopen();
