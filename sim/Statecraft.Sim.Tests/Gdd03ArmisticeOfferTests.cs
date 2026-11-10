@@ -321,12 +321,12 @@ options:
     // (Recommended)": no new saved state). A fixture text, never a real card's: the four real texts wait for the owner's
     // approval of the words and their sign-off ("You approve the words (Recommended)", "You, before they land (Recommended)").
 
-    const string Early = "The talks came sooner. {prime_minister} must decide.";
+    internal const string Early = "The talks came sooner. {prime_minister} must decide.";
     const string EarlyHe = "השיחות הגיעו מוקדם יותר. על {prime_minister} להחליט.";
 
     static string WithEarly(string card, string text = Early) => card.Replace("office: prime_minister", $"early_text: '{text}'\noffice: prime_minister");
 
-    static Content LoadEarly(string ruleset = SaveGame.Gdd03Ruleset)
+    internal static Content LoadEarly(string ruleset = SaveGame.Gdd03Ruleset)
     {
         var f = Gdd03MovementFortTests.Files(ruleset);
         f["events/armistice_egypt.yaml"] = WithEarly(Card("egypt", "1949-12-01"));
