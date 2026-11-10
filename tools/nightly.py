@@ -1367,6 +1367,23 @@ def run_savetest(cfg: Config, job: Path, tag: str) -> int:
     return 0 if result == "PASS" else 1
 
 
+def _mark_night(job: Path, now: datetime) -> None:
+    """Sets state.json's last_run_day to tonight after main() records a refusal before run_night starts, as run_night
+    does for every night it records, so the next night does not also record it as MISSED (#3009; the launcher's
+    _mark_night, #2694). Written only under run.lock: on contention the run holding it writes the day itself. A
+    state file load_state refuses is left alone (the next night records that refusal as gate=state)."""
+    try:
+        with run_lock(job) as held:
+            if not held:
+                return
+            path = job / "state.json"
+            state = load_state(path)
+            state.last_run_day = night_of(now).isoformat()
+            save_state(path, state)
+    except (Refused, OSError) as error:
+        print(f"could not mark {night_of(now)} as run in {job / 'state.json'}: {error}", file=sys.stderr)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="nightly.py")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1402,6 +1419,8 @@ def main(argv: list[str] | None = None) -> int:
                 detail = f"{detail}; could not write refusal log: {error}"
             line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=evidence)
             record(job / "LOG.md", Config().handoff, f"{line} {detail}")
+            if args.command == "run":   # after the record, as in run_night; the save test is not the night's run
+                _mark_night(job, now)
             notify("Nightly refused", str(e)[:200])
         print(e, file=sys.stderr)
         return 1
@@ -1439,6 +1458,8 @@ def main(argv: list[str] | None = None) -> int:
         if not getattr(args, "no_publish", False):   # a by-hand --no-publish run writes no record (tools/README.md)
             line = log_line(now, "REFUSED", tag=None, sha=None, gate=e.gate, log=None)
             record(job / "LOG.md", cfg.handoff, f"{line} {e.detail}")
+            if args.command == "run":   # the lock is retaken; a lock still failing is an stderr note
+                _mark_night(job, now)
             notify("Nightly refused", str(e)[:200])
         print(e, file=sys.stderr)
         return 1

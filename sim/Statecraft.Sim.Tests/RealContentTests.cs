@@ -148,17 +148,39 @@ public class RealContentTests
     }
 
     // R-ENEMY-001 at 4.4 km (owner review of #1796, 27 October): Rehovot shares Ramla's hex (-4, 24), and Ramla being enemy-held
-    // must not open Rehovot's hex to an enemy move.
+    // must not open Rehovot's hex to an enemy move. No enemy retreat ends there; since R-CTRL-006 (#1305) a move sent to it
+    // may, and then takes Rehovot, a player's locality, not Ramla.
     [Fact]
-    public void NoEnemyMoveEndsOnRehovotsHexItSharesWithRamla()
+    public void NoEnemyMoveEndsOnRehovotsHexItSharesWithRamlaUnlessSentThere()
     {
         var s = Simulation.NewGame(C, 42, Mode.Historical);
         var e = s.Units.Values.First(u => u.Side != Movement.PlayerSide);
         s.Units.Clear();
         s.Units.Add(1, new Unit(1, e.Type, -4, 25, side: e.Side, strength: 2));   // next to (-4, 24)
         Assert.Contains((-4, 24), Movement.NoEntry(C, s, true));
-        Assert.Equal("Units may not enter an enemy-held locality before its capture is possible",
-            Movement.Move(C, s, 1, -4, 24, new Dictionary<int, int>(), new List<Cause>(), enemy: true));
+        Assert.Null(Movement.Move(C, s, 1, -4, 24, new Dictionary<int, int>(), new List<Cause>(), enemy: true));
+        var why = new List<Cause>();
+        SettlementControl.Capture(C, s, s.Date.AddMonths(1), why);
+        Assert.Equal(new[] { ("rehovot", "place_lost") }, why.Select(x => (x.Target, x.Key)));
+    }
+
+    // R-CTRL-006 for an annexed target at 4.4 km (the owner on #2955, 8 November 2026: "Can be taken"; "Destination only
+    // (Recommended)"): an annexed Ramla is taken on its target hex (-3, 24), not Rehovot's (-4, 24), and only by a move sent
+    // there; no enemy path or retreat ends there otherwise.
+    [Fact]
+    public void AnAnnexedRamlaIsTakenOnItsTargetHexOnlyWhenSentThere()
+    {
+        var s = Simulation.NewGame(C, 42, Mode.Historical);
+        var e = s.Units.Values.First(u => u.Side != Movement.PlayerSide);
+        s.Units.Clear();
+        s.Units.Add(1, new Unit(1, e.Type, -3, 25, side: e.Side, strength: 2));   // next to (-3, 24)
+        s.Settlements["ramla"] = new SettlementControl(Movement.PlayerSide, SettlementControl.Annexed, new DateTime(1948, 7, 12));
+        Assert.Contains((-3, 24), Movement.NoEntry(C, s, true));
+        Assert.Null(Movement.Move(C, s, 1, -3, 24, new Dictionary<int, int>(), new List<Cause>(), enemy: true));
+        var why = new List<Cause>();
+        SettlementControl.Capture(C, s, s.Date.AddMonths(1), why);
+        Assert.Equal(new[] { ("ramla", "place_lost") }, why.Select(x => (x.Target, x.Key)));
+        Assert.Equal(("", SettlementControl.Annexed), (s.Settlements["ramla"].Owner, s.Settlements["ramla"].State));
     }
 
     // R-MOVE-005 for the player at 4.4 km (owner review of #1796, 31 October): an enemy-held Ramla closes its target hex (-3, 24)

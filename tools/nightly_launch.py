@@ -7,7 +7,8 @@ copy of nightly_state.py, so it depends on no checkout's working tree. It takes 
 dedicated clone's own `main` to `origin/main` (resetting and cleaning only that clone, keeping its Unity Library) and
 runs tools/nightly.py from the clone, so a merged change to the script takes effect on the next night. The clone is
 created by hand at install time (tools/README.md, "Nightly release"): a missing clone is a recorded REFUSED night,
-never a clone made here. When a run is in progress the launcher exits 0 and touches nothing.
+never a clone made here. A refusal also sets state.json's last_run_day, under the run lock, so the next night does
+not record it as MISSED. When a run is in progress the launcher exits 0 and touches nothing.
 
 The lock is held only while the clone is prepared: nightly.py takes the same lock itself and would find it taken.
 
@@ -15,13 +16,15 @@ Usage: uv run nightly_launch.py --uv PATH --home JOB_FOLDER"""
 from __future__ import annotations
 
 import argparse
+import contextlib
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
-from nightly_state import TZ, Config, Refused, load_config, log_line, notify, record, run_lock, write_refusal_log
+from nightly_state import (TZ, Config, Refused, load_config, load_state, log_line, night_of, notify, record, run_lock,
+                           save_state, write_refusal_log)
 
 # What `git clean -x` keeps in the clone: Unity's import cache and the Unity-MCP plugin's NuGet download. The same
 # list as unity_postmerge.KEEP (a test keeps them equal; this file runs without the checkout, so it cannot import it).
@@ -60,7 +63,24 @@ def prepare_clone(cfg: Config, git: Callable[..., str] = _git,
         raise Refused("clone", f"could not prepare the clone: {type(e).__name__}: {e}") from e
 
 
-def _refuse(cfg: Config, home: Path, e: Refused, now: datetime) -> None:
+def _mark_night(home: Path, now: datetime, *, locked: bool) -> None:
+    """Sets state.json's last_run_day to tonight, as nightly.py's run_night does for every night it records, so a
+    refused launch is never counted as MISSED on the next night (#2694). Written only under run.lock: `locked` says
+    the caller holds it; otherwise it is taken here, and a run that holds it already writes the day itself. A state
+    file nightly.py would refuse is left alone (the next night records that refusal as gate=state)."""
+    try:
+        with (contextlib.nullcontext(True) if locked else run_lock(home)) as held:
+            if not held:
+                return
+            path = home / "state.json"
+            state = load_state(path)
+            state.last_run_day = night_of(now).isoformat()
+            save_state(path, state)
+    except (Refused, OSError) as error:
+        print(f"could not mark {night_of(now)} as run in {home / 'state.json'}: {error}", file=sys.stderr)
+
+
+def _refuse(cfg: Config, home: Path, e: Refused, now: datetime, *, locked: bool = False) -> None:
     run_dir = home / "runs" / f"{now.astimezone(TZ):%Y%m%d-%H%M%S}"
     detail = e.detail
     try:
@@ -73,6 +93,7 @@ def _refuse(cfg: Config, home: Path, e: Refused, now: datetime) -> None:
         record(home / "LOG.md", cfg.handoff, f"{line} {detail}")
     except OSError as record_error:
         print(f"could not record refusal: {record_error}", file=sys.stderr)
+    _mark_night(home, now, locked=locked)   # after the record, as in run_night, so a failed save keeps the line
     notify("Nightly refused", str(e)[:200])
     print(e, file=sys.stderr)
 
@@ -90,14 +111,21 @@ def main(argv: list[str] | None = None, *, git: Callable[..., str] = _git,
     except Refused as e:   # a corrupt config is a recorded REFUSED night, not a night on defaults
         _refuse(Config(), a.home, e, now)
         return 1
+    recorded: Refused | None = None
     try:
         with run_lock(a.home) as held:
             if not held:
                 print("nightly_launch: a run is in progress")
                 return 0
-            prepare_clone(cfg, git, copy)
+            try:
+                prepare_clone(cfg, git, copy)
+            except Refused as e:   # recorded while the lock is held, so the state write is under it; re-raised so
+                recorded = e       # a lock release failure is only a note beside it, never a second record
+                _refuse(cfg, a.home, e, now, locked=True)
+                raise
     except Refused as e:
-        _refuse(cfg, a.home, e, now)
+        if e is not recorded:   # the lock itself failed
+            _refuse(cfg, a.home, e, now)
         return 1
     try:
         return call([a.uv, "run", str(cfg.clone / "tools" / "nightly.py"), "run"])

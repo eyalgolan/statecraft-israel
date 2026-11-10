@@ -58,7 +58,7 @@ namespace Statecraft.Sim
         public static IEnumerable<(Type Type, string Property)> Covered =>
             Bindings.Select(b => (b.Value.DeclaringType!, b.Value.Name))
                 .Concat(new[] { (typeof(GameEvent), nameof(GameEvent.TitleHe)), (typeof(GameEvent), nameof(GameEvent.TextHe)),
-                    (typeof(GameEvent), nameof(GameEvent.LateTextHe)),
+                    (typeof(GameEvent), nameof(GameEvent.LateTextHe)), (typeof(GameEvent), nameof(GameEvent.EarlyTextHe)),
                     (typeof(EventOption), nameof(EventOption.TextHe)) });
 
         /// <summary>The Hebrew the typed records hold, as a translation set (no UI strings: those are not content).</summary>
@@ -69,7 +69,7 @@ namespace Statecraft.Sim
                 if (e.TitleHe != "")
                     set.Events.Add(new EventTranslation
                     {
-                        Id = e.Id, Title = e.TitleHe, Text = e.TextHe, LateText = e.LateTextHe, Review = e.TextHeReview,
+                        Id = e.Id, Title = e.TitleHe, Text = e.TextHe, LateText = e.LateTextHe, EarlyText = e.EarlyTextHe, Review = e.TextHeReview,
                         Options = e.Options.Where(o => o.TextHe != "").Select(o => new KeyValuePair<string, string>(o.Id, o.TextHe)).ToList(),
                     });
             foreach (var b in Bindings)
@@ -91,7 +91,7 @@ namespace Statecraft.Sim
         {
             foreach (var e in c.Events)
             {
-                e.TitleHe = ""; e.TextHe = ""; e.LateTextHe = ""; e.TextHeReview = "";
+                e.TitleHe = ""; e.TextHe = ""; e.LateTextHe = ""; e.EarlyTextHe = ""; e.TextHeReview = "";
                 foreach (var o in e.Options) o.TextHe = "";
             }
             foreach (var b in Bindings)
@@ -112,7 +112,7 @@ namespace Statecraft.Sim
             {
                 var e = c.Events.FirstOrDefault(x => x.Id == t.Id)
                     ?? throw new ContentException(file + Translations.EventsFile, t.Id, "no event has this id");
-                e.TitleHe = t.Title; e.TextHe = t.Text; e.LateTextHe = t.LateText;
+                e.TitleHe = t.Title; e.TextHe = t.Text; e.LateTextHe = t.LateText; e.EarlyTextHe = t.EarlyText;
                 if (t.Review != "") e.TextHeReview = t.Review;
                 foreach (var o in t.Options)
                     (e.Options.FirstOrDefault(x => x.Id == o.Key)

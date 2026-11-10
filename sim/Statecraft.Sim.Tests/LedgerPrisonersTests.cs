@@ -9,14 +9,15 @@ using Statecraft.Sim;
 /// Captured records with that captor. The prisoners eat and the held soldiers cost Money as today (R-POW-002, R-POW-005).
 /// Owner rulings, 8 November 2026 (#1725): "Yes, as today (Recommended)", "Winning side, set at start (Recommended)",
 /// "Formation's region (Recommended)", "Stays on record (Recommended)", "Keep count + check (Recommended)", "No, keep
-/// count (Recommended)" and "Prisoners #1710 first (Recommended)".</summary>
+/// count (Recommended)" and "Prisoners #1710 first (Recommended)". Owner rulings, 9 November 2026: "Go ahead on strength (Recommended)",
+/// "Yes, in #1706 (Recommended)" and "Sent home (Recommended)".</summary>
 public class LedgerPrisonersTests
 {
     static Content Gdd03() => HistoricalPopulationTests.Real(true);
 
     static GameState Dark(Content c) => Simulation.NewGame(c, 1, Mode.Historical, darkStart: true);
 
-    static string Take(Content c, GameState s, Unit u, Unit captor) => Prisoners.Take(c, s, u, captor);
+    static string Take(Content c, GameState s, Unit u, Unit captor) => Prisoners.Take(c, s, u, captor).Text;
 
     // The own opening formations on the board, lowest id first: unit id i is c.StartingForces[i] (StartingForces.Init).
     static List<Unit> Own(Content c, GameState s) => s.Units.Values
@@ -161,12 +162,12 @@ public class LedgerPrisonersTests
         dark.PopulationLedger.Reconcile();
     }
 
-    // R-POP-002 "refused before mutation": each refusal leaves the state, the ledger and the hash unchanged. A formation whose
-    // serving records do not match its strength; a trained formation (not an opening one: its records are #2964's
-    // formation/<id> target, not on main); a captor side the ledger does not bind; and a count that already disagrees with
-    // the Captured records ("Keep count + check (Recommended)").
+    // R-POP-002 "refused before mutation": each refusal leaves the state, the ledger and the hash unchanged. A captor side
+    // the ledger does not bind, and a count that already disagrees with the Captured records ("Keep count + check
+    // (Recommended)"). The owner's rulings of 9 November 2026, "Go ahead on strength (Recommended)" and "Yes, in #1706
+    // (Recommended)", took out the refusals of a strength its records do not number and of a trained formation: those
+    // cases are captured now (the tests below).
     [Theory]
-    [InlineData("mismatch", "serves it with")] [InlineData("trained", "no ledger records to capture")]
     [InlineData("unbound", "is not a bound captor")] [InlineData("count", "captured records with that captor")]
     public void ARefusedCaptureLeavesStateLedgerAndHashUnchanged(string why, string reason)
     {
@@ -175,8 +176,6 @@ public class LedgerPrisonersTests
         var u = Own(c, s)[0]; var captor = Enemy(s, "egypt");
         switch (why)
         {
-            case "mismatch": s.PopulationLedger.RegisterCombatLoss(Serving(c, s, u)[0].Id, "fixture"); break;
-            case "trained": u = new Unit(s.NextId, "recruit", u.Q, u.R, side: Movement.PlayerSide, strength: 1); s.Units.Add(u.Id, u); s.NextId++; break;
             case "unbound": captor = new Unit(captor.Id, captor.Type, captor.Q, captor.R, side: "local", strength: captor.Strength); break;
             case "count": s.SoldiersHeld["egypt"] = 1; break;
         }
@@ -186,6 +185,146 @@ public class LedgerPrisonersTests
         Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash());
         Assert.Equal(ledger, s.PopulationLedger.Canonical());
         Assert.Equal(units, s.Units.Values.Select(x => x.Canonical()));
+    }
+
+    // "Go ahead on strength (Recommended)" (owner, 9 November 2026): a formation with fewer serving records than its strength
+    // surrenders; every record it has is captured, and SoldiersHeld grows by the records captured, not the strength, so the
+    // count still equals the Captured records ("Keep count + check (Recommended)") and the next Take and Upkeep go on.
+    [Fact]
+    public void AFormationWithFewerRecordsThanStrengthHasAllItsRecordsCaptured()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var u = Own(c, s)[0]; var captor = Enemy(s, "egypt");
+        var serving = Serving(c, s, u);
+        Assert.True(serving.Count >= 3);
+        foreach (var p in serving.Skip(serving.Count - 2)) s.PopulationLedger.RegisterCombatLoss(p.Id, "fixture");
+        var left = Serving(c, s, u);
+        Assert.Equal(u.Strength - 2, left.Count);
+        var taken = Prisoners.Take(c, s, u, captor);   // no leftover: no home city, no Arms back
+        Assert.Equal(("They are held by the enemy", left.Count, 0, (string?)null), (taken.Text, taken.Held, taken.ArmsBack, taken.Home));
+        Assert.Empty(Serving(c, s, u));
+        foreach (var p in left)
+            Assert.Equal((PopulationStatus.Captured, "egypt"), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
+        Assert.Equal(left.Count, s.SoldiersHeld["egypt"]);
+        AssertHeldMatchesRecords(s);
+        Take(c, s, Own(c, s)[1], captor);
+        Prisoners.Upkeep(c, s, c.RulesAt(s.Date).Mvp!, new List<Cause>());
+        AssertHeldMatchesRecords(s);
+        s.PopulationLedger.Reconcile();
+    }
+
+    // "Go ahead on strength (Recommended)": a formation with more serving records than its strength surrenders exactly its
+    // strength of them, the lowest ids first (as "Lowest id first (Recommended)" and docs/GDD.md's ascending population
+    // ids). SoldiersHeld grows by the strength, as in the aggregate game. "Sent home (Recommended)" (owner, 9 November
+    // 2026): the leftover records leave service as Send home's do (R-UNIT-005: "Nearest city, unemployed (Recommended)",
+    // "Settled in (Recommended)", "Keep both (Recommended)", "Back to Arms stock (Recommended)"): free civilians without an
+    // assignment in the nearest city to the formation's hex, reception ticks reception.turns, qualification and combat XP
+    // kept, the issued item back in the Arms stock once. No record is made or lost.
+    [Fact]
+    public void AFormationWithMoreRecordsThanStrengthHasItsLowestRecordsCapturedAndTheRestSentHome()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var o = Own(c, s)[0]; var captor = Enemy(s, "egypt");
+        var u = new Unit(o.Id, o.Type, o.Q, o.R, o.Service, o.Side, o.Strength - 2, o.Order, o.OrderTarget, o.HomeCity, o.Full, o.CombatXp);
+        s.Units[u.Id] = u;
+        var serving = Serving(c, s, u);
+        Assert.Equal(u.Strength + 2, serving.Count);
+        var leftover = serving.Skip(u.Strength).ToList();
+        Assert.Equal(new[] { serving[u.Strength].Id, serving[u.Strength + 1].Id }, leftover.Select(p => p.Id));
+        Assert.All(leftover, p => Assert.NotNull(p.Equipment.MilitaryId));
+        var city = Demobilization.Nearest(c, u.Q, u.R);
+        var region = c.PlayerRegions.AtLocation(city)!.Id;
+        var received = c.RequirePopulationInteger("reception.turns");
+        var arms = s.Arms; var next = s.PopulationLedger.NextPopulationId; var count = s.PopulationLedger.Units.Count;
+        var cities = string.Join(";", s.Cities.Values.Select(x => x.Canonical()));
+        var taken = Prisoners.Take(c, s, u, captor);
+        Assert.Equal((u.Strength, leftover.Count, city), (taken.Held, taken.ArmsBack, taken.Home));
+        foreach (var p in serving.Take(u.Strength))
+            Assert.Equal((PopulationStatus.Captured, "egypt"), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
+        Assert.Empty(Serving(c, s, u));
+        var home = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.FreeCivilian && serving.Any(w => w.Id == p.Id))
+            .Select(p => p.Id).OrderBy(x => x).ToList();
+        Assert.Equal(leftover.Select(p => p.Id), home);
+        foreach (var was in leftover)
+        {
+            var p = s.PopulationLedger.Get(was.Id);
+            Assert.Equal(PopulationAssignmentKind.Unassigned, p.Assignment.Kind);
+            Assert.Equal((region, city), (p.Location!.Region, p.Location.City));
+            Assert.Equal(received, p.ReceptionTicks);
+            Assert.Null(p.Captor);
+            Assert.Null(p.Equipment.MilitaryId);
+            Assert.Equal((was.Qualification, was.CombatXp, was.Profession, was.Tier, was.WorkXp, was.Equipment.ToolsId),
+                (p.Qualification, p.CombatXp, p.Profession, p.Tier, p.WorkXp, p.Equipment.ToolsId));
+        }
+        Assert.Equal(arms + leftover.Count, s.Arms);
+        Assert.Equal((next, count), (s.PopulationLedger.NextPopulationId, s.PopulationLedger.Units.Count));
+        Assert.Equal(cities, string.Join(";", s.Cities.Values.Select(x => x.Canonical())));   // "No, records only (Recommended)"
+        Assert.Equal(u.Strength, s.SoldiersHeld["egypt"]);
+        AssertHeldMatchesRecords(s);
+        s.PopulationLedger.Reconcile();
+    }
+
+    // R-POW-005, R-POP-002 "refused before mutation": every check, the leftovers' home location binding included, comes
+    // before the first write, so the capture and the leftovers' homecoming are one validated ledger commit. Here the
+    // nearest city to the formation is a region member the ledger does not bind as a location (a content change made
+    // after the start, the only way to reach it), so the leftovers' location is refused and nothing is written: no
+    // record captured, no count, no Arms, the same hash.
+    [Fact]
+    public void ALeftoverWhoseHomeIsNotABoundLocationRefusesBeforeAnyWrite()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var o = Own(c, s)[0]; var captor = Enemy(s, "egypt");
+        var u = new Unit(o.Id, o.Type, o.Q, o.R, o.Service, o.Side, o.Strength - 2, o.Order, o.OrderTarget, o.HomeCity, o.Full, o.CombatXp);
+        s.Units[u.Id] = u;
+        var unbound = c.PlayerRegions.Regions.Values.SelectMany(r => r.MemberLocations.Where(m => c.Cities.All(x => x.Id != m)
+            && r.FieldHosts.All(h => h.Host != m))).OrderBy(x => x, StringComparer.Ordinal).First();
+        c.Cities.Insert(0, new CityStart { Id = unbound });
+        c.SettlementHexes.Insert(0, new SettlementHex { Id = unbound, Q = u.Q, R = u.R });
+        Assert.Equal(unbound, Demobilization.Nearest(c, u.Q, u.R));
+        var hash = s.Hash(); var ledger = s.PopulationLedger.Canonical().ToList(); var arms = s.Arms;
+        var held = s.SoldiersHeld.ToList();
+        var refused = Assert.Throws<ArgumentException>(() => Prisoners.Take(c, s, u, captor));
+        Assert.Equal("Unknown or inconsistent location.", refused.Message);   // the leftover's home, not some other refusal
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal((hash, arms), (s.Hash(), s.Arms));
+        Assert.Equal(held, s.SoldiersHeld.ToList());
+        AssertHeldMatchesRecords(s);
+    }
+
+    // "Yes, in #1706 (Recommended)" (owner, 9 November 2026): a trained formation's soldiers are found as battles find them,
+    // on Training.FormationTarget (formation/<unit id>, #2964), and become Captured; a player unit with no records on its
+    // target captures none and adds nothing to SoldiersHeld ("Go ahead on strength (Recommended)").
+    [Fact]
+    public void ATrainedFormationsRecordsAreCaptured()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        s.Arms = 200; s.Treasury = 100; s.Debt = 0;
+        Assert.Null(Training.Start(c, s, "tel_aviv", "recruit", 1, new List<Cause>()));
+        var unit = s.NextId;
+        for (int i = 0; i < c.UnitTypes.First(t => t.Id == "recruit").TrainingTurns; i++) Training.Progress(c, s, new List<Cause>());
+        Assert.True(unit >= c.StartingForces.Count);
+        var u = s.Units[unit];
+        var target = Training.FormationTarget(c, unit);
+        var serving = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier && p.Assignment.Target == target)
+            .OrderBy(p => p.Id).ToList();
+        Assert.Equal(u.Strength, serving.Count);
+        Assert.Equal("They are held by the enemy", Take(c, s, u, Enemy(s, "jordan")));
+        foreach (var p in serving)
+            Assert.Equal((PopulationStatus.Captured, "jordan"), (s.PopulationLedger.Get(p.Id).Status, s.PopulationLedger.Get(p.Id).Captor));
+        Assert.Equal(u.Strength, s.SoldiersHeld["jordan"]);
+        AssertHeldMatchesRecords(s);
+
+        var none = new Unit(s.NextId, "recruit", u.Q, u.R, side: Movement.PlayerSide, strength: 1); s.Units.Add(none.Id, none); s.NextId++;
+        var ledger = s.PopulationLedger.Canonical().ToList();
+        Take(c, s, none, Enemy(s, "jordan"));
+        Assert.Equal(ledger, s.PopulationLedger.Canonical());
+        Assert.Equal(u.Strength, s.SoldiersHeld["jordan"]);
+        AssertHeldMatchesRecords(s);
+        s.PopulationLedger.Reconcile();
     }
 
     // "Keep count + check (Recommended)": Upkeep refuses a count that disagrees with the records, with nothing paid or eaten.
@@ -218,9 +357,9 @@ public class LedgerPrisonersTests
         Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
     }
 
-    // Where Take's refusal can be reached from combat, and what it leaves. Combat.Resolve (step 2, called by TurnResolver) refuses
-    // any initialized ledger at its entry, before any engagement, so on this branch only the player's instant
-    // attack, Combat.Strike (its one caller is Step, through Simulation.RunOrders), can reach Prisoners.Take on a dark start. Here an
+    // Where Take's refusal can be reached from combat, and what it leaves. Since #1706 both Combat.Resolve (step 2,
+    // TurnResolver.cs:20) and the player's instant attack, Combat.Strike (its one caller is Step, Simulation.cs:268), fight
+    // on a dark start and can reach Prisoners.Take (LedgerCombatTests covers Resolve's surrender). Here an
     // enemy unit boxed in by own units surrenders to a Strike while SoldiersHeld disagrees with the Captured records, so Take
     // throws InvalidOperationException before it writes anything. The throw comes after the Strike's own writes (the
     // attacker's order and the engagement's draw and losses), and those stay on the state object a direct call is given. In
@@ -233,10 +372,6 @@ public class LedgerPrisonersTests
     {
         var c = Gdd03();
         var s = Dark(c);
-        var resolve = s.Clone();
-        Assert.Contains("integration is held",
-            Assert.Throws<NotSupportedException>(() => Combat.Resolve(c, resolve, new List<Cause>())).Message);
-        Assert.Equal(s.Hash(), resolve.Hash());
 
         // The weakest enemy unit (lowest id on a tie), attacked by the strongest own formation (lowest id on a tie).
         var e = s.Units.Values.Where(u => Prisoners.FrontOf.ContainsKey(u.Side) && u.Strength > 0)
