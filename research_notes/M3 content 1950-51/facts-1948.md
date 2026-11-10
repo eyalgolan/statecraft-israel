@@ -2,6 +2,35 @@
 
 Researched 2026-10-10. All URLs were checked on that date.
 
+## Still open
+
+The [GAP] points below are the ones this note leaves open, each with the lines where it stands. The convention line
+(line 40) is not one. Line numbers are for this file as it now stands. The section "Open gaps to close with print sources"
+at the end of the note gives the historian-review view of the same points.
+
+- **First truce (section 1):** no minister for or against accepting is named (lines 93, 94, 96).
+- **Altalena (section 2):** who of the ten ministers present did not vote on 20 June (line 123); whether Fishman's and
+  Shapira's resignation was formally accepted, and when or whether either returned (line 126); anything outside the pages
+  listed (line 130).
+- **Generals' Revolt (section 3b):** the day the Committee of Five's report was finished or handed over (lines 155,
+  156); the day Galili left his post (lines 161, 162).
+- **Second truce (section 5):** the day of the government's own decision to accept, between the Council's vote of
+  15 July and the cable of 16 July (line 211); the cabinet positions and internal debate (lines 213, 214; table row
+  line 514).
+- **Israeli pound (sections 5 and 13e):** no sourced debate or alternative (lines 229, 491).
+- **Lehi amnesty (section 6):** the Herut item of 13 February 1949 on the release was blocked and not read (line 256).
+- **Horev (section 9):** whether the Israeli withdrawal order answered the British note itself or the US representation
+  that carried it (lines 329, 330); a direct British note to Israel, with the FO 371 files not reached (lines 331, 332;
+  table row line 513).
+- **Population registration (section 10):** no debated alternative (line 363); no Provisional Government minute on
+  deciding to hold it (lines 368, 384); which ministry the Statistics Department sat under in 1948 (line 383).
+- **Elections (section 11):** the deciding body and day of the first postponement (lines 395, 396); the day the
+  25 January date was decided (line 404); any debate inside the government or the Council on holding them in wartime
+  (line 416; table row line 517).
+- **First US loan (section 13d):** the Israeli debate, where the 1948 application and the Council and Knesset records of
+  1948-49 stay open after the second pass (line 478); whether the loan in the 26 May 1949 diary entry is the
+  Export-Import Bank credit (line 479); the four points (a) to (d) listed after the second pass (line 484).
+
 **Purpose.** The game has no events between `start: 1948-05-15` and `armistice_egypt` (`from: 1949-02-24`), which leaves about 40 weekly turns (rung 5) with no decision. These notes collect sourced candidates for that period.
 
 **Conventions** (the same as `facts.md`)
