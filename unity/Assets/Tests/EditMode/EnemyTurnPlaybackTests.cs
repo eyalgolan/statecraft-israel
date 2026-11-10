@@ -423,4 +423,26 @@ public class EnemyTurnPlaybackTests
         Assert.AreEqual(0, k.Camera.Settles);
         CollectionAssert.AreEqual(new[] { 901, 902, 903 }, k.Map.Released.ToArray());
     }
+
+    /// <summary>Q3 (owner, 2 November 2026): "a 12 s cap on the whole playback". The whole playback is the beats and the
+    /// camera's glide back to the player's view after them: an overlong turn (eight attacks far apart, each off screen, the
+    /// player's view far from the last one, so the return glide is the longest pan) ends within the cap.</summary>
+    [Test]
+    public void AnOverlongTurnEndsWithinTheCapReturnGlideIncluded()
+    {
+        var fights = Enumerable.Range(0, UnitBeats.Timing.MaxBeats)
+            .Select(i => Engagement(i * 30, 0, new[] { 921 + i }, new[] { 941 + i })).ToArray();
+        using var k = new Kit(Step(fights));
+        k.Bridge.EndTurn();
+        Assert.IsTrue(k.Playback.Active, "fixture: the moves play");
+        Assert.AreEqual(UnitBeats.Timing.MaxBeats, k.Playback.Count, "fixture: no fold");
+        const float dt = 0.001f;
+        int ticks = k.RunOut(dt, 40000);
+        // Each phase (a pan, an act, the return) ends on the tick that passes its length, so it may run a tick or two over
+        // (with the float sum of the ticks): at most 2 x MaxBeats + 1 phases, well under 0.1 s at this tick. The glide back
+        // is up to Timing.PanMax (0.8 s) long, so a cap that leaves it out fails by far more.
+        Assert.LessOrEqual(ticks * dt, UnitBeats.Timing.Cap + 0.1f,
+            "the beats and the glide back together stay within the cap");
+        Assert.Less(Vector3.Distance(new Vector3(-5000f, 0f, -5000f), k.Camera.LookAt), 1f, "fixture: the camera glided back");
+    }
 }

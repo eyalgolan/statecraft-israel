@@ -300,6 +300,28 @@ public class DecisionCardTests
         Assert.AreSame(r.CardElement, r.Focused, "with the keyboard focus");
     }
 
+    /// <summary>#3004 item 5: the same, with no screen opened while the card is held, so the refocus when the hold ends is
+    /// tested on its own (HeldForPlayback's setter forgets the card was focused; the case above also passes through a
+    /// cover's close, which does that too).</summary>
+    [UnityTest]
+    public IEnumerator ACardHeldWithNoScreenOpenedComesBackWithTheFocus([Values(false, true)] bool hebrew)
+    {
+        using var r = new Rig(1920, 1080, "law_of_return", text: hebrew ? He : Text);
+        yield return Frames(4);
+        Assert.AreSame(r.CardElement, r.Focused, "precondition: the open card has the focus");
+        var endTurn = r.Root.Q<Button>("end-turn");
+        endTurn.Focus();   // End turn pressed from the keyboard
+        r.Card.HeldForPlayback = true;
+        yield return Frames(3);
+        Assert.IsFalse(r.Shows("event-card"), "precondition: held out of view");
+        endTurn.Focus();
+        Assert.AreSame(endTurn, r.Focused, "precondition");
+        r.Card.HeldForPlayback = false;
+        yield return Frames(3);
+        Assert.IsTrue(r.Shows("event-card"), "the moves ended: the card is back");
+        Assert.AreSame(r.CardElement, r.Focused, "with the keyboard focus");
+    }
+
     [UnityTest]
     public IEnumerator AnOpenEventDoesNotTakeTheFocusBack()
     {

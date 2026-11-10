@@ -209,6 +209,52 @@ public class MeterTipTests
             Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
         }
     }
+
+    /// <summary>#803 Task 5 (R-CTRL-019): while the player's Deports have emptied any place, International support's tip
+    /// always counts them, whatever the turn's causes; no other meter, and none at 0 places.</summary>
+    [Test]
+    public void PersistentCausesCountThePlacesDepopulatedByDeport()
+    {
+        var text = En;
+        var s = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
+        s.DisplacedByPlayer = 2;
+        CollectionAssert.AreEqual(new[] { text.Format("hud.standing_displaced_places", 2) }, HudModel.PersistentCauses(text, s, "standing"));
+        StringAssert.Contains("2", HudModel.PersistentCauses(text, s, "standing")[0]);
+        CollectionAssert.IsEmpty(HudModel.PersistentCauses(text, s, "cohesion"), "only International support");
+        s.DisplacedByPlayer = 0;
+        CollectionAssert.IsEmpty(HudModel.PersistentCauses(text, s, "standing"), "none at 0 places");
+    }
+
+    /// <summary>#803 Task 5: rendered in English and Hebrew, International support's tip shows the places line after its
+    /// words and before the causes' heading on a turn with no Deport cause, so HudModel.MaxCauses never drops it.</summary>
+    [UnityTest]
+    public IEnumerator TheSupportTipCountsDepopulatedPlacesOnATurnWithNoDeport()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+        {
+            string at = hebrew ? "he" : "en";
+            yield return Rendered(1280, 720, hebrew, Check);
+
+            IEnumerator Check(VisualElement root, SimBridge bridge, UiText text)
+            {
+                bridge.State.DisplacedByPlayer = 2;
+                var meter = root.Q("meter-standing");
+                Enter(meter);
+                for (int i = 0; i < 3; i++) yield return null;
+                var line = text.Format("hud.standing_displaced_places", 2);
+                var causes = HudModel.Causes(bridge.Session.Last, "standing", bridge.Content, w => w.Key);
+                if (causes.Any(k => k.Contains("deport") || k.Contains("depopulation"))) problems.Add($"{at}: precondition: the turn has a Deport cause");
+                var words = Words(root);
+                var head = meter.tooltip + "\n" + text["hud.tip.standing"] + "\n" + line;
+                if (!words.StartsWith(head, System.StringComparison.Ordinal)) problems.Add($"{at}: the tip's words '{words}' do not show '{line}' after the meter's words");
+                if (causes.Count > 0 && words != head + "\n" + text["hud.causes"]) problems.Add($"{at}: the line is not before the causes' heading: '{words}'");
+                if (UiDirection.RightToLeft(line) != hebrew) problems.Add($"{at}: the line '{line}' is not in the UI's language");
+                Leave(meter);
+            }
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
 }
 
 /// <summary>#1184: a tap on the bare map never reaches the panel (the event system sends a pointer event only to a panel

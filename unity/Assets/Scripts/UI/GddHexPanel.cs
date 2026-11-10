@@ -19,7 +19,8 @@ namespace Statecraft.Game.UI
     /// can), and Build for each content project kind with its cost and turns (Projects.CityTurnsToBuild), disabled with the sim's own refusal
     /// (Projects.CheckCityReason) worded in the UI's language; or the project there, with its turns left and Cancel, or the
     /// day it was finished (R-PROJ-001 to R-PROJ-003); under gdd-0.3, on a built arms workshop, its staffing and cycle (#1722,
-    /// R-ARMS-005 to R-ARMS-007).</para>
+    /// R-ARMS-005 to R-ARMS-007). Under gdd-0.3 the city's block also has its housing readout (Cities.HousingOutlook,
+    /// R-HOUSE-005) and the list of all its projects with their work done, cost, builder and Cancel (#1722).</para>
     /// <para>Every number is the sim's, and every order goes through the bridge's queue: the sim rules on it when the turn
     /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available, Workshops.Check) and
     /// Simulation.Preview, asked with the exact queue a press would leave; a button is disabled only where the sim would refuse that
@@ -101,6 +102,7 @@ namespace Statecraft.Game.UI
             Line(host, "city-housing", city.Condition is double condition
                 ? text.Format("city.housing_condition", housed, capacity, PlayerText.Percent(condition))
                 : text.Format("city.housing", housed, capacity));
+            HousingLines(host, bridge, text, id);
             // #1121: the craftsmen (R-CRAFT-001) beside Jobs, as they fill ordinary jobs (R-CRAFT-002), and the overflow
             // (R-HOUSE-002, Cities.Overflow) beside the refugees waiting, the other people without housing. Each pair shares a
             // row (the labels keep their width and the row wraps only when they do not fit, Statecraft.uss), so on a short
@@ -238,7 +240,58 @@ namespace Statecraft.Game.UI
             var hex = c.SettlementHexes.First(h => h.Id == id);   // every settlement has one
             foreach (var u in s.Units.Values.Where(u => Projects.IsPioneer(u.Type) && u.Q == hex.Q && u.R == hex.R))
                 PioneerReturn(host, bridge, text, u.Id);
+            ProjectList(host, bridge, text, id);
         }
+
+        /// <summary>#1722 (R-HOUSE-005), gdd-0.3 only: the city's housing readout under its housing line, Cities.HousingOutlook
+        /// on the state as it is now: the surcharge a turn and the threshold it is charged below, or that there is none; the
+        /// condition the overflow lowers it to, when it does; Social cohesion's change a turn and its threshold, when there is
+        /// one. Every value and threshold is the sim's; nothing is computed here.</summary>
+        static void HousingLines(VisualElement host, SimBridge bridge, UiText text, string id)
+        {
+            if (!(Cities.HousingOutlook(bridge.Content, bridge.State, id) is Cities.HousingReadout o)) return;
+            var c = bridge.Content; var condition = bridge.State.Cities[id].Condition!.Value;
+            // #1722 review S2: a term shows only when its figure, rounded as shown, says something. A surcharge under the
+            // smallest amount shown has no line ("IL 0.0m a turn" says nothing, and "none" would not be true).
+            var surcharge = PlayerText.Money(c, "treasury", o.Surcharge);
+            if (o.Surcharge <= 0) Line(host, "city-surcharge", text.Format("city.housing_no_surcharge", PlayerText.Percent(o.MoneyThreshold)));
+            else if (surcharge != PlayerText.Money(c, "treasury", 0))
+                Line(host, "city-surcharge", text.Format("city.housing_surcharge", surcharge, PlayerText.Percent(o.MoneyThreshold)));
+            if (o.ConditionAfter < condition && PlayerText.Percent(o.ConditionAfter) != PlayerText.Percent(condition))
+                Line(host, "city-housing-falls", text.Format("city.housing_falls", PlayerText.Percent(o.ConditionAfter)));
+            if (o.CohesionShift < 0 && PlayerText.PercentChange(o.CohesionShift) != PlayerText.PercentChange(0))
+                Line(host, "city-housing-cohesion", text.Format("city.housing_cohesion", PlayerText.PercentChange(o.CohesionShift), PlayerText.Percent(o.CohesionThreshold)));
+        }
+
+        /// <summary>#1722 (R-PROJ-001 to R-PROJ-003, R-CITY-011, R-HOUSE-006), gdd-0.3 only: every project of the city in id
+        /// order, wherever it stands (a repair has no hex of its own): for one being built its whole turns of work done of
+        /// the kind's turns (the kind's turns less the record's TurnsLeft, which step 5 counts down, R-PROJ-003), the kind's
+        /// cost, which its start paid in full (Projects.StartCity, R-PROJ-001), whether it has a builder (R-CITY-011) and Cancel
+        /// (R-PROJ-002); for a built one the day it was finished and its cost. There is no upkeep column: upkeep is IL 0m in
+        /// the MVP (27M-17).</summary>
+        static void ProjectList(VisualElement host, SimBridge bridge, UiText text, string id)
+        {
+            var c = bridge.Content; var s = bridge.State;
+            if (!Listed(c, s, id)) return;
+            var mine = s.CityProjects.Values.Where(p => p.City == id).OrderBy(p => p.Id).ToList();
+            Line(host, "city-list-header", text.Format("city.list_header", mine.Count));
+            foreach (var p in mine)
+            {
+                var k = c.ProjectKinds.First(x => x.Id == p.Kind);
+                var name = "city-list-project-" + p.Id.ToString(CultureInfo.InvariantCulture);
+                var kind = PlayerText.Capitalised(ContentNames.Of(text, k));
+                var cost = PlayerText.Money(c, "treasury", k.Cost);
+                if (p.BuiltOn is DateTime built) { Line(host, name, text.Format("city.list_built", kind, Date(text, built), cost)); continue; }
+                var row = Row(host, name + "-row");
+                Line(row, name, text.Format("city.list_building", kind, k.Turns - p.TurnsLeft, k.Turns, cost, text[p.Builder ? "city.list_builder" : "city.list_no_builder"]));
+                var cancelled = bridge.QueuedLike(new CancelProject(p.Id)) != null;
+                OrderButton(row, bridge, name + "-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
+                    !cancelled, () => bridge.Queue(new CancelProject(p.Id)));
+            }
+        }
+
+        /// <summary>Whether the city's block lists its projects (ProjectList): gdd-0.3, and the city has one.</summary>
+        static bool Listed(Content c, GameState s, string city) => c.Ruleset == SaveGame.Gdd03Ruleset && s.CityProjects.Values.Any(p => p.City == city);
 
         /// <summary>A pioneer group's Return (R-QUAL-003; #1511): the sim's unit order return_civilian, offered where
         /// Qualification.CheckReturn takes the group (not one at work). It sits beside the places that list the group; the
@@ -568,13 +621,14 @@ namespace Statecraft.Game.UI
         /// (Simulation.Preview, as Train does) whether n + 1 in the order's slot would be refused, or would make it refuse an
         /// order of the queue it accepts now, so the queue's job, training, workshop, start and builder orders all count
         /// whichever runs first. While a project is left without one, that refusal shows in the UI's language. A repair's line
-        /// is <paramref name="line"/>; <paramref name="stepper"/> off leaves the stepper to another project of the hex (Repairs).</summary>
-        static void BuilderPart(VisualElement host, SimBridge bridge, UiText text, CityProject project, string line = "city-project-builder", bool stepper = true)
+        /// is <paramref name="line"/>, and none when it is null (its row in the city's list says it, Repairs); <paramref name="stepper"/>
+        /// off leaves the stepper to another project of the hex (Repairs).</summary>
+        static void BuilderPart(VisualElement host, SimBridge bridge, UiText text, CityProject project, string? line = "city-project-builder", bool stepper = true)
         {
             var c = bridge.Content; var s = bridge.State;
             if (c.Ruleset != SaveGame.Gdd03Ruleset) return;
             var city = project.City;
-            Line(host, line, text[project.Builder ? "city.project_builder" : "city.project_no_builder"]);
+            if (line != null) Line(host, line, text[project.Builder ? "city.project_builder" : "city.project_no_builder"]);
             if (!stepper) return;
             var building = s.CityProjects.Values.Count(p => p.City == city && p.BuiltOn == null);
             var builders = Projects.Builders(s, city);
@@ -610,7 +664,9 @@ namespace Statecraft.Game.UI
         /// (Projects.CityProjectAt skips it), so it shows on its city's own hex, where it is offered: its line and whether it
         /// has a builder. Its city's builder stepper shows once on the hex: under the hex's own project being built when that
         /// is the same city's, else under the city's first repair, so a city whose only project being built is a repair has
-        /// one too.</summary>
+        /// one too. Where the repair's city has its block on this hex and so its project list (ProjectList, #1722), the list's
+        /// row is the repair's line and its builder, so only the stepper shows here (owner, 8 November 2026: "Drop the old lines
+        /// here (Recommended)": each repair shows once).</summary>
         static void Repairs(VisualElement host, SimBridge bridge, UiText text, int q, int r, Func<string, string> townName)
         {
             var c = bridge.Content; var s = bridge.State;
@@ -618,6 +674,11 @@ namespace Statecraft.Game.UI
             if (Projects.CityProjectAt(s, q, r) is CityProject { BuiltOn: null } here) stepped.Add(here.City);
             foreach (var repair in s.CityProjects.Values.Where(p => p.Kind == Projects.HousingRepair && p.Q == q && p.R == r && p.BuiltOn == null).OrderBy(p => p.Id))
             {
+                if (Listed(c, s, repair.City) && c.SettlementHexes.Any(x => x.Id == repair.City && x.Q == q && x.R == r))
+                {
+                    BuilderPart(host, bridge, text, repair, null, stepped.Add(repair.City));
+                    continue;
+                }
                 var kind = PlayerText.Capitalised(ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == repair.Kind)));
                 Line(host, "city-repair-state", text.Format("city.project_building", kind, townName(repair.City),
                     Turns(text, Projects.CityTurnsToBuild(c, s, repair.Kind, repair.TurnsLeft, repair.Progress))));
