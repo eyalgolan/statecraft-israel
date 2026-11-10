@@ -528,7 +528,7 @@ public class TopBarTests
             return new Vector2(float.Parse(m.Groups[1].Value), float.Parse(m.Groups[2].Value));
         }
         var endTurn = Point(@"END_TURN, OPTION, MAP_UNDER_WHY = \((\d+), (\d+)\)");
-        var panel = Point(@"WHEEL_VIEWPORT, START_NEW, MAP, PANEL = \(1568, 752\), \(\d+, \d+\), \(\d+, \d+\), \((\d+), (\d+)\)");
+        var panel = Point(@"WHEEL_VIEWPORT, MAP, PANEL = \(1568, 752\), \(\d+, \d+\), \((\d+), (\d+)\)");
         yield return Rendered(1568, 752, false, (root, text) =>
         {
             float scale = 1568f / root.worldBound.width;
