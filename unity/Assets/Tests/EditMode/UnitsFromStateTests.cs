@@ -489,9 +489,13 @@ public class UnitsFromStateTests
             var animator = figure.gameObject.AddComponent<Animator>(); animator.runtimeAnimatorController = controller;
             animator.Rebind(); animator.Update(0f);
             Assert.IsTrue(layer.PlayAttack(israel[0].Id), "fixture: the token plays the attack");
+            // An Animator takes a Play at its next update, which only enters the state (at time 0) and does not move its clock
+            // (as AnAttackPlaysTheBakedTakeOnTheFigure): that update first, then 0.3 s on the figure's clock, as on the motion's.
+            animator.Update(0f);
+            Assert.AreEqual(UnitFigureMotion.Attack, animator.GetCurrentAnimatorStateInfo(0).fullPathHash, "fixture: the figure fires");
             TokenOf(map, firing).GetComponent<UnitTokenMotion>().Tick(0.3f);
             var attacker = TokenOf(map, firing).GetComponent<UnitTokenMotion>();
-            animator.Update(0.3f);   // the figure's own clock, as the motion's: 0.3 s into the 1 s take
+            animator.Update(0.3f);   // 0.3 s into the 1 s take
             float taken = animator.GetCurrentAnimatorStateInfo(0).normalizedTime;
             Assert.AreEqual(0.3f, taken, 0.02f, "fixture: the take has run 0.3 s");
             var to = FreeNeighbour(s, israel[1].Q, israel[1].R);
