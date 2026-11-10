@@ -132,14 +132,17 @@ namespace Statecraft.Sim
                 rows[row] = result.AsReadOnly();
             }
             // content/gdd03-balance.yaml `combat.armoured_factor`, `combat.artillery_range` and `combat.artillery_factor`; GDD docs/gdd/balance.md:175-177 at 605277df.
-            decimal Role(string key)
+            decimal Role(string key, string basis)
             {
-                var n = List(Required(key, "Default"), key, 1)[0];
+                var n = List(Required(key, basis), key, 1)[0];
                 if (n <= 0) throw Invalid(key, "requires a positive exact role factor");
                 return n;
             }
-            var armour = Role("combat.armoured_factor"); var artillery = Role("combat.artillery_factor");
-            var range = Integer(List(Required("combat.artillery_range", "Default"), "combat.artillery_range", 1)[0], "combat.artillery_range", true);
+            // R-COMBAT-007: the artillery factor is Agreed at 2, the live combat_percent 200 (C1, owner, 10 November 2026,
+            // #2918: "200% wins (Recommended)"); the armoured factor stays Default.
+            var armour = Role("combat.armoured_factor", "Default"); var artillery = Role("combat.artillery_factor", "Agreed");
+            // R-COMBAT-007: the range is Agreed (O5, owner, 1 November 2026, #1668: "2 hexes."; relabelled after #2918 C2).
+            var range = Integer(List(Required("combat.artillery_range", "Agreed"), "combat.artillery_range", 1)[0], "combat.artillery_range", true);
             return new Gdd03CombatCatalogue(thresholds, rows, draws, armour, artillery, range, sources);
         }
 
