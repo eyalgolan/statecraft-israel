@@ -91,6 +91,7 @@ namespace Statecraft.Game.UI
         OutcomePresenter? outcomes;
         EnemyTurnPlayback? playback;
         TurnReportPresenter? report;
+        UiDirection? direction;   // Hebrew only
         EndScreenPresenter? end;
         /// <summary>Set by SwitchLanguage for its Begin: the player had closed the end screen, so the rebuilt one stays closed.</summary>
         bool endClosed;
@@ -428,6 +429,9 @@ namespace Statecraft.Game.UI
             cabinet = Own(new CabinetPresenter(root, bridge, text, portraits));
             // After End Turn, what changed in the top bar and the sim's causes (#1037); under an outcome clip, which plays first.
             report = Own(new TurnReportPresenter(root, bridge, text, nav!));
+            // #2202: its lines are new labels with their words set, which UiDirection only sees on its next pass. The report
+            // can open with nothing that schedules one: when the enemy moves end, or when a screen it waited for closes.
+            report.Showing += turn => { if (turn != null) direction?.Later(); };
             // "Share" (#1170), from Settings and the turn report: the frame is captured at its end, before the panel shows.
             var sharePanel = share = Own(new SharePresenter(root, bridge, text, done => StartCoroutine(ShareShot.Capture(done))));
             // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
@@ -614,7 +618,8 @@ namespace Statecraft.Game.UI
             attacks.Claimed = play.Claims;
             // The card first, then the report, as at an End turn with no playback: the card comes into view with its cue, then
             // the report covers it.
-            Action<bool> holding = held => { if (card != null) card.HeldForPlayback = held; if (report != null) report.Held = held; };
+            // #2202: the released card and report build new texts with no turn, click or key press: UiDirection walks them.
+            Action<bool> holding = held => { if (card != null) card.HeldForPlayback = held; if (report != null) report.Held = held; if (!held) direction?.Later(); };
             play.Holding += holding;
             owned.Add(new Undo(() => play.Holding -= holding));   // disposed before the playback: its last release touches neither
             Own(new EnemyPlaybackBar(root, text, play, bridge)).Units = unitData;
@@ -853,7 +858,7 @@ namespace Statecraft.Game.UI
                     if (start != null) start.FreshGameOpened -= freshOpened;
                 }));
             }
-            if (hebrew) Own(new UiDirection(root, bridge));
+            if (hebrew) direction = Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
             if (setCompanion != null && CompanionWanted()) setCompanion(true);
             DiagLog.BootPhase("screens ready");
@@ -1140,7 +1145,7 @@ namespace Statecraft.Game.UI
             owned.Clear();
             savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; raid = null; card = null; outcomes = null; playback = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; raid = null; card = null; outcomes = null; playback = null; report = null; direction = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
