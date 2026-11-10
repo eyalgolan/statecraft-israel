@@ -25,7 +25,8 @@ step "policy tests"
 uv run --with pytest==9.1.1 --with pyyaml==6.0.3 --with requests==2.32.5 pytest scripts/oss/tests -q || fail=1
 
 step "simulation and content tests"
-dotnet test sim/Statecraft.sln -c Release --nologo -v q || fail=1
+# TreatNoTestsAsError: zero tests found is a failure, not a pass (#2532).
+dotnet test sim/Statecraft.sln -c Release --nologo -v q -- RunConfiguration.TreatNoTestsAsError=true || fail=1
 
 step "sensitivity gate on content/ (decision D11; Statecraft.Cli --release-gate)"
 dotnet run --project sim/Statecraft.Cli -v q -- --release-gate --content "$PWD/content" || fail=1
