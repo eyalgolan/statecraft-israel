@@ -500,6 +500,31 @@ public class RealContentTests
             Assert.Equal(new DateTime(1950, 1, 1), C.Events.Single(e => e.Id == id).To);
     }
 
+    // R-WAR-008 (#1709; owner, 9 November 2026): each front's card carries its early text in both languages, in the words the
+    // owner approved ("You approve the words (Recommended)": English "Approve as written (Recommended)", Hebrew "Approve with
+    // my choices (Recommended)", with "עם" and "התקיימו"). Shown before its `from` (the earliest early offer, 15 December
+    // 1948), the card shows it; on its `from` it shows its ordinary text. Red without the four cards' early_text lines.
+    [Theory]
+    [InlineData("armistice_egypt",
+        "The front with Egypt has been quiet, and the armistice talks have come sooner than in history: negotiators have reached an armistice agreement with Egypt. {prime_minister} must decide whether Israel signs.",
+        "החזית עם מצרים שקטה, ושיחות שביתת הנשק התקיימו מוקדם יותר מאשר בהיסטוריה: המשא ומתן הניב הסכם שביתת נשק עם מצרים. על {prime_minister} להחליט אם ישראל תחתום עליו.")]
+    [InlineData("armistice_jordan",
+        "The front with Jordan has been quiet, and the armistice talks have come sooner than in history: negotiators have reached an armistice agreement with Jordan. {prime_minister} must decide whether Israel signs.",
+        "החזית עם ירדן שקטה, ושיחות שביתת הנשק התקיימו מוקדם יותר מאשר בהיסטוריה: המשא ומתן הניב הסכם שביתת נשק עם ירדן. על {prime_minister} להחליט אם ישראל תחתום עליו.")]
+    [InlineData("armistice_lebanon",
+        "The front with Lebanon has been quiet, and the armistice talks have come sooner than in history: negotiators have reached an armistice agreement with Lebanon. {prime_minister} must decide whether Israel signs.",
+        "החזית עם לבנון שקטה, ושיחות שביתת הנשק התקיימו מוקדם יותר מאשר בהיסטוריה: המשא ומתן הניב הסכם שביתת נשק עם לבנון. על {prime_minister} להחליט אם ישראל תחתום עליו.")]
+    [InlineData("armistice_syria",
+        "The front with Syria has been quiet, and the armistice talks have come sooner than in history: negotiators have reached an armistice agreement with Syria. {prime_minister} must decide whether Israel signs.",
+        "החזית עם סוריה שקטה, ושיחות שביתת הנשק התקיימו מוקדם יותר מאשר בהיסטוריה: המשא ומתן הניב הסכם שביתת נשק עם סוריה. על {prime_minister} להחליט אם ישראל תחתום עליו.")]
+    public void EachArmisticeCardCarriesItsApprovedEarlyText(string id, string early, string earlyHe)
+    {
+        var e = C.Events.Single(x => x.Id == id);
+        Assert.Equal((early, earlyHe), (e.EarlyText, e.EarlyTextHe));
+        Assert.True(EventSystem.ShowsEarly(e, Armistice.EarliestOffer));
+        Assert.False(EventSystem.ShowsEarly(e, e.From));
+    }
+
     // Owner decision of 17 October 2026 (#937), "Yes, match the others": refusing any of the four armistices keeps the war
     // going at rung 4. Egypt's hold_out had no set_rung, so refusing it left the rung where it was.
     [Fact]

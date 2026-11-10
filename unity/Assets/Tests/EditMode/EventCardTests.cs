@@ -870,18 +870,19 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
 
     // R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", "Banner (Recommended)", "Ordinary text
     // (Recommended)"): an armistice card shown before its `from` shows its early text, in Hebrew its early_text_he, under
-    // the event.alt_early banner; the same card on its date shows its ordinary text and no banner. The early texts here are
-    // the test's, in memory: no real card has one until the owner approves and signs the four.
+    // the event.alt_early banner; the same card on its date shows its ordinary text and no banner. The early texts are the
+    // real card's, in the words the owner approved (#1709, 9 November 2026); each is checked up to its first placeholder,
+    // since the card fills {prime_minister} with the minister's name.
     [Test]
     public void AnEarlyArmisticeCardShowsItsEarlyTextUnderTheWhatIfBannerInBothLanguages()
     {
-        const string earlyEn = "The talks came sooner in this test.";
-        const string earlyHe = "השיחות הגיעו מוקדם יותר בבדיקה הזאת.";
         var c = ContentLoader.Load(Paths.Content);
         var e = c.Events.Single(x => x.Id == "armistice_egypt");
-        Assert.AreEqual("", e.EarlyText, "precondition: the real card has no early text yet");
-        e.EarlyText = earlyEn;
-        e.EarlyTextHe = earlyHe;
+        static string UpToPlaceholder(string t) => t.IndexOf('{') is var i and >= 0 ? t.Substring(0, i) : t;
+        var earlyEn = UpToPlaceholder(e.EarlyText);
+        var earlyHe = UpToPlaceholder(e.EarlyTextHe);
+        Assert.That(earlyEn.Length, Is.GreaterThan(40), "precondition: the real card has its English early text");
+        Assert.That(earlyHe.Length, Is.GreaterThan(40), "precondition: the real card has its Hebrew early text");
         foreach (var local in new[] { Text, He })
         {
             var hebrew = local["ui.lang"] == UiLanguage.Hebrew;
@@ -901,13 +902,14 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
                     Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value, where);
                     Assert.AreEqual(local["event.alt_early"], banner.text, where);
                     StringAssert.StartsWith(hebrew ? "מסלול חלופי." : "Alternative course.", banner.text, where);
-                    Assert.AreEqual(hebrew ? earlyHe : earlyEn, body, where);
+                    Assert.IsTrue(body.StartsWith(hebrew ? earlyHe : earlyEn, System.StringComparison.Ordinal), $"{where}: {body}");
+                    Assert.IsFalse(body.Contains('{'), $"{where}: a placeholder is left: {body}");
                 }
                 else
                 {
                     Assert.AreEqual(DisplayStyle.None, banner.style.display.value, where);
                     Assert.AreEqual("", banner.text, where);
-                    StringAssert.DoesNotContain(hebrew ? earlyHe : earlyEn, body, where);
+                    Assert.IsFalse(body.Contains(hebrew ? earlyHe : earlyEn, System.StringComparison.Ordinal), $"{where}: {body}");
                     StringAssert.Contains(hebrew ? "מצרים" : "Egypt", body, where);
                 }
             }
