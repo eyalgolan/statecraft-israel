@@ -44,3 +44,5 @@ sources:
   - { url: "https://avalon.law.yale.edu/20th_century/arm04.asp", checked: 2026-10-14 }
   - { url: "https://unispal.un.org/pdfs/E845CA0B92BE4E3485256442007901CC.pdf", checked: 2026-10-14 }
 status: fact-checked
+reviewed_by: eyalgolan
+reviewed_on: 2026-11-10
