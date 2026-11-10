@@ -311,6 +311,19 @@ namespace Statecraft.Game.UI
             return true;
         }
 
+        /// <summary>The top-bar button of the screen that holds <paramref name="e"/>, or null when it is in no screen: where
+        /// <see cref="Close"/> hands a focus that was on the screen's contents. A presenter that closes the screens from a
+        /// press inside one (the Encyclopedia's "Show the opening advice again") asks this rather than the focus controller:
+        /// a focus change made while UI Toolkit is still dispatching that press is applied only after it, so focusedElement
+        /// still names the control in the closed screen (#3028).</summary>
+        public static Button? ButtonOfScreenAround(VisualElement root, VisualElement? e)
+        {
+            for (var v = e; v != null; v = v.parent)
+                foreach (var s in Screens)
+                    if (v.name == "screen-" + s) return root.Q<Button>("nav-" + s);
+            return null;
+        }
+
         /// <summary>The open screen's name, or null.</summary>
         public string? Current { get; private set; }
         /// <summary>Raised with <see cref="Current"/> each time a screen opens or closes (TurnReportPresenter: a report that

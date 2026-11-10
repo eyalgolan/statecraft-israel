@@ -508,9 +508,11 @@ namespace Statecraft.Game.UI
             session.Chain.Step = first;
             if (hooks.Card?.Shown != null && !hooks.Card.Collapsed) hooks.Card.Collapse(takeFocus: false);
             ShowStep(first);
-            // After CloseScreens: a focus that was in a screen is on its rail button by now (ScreenNav.Close), as from the
-            // Encyclopedia's button. A focus already in the popup keeps the first opener.
-            if (hudRoot.focusController?.focusedElement is VisualElement had && !layer.Contains(had)) chainOpener = had;
+            // A focus already in the popup keeps the first opener. A focus in a screen, as on the Encyclopedia's button, goes to
+            // that screen's rail button, where CloseScreens (ScreenNav.Close) sends it: from inside that press the focus
+            // controller still names the button in the closed screen, as UI Toolkit applies the change after the press.
+            if (hudRoot.focusController?.focusedElement is VisualElement had && !layer.Contains(had))
+                chainOpener = ScreenNav.ButtonOfScreenAround(hudRoot, had) ?? had;
             FocusReturn.To(gotIt);                          // the player opens it, so Enter goes on (spec 16)
         }
 
