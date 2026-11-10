@@ -1238,6 +1238,14 @@ namespace Statecraft.Game.Map.Collection
                 new[] { new SpotCheck("houses", (p, r) => TownLandmarks.Clear(p, r, houses)) }, free, out tally);
         }
 
+#if UNITY_EDITOR
+        // #3058, as #1680's map-label counters: observe the edge walk's work without a clock. No callbacks, allocations or
+        // player-build instrumentation. EdgeSpotOf is static: tests sample these only around a synchronous main-thread Plan.
+        internal static long EdgeBearingsForTests { get; private set; }
+        internal static long EdgePointsForTests { get; private set; }
+        internal static long EdgeTestsForTests { get; private set; }
+#endif
+
         /// <summary><see cref="EdgeSpot"/>'s walk and tests round the edge of place <paramref name="city"/>: its drawn
         /// <paramref name="edgeBlocks"/> (centre, yaw as KitMesh.Corners, width, depth), or, with none, a disc of
         /// <paramref name="disc"/> m about its footprint's centre; <paramref name="edgeName"/> names that edge in the tally, and
@@ -1270,6 +1278,9 @@ namespace Statecraft.Game.Map.Collection
             var points = new List<Vector2>();
             for (int i = 0; i < EdgeBearings; i++)
             {
+#if UNITY_EDITOR
+                EdgeBearingsForTests++;
+#endif
                 int k = (i + 1) / 2 * (i % 2 == 1 ? first : -first);   // 0, +1, -1, +2, -2 ... (in degrees, k x 3.75), 48 last
                 float bearing = (180f + k * (360f / EdgeBearings)) * Mathf.Deg2Rad;
                 var dir = new Vector2(Mathf.Sin(bearing), Mathf.Cos(bearing)); var across = new Vector2(-dir.y, dir.x);
@@ -1283,7 +1294,13 @@ namespace Statecraft.Game.Map.Collection
                 }
                 if (own.Count == 0 && disc > 0f) edge = disc;   // no blocks: the disc's edge, on every bearing
                 if (float.IsNegativeInfinity(edge)) continue;
-                for (int j = 0; j <= steps; j++) points.Add(c + dir * (edge + clearance + j * step));
+                for (int j = 0; j <= steps; j++)
+                {
+#if UNITY_EDITOR
+                    EdgePointsForTests++;
+#endif
+                    points.Add(c + dir * (edge + clearance + j * step));
+                }
             }
             // The ground the points' discs cover about the city's centre, and what stands there.
             float extent = 0f;
@@ -1366,7 +1383,13 @@ namespace Statecraft.Game.Map.Collection
                 foreach (var p in points)
                 {
                     int failed = -1;
-                    for (int i = pass; i < checks.Count && failed < 0; i++) if (!checks[i].Test(p, clearance)) failed = i;
+                    for (int i = pass; i < checks.Count && failed < 0; i++)
+                    {
+#if UNITY_EDITOR
+                        EdgeTestsForTests++;
+#endif
+                        if (!checks[i].Test(p, clearance)) failed = i;
+                    }
                     if (failed < 0) { tally = ""; return p; }
                     turned[pass][failed]++;
                 }
