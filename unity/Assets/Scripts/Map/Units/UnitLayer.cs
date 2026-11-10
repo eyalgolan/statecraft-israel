@@ -676,9 +676,15 @@ namespace Statecraft.Game.Map.Units
 
         Vector3 Centre(AnchorSpot s) => UnitShowcase.Ground(map, new Vector3((float)s.X, 0f, (float)s.Z));
 
-        /// <summary>The ground the units are placed on (footprints, routes, land) for a built map.</summary>
+        /// <summary>The ground the units are placed on (footprints, routes, land, and the water a ship's hull must lie in) for a
+        /// built map.</summary>
         public static UnitGround Ground(MapScene map, IReadOnlyList<MapHex> hexes) =>
-            new UnitGround(map.SettlementFootprints, map.RouteCorridors, hexes, XZ(map), map.Hexes.hex_size_km * 1000f);
+            new UnitGround(map.SettlementFootprints, map.RouteCorridors, hexes, XZ(map), map.Hexes.hex_size_km * 1000f, Water(map));
+
+        /// <summary>The built map's drawn water (KitGround.Water over its terrain: the sea is the heightmap's 0 m), which a ship's
+        /// whole hull must lie in (issue #3038); null before the terrain is built.</summary>
+        public static Func<float, float, bool>? Water(MapScene map) =>
+            map.Terrain == null ? null : new Kits.KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM).Water;
 
         static Func<double, double, Vector2> XZ(MapScene map) => (lon, lat) => { var w = map.Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); };
 

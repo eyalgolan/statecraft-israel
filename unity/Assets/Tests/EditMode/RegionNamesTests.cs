@@ -174,16 +174,20 @@ public class RegionNamesTests
     {
         var input = Inputs; var sub = Subdistricts1948.Parse(input.RegionsYaml); var arm = Armistice1949.Parse(input.ArmisticeYaml);
         var plain = new MapRegions(sub, arm); var m = Regions(input);
+        // Parse each strings file once: Text() reparses the whole YAML, and calling it per hex (1118 hexes x 4 dates) took
+        // ~150 s of this test's 180 s timeout. UiText is read-only apart from a per-key memo of a pure function, so one
+        // instance gives the same text as a fresh parse per call.
+        var en = Text(false); var he = Text(true);
         Assert.AreEqual("fallback", MapRegionNames.Parse("").Pick("subdistrict.acre.name", "fallback", true));
         foreach (var date in new[] {new DateTime(1948,5,15), new DateTime(1949,2,24), new DateTime(1949,7,20), new DateTime(1950,3,1)})
         {
-            Assert.AreEqual(plain.Label(date, Text(false).Format), m.Label(date, Text(false).Format));
+            Assert.AreEqual(plain.Label(date, en.Format), m.Label(date, en.Format));
             foreach (var h in sub.Layer.Hexes)
             {
-                Assert.AreEqual(InfoPanelPresenter.RegionText(plain, Text(false), h.q, h.r, date), InfoPanelPresenter.RegionText(m, Text(false), h.q, h.r, date));
+                Assert.AreEqual(InfoPanelPresenter.RegionText(plain, en, h.q, h.r, date), InfoPanelPresenter.RegionText(m, en, h.q, h.r, date));
                 // With the catalogue omitted, Hebrew UI patterns still use the original English display fields.
                 if (date.Year == 1948 && sub.SubdistrictAt(h.q,h.r) is Subdistricts1948.Region r)
-                    Assert.IsTrue(string.Equals(Text(true).Format("info.region",r.Name,r.District), InfoPanelPresenter.RegionText(plain,Text(true),h.q,h.r,date), StringComparison.Ordinal));
+                    Assert.IsTrue(string.Equals(he.Format("info.region",r.Name,r.District), InfoPanelPresenter.RegionText(plain,he,h.q,h.r,date), StringComparison.Ordinal));
             }
         }
     }

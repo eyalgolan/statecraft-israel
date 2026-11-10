@@ -266,8 +266,8 @@ def test_a_late_text_has_its_row_in_every_language(langs):
     assert translate.load("fr")[0]["event:rhodes_talks:late_text"] == "Plus tard, {foreign_minister} décide."
 
 def test_an_early_text_has_its_row_in_every_language(langs, tmp_path, monkeypatch):
-    """R-WAR-008 (#1709): the early text's row, as the late text's above. No real card has one yet (the four armistice
-    texts wait for the owner's approval and sign-off), so a fixture event in a temporary events folder stands in."""
+    """R-WAR-008 (#1709): the early text's row, as the late text's above, on a fixture event in a temporary events
+    folder. Its real-content twin below reads armistice_egypt."""
     events = tmp_path / "events"
     events.mkdir()
     early = EARLY.replace("id: sample", "id: early_sample")
@@ -291,6 +291,27 @@ def test_an_early_text_has_its_row_in_every_language(langs, tmp_path, monkeypatc
                                      "review": "agent-checked"}
     assert translate.load("fr")[0]["event:early_sample:early_text"] == "Plus tôt, {prime_minister} demande."
 
+
+def test_a_real_early_text_has_its_row_in_every_language(langs):
+    """R-WAR-008 (#1709; owner, 9 November 2026, "You approve the words (Recommended)"): the real-content twin of the
+    test above. armistice_egypt's early text has its row, its Hebrew is the approved words, and another language saves
+    it with the rest of the card, all or none."""
+    r = rows()
+    assert r["event:armistice_egypt:early_text"]["en"].startswith("The front with Egypt has been quiet, and the armistice talks")
+    assert r["event:armistice_egypt:early_text"]["unit"] == "event:armistice_egypt"
+    texts, _ = translate.load("he")
+    assert texts["event:armistice_egypt:early_text"].startswith("החזית עם מצרים שקטה, ושיחות שביתת הנשק התקיימו")
+    edits = {"event:armistice_egypt:title": "Armistice avec l'Égypte", "event:armistice_egypt:text": "{prime_minister} décide.",
+             "event:armistice_egypt:option:sign": "Signer", "event:armistice_egypt:option:hold_out": "Refuser"}
+    assert "all or none" in translate.save("fr", edits, {})["errors"]["event:armistice_egypt"]
+    sooner = {"event:armistice_egypt:early_text": "Plus tôt, {prime_minister} décide."}
+    assert translate.save("fr", {**edits, **sooner}, {})["errors"] == {}
+    events = yaml12.load((langs / "fr/events.yaml").read_text(encoding="utf-8"))
+    assert events["armistice_egypt"] == {"title": "Armistice avec l'Égypte", "text": "{prime_minister} décide.",
+                                         "early_text": "Plus tôt, {prime_minister} décide.",
+                                         "options": {"sign": "Signer", "hold_out": "Refuser"},
+                                         "review": "agent-checked"}
+    assert translate.load("fr")[0]["event:armistice_egypt:early_text"] == "Plus tôt, {prime_minister} décide."
 
 FR = {"event:altalena:title": "L'Altalena", "event:altalena:text": "{defense_minister} décide.",
       "event:altalena:option:enforce": "Imposer", "event:altalena:option:compromise": "Céder"}
