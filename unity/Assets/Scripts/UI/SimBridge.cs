@@ -83,8 +83,8 @@ namespace Statecraft.Game.UI
         public void SeeEndingCard(string id)
         {
             if (!State.PendingEvents.Contains(id) || !IsEndingCard(id) || !endingCardsSeen.Add(id)) return;
-            Notify(Changed);
-            if (!EndingCardWaiting) Notify(EndingCardsSeen);
+            Notify(Changed, nameof(Changed));
+            if (!EndingCardWaiting) Notify(EndingCardsSeen, nameof(EndingCardsSeen));
         }
 
         readonly UiText text;
@@ -171,7 +171,7 @@ namespace Statecraft.Game.UI
         };
 
         /// <summary>Skips the unit for this turn: not an order, not saved, nothing in the game changes (spec 7.2).</summary>
-        public void Skip(int unit) { if (skipped.Add(unit)) Notify(Changed); }
+        public void Skip(int unit) { if (skipped.Add(unit)) Notify(Changed, nameof(Changed)); }
         public bool IsSkipped(int unit) => skipped.Contains(unit);
 
         /// <summary>Null if the id is known, else the player-facing reason. The player sees only the kind of thing (#622: a
@@ -449,20 +449,29 @@ namespace Statecraft.Game.UI
 
         static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement || x.Key == WhyKeys.Destroyed).ToList();
 
-        static void Notify(Action? handlers)
+        // Under ?turnlog, during End turn, each handler is timed (TurnProbe, #2905); otherwise Start is 0 and Handler returns.
+        static void Notify(Action? handlers, string evt)
         {
             if (handlers == null) return;
             foreach (Action handler in handlers.GetInvocationList())
+            {
+                var t = Boot.TurnProbe.Start();
                 try { handler(); }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); }
+                Boot.TurnProbe.Handler(evt, handler, t);
+            }
         }
 
-        static void Notify<T>(Action<T>? handlers, T value)
+        static void Notify<T>(Action<T>? handlers, T value, string evt)
         {
             if (handlers == null) return;
             foreach (Action<T> handler in handlers.GetInvocationList())
+            {
+                var t = Boot.TurnProbe.Start();
                 try { handler(value); }
                 catch (Exception e) { UnityEngine.Debug.LogException(e); }
+                Boot.TurnProbe.Handler(evt, handler, t);
+            }
         }
 
         /// <summary>Queues an order (replacing one with the same key). Returns null, or why it was refused here: an id
@@ -481,16 +490,16 @@ namespace Statecraft.Game.UI
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
                 WithdrawUnmetOperations();
-                Notify(Changed);
+                Notify(Changed, nameof(Changed));
                 var added = Session.Now.Why.Skip(before).ToList();
-                Notify(Committed, added);
-                Notify(CombatResolved, Engagements(added));
+                Notify(Committed, added, nameof(Committed));
+                Notify(CombatResolved, Engagements(added), nameof(CombatResolved));
                 return null;
             }
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
             if (Content.UsesAttention && !CanPay(c))
             {
-                Notify(RefusedForAttention);                            // presentation only: a failing listener never changes the refusal
+                Notify(RefusedForAttention, nameof(RefusedForAttention));   // presentation only: a failing listener never changes the refusal
                 return Refuse(text.Format("order.no_attention", Price(c)!.Value, LeftFor(c)));
             }
             // Send home takes the unit's place in the queue: an order queued for it earlier (a reinforcement) is withdrawn, and
@@ -499,7 +508,7 @@ namespace Statecraft.Game.UI
             if (IsSendHome(c)) deferred.RemoveAll(x => UnitOf(x) == UnitOf(c) && Key(x) != Key(c));
             var old = QueuedLike(c);
             if (old != null) deferred[deferred.IndexOf(old)] = c; else deferred.Add(c);
-            Notify(Changed);
+            Notify(Changed, nameof(Changed));
             return null;
         }
 
@@ -519,7 +528,7 @@ namespace Statecraft.Game.UI
 
         public void Withdraw(Command c)
         {
-            if (deferred.Remove(c)) Notify(Changed);
+            if (deferred.Remove(c)) Notify(Changed, nameof(Changed));
         }
 
         /// <summary>Runs the turn with the committed then deferred orders, clears the deferred queue, and notifies. If the
@@ -533,6 +542,8 @@ namespace Statecraft.Game.UI
             int replayed = Session.Now.Why.Count;
             var batch = Session.Committed.Concat(deferred).ToList();
             var date = TurnStart.Date;
+            Boot.TurnProbe.BeginTurn(TurnStart.Turn, date);   // ?turnlog (#2905): this call's sim step and handlers, one line
+            var stepFrom = Boot.TurnProbe.Start();
             try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
             catch (Exception e)   // any exception (M3 final review M7): never leave a queue that fails on every End Turn
             {
@@ -543,16 +554,19 @@ namespace Statecraft.Game.UI
                 LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
                 var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
                 var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
-                Notify(Changed);
-                Notify(TurnEnded, failed.Rejected);
+                Notify(Changed, nameof(Changed));
+                Notify(TurnEnded, failed.Rejected, nameof(TurnEnded));
+                Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log);
                 return failed;
             }
+            Boot.TurnProbe.Step(stepFrom);
             LastBatch = batch; LastBatchDate = date;
             deferred.Clear(); skipped.Clear();
-            Notify(Stepped, r);
-            Notify(Changed);
-            Notify(CombatResolved, Engagements(r.Why.Skip(replayed)));
-            Notify(TurnEnded, r.Rejected);
+            Notify(Stepped, r, nameof(Stepped));
+            Notify(Changed, nameof(Changed));
+            Notify(CombatResolved, Engagements(r.Why.Skip(replayed)), nameof(CombatResolved));
+            Notify(TurnEnded, r.Rejected, nameof(TurnEnded));
+            Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log);
             return r;
         }
 
@@ -562,7 +576,7 @@ namespace Statecraft.Game.UI
             Session = session ?? throw new ArgumentNullException(nameof(session));
             LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
             deferred.Clear(); skipped.Clear(); endingCardsSeen.Clear();
-            Notify(Changed);
+            Notify(Changed, nameof(Changed));
         }
     }
 }

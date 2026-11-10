@@ -446,7 +446,7 @@ namespace Statecraft.Sim
             //   options: [{ id, text, historical, recommended, effects: [{ target, delta }], set_rung, set_policy,
             //              grant_units: [{ type, n, at }], city_effects: [{ city, field, delta }],
             //              unlock_projects: [<projects.yaml id of a locked kind>],
-            //              unit_orders: [{ unit, q, r }] (R-ENEMY-005) }]
+            //              unit_orders: [{ unit, order, q, r }] (R-ENEMY-005; order go_to or attack, R-ENEMY-008) }]
             //   sources: [{ url, checked }], status
             //   objective                  the objective (objectives.yaml) whose completion card this is: it fires only once
             //                              that objective is recorded, and has exactly one option
