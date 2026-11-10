@@ -504,6 +504,60 @@ public class UnitOrdersTests
         }
     }
 
+    // #2978 (owner, 9 November 2026: "Enabled + toast (Recommended)"): a Reinforce the Attention left cannot pay for keeps its
+    // button, and the press is refused with the bridge's order.no_attention toast, in English and Hebrew; it queues nothing.
+    // With the Attention short, a Reinforce the sim refuses anyway (no Arms) still hides and shows the sim's reason. Red-first
+    // prediction at e29447748: the card asks End turn's preview, which charges Attention first (AttentionSystem.TrySpend), so the
+    // button hides behind the Attention refusal.
+    [Test]
+    public void AReinforceTheAttentionCannotPayStaysOfferedAndTheBridgeSaysWhy()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        foreach (var (t, arms) in new[] { (Text, "not enough Arms"), (he, "אין די כלי נשק") })
+        {
+            using var ui = new UiTestKit();
+            var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            var bridge = new SimBridge(g, t);
+            var refusals = new List<string>();
+            bridge.Refused += refusals.Add;
+            var token = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+            var u = g.State.Units[id];
+            var city = C.SettlementHexes.Single(h => h.Id == "tel_aviv");
+            g.State.Units[id] = new Unit(u.Id, u.Type, city.Q, city.R, u.Service, u.Side, u.Strength - 2, u.Order, u.OrderTarget, u.HomeCity, u.Strength);
+            g.State.Arms = 100;
+            // A queued order in another city leaves half a Reinforce's price.
+            var filler = new AssignWorkers("jerusalem", "job", 0);
+            var candidate = new Reinforce(id, city.Id, 2);
+            var price = bridge.Price(candidate)!.Value;
+            g.State.Attention = bridge.Price(filler)!.Value + price / 2;
+            Assert.IsNull(bridge.Queue(filler), "precondition: the filler is queued");
+            Assert.IsFalse(bridge.CanPay(candidate), "precondition: the Attention left cannot pay for Reinforce");
+            Assert.That(bridge.AttentionLeft!.Value, Is.GreaterThan(0).And.LessThan(price), "precondition: some Attention is left");
+            var left = Simulation.Preview(C, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList());
+            Assert.IsEmpty(left.Rejected, "precondition: End turn takes the filler, so its Attention is spent");
+            Assert.IsNull(Training.Reinforce(C, left.State, id, city.Id, 2, new List<Cause>()), "precondition: the sim's Reinforce rule takes it");
+
+            PlacedToken? selected = new PlacedToken(token, new AnchorSpot(0, 0, 0, 0, false));
+            using var info = new InfoPanelPresenter(ui.Root, bridge, t, new Dictionary<string, string>(), selectedUnit: () => selected);
+            var button = ui.Q<Button>("info-reinforce");
+            info.ShowUnit();
+            Assert.AreEqual(DisplayStyle.Flex, button.style.display.value, "only the Attention is short, so Reinforce stays offered");
+            Assert.IsTrue(button.enabledSelf, "and enabled");
+            Assert.AreEqual(t.Format("unit.order.reinforce", 2), button.text);
+            var before = bridge.AttentionLeft!.Value;
+            UiTestKit.Press(button);
+            Assert.AreSame(filler, bridge.Queued.Single(), "the bridge refuses the press: the queue is unchanged");
+            Assert.AreEqual(before, bridge.AttentionLeft!.Value, 1e-9, "the refused press spends nothing");
+            Assert.AreEqual(new[] { t.Format("order.no_attention", price, before) }, refusals);
+
+            g.State.Arms = 0;
+            info.ShowUnit();
+            Assert.AreEqual(DisplayStyle.None, button.style.display.value, "no Arms, no Reinforce, whatever the Attention");
+            StringAssert.Contains(arms, ui.Q<Label>("info-reason").text, "the sim's reason shows, not the Attention's");
+        }
+    }
+
     /// <summary>#2072, owner review item 1: a Reinforce the sim refuses for Arms ("Tel Aviv: not enough Arms for basic training
     /// (need ..)") reaches the player through SimBridge, in Hebrew whole: the town and the course in Hebrew too, no Latin
     /// letter. The bridge queues it (a Reinforce waits for End turn) and End turn raises the sim's refusal, which the toast
