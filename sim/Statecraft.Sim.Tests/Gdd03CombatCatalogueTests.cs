@@ -104,11 +104,14 @@ public class Gdd03CombatCatalogueTests
                 }
             }
             Assert.Equal(1, table.DrawCount);
-            Assert.Equal(1.50m, table.ArmouredFactor); Assert.Equal(1m, table.ArtilleryFactor);
+            // C1 (owner, 10 November 2026, #2918): 2 is the unitless multiplier for unit_types.yaml's combat_percent 200.
+            Assert.Equal(1.50m, table.ArmouredFactor); Assert.Equal(2m, table.ArtilleryFactor);
             Assert.Equal(2, table.ArtilleryRange);
             Assert.Equal("Agreed", table.Sources["combat.draw_count"].Basis);
             Assert.Equal("Agreed", table.Sources["combat.artillery_range"].Basis);   // O5, owner-approved 1 November 2026, #1668
-            foreach (var source in table.Sources.Where(p => p.Key != "combat.draw_count" && p.Key != "combat.artillery_range"))
+            Assert.Equal("Agreed", table.Sources["combat.artillery_factor"].Basis);   // C1, owner, 10 November 2026, #2918
+            foreach (var source in table.Sources.Where(p => p.Key != "combat.draw_count" && p.Key != "combat.artillery_range"
+                && p.Key != "combat.artillery_factor"))
                 Assert.Equal("Default", source.Value.Basis);
             foreach (var source in table.Sources.Values) Assert.Contains("605277df", source.Note);
             Assert.Throws<ArgumentOutOfRangeException>(() => table.Outcome(1m, -1));
@@ -154,6 +157,22 @@ public class Gdd03CombatCatalogueTests
             var error = Assert.Throws<ContentException>(() => Gdd03BalanceCatalogue.ReadCombatCatalogue(c));
             Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
             Assert.Equal("values.combat.artillery_range", error.Field);
+            Assert.Contains("requires its catalogue basis Agreed", error.Message);
+        });
+    }
+
+    // R-COMBAT-007: combat.artillery_factor is Agreed since the owner's C1 answer (10 November 2026, #2918: "200% wins
+    // (Recommended)"). A Default row with the same value is refused, naming the exact file and field.
+    [Theory, InlineData("he-IL"), InlineData("en-US")]
+    public void DefaultArtilleryFactorRefuses(string culture)
+    {
+        InCulture(culture, () => {
+            var c = Synthetic(); var v = At(c, "combat.artillery_factor");
+            v.Basis = "Default";
+            Assert.Equal(new[] { 2m }, v.Values);
+            var error = Assert.Throws<ContentException>(() => Gdd03BalanceCatalogue.ReadCombatCatalogue(c));
+            Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
+            Assert.Equal("values.combat.artillery_factor", error.Field);
             Assert.Contains("requires its catalogue basis Agreed", error.Message);
         });
     }
