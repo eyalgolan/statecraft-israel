@@ -441,6 +441,45 @@ public class UnitsInPlayTests
 
     static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");
 
+    /// <summary>Issue #3038 (the owner, 10 November 2026: "one of the ships near haifa is half on the land"): a ship's spot was
+    /// only its sea hex's centre, and hex (5, 9), more than half sea, has its centre on Mount Carmel's headland (about 44 m up),
+    /// so INS Haganah stood across the cape. Every ship's drawn hull, the corvette mesh's own footprint (its bounds) at
+    /// UnitShowcase.ShipScale and ShipHeadingDegrees, now lies wholly in the drawn water, sampled every 25 m.</summary>
+    [Test]
+    public void EveryShipsDrawnHullLiesWhollyInWater()
+    {
+        var map = BuildMap();
+        try
+        {
+            var units = Units;   // one parse: the layer's spots are keyed by these anchors (UnitAnchor has reference equality)
+            var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
+            var ground = new Statecraft.Game.Map.Kits.KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM);
+            var mesh = UnitModels.Corvette("hull-test");
+            var size = mesh.bounds.size * UnitShowcase.ShipScale; var mid = mesh.bounds.center * UnitShowcase.ShipScale;
+            UnityEngine.Object.DestroyImmediate(mesh);
+            var turn = Quaternion.Euler(0f, UnitShowcase.ShipHeadingDegrees, 0f);
+            int ships = 0;
+            foreach (var u in units.Where(u => UnitRoster.OnMap(u) && u.Service == UnitData.Navy))
+                foreach (var a in u.Anchors)
+                {
+                    Assert.IsTrue(layer.Spots.TryGetValue(a, out var s), $"{u.Id} {a.Place}: no spot");
+                    ships++;
+                    int n = Mathf.CeilToInt(size.z / 25f), m = Mathf.CeilToInt(size.x / 25f), wet = 0, dry = 0;
+                    for (int i = 0; i <= n; i++)
+                        for (int j = 0; j <= m; j++)
+                        {
+                            var local = new Vector3(mid.x + size.x * (j / (float)m - 0.5f), 0f, mid.z + size.z * (i / (float)n - 0.5f));
+                            var p = new Vector3((float)s.X, 0f, (float)s.Z) + turn * local;
+                            if (ground.Water(p.x, p.z)) wet++; else dry++;
+                        }
+                    TestContext.WriteLine($"{u.Id} {a.Place} at {s}: {dry} of {wet + dry} hull points on land");
+                    Assert.AreEqual(0, dry, $"{u.Id} {a.Place} at {s}: its drawn hull stands on land");
+                }
+            Assert.AreEqual(2, ships, "INS Haganah and INS Wedgwood");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
     /// <summary>Review I2 and M9: every anchor gets one spot, from the data alone, within one hex step of its sourced
     /// place, clear of the towns' footprints and, for the figures, of the railways and roads by the full clearance; no two
     /// anchors whose windows overlap share a hex. Each spot and its distance is logged.</summary>
