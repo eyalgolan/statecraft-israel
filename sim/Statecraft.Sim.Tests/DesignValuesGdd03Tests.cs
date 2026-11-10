@@ -236,6 +236,10 @@ public partial class DesignValuesTests
     [InlineData("housing.max_deterioration", "Default", "10", "declined by the owner", Oct30)]
     [InlineData("housing.overflow_deterioration", "Agreed", "5", "\"Yes, 5 pp under GDD 0.3 (Recommended)\"", "2 November 2026")]
     [InlineData("field.slots", "Agreed", "1", "\"One farmer per field (Recommended)\"", "3 November 2026")]
+    [InlineData("military.strength", "Default", "1 2 3", S3, Nov10)]
+    [InlineData("military.refugee_multiplier", "Default", "0.75", S3All, Nov10)]
+    [InlineData("food.shortage_combat_slope", "Default", "1", S3All, Nov10)]
+    [InlineData("food.shortage_cohesion_max", "Default", "10", S3All, Nov10)]
     public void Gdd03RowsFollowTheOwnersLaterRulings(string key, string basis, string values, string ruling, string date)
     {
         var row=ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!.Values[key];
@@ -248,7 +252,8 @@ public partial class DesignValuesTests
         foreach(var part in row.Parts.Values) Assert.DoesNotContain("Agreed",part.Note);
     }
     const string D2="\"Approve all six (Recommended)\"", Keep="\"Keep the set values (Recommended)\"",
-        PostMvp="\"Approve all 79 (Recommended)\"", Oct30="30 October 2026", Nov1="1 November 2026";
+        PostMvp="\"Approve all 79 (Recommended)\"", Oct30="30 October 2026", Nov1="1 November 2026",
+        S3="\"Default, not operative (Recommended)\"", S3All="\"Same answer for all 4 (Recommended)\"", Nov10="10 November 2026";
     [Theory]
     [InlineData("0")][InlineData("1")][InlineData("34")][InlineData("-1")][InlineData("1.5")]
     public void Gdd03LoaderRefusesEveryNumericArmyGuessWhileDeferred(string number)
