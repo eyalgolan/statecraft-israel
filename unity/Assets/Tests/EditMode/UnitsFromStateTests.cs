@@ -162,7 +162,10 @@ public class UnitsFromStateTests
         CollectionAssert.Contains(home.Body.Split('\n'), position, "on its starting anchor the card names the place");
         CollectionAssert.DoesNotContain(card.Body.Split('\n'), position, "no position line for a hex no source names");
         foreach (var host in t.Unit.AllSources().Select(x => new Uri(x.Url).Host)) StringAssert.Contains(host, card.Footer);
-        Assert.AreEqual(UnitData.IsWikipediaOnly(t.Unit) ? text["unit.draft_wikipedia"] : text["unit.draft"], card.Note);
+        // #2918 P2: a fact-checked row says a person checked it (no starting row has a source checked after its checked_on:
+        // ReleaseGate.StartingForcesUnchecked, #2722); any other row keeps the draft note, by the row's sources off a sourced hex.
+        Assert.AreEqual(t.Unit.Status == "fact-checked" ? text["unit.fact_checked"]
+            : UnitData.IsWikipediaOnly(t.Unit) ? text["unit.draft_wikipedia"] : text["unit.draft"], card.Note, row);
     }
 
     static Unit Raise(GameState s, string type = "recruit", int strength = 2)
