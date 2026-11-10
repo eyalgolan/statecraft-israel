@@ -991,6 +991,11 @@ advisor.opening.cities.text: "Your cities hold your people, jobs and training, a
 advisor.opening.move_how.text: "To move, select a brigade, press Move, then click a lit hex. Click a farther hex and the brigade goes there over several turns."
 advisor.opening.orders.text: "A brigade with no order holds up End turn. Fortify and Hold stay until you change them, and a route carries on by itself. Skip this turn lasts one turn."
 advisor.opening.end_turn.text: "When no unit needs orders, press End turn. If the button says a unit needs orders, pressing it takes you to that unit. The month then plays out and a report follows."
+# The later lessons (#2933 section 3): the issue's words.
+advisor.lesson.report.text: "That report shows what moved and what was fought. If the truce was accepted, your brigades cannot attack until it ends."
+advisor.lesson.attack.text: "The truce period is over. Select a brigade next to an enemy to see Attack and its odds. An attack can force the enemy back."
+advisor.lesson.stakes.text: "Your score counts objectives, how early you reach them, and prisoners returned. Battles wear brigades down. If Money and Food stay exhausted, the game ends."
+advisor.lesson.combat.text: "When fighting breaks out, the report shows losses and who fell back. Select a brigade next to an enemy to see Attack and its odds."
 advisor.next: "Next"
 advisor.done: "Done"
 # {0} the step, {1} the steps in the chain now.
