@@ -1,7 +1,7 @@
 # Phase 6 settlement-control candidates: research note
 
 Research date: 18 October 2026. Research only. This note proposes no target list and selects no place; the owner
-picks the list (Q-TGT-1, #783).
+picks the list (Q-TGT-1, #783). The [GAP] points still open are listed in "Still open" at the end of this note.
 
 ## Scope and cautions
 
@@ -349,3 +349,26 @@ The findings above record what each source says; these rulings set what the game
 - **Lydda, Ramle and the last residents of Beersheba** take the default "fled". In the owner's words: "Default 'fled'; Morris isn't enough". Morris alone does not meet the owner's "super credible israeli sources" bar, and the official Israeli sources consulted do not describe the residents.
 - **Acre** counts as "stayed" ("Count as stayed"), so its residents join the player's population on annexation (Q-ANNEX-1).
 - **Nazareth** reads "stayed", as sourced above.
+
+## Still open
+
+The [GAP] points below are the ones this note leaves open, each with the line where it stands. The convention line (line 28)
+is not one. Line numbers are for this file as it now stands.
+
+- **Jaffa, the 13 May agreement:** the agreement itself was not read; its terms here are Morris's account (line 94; also
+  lines 256 and 269).
+- **Jaffa, start-of-game control:** Jaffa falls before the 15 May 1948 start and #569 makes it part of Tel Aviv-Yafo, so
+  its control at the start is a question for the owner (lines 94, 256). The owner kept Jaffa on the list; how it can be a
+  target in play is still open for the owner (line 347).
+- **Acre:** the surrender spans the night of 17-18 May; if a data row needs one day, the owner chooses (lines 123, 257).
+- **Nazareth:** the post-capture figures mix residents and refugees; they are not a resident count (lines 143, 258).
+- **Lydda, capture day:** one capture day needs a choice between the versions in the Lydda section (line 177; also line 337).
+- **Lydda, the march:** no supported count of deaths on the march was found (lines 177, 259).
+- **Ramle:** the sources read give no separate count for Ramle of those who remained (lines 201, 260).
+- **Gaza:** Gaza did not change hands in 1947-1949, so there is no Israeli capture date or captured-resident outcome for
+  it (lines 224, 261). The owner's ruling takes Gaza off the list (line 348).
+- **Beersheba, May date:** the May change of control is 17, 19 or 20 May, depending on whether the advance guard or the
+  main body counts (line 249).
+- **Beersheba, 1945 baseline:** 5,570 is the repo file's most likely reading of a garbled row, unchecked against the scan
+  (lines 244, 262). The *Village Statistics* scan was not checked for any of the seven baselines (line 268).
+- **Khalidi, *All That Remains*:** only the bibliographic record was reachable; it supports no claim here (lines 58, 266).
