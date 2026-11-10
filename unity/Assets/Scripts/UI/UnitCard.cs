@@ -15,8 +15,9 @@ namespace Statecraft.Game.UI
     /// never the game's first day: review I1); its formation and first commander where sourced; the sector in the
     /// source's words; on Israel's units, the national values its token reflects (legacy loop: the reserve call-up sets an
     /// army token's figures, the security level whether the aircraft fly; GDD loop: the unit's strength sets the figures,
-    /// Q-UI-3, so only the squadron's card keeps a line, the security level); and its sources, with a draft note that says
-    /// "Wikipedia only" when the position's own sources are (review M8).</summary>
+    /// Q-UI-3, so only the squadron's card keeps a line, the security level); and its sources, with a note: that a person
+    /// has checked the row against its sources (<see cref="UnitData.IsPersonChecked"/>, #2918 P2), else a draft note that
+    /// says "Wikipedia only" when the position's own sources are (review M8).</summary>
     public sealed class UnitCard
     {
         public string Title = "", Subtitle = "", Body = "", Footer = "", Note = "";
@@ -125,7 +126,10 @@ namespace Statecraft.Game.UI
                 Body = string.Join("\n", lines),
                 Footer = t.Raised ? "" : (national == "" ? "" : national + "\n")
                     + text.Format("unit.sources", string.Join(", ", hosts)),
-                Note = t.Raised ? "" : (sourced ? UnitData.IsWikipediaOnly(a.Sources) : UnitData.IsWikipediaOnly(u)) ? text["unit.draft_wikipedia"] : text["unit.draft"],
+                // A person-checked row says so, on a Wikipedia-only position too (owner, 10 November 2026, #2918 P2: "Your check
+                // wins"; the footer still names the hosts); any other row keeps the draft note.
+                Note = t.Raised ? "" : UnitData.IsPersonChecked(u) ? text["unit.fact_checked"]
+                    : (sourced ? UnitData.IsWikipediaOnly(a.Sources) : UnitData.IsWikipediaOnly(u)) ? text["unit.draft_wikipedia"] : text["unit.draft"],
             };
         }
     }
