@@ -14,6 +14,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -253,14 +254,16 @@ public class GameRootEscapeLayerTests : SharedCameraActionsFixture
         Assert.IsTrue(HudRoot.ClassListContains(RaidFlightPresenter.OpenClass), "precondition: New game flies the raid");
         Assert.IsFalse(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "precondition: the card waits for the flight");
 
-        Press(keyboard.escapeKey);                                     // the one press, as GameRoot's poll reads it first
+        // The one press, as GameRoot's poll reads it first. Queued by hand: InputTestFixture's Press refuses an EditMode
+        // [UnityTest], and this test needs its frame (CameraScreenCoverTests presses keys the same way).
+        InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape)); InputSystem.Update();
         Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
         typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
         Assert.IsFalse(HudRoot.ClassListContains(RaidFlightPresenter.OpenClass), "precondition: the poll skipped the flight");
         Assert.IsTrue(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "precondition: and the flight's finish showed the card");
         var ok = Ui.Q<Button>("raid-ok");                              // what the card's Show focused
         using (var e = NavigationCancelEvent.GetPooled()) { e.target = ok; ok.SendEvent(e); }   // the same press, as the UI's Cancel
-        Release(keyboard.escapeKey);
+        InputSystem.QueueStateEvent(keyboard, new KeyboardState()); InputSystem.Update();
 
         Assert.AreEqual(1, stops, "the flight ends, the Dakotas stopped once");
         Assert.IsTrue(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "the card the flight showed stays up: the press was the flight's");
