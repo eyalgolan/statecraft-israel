@@ -452,11 +452,11 @@ public class CombatEffectsTests
             Assert.IsTrue(MotionOf(waiting).HitPending, "fixture: the second still waits for the hit");
 
             s.Units.Remove(lost.Id);
-            Assert.IsTrue(layer.Show(C, s), "fixture: the roster changed, so the tokens are rebuilt");
+            Assert.IsTrue(layer.Show(C, s), "fixture: the roster changed, so the layer rebuilds (the survivors are kept, #3055)");
             var after = MotionOf(shaking);
-            Assert.IsFalse(after.Moving, "the shaking defender never moved, so its new token does not slide");
-            Assert.IsTrue(after.Reacting, "its shake goes on in the new token");
-            Assert.IsTrue(MotionOf(waiting).HitPending, "and the hit still on its way to the second lands on its new token");
+            Assert.IsFalse(after.Moving, "the shaking defender never moved, so its kept token does not slide");
+            Assert.IsTrue(after.Reacting, "its shake goes on in its kept token");
+            Assert.IsTrue(MotionOf(waiting).HitPending, "and the hit still on its way to the second lands on its kept token");
             int dust = layer.Combat!.MoveDust!.Busy;
             for (int i = 0; i < 30; i++) { after.Tick(0.05f); MotionOf(waiting).Tick(0.05f); }
             Assert.AreEqual(dust, layer.Combat.MoveDust.Busy, "no march dust from a unit that did not march");
