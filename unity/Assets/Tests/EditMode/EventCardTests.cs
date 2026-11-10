@@ -868,6 +868,52 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         Assert.AreEqual("Alternative course. It follows the government's decision: Hold the course (After the road).", banner.text);
     }
 
+    // R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", "Banner (Recommended)", "Ordinary text
+    // (Recommended)"): an armistice card shown before its `from` shows its early text, in Hebrew its early_text_he, under
+    // the event.alt_early banner; the same card on its date shows its ordinary text and no banner. The early texts here are
+    // the test's, in memory: no real card has one until the owner approves and signs the four.
+    [Test]
+    public void AnEarlyArmisticeCardShowsItsEarlyTextUnderTheWhatIfBannerInBothLanguages()
+    {
+        const string earlyEn = "The talks came sooner in this test.";
+        const string earlyHe = "השיחות הגיעו מוקדם יותר בבדיקה הזאת.";
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.Single(x => x.Id == "armistice_egypt");
+        Assert.AreEqual("", e.EarlyText, "precondition: the real card has no early text yet");
+        e.EarlyText = earlyEn;
+        e.EarlyTextHe = earlyHe;
+        foreach (var local in new[] { Text, He })
+        {
+            var hebrew = local["ui.lang"] == UiLanguage.Hebrew;
+            foreach (var early in new[] { true, false })
+            {
+                var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+                g.State.Date = early ? new System.DateTime(1948, 12, 15) : e.From;
+                g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+                using var ui = new UiTestKit();
+                using var card = new EventCardPresenter(ui.Root, new SimBridge(g, local), local, null);
+                card.Render();
+                var banner = ui.Q<Label>("event-alt-banner");
+                var body = ui.Q<Label>("event-text").text;
+                var where = $"{(hebrew ? "he" : "en")} early={early}";
+                if (early)
+                {
+                    Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value, where);
+                    Assert.AreEqual(local["event.alt_early"], banner.text, where);
+                    StringAssert.StartsWith(hebrew ? "מסלול חלופי." : "Alternative course.", banner.text, where);
+                    Assert.AreEqual(hebrew ? earlyHe : earlyEn, body, where);
+                }
+                else
+                {
+                    Assert.AreEqual(DisplayStyle.None, banner.style.display.value, where);
+                    Assert.AreEqual("", banner.text, where);
+                    StringAssert.DoesNotContain(hebrew ? earlyHe : earlyEn, body, where);
+                    StringAssert.Contains(hebrew ? "מצרים" : "Egypt", body, where);
+                }
+            }
+        }
+    }
+
     [Test]
     public void AnOrdinaryCardHasNoBanner()
     {

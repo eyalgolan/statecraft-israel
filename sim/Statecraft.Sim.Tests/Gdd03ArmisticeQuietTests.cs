@@ -214,7 +214,7 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
         Assert.NotEmpty(engaged);
 
         var text = game.Save.Write();
-        Assert.StartsWith("statecraft-save 5", text);
+        Assert.StartsWith("statecraft-save 6", text);
         var replay = GameSession.Load(c, text, out _);
         Assert.Equal(game.Now.State.EngagedFronts.ToArray(), replay.Now.State.EngagedFronts.ToArray());
         Assert.Equal(game.Now.State.Hash(), replay.Now.State.Hash());

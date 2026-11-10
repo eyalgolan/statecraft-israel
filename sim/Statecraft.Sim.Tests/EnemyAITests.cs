@@ -11,10 +11,10 @@ using Statecraft.Sim;
 /// coastal plain, 10 people a population unit, two units of a side per hex and an attack ratio of 200.</summary>
 public class EnemyAITests
 {
-    const string Types = Fixture.GddUnitTypes
+    internal const string Types = Fixture.GddUnitTypes
         + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
         + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n";
-    const string OperationRegions = "player_regions:\n"
+    internal const string OperationRegions = "player_regions:\n"
         + "  - id: fixture_region\n    capital_location: town_a\n    member_hexes: [{ q: 0, r: 0 }, { q: 1, r: 0 }]\n"
         + "    member_locations: [town_a]\n    design_note: 'Operation requirement test region'\n"
         + "    sources: ['test fixture: no historical claim']\n    capital_approval: NEEDS-RESEARCH\n"
@@ -58,7 +58,8 @@ public class EnemyAITests
     }
 
     // R-ENEMY-001: an enemy order goes through the player's validation, with the sides swapped, and a refused one leaves the
-    // state as it was. The locality rule is R-MOVE-005's mirror: no enemy unit enters a locality off enemy_held_localities.
+    // state as it was. The locality rule, R-MOVE-005's mirror less the player's localities an enemy move may now take
+    // (R-CTRL-006), is in CaptureTests.AnEnemyUnitMayMoveOntoAPlayersLocality: this fixture's one place, town_a, is a player's.
     [Fact]
     public void AnInvalidEnemyOrderIsRefusedLikeThePlayers()
     {
@@ -69,7 +70,6 @@ public class EnemyAITests
         var why = new List<Cause>();
         Assert.Equal("That unit is not yours", Movement.Move(c, s, 1, 4, 0, spent, why, enemy: true));
         Assert.Equal("An enemy unit holds that hex", Movement.Move(c, s, 2, 3, 0, spent, why, enemy: true));
-        Assert.Equal("Units may not enter an enemy-held locality before its capture is possible", Movement.Move(c, s, 2, 1, 0, spent, why, enemy: true));
         Assert.Equal("Units cannot enter water or leave the map", Movement.Move(c, s, 2, 2, -1, spent, why, enemy: true));
         Assert.Equal("That hex already holds 2 units of that side, the most one hex can hold", Movement.Move(c, s, 5, 2, 2, spent, why, enemy: true));
         Assert.Equal("That unit is not yours", Combat.Give(c, s, 1, 2, 0, why, enemy: true));
@@ -1672,7 +1672,7 @@ public class EnemyAITests
     // combat.enemy_attack_ratio, 1.5:1 (150%); gdd-0.1 keeps mvp.enemy_attack_ratio_percent (the fixture's 200).
     static Content Gdd03() => ContentLoader.Load(Fixture.Write(Gdd03Files()));
 
-    static Dictionary<string, string> Gdd03Files()
+    internal static Dictionary<string, string> Gdd03Files()
     {
         var f = Fixture.Gdd(new Dictionary<string, string>
         {

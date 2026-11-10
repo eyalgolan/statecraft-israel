@@ -244,13 +244,14 @@ class GitHub:
 
     # --- release state ---------------------------------------------------------------------------------------------
 
-    def next_version(self) -> str:
-        """Read every release page through gh; drafts and non-version tags cannot choose the version."""
+    def next_version(self, override: str | None = None) -> str:
+        """Read every release page through gh; drafts and non-version tags cannot choose the version. `override` is
+        checked against the same pages (see nightly_state.next_version)."""
         pages = self._json("version", ["gh", "api", f"repos/{self.slug}/releases?per_page=100",
                                        "--paginate", "--slurp"], list)
         if not all(isinstance(page, list) for page in pages):
             raise Refused("version", "gh returned release pages of the wrong shape")
-        return next_version([row for page in pages for row in page])
+        return next_version([row for page in pages for row in page], override)
 
     def ensure_tag_available(self, tag: str) -> None:
         """Refuse every remaining release or local/remote tag after owned-draft cleanup."""

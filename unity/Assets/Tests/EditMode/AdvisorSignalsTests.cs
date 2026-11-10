@@ -201,6 +201,27 @@ public class AdvisorSignalsTests
         Assert.AreEqual(hebrew, he["advisor." + id + ".text"]);
     }
 
+    /// <summary>#2933's six new course steps, approved by the owner word for word (8 November 2026: "Approve all six"; step 10
+    /// ends on the report screen's own title, "Use the screen title"; step 2 keeps its date, "Keep date, add exception
+    /// (Recommended)", HE-08). A different text needs a new approval, so it must also set he_review back to pending.</summary>
+    [TestCase("opening.invasion", "ב־15 במאי 1948 שלחו מצרים, סוריה ועיראק צבאות אל הארץ. הלגיון הערבי של עבר הירדן, המסומן במפה ״ירדן״, עמד ברמאללה וליד שער הגיא. החטיבות שלכם צריכות לעצור אותם.")]
+    [TestCase("opening.units", "צבא לבנון עמד על הגבול, ומתנדבי הליגה הערבית כבר היו כאן. בחרו יחידה כלשהי במפה כדי לראות של מי היא.")]
+    [TestCase("opening.cities", "בערים שלכם נמצאים האנשים, המשרות וההכשרה, והעבודה בהן מכניסה כסף. בחרו עיר כדי לראות אותם.")]
+    [TestCase("opening.move_how", "כדי לנוע, בחרו חטיבה, לחצו על ״תנועה״ ואז על משבצת מוארת. לחיצה על משבצת רחוקה יותר שולחת אליה את החטיבה במשך כמה תורות.")]
+    [TestCase("opening.orders", "חטיבה ללא הוראה מעכבת את ״סיום התור״. ״ביצור״ ו״החזקה״ נשארים עד שתשנו אותם, ומסלול ממשיך מעצמו. ״דילוג על התור״ חל על תור אחד.")]
+    [TestCase("opening.end_turn", "כשאף יחידה לא ממתינה להוראות, לחצו על ״סיום התור״. אם הכפתור מציג ״יחידה ממתינה להוראות״, לחיצה עליו תביא אתכם אל היחידה. אחר כך החודש מתנהל, ואחריו מוצג ״מה קרה בתור הזה״.")]
+    public void ACourseStepsApprovedHebrewIsTheTextTheOwnerRead(string id, string hebrew) =>
+        AnApprovedHebrewLineIsTheTextTheOwnerRead(id, hebrew);
+
+    /// <summary>#2933's four later lessons, approved by the owner word for word (9 November 2026: "Approve all four
+    /// (Recommended)"). A different text needs a new approval, so it must also set he_review back to pending.</summary>
+    [TestCase("lesson.report", "המסך ״מה קרה בתור הזה״ מראה מה נע ואילו קרבות נערכו. אם ההפוגה התקבלה, החטיבות שלכם אינן יכולות לתקוף עד שהיא נגמרת.")]
+    [TestCase("lesson.attack", "תקופת ההפוגה נגמרה. בחרו חטיבה הסמוכה לאויב כדי לראות את ״התקפה״ ואת יחס הכוחות. התקפה יכולה להדוף את האויב לאחור.")]
+    [TestCase("lesson.stakes", "הניקוד שלכם סופר יעדים, כמה מוקדם השגתם אותם, ושבויים שהוחזרו. קרבות שוחקים את החטיבות. אם הכסף והמזון אוזלים ונשארים כך, המשחק נגמר.")]
+    [TestCase("lesson.combat", "כשפורץ קרב, המסך ״מה קרה בתור הזה״ מראה את האבדות ומי נסוג. בחרו חטיבה הסמוכה לאויב כדי לראות את ״התקפה״ ואת יחס הכוחות.")]
+    public void ACourseLessonsApprovedHebrewIsTheTextTheOwnerRead(string id, string hebrew) =>
+        AnApprovedHebrewLineIsTheTextTheOwnerRead(id, hebrew);
+
     [Test]
     public void TheEconomySignalsReadTheShownState()
     {

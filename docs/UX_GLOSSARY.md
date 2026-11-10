@@ -64,7 +64,7 @@ Revision 21 October 2026, localisation follow-up: the Cabinet reads government a
 | aliyah-and-immigration | preferred | immigration | עלייה | Eyal |
 | mandate-sub-district | preferred | Mandate sub-districts | נפות המנדט | Eyal |
 | terrain | use-with-caution | terrain | open | Native reviewer |
-| front-line-and-control | preferred | the labels the strings use: 'Held by Israel', 'Held by Arab forces', 'Contested', "No-man's land", 'Israeli side', 'Arab side', 'Demilitarized zone' | open | Eyal; historian review for new labels |
+| front-line-and-control | preferred | the labels the strings use: 'Held by Israel', 'Held by Arab forces', 'Contested', "No-man's land", 'Israeli side of the armistice line', 'Arab side of the armistice line', 'Demilitarized zone' | open | Eyal; historian review for new labels |
 | city | pending-gdd | city | open | Eyal |
 
 ## Conventions
@@ -1558,12 +1558,14 @@ Category: history-term. Scope: ui, docs.
 
 **Definition.** Who held an area on a date, as the map's control layer shows it. With the armistice lines, the map also names the two sides and the demilitarized zone.
 
-**English.** Preferred: the labels the strings use: 'Held by Israel', 'Held by Arab forces', 'Contested', "No-man's land", 'Israeli side', 'Arab side', 'Demilitarized zone'.
+**English.** Preferred: the labels the strings use: 'Held by Israel', 'Held by Arab forces', 'Contested', "No-man's land", 'Israeli side of the armistice line', 'Arab side of the armistice line', 'Demilitarized zone'.
 
 | In use | Where |
 |---|---|
 | Held by Israel | strings.en.yaml info.control_israel |
 | Held by Arab forces | strings.en.yaml info.control_arab |
+| Israeli side of the armistice line | strings.en.yaml info.control_side_israel |
+| Arab side of the armistice line | strings.en.yaml info.control_side_arab |
 | the Arab Liberation Army | strings.en.yaml control.holder_ala |
 | Demilitarized zone | strings.en.yaml info.control_dmz |
 | Front lines, {0}, approximate (Israel State Archives) | strings.en.yaml map.caption_held |
@@ -1574,6 +1576,8 @@ Category: history-term. Scope: ui, docs.
 |---|---|
 | בשליטת ישראל | translations/he/ui.yaml info.control_israel |
 | בשליטת כוחות ערביים | translations/he/ui.yaml info.control_arab |
+| הצד הישראלי של קו שביתת הנשק | translations/he/ui.yaml info.control_side_israel |
+| הצד הערבי של קו שביתת הנשק | translations/he/ui.yaml info.control_side_arab |
 | צבא ההצלה | translations/he/ui.yaml control.holder_ala |
 | אזור מפורז | translations/he/ui.yaml info.control_dmz |
 

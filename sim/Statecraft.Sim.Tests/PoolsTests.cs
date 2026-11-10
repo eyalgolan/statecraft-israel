@@ -615,6 +615,29 @@ public class PoolsTests
         Assert.Equal(hash, s.Hash());
     }
 
+    /// <summary>R-FOOD-002 under gdd-0.3 (#2806 item 18): an invalid live ledger is refused before any Food moves, because
+    /// Pools.Consume reconciles the ledger (Pools.cs:215) before it computes the need or writes Food. The ledger's API refuses
+    /// every invalid change (Commit, Replace and Initialize all validate), so this test breaks the ledger through reflection
+    /// on its private <c>units</c> field: it removes one registered record, so the created ids no longer equal the live ids.
+    /// Reflection keeps the test test-only, with no test hook added to the sim.</summary>
+    [Fact]
+    public void AnInvalidLedgerIsRefusedBeforeAnyFoodMoves()
+    {
+        var s = LedgerState(); s.Food = 5;
+        var month = Month(s);
+        var units = (System.Collections.IDictionary)typeof(PopulationLedger)
+            .GetField("units", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(s.PopulationLedger)!;
+        units.Remove(s.PopulationLedger.Units[0].Id);
+        var hash = s.Hash(); var food = (s.Food, s.FoodNeed, s.FoodUnmet);
+        var why = new List<Cause>();
+        var ex = Assert.Throws<InvalidOperationException>(() => Pools.Consume(PopulationLedgerTests.Content(), s, new MvpRules { CoverMonths = 3 }, month, why));
+        Assert.Equal("Population id conservation failed.", ex.Message);
+        Assert.Equal(hash, s.Hash());
+        Assert.Equal(food, (s.Food, s.FoodNeed, s.FoodUnmet));
+        Assert.Empty(why);
+    }
+
     // R-FOOD-002 under gdd-0.3 (#2470): the need comes from the month's frozen snapshot, not the live ledger. A combat loss after the month
     // opened leaves the live ledger at 7 ids; the month still eats its 8 opening rations.
     [Fact]

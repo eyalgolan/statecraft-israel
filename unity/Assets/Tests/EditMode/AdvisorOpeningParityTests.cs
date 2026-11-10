@@ -27,6 +27,8 @@ public class AdvisorOpeningParityTests
     // Approval is a test-only in-memory copy; no shipped review field is changed.
     static AdvisorCatalog Approved() => AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved"));
     static string[] Steps => AdvisorPresenter.ChainIds(AdvisorCatalog.Load()).ToArray();
+    /// <summary>The city step of AdvisorTour1688Fixture.WithACityStep.</summary>
+    static int CityStep => Array.IndexOf(Steps, "opening.cities");
     static void Begin(GameRoot game, GameInputs inputs, int smoke, bool startScreen = false)
     {
         game.Begin(inputs, smoke, startScreen: startScreen);
@@ -42,12 +44,12 @@ public class AdvisorOpeningParityTests
     /// <summary>The info panel and the advisor as GameRoot wires them, without the map: the advisor's city (CityHex) and its unit
     /// (UnitToShow, among the tokens a new game draws) shown as a click would show them.</summary>
     static (InfoPanelPresenter info, AdvisorPresenter advisor) PanelAndAdvisor(VisualElement root, SimBridge bridge, UiText text,
-        SettingsStore? settings, EventCardPresenter card, Action closeScreens)
+        SettingsStore? settings, EventCardPresenter card, Action closeScreens, AdvisorCatalog? catalog = null)
     {
         var tokens = UnitRoster.FromState(UnitRows, bridge.Content, bridge.State, _ => true, (row, a, q, r) => a);
         PlacedToken? shown = null;
         var info = new InfoPanelPresenter(root, bridge, text, Names(), selectedUnit: () => shown);
-        var session = new AdvisorSession(Approved(), new AdvisorSettings(settings), autoShow: true);
+        var session = new AdvisorSession(catalog ?? Approved(), new AdvisorSettings(settings), autoShow: true);
         var advisor = new AdvisorPresenter(root, bridge, text, session, hooks: new AdvisorHooks
         {
             Card = card, CloseScreens = closeScreens,
@@ -189,6 +191,7 @@ public class AdvisorOpeningParityTests
     public void ALanguageSwitchOnTheCityStepStillPutsBackTheSelectionItFound()
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.AdvisorCatalogForTests = AdvisorTour1688Fixture.WithACityStep();
         Begin(game, Inputs, 0, startScreen: true); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         game.Advisor!.CloseChain();
         var map = Object.FindFirstObjectByType<MapScene>(); var bridge = game.Bridge!;
@@ -197,12 +200,12 @@ public class AdvisorOpeningParityTests
         GameRoot.OnHexClicked(map, game.Units!, game.Info!, hex.Item1, hex.Item2);
         Assert.AreEqual(hex, game.Info!.Selected, "precondition: the player's hex");
         game.Advisor.OpenChain();
-        for (int i = 0; i < 2; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+        for (int i = 0; i < CityStep; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
         Assert.AreEqual(city, game.Info!.Selected, "precondition: the city step shows its city");
 
         UiTestKit.Press(Ui.Q<Button>("nav-settings")); UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
         if (Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass)) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
-        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt chain"); Assert.AreEqual("opening.city", Steps[game.Advisor.ChainStep]);
+        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt chain"); Assert.AreEqual("opening.cities", Steps[game.Advisor.ChainStep]);
         Assert.AreEqual(city, game.Info!.Selected, "shows its city again");
         UiTestKit.Press(Ui.Q<Button>("advisor-close"));
         Assert.AreEqual(hex, game.Info!.Selected, "closing puts back the player's hex");
@@ -214,6 +217,7 @@ public class AdvisorOpeningParityTests
     public void ClosingPutsBackAnOpenPioneerCard()
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.AdvisorCatalogForTests = AdvisorTour1688Fixture.WithACityStep();
         Begin(game, Inputs, 0, startScreen: true); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         game.Advisor!.CloseChain();
         var bridge = game.Bridge!; var info = game.Info!; var units = game.Units!;
@@ -225,7 +229,7 @@ public class AdvisorOpeningParityTests
         void OpenCityStep()
         {
             game.Advisor!.OpenChain();
-            for (int i = 0; i < 2; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+            for (int i = 0; i < CityStep; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
             Assert.AreEqual(city, info.Selected, "precondition: the city step shows its city");
             Assert.IsNull(info.Pioneer, "precondition: the advisor's city, not the pioneer card");
         }
@@ -263,14 +267,14 @@ public class AdvisorOpeningParityTests
         public readonly InfoPanelPresenter Info;
         readonly List<IDisposable> owned = new List<IDisposable>();
 
-        public Rig(UiText text, SettingsStore? settings = null)
+        public Rig(UiText text, SettingsStore? settings = null, AdvisorCatalog? catalog = null)
         {
             Ui.Root.Q("root").RemoveFromClassList("loading");
             Bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
             owned.Add(new HudPresenter(Ui.Root, Bridge, text));
             Nav = Own(new ScreenNav(Ui.Root));
             Card = Own(new EventCardPresenter(Ui.Root, Bridge, text, null));
-            var (info, advisor) = PanelAndAdvisor(Ui.Root, Bridge, text, settings, Card, () => Nav.Close());
+            var (info, advisor) = PanelAndAdvisor(Ui.Root, Bridge, text, settings, Card, () => Nav.Close(), catalog);
             Info = Own(info);
             Advisor = Own(advisor);
             Own(new EncyclopediaPresenter(Ui.Root, text, AdvisorCatalog.Load(), Nav, Advisor));
@@ -285,17 +289,16 @@ public class AdvisorOpeningParityTests
         }
     }
 
-    /// <summary>The seven steps, in the order a player meets them (spec 9.2): the greeting first, then the guide's six with
-    /// the guide's targets; the move step (#1141, owner, 21 October 2026) after training and before the event card.</summary>
+    /// <summary>The ten steps, in the order a player meets them (#2933): the war and its armies, then the moves of the first
+    /// turn on a real unit, the card and End turn. Objectives and the city's two lines left for the later turns.</summary>
     [Test]
-    public void HasSevenStepsInOrder()
+    public void HasTenStepsInOrder()
     {
-        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.attention", "opening.city", "opening.training", "opening.move", "opening.event", "opening.objectives" }, Steps);
-        Assert.AreEqual(5, AdvisorPresenter.EventStep);
-        var targets = AdvisorCatalog.Load().Messages.Where(m => m.Signal == AdvisorSignals.Opening)
-            .Select(m => m.Actions.FirstOrDefault(a => a.ShowMe != "")?.ShowMe ?? "").ToArray();
-        CollectionAssert.AreEqual(new[] { "", "attention", "city_housing", "city_training", "unit_move", "decision_waiting", "nav_objectives" }, targets,
-            "the guide's targets, in its order");
+        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.invasion", "opening.units", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.event", "opening.end_turn" }, Steps);
+        Assert.AreEqual(8, AdvisorPresenter.EventStep);
+        var targets = Steps.Select(id => AdvisorCatalog.Load().Messages.Single(m => m.Id == id).Actions.FirstOrDefault(a => a.ShowMe != "")?.ShowMe ?? "").ToArray();
+        CollectionAssert.AreEqual(new[] { "", "", "", "", "attention", "unit_move", "unit_move", "unit_orders", "decision_waiting", "end_turn" }, targets,
+            "each step's target, in order");
         foreach (var text in new[] { En, He }) foreach (var key in Steps)
             Assert.IsFalse(string.IsNullOrWhiteSpace(text["advisor." + key + ".text"]), key);
     }
@@ -357,7 +360,7 @@ public class AdvisorOpeningParityTests
         Assert.IsNull(AdvisorTargets.UnitToShow(bridge, rows), "no unit can move: none to show");
     }
 
-    /// <summary>Skip at any step closes it; Next walks the seven steps and Done closes it; Escape skips; How to play's button
+    /// <summary>Skip at any step closes it; Next walks the ten steps and Done closes it; Escape skips; How to play's button
     /// opens it again at its first step, closing that screen; each step shows its own strings.</summary>
     [UnityTest] public IEnumerator CanBeSkippedInEnglish() { yield return CanBeSkippedAtAnyStepAndReopened(false); }
     [UnityTest] public IEnumerator CanBeSkippedInHebrew() { yield return CanBeSkippedAtAnyStepAndReopened(true); }
@@ -372,13 +375,13 @@ public class AdvisorOpeningParityTests
         {
             var key = Steps[step];
             Assert.AreEqual(step, rig.Advisor.ChainStep);
-            Assert.AreEqual(text.Format("advisor.step", step + 1, 7), rig.Ui.Q<Label>("advisor-count").text);
+            Assert.AreEqual(text.Format("advisor.step", step + 1, Steps.Length), rig.Ui.Q<Label>("advisor-count").text);
             var speaker = AdvisorCatalog.Load().Messages.Single(m => m.Id == key).Advisor;
-            Assert.AreEqual(text["advisor." + speaker + (step == 2 ? ".name_first" : ".name")], rig.Ui.Q<Label>("advisor-name").text);
+            Assert.AreEqual(text["advisor." + speaker + (key == "opening.cities" ? ".name_first" : ".name")], rig.Ui.Q<Label>("advisor-name").text);
             Assert.AreEqual(text["advisor." + key + ".text"], rig.Ui.Q<Label>("advisor-text").text);
-            Assert.AreEqual(text[step == 6 ? "advisor.done" : "advisor.next"], rig.Ui.Q<Button>("advisor-got-it").text);
+            Assert.AreEqual(text[step == Steps.Length - 1 ? "advisor.done" : "advisor.next"], rig.Ui.Q<Button>("advisor-got-it").text);
             Assert.IsTrue(rig.Card.Collapsed, "the chain speaks before the card opens");
-            if (key == "opening.objectives")
+            if (key == "opening.end_turn")
             {
                 // #791: from the advisor's last step the real Objectives button opens the new parts and the standalone goal.
                 CollectionAssert.AreEquivalent(new[] { "railway", "burma_road", "yishuvim", "absorb_immigrants" },
@@ -474,6 +477,7 @@ public class AdvisorOpeningParityTests
     public IEnumerator ClosingPutsBackTheSelectionItFound()
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.AdvisorCatalogForTests = AdvisorTour1688Fixture.WithACityStep();
         Begin(game, Inputs, 0, startScreen: true);
         UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         var advisor = game.Advisor!; var info = game.Info!; var units = game.Units!; var bridge = game.Bridge!;
@@ -482,8 +486,8 @@ public class AdvisorOpeningParityTests
         bool Outlined() { var t = map.Terrain.transform.Find(MapScene.SelectionName); return t != null && t.GetComponent<MeshRenderer>().enabled; }
         void ToCity()
         {
-            for (int i = 0; i < 2; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));   // past the greeting and Attention
-            Assert.AreEqual(city, info.Selected, "step 3 shows the advisor's city");
+            for (int i = 0; i < CityStep; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+            Assert.AreEqual(city, info.Selected, "the city step shows the advisor's city");
         }
         void Click(int q, int r) => GameRoot.OnHexClicked(map, units, info, q, r);
 
@@ -499,7 +503,7 @@ public class AdvisorOpeningParityTests
         Click(hex.Item1, hex.Item2);
         Assert.AreEqual(hex, info.Selected, "precondition: a hex selected");
         advisor.OpenChain(); ToCity();
-        for (int i = 2; i < Steps.Length; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+        for (int i = CityStep; i < Steps.Length; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
         Assert.IsFalse(advisor.InChain, "Done");
         Assert.AreEqual(hex, info.Selected, "Done: the hex the advisor found");
         Assert.IsTrue(Outlined(), "outlined again");
@@ -545,6 +549,25 @@ public class AdvisorOpeningParityTests
         Assert.IsNull(units.Selected, "Skip: no unit selected again");
         Assert.IsFalse(info.ShowsUnit);
         Assert.IsNull(info.Selected, "and no hex");
+    }
+
+    /// <summary>#2933: the unit steps name one unit from step to step, the card keeping Move while the chain walks them.</summary>
+    [Test]
+    public void TheUnitStepsKeepOneUnitsCard()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        Begin(game, Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        var advisor = game.Advisor!; var info = game.Info!; var units = game.Units!;
+        for (int i = 0; i < Array.IndexOf(Steps, "opening.move_how"); i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+        var id = AdvisorTargets.UnitToShow(game.Bridge!, units.Tokens.Select(t => t.Token));
+        foreach (var step in new[] { "opening.move_how", "opening.move", "opening.orders" })
+        {
+            Assert.AreEqual(step, Steps[advisor.ChainStep]);
+            Assert.AreEqual(id, units.Selected, step); Assert.IsTrue(info.ShowsUnit, step);
+            UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+        }
+        Assert.IsNull(units.Selected, "the event step puts it away");
     }
 
     /// <summary>Issue #1392: the move step brings UnitToShow's hex into the map view, clear of the info panel and the advisor's
@@ -696,21 +719,21 @@ public class AdvisorOpeningParityTests
         for (int i = 0; i < AdvisorPresenter.EventStep; i++) advisor.NextStep();
         Assert.IsTrue(card.Shown != null && card.Collapsed);
         UiTestKit.Press(Ui.Q<Button>("advisor-show-me")); Assert.IsFalse(advisor.IsOpen);
-        card.Collapse(); Assert.AreEqual(5, advisor.ChainStep); Assert.IsTrue(advisor.IsOpen);
+        card.Collapse(); Assert.AreEqual(AdvisorPresenter.EventStep, advisor.ChainStep); Assert.IsTrue(advisor.IsOpen);
         UiTestKit.Press(Ui.Q<Button>("advisor-show-me")); AnswerTheCard();
         Assert.AreEqual("degania_defence", card.Shown?.Id, "One Army answered, the turn's second card opens (R-EVT-006)");
         Assert.IsFalse(advisor.IsOpen, "the advisor steps aside while the second card is open, its event step kept");
         AnswerTheCard();
-        Assert.IsNull(card.Shown, "the opening turn's two cards answered"); Assert.IsTrue(advisor.InChain); Assert.AreEqual(6, advisor.ChainStep);
-        Assert.AreEqual(En.Format("advisor.step", 7, 7), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
-        Assert.AreEqual(En["advisor.opening.objectives.text"], Ui.Q<Label>("advisor-text").text, "on to Objectives");
+        Assert.IsNull(card.Shown, "the opening turn's two cards answered"); Assert.IsTrue(advisor.InChain); Assert.AreEqual(AdvisorPresenter.EventStep + 1, advisor.ChainStep);
+        Assert.AreEqual(En.Format("advisor.step", 10, 10), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
+        Assert.AreEqual(En["advisor.opening.end_turn.text"], Ui.Q<Label>("advisor-text").text, "on to End turn");
         for (int i = 0; i < 3; i++) yield return null;                   // the popup was hidden under the card: styles resolve
         Assert.AreSame(Ui.Q<Button>("advisor-got-it"), Ui.Q("root").focusController.focusedElement, "Next has the focus again (#1323)");
     }
 
     /// <summary>Path B: the card was answered before the advisor reaches its event step (a returning player opening it from How
     /// to play, or one who answered it under the advisor): there is no card to explain, so the step is left out and the
-    /// advisor counts five steps.</summary>
+    /// advisor counts nine steps.</summary>
     [Test]
     public void WithNoCardTheEventStepIsLeftOut()
     {
@@ -727,29 +750,29 @@ public class AdvisorOpeningParityTests
         for (int shown = 1; advisor.InChain; shown++)
         {
             seen.Add(Steps[advisor.ChainStep]);
-            Assert.AreEqual(En.Format("advisor.step", shown, 6), Ui.Q<Label>("advisor-count").text, $"step {shown} of six");
-            Assert.AreEqual(En[shown == 6 ? "advisor.done" : "advisor.next"], Ui.Q<Button>("advisor-got-it").text);
-            Assert.LessOrEqual(shown, 6, "six steps, then Done");
+            Assert.AreEqual(En.Format("advisor.step", shown, 9), Ui.Q<Label>("advisor-count").text, $"step {shown} of nine");
+            Assert.AreEqual(En[shown == 9 ? "advisor.done" : "advisor.next"], Ui.Q<Button>("advisor-got-it").text);
+            Assert.LessOrEqual(shown, 9, "nine steps, then Done");
             UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
         }
-        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.attention", "opening.city", "opening.training", "opening.move", "opening.objectives" }, seen);
+        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.invasion", "opening.units", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.end_turn" }, seen);
     }
 
-    /// <summary>The city or unit the advisor shows for steps 2 to 4 is put away when the advisor moves on to a step that does not
-    /// explain it (the event card, Objectives), with or without a card, so no stale panel stays under the later steps.</summary>
+    /// <summary>The unit the advisor shows for its unit steps is put away when the advisor moves on to a step that does not
+    /// explain it (the event card, End turn), with or without a card, so no stale panel stays under the later steps.</summary>
     [Test]
-    public void LeavingTheMoveStepPutsItsUnitCardAway([Values(false, true)] bool cardAnswered)
+    public void LeavingTheLastUnitStepPutsItsUnitCardAway([Values(false, true)] bool cardAnswered)
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
         Begin(game, Inputs, 0, startScreen: true);
         UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         var advisor = game.Advisor!; var info = game.Info!; var units = game.Units!;
         if (cardAnswered) { advisor.CloseChain(); AnswerTheOpeningCards(); advisor.OpenChain(); }
-        var move = Array.IndexOf(Steps, "opening.move");
-        for (int i = 0; i < move; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
-        Assert.IsTrue(info.ShowsUnit && units.Selected != null, "precondition: the move step shows a unit's card");
+        var orders = Array.IndexOf(Steps, "opening.orders");
+        for (int i = 0; i < orders; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+        Assert.IsTrue(info.ShowsUnit && units.Selected != null, "precondition: the orders step shows a unit's card");
         UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
-        Assert.AreEqual(cardAnswered ? "opening.objectives" : "opening.event", Steps[advisor.ChainStep]);
+        Assert.AreEqual(cardAnswered ? "opening.end_turn" : "opening.event", Steps[advisor.ChainStep]);
         Assert.IsFalse(info.ShowsUnit, "the unit's card is put away");
         Assert.IsNull(units.Selected, "and its unit unselected, as the advisor found it");
         Assert.IsNull(info.Selected, "with no hex shown either");
@@ -789,9 +812,9 @@ public class AdvisorOpeningParityTests
     [Test]
     public void TheGameChangingKeepsThePlayersSelectionOnAStep()
     {
-        using var rig = new Rig(En, new SettingsStore(TempDir()));
-        rig.Advisor.OpenChain(); rig.Advisor.NextStep(); rig.Advisor.NextStep();
-        Assert.AreEqual("opening.city", Steps[rig.Advisor.ChainStep], "precondition: the city step");
+        using var rig = new Rig(En, new SettingsStore(TempDir()), AdvisorTour1688Fixture.WithACityStep());
+        rig.Advisor.OpenChain(); for (int i = 0; i < CityStep; i++) rig.Advisor.NextStep();
+        Assert.AreEqual("opening.cities", Steps[rig.Advisor.ChainStep], "precondition: the city step");
         var city = AdvisorTargets.CityHex(rig.Bridge.Content, rig.Bridge.State)!.Value;
         Assert.AreEqual(city, rig.Info.Selected, "precondition: it shows its city");
         var other = rig.Bridge.Content.Hexes.Where(h => h.Land).Select(h => (h.Q, h.R)).First(h => h != city);
@@ -800,7 +823,7 @@ public class AdvisorOpeningParityTests
         Assert.IsNull(rig.Bridge.Queue(new AssignWorkers("tel_aviv", "job", 1)), "precondition: the order is queued");
         Assert.AreEqual(1, changed, "precondition: the game changed");
         Assert.AreEqual(other, rig.Info.Selected, "the player's hex stays");
-        Assert.IsTrue(rig.Advisor.InChain); Assert.AreEqual("opening.city", Steps[rig.Advisor.ChainStep], "on the same step");
+        Assert.IsTrue(rig.Advisor.InChain); Assert.AreEqual("opening.cities", Steps[rig.Advisor.ChainStep], "on the same step");
         rig.Ui.Press("advisor-close");
         Assert.AreEqual(other, rig.Info.Selected, "and Skip keeps the player's choice");
     }
@@ -844,7 +867,7 @@ public class AdvisorOpeningParityTests
 
     /// <summary>Every step's target is on screen, in the window, with the gold ring round it (inside the window) and the panel
     /// inside the window and clear of it, at 1920x1080 (the one-row bar), 1280x720 and 390x844 (the phone the three-row bar
-    /// is tuned for), in English and Hebrew, on a new game's first turn (the opening card open). Step 1's ring keeps clear of
+    /// is tuned for), in English and Hebrew, on a new game's first turn (the opening card open). Attention's ring keeps clear of
     /// End turn's border, so the two read as two boxes (review of #1209, follow-up 2).</summary>
     [UnityTest]
     public IEnumerator EveryStepPointsAtAVisibleElement()
@@ -857,16 +880,19 @@ public class AdvisorOpeningParityTests
                     string at = $"{(hebrew ? "he" : "en")} {w}x{h} step {step + 1} ({Steps[step]})";
                     var window = root.worldBound;
                     var targets = Targets(root, advisor, eventCard, step);
-                    if (Steps[step] == "opening.objectives" &&
-                        (targets.Count != 1 || targets[0].name != "nav-objectives"))
-                        problems.Add($"{at}: the last step must point at the Objectives button");
+                    if (Steps[step] == "opening.end_turn" &&
+                        (targets.Count != 1 || targets[0].name != "end-turn"))
+                        problems.Add($"{at}: the last step must point at End turn");
+                    if (Steps[step] == "opening.orders" &&
+                        (targets.Count == 0 || targets.Any(t => !new[] { "info-move", "info-fortify", "info-hold", "info-skip" }.Contains(t.name))))
+                        problems.Add($"{at}: the orders step must point at the unit card's orders, not [{string.Join(", ", targets.Select(t => t.name))}]");
                     if (Steps[step] == "opening.move" &&
                         (targets.Count != 1 || targets[0].name != "info-move" || ((Button)targets[0]).text != (hebrew ? He : En)["unit.order.move"]))
                         problems.Add($"{at}: the move step must point at the unit card's Move button");
-                    if (step == 0)
+                    if (advisor.Chain[step].Actions.All(a => a.ShowMe == ""))
                     {
-                        if (targets.Count != 0 || root.Q("advisor-ring").resolvedStyle.display == DisplayStyle.Flex) problems.Add($"{at}: greeting has a ring");
-                        if (!Inside(root.Q("advisor-popup").worldBound, window)) problems.Add($"{at}: greeting popup outside window");
+                        if (targets.Count != 0 || root.Q("advisor-ring").resolvedStyle.display == DisplayStyle.Flex) problems.Add($"{at}: a step with no target has a ring");
+                        if (!Inside(root.Q("advisor-popup").worldBound, window)) problems.Add($"{at}: popup outside window");
                         return;
                     }
                     if (targets.Count == 0) { problems.Add($"{at}: no target shows"); return; }
@@ -878,9 +904,9 @@ public class AdvisorOpeningParityTests
                     {
                         if (!Inside(area, ring.worldBound)) problems.Add($"{at}: the ring {ring.worldBound} is not round the target {area}");
                         if (!Inside(ring.worldBound, window)) problems.Add($"{at}: the ring {ring.worldBound} leaves the window {window}");
-                        // Step 1's ring round Attention must read as its own box, not one with End turn's gold border under it.
+                        // The ring round Attention must read as its own box, not one with End turn's gold border under it.
                         var endTurn = root.Q("end-turn").worldBound;
-                        if (step == 1 && Gap(ring.worldBound, endTurn) < RingClearPx)
+                        if (Steps[step] == "opening.attention" && Gap(ring.worldBound, endTurn) < RingClearPx)
                             problems.Add($"{at}: the ring {ring.worldBound} is {Gap(ring.worldBound, endTurn):0.#} px from End turn {endTurn} (under {RingClearPx})");
                     }
                     var panel = root.Q("advisor-popup").worldBound;
@@ -1039,7 +1065,7 @@ public class AdvisorOpeningNoAttentionParityTests
             var id = AdvisorTour1688Fixture.Visible[n]; Assert.AreEqual(id, rig.Advisor.Shown?.Id);
             var index = rig.Session.Chain.Step; rig.Rebuild(!startsHebrew);
             Assert.AreEqual(id, rig.Advisor.Shown?.Id); Assert.AreEqual(index, rig.Advisor.ChainStep);
-            Assert.AreEqual(AdvisorTour1688Fixture.Text(!startsHebrew).Format("advisor.step", n + 1, 6), rig.Ui.Q<Label>("advisor-count").text);
+            Assert.AreEqual(AdvisorTour1688Fixture.Text(!startsHebrew).Format("advisor.step", n + 1, AdvisorTour1688Fixture.Visible.Length), rig.Ui.Q<Label>("advisor-count").text);
             rig.Rebuild(startsHebrew); Assert.AreEqual(id, rig.Advisor.Shown?.Id); rig.Advisor.NextStep();
         }
         Assert.IsFalse(rig.Advisor.InChain); Assert.AreEqual("player", rig.Selection);
@@ -1052,21 +1078,23 @@ public class AdvisorOpeningNoAttentionParityTests
     public void BackwardRetainedStepRestorationNeverRendersAttention()
     {
         using var rig = new AdvisorTour1688Fixture.Rig(); rig.Advisor.OpenChain();
-        rig.Advisor.NextStep(); Assert.AreEqual("opening.city", rig.Advisor.Shown?.Id);
-        foreach (var index in new[] { 0, 1, 0, 2 })
+        for (int i = 0; i < AdvisorTour1688Fixture.PastCities; i++) rig.Advisor.NextStep();
+        Assert.AreEqual("opening.move_how", rig.Advisor.Shown?.Id);
+        var attention = AdvisorPresenter.ChainIds(rig.Session.Catalog).ToList().IndexOf("opening.attention");
+        foreach (var index in new[] { 0, attention, 0, attention + 1 })
         {
             rig.Advisor.Dispose(); rig.Session.Chain.Step = index; rig.Rebuild(false);
-            Assert.AreEqual(index < 1 ? "opening.greeting" : "opening.city", rig.Advisor.Shown?.Id);
+            Assert.AreEqual(index < 1 ? "opening.greeting" : "opening.move_how", rig.Advisor.Shown?.Id);
             Assert.IsFalse(rig.Session.Settings.Seen("opening.attention"));
         }
     }
 
-    // R-GOV-002: the event message opens the card, after four visible predecessors.
+    // R-GOV-002: the event message opens the card, after its visible predecessors.
     [TestCase(false)] [TestCase(true)]
     public void EventMessageOpensTheCardAndResumesAfterBothSyntheticDecisions(bool he)
     {
         using var rig = new AdvisorTour1688Fixture.Rig(he); rig.Advisor.OpenChain();
-        foreach (var id in AdvisorTour1688Fixture.Visible.Take(4))
+        foreach (var id in AdvisorTour1688Fixture.Visible.Take(7))
         {
             Assert.AreEqual(id, rig.Advisor.Shown?.Id); Assert.IsTrue(rig.Card.Collapsed); rig.Advisor.NextStep();
         }
@@ -1076,12 +1104,12 @@ public class AdvisorOpeningNoAttentionParityTests
         rig.Ui.Press("advisor-show-me"); UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         Assert.AreEqual("tour_test_b", rig.Card.Shown?.Id); Assert.IsFalse(rig.Advisor.IsOpen);
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
-        Assert.IsNull(rig.Card.Shown); Assert.AreEqual("opening.objectives", rig.Advisor.Shown?.Id);
-        Assert.AreEqual(AdvisorTour1688Fixture.Text(he).Format("advisor.step", 6, 6), rig.Ui.Q<Label>("advisor-count").text);
+        Assert.IsNull(rig.Card.Shown); Assert.AreEqual("opening.end_turn", rig.Advisor.Shown?.Id);
+        Assert.AreEqual(AdvisorTour1688Fixture.Text(he).Format("advisor.step", 9, 9), rig.Ui.Q<Label>("advisor-count").text);
         Assert.IsTrue(rig.Advisor.IsOpen); Assert.AreEqual("player", rig.Selection);
     }
 
-    // R-GOV-002: a missing decision is another skip; requires cannot block objectives.
+    // R-GOV-002: a missing decision is another skip; requires cannot block the step after it.
     [Test]
     public void NoDecisionSkipsEventWithoutBlockingObjectives()
     {
@@ -1089,7 +1117,7 @@ public class AdvisorOpeningNoAttentionParityTests
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         rig.Advisor.OpenChain(); var ids = new List<string>();
-        while (rig.Advisor.InChain) { ids.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(ids.Count, 5); rig.Advisor.NextStep(); }
+        while (rig.Advisor.InChain) { ids.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(ids.Count, 8); rig.Advisor.NextStep(); }
         CollectionAssert.AreEqual(AdvisorTour1688Fixture.Visible.Where(id => id != "opening.event"), ids);
     }
 }
@@ -1107,14 +1135,14 @@ public class AdvisorOpeningEventIdentityTests
             .Replace("\npages:\n", "\n  - { id: opening.detour, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 99 } }\n\npages:\n");
         using var rig = new AdvisorTour1688Fixture.Rig(catalog: AdvisorCatalog.Parse(yaml));
         rig.Advisor.OpenChain();
-        for (int i = 0; i < 4; i++) rig.Advisor.NextStep();
+        for (int i = 0; i < 7; i++) rig.Advisor.NextStep();
         Assert.AreEqual("opening.event", rig.Advisor.Shown?.Id);
         Assert.AreNotEqual(AdvisorPresenter.EventStep, rig.Advisor.ChainStep, "shifted catalogue precondition");
         rig.Ui.Press("advisor-show-me");
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
-        Assert.AreEqual("opening.objectives", rig.Advisor.Shown?.Id);
-        Assert.AreEqual(AdvisorTour1688Fixture.Text(false).Format("advisor.step", 6, 6), rig.Ui.Q<Label>("advisor-count").text);
+        Assert.AreEqual("opening.end_turn", rig.Advisor.Shown?.Id);
+        Assert.AreEqual(AdvisorTour1688Fixture.Text(false).Format("advisor.step", 9, 9), rig.Ui.Q<Label>("advisor-count").text);
         Assert.IsTrue(rig.Advisor.IsOpen);
     }
 
@@ -1123,7 +1151,7 @@ public class AdvisorOpeningEventIdentityTests
     public void ClosingEventRestoresTheOriginallyCollapsedCard()
     {
         using var rig = new AdvisorTour1688Fixture.Rig(); rig.Card.Collapse(); rig.Advisor.OpenChain();
-        for (int i = 0; i < 4; i++) rig.Advisor.NextStep();
+        for (int i = 0; i < 7; i++) rig.Advisor.NextStep();
         Assert.AreEqual("opening.event", rig.Advisor.Shown?.Id);
         rig.Ui.Press("advisor-show-me"); Assert.IsFalse(rig.Card.Collapsed);
         rig.Advisor.CloseChain(); Assert.IsTrue(rig.Card.Collapsed);
@@ -1151,7 +1179,7 @@ public class AdvisorOpeningNoAttentionGameRootTests
 
     // R-GOV-002 / #1688 S1: Settings invokes GameRoot.SwitchLanguage -> Begin(keep: Bridge),
     // rebuilding the HUD, localized bridge, card and advisor, not just the advisor presenter.
-    // Red-first: base reaches opening.attention instead of opening.city after the first Next.
+    // Red-first: base reaches opening.attention instead of the step after it.
     [Test]
     public void SettingsRebuildKeepsGdd03TourIdentityAndRestoresCardAndSelection()
     {
@@ -1160,8 +1188,7 @@ public class AdvisorOpeningNoAttentionGameRootTests
         var settings = new SettingsStore(TempDir());
         var game = AdvisorGameTests.OpenScene(new SaveStore(TempDir()), settings);
         game.Language = UiLanguage.English;
-        game.AdvisorCatalogForTests = AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path)
-            .Replace("he_review: pending", "he_review: approved"));
+        game.AdvisorCatalogForTests = AdvisorTour1688Fixture.WithACityStep();
         game.Begin(inputs, 0, startScreen: true);
         UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         game.Advisor!.CloseChain();
@@ -1176,10 +1203,10 @@ public class AdvisorOpeningNoAttentionGameRootTests
             .First(h => h != city && game.Units!.UnitToSelectAt(h.Item1, h.Item2) == null);
         GameRoot.OnHexClicked(map, game.Units!, game.Info!, hex.Item1, hex.Item2);
         Assert.AreEqual(hex, game.Info!.Selected, "the player's selection before the tour");
-        game.Advisor.OpenChain(); game.Advisor.NextStep();
-        Assert.AreEqual("opening.city", game.Advisor.Shown?.Id);
+        game.Advisor.OpenChain(); for (int i = 0; i < 3; i++) game.Advisor.NextStep();
+        Assert.AreEqual("opening.cities", game.Advisor.Shown?.Id);
         Assert.AreEqual(city, game.Info.Selected, "the tour temporarily selects its city");
-        RoundTrip("opening.city", 2);
+        RoundTrip("opening.cities", 4);
         Assert.AreEqual(city, game.Info!.Selected, "the rebuilt city step selects its city again");
         game.Advisor!.CloseChain();
         Assert.AreEqual(hex, game.Info.Selected, "closing restores the player's selection in the rebuilt info panel");
@@ -1194,7 +1221,7 @@ public class AdvisorOpeningNoAttentionGameRootTests
             Assert.IsFalse(game.AdvisorSession!.Settings.Seen("opening.attention"));
             if (id == "opening.event")
             {
-                RoundTrip(id, 5);
+                RoundTrip(id, 8);
                 UiTestKit.Press(Ui.Q<Button>("advisor-show-me"));
                 Assert.AreEqual("tour_test_a", game.Card!.Shown?.Id);
                 Assert.IsFalse(game.Card.Collapsed, "the rebuilt event action opens the same decision by identity");
@@ -1232,7 +1259,7 @@ public class AdvisorOpeningNoAttentionGameRootTests
                 Assert.IsTrue(game.Advisor!.InChain);
                 Assert.AreEqual(id, game.Advisor.Shown?.Id); Assert.AreEqual(index, game.Advisor.ChainStep);
                 Assert.AreNotEqual("opening.attention", game.Advisor.Shown?.Id);
-                Assert.AreEqual(AdvisorTour1688Fixture.Text(language == UiLanguage.Hebrew).Format("advisor.step", position, 6),
+                Assert.AreEqual(AdvisorTour1688Fixture.Text(language == UiLanguage.Hebrew).Format("advisor.step", position, AdvisorTour1688Fixture.Visible.Length),
                     Ui.Q<Label>("advisor-count").text);
                 Assert.AreEqual("tour_test_a", game.Card!.Shown?.Id); Assert.IsTrue(game.Card.Collapsed);
                 AssertNoAttention();

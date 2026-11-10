@@ -60,9 +60,43 @@ def left_column_button(index: int, window: tuple[int, int] = WINDOW) -> tuple[in
 WHY = left_column_button(3)   # Why? moved from the top bar to the left icon column (#602)
 
 
+# The start screen's bottom stack and action row in panel units, from Statecraft.uss: the body's 28 px bottom padding, the
+# panel's 1 px border and 20 px bottom padding, the community row (40 px high, 8 px above it); a .start-button is 300 px
+# wide (min-width) and 50 px high with 10 px and 4 px margins.
+START_PANEL_BOTTOM, START_BUTTON = 28 + 1 + 20 + 40 + 8, (300 + 2 * 10, 50 + 2 * 4)
+# The action row a fresh profile shows: no save, so no Continue; the reviewed opening's replay; Star on GitHub (#1168).
+START_ROW = ("start-new-game", "start-opening-replay", "start-star")
+
+
+def start_new_game_button(lang: str = "en", window: tuple[int, int] = WINDOW) -> tuple[int, int]:
+    """The centre of the start screen's New game in CSS pixels, from Statecraft.uss (refs #3003): the panel sits at the
+    bottom of the window (a wide window, so no .start-band), its action row centred and START_ROW's buttons all
+    START_BUTTON wide; in Hebrew (?lang=he) the row runs right to left (.lang-he .start-actions: row-reverse), so New game
+    is mirrored about the centre. Scaled as left_column_button. A headed capture on 10 Nov 2026 at 0be35a517 (main
+    59fdd6924 plus #3003) measured (541, 657) and (1026, 657); this gives (543, 657) and (1025, 657) (Star on GitHub's label
+    and signs make it a few px wider than 300 in English)."""
+    if lang not in ("en", "he"):
+        raise ValueError(f"no start screen layout for lang={lang!r}")
+    w, h = window
+    scale = ((w / 1920) * (h / 1080)) ** 0.5
+    bw, bh = START_BUTTON
+    offset = (START_ROW.index("start-new-game") + 0.5 - len(START_ROW) / 2) * bw   # from the row's centre
+    if lang == "he":
+        offset = -offset
+    return round(w / 2 + offset * scale), round(h - (START_PANEL_BOTTOM + bh / 2) * scale)
+
+
+def query_lang(query: str) -> str:
+    """The UI language a page query asks for (UiLanguage: ?lang=he), English without one."""
+    return "he" if "lang=he" in query.split("&") else "en"
+
+
 # For `wheel`, in a fixed 1568x752 CSS viewport (Playwright's, from the #43 browser runs): START_NEW, the start screen's
-# New Game button; MAP, open map clear of the HUD; PANEL, the End Turn button in the top bar.
-WHEEL_VIEWPORT, START_NEW, MAP, PANEL = (1568, 752), (784, 693), (300, 400), (1500, 44)
+# New Game button (START_NEW_BY_LANG for a ?lang=he page); MAP, open map clear of the HUD; PANEL, the End Turn button in
+# the top bar.
+WHEEL_VIEWPORT, MAP, PANEL = (1568, 752), (300, 400), (1500, 44)
+START_NEW_BY_LANG = {lang: start_new_game_button(lang, WHEEL_VIEWPORT) for lang in ("en", "he")}
+START_NEW = START_NEW_BY_LANG["en"]
 
 
 def pad_swipe() -> list[float]:
@@ -430,10 +464,11 @@ async def wheel(args):
     results = {}
     for label, steps in WHEEL_CASES:
         async with Browser(args.build, viewport=WHEEL_VIEWPORT) as b:
-            sid = await b.open("camlog", init_script=WHEEL_SEEN_SCRIPT)
+            query = "camlog"
+            sid = await b.open(query, init_script=WHEEL_SEEN_SCRIPT)
             await b.wait_for(sid, r"^GAME OK")
             await asyncio.sleep(3)
-            await b.click(sid, *START_NEW)
+            await b.click(sid, *START_NEW_BY_LANG[query_lang(query)])
             await b.wait_for(sid, r"^CAMERA ")
             await asyncio.sleep(2)
             out = []

@@ -185,6 +185,8 @@ namespace Statecraft.Sim
         public const string TrainingCancelled = "training_cancelled";
         /// <summary>Args: k.City; Training.CourseId(type).</summary>
         public const string TrainingArmsReturned = "training_arms_returned";
+        /// <summary>Args: city; CauseKeys.Number(u.Id). R-UNIT-005 on a Historical ledger game only (#1725 PR 7).</summary>
+        public const string SentHomeArmsReturned = "sent_home_arms_returned";
         /// <summary>Args: CauseKeys.Number(aim).</summary>
         public const string ReplacementsStopped = "replacements_stopped";
         /// <summary>Args: CauseKeys.Number(k.Count); Training.CourseId(type); CauseKeys.Number(target.Id).</summary>
@@ -227,6 +229,10 @@ namespace Statecraft.Sim
         public const string PlaceCaptured = "place_captured";
         /// <summary>Args: record.Fled ? "1" : "0".</summary>
         public const string EnemyRegained = "enemy_regained";
+        /// <summary>Args: none. R-CTRL-006: enemy units took a player's locality.</summary>
+        public const string PlaceLost = "place_lost";
+        /// <summary>Args: none. R-CTRL-006: Israeli units took a lost player's locality back.</summary>
+        public const string PlaceRetaken = "place_retaken";
         /// <summary>Args: x.Fled ? "1" : "0".</summary>
         public const string PlaceAnnexed = "place_annexed";
         /// <summary>Args: moved.Count &gt; 0 ? "1" : "0"; residentsFled ? "1" : "0".</summary>
@@ -282,7 +288,7 @@ namespace Statecraft.Sim
             EventNew, EventChosen, EventDelegated, EventDelegatedPartial, OperationPostponed, OperationLapsed, OperationLapsedSigned, OperationLapsedUnitLost, OperationWaitsForArmistice, EventAmount, EventStock, EventGrant, EventCity,
             EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep, HousingSurcharge, HousingCohesion,
             ObjectiveCompleted, PrisonersReturned, SoldiersReturned,
-            WorkersAssigned, WagesPaid, ImmigrantsHoused, HousingShortage, ImmigrantsWaiting, RecruitsVeteran, CorridorStarted, CorridorCancelled, CorridorCompleted, PioneersVeteran, MapBorrowed, MapBuilt, LandWorkStarted, SiteStarted, SiteCancelled, SiteCompleted, ProjectStarted, ProjectCancelled, ProjectCompleted, ProjectBuilder, ProjectBuilderFreed, ProjectWaiting, ArmsBought, WorkshopWorkers, WorkshopArms, WorkshopPaused, DollarsConverted, DollarsConvertedFx, FoodHarvest, FieldFood, FoodShortage, FoodWithoutImports, FoodImported, PrisonerFood, PrisonerFoodShortage, CraftsmenReturned, CraftsmenReassigned, PioneerReturned, PioneersReassigned, TrainingStarted, TrainingArms, TrainingCancelled, TrainingArmsReturned, ReplacementsStopped, ReplacementsJoined, MilitaryTrained, PioneersTrained, CraftsmenTrained, Appointed, Reshuffle, AppointmentsEnded, ApprovalStability, CoalitionCollapsed, LegislatureConvened, GovernmentTookOffice, CoalitionChanged, EraEnded, AdvisoryPolicyRejected, PolicyRejected, PolicySet, AdvisoryBudgetRejected, BudgetRejected, PlaceCaptured, EnemyRegained, PlaceAnnexed, PlaceWithdrawn, PlaceDeported, DeportEffect, DeportCost, OccupationStarted, PendingBecameRaid, OccupationLostUnit, OccupationCountdown, DepopulationSupport, CityHeld,
+            WorkersAssigned, WagesPaid, ImmigrantsHoused, HousingShortage, ImmigrantsWaiting, RecruitsVeteran, CorridorStarted, CorridorCancelled, CorridorCompleted, PioneersVeteran, MapBorrowed, MapBuilt, LandWorkStarted, SiteStarted, SiteCancelled, SiteCompleted, ProjectStarted, ProjectCancelled, ProjectCompleted, ProjectBuilder, ProjectBuilderFreed, ProjectWaiting, ArmsBought, WorkshopWorkers, WorkshopArms, WorkshopPaused, DollarsConverted, DollarsConvertedFx, FoodHarvest, FieldFood, FoodShortage, FoodWithoutImports, FoodImported, PrisonerFood, PrisonerFoodShortage, CraftsmenReturned, CraftsmenReassigned, PioneerReturned, PioneersReassigned, TrainingStarted, TrainingArms, TrainingCancelled, TrainingArmsReturned, SentHomeArmsReturned, ReplacementsStopped, ReplacementsJoined, MilitaryTrained, PioneersTrained, CraftsmenTrained, Appointed, Reshuffle, AppointmentsEnded, ApprovalStability, CoalitionCollapsed, LegislatureConvened, GovernmentTookOffice, CoalitionChanged, EraEnded, AdvisoryPolicyRejected, PolicyRejected, PolicySet, AdvisoryBudgetRejected, BudgetRejected, PlaceCaptured, EnemyRegained, PlaceLost, PlaceRetaken, PlaceAnnexed, PlaceWithdrawn, PlaceDeported, DeportEffect, DeportCost, OccupationStarted, PendingBecameRaid, OccupationLostUnit, OccupationCountdown, DepopulationSupport, CityHeld,
         };
 
         /// <summary>A number as an Arg: invariant and round-trip, so the UI rounds exactly the value Message rounded.</summary>

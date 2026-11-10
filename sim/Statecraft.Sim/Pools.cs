@@ -123,9 +123,25 @@ namespace Statecraft.Sim
 
         /// <summary>R-FIELD-002, step 6 after the cities' production (D-A6): in ordinal site id order, every plowed field (a built
         /// field site, R-FIELD-001) adds field_food_per_turn to the stock, with no workers (Q-FIELD-2). It comes before the
-        /// nation eats in step 7, so in a turn with imports the import only tops the stock up by less.</summary>
-        public static void Harvest(Content c, GameState s, MvpRules r, List<Cause> why)
+        /// nation eats in step 7, so in a turn with imports the import only tops the stock up by less. A state with an
+        /// initialized population ledger is refused here (R-POP-002); its harvest is the month overload's.</summary>
+        public static void Harvest(Content c, GameState s, MvpRules r, List<Cause> why) => Harvest(c, s, r, null, why);
+
+        /// <summary>R-FIELD-002 on a game with an initialized Historical ledger (#1694, #1725 PR 7). Owner, 8 November 2026,
+        /// on #1725: "One snapshot per turn (Recommended)", the farmers are those of the turn's one month snapshot
+        /// (<see cref="Gdd03SyntheticMonthContext.CreateLive"/>); "Yes, recheck (Recommended)", a field yields only if its
+        /// snapshot farmer's record still exists and still holds Work on that field when the harvest runs, and the field is
+        /// held; "Held unless enemy on it (Recommended)", a field is held unless an enemy military unit stands on its hex
+        /// now, the test of <see cref="Cities.Held"/>. A yielding field adds `farmer.output` at the snapshot tier (R-VET-002)
+        /// times field_food_per_turn, as <see cref="Gdd03FieldFixture.Yield"/>, in ordinal field-id order, with one
+        /// <see cref="CauseKeys.FieldFood"/> line each ("Per field, words later (Recommended)"); an unworked field adds 0.
+        /// "Nothing until #1713 (Recommended)": a plowed sites.yaml field adds nothing here. "Not in this change
+        /// (Recommended)": no work XP, and no record changes. Every check, the checked sum included, comes before the stock
+        /// is written. A synthetic or Open ledger, or a month on a game without a ledger, is refused (R-POP-002); without a
+        /// month this is the aggregate harvest above, refused on any initialized ledger.</summary>
+        internal static void Harvest(Content c, GameState s, MvpRules r, Gdd03SyntheticMonthContext? month, List<Cause> why)
         {
+            if (month != null) { HarvestLedger(c, s, r, month, why); return; }
             PopulationLedger.RefuseAggregate(s);
             var yield = r.FieldFoodPerTurn!.Value;   // the loader requires it in the GDD loop
             if (yield == 0) return;
@@ -135,6 +151,38 @@ namespace Statecraft.Sim
                 s.Food += yield;
                 why.Add(new Cause("economy", "food", yield, FormattableString.Invariant($"{f.Name}: the plowed land yielded {Units(yield)} of Food"), key: CauseKeys.FoodHarvest, args: new[] { f.Id }));
             }
+        }
+
+        static void HarvestLedger(Content c, GameState s, MvpRules r, Gdd03SyntheticMonthContext month, List<Cause> why)
+        {
+            if (why == null) throw new ArgumentNullException(nameof(why));
+            var ledger = s.PopulationLedger;
+            if (!c.UsesPopulationLedger || !ledger.IsInitialized || !ledger.IsHistorical)
+                throw new NotSupportedException("A ledger harvest needs an initialized Historical gdd-0.3 population ledger (R-POP-002).");
+            ledger.Reconcile();
+            var rates = Gdd03FieldRates.FromCatalogue(c.Gdd03Balance
+                ?? throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.farmer.output", "required under gdd-0.3"));
+            var enemy = Cities.EnemyHexes(s);
+            var live = ledger.Units.ToDictionary(u => u.Id);
+            var working = new HashSet<int>(month.WorkEligibleIds);
+            var yields = new List<(string Field, int Food)>();
+            foreach (var field in Gdd03FieldFixture.Fields(c))   // ordinal field-id order
+            {
+                var farmers = month.OpeningPeople.Where(p => working.Contains(p.Id) && p.Assignment.Target == field.Id).ToArray();
+                if (farmers.Length > 1) throw new ArgumentException("A field's snapshot holds more than one farmer.");
+                var farmer = farmers.SingleOrDefault();
+                if (farmer == null || farmer.Profession != CivilianProfession.Farmer) continue;   // unworked: nothing
+                if (!live.TryGetValue(farmer.Id, out var now) || now.Assignment.Kind != PopulationAssignmentKind.Work
+                    || now.Assignment.Target != field.Id) continue;                                // left after the snapshot
+                if (enemy.Contains((field.Q, field.R))) continue;                                // not held
+                var food = rates.FoodPerTurn(farmer.Tier, r);
+                if (food > 0) yields.Add((field.Id, food));
+            }
+            var stock = yields.Aggregate(s.Food, (sum, y) => checked(sum + y.Food));
+            foreach (var (field, food) in yields)
+                why.Add(new Cause("economy", "food", food, FormattableString.Invariant($"{field}: its farmer yielded {food} units of Food"),
+                    key: CauseKeys.FieldFood, args: new[] { field }));
+            s.Food = stock;
         }
 
         /// <summary>R-FOOD-001 under gdd-0.3 (#2470): the month's need of a population ledger, one ration (one population
@@ -192,10 +240,13 @@ namespace Statecraft.Sim
 
         /// <summary>R-FOOD-003: food_supply's stock term, k_food * (stock - full) / full - unmet / need, where full is
         /// cover_months of the last need. It is exactly 0 at a full stock, -k_food when the stock is empty, and the unmet
-        /// share lowers it further; food_supply's clamp to 0..1 bounds it. 0 in the legacy loop and with no need.</summary>
+        /// share lowers it further; food_supply's clamp to 0..1 bounds it. 0 in the legacy loop and with no need. It reads
+        /// only the stock, the last need and the unmet share, never a record, so it runs on an initialized Historical ledger
+        /// (the dark start, #1704, #1725 PR 7), where the need is already the ledger's rations (R-FOOD-001). A synthetic or
+        /// Open ledger stays refused (R-POP-002).</summary>
         public static double FoodTerm(Content c, GameState s)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
             if (!c.IsGdd || s.FoodNeed == 0) return 0.0;
             var r = c.RulesAt(s.Date).Mvp!;
             var full = (long)r.CoverMonths!.Value * s.FoodNeed;

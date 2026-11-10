@@ -427,6 +427,7 @@ namespace Statecraft.Sim
             var settlements = ReadSettlements(readFile);
             var settlementIds = settlements.Select(x => x.id).ToList();
             foreach (var (id, name, _) in settlements) c.SettlementNames[id] = name;   // a duplicate id fails in ValidateMap
+            c.ArabTowns = new HashSet<string>(settlements.Where(x => x.type == ArabTown).Select(x => x.id), StringComparer.Ordinal);
             c.SettlementTargets = Read<SettlementTargetsFile>(readFile, SettlementTargetsFileName).Targets;
             ValidateSettlementTargets(c, settlements.Where(x => x.type == ArabTown).Select(x => x.id));
             // Event files (content/events/*.yaml), one GameEvent each. Keys, for content authors:
@@ -445,7 +446,7 @@ namespace Statecraft.Sim
             //   options: [{ id, text, historical, recommended, effects: [{ target, delta }], set_rung, set_policy,
             //              grant_units: [{ type, n, at }], city_effects: [{ city, field, delta }],
             //              unlock_projects: [<projects.yaml id of a locked kind>],
-            //              unit_orders: [{ unit, q, r }] (R-ENEMY-005) }]
+            //              unit_orders: [{ unit, order, q, r }] (R-ENEMY-005; order go_to or attack, R-ENEMY-008) }]
             //   sources: [{ url, checked }], status
             //   objective                  the objective (objectives.yaml) whose completion card this is: it fires only once
             //                              that objective is recorded, and has exactly one option
@@ -458,6 +459,8 @@ namespace Statecraft.Sim
             //                              has exactly one option (R-EVT-007)
             //   front_quiet                the front (Prisoners.Fronts) of an armistice_<front> card: under gdd-0.3 it may also
             //                              come early, and again after a refusal, once that front is quiet (R-WAR-008)
+            //   early_text, early_text_he  on a front_quiet card only: its text, and its Hebrew, when it is shown before its
+            //                              `from` (R-WAR-008, #1709); a what-if, so it needs a reviewed_by (R-ALT-011)
             //   armistice_front            a front (Prisoners.Fronts) whose signed armistice ends the card: a pending
             //                              operation lapses once it is signed, and a card with it never first fires after
             //                              it (R-ENEMY-007); on an operation card or a following card only
@@ -563,26 +566,29 @@ namespace Statecraft.Sim
         /// <summary>#1689 rows 7 and 8 (owner, 7 November 2026, comment 6704389240: "1 each, Negev 0 (Recommended)"): each own
         /// opening formation's combat XP in the Historical ledger fixture, once each, from 0 to military.combat_xp_full. Read
         /// after the starting forces. An absent list leaves the value unset; the ledger fixture then refuses (no fallback).
-        /// Ledger fixture only (maintainer call, eyalgolan-30's coordinator, 7 November 2026): NewGame's units keep 0.</summary>
+        /// Ledger fixture only (maintainer call, eyalgolan-30's coordinator, 7 November 2026): NewGame's units keep 0.
+        /// #1725 PR 7, producer 08: each own dated brigade (R-UNIT-009) is named too, since it arrives as soldier records
+        /// (owner, 8 November 2026, for the 7th Brigade: "1, like the others").</summary>
         static void ApplyGdd03FormationCombatXp(List<StartFormationCombatXp> rows, Content c)
         {
             const string file = "gdd03-start.yaml";
             var full = Gdd03Military.Scalar(c, "military.combat_xp_full");
-            var opening = new HashSet<string>(HistoricalPopulation.OpeningFormationRows(c), StringComparer.Ordinal);
+            var own = new HashSet<string>(HistoricalPopulation.OpeningFormationRows(c)
+                .Concat(HistoricalPopulation.DatedFormations(c).Select(f => f.Row)), StringComparer.Ordinal);
             var xp = new SortedDictionary<string, int>(StringComparer.Ordinal);
             for (int i = 0; i < rows.Count; i++)
             {
                 var row = rows[i];
                 var at = FormattableString.Invariant($"formation_combat_xp[{i}]");
-                if (row == null || !opening.Contains(row.Row))
-                    throw new ContentException(file, at + ".row", "must name an own opening formation of map/units_1948.yaml");
+                if (row == null || !own.Contains(row.Row))
+                    throw new ContentException(file, at + ".row", "must name an own opening or dated formation of map/units_1948.yaml");
                 if (xp.ContainsKey(row.Row)) throw new ContentException(file, at + ".row", "duplicate formation");
                 if (!(row.CombatXp is int value) || value < 0 || value > full)
                     throw new ContentException(file, at + ".combat_xp", FormattableString.Invariant($"required: an integer from 0 to military.combat_xp_full {full}"));
                 xp.Add(row.Row, value);
             }
-            var missing = opening.Where(r => !xp.ContainsKey(r)).OrderBy(r => r, StringComparer.Ordinal).ToList();
-            if (missing.Count > 0) throw new ContentException(file, "formation_combat_xp", "missing opening formation " + string.Join(", ", missing));
+            var missing = own.Where(r => !xp.ContainsKey(r)).OrderBy(r => r, StringComparer.Ordinal).ToList();
+            if (missing.Count > 0) throw new ContentException(file, "formation_combat_xp", "missing own formation " + string.Join(", ", missing));
             c.Gdd03FormationCombatXp = xp;
         }
 
