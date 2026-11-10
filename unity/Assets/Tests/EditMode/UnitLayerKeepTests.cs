@@ -211,6 +211,43 @@ public class UnitLayerKeepTests
         AssertTokensInOrder("after the strength change");
     }
 
+    /// <summary>Behaviour change of #3055: an attack waiting for a figure that can play it keeps its started/missed cue
+    /// through another unit's rebuild. Before, every rebuild deactivated every token, whose motion's OnDisable snapped and
+    /// dropped the cue, so UnitAttackPresenter heard "missed" at once. Now the attacker's token is kept, the cue stays
+    /// pending, and it reports "started" when a figure can play the take, as on a token no rebuild touched.</summary>
+    [Test]
+    public void AWaitingAttacksCueSurvivesAnotherUnitsRebuildAndStartsAsNormal()
+    {
+        var controller = new UnityEditor.Animations.AnimatorController(); controller.AddLayer("Base Layer");
+        var fire = new AnimationClip { name = "fire" };
+        fire.SetCurve("", typeof(Transform), "localScale.x", AnimationCurve.Linear(0f, 1f, 1f, 1f));
+        try
+        {
+            var machine = controller.layers[0].stateMachine;
+            machine.defaultState = machine.AddState("idle"); machine.AddState("attack").motion = fire;
+            var attacker = Israeli(0);
+            var figure = new GameObject("test figure").transform; figure.SetParent(TokenOf(attacker.Id).transform, false);
+            var animator = figure.gameObject.AddComponent<Animator>(); animator.runtimeAnimatorController = controller;
+            animator.Rebind(); animator.Update(0f);
+            animator.enabled = false;   // no figure can play the take yet: the attack waits (UnitTokenMotion.AttackWaitS)
+            var motion = MotionOf(attacker.Id);
+            int started = 0, missed = 0;
+            layer.PlayAttack(attacker.Id, () => started++, () => missed++);
+            Assert.IsTrue(motion.Attacking, "fixture: the attack waits for a figure");
+            Assert.AreEqual((0, 0), (started, missed), "fixture: a waiting attack has made neither decision");
+
+            Move(Israeli(1));
+            Assert.IsTrue(layer.Show(C, state), "fixture: another unit's move rebuilds the layer");
+            Assert.AreEqual((0, 0), (started, missed), "its cue is still pending, not missed");
+            Assert.AreSame(motion, MotionOf(attacker.Id), "the attacker's token is kept");
+            Assert.IsTrue(motion.Attacking, "and its attack still waits");
+
+            animator.enabled = true; motion.RefreshPose();   // a figure turns near within the wait
+            Assert.AreEqual((1, 0), (started, missed), "the cue starts with the take, as normal");
+        }
+        finally { Object.DestroyImmediate(controller); Object.DestroyImmediate(fire); }
+    }
+
     /// <summary>Another game (New Game or a load: SimBridge.Replace, Show with slide false) reuses the sim ids, so no token of
     /// the old game is kept, even where the new game's unit looks the same.</summary>
     [Test]
