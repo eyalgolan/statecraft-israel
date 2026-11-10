@@ -169,7 +169,23 @@ namespace Statecraft.Game.UI
                 // the button asks End turn's own order runner (Simulation.Preview: queue order, conversions before Arms
                 // purchases) whether that exact order would be refused, for a short Arms stock (R-ARMS-003) or any other reason,
                 // or would make it refuse a queued order it accepts now (its civilians, Arms or anything else).
-                var refused = Refused(bridge, current, old, new Train(id, type.Id, ordered + 1));
+                var press = new Train(id, type.Id, ordered + 1);
+                var refused = Refused(bridge, current, old, press);
+                // #2978 (owner, 9 November 2026: "Enabled + toast (Recommended)"): an order the Attention left cannot pay for
+                // keeps its Train button, as Build does: the bridge refuses the press and says why (order.no_attention,
+                // SimBridge.Queue). The preview above charges Attention, so only Training's own rule is asked, on a copy of the
+                // state the queue leaves, with the press run last, as End turn would. No Train of this type is queued here:
+                // CanPay refunds a queued order of the same key, and every Train order costs the same, so with one queued the
+                // press can pay. A press End turn refuses changes nothing, so it makes no queued order refused: only the press's
+                // own refusal is replaced. As the preview did, an ended game refuses it (SimBridge.Queue says so; under gdd-0.3
+                // OrderButton disables it anyway). Training.Start changes the state it is given, so it gets a fresh preview's,
+                // not current's (the Return and Reassign rows below read that).
+                if (s.GameOver == null && (refused == null || ReferenceEquals(refused.Command, press)) && !bridge.CanPay(press))
+                {
+                    var left = Preview(bridge, bridge.Queued).State;
+                    var why = Training.Start(c, left, id, type.Id, ordered + 1, new System.Collections.Generic.List<Cause>());
+                    refused = why == null ? null : new Rejection(press, why);
+                }
                 var row = Row(host, $"city-train-{type.Id}-row");
                 OrderButton(row, bridge, "city-train-" + type.Id, text.Format("city.train_" + type.Id, PlayerText.Money(c, "treasury", type.TrainingCost), Turns(text, type.TrainingTurns)),
                     refused == null && free >= 1, () => bridge.Queue(new Train(id, type.Id, ordered + 1)));
