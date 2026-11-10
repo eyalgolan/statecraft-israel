@@ -1920,13 +1920,17 @@ concepts:
   - docs
   en:
     preferred: 'the labels the strings use: ''Held by Israel'', ''Held by Arab forces'', ''Contested'', "No-man''s land",
-      ''Israeli side'', ''Arab side'', ''Demilitarized zone'''
+      ''Israeli side of the armistice line'', ''Arab side of the armistice line'', ''Demilitarized zone'''
     avoid: []
     in_use:
     - form: Held by Israel
       where: strings.en.yaml info.control_israel
     - form: Held by Arab forces
       where: strings.en.yaml info.control_arab
+    - form: Israeli side of the armistice line
+      where: strings.en.yaml info.control_side_israel
+    - form: Arab side of the armistice line
+      where: strings.en.yaml info.control_side_arab
     - form: the Arab Liberation Army
       where: strings.en.yaml control.holder_ala
     - form: Demilitarized zone
@@ -1941,6 +1945,10 @@ concepts:
       where: strings.he.yaml info.control_israel
     - form: בשליטת כוחות ערביים
       where: strings.he.yaml info.control_arab
+    - form: הצד הישראלי של קו שביתת הנשק
+      where: strings.he.yaml info.control_side_israel
+    - form: הצד הערבי של קו שביתת הנשק
+      where: strings.he.yaml info.control_side_arab
     - form: צבא ההצלה
       where: strings.he.yaml control.holder_ala
     - form: אזור מפורז
