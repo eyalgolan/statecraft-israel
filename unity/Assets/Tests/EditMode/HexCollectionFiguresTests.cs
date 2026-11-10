@@ -72,6 +72,41 @@ public sealed class HexCollectionFiguresTests
         Assert.That(CollectionCatalog.BundleOf(figure), Is.EqualTo(CollectionCatalog.People));
     }
 
+    // Tal Heuberger's khaki canvas tent on the hex tiles (#1955; owner, 10 November 2026: "Where it fits + one per tile
+    // (Recommended)"): the Negev kibbutz's two small tents stream it from its own bundle, the one the camps' tents use.
+    [Test] public void TheNegevKibbutzTentsStreamTalsKhakiTent()
+    {
+        const string id = "tiles:kibbutz_negev/tent";
+        var ctx = new HexTileContext(2, -1, new FlatSurface(), 1948);
+        HexPrototypes.Create("kibbutz_negev").Build(ctx);
+        Assert.That(ctx.Placements.Count(p => p.Model == id), Is.EqualTo(2), "kibbutz_negev places its two tents");
+        Assert.That(HexCollectionFigures.Streams(id), Is.True, id);
+        using var models = new HexCollectionFigures(() => {});
+        models.Prefab(id); models.Prefab(id);
+        Assert.That(pending.Select(r => (r.id, r.detail)), Is.EqualTo(new[] { (CollectionCatalog.KhakiTent, CollectionDetail.Near) }), "asked once");
+        Assert.That(CollectionCatalog.BundleOf(CollectionCatalog.KhakiTent), Is.EqualTo("collection-" + CollectionCatalog.KhakiTent));
+        var editor = HexModels.Prefab(id);
+        Assert.That(editor, Is.Not.Null, "the editor draws the tent's prefab");
+        Assert.That(UnityEditor.AssetDatabase.GetAssetPath(editor), Is.EqualTo(CollectionCatalog.PrefabPath(CollectionCatalog.KhakiTent, CollectionDetail.Near)));
+        HexModels.DrawCollectionFigures = false; HexModels.Clear();
+        Assert.That(HexCollectionFigures.Streams(id), Is.False, "switched off with the figures");
+        Assert.That(HexModels.Prefab(id), Is.Null, "off: the Box stand-in again");
+    }
+
+    // Where the tent does not fit (the same ruling; e6/tent-measure.md): one tent in place of each multi-box goat-hair tent
+    // would take negev_loess past its 8,000 and judean_desert past its documented 11,850 of 14,000, so both keep their boxes.
+    [TestCase("negev_loess")]
+    [TestCase("judean_desert")]
+    public void TheDesertTilesKeepTheirBoxTents(string tile)
+    {
+        string id = "tiles:" + tile + "/tent";
+        var ctx = new HexTileContext(2, -1, new FlatSurface(), 1948);
+        HexPrototypes.Create(tile).Build(ctx);
+        Assert.That(ctx.Placements.Count(p => p.Model == id), Is.GreaterThan(0), tile + " places " + id);
+        Assert.That(HexCollectionFigures.Streams(id), Is.False, id);
+        Assert.That(HexModels.Prefab(id), Is.Null, id + " draws its Box stand-in");
+    }
+
     [Test] public void FailureStaysOnFallbackAndDoesNotRequestEveryFrame()
     {
         using var models = new HexCollectionFigures(() => Assert.Fail("failure does not need a visual rebuild"));
