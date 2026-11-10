@@ -48,6 +48,7 @@ namespace Statecraft.Game.Map.Units
     ///    (Majdal, the Egyptian rear base, whose nearest clear ground lies 3.5 km south-west of its point, west of Ni'ilya). It
     ///    runs last, so an anchor that found a spot in rounds 1-3 keeps it; a spot it finds holds its hex like any other.
     ///    Ranked as above (by distance to a `toward` point when the anchor has one).
+    /// A ship tries rounds 1 and 2 only, and its spot is never compact (it is drawn at its one size; issue #3038).
     /// A spot must be land (sea for a ship), on a hex no other anchor with an overlapping window holds, and clear (the
     /// caller's test: the ring off the settlement footprints except in round 3, the figures on land and off the railways
     /// and roads). An anchor with no such spot is left out and reported. The map holds no 1948 front line yet: where the
@@ -104,6 +105,9 @@ namespace Statecraft.Game.Map.Units
                     AnchorSpot? best = null;
                     foreach (var round in new[] { 1, 2, 3, 4 })
                     {
+                        // A ship tries its sea hexes' centres, then the points inside them (issue #3038: a centre can stand
+                        // on a headland, and the hull must lie wholly in the water); never a town or the mesh.
+                        if (sea && round > 2) break;
                         bool compact = round > 1, inTown = round == 3;
                         double bestD = double.MaxValue, bestDepth = double.MaxValue;
                         var points = round == 4 ? Mesh(centres, p, maxOffset)
@@ -125,10 +129,10 @@ namespace Statecraft.Game.Map.Units
                             // Ties go to the lower (q, r): the result never depends on the hex list's order.
                             if (depth == bestDepth && d == bestD && best != null && (h.Q, h.R).CompareTo((best.Value.Q, best.Value.R)) > 0) continue;
                             if (!clear(u.Service, x, z, compact, inTown, p.x, p.z)) continue;
-                            best = new AnchorSpot(h.Q, h.R, x, z, compact, inTown && overlap > 0); bestD = d; bestDepth = depth;
+                            // A ship is drawn at its one size wherever it stands, so its spot is never compact.
+                            best = new AnchorSpot(h.Q, h.R, x, z, compact && !sea, inTown && overlap > 0); bestD = d; bestDepth = depth;
                         }
                         if (best != null) break;
-                        if (sea) break;   // a ship's sea hex is all its test; rounds 2 and 3 add nothing
                     }
                     if (best == null) { skipped?.Invoke(SkipMessage(u, a)); continue; }
                     held.Add((best.Value.Q, best.Value.R, from, to));

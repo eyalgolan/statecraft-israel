@@ -14,7 +14,7 @@ using Statecraft.Sim;
 ///   first then lowest id, and they go back to region-only with no city, as at graduation.
 /// - "Yes, keep the link (Recommended)": a veteran pioneer unit made by promotion keeps the link, and a returned veteran
 ///   record counts for the veteran track.
-/// The tests call Training and Qualification directly: Simulation.Step still refuses a ledger game (R-POP-002).</summary>
+/// The tests call Training and Qualification directly: the turn (TurnResolver.Resolve) still refuses a ledger game (R-POP-002).</summary>
 public class LedgerHalutzLinkTests
 {
     const string TelAviv = "tel_aviv";

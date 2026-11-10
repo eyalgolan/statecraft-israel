@@ -93,8 +93,9 @@ public class FinalWaveTests
 
     /// <summary>R-ALT-011, R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", checked through
     /// the alternate-timeline gate): an armistice card's early text is a what-if, so a card with one and no person's
-    /// reviewed_by keeps a shareable build back; signed, it does not. A fixture card: no real card has an early text until the
-    /// owner signs the four ("You, before they land (Recommended)"), which the first assert above pins.</summary>
+    /// reviewed_by keeps a shareable build back; signed, it does not. A fixture card. The four real cards' early texts
+    /// (#1709 PR 2) land only with the owner's own sign-off on all four ("You, before they land (Recommended)"), which the
+    /// first assert above pins.</summary>
     [Fact]
     public void AShareableBuildNeedsAnEarlyArmisticeTextSignedOff()
     {

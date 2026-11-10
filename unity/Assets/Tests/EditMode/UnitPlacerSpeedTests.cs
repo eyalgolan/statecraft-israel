@@ -16,7 +16,9 @@ using static Statecraft.Game.Map.Units.UnitPlacer;
 /// reference), for any ground: the spots decide where every unit token stands.</summary>
 public class UnitPlacerSpeedTests
 {
-    /// <summary>UnitPlacer.PlaceAll, Candidates, Inside and Nearest as they were before issue #321's change, verbatim.</summary>
+    /// <summary>UnitPlacer.PlaceAll, Candidates, Inside and Nearest as they were before issue #321's change, verbatim, but
+    /// for the two marked lines of issue #3038 (a ship's rounds and its spot's size), which change the result and not the
+    /// speed.</summary>
     static class Reference
     {
         public static Dictionary<UnitAnchor, AnchorSpot> PlaceAll(IReadOnlyList<UnitEntry> units, IReadOnlyList<MapHex> hexes, double hexSizeM,
@@ -45,6 +47,7 @@ public class UnitPlacerSpeedTests
                     AnchorSpot? best = null;
                     foreach (var round in new[] { 1, 2, 3 })
                     {
+                        if (sea && round > 2) break;   // since issue #3038 (not part of #321's change): a ship tries rounds 1 and 2
                         bool compact = round > 1, inTown = round == 3;
                         double bestD = double.MaxValue, bestDepth = double.MaxValue;
                         foreach (var (i, x, z) in Candidates(hexes, centres, hexSizeM, compact, a.Toward != null ? target : ((double, double)?)null))
@@ -63,10 +66,9 @@ public class UnitPlacerSpeedTests
                             // Ties go to the lower (q, r): the result never depends on the hex list's order.
                             if (depth == bestDepth && d == bestD && best != null && (h.Q, h.R).CompareTo((best.Value.Q, best.Value.R)) > 0) continue;
                             if (!clear(u.Service, x, z, compact, inTown, p.x, p.z)) continue;
-                            best = new AnchorSpot(h.Q, h.R, x, z, compact, inTown && overlap > 0); bestD = d; bestDepth = depth;
+                            best = new AnchorSpot(h.Q, h.R, x, z, compact && !sea, inTown && overlap > 0); bestD = d; bestDepth = depth;   // #3038: a ship is never compact
                         }
                         if (best != null) break;
-                        if (sea) break;   // a ship's sea hex is all its test; rounds 2 and 3 add nothing
                     }
                     if (best == null) { skipped?.Invoke($"UNITS no clear spot within one hex of {a.Place} for {u.Id}"); continue; }
                     held.Add((best.Value.Q, best.Value.R, from, to));

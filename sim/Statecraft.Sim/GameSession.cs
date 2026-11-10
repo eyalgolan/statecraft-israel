@@ -114,8 +114,9 @@ namespace Statecraft.Sim
             // game, so accept that exact same-content difference; every other replay mismatch keeps the existing handling.
             // Only a save older than schema 5 can be from before the markers: a later one always has them, so one without them
             // was edited (Codex review of 47da9b207). Both stay at schema 5 when the schema moves on (#2544).
-            if (session.State.Hash() != saved.FinalHash && !(saved.Version < SaveGame.SoftEventCapSchemaVersion && OnlyEndingCardsAdded(c, session.State, saved.FinalHash))
-                && !(saved.Version < SaveGame.SoftEventCapSchemaVersion && sameContent && OnlyLostMarkersAdded(session.State, saved.FinalHash)))
+            // A save from before both lacks both, so it is the same game when taking both out gives its hash (#2733 item 19).
+            if (session.State.Hash() != saved.FinalHash
+                && !(saved.Version < SaveGame.SoftEventCapSchemaVersion && OnlyLaterAdditions(c, session.State, saved.FinalHash, sameContent)))
             {
                 if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset)
                     throw new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);
@@ -134,35 +135,46 @@ namespace Statecraft.Sim
             return session;
         }
 
-        /// <summary>#2536: whether <paramref name="s"/>, a replayed game, differs from the saved final state only by the ending
-        /// turn's objective cards (EventSystem.EndingCard), which games finished before that change never fired. Before it,
-        /// a finished game had nothing pending (Delegate resolves every card before a turn, and an ended game raised no
-        /// event), so taking exactly the pending cards out of both the fired and the pending lists must give the saved hash.
-        /// Narrow by design: the game is over, every pending event is an ending card, and the hash matches exactly.</summary>
-        static bool OnlyEndingCardsAdded(Content c, GameState s, string savedHash)
+        /// <summary>Whether <paramref name="s"/>, a replayed game, differs from the saved final state only by what #2536 and
+        /// #2542 added: its ending cards, or (same content only) its stayed lost markers, or both (#2733 item 19).</summary>
+        static bool OnlyLaterAdditions(Content c, GameState s, string savedHash, bool sameContent)
         {
-            if (s.GameOver == null || s.PendingEvents.Count == 0) return false;
+            var noCards = WithoutEndingCards(c, s);
+            if (noCards != null && noCards.Hash() == savedHash) return true;
+            if (!sameContent) return false;
+            if (WithoutLostMarkers(s) is GameState noMarkers && noMarkers.Hash() == savedHash) return true;
+            return noCards != null && WithoutLostMarkers(noCards) is GameState neither && neither.Hash() == savedHash;
+        }
+
+        /// <summary>#2536: <paramref name="s"/>, a replayed game, without the ending turn's objective cards
+        /// (EventSystem.EndingCard), which games finished before that change never fired, or null when it has none. Before
+        /// it, a finished game had nothing pending (Delegate resolves every card before a turn, and an ended game raised no
+        /// event), so taking exactly the pending cards out of both the fired and the pending lists must give the saved hash.
+        /// Narrow by design: the game is over, every pending event is an ending card, and the hash must match exactly.</summary>
+        static GameState? WithoutEndingCards(Content c, GameState s)
+        {
+            if (s.GameOver == null || s.PendingEvents.Count == 0) return null;
             if (!s.PendingEvents.All(id => c.Events.FirstOrDefault(e => e.Id == id) is GameEvent e && EventSystem.EndingCard(s, e)))
-                return false;
+                return null;
             var before = s.Clone();
             foreach (var id in s.PendingEvents) before.FiredEvents.Remove(id);
             before.PendingEvents.Clear();
-            return before.Hash() == savedHash;
+            return before;
         }
 
-        /// <summary>#2542: whether a replay differs from its saved final state only by ownerless, inhabited, stayed markers
-        /// for places captured and later lost. Before this change those records were removed. Narrow by design: remove every
-        /// record having exactly the new lost-marker shape, then require the saved hash to match.</summary>
-        static bool OnlyLostMarkersAdded(GameState s, string savedHash)
+        /// <summary>#2542: a replay without its ownerless, inhabited, stayed markers for places captured and later lost, or
+        /// null when it has none. Before this change those records were removed. Narrow by design: remove every record
+        /// having exactly the new lost-marker shape; the saved hash must then match.</summary>
+        static GameState? WithoutLostMarkers(GameState s)
         {
             var ids = s.Settlements.Where(kv => kv.Value.Owner == "" && kv.Value.State == ""
                 && kv.Value.Since != default && !kv.Value.Depopulated && !kv.Value.Fled
                 && kv.Value.Combatants == 0 && kv.Value.Buildings == "" && kv.Value.Turns == 0)
                 .Select(kv => kv.Key).ToList();
-            if (ids.Count == 0) return false;
+            if (ids.Count == 0) return null;
             var before = s.Clone();
             foreach (var id in ids) before.Settlements.Remove(id);
-            return before.Hash() == savedHash;
+            return before;
         }
     }
 }
