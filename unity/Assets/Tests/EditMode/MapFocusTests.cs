@@ -31,7 +31,7 @@ public class MapFocusTests
 {
     static GameInputs? inputs;
     internal static GameInputs Inputs => inputs ??= GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
-    static UiText TextHe => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText TextHe => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
 
     string saveDir = "";

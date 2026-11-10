@@ -63,7 +63,7 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   any language: every user-facing string (the events, `unity/Assets/UI/strings.en.yaml` and every content field with a
   Hebrew form, such as `name_he`, `title_he_f` or `sector_he`) with a source language you pick on the left (English,
   Hebrew or any other started language) and the translation on the right. Hebrew is written where the game reads it:
-  the events' `title_he` / `text_he` / options' `text_he` (#1064) and `strings.he.yaml` (#12), only the changed lines;
+  the events' `title_he` / `text_he` / options' `text_he` (#1064) and `translations/he/ui.yaml` (#12; `unity/Assets/UI/strings.he.yaml` until #1618 step 4), only the changed lines;
   Hebrew content names keep their sources and are edited by hand. Any other language goes to
   `translations/<lang>/{events,ui,content}.yaml`, which the game does not read yet, and leaves out the advisors
   (`advisor.*`) and their encyclopedia (`encyclopedia.*`, which replaced How to play), which stay English or Hebrew only for now (owner, #1604). Every language keeps the Hebrew

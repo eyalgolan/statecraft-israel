@@ -164,7 +164,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator TheJerusalemPanelNamesWestJerusalemAsIsraeliHeld([Values(false, true)] bool hebrew)
     {
-        var t = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var t = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml") : Text;
         var regions = new MapRegions(Subdistricts1948.Parse(MapFile(Subdistricts1948.FileName)), Armistice1949.Parse(MapFile(Armistice1949.FileName)),
             Control1948.Parse(MapFile(Control1948.FileName)));
         var jerusalem = C.SettlementHexes.Single(s => s.Id == "jerusalem");
@@ -191,7 +191,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator InHebrewTheInfoPanelsRowsMirror([Values(100, 125, 150)] int uiScale)
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var g = WithAnEventOpen();
         var lod = C.SettlementHexes.Single(s => s.Id == "lod");
         var problems = new List<string>();
@@ -216,7 +216,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator TheGddCityAndSitePanelsFitEveryWindow([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var city = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
         var site = C.Sites.Single(s => s.Id == "mefalsim");
         var start = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
@@ -282,7 +282,7 @@ public class InfoPanelLayoutTests
     public IEnumerator ACityHexWithARepairBeingBuiltFitsEveryWindow_RCity011([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var c = WorkshopPanelTests.Load03();
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var city = c.SettlementHexes.Single(s => s.Id == "haifa");
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
@@ -319,7 +319,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator TheUnitCardWithItsOrdersFitsEveryWindow()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var units = Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
@@ -380,7 +380,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator APressOnTheOrdersRowBesideItsButtonsStaysTheCards()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var units = Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
@@ -438,7 +438,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator TheCityProjectsToggleOpensAndClosesTheListOnAStackedBar()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var city = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var lone = C.Hexes.Where(x => x.Land && Projects.CitiesFor(C, g.State, x.Q, x.R).Count == 1).OrderBy(x => x.Q).ThenBy(x => x.R).First();
@@ -478,7 +478,7 @@ public class InfoPanelLayoutTests
     public IEnumerator TheEmptyInfoPanelHintFitsBothLanguages()
     {
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         foreach (var hebrew in new[] { false, true })
             foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (960, 1080), (390, 844) })
                 yield return Rendered(w, h, g, (root, info) => { }, root =>
@@ -569,7 +569,7 @@ public class InfoPanelLayoutTests
         var namesHe = settlements.ToDictionary(t => t.Id, t => t.NameHe);
         var tiberias = C.SettlementHexes.Single(s => s.Id == "tiberias");
         var lod = C.SettlementHexes.Single(s => s.Id == "lod");
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         foreach (var (text, line, words) in new[]
         {
             (Text, "Tiberias is shown here because its own hex is water.", "its own hex is water"),
@@ -597,7 +597,7 @@ public class InfoPanelLayoutTests
         var names = Names();
         var lod = C.SettlementHexes.Single(s => s.Id == "lod");
         var owned = C.SettlementHexes.Where(s => s.Q == lod.Q && s.R == lod.R).Select(s => s.Id).ToList();
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         Assert.AreEqual("לוד", namesHe["lod"]);
         foreach (var (text, name) in new (UiText, System.Func<string, string>)[] { (Text, id => names[id]), (he, id => namesHe[id]!) })
         {
@@ -618,7 +618,7 @@ public class InfoPanelLayoutTests
         var names = Names();
         var namesHe = SettlementPlacer.Parse(MapFile(SettlementPlacer.DefaultFileName)).ToDictionary(t => t.Id, t => t.NameHe);
         var acre = C.SettlementHexes.Single(s => s.Id == "acre");
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var states = new[]
         {
             new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, new System.DateTime(1948, 5, 20)),
@@ -706,7 +706,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator LaptopPrimaryUnitOrdersStayTogether([Values(false, true)] bool hebrew)
     {
-        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+        var text = UiText.Parse(UiPaths.StringsText(hebrew));
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var data = Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
         var token = Statecraft.Game.Map.Units.UnitRoster.FromState(data, C, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
@@ -730,7 +730,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator TheCityJobsLineStaysInsideItsColumnAt1024x768([Values(false, true)] bool hebrew)
     {
-        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+        var text = UiText.Parse(UiPaths.StringsText(hebrew));
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var s = g.State;
         foreach (var id in s.Units.Values.Where(u => Projects.IsPioneer(u.Type)).Select(u => u.Id).ToList()) s.Units.Remove(id);
@@ -908,7 +908,7 @@ public class InfoPanelLayoutTests
             var source = File.ReadAllText(path);
             return rel == "eras.yaml" ? source.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : source;
         }, Directory.GetFiles(Path.Combine(Paths.Content, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
-        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+        var text = UiText.Parse(UiPaths.StringsText(hebrew));
         var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
         var data = Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
         var token = Statecraft.Game.Map.Units.UnitRoster.FromState(data, c, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
@@ -945,7 +945,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator Gdd03AfterMoveUsesRemainingRolePointsAndReach([Values(false,true)] bool hebrew,[Values("infantry","armour")] string role)
     {
-        var f=MilitaryFixture(role);var g=f.session;var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var f=MilitaryFixture(role);var g=f.session;var text=UiText.Parse(UiPaths.StringsText(hebrew));
         var bridge=new SimBridge(g,text);Assert.IsNull(bridge.Queue(new Move(f.id,1,1)));
         var allowance=Movement.Allowance(g.Content,bridge.State.Units[f.id]);
         var reach=InfoPanelPresenter.MoveReach(bridge,f.id)!;
@@ -968,7 +968,7 @@ public class InfoPanelLayoutTests
     [UnityTest]
     public IEnumerator Gdd03RouteEtaUsesCommittedRemainder([Values(false,true)] bool hebrew)
     {
-        var f=MilitaryFixture("infantry");var g=f.session;var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var f=MilitaryFixture("infantry");var g=f.session;var text=UiText.Parse(UiPaths.StringsText(hebrew));
         var bridge=new SimBridge(g,text);Assert.IsNull(bridge.Queue(new UnitOrder(f.id,Movement.GoTo,6,1)));
         var route=Movement.Route(g.Content,bridge.State,f.id,6,1,bridge.Spent);Assert.IsNotEmpty(route);
         yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
@@ -983,7 +983,7 @@ public class InfoPanelLayoutTests
         var f=MilitaryFixture("infantry");var g=f.session;var c=g.Content;
         g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,1,1,side:"egypt",strength:6,order:Orders.Fortify,orderTarget:"1,1");
         c.MapLocations.Add(new MapLocation { Id="fixture_fort",Kind="fort",Q=1,R=1 });
-        var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var text=UiText.Parse(UiPaths.StringsText(hebrew));
         var expected=Combat.Preview(c,g.State,f.id,1,1)!.Value.RatioPercent;Assert.AreEqual(57,expected);
         yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
             StringAssert.Contains(text.Format("unit.attack_odds","1,1",expected),root.Q<Label>("info-settlements").text);
@@ -997,7 +997,7 @@ public class InfoPanelLayoutTests
     {
         var f=MilitaryFixture(Combat.ArtilleryClass);var g=f.session;var c=g.Content;
         g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,2,1,side:"egypt",strength:6);
-        var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var text=UiText.Parse(UiPaths.StringsText(hebrew));
         var bridge=new SimBridge(g,text);CollectionAssert.Contains(bridge.NeedsOrders,f.id);
         Assert.AreEqual(2,Movement.Allowance(c,bridge.State.Units[f.id]));
         Assert.IsNull(bridge.Queue(new Move(f.id,1,1)));
@@ -1031,7 +1031,7 @@ public class InfoPanelLayoutTests
     public IEnumerator Gdd03GunCardRefusesHoldInTheUiLanguage([Values(false,true)] bool hebrew)
     {
         var f=MilitaryFixture(Combat.ArtilleryClass);var g=f.session;
-        var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var text=UiText.Parse(UiPaths.StringsText(hebrew));
         Assert.AreEqual(Orders.RefusedArtilleryHold,Orders.Check(g.Content,g.State,f.id,Orders.Hold));
         yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
             var reason=root.Q<Label>("info-reason").text;
@@ -1054,7 +1054,7 @@ public class InfoPanelLayoutTests
         s.Units[f.id]=new Unit(f.id,s.Units[f.id].Type,at.Q,at.R,side:Movement.PlayerSide,strength:6,full:10);
         s.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,at.Q+1,at.R,side:"egypt",strength:6);
         s.ChosenOptions["first_truce"]="accept";
-        var text=hebrew?UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text,"strings.he.yaml"):Text;
+        var text=hebrew?UiText.Parse(UiPaths.HebrewText(),"strings.he.yaml"):Text;
         var bridge=new SimBridge(g,text);
         var attackWhy=Combat.Check(c,s,f.id,at.Q+1,at.R,spent:bridge.Spent);
         var home=c.SettlementHexes.First(h=>h.Q==at.Q&&h.R==at.R&&s.Cities.ContainsKey(h.Id));   // the city the card reinforces from

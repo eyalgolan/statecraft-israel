@@ -14,7 +14,7 @@ using UnityEngine.UIElements;
 public class PioneerCardTests
 {
     public static readonly Content C = ContentLoader.Load(Paths.Content);
-    public static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    public static UiText Text(bool he) => UiText.Parse((he ? UiPaths.HebrewText() : AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text));
     public static int Add(GameState s, int q, int r, string type = "halutz")
     {
         var id = s.NextId++;

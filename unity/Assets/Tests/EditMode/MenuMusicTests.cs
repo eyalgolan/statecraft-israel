@@ -24,7 +24,7 @@ using Is = UnityEngine.TestTools.Constraints.Is;
 public class MenuMusicTests
 {
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
     static GameInputs? inputs;
     static GameInputs Inputs => inputs ??= GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
     const float V = MenuMusic.DefaultVolume;   // MenuMusic's own volume until Settings sets one

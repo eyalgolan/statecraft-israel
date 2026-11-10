@@ -14,7 +14,7 @@ Revision 21 October 2026: map-hint quotations were checked against upstream/main
 - A writer reads the rules and the review checklist.
 - A reviewer runs the checklist in order and cites rule IDs, for example "this breaks UI-05".
 - An AI agent reads the agent brief first and the rules when it needs the reason.
-- Every example is a real string from `strings.en.yaml` or `strings.he.yaml`. Rewrites are labelled "candidate" and are proposals only.
+- Every example is a real string from `strings.en.yaml` or `translations/he/ui.yaml` (until #1618 step 4, `unity/Assets/UI/strings.he.yaml`). Rewrites are labelled "candidate" and are proposals only.
 
 The check report numbers its groups with its own codes (UI-02, UI-03 and so on). They do not always match the rule IDs below, so each "Check:" line names the report group it means.
 

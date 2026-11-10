@@ -71,9 +71,9 @@ namespace Statecraft.Game.EditorTools
             foreach (var row in review.Strings)
             {
                 if (!en.Has(row.Key)) return "strings.en.yaml is missing settlement-control key '" + row.Key + "'";
-                if (!he.Has(row.Key)) return "strings.he.yaml is missing settlement-control key '" + row.Key + "'";
+                if (!he.Has(row.Key)) return "translations/he/ui.yaml is missing settlement-control key '" + row.Key + "'";
                 if (en[row.Key] != row.En) return "settlement-control key '" + row.Key + "' does not match strings.en.yaml";
-                if (he[row.Key] != row.He) return "settlement-control key '" + row.Key + "' does not match strings.he.yaml";
+                if (he[row.Key] != row.He) return "settlement-control key '" + row.Key + "' does not match translations/he/ui.yaml";
             }
             return review.Status == ReleaseGate.ReviewedStatus ? null
                 : "a shareable build needs the owner's sensitivity review of the settlement-control strings"

@@ -15,7 +15,7 @@ using UnityEngine.UIElements;
 public class TimelineScreenTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
-    static UiText Text(bool hebrew = false) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    static UiText Text(bool hebrew = false) => UiText.Parse(UiPaths.StringsText(hebrew));
     static IDisposable Presenter(VisualElement root, SimBridge bridge, UiText text) => new TimelinePresenter(root, bridge, text);
     static GameSession Historical(int turns, Content? content = null)
     {

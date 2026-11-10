@@ -13,7 +13,7 @@ public class CabinetScreenTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>The UI with the Cabinet screen open, as ScreenNav opens it (a hidden screen does not re-render).</summary>
     static UiTestKit Shown()
@@ -60,7 +60,7 @@ public class CabinetScreenTests
     [Test]
     public void InHebrewTheScreenShowsTheContentsHebrewNames()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         using var ui = Shown();
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new DateTime(1950, 2, 1)) g.Step(HistoricalAI.Commands(C, g.State));
@@ -102,7 +102,7 @@ public class CabinetScreenTests
     [Test]
     public void AWomansMinisterTitleIsFeminineAndThePrimeMinistersIsNot()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var golda = C.People.Single(p => p.Id == "golda_meir");
         Office O(string id) => C.Offices.Single(o => o.Id == id);
         var day = new DateTime(1950, 2, 1);   // inside every title's days, the rationing office's too

@@ -19,7 +19,7 @@ public class CauseTextTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static readonly IReadOnlyList<UnitEntry> NoRows = Array.Empty<UnitEntry>();
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>The golden seed's whole game, played by the reference player, turn by turn.</summary>
     static IEnumerable<StepResult> Turns()

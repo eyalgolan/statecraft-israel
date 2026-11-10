@@ -193,7 +193,7 @@ namespace Statecraft.Game.EditorTools
                 var videos = File.ReadAllText(EventVideoMapping.Path);   // fails closed: a missing file is a refusal
                 var clips = GatedClips(videos);
                 var en = UiText.Parse(File.ReadAllText(UiPaths.Strings), "strings.en.yaml");
-                var he = UiText.Parse(File.ReadAllText(UiPaths.StringsHebrew), "strings.he.yaml");
+                var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
                 var review = SettlementControlStringReview.Parse(File.ReadAllText(UiPaths.SettlementControlStringsReview), UiPaths.SettlementControlStringsReview);
                 var stringRefusal = SettlementControlStringReview.Refusal(review, en, he);
                 refusal = GateRefusal(args, Statecraft.Sim.ContentLoader.Load(Paths.Content), photos,

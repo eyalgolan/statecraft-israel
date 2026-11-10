@@ -750,7 +750,7 @@ public class StartScreenTests
         foreach (var save in new[] { false, true })
         foreach (var (w, h) in new[] { (1920, 1080), (1366, 768), (390, 844) })
         {
-            var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+            var text = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml") : Text;
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
@@ -933,7 +933,7 @@ public class StartScreenTests
     {
         var struggling = new List<string>();
         void Capture(string message, string trace, LogType type) { if (message.Contains("Layout update is struggling")) struggling.Add(message); }
-        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var text = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml") : Text;
         var rt = new RenderTexture(390, 844, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;

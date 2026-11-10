@@ -19,7 +19,7 @@ public class TopBarScoreLayoutTests
 {
     static readonly Content Gdd = ContentLoader.Load(Paths.Content);   // the real game: GDD since the cutover
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>Five digits with the thousands separator: well past what a Phase 1 or MVP run can score.</summary>
     const int WorstScore = 99999;

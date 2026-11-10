@@ -91,7 +91,7 @@ public class PromoScreensTests
     [Test]
     public void EachPartyChipSaysWhetherThePartyIsInTheCoalition()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         foreach (var (text, coalition, opposition) in new[] { (Text, "Coalition", "Opposition"), (he, "קואליציה", "אופוזיציה") })
             foreach (var date in OneDatePerLegislature())
             {
@@ -305,7 +305,7 @@ public class PromoScreensTests
     [UnityTest]
     public IEnumerator InHebrewThePlateShowsTheInitialAndSurnameAndItFits()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new DateTime(1950, 2, 1)) g.Step(HistoricalAI.Commands(C, g.State));
         var plates = C.People.Where(p => p.NameHe != "").Select(p => PersonCard.InitialAndSurname(p.NameHe)).ToList();
@@ -625,7 +625,7 @@ public class PromoScreensTests
     [UnityTest]
     public IEnumerator TheSelectedSeatIsTaggedWithoutMovingItsCard()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         foreach (var (text, hebrew) in new[] { (Text, false), (he, true) })
         {
             using var ui = new UiTestKit();
@@ -719,7 +719,7 @@ public class PromoScreensTests
     [UnityTest]
     public IEnumerator TheCabinetRestoresItsOrderAfterScaleChanges([Values(false, true)] bool hebrew)
     {
-        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var text = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml") : Text;
         foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (390, 844), (360, 800) })
         {
             var rt = new RenderTexture(w, h, 0);
@@ -783,7 +783,7 @@ public class PromoScreensTests
     [UnityTest]
     public IEnumerator BothScreensFitEveryWindowShape([Values(100, 125, 150)] int uiScale, [Values(false, true)] bool hebrew)   // #40: at the Settings scale choices
     {
-        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var text = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml") : Text;
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var problems = new List<string>();
         foreach (var (w, h) in new[] { (1920, 1080), (1366, 768), (1280, 720), (1440, 900), (1920, 1200), (1024, 768), (1280, 1024), (1531, 784), (1024, 1024), (960, 1080), (800, 1000), (960, 600), (390, 844), (360, 800), (375, 667), (2560, 1080) })

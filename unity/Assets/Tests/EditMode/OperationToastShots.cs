@@ -59,7 +59,7 @@ public class OperationToastShots
         doc.panelSettings = ps;
         doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
         go.SetActive(true);
-        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml")
+        var text = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml")
             : UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
         var root = doc.rootVisualElement;
         root.Q("root").RemoveFromClassList("loading");

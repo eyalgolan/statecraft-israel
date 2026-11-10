@@ -5,9 +5,10 @@ it doesnt cause any bugs, degregations or gaps"). English stays the source of re
 `unity/Assets/UI/strings.en.yaml`. This page fixes the files, their keys and their order, so the tools, the sim and Unity
 read and write them the same way.
 
-**Status (steps 1 and 2 of #1618):** the contract and its tests, and the transport that brings `translations/` to the
-sim, the CLI and every player (below, "Loading"). The game still shows Hebrew from the inline `*_he` fields and
-`strings.he.yaml`; nothing has moved. `Translations.InlineHebrew` (sim) reads today's inline Hebrew as these files,
+**Status (steps 1 to 4 of #1618):** the contract and its tests, the transport that brings `translations/` to the
+sim, the CLI and every player (below, "Loading"), the tools and gates (step 3), and the Hebrew UI strings, moved to
+`translations/he/ui.yaml` (step 4). The game shows the events' and the content's Hebrew from the inline `*_he` fields
+still. `Translations.InlineHebrew` (sim) reads today's inline Hebrew as these files,
 and the tests prove every value comes back unchanged. `tools/translate.py` (#1604) has the same reader,
 `inline_hebrew()`, and the same key quoting (`_yaml_key`); `tools/tests/test_translate.py` holds it to the same fixture
 bytes, so the tool and the game write one format.
@@ -114,6 +115,12 @@ letters, digits, `_`, `.` and `-` and no YAML reader would type it: not a value 
 boolean or a number (`null`, `~`, `true`, `1948`, `1e3`, `.inf`), and not a YAML 1.1 boolean (`y`, `yes`, `on`, `off` and
 their capitalised forms). Any other key is double-quoted (`Translations.Key()`, `tools/translate.py` `_yaml_key`). The header comment belongs to the tool that writes the file.
 
+One exception: `he/ui.yaml` is `unity/Assets/UI/strings.he.yaml` moved as it was (#1618, step 4), its values, their
+order and its comments kept. Most of those comments record a native read or an owner ruling for the string under them,
+so `tools/translate.py` edits the file line by line, as it edited `strings.he.yaml`, and never rewrites it. Its body is
+therefore not the writer's bytes; the parser reads it the same way, and `Translations.InlineHebrew` reads it as the UI
+strings.
+
 ## What the parser checks, and what it leaves to the content rules
 
 `Translations.Parse` checks the shape: the known fields only, keys of the right form, no key twice, every text a
@@ -165,16 +172,19 @@ separate call, made where a language is adopted.
   `HebrewOverlay.UnityReads` need not exist in a player). The English text is not compared, so a translation still loads
   after only the English wording changes. The error says how to unblock without a translator: update the entry, or delete
   it from the language's file, and that text shows in English. Not for `he/`, which must equal the inline Hebrew.
-- **Hebrew:** a `translations/he/` that is present must match the inline Hebrew of the events and the content exactly:
-  the same events, texts, options and review flags, and the same fields and flags, none missing and none extra.
-  `he/ui.yaml` is not compared with `strings.he.yaml` yet; that comes with the UI move (step 4).
+- **Hebrew:** a `he/events.yaml` or `he/content.yaml` that is present must match the inline Hebrew of the events or
+  the content exactly: the same events, texts, options and review flags, and the same fields and flags, none missing
+  and none extra. Only the files that are there are compared, since the Hebrew moves one file at a time. `he/ui.yaml`
+  has no inline copy: since step 4 it is the Hebrew UI.
 - **Files a player does not ship:** `map/localities_1948.yaml` is a tool input; players get its baked TSV. A key into it
   is checked where the file can be read (the editor, the CLI and the build) and skipped in a player.
 - **The hash:** translations are display text, so they stay outside `Content.Hash`: saves, the goldens and replay hashes
   are the same with or without them.
 
-The UI strings still come from `strings.en.yaml` and `strings.he.yaml`; which catalogue the UI shows is #1606's
-(`GameRoot.Strings()`).
+The UI shows `strings.en.yaml`, a language's `ui.yaml` over it (#1606), or, in Hebrew, `he/ui.yaml` alone, with no
+English under it (`GameRoot.Strings()`). The Hebrew comes with the content (the web bundle packs it). Before the content
+loads, the loading line and a boot failure read an early copy: the file itself off the web, and on WebGL one small
+request for a Hebrew player only. When that cannot be read, those two lines are English.
 
 ## The implementations and their tests
 

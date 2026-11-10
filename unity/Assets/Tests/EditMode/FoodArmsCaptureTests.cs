@@ -32,7 +32,7 @@ public class FoodArmsCaptureTests
                 var root=doc.rootVisualElement;
                 if(he) root.Q("root").AddToClassList(UiLanguage.HebrewClass);
                 root.Q("root").RemoveFromClassList("loading");
-                var t=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he?UiPaths.StringsHebrew:UiPaths.Strings).text);
+                var t=UiText.Parse(UiPaths.StringsText(he));
                 var b=new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content),GoldenRun.Seed,Mode.Historical),t);
                 using var hud=new HudPresenter(root,b,t); using var nav=new ScreenNav(root); using var defence=new DefencePresenter(root,b,t);
                 for(int i=0;i<25;i++)yield return null;

@@ -36,7 +36,7 @@ public class DefenceScreenTests
     [Test]
     public void InHebrewTheLeadersAreNamedInHebrew()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         using var ui = new UiTestKit();
         ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
         var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), he);
@@ -251,7 +251,7 @@ public class DefenceScreenTests
     [Test]
     public void InHebrewTheTruceLineNamesItsEnd()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         using var ui = new UiTestKit();
         ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
         var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), he);

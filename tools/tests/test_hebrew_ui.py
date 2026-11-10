@@ -5,10 +5,11 @@ from collections import Counter
 import yaml12
 ROOT = Path(__file__).resolve().parents[2]
 UI = ROOT / 'unity/Assets/UI'
+HE = ROOT / 'translations/he/ui.yaml'   # the Hebrew UI strings, moved from unity/Assets/UI/ (#1618, step 4)
 
 
 def strings(name):
-    return yaml12.load((UI / name).read_text(encoding='utf-8'))
+    return yaml12.load((HE if name == 'strings.he.yaml' else UI / name).read_text(encoding='utf-8'))
 
 
 def test_hebrew_keys_match_english_and_every_value_is_nonempty():
@@ -41,15 +42,14 @@ def test_hebrew_keeps_complete_format_tokens_and_logical_text_order():
     assert 'תשומת לב' in he['hud.attention']
 
 
-def test_hebrew_is_not_enabled_without_runtime_review():
+def test_the_hebrew_ui_strings_have_one_copy_in_translations():
+    """#1618 step 4: the Hebrew UI is translations/he/ui.yaml alone; no copy is left in unity/ for a scene to hold."""
     paths = (ROOT / 'unity/Assets/Scripts/UI/UiPaths.cs').read_text()
     assert 'public const string Strings = Folder + "/strings.en.yaml";' in paths
-    # The translation is data only; no language-switch or RTL implementation in this PR.
-    meta = (UI / 'strings.he.yaml.meta').read_text()
-    english_meta = (UI / 'strings.en.yaml.meta').read_text()
-    guid = re.search(r'^guid: ([0-9a-f]{32})$', meta, re.M).group(1)
-    assert guid not in english_meta
-    assert 'TextScriptImporter:' in meta
+    assert 'public const string StringsHebrew = "../translations/he/ui.yaml";' in paths
+    assert not (UI / 'strings.he.yaml').exists() and not (UI / 'strings.he.yaml.meta').exists()
+    assert not list((ROOT / 'unity/Assets').rglob('strings.he.yaml*'))
+    assert strings('strings.he.yaml')['ui.lang'] == 'he'
 
 
 def test_hebrew_review_wording_is_count_neutral_and_uses_knesset_terms():

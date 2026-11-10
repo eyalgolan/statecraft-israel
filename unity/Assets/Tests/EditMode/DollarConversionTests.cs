@@ -13,7 +13,7 @@ using UnityEngine.UIElements;
 /// reserve beside the order (the top bar's meters are unchanged) and says the sim's refusal before End turn.</summary>
 public class DollarConversionTests
 {
-    static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    static UiText Text(bool he) => UiText.Parse((he ? UiPaths.HebrewText() : AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text));
     static UiText En => Text(false);
     static UiText He => Text(true);
 

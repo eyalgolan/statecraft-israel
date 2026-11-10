@@ -72,7 +72,7 @@ public class MapActionUiTests
     [Test]
     public void BeforeTheMaabarotTheHebrewPanelSaysWhyInHebrew()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         using var ui = new UiTestKit();
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var bridge = new SimBridge(g, he);
@@ -162,7 +162,7 @@ public class MapActionUiTests
     [Test]
     public void InHebrewTheBuildDateIsAHebrewMonth()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         using var ui = new UiTestKit();
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(C, g.State));
@@ -182,7 +182,7 @@ public class MapActionUiTests
     [Test]
     public void InHebrewTheQueuedAndBuiltLinesNameTheActionInHebrew()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         using var ui = new UiTestKit();
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(C, g.State));

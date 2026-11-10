@@ -201,7 +201,7 @@ public class EventVideoTests
     public IEnumerator InHebrewTheIllustrationUsesHebrewAltAndFallsBackToEnglish()
     {
         LogAssert.ignoreFailingMessages = true;
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var row = Rows.First(x => x.Event == "law_of_return");
         using (var r = new Rig("law_of_return", From(Rows), text: he))
         {

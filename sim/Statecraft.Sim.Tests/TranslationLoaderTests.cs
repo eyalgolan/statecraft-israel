@@ -12,7 +12,10 @@ public class TranslationLoaderTests
 {
     static string ContentDir => RealContentTests.ContentRoot();
     static string RepoDir => Path.GetDirectoryName(ContentDir)!;
-    static string UiFile(string lang) => Path.Combine(RepoDir, "unity", "Assets", "UI", $"strings.{lang}.yaml");
+    // The English UI strings live with the scene; the Hebrew moved to translations/he/ui.yaml (#1618, step 4).
+    static string UiFile(string lang) => lang == Translations.Hebrew
+        ? Path.Combine(RepoDir, "translations", "he", Translations.UiFile)
+        : Path.Combine(RepoDir, "unity", "Assets", "UI", $"strings.{lang}.yaml");
 
     /// <summary>Today's inline Hebrew as a translation set (step 1's reader), re-read each time so a test can change it.</summary>
     static TranslationSet InlineHe() => Translations.InlineHebrew(ContentDir, UiFile("en"), UiFile("he"));
@@ -309,6 +312,33 @@ public class TranslationLoaderTests
         var he = Assert.Single(LoadReal(Files(InlineHe())).Translations);
         Assert.Equal(Translations.Write(InlineHe()), Translations.Write(he));
         Assert.Equal("he", Assert.Single(LoadAsPlayer(Files(InlineHe())).Translations).Lang);
+    }
+
+    [Fact]
+    public void TheRealHebrewUiLoadsAsTheHebrewSetsUiAlone()
+    {
+        // #1618 step 4: translations/he/ holds only ui.yaml; the events and content keep their inline Hebrew, uncompared.
+        var he = Assert.Single(ContentLoader.Load(ContentDir).Translations, t => t.Lang == Translations.Hebrew);
+        var file = Translations.Parse("he", File.ReadAllText(UiFile("he")), null, null);
+        Assert.Equal(file.Ui, he.Ui);
+        Assert.Equal("he", he.Ui.Single(kv => kv.Key == "ui.lang").Value);
+        Assert.Empty(he.Events);
+        Assert.Empty(he.Content);
+    }
+
+    [Fact]
+    public void OnlyTheHebrewFilesThatArePresentAreCompared()
+    {
+        // The Hebrew moves one file at a time (steps 4 to 6): events.yaml alone is compared with the events, and
+        // content.yaml alone with the content; neither is "missing" while its file is not there yet.
+        var events = InlineHe();
+        events.Content.Clear();
+        Assert.Equal(InlineHe().Events.Count, Assert.Single(LoadReal(Files(events)).Translations).Events.Count);
+        var content = InlineHe();
+        content.Events.Clear();
+        Assert.Equal(InlineHe().Content.Count, Assert.Single(LoadReal(Files(content)).Translations).Content.Count);
+        content.Content[0].Text += "x";
+        Assert.Contains("differs", Refused(Files(content)).Message);   // a file that is there is still compared
     }
 
     [Fact]

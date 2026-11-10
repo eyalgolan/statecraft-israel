@@ -10,8 +10,9 @@ namespace Statecraft.Sim
 {
     /// <summary>Brings translations/ to the sim with the content (#1618 step 2; docs/translations.md, "Loading"). Each
     /// language is parsed and checked against the content it translates, then kept in <see cref="Content.Translations"/>,
-    /// outside the content hash. Nothing shows them yet: the game's Hebrew still comes from the inline fields, and a
-    /// translations/he/ that is present must equal them, so the later steps can switch the source with no text changing.</summary>
+    /// outside the content hash. The Hebrew UI strings are translations/he/ui.yaml (#1618, step 4), which the UI shows; the
+    /// events' and content's Hebrew still come from the inline fields, and a he/events.yaml or he/content.yaml that is
+    /// present must equal them, so the later steps can switch the source with no text changing.</summary>
     public static class TranslationLoader
     {
         public const string Folder = "translations";
@@ -117,7 +118,8 @@ namespace Statecraft.Sim
                 CheckUi(set);
                 CheckEvents(set, events);
                 CheckContent(set, Yaml);
-                if (set.Lang == Translations.Hebrew) CheckEqualsInlineHebrew(set, events, Yaml);
+                if (set.Lang == Translations.Hebrew)
+                    CheckEqualsInlineHebrew(set, events, Yaml, language.Value.Contains(Translations.EventsFile), language.Value.Contains(Translations.ContentFile));
                 sets.Add(set);
             }
             return sets;
@@ -224,8 +226,17 @@ namespace Statecraft.Sim
 
         /// <summary>translations/he/ equals the inline Hebrew: the same events with the same title, text, options and review
         /// flag, and the same content fields with the same text and flag, none missing and none extra. A file a player does
-        /// not ship is compared where it can be read.</summary>
-        static void CheckEqualsInlineHebrew(TranslationSet he, IReadOnlyList<GameEvent> events, Func<string, YamlNode?> yaml)
+        /// not ship is compared where it can be read. Only the files he/ has are compared: the Hebrew moves one file at a
+        /// time (#1618, steps 4 to 6), so until events.yaml or content.yaml is there its Hebrew is the inline one alone. The
+        /// UI strings have no inline copy once ui.yaml is there (step 4), so they are the Hebrew UI, not compared.</summary>
+        static void CheckEqualsInlineHebrew(TranslationSet he, IReadOnlyList<GameEvent> events, Func<string, YamlNode?> yaml,
+            bool hasEvents, bool hasContent)
+        {
+            if (hasEvents) CheckEventsEqualInlineHebrew(he, events);
+            if (hasContent) CheckContentEqualsInlineHebrew(he, yaml);
+        }
+
+        static void CheckEventsEqualInlineHebrew(TranslationSet he, IReadOnlyList<GameEvent> events)
         {
             var where = Where(he, Translations.EventsFile);
             var inline = events.Where(e => e.TitleHe != "").ToDictionary(e => e.Id, StringComparer.Ordinal);
@@ -239,8 +250,11 @@ namespace Statecraft.Sim
             var translated = new HashSet<string>(he.Events.Select(t => t.Id), StringComparer.Ordinal);
             foreach (var id in inline.Keys.OrderBy(id => id, StringComparer.Ordinal))
                 if (!translated.Contains(id)) throw new ContentException(where, id, "missing: the event has inline Hebrew");
+        }
 
-            where = Where(he, Translations.ContentFile);
+        static void CheckContentEqualsInlineHebrew(TranslationSet he, Func<string, YamlNode?> yaml)
+        {
+            var where = Where(he, Translations.ContentFile);
             var mine = he.Content.ToDictionary(t => t.Key, StringComparer.Ordinal);
             var files = HebrewOverlay.Files.Concat(HebrewOverlay.UnityReads).Concat(mine.Keys.Select(k => ContentKey.TryParse(k)!.File))
                 .Distinct().OrderBy(f => f, StringComparer.Ordinal);

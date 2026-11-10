@@ -77,7 +77,7 @@ public class UiLayoutTests
     }
 
     static readonly Content C = ContentLoader.Load(Paths.Content);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>Review Focus 3: the longer blocked End turn label, including its hourglass padding, fits at phone width in
     /// English and Hebrew.</summary>
@@ -825,7 +825,7 @@ public class UiLayoutTests
     {
         const float SideMargin = 16f;   // logical px the text keeps from each edge of the panel
         var problems = new List<string>();
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         foreach (var (w, h) in new[] { (390, 844), (960, 600), (1280, 720) })
             foreach (var (lang, text) in new[] { ("en", Text), ("he", he) })
             {

@@ -19,8 +19,7 @@ using UnityEngine.UIElements;
 public class OpeningClipTests
 {
     static OpeningContent Asset => AssetDatabase.LoadAssetAtPath<OpeningContent>("Assets/Resources/OpeningContent.asset");
-    static UiText Text(string lang) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(
-        "Assets/UI/strings." + lang + ".yaml").text);
+    static UiText Text(string lang) => UiText.Parse(UiPaths.StringsText(lang == "he"));
 
     sealed class Rig : IDisposable
     {

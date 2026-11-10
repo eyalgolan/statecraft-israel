@@ -16,7 +16,7 @@ public class AdvisorOpeningTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
     readonly List<string> dirs = new List<string>();
     SettingsStore Store() { var d = Path.Combine(Path.GetTempPath(), "statecraft-opening-" + Guid.NewGuid().ToString("N")); dirs.Add(d); return new SettingsStore(d); }
     [TearDown] public void Clean() { foreach (var d in dirs) if (Directory.Exists(d)) Directory.Delete(d, true); dirs.Clear(); }
@@ -501,7 +501,7 @@ internal static class AdvisorTour1688Fixture
         StringAssert.Contains(Cities, yaml);
         return AdvisorCatalog.Parse(yaml.Replace(Cities, "actions: [{ show_me: city_housing }, { encyclopedia: cities }]"));
     }
-    internal static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    internal static UiText Text(bool he) => UiText.Parse((he ? UiPaths.HebrewText() : AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text));
     internal static Content Content(string ruleset = SaveGame.Gdd03Ruleset)
     {
         // Borrow existing topology/rules but replace ALL historical cards before creating any session.

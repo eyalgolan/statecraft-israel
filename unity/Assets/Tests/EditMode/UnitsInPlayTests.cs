@@ -195,7 +195,7 @@ public class UnitsInPlayTests
     [Test]
     public void TheHebrewUnitCardSubtitleShowsTheSourcedNumberAndEnglishKeepsItsNumber()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var state = StateAt(C.Rules.Start, 5, 0.8);
         var withNumberHe = Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)).ToList();
         Assert.IsNotEmpty(withNumberHe);
@@ -1151,7 +1151,7 @@ public class UnitsInPlayTests
     [Test]
     public void TheHebrewUnitCardShowsTheSourcedNameAndEnglishKeepsItsName()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var state = StateAt(C.Rules.Start, 5, 0.8);
         foreach (var u in Units)
         {
@@ -1188,7 +1188,7 @@ public class UnitsInPlayTests
     [Test]
     public void AUnitWithNoHebrewNameKeepsItsEnglishNameInTheHebrewCard()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var u = Units.First(x => x.Id == "golani");
         u.NameHe = "";
         var placed = new PlacedToken(new UnitToken(u, u.Anchors[0], 0, "", false), default);
@@ -1216,7 +1216,7 @@ public class UnitsInPlayTests
     static UnitCard ProseCard(UnitEntry u, UiText text)
         => UnitCard.For(new PlacedToken(new UnitToken(u, u.Anchors[0], 0, "", false), default), StateAt(C.Rules.Start, 5, 0.8), text);
 
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>#558: the three Hebrew counterparts load beside the English and show in the Hebrew card only; the English
     /// card is the same as for the row without them, and their sources join the footer without clearing the draft note.</summary>

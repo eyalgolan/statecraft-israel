@@ -152,12 +152,12 @@ Options: דרגה; רמת ביטחון; רמת כוננות (Eyal's suggestion o
 
 | In use | Where |
 |---|---|
-| דרגה {0} מתוך 5 | strings.he.yaml hud.level |
-| המצב הביטחוני | strings.he.yaml defence.section_ladder |
-| הורדת הדרגה | strings.he.yaml defence.lower |
-| העלאת הדרגה | strings.he.yaml defence.raise |
-| רמת ביטחון {1} מתוך 5 | strings.he.yaml unit.national |
-| מדרגה {0} לדרגה {1} | strings.he.yaml defence.order |
+| דרגה {0} מתוך 5 | translations/he/ui.yaml hud.level |
+| המצב הביטחוני | translations/he/ui.yaml defence.section_ladder |
+| הורדת הדרגה | translations/he/ui.yaml defence.lower |
+| העלאת הדרגה | translations/he/ui.yaml defence.raise |
+| רמת ביטחון {1} מתוך 5 | translations/he/ui.yaml unit.national |
+| מדרגה {0} לדרגה {1} | translations/he/ui.yaml defence.order |
 | סולם הסלמה | README.he.md |
 
 **Recommendation (see status).**
@@ -188,8 +188,8 @@ Category: game-system. Scope: ui, docs, code.
 
 | In use | Where |
 |---|---|
-| תשומת לב {0:0.0} מתוך {1:0.0} | strings.he.yaml hud.attention |
-| אין מספיק תשומת לב | strings.he.yaml order.no_attention |
+| תשומת לב {0:0.0} מתוך {1:0.0} | translations/he/ui.yaml hud.attention |
+| אין מספיק תשומת לב | translations/he/ui.yaml order.no_attention |
 
 **Recommendation (see status).**
 - English: Keep sentence case everywhere, in prose as well as in the UI, so one rule covers both, and define the term once at first use in each document. The alternative, a capital for the named resource in prose only, would split the rule between UI and docs.
@@ -219,9 +219,9 @@ Category: game-system. Scope: ui, docs, marketing, code.
 
 | In use | Where |
 |---|---|
-| תור {0} | strings.he.yaml hud.turn |
-| תורות של רבעון / חודש / שבוע | strings.he.yaml defence.turn_* |
-| {0} תורות | strings.he.yaml city.turns (#869) |
+| תור {0} | translations/he/ui.yaml hud.turn |
+| תורות של רבעון / חודש / שבוע | translations/he/ui.yaml defence.turn_* |
+| {0} תורות | translations/he/ui.yaml city.turns (#869) |
 
 **Recommendation (see status).**
 - English: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy strings.
@@ -246,7 +246,7 @@ Category: game-system. Scope: ui, docs, code.
 
 | In use | Where |
 |---|---|
-| נקודות תנועה: {0} מתוך {1} | strings.he.yaml unit.points |
+| נקודות תנועה: {0} מתוך {1} | translations/he/ui.yaml unit.points |
 
 **Recommendation (see status).**
 - English: Use movement points in the card and rules.
@@ -273,9 +273,9 @@ Category: game-system. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| סיום התור | strings.he.yaml hud.end_turn |
-| ייכנס לתוקף בסיום התור | strings.he.yaml budget.queued |
-| יש לסיים את התור כדי לראות את הסיבות | strings.he.yaml why.empty |
+| סיום התור | translations/he/ui.yaml hud.end_turn |
+| ייכנס לתוקף בסיום התור | translations/he/ui.yaml budget.queued |
+| יש לסיים את התור כדי לראות את הסיבות | translations/he/ui.yaml why.empty |
 
 **Recommendation (see status).**
 - English: Keep the pattern: capitalised for the button, lowercase for the action. Record it as the rule (conventions: button-names).
@@ -302,8 +302,8 @@ Category: game-system. Scope: ui, docs, marketing.
 
 | In use | Where |
 |---|---|
-| החלטה ממתינה | strings.he.yaml event.reopen |
-| החלטות ממתינות נוספות: {0} | strings.he.yaml event.more |
+| החלטה ממתינה | translations/he/ui.yaml event.reopen |
+| החלטות ממתינות נוספות: {0} | translations/he/ui.yaml event.more |
 | מכריעים בהחלטות אמיתיות | README.he.md |
 
 **Recommendation (see status).**
@@ -330,7 +330,7 @@ Category: game-system. Scope: docs, events, code.
 
 | In use | Where |
 |---|---|
-| אירועים | strings.he.yaml why.events |
+| אירועים | translations/he/ui.yaml why.events |
 
 **Recommendation (see status).**
 - English: Use 'event' for the historical happening and the data, 'decision' for what the player answers.
@@ -359,8 +359,8 @@ Avoid: 'Why panel' without the question mark.
 
 | In use | Where |
 |---|---|
-| למה? | strings.he.yaml hud.nav.why |
-| למה זה קרה? | strings.he.yaml why.title |
+| למה? | translations/he/ui.yaml hud.nav.why |
+| למה זה קרה? | translations/he/ui.yaml why.title |
 | לוח 'למה זה קרה?' | README.he.md |
 
 **Recommendation (see status).**
@@ -387,7 +387,7 @@ Category: politics. Scope: ui, docs, marketing.
 
 | In use | Where |
 |---|---|
-| קואליציה: {0} מתוך {1} {3} · יציבות {2} | strings.he.yaml cabinet.coalition |
+| קואליציה: {0} מתוך {1} {3} · יציבות {2} | translations/he/ui.yaml cabinet.coalition |
 | בתוך קואליציה אמיתית | README.he.md |
 
 **Recommendation (see status).**
@@ -418,9 +418,9 @@ Category: politics. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| מנדטים | strings.he.yaml cabinet.seats |
-| חברים | strings.he.yaml cabinet.seats_appointed |
-| חברים | strings.he.yaml cabinet.legislature, cabinet.members_unit |
+| מנדטים | translations/he/ui.yaml cabinet.seats |
+| חברים | translations/he/ui.yaml cabinet.seats_appointed |
+| חברים | translations/he/ui.yaml cabinet.legislature, cabinet.members_unit |
 
 **Recommendation (see status).**
 - English: No change; 'seats' and 'members' already work for both bodies.
@@ -471,9 +471,9 @@ Options: יכולת (the other candidate Eyal named).
 
 | In use | Where |
 |---|---|
-| כישורים | strings.he.yaml card.competence |
-| כישורים {2}, נאמנות {3} | strings.he.yaml cabinet.person |
-| נאמנות | strings.he.yaml card.loyalty |
+| כישורים | translations/he/ui.yaml card.competence |
+| כישורים {2}, נאמנות {3} | translations/he/ui.yaml cabinet.person |
+| נאמנות | translations/he/ui.yaml card.loyalty |
 
 **Recommendation (see status).**
 - English: No change.
@@ -502,7 +502,7 @@ Avoid: cease-fire (hyphenated) in new text.
 
 | In use | Where |
 |---|---|
-| הפסקת אש של האו״ם | strings.he.yaml defence.ceasefire_starts |
+| הפסקת אש של האו״ם | translations/he/ui.yaml defence.ceasefire_starts |
 
 **Recommendation (see status).**
 - English: Use 'ceasefire' as one word in UI and prose. An event title that follows a source's own spelling keeps it, so decide whether 'Cease-fire in Jerusalem' follows a source or should be aligned.
@@ -552,7 +552,7 @@ Category: history-term. Scope: ui, events, docs.
 
 | In use | Where |
 |---|---|
-| קו שביתת נשק | strings.he.yaml map.layer_front_no_data |
+| קו שביתת נשק | translations/he/ui.yaml map.layer_front_no_data |
 
 **Recommendation (see status).**
 - English: No change.
@@ -578,7 +578,7 @@ Category: game-system. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| גיוס מילואים | strings.he.yaml defence.section_callup, unit.national |
+| גיוס מילואים | translations/he/ui.yaml defence.section_callup, unit.national |
 
 **Recommendation (see status).**
 - English: No change.
@@ -605,7 +605,7 @@ Category: place. Scope: ui, docs, marketing.
 
 | In use | Where |
 |---|---|
-| הקמת מעברה ({0}) | strings.he.yaml info.build_camp |
+| הקמת מעברה ({0}) | translations/he/ui.yaml info.build_camp |
 
 **Recommendation (see status).**
 - English: UI says 'transit camp'. Prose says 'the ma'abarot (transit camps)' the first time, then either word. The spelling is settled (conventions: transliteration; owner, 26 October 2026, #1760).
@@ -630,7 +630,7 @@ Category: place. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| יישובים: {0} | strings.he.yaml info.owned |
+| יישובים: {0} | translations/he/ui.yaml info.owned |
 
 **Recommendation (see status).**
 - English: No change.
@@ -656,8 +656,8 @@ Category: place. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| יישובים ב-1948: {0} | strings.he.yaml info.localities |
-| יישוב מעורב | strings.he.yaml map.mixed |
+| יישובים ב-1948: {0} | translations/he/ui.yaml info.localities |
+| יישוב מעורב | translations/he/ui.yaml map.mixed |
 
 **Recommendation (see status).**
 - English: No change.
@@ -708,7 +708,7 @@ Avoid: משושה (replaced by the owner on 1 November 2026: "replace evey place
 
 | In use | Where |
 |---|---|
-| יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משבצת; גרירה בלחצן הימני מזיזה את המפה | strings.he.yaml info.hint |
+| יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משבצת; גרירה בלחצן הימני מזיזה את המפה | translations/he/ui.yaml info.hint |
 
 **Recommendation (see status).**
 - English: Keep, but write the first mention so a player who has never met a hex map understands it.
@@ -760,8 +760,8 @@ Category: content-label. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| טיוטה: טרם נבדק בידי היסטוריון | strings.he.yaml unit.draft |
-| טיוטה | strings.he.yaml event.draft |
+| טיוטה: טרם נבדק בידי היסטוריון | translations/he/ui.yaml unit.draft |
+| טיוטה | translations/he/ui.yaml event.draft |
 
 **Recommendation (see status).**
 - English: No change to the word. Two writings are live: 'Draft:' with a reason on a unit card, and 'DRAFT' in capitals as the mark on a decision card (the Hebrew uses one writing for both). Decide whether the capitals are a deliberate style for a mark.
@@ -792,7 +792,7 @@ Avoid: presenting concept art or the trailer as gameplay.
 
 | In use | Where |
 |---|---|
-| איור שנוצר בבינה מלאכותית | strings.he.yaml event.ai_label |
+| איור שנוצר בבינה מלאכותית | translations/he/ui.yaml event.ai_label |
 
 **Recommendation (see status).**
 - English: Keep the label wording. The statements now agree: on 14 October the owner removed the caption burned into the clips, and the store-page draft says so while saying the game's UI labels each clip 'AI-generated illustration' while it plays, which is the string `event.ai_label`. The README says the loops and End turn clips are 'labelled as such', which the UI label satisfies. The 'not gameplay' wording stays beside any concept art or trailer.
@@ -825,8 +825,8 @@ Category: politics. Scope: ui, docs, events, code.
 
 | In use | Where |
 |---|---|
-| ביטחון | strings.he.yaml hud.nav.defence |
-| שר הביטחון {0} · הרמטכ״ל {1} | strings.he.yaml defence.command |
+| ביטחון | translations/he/ui.yaml hud.nav.defence |
+| שר הביטחון {0} · הרמטכ״ל {1} | translations/he/ui.yaml defence.command |
 
 **Recommendation (see status).**
 - English: The rule is already the owner's and the strings follow it. Write it down outside a YAML comment (conventions: spelling), and decide what the GDD, which mixes both spellings, follows. A placeholder such as {defense_minister} is an office id and a code question, not player text.
@@ -882,7 +882,7 @@ Category: game-system. Scope: docs, ui, events, code.
 
 | In use | Where |
 |---|---|
-| תמיכה בינלאומית | strings.he.yaml hud.caption.standing |
+| תמיכה בינלאומית | translations/he/ui.yaml hud.caption.standing |
 | The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית | docs/gdd/cutover-resource-layer.md |
 
 **Recommendation (see status).**
@@ -914,10 +914,10 @@ Category: gdd-term. Scope: docs, ui, marketing.
 
 | In use | Where |
 |---|---|
-| הכשרת חלוצים: קבוצה אחת, {0}, {1} | strings.he.yaml city.train_halutz (#869) |
-| חלוצים | strings.he.yaml city.track_halutz (#869) |
-| קבוצת חלוצים {0} | strings.he.yaml site.group (#869) |
-| אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה. | strings.he.yaml site.no_halutz (#869) |
+| הכשרת חלוצים: קבוצה אחת, {0}, {1} | translations/he/ui.yaml city.train_halutz (#869) |
+| חלוצים | translations/he/ui.yaml city.track_halutz (#869) |
+| קבוצת חלוצים {0} | translations/he/ui.yaml site.group (#869) |
+| אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה. | translations/he/ui.yaml site.no_halutz (#869) |
 
 **Recommendation (see status).**
 - English: The UI says 'halutz' / 'halutzim' and 'Hakhshara' (#869), as the GDD does. Proposal for the owner: define each once at first use (for example in a tooltip), or switch the UI to 'pioneer' / 'pioneer training'. Either way it is a string change the owner approves.
@@ -944,7 +944,7 @@ Category: gdd-term. Scope: docs, ui.
 | In use | Where |
 |---|---|
 | Hakhshara (הכשרה) | docs/GDD.md |
-| אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה. | strings.he.yaml site.no_halutz (#869) |
+| אין קבוצת חלוצים פנויה. אפשר להכשיר קבוצה בעיר שיש בה הכשרה. | translations/he/ui.yaml site.no_halutz (#869) |
 
 **Recommendation (see status).**
 - English: The UI says 'halutz' / 'halutzim' and 'Hakhshara' (#869), as the GDD does. Proposal for the owner: define each once at first use (for example in a tooltip), or switch the UI to 'pioneer' / 'pioneer training'. Either way it is a string change the owner approves.
@@ -981,12 +981,12 @@ Category: game-system. Scope: ui, docs, events, code.
 
 | In use | Where |
 |---|---|
-| כסף (נטו) | strings.he.yaml hud.caption.treasury |
-| עלייה | strings.he.yaml hud.caption.immigration |
-| ביטחון | strings.he.yaml hud.caption.security |
-| תמיכה ציבורית | strings.he.yaml hud.caption.support |
-| תמיכה בינלאומית | strings.he.yaml hud.caption.standing |
-| מטבע חוץ | strings.he.yaml hud.caption.fx |
+| כסף (נטו) | translations/he/ui.yaml hud.caption.treasury |
+| עלייה | translations/he/ui.yaml hud.caption.immigration |
+| ביטחון | translations/he/ui.yaml hud.caption.security |
+| תמיכה ציבורית | translations/he/ui.yaml hud.caption.support |
+| תמיכה בינלאומית | translations/he/ui.yaml hud.caption.standing |
+| מטבע חוץ | translations/he/ui.yaml hud.caption.fx |
 | The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית | docs/gdd/cutover-resource-layer.md |
 
 **Recommendation (see status).**
@@ -1019,7 +1019,7 @@ Category: game-system. Scope: ui, docs, events, code.
 
 | In use | Where |
 |---|---|
-| כסף {0} · חוב {1} · מטבע חוץ {2} | strings.he.yaml budget.money |
+| כסף {0} · חוב {1} · מטבע חוץ {2} | translations/he/ui.yaml budget.money |
 | The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית | docs/gdd/cutover-resource-layer.md |
 
 **Recommendation (see status).**
@@ -1051,8 +1051,8 @@ Avoid: fx and forex in player text; a bare "reserves" for this meaning in player
 
 | In use | Where |
 |---|---|
-| מטבע חוץ | strings.he.yaml hud.caption.fx |
-| מטבע חוץ {2} | strings.he.yaml budget.money |
+| מטבע חוץ | translations/he/ui.yaml hud.caption.fx |
+| מטבע חוץ {2} | translations/he/ui.yaml budget.money |
 
 **Recommendation (see status).**
 - English: Say 'foreign currency' in player text. Capitalisation follows the label rule (conventions: label-capitalisation): the caption and the content name are both 'Foreign currency'. The owner decided on 15 October that debt and foreign currency stay internal under Money, at least through the cutover, and are hidden if they confuse, so the top-bar caption may go.
@@ -1083,9 +1083,9 @@ Avoid: a bare "reserves" for the money in player text, where it could be read as
 
 | In use | Where |
 |---|---|
-| גיוס מילואים | strings.he.yaml defence.section_callup |
-| יתרות מטבע החוץ אזלו | strings.he.yaml why.cause.fx_crisis_began |
-| אין די דולרים ביתרות מטבע החוץ | strings.he.yaml dollars.refused_reserves |
+| גיוס מילואים | translations/he/ui.yaml defence.section_callup |
+| יתרות מטבע החוץ אזלו | translations/he/ui.yaml why.cause.fx_crisis_began |
+| אין די דולרים ביתרות מטבע החוץ | translations/he/ui.yaml dollars.refused_reserves |
 
 **Recommendation (see status).**
 - Decided (owner, 5 November 2026, "Allow both", recorded on #2779 by an agent): 'reserves' for the military reserve, and 'foreign currency reserves' for the money, with the qualifier. The ids and comments can keep 'reserves' for the currency.
@@ -1117,10 +1117,10 @@ Category: game-system. Scope: ui, docs, events.
 
 | In use | Where |
 |---|---|
-| תקציב | strings.he.yaml budget.title |
-| הגשת התקציב | strings.he.yaml budget.submit |
-| מסים {0}, הוצאות {1} וגיוס מילואים {2} בשנה | strings.he.yaml budget.flow |
-| אין בתקציב סעיף ביטחון | strings.he.yaml defence.budget_none |
+| תקציב | translations/he/ui.yaml budget.title |
+| הגשת התקציב | translations/he/ui.yaml budget.submit |
+| מסים {0}, הוצאות {1} וגיוס מילואים {2} בשנה | translations/he/ui.yaml budget.flow |
+| אין בתקציב סעיף ביטחון | translations/he/ui.yaml defence.budget_none |
 
 **Recommendation (see status).**
 - English: No change. One note for later: the budget says 'Submitted', and the other player orders say 'Ordered' (see 'order'). That may be deliberate, because a budget can go to a vote.
@@ -1151,11 +1151,11 @@ Category: politics. Scope: ui, docs, events.
 
 | In use | Where |
 |---|---|
-| נדרש אישור של {0}: לקואליציה יש {1} מתוך {2} {3} | strings.he.yaml budget.vote_needed |
-| {0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3} | strings.he.yaml budget.vote_advisory |
-| {0} אינה מצביעה על התקציב | strings.he.yaml budget.no_vote |
-| אחראית בפני {0} · {1} חברים | strings.he.yaml cabinet.legislature |
-| מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות | strings.he.yaml cabinet.legislature_advisory |
+| נדרש אישור של {0}: לקואליציה יש {1} מתוך {2} {3} | translations/he/ui.yaml budget.vote_needed |
+| {0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3} | translations/he/ui.yaml budget.vote_advisory |
+| {0} אינה מצביעה על התקציב | translations/he/ui.yaml budget.no_vote |
+| אחראית בפני {0} · {1} חברים | translations/he/ui.yaml cabinet.legislature |
+| מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות | translations/he/ui.yaml cabinet.legislature_advisory |
 | body_he: "מועצת המדינה הזמנית" | content/legislatures.yaml |
 | body_he: "הכנסת השנייה" | content/legislatures.yaml |
 
@@ -1209,8 +1209,8 @@ Category: politics. Scope: ui, code.
 
 | In use | Where |
 |---|---|
-| רוב: {0} {1} | strings.he.yaml cabinet.majority |
-| אופוזיציה: {0} {1} | strings.he.yaml cabinet.opposition |
+| רוב: {0} {1} | translations/he/ui.yaml cabinet.majority |
+| אופוזיציה: {0} {1} | translations/he/ui.yaml cabinet.opposition |
 
 **Recommendation (see status).**
 - English: 'Majority: {0} {1}' reads as a holding, but it is the threshold. A drop-in with the same two placeholders is 'Needed for a majority: {0} {1}'. Optional, and the first thing to take to a cold-read test.
@@ -1238,7 +1238,7 @@ Category: politics. Scope: ui, docs, events, code.
 
 | In use | Where |
 |---|---|
-| ממשלה | strings.he.yaml hud.nav.cabinet, why.cabinet |
+| ממשלה | translations/he/ui.yaml hud.nav.cabinet, why.cabinet |
 | name_he: "הממשלה הזמנית" | content/governments.yaml |
 | name_he: "ממשלת ישראל הראשונה" | content/governments.yaml |
 
@@ -1271,13 +1271,13 @@ Category: politics. Scope: ui, events, docs, code.
 
 | In use | Where |
 |---|---|
-| מינוי לתפקיד {0} | strings.he.yaml cabinet.pick |
-| אין משרד עד {0} | strings.he.yaml budget.not_established |
-| פנוי | strings.he.yaml budget.vacant |
-| {0} (מינוי שלך) | strings.he.yaml card.appointed_name |
+| מינוי לתפקיד {0} | translations/he/ui.yaml cabinet.pick |
+| אין משרד עד {0} | translations/he/ui.yaml budget.not_established |
+| פנוי | translations/he/ui.yaml budget.vacant |
+| {0} (מינוי שלך) | translations/he/ui.yaml card.appointed_name |
 | title_he: "שר הפנים" | content/offices.yaml |
 | title_he_f: "שרת החוץ" | content/offices.yaml |
-| המשרה {0} בוטלה ב־{1} | strings.he.yaml cabinet.reason.abolished |
+| המשרה {0} בוטלה ב־{1} | translations/he/ui.yaml cabinet.reason.abolished |
 
 **Recommendation (see status).**
 - English: Use 'office' for the post and 'ministry' for the department. Hebrew uses תפקיד and משרד in the earlier strings, and the Cabinet refusal reasons also use משרה (#985); a native reader should assess the variants.
@@ -1304,7 +1304,7 @@ Category: politics. Scope: ui, events, docs.
 
 | In use | Where |
 |---|---|
-| שר הביטחון {0} · הרמטכ״ל {1} | strings.he.yaml defence.command |
+| שר הביטחון {0} · הרמטכ״ל {1} | translations/he/ui.yaml defence.command |
 | title_he: "ראש המטה הכללי" | content/offices.yaml |
 | title_he: 'רמטכ״ל ההגנה' | content/offices.yaml |
 
@@ -1335,7 +1335,7 @@ Options: Public support; Public support; Approval.
 
 | In use | Where |
 |---|---|
-| תמיכה ציבורית | strings.he.yaml hud.caption.support |
+| תמיכה ציבורית | translations/he/ui.yaml hud.caption.support |
 
 **Recommendation (see status).**
 - English: Use 'Public support' for the meter and approval for the code concept. The top-bar caption is already sentence case, as adopted in #630.
@@ -1366,12 +1366,12 @@ Category: game-system. Scope: ui, docs, code.
 
 | In use | Where |
 |---|---|
-| ניתנה פקודה: {0}, בסיום התור | strings.he.yaml info.queued |
-| הפקודה שלך: {0} | strings.he.yaml outcome.order |
-| הפקודה אינה תקפה | strings.he.yaml order.invalid |
-| הוגש: ייכנס לתוקף בסיום התור | strings.he.yaml budget.queued |
-| הוזמנו {0} | strings.he.yaml city.train_ordered (#869) |
-| הוזמן | strings.he.yaml site.ordered (#869) |
+| ניתנה פקודה: {0}, בסיום התור | translations/he/ui.yaml info.queued |
+| הפקודה שלך: {0} | translations/he/ui.yaml outcome.order |
+| הפקודה אינה תקפה | translations/he/ui.yaml order.invalid |
+| הוגש: ייכנס לתוקף בסיום התור | translations/he/ui.yaml budget.queued |
+| הוזמנו {0} | translations/he/ui.yaml city.train_ordered (#869) |
+| הוזמן | translations/he/ui.yaml site.ordered (#869) |
 
 **Recommendation (see status).**
 - English: Use 'order' for the player's actions and say what was ordered. The budget says 'Submitted' for the same kind of step; that can stay if the vote is the reason (see 'budget').
@@ -1399,7 +1399,7 @@ Options: Chapter; Era.
 
 | In use | Where |
 |---|---|
-| פרק | strings.he.yaml why.era |
+| פרק | translations/he/ui.yaml why.era |
 | תקופות מאוחרות | README.he.md (roadmap) |
 
 **Recommendation (see status).**
@@ -1428,7 +1428,7 @@ Category: game-system. Scope: ui, events, code.
 
 | In use | Where |
 |---|---|
-| מדיניות | strings.he.yaml why.policy |
+| מדיניות | translations/he/ui.yaml why.policy |
 
 **Recommendation (see status).**
 - English: No change. One finding for the transliteration convention: the content name is 'Transit camps (ma'abarot)', which gives the Hebrew word in brackets, while the strings say 'transit camp'.
@@ -1456,8 +1456,8 @@ Category: game-system. Scope: ui, code.
 
 | In use | Where |
 |---|---|
-| השפעות מתמשכות | strings.he.yaml why.effects |
-| מצבים | strings.he.yaml why.situations |
+| השפעות מתמשכות | translations/he/ui.yaml why.effects |
+| מצבים | translations/he/ui.yaml why.situations |
 
 **Recommendation (see status).**
 - English: The two labels are generic. 'Situations' in particular could mean any state of the game. Add one line under each heading, or test a plainer word such as 'Crises' only if every situation is a crisis, which the files read here do not show.
@@ -1487,8 +1487,8 @@ Category: history-term. Scope: ui, events, docs, code.
 
 | In use | Where |
 |---|---|
-| עלייה | strings.he.yaml hud.caption.immigration |
-| עלייה ואוכלוסייה | strings.he.yaml why.population |
+| עלייה | translations/he/ui.yaml hud.caption.immigration |
+| עלייה ואוכלוסייה | translations/he/ui.yaml why.population |
 | title_he: "שר העלייה" | content/offices.yaml |
 
 **Recommendation (see status).**
@@ -1515,7 +1515,7 @@ Category: place. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| נפות המנדט | strings.he.yaml info.region, map.layer_front_no_data |
+| נפות המנדט | translations/he/ui.yaml info.region, map.layer_front_no_data |
 
 **Recommendation (see status).**
 - English: No change. Spell 'sub-district' with a hyphen everywhere.
@@ -1542,8 +1542,8 @@ Category: game-system. Scope: ui.
 
 | In use | Where |
 |---|---|
-| בקע | strings.he.yaml info.biome.valley |
-| עמק | strings.he.yaml info.biome.lowland |
+| בקע | translations/he/ui.yaml info.biome.valley |
+| עמק | translations/he/ui.yaml info.biome.lowland |
 
 **Recommendation (see status).**
 - English: No change. Keep 'biome' as the code word only.
@@ -1574,12 +1574,12 @@ Category: history-term. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| בשליטת ישראל | strings.he.yaml info.control_israel |
-| בשליטת כוחות ערביים | strings.he.yaml info.control_arab |
-| הצד הישראלי של קו שביתת הנשק | strings.he.yaml info.control_side_israel |
-| הצד הערבי של קו שביתת הנשק | strings.he.yaml info.control_side_arab |
-| צבא ההצלה | strings.he.yaml control.holder_ala |
-| אזור מפורז | strings.he.yaml info.control_dmz |
+| בשליטת ישראל | translations/he/ui.yaml info.control_israel |
+| בשליטת כוחות ערביים | translations/he/ui.yaml info.control_arab |
+| הצד הישראלי של קו שביתת הנשק | translations/he/ui.yaml info.control_side_israel |
+| הצד הערבי של קו שביתת הנשק | translations/he/ui.yaml info.control_side_arab |
+| צבא ההצלה | translations/he/ui.yaml control.holder_ala |
+| אזור מפורז | translations/he/ui.yaml info.control_dmz |
 
 **Recommendation (see status).**
 - English: No change. The captions follow the project's framing (docs/CONTENT_POLICY.md, section 1) and cite their source. Keep it that way, and send any new label for a side or a holder through the content review, as the policy requires for sensitive wording. The unit names in the GDD ('Arab Legionnaire', 'Palestinian militia') are more specific than the UI's 'Arab forces'; the two should not contradict each other.
@@ -1605,7 +1605,7 @@ Category: gdd-term. Scope: ui, docs.
 
 | In use | Where |
 |---|---|
-| ערים | strings.he.yaml why.city |
+| ערים | translations/he/ui.yaml why.city |
 
 **Recommendation (see status).**
 - English: Keep 'city' for the places modeled in detail. The GDD and site UI call a new place the player founds a 'yishuv'; see that entry before proposing a different term.

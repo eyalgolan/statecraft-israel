@@ -253,7 +253,7 @@ public class BudgetScreenTests
     [Test]
     public void InHebrewTheMinistrysStartIsAHebrewDate()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         using var ui = new UiTestKit();
         new BudgetPresenter(ui.Root, new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), he), he);
         StringAssert.EndsWith("(אין משרד עד 10 במרץ 1949)", ui.Q<Label>("budget-education_minister-name").text);
@@ -262,7 +262,7 @@ public class BudgetScreenTests
     [Test]
     public void InHebrewTheRowsAndVoteUseTheContentsHebrewNames()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         var c = ContentLoader.Load(Paths.Content);
         c.Rules.BudgetStart["rationing_minister"] = 0;       // expose the non-budgeted fallback row through the real presenter
         var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);

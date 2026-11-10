@@ -41,7 +41,6 @@ namespace Statecraft.Game.UI
         [SerializeField] GameBoot boot = null!;
         [SerializeField] UIDocument document = null!;
         [SerializeField] TextAsset strings = null!;
-        [SerializeField] TextAsset stringsHe = null!;
         [SerializeField] PortraitCatalog portraits = null!;
         [SerializeField] MapScene map = null!;
         [SerializeField] PlacementLayer placements = null!;
@@ -155,11 +154,11 @@ namespace Statecraft.Game.UI
         internal MenuMusic? Music => music;
         MenuMusic? music;
 
-        public void Configure(GameBoot boot, UIDocument document, TextAsset strings, TextAsset stringsHe, PortraitCatalog portraits,
+        public void Configure(GameBoot boot, UIDocument document, TextAsset strings, PortraitCatalog portraits,
             MapScene map, PlacementLayer placements, MapPointer pointer, CameraController cameraController)
         {
             var oldBoot = this.boot;
-            this.boot = boot; this.document = document; this.strings = strings; this.stringsHe = stringsHe; this.portraits = portraits; this.map = map;
+            this.boot = boot; this.document = document; this.strings = strings; this.portraits = portraits; this.map = map;
             this.placements = placements; this.pointer = pointer; this.cameraController = cameraController;
             // An enabled GameRoot is already subscribed to the old boot's Ready (OnEnable): move the subscription.
             if (!isActiveAndEnabled) return;
@@ -171,7 +170,7 @@ namespace Statecraft.Game.UI
 
         /// <summary>The loading line in the UI's language from the first frame (Start runs after every OnEnable, so the
         /// document's tree exists).</summary>
-        void Start() { if (Application.isPlaying) Started(); }
+        void Start() { if (Application.isPlaying) { Started(); FetchEarlyHebrew(); } }
 
         /// <summary>Start's work: the loading line in the UI's language (ShowLoading), unless the boot has already failed or
         /// the game has already begun. GameBoot and GameRoot set no execution order, and on the desktop the load reads from
@@ -196,7 +195,7 @@ namespace Statecraft.Game.UI
         /// the strings, or null before the scene's fields are set.</summary>
         internal UiText? ShowLoading()
         {
-            if (document == null || strings == null || stringsHe == null || document.rootVisualElement == null) return null;
+            if (document == null || strings == null || document.rootVisualElement == null) return null;
             var text = Strings();
             var root = document.rootVisualElement;
             bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
@@ -213,16 +212,61 @@ namespace Statecraft.Game.UI
             line.languageDirection = !hebrew ? LanguageDirection.Inherit : UiDirection.RightToLeft(words) ? LanguageDirection.RTL : LanguageDirection.LTR;
         }
 
-        /// <summary>The strings of the UI's language (UiLanguage): strings.he.yaml when Hebrew is asked for or chosen; a language
-        /// from translations/ (#1606) as its ui.yaml over the English, per string, once <paramref name="content"/> carries it
-        /// (before the content loads, the loading line is English); else English.</summary>
+        /// <summary>The strings of the UI's language (UiLanguage): in Hebrew, translations/he/ui.yaml (#1618, step 4) as
+        /// <paramref name="content"/> carries it, whole, with no English under it; a language from translations/ (#1606) as
+        /// its ui.yaml over the English, per string, once the content carries it; else English. Before the content loads
+        /// (the loading line, a boot failure) Hebrew is the early copy (EarlyHebrew), and English until that is there.</summary>
         UiText Strings(Content? content = null)
         {
             var language = Language ?? UiLanguage.AtStart(SettingsFile()?.Read(SettingsPresenter.LanguageKey));
-            if (language == UiLanguage.Hebrew) return UiText.Parse(stringsHe.text, "strings.he.yaml");
+            if (language == UiLanguage.Hebrew)
+            {
+                if (content != null)
+                    return UiText.Of((content.Translations.Find(t => t.Lang == Translations.Hebrew)
+                        ?? throw new InvalidOperationException($"{HebrewFile} is missing from the content")).Ui, HebrewFile);
+                if (EarlyHebrew() is string early) return UiText.Parse(early, HebrewFile);
+                return UiText.Parse(strings.text);
+            }
             var english = UiText.Parse(strings.text);
             var set = language == UiLanguage.English ? null : content?.Translations.Find(t => t.Lang == language);
             return set == null ? english : english.Over(set.Ui, $"translations/{language}/ui.yaml");
+        }
+
+        const string HebrewFile = "translations/he/ui.yaml";
+        string? earlyHebrew;
+        bool earlyHebrewFetched;
+
+        /// <summary>translations/he/ui.yaml before the content arrives (#1618, step 4), so the loading line and a boot failure
+        /// read in Hebrew: read from disk off the web (the repository's in the editor, StreamingAssets' in a player), fetched
+        /// on WebGL (FetchEarlyHebrew). Null until it is there, or when it cannot be read: those lines are then English. Once
+        /// the content loads, the Hebrew it carries is the one shown (Strings).</summary>
+        string? EarlyHebrew()
+        {
+            if (earlyHebrew != null || Application.platform == RuntimePlatform.WebGLPlayer) return earlyHebrew;
+            try { return earlyHebrew = System.IO.File.ReadAllText(System.IO.Path.Combine(Paths.Translations, Translations.Hebrew, Translations.UiFile)); }
+            catch (System.IO.IOException) { return null; }
+            catch (UnauthorizedAccessException) { return null; }
+        }
+
+        /// <summary>On WebGL, for a Hebrew player only, fetches translations/he/ui.yaml beside the content (one small request,
+        /// alongside the bundle) and then puts the loading line, or a boot failure that came first, into Hebrew. A failed
+        /// fetch leaves them English; the game's own strings come with the content either way.</summary>
+        async void FetchEarlyHebrew()
+        {
+            if (Application.platform != RuntimePlatform.WebGLPlayer || earlyHebrewFetched) return;
+            earlyHebrewFetched = true;
+            if ((Language ?? UiLanguage.AtStart(SettingsFile()?.Read(SettingsPresenter.LanguageKey))) != UiLanguage.Hebrew) return;
+            var download = StreamingFetch.Get(Application.streamingAssetsPath + "/translations/he/ui.yaml");
+            try
+            {
+                while (!download.IsDone) await Awaitable.NextFrameAsync();
+                if (download.Result != UnityEngine.Networking.UnityWebRequest.Result.Success || this == null) return;
+                earlyHebrew = download.Request.downloadHandler.text;
+            }
+            finally { download.Release(); }
+            if (Bridge != null) return;
+            if (boot != null && boot.Error != null) OnBootFailed(boot.Error);
+            else ShowLoading();
         }
 
         void OnDisable()
@@ -283,7 +327,7 @@ namespace Statecraft.Game.UI
         internal void Begin(GameInputs inputs, int smoke, bool startScreen = false, SimBridge? keep = null, bool smokeOrders = false)
         {
             if (inputs == null) throw new ArgumentNullException(nameof(inputs));
-            foreach (var (value, field) in new (UnityEngine.Object?, string)[] { (document, nameof(document)), (strings, nameof(strings)), (stringsHe, nameof(stringsHe)),
+            foreach (var (value, field) in new (UnityEngine.Object?, string)[] { (document, nameof(document)), (strings, nameof(strings)),
                 (map, nameof(map)), (placements, nameof(placements)), (pointer, nameof(pointer)), (cameraController, nameof(cameraController)) })
                 if (value == null) throw new InvalidOperationException($"GameRoot: {field} is not assigned (run MapCapture.MakeScene)");
             if (map.Terrain == null) throw new InvalidOperationException("GameRoot: the map is not built (GameBoot builds it before Ready)");

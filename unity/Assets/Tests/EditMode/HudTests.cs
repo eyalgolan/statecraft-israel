@@ -123,7 +123,7 @@ public class HudTests
     [Test]
     public void AMissingMonthNameThrowsRatherThanShowingEnglish()
     {
-        var yaml = AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text;
+        var yaml = UiPaths.HebrewText();
         var noMay = UiText.Parse(string.Join("\n", yaml.Split('\n').Where(l => !l.StartsWith("date.month_5:"))), "strings.he.yaml");
         var e = Assert.Throws<System.Collections.Generic.KeyNotFoundException>(() =>
             HudModel.From(new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), He), noMay));
@@ -653,7 +653,7 @@ public class HudTests
     [TestCase(true)]
     public void ARefusalShowsNoIdOrExceptionTextInEitherLanguage(bool hebrew)
     {
-        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var text = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml") : Text;
         LogAssert.Expect(LogType.Log, new System.Text.RegularExpressions.Regex("unknown policy 'curfew'"));
         var unknown = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text).Queue(new SetPolicy("curfew", 1));
         Assert.AreEqual(text.Format("order.unknown", text["order.kind.policy"]), unknown);   // the kind in the UI's language (#595)
@@ -896,7 +896,7 @@ public class HudTests
     }
 
     static readonly string[] MeterIds = { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" };
-    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings.Replace("strings.en.yaml", "strings.he.yaml")).text, "strings.he.yaml");
+    static UiText He => UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
 
     /// <summary>Ends turns until Immigration shows a change (it compares two turns' arrivals), so every meter can show one.
     /// Fails if none comes within 30 turns, so a test built on it never passes by checking nothing.</summary>

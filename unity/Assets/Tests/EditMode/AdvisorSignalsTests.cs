@@ -196,7 +196,7 @@ public class AdvisorSignalsTests
     [TestCase("dayan.arms_out", "אימון צבאי דורש נשק, ונשק נצרך בהתקפות. קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות.")]
     public void AnApprovedHebrewLineIsTheTextTheOwnerRead(string id, string hebrew)
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var he = UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml");
         Assert.AreEqual(AdvisorCatalog.Approved, AdvisorCatalog.Parse(System.IO.File.ReadAllText(AdvisorCatalog.Path)).Find(id)!.HeReview);
         Assert.AreEqual(hebrew, he["advisor." + id + ".text"]);
     }
@@ -280,7 +280,7 @@ public class AdvisorSignalsTests
     [Test]
     public void TheCriticalWarningsShowInHebrew()
     {
-        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text);
+        var he = UiText.Parse(UiPaths.HebrewText());
         using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: he);
         rig.Session.Settings.SetLevel("off");
         rig.Bridge.State.ExhaustedTurns = 1; rig.Bridge.State.Debt = Ceiling(rig.Bridge); rig.Bridge.State.FoodUnmet = 3;
@@ -333,7 +333,7 @@ public class AdvisorSignalsTests
     public void TheEndScreenNamesTheWarLoss()
     {
         foreach (var file in new[] { UiPaths.Strings, UiPaths.StringsHebrew })
-            Assert.IsTrue(UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(file).text).Has("end.outcome.defeat_war"), file);
+            Assert.IsTrue(UiText.Parse(System.IO.File.ReadAllText(file)).Has("end.outcome.defeat_war"), file);
         Assert.AreEqual("The enemy holds a city.", En["end.outcome.defeat_war"], "Q-DEF-4 (b)'s line (PlayerText.cs:27)");
     }
 
@@ -380,7 +380,7 @@ public class AdvisorSignalsTests
     [TestCase(true)]
     public void ACityAtRiskIsWarnedAtOff(bool hebrew)
     {
-        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml")
+        var text = hebrew ? UiText.Parse(UiPaths.HebrewText(), "strings.he.yaml")
                           : UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
         using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text);
         rig.Session.Settings.SetLevel("off");
