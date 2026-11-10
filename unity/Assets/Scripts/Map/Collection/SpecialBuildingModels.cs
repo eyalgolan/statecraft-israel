@@ -607,8 +607,17 @@ namespace Statecraft.Game.Map.Collection
 
         internal void ShowForTest(IReadOnlyList<Want> wants) => Show(wants);
 
+#if UNITY_EDITOR
+        /// <summary>How many times the layer has re-planned on a Show (ShowAt past its early-out, or ShowForTest): a test aid
+        /// (#3056), not in a player.</summary>
+        internal int Replans { get; private set; }
+#endif
+
         void Show(IReadOnlyList<Want> wants)
         {
+#if UNITY_EDITOR
+            Replans++;
+#endif
             this.wants = wants;
             var probe = Boot.TurnProbe.Start();   // ?turnlog (#2905): the replan and the residency apart
             Replan(log: true);
