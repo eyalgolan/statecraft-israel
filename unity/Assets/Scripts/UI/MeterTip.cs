@@ -87,7 +87,8 @@ namespace Statecraft.Game.UI
         public VisualElement? ShownFor => shownFor;
 
         /// <summary>The tip's lines for <paramref name="meter"/> (an element named "meter-" + a HudModel.MeterIds id): its
-        /// words and what the meter is (hud.tip.&lt;id&gt;, #2200), with the causes' heading when there are causes (for
+        /// words and what the meter is (hud.tip.&lt;id&gt;, #2200), then its standing lines (HudModel.PersistentCauses, #803),
+        /// with the causes' heading when there are causes (for
         /// Immigration, this turn's arrivals), and the causes, one a line (none when none).</summary>
         public (string words, IReadOnlyList<string> causes) Lines(VisualElement meter)
         {
@@ -95,6 +96,7 @@ namespace Statecraft.Game.UI
             var causes = HudModel.Causes(bridge.Session.Last, id, bridge.Content,
                 w => CauseText.Line(w, bridge.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text, TownNamesHe));   // no meter counts a unit line
             var words = meter.tooltip + "\n" + text["hud.tip." + id];   // the number alone does not say what moves it (#2200)
+            foreach (var line in HudModel.PersistentCauses(text, bridge.State, id)) words += "\n" + line;   // #803: before the causes
             var causesHeading = id == "immigration" ? "hud.arrivals_this_turn" : "hud.causes";
             return causes.Count == 0 ? (words, causes) : (words + "\n" + text[causesHeading], causes);
         }
