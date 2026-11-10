@@ -538,7 +538,7 @@ Gaps remain in the second half of August and in early December.
 
 ## Open gaps to close with print sources (historian review)
 - Names of Israeli ministers or generals who argued for refusing the first truce, if any. Sources: Gelber, Bar-Zohar.
-- The date and terms of Israel's acceptance of the second truce.
+- Second truce: Israel's acceptance and its terms are recorded in section 5 (the cable of 16 July 1948, UN doc S/903, [V, agent read 2026-10-23; a person's check pending]). Still open: the day of the government's own decision to accept, between the Council's vote of 15 July and the cable of 16 July ([GAP]), and the cabinet positions and internal debate ([GAP]) (section 5).
 - Whether Britain also sent a note directly to Israel, and the FO 371 reference for the 30 Dec 1948 Note Verbale (section 9).
 - Generals' Revolt: the day the Committee of Five's report was finished, its text, and the day Galili left his post (section 3b). The other steps are dated from the committee's protocol and the Palmach site.
 - 8 Nov registration: which ministry the Statistics Department sat under in 1948, any Provisional Government minute on deciding to hold it, and the Gazette scan of the regulations and of their extension ordinance (the minister, the office, the regulations' text as printed in the Council's annex and the 25th-sitting vote are sourced in section 10).
