@@ -43,19 +43,18 @@ namespace Statecraft.Sim
         public const string RefusedIdle = "{0} has {1} civilians without work";
         public const string RefusedArms = "{0}: not enough Arms for {1} (need {2}, have {3})";
 
-        // #1725 PR 7, producer 12: the refusals only a Historical ledger game gives. Internal, not Refused* constants: no
-        // player reaches them yet (Simulation.Step still refuses a ledger game, R-POP-002), and the UI strings follow when it
-        // does.
+        // #1725 PR 7, producer 12: the refusals only a Historical ledger game gives. Public for the UI's strings (#3020:
+        // SimBridge.ReasonText words each in the UI's language), and not named Refused*, as only a ledger game gives them.
         /// <summary>Owner, 8 November 2026, "Recruit+crews+halutz (Rec.)" (#1725 issuecomment-6724941867): the craftsman track is refused with a plain reason until #2476.</summary>
-        internal const string LedgerRefusedCraftsman = "Craft training does not run on the population ledger yet (#2476)";
+        public const string LedgerRefusedCraftsman = "Craft training does not run on the population ledger yet (#2476)";
         /// <summary>Owner, 8 November 2026, "Enforce it here (Rec.)" (#1725 issuecomment-6724941867): the camp capacity, 50 records per camp city, over all military tracks.</summary>
-        internal const string LedgerRefusedCampFull = "{0}'s military camp has room for {1} more trainees (capacity {2})";
+        public const string LedgerRefusedCampFull = "{0}'s military camp has room for {1} more trainees (capacity {2})";
         /// <summary>Owner, 8 November 2026, "Full minus strength (Rec.)" (#1725 issuecomment-6724941867): a formation whose strength differs from its serving records is refused.</summary>
-        internal const string LedgerRefusedStrength = "Unit {0} has {1} soldiers on record but strength {2}";
+        public const string LedgerRefusedStrength = "Unit {0} has {1} soldiers on record but strength {2}";
         /// <summary>Owner, 8 November 2026, Q3, "Refuse, with reason (Recommended)": a military trainee who already carries a military item.</summary>
-        internal const string LedgerRefusedCarried = "A civilian without work in {0} already carries a military item";
+        public const string LedgerRefusedCarried = "A civilian without work in {0} already carries a military item";
         /// <summary>Owner, 8 November 2026, Q3, "Refuse, with reason (Recommended)": a farmer or craftsman on the halutz track.</summary>
-        internal const string LedgerRefusedHalutzTrade = "A farmer or craftsman in {0} cannot train as a halutz";
+        public const string LedgerRefusedHalutzTrade = "A farmer or craftsman in {0} cannot train as a halutz";
 
         static string Refused(string format, params object[] values) => string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values);
 

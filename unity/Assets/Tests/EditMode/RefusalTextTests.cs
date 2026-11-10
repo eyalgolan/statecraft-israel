@@ -24,6 +24,11 @@ public class RefusalTextTests
             SimBridge.ReasonText(En, string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeople, town, 1)));
         Assert.AreEqual(town + " has 1 civilian or craftsman without a job",
             SimBridge.ReasonText(En, string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.RefusedPeopleNoJob, town, 1)));
+        // #3020: the ledger game's free-record counts name theirs too.
+        Assert.AreEqual(town + " has 1 free civilian without an assignment",
+            SimBridge.ReasonText(En, string.Format(System.Globalization.CultureInfo.InvariantCulture, Workshops.LedgerRefusedFree, town, 1)));
+        Assert.AreEqual(town + " has 1 free pioneer without work",
+            SimBridge.ReasonText(En, string.Format(System.Globalization.CultureInfo.InvariantCulture, Qualification.LedgerRefusedFreePioneers, town, 1)));
         // Every other count is the sim's own English, word for word.
         var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, Training.RefusedIdle, town, 6);
         Assert.AreEqual(reason, SimBridge.ReasonText(En, reason));

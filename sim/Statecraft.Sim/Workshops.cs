@@ -164,15 +164,15 @@ namespace Statecraft.Sim
             new Cause("city", city, delta, FormattableString.Invariant($"{name}: arms workshops staffed: {count}"),
                 key: CauseKeys.WorkshopWorkers, args: new[] { CauseKeys.Number(count) });
 
-        // #1725 PR 7, producer 07: the refusal only a Historical ledger game gives. Internal, not a Refused* constant: no
-        // player reaches it yet (Simulation.Step still refuses a ledger game, R-POP-002), and the UI string follows when it does.
+        // #1725 PR 7, producer 07: the refusals only a Historical ledger game gives. Public for the UI's strings (#3020:
+        // SimBridge.ReasonText words each in the UI's language), and not named Refused*, as only a ledger game gives them.
         /// <summary>Owner, 8 November 2026, Q7 "Unassigned, lowest id (Rec.)": more newly staffed workshops than the city's
         /// unassigned free-civilian records.</summary>
-        internal const string LedgerRefusedFree = "{0} has {1} free civilians without an assignment";
+        public const string LedgerRefusedFree = "{0} has {1} free civilians without an assignment";
 
         /// <summary>Owner, 8 November 2026, "Refuse with a reason (Recommended)": a staffing order in a city with builders
         /// (R-CITY-011), which are city counts and not records yet.</summary>
-        internal const string LedgerRefusedBuilders = "{0} has builders on city projects, who are not on the population ledger yet";
+        public const string LedgerRefusedBuilders = "{0} has builders on city projects, who are not on the population ledger yet";
 
         /// <summary>Owner, 8 November 2026, Q1 "Work assignment (Rec.)": the Work target a workshop's worker record holds.</summary>
         internal static string WorkerTarget(int project) => "workshop/" + project.ToString(System.Globalization.CultureInfo.InvariantCulture);
