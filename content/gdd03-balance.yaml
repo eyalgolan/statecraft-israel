@@ -490,9 +490,9 @@
     "note": "Movement and engagement defaults: hex support range; cannot attack alone or hold ground; retained role. The owner-approved answer O5 (1 November 2026, https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6553884547): \"2 hexes.\"; relabelled from Default after the #2918 C2 audit. Source: #1668 balance.md at 605277df."
     "values": [2]
   "combat.artillery_factor":
-    "basis": "Default"
-    "note": "Movement and engagement defaults: unitless role multiplier; Default. Source: #1668 balance.md at 605277df."
-    "values": [1]
+    "basis": "Agreed"
+    "note": "Movement and engagement defaults: unitless role multiplier. The owner's answer C1 (10 November 2026, https://github.com/eyalgolan/statecraft-israel/issues/2918#issuecomment-6765662598): \"200% wins (Recommended)\"; 2 matches the live combat_percent 200 in unit_types.yaml (was Default 1). Source: #1668 balance.md at 605277df."
+    "values": [2]
   "combat.loss_cohorts":
     "basis": "Default"
     "note": "Movement and engagement defaults: combatant population cohort removed on loss result; Default abstract loss granularity. Source: #1668 balance.md at 605277df."
