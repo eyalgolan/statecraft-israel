@@ -144,7 +144,7 @@ bool auto = autoMode == "historical";
 
 for (int t = 0; t < turns && state.GameOver == null; t++)
 {
-    Briefing(content, state);
+    Briefing.Write(content, state, Console.Out);
     var commands = auto ? HistoricalAI.Commands(content, state).ToList() : ReadCommands();
     if (commands == null) break;
     var result = Simulation.Step(content, state, commands);
@@ -155,20 +155,6 @@ for (int t = 0; t < turns && state.GameOver == null; t++)
 Console.WriteLine($"End {state.Date:yyyy-MM-dd}: population {state.TotalPopulation:N0}, level {state.Rung}, treasury {state.Treasury:0.0}, debt {state.Debt:0.0}, fx {state.FxReserves:0.0}, stability {state.CoalitionStability:0.00}{(state.GameOver != null ? ", GAME OVER: " + state.GameOver : "")}");
 Console.WriteLine($"State hash {state.Hash()}");
 return 0;
-
-static void Briefing(Content c, GameState s)
-{
-    var gov = Offices.Government(c, s.Date);
-    var attention = c.UsesAttention ? $" | attention {s.Attention:0.0}" : "";
-    Console.WriteLine($"== {s.Date:yyyy-MM-dd} | turn {s.Turn} | {gov?.Name} | security level {s.Rung}{attention}");
-    foreach (var id in s.PendingEvents)
-    {
-        var e = c.Events.First(x => x.Id == id);
-        var fillDate = EventSystem.FillDate(e, s.Date);   // after the window ends, name the last in-window holder
-        Console.WriteLine($"  EVENT {e.Id}: {Offices.Fill(c, e.Title, fillDate)} - {EventSystem.Render(c, e, s.Date)}");
-        foreach (var o in e.Options) Console.WriteLine($"    {o.Id}: {Offices.Fill(c, o.Text, fillDate)}");
-    }
-}
 
 static List<Command>? ReadCommands()
 {
