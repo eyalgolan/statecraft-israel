@@ -188,7 +188,9 @@ def test_merge_workflow_never_touches_pull_request_code():
     # Owner ruling 2026-10-11: approved pull requests merge without giving contributors write access. The job holds a
     # write token, so it must never check out, build or run pull-request code, and never read PR text into the shell.
     wf = yaml.safe_load(MERGE.read_text(encoding="utf-8"))
-    assert set(triggers(wf)) == {"workflow_run", "pull_request_review", "schedule", "workflow_dispatch"}
+    # Owner decision on #3026 (10 Nov): no pull_request_review trigger. A review run would use the file from the pull
+    # request's merge ref; these three triggers all run main's copy.
+    assert set(triggers(wf)) == {"workflow_run", "schedule", "workflow_dispatch"}
     assert triggers(wf)["workflow_run"]["workflows"] == ["CI"]
     assert "pull_request_target" not in triggers(wf)
     assert wf["permissions"] == {"contents": "write", "pull-requests": "write"}
@@ -301,16 +303,18 @@ def test_a_merge_that_succeeds_passes(tmp_path):
     assert "pr merge 7 --squash --match-head-commit abc" in calls
 
 
-def test_a_read_only_review_token_is_an_expected_refusal(tmp_path):
-    # GitHub gives a fork's pull_request_review run a read-only token; the next CI or timer run merges.
-    done, _ = run_merge_step(tmp_path, "pull_request_review", {7: (ready_pr(), 1, READ_ONLY, None)})
-    assert done.returncode == 0, done.stdout + done.stderr
-    assert "read-only token" in done.stdout
+def test_the_merge_step_does_not_depend_on_which_trigger_started_it():
+    # #3026: every trigger left runs main's copy with the write token, so no refusal is tolerated per event.
+    wf = yaml.safe_load(MERGE.read_text(encoding="utf-8"))
+    script = "\n".join(s.get("run", "") for s in steps(wf))
+    assert "GITHUB_EVENT_NAME" not in script and "Resource not accessible" not in script
+    assert "pull_request_review" not in MERGE.read_text(encoding="utf-8")
 
 
-@pytest.mark.parametrize("event", ["workflow_run", "schedule", "workflow_dispatch"])
-def test_a_read_only_refusal_fails_the_run_where_the_token_should_write(tmp_path, event):
-    # These runs hold the write token, so "not accessible" means the permissions are wrong, not a fork review.
+# pull_request_review is no longer a trigger (#3026); it stays in the list to show its old read-only exception is gone.
+@pytest.mark.parametrize("event", ["workflow_run", "schedule", "workflow_dispatch", "pull_request_review"])
+def test_a_read_only_refusal_fails_the_run(tmp_path, event):
+    # Every run holds the write token, so "not accessible" means the permissions are wrong.
     done, _ = run_merge_step(tmp_path, event, {7: (ready_pr(), 1, READ_ONLY, None)})
     assert done.returncode != 0, done.stdout + done.stderr
 
