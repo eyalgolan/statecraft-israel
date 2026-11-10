@@ -42,6 +42,6 @@ Other post-MVP rows (for example `reception.turns`, `reception.capacity`, `recep
 
 ## #1706 slices 0/1: inactive combat catalogue foundation
 
-Coordinator decision, 26 Oct 2026 (Q5): synthetic catalogue validation only; the foundation remains inactive in the actual game. The catalogue defines one draw (Agreed), four ratio ranges, complete, non-overlapping inclusive 0..99 outcome bands, role factors and artillery support range (Default). Required missing, malformed or Deferred entries are refused without an old-table fallback.
+Coordinator decision, 26 Oct 2026 (Q5): synthetic catalogue validation only; the foundation remains inactive in the actual game. The catalogue defines one draw (Agreed), four ratio ranges, complete, non-overlapping inclusive 0..99 outcome bands, role factors (Default) and artillery support range (Agreed: the owner's O5 answer, 1 November 2026, #1668, "2 hexes."; relabelled after the #2918 C2 audit). Required missing, malformed or Deferred entries are refused without an old-table fallback.
 
 Sources: `content/gdd03-balance.yaml:447-475,484-495`; pinned GDD `605277df`, `docs/gdd/balance.md:172,175-177,180-185`. See [the combat rules](rules/mvp.md#combat) for current runtime behavior.

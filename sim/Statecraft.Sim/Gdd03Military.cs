@@ -139,7 +139,8 @@ namespace Statecraft.Sim
                 return n;
             }
             var armour = Role("combat.armoured_factor"); var artillery = Role("combat.artillery_factor");
-            var range = Integer(List(Required("combat.artillery_range", "Default"), "combat.artillery_range", 1)[0], "combat.artillery_range", true);
+            // R-COMBAT-007: the range is Agreed (O5, owner, 1 November 2026, #1668: "2 hexes."; relabelled after #2918 C2).
+            var range = Integer(List(Required("combat.artillery_range", "Agreed"), "combat.artillery_range", 1)[0], "combat.artillery_range", true);
             return new Gdd03CombatCatalogue(thresholds, rows, draws, armour, artillery, range, sources);
         }
 

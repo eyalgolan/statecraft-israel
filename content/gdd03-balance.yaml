@@ -486,8 +486,8 @@
     "note": "Movement and engagement defaults: unitless role multiplier; Default. Source: #1668 balance.md at 605277df."
     "values": [1.50]
   "combat.artillery_range":
-    "basis": "Default"
-    "note": "Movement and engagement defaults: hex support range; cannot attack alone or hold ground; Default range; retained role. Source: #1668 balance.md at 605277df."
+    "basis": "Agreed"
+    "note": "Movement and engagement defaults: hex support range; cannot attack alone or hold ground; retained role. The owner-approved answer O5 (1 November 2026, https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6553884547): \"2 hexes.\"; relabelled from Default after the #2918 C2 audit. Source: #1668 balance.md at 605277df."
     "values": [2]
   "combat.artillery_factor":
     "basis": "Default"
