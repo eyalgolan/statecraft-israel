@@ -236,6 +236,10 @@ and what is public are in `docs/RELEASING.md`, "Nightly builds". It runs on the 
   pass, it turns `itch_enabled` on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off. A night pushes to itch
   only while `savetest_itch_target` names a separate project and `itch_evidence` records that PASS; otherwise its log line says
   `itch: skipped (<reason>)`, naming the missing key or the problem (#2056).
+- A night that `main()` refuses before `run_night` starts (a corrupt `config.json`, or a lock-system failure) still
+  sets `last_run_day` in `state.json` while it can take `run.lock` again, so the next night does not also record it as
+  MISSED (#3010). A refused `savetest` run does not set it: the save test is not the 03:00 run, so its refusal says
+  nothing about whether that night ran (owner, 10 Nov 2026, #3024).
 - The boot-time baseline is the median headless boot of the first 5 PUBLISHED nights; later nights must stay within
   the spread of those 5. To measure it again (a new machine, a new Chrome), delete `boot_baseline` from `state.json`;
   the next 5 published nights record it.
