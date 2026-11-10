@@ -149,7 +149,7 @@ flowchart RL
 
 ## רישיון
 
-קוד: <span dir="ltr">PolyForm Noncommercial 1.0.0</span>, מותר לכל שימוש לא מסחרי; שימוש מסחרי דורש אישור בכתב (מבקשים ב־issue). קוד שפורסם עד גרסה <span dir="ltr">v0.2.1</span> כולל נשאר ב־MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. מודלים בתלת־ממד של <span dir="ltr">Tal Heuberger</span>: <span dir="ltr">CC BY-NC-ND 4.0</span>. מוזיקה של <span dir="ltr">Afik Faerman</span>: <span dir="ltr">CC BY-NC-ND 4.0</span>. חומר של צד שלישי: הגופנים, הפורטרטים בנחלת הכלל וברישיונות CC0, CC BY 4.0 ו־CC BY-SA 4.0, צילומי הארכיון של האירועים, ההקלטה של בן־גוריון מ־1948, ומנוע Unity וחבילותיו, כולם לפי התנאים שלהם.
+קוד: <span dir="ltr">PolyForm Noncommercial 1.0.0</span>, מותר לכל שימוש לא מסחרי; שימוש מסחרי דורש אישור בכתב (מבקשים ב־issue). קוד שפורסם עד גרסה <span dir="ltr">v0.2.1</span> כולל נשאר ב־MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. מודלים בתלת־ממד של טל הויברגר: <span dir="ltr">CC BY-NC-ND 4.0</span>. מוזיקה של <span dir="ltr">Afik Faerman</span>: <span dir="ltr">CC BY-NC-ND 4.0</span>. חומר של צד שלישי: הגופנים, הפורטרטים בנחלת הכלל וברישיונות CC0, CC BY 4.0 ו־CC BY-SA 4.0, צילומי הארכיון של האירועים, ההקלטה של בן־גוריון מ־1948, ומנוע Unity וחבילותיו, כולם לפי התנאים שלהם.
 
 הפירוט ב־[<span dir="ltr">LICENSING.md</span>](LICENSING.md); הייחוסים ב־[<span dir="ltr">NOTICE</span>](NOTICE) וב־[<span dir="ltr">THIRD-PARTY-NOTICES.md</span>](THIRD-PARTY-NOTICES.md), והמקור של כל תמונה ב־[<span dir="ltr">ASSETS.yaml</span>](ASSETS.yaml) וב־[<span dir="ltr">ASSETS.portraits.yaml</span>](ASSETS.portraits.yaml).
 
