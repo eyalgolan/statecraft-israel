@@ -171,6 +171,19 @@ namespace Statecraft.Game.UI
                 // queue) and as ArmsPurchasePresenter asks it.
                 var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
                 var accepted = !preview.Rejected.Any(x => ReferenceEquals(x.Command, press));
+                // #2978 (owner, 9 November 2026: "Enabled + toast (Recommended)"): an order the Attention left cannot pay for
+                // keeps its Train button, as Build does: the bridge refuses the press and says why (order.no_attention,
+                // SimBridge.Queue). The preview above charges Attention, so only Training's own rule is asked, on a copy of the
+                // state the queue leaves, with the press run last, as End turn would. No Train of this type is queued here:
+                // CanPay refunds a queued order of the same key, and every Train order costs the same, so with one queued the
+                // press can pay. As the preview did, an ended game refuses it (SimBridge.Queue says so; under gdd-0.3
+                // OrderButton disables it anyway).
+                if (!bridge.CanPay(press))
+                {
+                    var left = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList()).State;
+                    accepted = s.GameOver == null
+                        && Training.Start(c, left, id, type.Id, ordered + 1, new System.Collections.Generic.List<Cause>()) == null;
+                }
                 // Nor may the press make End turn refuse a queued order it accepts now (its civilians, Arms or anything else).
                 var causesNoNewRefusal = !bridge.Queued.Any(x => preview.Rejected.Any(r => ReferenceEquals(r.Command, x)) && !current.Rejected.Any(r => ReferenceEquals(r.Command, x)));
                 var row = Row(host, $"city-train-{type.Id}-row");
