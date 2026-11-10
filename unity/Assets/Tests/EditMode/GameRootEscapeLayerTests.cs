@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -13,6 +14,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
@@ -226,6 +228,46 @@ public class GameRootEscapeLayerTests : SharedCameraActionsFixture
         typeof(RaidFlightPresenter).GetField("closedFrame", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(flight, -1);
         Escape(root);
         Assert.IsFalse(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "the next Escape closes the card");
+    }
+
+    /// <summary>#3000, seen in a headed WebGL run: one Escape 6 s into the flight ended the flight and the card with it, and the
+    /// advisors came up. The flight's layer has the focus. GameRoot's poll reads the press first and skips the flight, whose
+    /// finish shows the card, and the card's Show focuses its OK. The same press then reaches the UI as the Cancel, sent to the
+    /// element focused now, the card's OK, and bubbles to the card's layer. That Cancel was the flight's: the card stays up.
+    /// The Cancel is sent to OK as the panel sends it to the focused element, so the test does not hang on EditMode focus.</summary>
+    [UnityTest]
+    public IEnumerator OneEscapeThePollTakesFirstSkipsTheRaidFlightAndItsCancelLeavesTheCardUp()
+    {
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+        var root = Object.FindFirstObjectByType<GameRoot>();
+        root.Store = new SaveStore(saveDir);
+        root.Settings = new SettingsStore(Path.Combine(saveDir, "settings")); root.Language = "en";
+        root.RaidCardInEditMode = true; root.RaidFlightInEditMode = true;
+        int stops = 0;
+        root.RaidFlightForTests = ended => () => stops++;              // flies until skipped: EditMode has no frame clock
+        root.Begin(inputs, 0, startScreen: true);
+        keyboard = InputSystem.AddDevice<Keyboard>();
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.IsTrue(HudRoot.ClassListContains(RaidFlightPresenter.OpenClass), "precondition: New game flies the raid");
+        Assert.IsFalse(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "precondition: the card waits for the flight");
+
+        Press(keyboard.escapeKey);                                     // the one press, as GameRoot's poll reads it first
+        Assert.IsTrue(keyboard.escapeKey.wasPressedThisFrame, "precondition: Escape went down this frame");
+        typeof(GameRoot).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(root, null);
+        Assert.IsFalse(HudRoot.ClassListContains(RaidFlightPresenter.OpenClass), "precondition: the poll skipped the flight");
+        Assert.IsTrue(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "precondition: and the flight's finish showed the card");
+        var ok = Ui.Q<Button>("raid-ok");                              // what the card's Show focused
+        using (var e = NavigationCancelEvent.GetPooled()) { e.target = ok; ok.SendEvent(e); }   // the same press, as the UI's Cancel
+        Release(keyboard.escapeKey);
+
+        Assert.AreEqual(1, stops, "the flight ends, the Dakotas stopped once");
+        Assert.IsTrue(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "the card the flight showed stays up: the press was the flight's");
+        Assert.IsFalse(root.Advisor!.IsOpen, "and the advisors wait for the card's OK");
+        yield return null;
+        Assert.IsTrue(HudRoot.ClassListContains(RaidCardPresenter.OpenClass), "still up one frame later");
+        Assert.IsFalse(root.Advisor.IsOpen);
     }
 
     /// <summary>An ended autosave opens the end screen before the start screen goes up over it. Escape on the start screen
