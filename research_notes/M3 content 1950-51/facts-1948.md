@@ -511,7 +511,7 @@ See section 3b. A real PM crisis: Ben-Gurion threatened to resign during the fir
 | 4 | `latrun_proposal` | 26 Sep 1948 | V primary (BG diary); vote count C (7–5 vs majority of one) | High; real cabinet vote |
 | 5 | `operation_yoav` | 6–15 Oct 1948 | V (cabinet 6 Oct) | Medium-high; real Hebron alternative |
 | 6 | `sinai_withdrawal` (Horev) | 31 Dec 1948 – 2 Jan 1949 | V (FRUS d341); British note 30 Dec (FRUS 1948 d857, to the US); a direct note to Israel GAP; RAF date C (6/7 Jan) | High |
-| 7 | `second_truce` | 15–18 Jul 1948 | V (Res 54); Israeli acceptance GAP | Medium |
+| 7 | `second_truce` | 15–18 Jul 1948 | V (Res 54); Israeli acceptance cabled 16 Jul V (S/903; a person's check pending); cabinet positions GAP | Medium |
 | 8 | `ten_days` | 8–10 Jul 1948 | V; alternative weak (S) | Medium; sensitive |
 | 9 | `operation_hiram` | 24–29 Oct 1948 | V; start date C (28/29 Oct) | Medium; sensitive |
 | 10 | `elections_1949` | 5 Nov 1948 – 25 Jan 1949 | V facts; wartime debate GAP | Medium |
