@@ -544,30 +544,33 @@ namespace Statecraft.Game.UI
             var date = TurnStart.Date;
             Boot.TurnProbe.BeginTurn(TurnStart.Turn, date);   // ?turnlog (#2905): this call's sim step and handlers, one line
             var stepFrom = Boot.TurnProbe.Start();
-            try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
-            catch (Exception e)   // any exception (M3 final review M7): never leave a queue that fails on every End Turn
+            try   // the finally closes the probed turn on every path, an exception included (#3057); off, it does nothing
             {
-                // A refusal (ArgumentException) is a clear warning, anything else the full exception: both leave a trace.
-                if (e is ArgumentException) UnityEngine.Debug.LogWarning("End Turn refused: " + e.Message);
-                else UnityEngine.Debug.LogException(e);
+                try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
+                catch (Exception e)   // any exception (M3 final review M7): never leave a queue that fails on every End Turn
+                {
+                    Boot.TurnProbe.Step(stepFrom);   // the failed step is timed too (#3057)
+                    // A refusal (ArgumentException) is a clear warning, anything else the full exception: both leave a trace.
+                    if (e is ArgumentException) UnityEngine.Debug.LogWarning("End Turn refused: " + e.Message);
+                    else UnityEngine.Debug.LogException(e);
+                    deferred.Clear(); skipped.Clear();
+                    LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
+                    var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
+                    var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
+                    Notify(Changed, nameof(Changed));
+                    Notify(TurnEnded, failed.Rejected, nameof(TurnEnded));
+                    return failed;
+                }
+                Boot.TurnProbe.Step(stepFrom);
+                LastBatch = batch; LastBatchDate = date;
                 deferred.Clear(); skipped.Clear();
-                LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
-                var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
-                var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
+                Notify(Stepped, r, nameof(Stepped));
                 Notify(Changed, nameof(Changed));
-                Notify(TurnEnded, failed.Rejected, nameof(TurnEnded));
-                Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log);
-                return failed;
+                Notify(CombatResolved, Engagements(r.Why.Skip(replayed)), nameof(CombatResolved));
+                Notify(TurnEnded, r.Rejected, nameof(TurnEnded));
+                return r;
             }
-            Boot.TurnProbe.Step(stepFrom);
-            LastBatch = batch; LastBatchDate = date;
-            deferred.Clear(); skipped.Clear();
-            Notify(Stepped, r, nameof(Stepped));
-            Notify(Changed, nameof(Changed));
-            Notify(CombatResolved, Engagements(r.Why.Skip(replayed)), nameof(CombatResolved));
-            Notify(TurnEnded, r.Rejected, nameof(TurnEnded));
-            Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log);
-            return r;
+            finally { Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log); }
         }
 
         /// <summary>Switches to another session (a loaded save), dropping queued orders and the last batch's metadata.</summary>
