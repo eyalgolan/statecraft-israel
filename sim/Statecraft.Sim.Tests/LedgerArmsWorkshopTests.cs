@@ -502,7 +502,9 @@ public class LedgerArmsWorkshopTests
         const string reason = "Haifa has builders on city projects, who are not on the population ledger yet";
         Assert.Equal(reason, Workshops.Check(c, s, Haifa, 1, Array.Empty<Command>()));
         Assert.Equal(reason, Cities.Assign(c, s.Clone(), Haifa, Workshops.Role, 1, new List<Cause>()));
-        Assert.Null(Workshops.Check(c, s, Haifa, 0, Array.Empty<Command>()));   // nothing newly staffed: accepted, as the order is
+        // LedgerStaff refuses before it reads the count, so an order to staff none is refused the same way.
+        Assert.Equal(reason, Workshops.Check(c, s, Haifa, 0, Array.Empty<Command>()));
+        Assert.Equal(reason, Cities.Assign(c, s.Clone(), Haifa, Workshops.Role, 0, new List<Cause>()));
         Assert.Null(Workshops.Check(c, twin, Haifa, 1, Array.Empty<Command>()));
     }
 
