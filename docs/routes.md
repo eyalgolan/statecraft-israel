@@ -112,6 +112,46 @@ is inside it (review C1):
 | rail | Petah Tikva–Tel Aviv North rail link | 1949-09-20 | The 1949 Yarkon link (#786): new track from the Petah Tikva branch to a new Tel Aviv North station, which with the Tulkarm bypass carried the Haifa–Tel Aviv service from 20 September 1949. Drawn along the 1946 tracks (to-verify); the bypass is not drawn, no source gives its line. A GDD Phase 4 corridor (`content/corridors.yaml`). |
 | road | Tel Aviv–Netanya road | 1950-07-28 | Opened on 28 July 1950 (*The Jerusalem Post*, 30 July 1950), from the northern end of the Yarkon bridge by Herzliya, Rishpon and Wadi Falik to Netanya; an 8 km stretch at Wadi Falik was still unfinished. A Phase 4 corridor (#786). Straight draft lines between those five places (`trace: straight`, owner, 18 October 2026, #786), not the built line (to-verify). |
 
+**Paths between villages** (#2917; owner, 8 November 2026: "All four as recommended"). A path is kind `path`: a track the
+1946 map draws between two places of `localities_1948.yaml` or `settlements_1948.yaml` that no road or railway joins.
+- **The symbol.** The legend of Sheet 2 has three relevant lines. The **Track** is a fine dotted line. The **Other
+  roads** are a double black line, solid for all-weather and dashed for dry-weather. The **Metalled road** is red. A
+  path follows the Track alone.
+  - The legend was read on Wikimedia Commons, `File:Survey of Palestine, Palestine 02 (FL33250066 2367883).jpg` (Eran
+    Laor Cartographic Collection). That copy is the 1945 compilation ("Road revision to July 1944"), reprinted in January
+    1949. The 1946 tiles have no margins, so their own legend cannot be read.
+- **The trace.** `routes_1948.py`'s `path` symbol is `path_dots`, the Track's dots alone:
+  - the map's brown-black ink: red over blue by more than 25, and red over green by less than 65. That leaves out a
+    wadi's blue-grey dashes and a red road;
+  - not on or beside a stroke (a straight dark run of 5 px): a dash of an Other road, a line, a letter or a village
+    circle. Dots never make one, however close they are;
+  - less the grid: dots with 20 more along their row or column within 81 px (1.3 km);
+  - joined into a line by a 7 px dilation.
+  - Off the dots a pixel costs 4, not 40. A dotted line has a gap at every faint dot, and at 40 the trace ran a 4 km
+    loop on unbroken dots rather than bridge them on the direct 1.8 km track from Salbit to Imwas.
+  - The mask also picks up parts of the plain's dry-weather roads, whose dashes are as short as dots there. So every
+    path was checked by eye on its preview (`--preview`).
+  - Where the trace left its track, a waypoint on the track itself holds it there. That waypoint is a point read off
+    the map and cited to it ("the track south of Salbit (1946 map)").
+- **Quality.** A path's bar is 60% on its symbol, against 85% for a road (`test_each_trace_follows_its_symbol`). The
+  dotted line has a gap at every faint dot, every name over it and every village circle. The six are at 67-100%, and the
+  longest bridged gap is 762 m (bar 800 m).
+- **Dates.** From 1946, the map's date, with no `to`: no source read gives a track's use in 1948 or an end (owner,
+  8 November 2026).
+
+| Path | By | Length |
+|---|---|---|
+| Al-Tira (Ramle)–Rantis | | 7.9 km |
+| Bayt Nabala–Rantis | | 8.2 km |
+| Rantis–Qibya | | 5.7 km |
+| Al-Qubab–Imwas | | 4.4 km |
+| Imwas–Yalo | | 3.0 km |
+| Innaba–Imwas | Bayt Shanna, Salbit | 9.0 km |
+
+In the gameplay03 view, these are all the dotted tracks between two listed places that no road joins. All six are in
+the Lydda–Latrun foothills. The coastal plain joins its villages by dry-weather roads, which are not tracks. Whether
+those count as paths is the owner's question on #2917.
+
 **Left out, on purpose.**
 - The Afula–Nablus–Tulkarm branch: its service ended in 1932 and 1938 (Palestine Railways article). Freight on the
   Tulkarm–Nablus part ended in July 1946 (Jezreel Valley railway).
@@ -162,6 +202,7 @@ measurement in `docs/units.md`:
 | Sleeper spacing | about 4 px | 150 m |
 | Dirt road | about 8 px | 420 m (its pale core, inside the soft verges, about 280 m) |
 | Burma Road | (not in the promo) | 200 m |
+| Path between villages (#2917) | (not in the promo) | 120 m (the owner's 100-140 m), about 3 px at gameplay03 |
 | Train (six cars) | about 250 px, about 8.8 km | 8.8 km: locomotive, tender and four coaches at 80x real length and 1.5x stockier across (at a uniform 65x the first checkpoint drew a thin dark line) |
 
 **Jerusalem's Old City** (#319). The kits draw the Old City as a walled square 4 km across
@@ -303,7 +344,16 @@ none crosses the real walled city, but near the city they fall inside the drawn 
 - **A station correction:** the line's Tel Aviv station of 1920–1970 was Beit Hadar, "the original Tel Aviv South
   station" (Jaffa–Jerusalem railway). The later Tel Aviv South opened when Beit Hadar closed.
 
-**Toggles.** `routes` (the ribbons) and `train` (when there is one) are visual toggles, so `?vprofile` prices each one.
+**Toggles.** `routes` (the ribbons), `paths` (the paths' ribbons, #2917) and `train` (when there is one) are visual
+toggles, so `?vprofile` prices each one.
+
+**Paths** (#2917) draw with their own material, `Resources/Routes/Path.mat` (`_Kind` 2, queue 3002, opacity 0.75):
+- trodden dust, a little darker and warmer than a road, with no ruts or verges and a wide soft edge;
+- they fade out as a pixel grows from 50 to 90 m, rather than darkening as a road does;
+- a road's core draws over a path's at a crossing, through the stencil bit;
+- no vehicle runs on them (`RoadVehicles.Plans` name their routes);
+- the kits and the unit tokens do not keep off them (`KitRoutes` and `UnitRoutes` leave them out). A footpath runs
+  between a village's houses and trees, and no house, tree or token moved for them.
 
 **Runtime form** (issue #321). Boot reads the traced lines from `content/map/route_paths_1948.tsv` instead of parsing
 the YAML (about 125 ms at `--cpu 4`), as the localities do since #291.

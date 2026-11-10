@@ -12,7 +12,9 @@ waypoints the line is the least-cost path over the scanned map, where the cost i
   road   the red main road;
   track  any dark line (cart tracks, footpaths, the thin narrow-gauge railway symbol): the 1948 Burma Road, which the
          1946 map cannot show as a road, and the 1,050 mm lines (a route's `trace` names the symbol when it is not its
-         kind's).
+         kind's);
+  path   the map's Track symbol alone, a fine dotted line (the legend of Sheet 2): a path between villages (#2917),
+         which must not slip onto the double lines of the Other roads beside it, nor onto the grid.
 A route with `trace: straight` is not traced: its line is its waypoints joined by straight lines, for a road the map
 does not show and no source gives the line of (the 1950 Tel Aviv-Netanya road, owner, 18 October 2026, #786). It reads
 no tile, none of it is on a symbol (on_symbol 0), and its max_gap_m is its whole length.
@@ -57,7 +59,7 @@ TILE_ZOOM = 13
 TILE_CACHE = Path(os.environ.get("STATECRAFT_TILE_CACHE", ROOT / "tools" / ".cache" / "pal250k-1946"))
 USER_AGENT = "statecraft-israel-routes/1.0 (+https://github.com/eyalgolan/statecraft-israel)"
 
-KINDS = ("rail", "road", "track")
+KINDS = ("rail", "road", "track", "path")
 TRACES = KINDS + ("straight",)   # what `trace` may name: a kind's symbol, or straight lines between the waypoints
 SNAP_M = 1500.0           # a waypoint (a town's or a station's coordinates) snaps to its symbol this close
 WINDOW_MARGIN_M = 3000.0  # the search window around two waypoints: their box grown by this (or 35% of their distance)
@@ -72,6 +74,21 @@ RESAMPLE_M = 40.0         # spacing the chain is resampled to before the Gaussia
 SIMPLIFY_M = 35.0         # Douglas-Peucker tolerance of the written line: about two map pixels, a tenth of a road's width
 OFF_SYMBOL_COST = 40.0    # cost of a pixel off the symbol (on it: 1), so a gap in the scan of up to ~40 px is bridged
 THIN_RAIL_COST = 4.0      # a rail trace's cost on a thin dark line (cost_raster)
+PATH_OFF_SYMBOL_COST = 4.0   # a path's cost off its dots: a dotted line has a gap every few pixels where a dot is faint
+                          # or missing, and at OFF_SYMBOL_COST the trace ran a 4 km loop on unbroken dots to save
+                          # bridging them on the direct 1.8 km track (Salbit to Imwas)
+STROKE_PX = 5             # a dark run this long in a straight line (along a row, a column or a diagonal) is a stroke:
+                          # a dash of an Other road, a line, a letter, a village's circle; a Track's dots (about 2 px,
+                          # 1-4 px apart) never make one, however close
+DOT_INK_RB, DOT_INK_RG = 25, 65   # the map's black is a brown-black (red over blue by about 60-100, over green by about
+                          # 30, or 50-60 over the hills' orange tint): a wadi's blue-grey dashes (blue at or over red)
+                          # and a red road (red over green by 85 and more) are not dots; a road's dark edge is a stroke
+DOT_INK_MAX = 135         # a Track's dots print lighter than the lettering in places (a brown of about 110-130 where
+                          # the dark lines are under 110), so a dot is ink up to this; strokes are the dark lines alone
+GRID_RUN_PX = 81          # the grid is a fine dashed line along the sheet's axes, 1-2 px wide, which the dot test also
+GRID_MIN_DOTS = 20        # passes: dots with this many more along their row or column, within this run (1.3 km), are
+                          # the grid; a track wanders across rows and columns, so it never has that many in one
+DOT_JOIN_PX = 7           # the dots are joined into a line by a dilation this wide (they are 5-8 px apart)
 STATUSES = ("draft", "fact-checked")
 
 
@@ -127,6 +144,56 @@ def erode(mask: np.ndarray, k: int) -> np.ndarray:
     return _shift_reduce(mask, k, np.logical_and)
 
 
+def _box_sum(a: np.ndarray, k: int, axis: int | None = None) -> np.ndarray:
+    """The sum of `a` over a k-long window centred on each pixel: along `axis`, or over a k x k square when it is None."""
+    h = k // 2
+    if axis is None:
+        return _box_sum(_box_sum(a, k, 0), k, 1)
+    pad = [(0, 0), (0, 0)]
+    pad[axis] = (h + 1, h)
+    q = np.pad(a, pad).cumsum(axis)
+    return q[k:] - q[:-k] if axis == 0 else q[:, k:] - q[:, :-k]
+
+
+def _dark(rgb: np.ndarray) -> np.ndarray:
+    c = rgb.astype(np.int16)
+    r, g, b = c[..., 0], c[..., 1], c[..., 2]
+    return (np.maximum(np.maximum(r, g), b) < 110) & ((b - r) < 25)
+
+
+def _shift(a: np.ndarray, dy: int, dx: int) -> np.ndarray:
+    """`a` moved by (dy, dx) pixels, False where nothing moved in."""
+    h, w = a.shape
+    out = np.zeros_like(a)
+    out[max(dy, 0):h + min(dy, 0), max(dx, 0):w + min(dx, 0)] = a[max(-dy, 0):h - max(dy, 0), max(-dx, 0):w - max(dx, 0)]
+    return out
+
+
+def strokes(dark: np.ndarray, n: int = STROKE_PX) -> np.ndarray:
+    """The dark pixels on a straight run of at least n dark pixels along a row, a column or a diagonal."""
+    out = np.zeros_like(dark)
+    for dy, dx in ((0, 1), (1, 0), (1, 1), (1, -1)):
+        run = dark.copy()
+        for k in range(1, n):            # run: the pixel and the n - 1 after it are all dark
+            run &= _shift(dark, -k * dy, -k * dx)
+        for k in range(n):               # every pixel of such a run
+            out |= _shift(run, k * dy, k * dx)
+    return out
+
+
+def path_dots(rgb: np.ndarray) -> np.ndarray:
+    """The dots of the map's Track symbol (#2917): pixels of the map's brown-black ink (DOT_INK_RB, DOT_INK_RG) not on
+    or beside a stroke (strokes: a dash, a line, a letter, a circle), less the grid (GRID_RUN_PX, GRID_MIN_DOTS). Plain
+    numpy, as the other masks."""
+    c = rgb.astype(np.int16)
+    r, g, b = c[..., 0], c[..., 1], c[..., 2]
+    ink = (np.maximum(np.maximum(r, g), b) < DOT_INK_MAX) & ((r - b) > DOT_INK_RB) & ((r - g) < DOT_INK_RG)
+    dots = ink & ~dilate(strokes(_dark(rgb)), 3)
+    n = dots.astype(np.int32)
+    grid = (_box_sum(n, GRID_RUN_PX, 0) >= GRID_MIN_DOTS) | (_box_sum(n, GRID_RUN_PX, 1) >= GRID_MIN_DOTS)
+    return dots & ~grid
+
+
 def symbol_mask(rgb: np.ndarray, kind: str) -> np.ndarray:
     """Where the map shows a route of this kind (RGB uint8 image -> bool). Tuned on the 1946 sheets:
     road: the red fill of a main road: red over green by more than 90 with green and blue within 50 of each other (the
@@ -135,14 +202,17 @@ def symbol_mask(rgb: np.ndarray, kind: str) -> np.ndarray:
           Galilee), red over green by more than 65 with green and blue within 35 (the orange tint's are 60+ apart);
     rail: dark, not blue, strokes at least about 4 px thick once the white dashes inside the line are closed, which
           drops the thin double-dashed cart tracks, hairlines and road casings (lettering stays, but it is short);
-    track: any dark, not blue, pixel, dilated by one so a dashed track reads as continuous."""
+    track: any dark, not blue, pixel, dilated by one so a dashed track reads as continuous;
+    path:  the Track symbol's dots (path_dots), joined into a line by a DOT_JOIN_PX dilation."""
     if kind not in KINDS:
         raise ValueError(f"unknown kind {kind!r}")
     c = rgb.astype(np.int16)
     r, g, b = c[..., 0], c[..., 1], c[..., 2]
+    if kind == "path":
+        return dilate(path_dots(rgb), DOT_JOIN_PX)
     if kind == "road":
         return (((r - g) > 90) & (np.abs(g - b) < 50) & (r > 130)) | (((r - g) > 65) & (np.abs(g - b) < 35) & (r > 125))
-    dark = (np.maximum(np.maximum(r, g), b) < 110) & ((b - r) < 25)
+    dark = _dark(rgb)
     if kind == "track":
         return dilate(dark, 3)
     closed = erode(dilate(dark, 5), 5)
@@ -150,10 +220,10 @@ def symbol_mask(rgb: np.ndarray, kind: str) -> np.ndarray:
 
 
 def cost_raster(rgb: np.ndarray, kind: str) -> np.ndarray:
-    """1 on the route's symbol, OFF_SYMBOL_COST off it. For rail, any dark pixel costs THIN_RAIL_COST: the line is drawn
+    """1 on the route's symbol, OFF_SYMBOL_COST off it (a path PATH_OFF_SYMBOL_COST). For rail, any dark pixel costs THIN_RAIL_COST: the line is drawn
     thinner round tight curves (the Sorek canyon), where the thick-stroke mask breaks up and a cheaper chord cut across
     the meanders."""
-    cost = np.where(symbol_mask(rgb, kind), 1.0, OFF_SYMBOL_COST)
+    cost = np.where(symbol_mask(rgb, kind), 1.0, PATH_OFF_SYMBOL_COST if kind == "path" else OFF_SYMBOL_COST)
     if kind == "rail":
         cost = np.where((cost > 1.0) & symbol_mask(rgb, "track"), THIN_RAIL_COST, cost)
     return cost

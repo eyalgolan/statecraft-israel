@@ -72,8 +72,8 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>Bump it, with tools/route_paths_bake.py's VERSION, when the runtime file's layout or its reading
         /// (ParseRuntime, RuntimeRows) changes; tools/tests/test_route_paths_bake.py pins a fingerprint of that code.</summary>
         public const int RuntimeVersion = 4;   // 2: the body_check row (review of #547); 3: the service rows (#668); 4: segments (#792)
-        public const string Rail = "rail", Road = "road", Track = "track";
-        static readonly HashSet<string> Kinds = new HashSet<string> { Rail, Road, Track };
+        public const string Rail = "rail", Road = "road", Track = "track", Path = "path";
+        static readonly HashSet<string> Kinds = new HashSet<string> { Rail, Road, Track, Path };
         static readonly Regex IdRule = new Regex(@"^[a-z][a-z0-9_]*\z");
         static readonly Regex DateRule = new Regex(@"^\d{4}(-\d{2}-\d{2})?\z");
 

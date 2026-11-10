@@ -81,9 +81,11 @@ def test_no_segment_jumps():
 
 
 def test_each_trace_follows_its_symbol():
-    """At least 85% of every route's traced pixels lie on its own map symbol (the rest: names over the road, towns)."""
+    """At least 85% of every route's traced pixels lie on its own map symbol (the rest: names over the road, towns). A
+    path's dotted Track has a gap at every faint dot, every name printed over it and every village circle, so its bar is
+    60% (#2917): each path was also checked by eye on its preview (routes_1948.py --preview)."""
     for r in (r for r in PATHS if r["id"] not in STRAIGHT):
-        assert r["on_symbol"] >= 0.85, (r["id"], r["on_symbol"])
+        assert r["on_symbol"] >= (0.6 if r["kind"] == "path" else 0.85), (r["id"], r["on_symbol"])
 
 
 def test_display_windows():
@@ -194,6 +196,55 @@ def test_symbol_masks_on_the_map_colours():
     img[30:32, :] = 25
     m = rt.symbol_mask(img, "rail")
     assert m[12, 30] and not m[31, 30]
+
+
+INK = (75, 60, 31)   # the map's brown-black ink, as a track's dot reads on the tiles
+
+
+def _dotted(img, rows, cols, every=6):
+    """Draws the 1946 map's Track symbol (2 x 2 px dots, `every` px apart) at the given pixel rows and columns."""
+    for r, c in list(zip(rows, cols))[::every]:
+        img[r:r + 2, c:c + 2] = INK
+
+
+def test_the_path_mask_keeps_the_dotted_track_and_drops_the_lines():
+    # The legend (Sheet 2): Track is a fine dotted line; Other roads a double line, solid (all weather) or dashed (dry
+    # weather); the grid a fine line along the sheet's axes. A path follows the Track alone (#2917).
+    img = np.full((120, 160, 3), 250, np.uint8)
+    cols = np.arange(10, 150)
+    _dotted(img, 20 + cols // 10, cols)                       # a dotted track, gently sloping
+    img[50:52, 10:150] = INK                                  # a solid line (a road's casing)
+    for c in range(10, 150, 10):                              # a dry-weather road: two dashed lines 4 px apart
+        img[80:82, c:c + 6] = INK
+        img[85:87, c:c + 6] = INK
+    for c in range(0, 160, 4):                                # the grid: a fine dashed line along a row
+        img[110:112, c:c + 2] = INK
+    for c in range(10, 150, 8):                               # a wadi's blue-grey dashes
+        img[66:68, c:c + 3] = (70, 80, 88)
+    _dotted(img, 95 + cols // 15, cols)                       # a track nearly along a row: kept
+    m = rt.path_dots(img)
+    assert m[21:24, 30:40].any() and m[30:33, 110:120].any() and m[95:106, 20:140].sum() >= 40
+    assert not m[65:69].any()
+    assert not m[49:53].any() and not m[79:88].any() and not m[109:112].any()
+
+
+def test_validate_accepts_a_path():
+    doc = {"routes": [dict(ROUTES["routes"][0], id="a_path", kind="path")]}
+    doc["routes"][0].pop("service", None)
+    rt.validate_routes(doc, BOUNDS)
+
+
+def test_a_path_trace_follows_the_dots_not_the_road_beside_them():
+    pytest.importorskip("skimage")
+    img = np.full((120, 200, 3), (250, 230, 180), np.uint8)
+    cols = np.arange(0, 200)
+    rr = (60 + 30 * np.sin(np.linspace(0, 3, 200))).astype(int)
+    _dotted(img, rr, cols, every=5)
+    img[58:60, :] = INK                                       # a dry-weather road's two lines, straight across
+    img[63:65, :] = INK
+    cost = rt.cost_raster(img, "path")
+    path = rt.least_cost_path(cost, (rr[0], 0), (rr[-1], 199))
+    assert max(abs(r - rr[c]) for r, c in path) <= 5
 
 
 def test_a_trace_follows_a_drawn_road():

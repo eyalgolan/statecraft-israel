@@ -86,7 +86,7 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>Bump it when RouteLayer.Geometry's rule changes (the constants are checked on their own), so CI fails a
         /// bake made by the old rule. tools/tests/test_route_ribbon_bake.py pins it with a fingerprint of that code
         /// (RouteLayer.Plan, Derive and what they call, and Bake below) and fails on an edit until both are re-pinned.</summary>
-        public const int Version = 4;   // 2: roads cut at the Old City's walls (RouteLayer.Drawn, #319); 3: the railway too; 4: segments (#792)
+        public const int Version = 5;   // 2: roads cut at the Old City's walls (RouteLayer.Drawn, #319); 3: the railway too; 4: segments (#792); 5: paths (#2917)
         const int Magic = 0x31524353;   // "SCR1"
 
         /// <summary>What the ribbons were made from, as the map read it.</summary>
@@ -111,7 +111,7 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>The constants the ribbons depend on, in the header's order (the Python test reads the same names).</summary>
         static float[] Floats => new[]
         {
-            RouteLayer.RailWidthM, RouteLayer.RoadWidthM, RouteLayer.TrackWidthM, RouteLayer.StepM, RouteLayer.ClearanceM,
+            RouteLayer.RailWidthM, RouteLayer.RoadWidthM, RouteLayer.TrackWidthM, RouteLayer.PathWidthM, RouteLayer.StepM, RouteLayer.ClearanceM,
             RouteLayer.FallToleranceM, RouteLayer.RiseToleranceM, RouteLayer.MinWidthShare, RouteLayer.HalfWidthStepShare,
             RouteLayer.RailSpanShare, RouteLayer.RailClearanceM, MapBuilder.VerticalExaggeration,
         };
