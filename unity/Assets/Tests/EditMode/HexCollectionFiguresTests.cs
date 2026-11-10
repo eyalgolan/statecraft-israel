@@ -51,6 +51,27 @@ public sealed class HexCollectionFiguresTests
         Assert.That(changes, Is.EqualTo(1));
     }
 
+    // The five civilian hooks (#1955; owner, 30 October 2026: "Yes to both"): each tile still asks for its hook, and each
+    // hook streams Tal Heuberger's shipped Collection original of the same id, far, from the people's bundle.
+    [TestCase("maabara_camp", "figure-elder-immigrant-v1")]
+    [TestCase("maabara_camp", "figure-immigrant-woman-v1")]
+    [TestCase("maabara_camp", "figure-immigrant-child-v1")]
+    [TestCase("maabara_camp", "figure-yemenite-immigrant-v1")]
+    [TestCase("kibbutz_negev", "figure-kibbutz-woman-v1")]
+    public void CivilianHookStreamsItsSameIdOriginal(string tile, string figure)
+    {
+        string id = "proto:" + figure;
+        var ctx = new HexTileContext(2, -1, new FlatSurface(), 1948);
+        HexPrototypes.Create(tile).Build(ctx);
+        Assert.That(ctx.Placements.Count(p => p.Model == id), Is.GreaterThan(0), tile + " places " + id);
+        Assert.That(HexModels.FigureAliases, Has.Exactly(1).EqualTo((id, figure, "far")));
+        Assert.That(HexCollectionFigures.Streams(id), Is.True, id);
+        using var models = new HexCollectionFigures(() => {});
+        models.Prefab(id);
+        Assert.That(pending.Select(r => (r.id, r.detail)), Is.EqualTo(new[] { (figure, CollectionDetail.Far) }));
+        Assert.That(CollectionCatalog.BundleOf(figure), Is.EqualTo(CollectionCatalog.People));
+    }
+
     [Test] public void FailureStaysOnFallbackAndDoesNotRequestEveryFrame()
     {
         using var models = new HexCollectionFigures(() => Assert.Fail("failure does not need a visual rebuild"));

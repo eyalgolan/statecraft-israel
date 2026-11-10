@@ -112,6 +112,13 @@ namespace Statecraft.HexTiles
             // protos measure whole and keep drawing.
             ("proto:figure-sheep-lite-1948", "figure-sheep-idle-1948-v1", "far"),
             ("proto:figure-donkey-lite-1948", "figure-donkey-1948-v1", "far"),
+            // The five civilian hooks of the ma'abara and Negev kibbutz tiles (#1955; owner, 30 October 2026: "Yes to both"):
+            // Tal Heuberger's shipped Collection originals with the same ids, at the far level (one -stream prefab for both).
+            ("proto:figure-elder-immigrant-v1", "figure-elder-immigrant-v1", "far"),
+            ("proto:figure-immigrant-woman-v1", "figure-immigrant-woman-v1", "far"),
+            ("proto:figure-immigrant-child-v1", "figure-immigrant-child-v1", "far"),
+            ("proto:figure-yemenite-immigrant-v1", "figure-yemenite-immigrant-v1", "far"),
+            ("proto:figure-kibbutz-woman-v1", "figure-kibbutz-woman-v1", "far"),
         };
 
         /// <summary>Off draws the proto figures again (a before shot, or a test of the fallback); call <see cref="Clear"/>
