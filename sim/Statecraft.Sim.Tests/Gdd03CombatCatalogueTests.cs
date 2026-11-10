@@ -107,7 +107,8 @@ public class Gdd03CombatCatalogueTests
             Assert.Equal(1.50m, table.ArmouredFactor); Assert.Equal(1m, table.ArtilleryFactor);
             Assert.Equal(2, table.ArtilleryRange);
             Assert.Equal("Agreed", table.Sources["combat.draw_count"].Basis);
-            foreach (var source in table.Sources.Where(p => p.Key != "combat.draw_count"))
+            Assert.Equal("Agreed", table.Sources["combat.artillery_range"].Basis);   // O5, owner-approved 1 November 2026, #1668
+            foreach (var source in table.Sources.Where(p => p.Key != "combat.draw_count" && p.Key != "combat.artillery_range"))
                 Assert.Equal("Default", source.Value.Basis);
             foreach (var source in table.Sources.Values) Assert.Contains("605277df", source.Note);
             Assert.Throws<ArgumentOutOfRangeException>(() => table.Outcome(1m, -1));
@@ -139,6 +140,22 @@ public class Gdd03CombatCatalogueTests
     {
         var c = Synthetic(); At(c, "combat.draw_count").Values[0] = 2;
         Assert.Throws<ContentException>(() => Gdd03BalanceCatalogue.ReadCombatCatalogue(c));
+    }
+
+    // R-COMBAT-007: combat.artillery_range is Agreed since the owner's O5 answer (1 November 2026, #1668: "2 hexes.") and
+    // the #2918 C2 audit. A Default row with the same value is refused, naming the exact file and field.
+    [Theory, InlineData("he-IL"), InlineData("en-US")]
+    public void DefaultArtilleryRangeRefuses(string culture)
+    {
+        InCulture(culture, () => {
+            var c = Synthetic(); var v = At(c, "combat.artillery_range");
+            v.Basis = "Default";
+            Assert.Equal(new[] { 2m }, v.Values);
+            var error = Assert.Throws<ContentException>(() => Gdd03BalanceCatalogue.ReadCombatCatalogue(c));
+            Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
+            Assert.Equal("values.combat.artillery_range", error.Field);
+            Assert.Contains("requires its catalogue basis Agreed", error.Message);
+        });
     }
 
     [Theory, InlineData("combat.armoured_factor"), InlineData("combat.artillery_factor"), InlineData("combat.artillery_range")]

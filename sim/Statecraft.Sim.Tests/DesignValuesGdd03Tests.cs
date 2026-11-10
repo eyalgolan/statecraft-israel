@@ -229,6 +229,7 @@ public partial class DesignValuesTests
     [InlineData("military.active_money", "Agreed", "0.05", Keep, Oct30)]
     [InlineData("prisoner.return_points", "Agreed", "10", "\"10 per unit, main (Recommended)\"", Nov1)]
     [InlineData("military.fortify_bonus", "Agreed", "25", "owner-approved answer O1 (1 November 2026, #1668 issuecomment-6553884547): +25%, one turn to set", Nov1)]
+    [InlineData("combat.artillery_range", "Agreed", "2", "owner-approved answer O5 (1 November 2026, https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6553884547): \"2 hexes.\"", Nov1)]
     [InlineData("transit.cost", "Default", "0.50", PostMvp, Nov1)]
     [InlineData("reception.queue_cohesion_loss", "Default", "1", PostMvp, Nov1)]
     [InlineData("housing.max_deterioration", "Default", "10", "declined by the owner", Oct30)]
