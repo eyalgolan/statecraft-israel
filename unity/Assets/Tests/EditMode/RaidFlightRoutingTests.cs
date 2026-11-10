@@ -192,8 +192,9 @@ public class RaidFlightRoutingTests
         Assert.IsFalse(root.Advisor!.IsOpen);
     }
 
-    [Test]
-    public void WithoutVideoAsInTheAutomatedRunsTheCardShowsWithoutTheFlight()
+    // The resolved display is read after two frames: a synchronous test reads it before the panel has resolved any style.
+    [UnityTest]
+    public IEnumerator WithoutVideoAsInTheAutomatedRunsTheCardShowsWithoutTheFlight()
     {
         CardVideo.ForceOffForTests = true;                               // as the smoke, golden and shot runs boot (reset in Clean)
         var flight = new FakeFlight();
@@ -201,17 +202,19 @@ public class RaidFlightRoutingTests
         UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         Assert.AreEqual(0, flight.Plays, "no flight with video off");
         Assert.IsFalse(FlightOpen);
+        yield return null; yield return null;
         Assert.AreEqual(DisplayStyle.None, Layer.resolvedStyle.display);
     }
 
-    [Test]
-    public void TheToolsBeginNeverFliesIt()
+    [UnityTest]
+    public IEnumerator TheToolsBeginNeverFliesIt()
     {
         var flight = new FakeFlight();
         var root = Open(flight);
         root.Begin(Inputs, 0);                                           // the tools' Begin: no start screen
-        Assert.AreEqual(0, flight.Plays);
+        Assert.AreEqual(0, flight.Plays, "the open start screen going away with the old session plays no intro (#3003)");
         Assert.IsFalse(FlightOpen);
+        yield return null; yield return null;
         Assert.AreEqual(DisplayStyle.None, Layer.resolvedStyle.display);
     }
 

@@ -130,6 +130,9 @@ namespace Statecraft.Game.UI
         /// <summary>Whether the last Begin was a smoke run: the language switch then leaves the UI as it is, so the golden-seed
         /// game never gets the autosave and New Game a normal Begin gives (SwitchLanguage).</summary>
         bool smokeRun;
+        /// <summary>True while Shutdown disposes the presenters: the start screen's Dispose reports it closed, which must not
+        /// play a New game's intro (the raid flight, card or advisors) for a session that is going away (#3003).</summary>
+        bool shuttingDown;
 
         public SimBridge? Bridge { get; private set; }
         /// <summary>Where the autosave lives; null (the default) = SaveStore.ForPlatform(). Tests set a temporary folder.</summary>
@@ -1130,7 +1133,7 @@ namespace Statecraft.Game.UI
         /// first and shows the card when it ends or is skipped.</summary>
         void PlayNewGameIntro()
         {
-            if (raidFlight?.IsOpen == true || raid?.IsOpen == true) return;
+            if (shuttingDown || raidFlight?.IsOpen == true || raid?.IsOpen == true) return;
             if (raidFlight != null) raidFlight.Show();
             else if (raid != null) raid.Show();
             else advisor?.NewGame();
@@ -1142,6 +1145,7 @@ namespace Statecraft.Game.UI
         void Shutdown(bool keepCompanionPage = false)
         {
             StopAllCoroutines();
+            shuttingDown = true;
             // The card first: disposing the start screen uncovers the decision layer, and a card still waiting for it would
             // then render and load the photo catalog for a game that is going away (#592; since the GDD cutover a new game's
             // card waits under the screen, so New Game's Begin would load it).
@@ -1158,6 +1162,7 @@ namespace Statecraft.Game.UI
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
+            shuttingDown = false;
         }
 
         /// <summary>Draws the placements only when State.Placements with the built city projects (PlacementLayer.Drawn, #1123)
