@@ -240,11 +240,11 @@ and disabled men, were trucked to the Gaza lines and pushed across. Of the rough
 later sent to prisoner-of-war camps and others to Egyptian-held Majdal or Gaza. When Ben-Gurion visited on 30
 October, the Arab inhabitants were gone (p. 467). [V]
 
-**Population baseline.** 5,570 in the "Beersheba" row on 1 April 1945. The repo file calls the source row garbled
-and 5,570 its most likely reading. An AI agent read the scan on 11 November 2026 (*Village Statistics 1945*, printed
-p. 33): the row prints the total as "5.570", and its parts add up to it (Moslems 5,360, Christians 200, Others 10);
-see `research_notes/Map/village-statistics-1945-scan-check.md`. No person has checked that reading yet, and the repo
-row stays `owner-verify`. [W] [GAP]
+**Population baseline.** 5,570 in the "Beersheba" row on 1 April 1945. Before the scan was read, the repo file called
+the source row garbled and 5,570 its most likely reading. An AI agent read the scan on 11 November 2026 (*Village
+Statistics 1945*, printed p. 33): the row prints the total as "5.570", and its parts add up to it (Moslems 5,360,
+Christians 200, Others 10); see `research_notes/Map/village-statistics-1945-scan-check.md`. No person has checked that
+reading yet, and the repo row stays `owner-verify`. [W] [GAP]
 
 **Existing cards.** `operation_yoav.yaml` records Beersheba's capture in its sourced comments; its text does not name
 the town. `first_new_yishuv.yaml` mentions the Beersheba bedouin in a comment.
@@ -262,13 +262,14 @@ main body counts.
 | Lydda | Operation Dani, 9-18 July (IDF) or 9-17 July (Knesset); entered 11 July, police fort 13 July | Morris pp. 423-435; Knesset; IDF Danny; Munayyer/Khalidi pp. 80-98 | High for the operation and the residents' outcome; medium for one capture day | Capture day [C]; deaths on the march [GAP] |
 | Ramle | Operation Dani; surrendered and entered 12 July 1948 | Morris pp. 425-432; IDF Danny; Knesset; Munayyer/Khalidi p. 80 | High | Count of those who remained [GAP] |
 | Gaza | Egyptian-held from 15 May (or 19 May) 1948 through the 1949 armistice; not taken by Israel | Phase 5 note (Dupuy, Tal); Morris pp. 467, 471-472; IDF Archives Horev; Knesset; 1949 armistice | High | No Israeli capture or captured-resident outcome [GAP] |
-| Beersheba | Egyptian control from 17, 19 or 20 May; Israeli capture 21 October 1948 | Phase 5 note (Dupuy, O'Ballance, Tal); Knesset; IDF Yoav; Morris pp. 466-467 | High for 21 October and the residents' outcome; low for one May date | May date [C]; 1945 baseline scan [GAP] |
+| Beersheba | Egyptian control from 17, 19 or 20 May; Israeli capture 21 October 1948 | Phase 5 note (Dupuy, O'Ballance, Tal); Knesset; IDF Yoav; Morris pp. 466-467 | High for 21 October and the residents' outcome; low for one May date | May date [C]; 1945 baseline: scan read by an agent, not yet by a person [GAP] |
 
 ## Sources not reached or not usable
 
 - Khalidi, *All That Remains*: only the bibliographic record was reachable. It supports no claim here. [GAP]
-- The Government of Palestine's *Village Statistics, April 1945* scan was not checked; all seven baselines stay the
-  repo's `owner-verify` transcription. [GAP]
+- The Government of Palestine's *Village Statistics, April 1945* scan was read by an AI agent on 11 November 2026: all
+  seven baselines match it (`research_notes/Map/village-statistics-1945-scan-check.md`). No person has checked that
+  reading, so all seven stay the repo's `owner-verify` transcription. [GAP]
 - The 13 May 1948 Jaffa agreement and instructions were not read in the original. [GAP]
 
 ## Extension after the owner's rulings: option (a) rows (DRAFT for the owner's sensitivity review)
@@ -359,19 +360,20 @@ The [GAP] points below are the ones this note leaves open, each with the line wh
 is not one. Line numbers are for this file as it now stands.
 
 - **Jaffa, the 13 May agreement:** the agreement itself was not read; its terms here are Morris's account (line 94; also
-  lines 256 and 269).
+  lines 259 and 273).
 - **Jaffa, start-of-game control:** Jaffa falls before the 15 May 1948 start and #569 makes it part of Tel Aviv-Yafo, so
-  its control at the start is a question for the owner (lines 94, 256). The owner kept Jaffa on the list; how it can be a
-  target in play is still open for the owner (line 347).
-- **Acre:** the surrender spans the night of 17-18 May; if a data row needs one day, the owner chooses (lines 123, 257).
-- **Nazareth:** the post-capture figures mix residents and refugees; they are not a resident count (lines 143, 258).
-- **Lydda, capture day:** one capture day needs a choice between the versions in the Lydda section (line 177; also line 337).
-- **Lydda, the march:** no supported count of deaths on the march was found (lines 177, 259).
-- **Ramle:** the sources read give no separate count for Ramle of those who remained (lines 201, 260).
+  its control at the start is a question for the owner (lines 94, 259). The owner kept Jaffa on the list; how it can be a
+  target in play is still open for the owner (line 351).
+- **Acre:** the surrender spans the night of 17-18 May; if a data row needs one day, the owner chooses (lines 123, 260).
+- **Nazareth:** the post-capture figures mix residents and refugees; they are not a resident count (lines 143, 261).
+- **Lydda, capture day:** one capture day needs a choice between the versions in the Lydda section (line 177; also line 341).
+- **Lydda, the march:** no supported count of deaths on the march was found (lines 177, 262).
+- **Ramle:** the sources read give no separate count for Ramle of those who remained (lines 201, 263).
 - **Gaza:** Gaza did not change hands in 1947-1949, so there is no Israeli capture date or captured-resident outcome for
-  it (lines 224, 261). The owner's ruling takes Gaza off the list (line 348).
+  it (lines 224, 264). The owner's ruling takes Gaza off the list (line 352).
 - **Beersheba, May date:** the May change of control is 17, 19 or 20 May, depending on whether the advance guard or the
-  main body counts (line 249).
-- **Beersheba, 1945 baseline:** 5,570 is the repo file's most likely reading of a garbled row, unchecked against the scan
-  (lines 244, 262). The *Village Statistics* scan was not checked for any of the seven baselines (line 268).
-- **Khalidi, *All That Remains*:** only the bibliographic record was reachable; it supports no claim here (lines 58, 266).
+  main body counts (line 252).
+- **Beersheba, 1945 baseline:** the scan prints the total as "5.570" and its parts add up to it, but only an AI agent has
+  read it, not a person (lines 243-247, 265). The other six baselines match the scan in the same agent read, with no
+  person's check either (lines 270-272).
+- **Khalidi, *All That Remains*:** only the bibliographic record was reachable; it supports no claim here (lines 58, 269).
