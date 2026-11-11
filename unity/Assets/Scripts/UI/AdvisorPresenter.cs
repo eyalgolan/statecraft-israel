@@ -199,11 +199,12 @@ namespace Statecraft.Game.UI
         /// Covered(hudRoot) alone misses Settings, and Next's focus would steal the screen's own (#1915).</summary>
         bool ScreenOpen() => Covered(hudRoot) || hudRoot.ClassListContains(ScreenNav.ScreenOpenClass);
 
-        /// <summary>A modal layer is open (spec 4.2): the start screen, the opening (#530), the raid card on New game and the raid flight before it (#3000), the open decision card, the capture
+        /// <summary>A modal layer is open (spec 4.2): the start screen, the opening (#530), the raid card on New game, the raid flight before it (#3000) and the invasion card after it (#3142), the open decision card, the capture
         /// dialog, the turn report, an outcome clip, the end screen; and, on the two-row HUD, any side screen (it takes the full width).</summary>
         public static bool Covered(VisualElement hudRoot) =>
             hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(OpeningPresenter.OpenClass)
             || hudRoot.ClassListContains(RaidCardPresenter.OpenClass) || hudRoot.ClassListContains(RaidFlightPresenter.OpenClass)
+            || hudRoot.ClassListContains(InvasionCardPresenter.OpenClass)
             || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
             || hudRoot.ClassListContains(CaptureDialogPresenter.OpenClass) || hudRoot.ClassListContains(TurnReportPresenter.OpenClass)
             || hudRoot.ClassListContains(OutcomePresenter.OpenClass) || hudRoot.ClassListContains(EndScreenPresenter.OpenClass)
@@ -459,7 +460,7 @@ namespace Statecraft.Game.UI
         }
 
         // Original catalogue position, retained for existing callers; runtime routing uses message identity.
-        public const int EventStep = 8;
+        public const int EventStep = 6;
         public IReadOnlyList<AdvisorCatalog.Message> Chain => chain;
         public bool InChain => session.Chain.Step >= 0 && IsOpen;
         public int ChainStep => InChain ? session.Chain.Step : -1;
@@ -664,6 +665,7 @@ namespace Statecraft.Game.UI
 
         bool HardMediaCover() => hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(OpeningPresenter.OpenClass)
             || hudRoot.ClassListContains(RaidCardPresenter.OpenClass) || hudRoot.ClassListContains(RaidFlightPresenter.OpenClass)
+            || hudRoot.ClassListContains(InvasionCardPresenter.OpenClass)
             || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
             || hudRoot.ClassListContains(CaptureDialogPresenter.OpenClass) || hudRoot.ClassListContains(TurnReportPresenter.OpenClass)
             || hudRoot.ClassListContains(OutcomePresenter.OpenClass) || hudRoot.ClassListContains(EndScreenPresenter.OpenClass)

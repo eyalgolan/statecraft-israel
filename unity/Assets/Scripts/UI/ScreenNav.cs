@@ -44,10 +44,10 @@ namespace Statecraft.Game.UI
         public static void DisableCovered(VisualElement root)
         {
             var r = root.Q("root") ?? root;
-            // The raid card on New game (RaidCardPresenter), and the raid flight before it (RaidFlightPresenter), cover the HUD
-            // as the opening does.
+            // The raid card on New game (RaidCardPresenter), the raid flight before it (RaidFlightPresenter) and the invasion
+            // card after it (InvasionCardPresenter, #3142) cover the HUD as the opening does.
             bool opening = r.ClassListContains(OpeningPresenter.OpenClass) || r.ClassListContains(RaidCardPresenter.OpenClass)
-                || r.ClassListContains(RaidFlightPresenter.OpenClass);
+                || r.ClassListContains(RaidFlightPresenter.OpenClass) || r.ClassListContains(InvasionCardPresenter.OpenClass);
             bool start = r.ClassListContains(StartScreenPresenter.OpenClass) || opening;
             r.Q("start-screen")?.SetEnabled(!opening);
             bool screen = r.ClassListContains(ScreenOpenClass);

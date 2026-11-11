@@ -416,6 +416,13 @@ read on #2943's tree after its merge of main `597b9367a`, not on this spec's bas
 - **Not decided here.** The advisor on each new row is the agent's choice (#2943, "Calls to check", item 2), not an
   owner ruling. Section 9.3's 17 parity tests describe the old steps; the chain's tests in #2943 are the record of
   what the new chain does.
+- **Amendment, 11 November 2026 (#3142).** Rows 2 and 3, `opening.invasion` and `opening.units`, left the chain for
+  the invasion card on New game (`InvasionCardPresenter`, `unity/Assets/Resources/InvasionCard/invasion-card.yaml`),
+  which steps through the five enemy forces on the map and centres the camera on each. The owner's answers, 11 November
+  2026: "One card, step per front (Recommended)", "Replace the 2 advisor steps (Recommended)" and "Info only, turn 1
+  only (Recommended)". `opening.cities` now requires `opening.greeting`, so the chain has eight steps under gdd-0.1
+  (seven under gdd-0.3) and `EventStep` is 6. `opening.end_turn` is the one fallback row left; the two rows' strings,
+  and their approved Hebrew, were removed. The table and bullets above keep the record of #2943.
 
 ### 9.3 Parity first, tests migrate first
 

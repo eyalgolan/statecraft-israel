@@ -140,7 +140,7 @@ public class AdvisorShowMeNoAttentionTests
             }
             rig.Advisor.NextStep();
         }
-        Assert.AreEqual(9, steps);
+        Assert.AreEqual(AdvisorTour1688Fixture.Visible.Length, steps);
         if (!he) { Assert.IsNotEmpty(picture.Loaded); Assert.IsNotEmpty(audio); }
         Assert.IsFalse(picture.Loaded.Concat(audio).Any(url => url.Contains("opening.attention")));
         Assert.IsFalse(rig.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.RingClass));

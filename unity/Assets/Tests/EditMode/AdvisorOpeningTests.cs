@@ -51,10 +51,11 @@ public class AdvisorOpeningTests
     }
 
     [Test]
-    public void HasTenStepsInOrder()
+    public void HasEightStepsInOrder()
     {
-        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.invasion", "opening.units", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.event", "opening.end_turn" }, AdvisorPresenter.ChainIds(AdvisorCatalog.Load()));
-        Assert.AreEqual(8, AdvisorPresenter.EventStep);
+        // #3142: the invasion card on New game took opening.invasion's and opening.units' place.
+        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.event", "opening.end_turn" }, AdvisorPresenter.ChainIds(AdvisorCatalog.Load()));
+        Assert.AreEqual(6, AdvisorPresenter.EventStep);
     }
 
     /// <summary>Tell me more on an opening step (#2095 review): the encyclopedia opens on the step's page over the chain, and
@@ -63,16 +64,16 @@ public class AdvisorOpeningTests
     public void TellMeMoreOnAnOpeningStepKeepsTheChainOnItsStep()
     {
         using var rig = new Rig(En, Store(), tellMeMore: true); rig.Advisor.NewGame();
-        rig.Advisor.NextStep(); rig.Advisor.NextStep(); rig.Advisor.NextStep();
-        Assert.AreEqual(3, rig.Session.Chain.Step); Assert.AreEqual("opening.cities", rig.Advisor.Shown?.Id);
+        rig.Advisor.NextStep();
+        Assert.AreEqual(1, rig.Session.Chain.Step); Assert.AreEqual("opening.cities", rig.Advisor.Shown?.Id);
         Assert.AreEqual(DisplayStyle.Flex, rig.Ui.Q<Button>("advisor-more").style.display.value, "the step offers Tell me more");
         rig.Ui.Press("advisor-more");
         Assert.AreEqual("encyclopedia", rig.Nav.Current); Assert.AreEqual("cities", rig.Encyclopedia.ShowingPage);
-        Assert.AreEqual(3, rig.Session.Chain.Step, "reading the page does not move the chain");
+        Assert.AreEqual(1, rig.Session.Chain.Step, "reading the page does not move the chain");
         rig.Ui.Press("nav-encyclopedia");
         Assert.IsNull(rig.Nav.Current);
         Assert.IsTrue(rig.Advisor.InChain, "the chain is still open");
-        Assert.AreEqual(3, rig.Session.Chain.Step, "on the same step");
+        Assert.AreEqual(1, rig.Session.Chain.Step, "on the same step");
         Assert.AreEqual("opening.cities", rig.Advisor.Shown?.Id);
         Assert.IsTrue(rig.Advisor.IsOpen, "and the step shows again");
     }
@@ -175,9 +176,9 @@ public class AdvisorOpeningTests
         Assert.IsFalse(pending.Session.Settings.CourseOpen, "Hebrew with every step pending shows no chain");
     }
 
-    /// <summary>#2933, the plan's quit and X case: after X on the first step, opening.invasion shows as a queue row, comes back
+    /// <summary>#2933, the plan's quit and X case: after X on the first step, the fallback step shows as a queue row, comes back
     /// from under a layer (its own signal, opening, never holds), and on a Continue it is offered from the settings line
-    /// alone, with no chain.</summary>
+    /// alone, with no chain. Since #3142 that step is opening.end_turn, the chain's one fallback row.</summary>
     [Test]
     public void AFallbackStepSurvivesXALayerAndAContinue()
     {
@@ -189,12 +190,12 @@ public class AdvisorOpeningTests
             Assert.AreEqual("opening.greeting", rig.Advisor.Shown?.Id);
             rig.Advisor.CloseChain();
             rig.Card.Collapse(takeFocus: false);
-            Assert.AreEqual("opening.invasion", rig.Advisor.Shown?.Id, "X on the first step");
+            Assert.AreEqual("opening.end_turn", rig.Advisor.Shown?.Id, "X on the first step");
             Assert.IsTrue(rig.Advisor.IsOpen);
             rig.Card.Reopen();
             Assert.IsFalse(rig.Advisor.IsOpen, "under the card");
             rig.Card.Collapse(takeFocus: false);
-            Assert.AreEqual("opening.invasion", rig.Advisor.Shown?.Id, "back from under the card");
+            Assert.AreEqual("opening.end_turn", rig.Advisor.Shown?.Id, "back from under the card");
             Assert.IsTrue(rig.Advisor.IsOpen);
             Assert.IsFalse(rig.Session.Queue.History.Any(e => e.Outcome == AdvisorQueue.Outcome.Missed));
         }
@@ -202,36 +203,32 @@ public class AdvisorOpeningTests
         continued.Card.Collapse(takeFocus: false);
         continued.Advisor.Resume();
         Assert.IsFalse(continued.Advisor.InChain);
-        Assert.AreEqual("opening.invasion", continued.Advisor.Shown?.Id, "a Continue, not seen yet");
+        Assert.AreEqual("opening.end_turn", continued.Advisor.Shown?.Id, "a Continue, not seen yet");
     }
 
-    /// <summary>#2933: a player who quits on step 2 finds its two fallback steps on a Continue, one teaching line a turn; End
-    /// turn's still has its Show me, as a queue row.</summary>
+    /// <summary>#2933: a player who quits on step 2 finds the fallback step on a Continue (since #3142 the one, End turn's),
+    /// with its Show me, as a queue row.</summary>
     [Test]
-    public void QuittingOnStepTwoLeavesBothFallbackStepsForAContinue()
+    public void QuittingOnStepTwoLeavesTheFallbackStepForAContinue()
     {
         var store = Store();
         using (var rig = new Rig(En, store, session: new AdvisorSession(AdvisorCatalog.Load(), new AdvisorSettings(store), true)))
         {
             rig.Advisor.NewGame(); rig.Advisor.NextStep();
-            Assert.AreEqual("opening.invasion", rig.Advisor.Shown?.Id);
+            Assert.AreEqual("opening.cities", rig.Advisor.Shown?.Id);
         }
         using var continued = new Rig(En, store, session: new AdvisorSession(AdvisorCatalog.Load(), new AdvisorSettings(store), true));
         continued.Card.Collapse(takeFocus: false);
         continued.Advisor.Resume();
         Assert.IsFalse(continued.Advisor.InChain);
-        Assert.AreEqual("opening.invasion", continued.Advisor.Shown?.Id);
-        continued.Ui.Press("advisor-got-it");
-        Assert.IsNull(continued.Advisor.Shown, "one teaching line a turn");
-        continued.Bridge.State.Turn = 1; continued.Advisor.Notice(AdvisorSignals.TurnEnded);
         Assert.AreEqual("opening.end_turn", continued.Advisor.Shown?.Id);
         Assert.AreEqual(DisplayStyle.Flex, continued.Ui.Q<Button>("advisor-show-me").style.display.value);
         continued.Ui.Press("advisor-show-me");
         Assert.IsTrue(continued.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.RingClass), "a queue row's Show me rings End turn");
     }
 
-    /// <summary>#2933: X on step 2. The greeting took the first turn's teaching line, so the step comes back on turn 2 and End
-    /// turn's on turn 3, its last.</summary>
+    /// <summary>#2933: X on step 2. The greeting took the first turn's teaching line, so the fallback step (since #3142 the
+    /// one, End turn's) comes back on turn 2.</summary>
     [Test]
     public void XOnStepTwoBringsItBackNextTurn()
     {
@@ -242,17 +239,16 @@ public class AdvisorOpeningTests
         rig.Card.Collapse(takeFocus: false);
         Assert.IsNull(rig.Advisor.Shown, "one teaching line a turn: the greeting was it");
         rig.Bridge.State.Turn = 1; rig.Advisor.Notice(AdvisorSignals.TurnEnded);
-        Assert.AreEqual("opening.invasion", rig.Advisor.Shown?.Id);
-        rig.Ui.Press("advisor-got-it");
-        rig.Bridge.State.Turn = 2; rig.Advisor.Notice(AdvisorSignals.TurnEnded);
         Assert.AreEqual("opening.end_turn", rig.Advisor.Shown?.Id);
     }
 
     /// <summary>#2933: End turn pressed on a step that would come back as a queue row: the player has read it (above all step
-    /// 10, whose own lesson is to press the button), so it counts as seen, on the turn it was shown.</summary>
-    [TestCase("opening.invasion", false)] [TestCase("opening.end_turn", true)]
-    public void EndTurnOnAFallbackStepCountsAsSeen(string id, bool last)
+    /// 10, whose own lesson is to press the button), so it counts as seen, on the turn it was shown. Since #3142 End turn's is
+    /// the one fallback step.</summary>
+    [Test]
+    public void EndTurnOnTheFallbackStepCountsAsSeen()
     {
+        const string id = "opening.end_turn";
         var store = Store();
         using var rig = new Rig(En, store, session: new AdvisorSession(AdvisorCatalog.Load(), new AdvisorSettings(store), true));
         rig.Advisor.NewGame();
@@ -264,7 +260,6 @@ public class AdvisorOpeningTests
         Assert.IsFalse(rig.Advisor.InChain);
         Assert.IsTrue(rig.Session.Settings.Seen(id));
         Assert.AreEqual(0, rig.Session.Queue.History.Single(e => e.Id == id).Turn, "the turn it was shown");
-        Assert.AreEqual(last, rig.Session.Settings.Seen("opening.end_turn"), "the other fallback step still waits");
     }
 
     /// <summary>#2933: a language switch is the one way to stand on a step that is pending in Hebrew. The chain goes on to the
@@ -273,15 +268,15 @@ public class AdvisorOpeningTests
     public void ASwitchToHebrewOnAPendingStepGoesOnToTheNextApprovedStep()
     {
         var store = Store();
-        var catalog = AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("{ id: opening.invasion, advisor: dayan, signal: opening, level: new, he_review: approved", "{ id: opening.invasion, advisor: dayan, signal: opening, level: new, he_review: pending"));
+        var catalog = AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("{ id: opening.cities, advisor: meyerson, signal: opening, level: new, he_review: approved", "{ id: opening.cities, advisor: meyerson, signal: opening, level: new, he_review: pending"));
         var ids = AdvisorPresenter.ChainIds(catalog).ToList();
         AdvisorSession session;
         using (var en = new Rig(En, store, session: new AdvisorSession(catalog, new AdvisorSettings(store), true)))
         {
             en.Advisor.NewGame(); en.Advisor.NextStep(); session = en.Session;
-            Assert.AreEqual("opening.invasion", en.Advisor.Shown?.Id, "precondition");
+            Assert.AreEqual("opening.cities", en.Advisor.Shown?.Id, "precondition");
         }
-        Assert.IsFalse(catalog.Messages.Single(m => m.Id == "opening.invasion").ApprovedIn(true), "precondition: pending");
+        Assert.IsFalse(catalog.Messages.Single(m => m.Id == "opening.cities").ApprovedIn(true), "precondition: pending");
         var next = ids.Skip(2).First(id => catalog.Messages.Single(m => m.Id == id).ApprovedIn(true));
         using var he = new Rig(He, store, session: session);
         Assert.IsTrue(he.Advisor.InChain); Assert.IsTrue(he.Advisor.IsOpen, "not hidden");
@@ -309,7 +304,7 @@ public class AdvisorOpeningTests
         }
         CollectionAssert.AreEqual(approved, seen);
         rig.Card.Collapse(takeFocus: false);
-        foreach (var id in new[] { "opening.invasion", "opening.end_turn" })
+        foreach (var id in new[] { "opening.end_turn" })   // the one fallback step since #3142
         {
             if (catalog.Messages.Single(m => m.Id == id).ApprovedIn(true)) continue;   // the owner approved it: nothing to lapse
             for (int turn = 1; turn <= 3; turn++) { rig.Bridge.State.Turn = turn; rig.Advisor.Notice(AdvisorSignals.TurnEnded); Assert.AreNotEqual(id, rig.Advisor.Shown?.Id); }
@@ -350,16 +345,19 @@ public class AdvisorOpeningTests
     }
 
     /// <summary>#2933: "Priority 3 rows go first, fallback rows included". Without it, lesson.report (priority 3) would take
-    /// turn 2 from a fallback step that X put off, and opening.end_turn would lapse unseen on turn 3.</summary>
-    [TestCase("opening.invasion")] [TestCase("opening.end_turn")]
-    public void AFallbackStepGoesFirstAmongTheCourseRows(string id)
+    /// turn 2 from a fallback step that X put off, and opening.end_turn would lapse unseen on turn 3. Since #3142 it is the one
+    /// fallback row.</summary>
+    [Test]
+    public void TheFallbackStepGoesFirstAmongTheCourseRows()
     {
-        var row = AdvisorCatalog.Load().Messages.Single(m => m.Id == id);
+        var catalog = AdvisorCatalog.Load();
+        CollectionAssert.AreEqual(new[] { "opening.end_turn" }, catalog.Messages.Where(m => m.Fallback != "").Select(m => m.Id));
+        var row = catalog.Messages.Single(m => m.Id == "opening.end_turn");
         Assert.AreEqual(AdvisorSignals.CourseOpen, row.Fallback); Assert.AreEqual(3, row.Priority);
     }
 
-    /// <summary>#2933: X on step 2, then a turn at a time: both fallback steps come back first, then each course row on its own
-    /// turn, a bumped row waiting while it can; opening.city waits to its last turn, and nothing is missed.</summary>
+    /// <summary>#2933: X on step 2, then a turn at a time: the fallback step comes back first (since #3142 the one, End turn's),
+    /// then each course row on its own turn, a bumped row waiting while it can, and nothing is missed.</summary>
     [Test]
     public void XOnStepTwoThenTheWholeCourseOneRowATurn()
     {
@@ -369,7 +367,7 @@ public class AdvisorOpeningTests
         rig.Ui.Press("advisor-close");
         rig.Card.Collapse(takeFocus: false);
         Assert.IsNull(rig.Advisor.Shown, "one teaching line a turn: the greeting was it");
-        var expected = new[] { "opening.invasion", "opening.end_turn", "lesson.report", "opening.objectives", "lesson.attack", "opening.city", "opening.training", "lesson.stakes", null };
+        var expected = new[] { "opening.end_turn", "lesson.report", "opening.objectives", "opening.city", "lesson.attack", "opening.training", "lesson.stakes", null };
         for (int turn = 2; turn < 2 + expected.Length; turn++)
         {
             rig.Bridge.State.Turn = turn - 1; rig.Advisor.Notice(AdvisorSignals.TurnEnded);
@@ -386,7 +384,7 @@ public class AdvisorOpeningTests
     public void TheCombatLessonFollowsTheFirstFight(int firstFight, string?[] fromTurnTwo)
     {
         var settings = new AdvisorSettings(null);
-        settings.MarkSeen("opening.invasion"); settings.MarkSeen("opening.end_turn");   // the chain walked
+        settings.MarkSeen("opening.end_turn");   // the chain walked
         var queue = new AdvisorQueue(AdvisorCatalog.Load(), settings);
         var shown = new List<string?>();
         for (int turn = 1; turn <= 9; turn++)   // State.Turn; game turn 2 to 10
@@ -508,8 +506,8 @@ public class AdvisorOpeningTests
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());   // One Army
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());   // then Degania (R-EVT-006)
         Assert.IsNull(rig.Card.Shown); rig.Advisor.OpenChain(); var seen = new List<string>();
-        while (rig.Advisor.InChain) { seen.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(seen.Count, 9); rig.Advisor.NextStep(); }
-        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.invasion", "opening.units", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.end_turn" }, seen);
+        while (rig.Advisor.InChain) { seen.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(seen.Count, 7); rig.Advisor.NextStep(); }
+        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.end_turn" }, seen);
     }
 
     [Test]
@@ -551,9 +549,9 @@ public class AdvisorOpeningTests
 // R-GOV-002 / #1688: isolated test sessions; no shipped selector is changed.
 internal static class AdvisorTour1688Fixture
 {
-    internal static readonly string[] Visible = { "opening.greeting", "opening.invasion", "opening.units", "opening.cities", "opening.move_how", "opening.move", "opening.orders", "opening.event", "opening.end_turn" };
+    internal static readonly string[] Visible = { "opening.greeting", "opening.cities", "opening.move_how", "opening.move", "opening.orders", "opening.event", "opening.end_turn" };
     /// <summary>From the greeting to the step after cities: Attention, or under gdd-0.3 the step past it.</summary>
-    internal const int PastCities = 4;
+    internal const int PastCities = 2;
     /// <summary>No shipped step shows a city since #2933, while Show me still does: the tests of that rule give opening.cities one, in memory.</summary>
     internal static AdvisorCatalog WithACityStep()
     {

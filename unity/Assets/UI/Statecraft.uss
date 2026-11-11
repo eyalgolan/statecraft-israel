@@ -1336,6 +1336,16 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .raid-actions > Button { min-height: 44px; min-width: 160px; margin: 4px 6px; }
 .raid-open .top-bar, .raid-open .left-column, .raid-open .community-column, .raid-open .right-column, .raid-open .event-layer, .raid-open .info-panel, .raid-open .screen, .raid-open .map-labels, .raid-open .start-screen, .raid-open .advisor-layer { display: none; }
 .loading .raid-layer { display: none; }
+/* The Arab armies' invasion card on New game (InvasionCardPresenter, #3142): the raid card's frame docked to the right
+   with no backdrop, so the map and its place names stay in view while the camera centres on each army's token. The HUD
+   (and the unit panel that selecting the token opens) is hidden as under the raid card. */
+.invasion-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: flex-end; justify-content: center; padding: 16px; }
+.invasion-layer > .invasion-card { display: flex; width: 440px; max-height: 100%; padding: 12px 24px; }
+.invasion-layer > .invasion-card > .invasion-scroll { flex-shrink: 1; min-height: 48px; }
+.invasion-actions { flex-wrap: wrap; justify-content: center; flex-shrink: 0; }
+.invasion-actions > Button { min-height: 44px; min-width: 160px; margin: 4px 6px; }
+.invasion-open .top-bar, .invasion-open .left-column, .invasion-open .community-column, .invasion-open .right-column, .invasion-open .event-layer, .invasion-open .info-panel, .invasion-open .screen, .invasion-open .start-screen, .invasion-open .advisor-layer { display: none; }
+.loading .invasion-layer { display: none; }
 /* New game's raid flight before that card (RaidFlightPresenter, #3000): a clear layer over the whole map, so the Dakotas
    show and any click on it skips the flight; the HUD under it is hidden as under the card, the map's names too. */
 .raid-flight-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0); }
