@@ -781,6 +781,47 @@ public class UnitOrdersTests
         info.Dispose();
     }
 
+    /// <summary>#1398 U2, Review Focus 4 (plan 2026-10-23-civ-movement.md, Task 11): a unit its own attack destroys leaves the
+    /// state at the click; its open card closes on the commit's Changed, with no other call, and End turn's cycle does not
+    /// select it, though it was next. Unlike AnAttackShowsItsResultAtOnce, whose seed picks one branch, the attacker here
+    /// has strength 1 and the odds fall in the combat table's first row, where every face takes a unit from the attacker
+    /// (Combat.Take removes a unit at strength 1), so the destroyed branch runs on any draw. Test values: the strengths.</summary>
+    [Test]
+    public void AUnitDestroyedInItsOwnAttackClosesItsCard()
+    {
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var golani = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
+        var id = UnitCard.SimUnit(C, g.State, golani.Unit)!.Value;
+        var u = g.State.Units[id];
+        var iraqi = g.State.Units.Values.First(x => x.Side == "iraq" && MapActions.Distance(x.Q, x.R, u.Q, u.R) == 1);
+        g.State.Units[id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, 1, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp, u.Records);
+        g.State.Units[iraqi.Id] = new Unit(iraqi.Id, iraqi.Type, iraqi.Q, iraqi.R, iraqi.Service, iraqi.Side, System.Math.Max(iraqi.Strength, 10),
+            iraqi.Order, iraqi.OrderTarget, iraqi.HomeCity, iraqi.Full, iraqi.CombatXp, iraqi.Records);
+        var bridge = new SimBridge(g, Text);
+        Assert.AreEqual(0, Combat.Preview(C, bridge.State, id, iraqi.Q, iraqi.R)?.Row, "precondition: the odds fall in the combat table's first row");
+        Assert.IsTrue(Combat.Outcomes(C, bridge.State, 0, id, iraqi.Q, iraqi.R).All(b => b.AttackersLose > 0),
+            "precondition: every face of that row takes the attacker's last unit");
+        PlacedToken? shown = new PlacedToken(golani, new AnchorSpot(0, 0, 0, 0, false));
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => shown);
+        var selected = new List<int>();
+        using var hud = new HudPresenter(ui.Root, bridge, Text, selected.Add);
+        info.ShowUnit();
+        Assert.IsTrue(info.ShowsUnit, "precondition: the unit's card is open");
+        Assert.AreEqual(id, bridge.NeedsOrders[0], "precondition: the unit is next in End turn's cycle");
+        Assert.IsNull(bridge.Queue(new UnitOrder(id, Combat.Attack, iraqi.Q, iraqi.R)), "the sim takes the attack");
+        Assert.IsFalse(bridge.State.Units.ContainsKey(id), "its own attack destroyed the unit");
+        Assert.IsNull(UnitCard.SimUnit(C, bridge.State, golani.Unit), "its row has no sim unit now");
+        Assert.IsFalse(info.ShowsUnit, "its card closed on the commit, with no other call");
+        CollectionAssert.DoesNotContain(bridge.NeedsOrders, id);
+        Assert.Greater(bridge.NeedsOrders.Count, 0, "precondition: other units still need orders");
+        UiTestKit.Press(ui.Q<Button>("end-turn"));
+        Assert.AreEqual(1, selected.Count, "End turn selects the next unit that needs orders");
+        Assert.AreNotEqual(id, selected[0], "not the destroyed unit");
+        Assert.IsTrue(bridge.State.Units.ContainsKey(selected[0]), "a unit still in the state");
+        info.Dispose();
+    }
+
     /// <summary>The overlay draws one band per hex given (two rings of MapBuilder.RingVertices each) and hides when given
     /// none, or only hexes off the map.</summary>
     [Test]
