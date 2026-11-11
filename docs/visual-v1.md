@@ -1990,7 +1990,7 @@ Code: `unity/Assets/Scripts/Map/Kits/` (built at load, seeded per settlement id 
   the marker boxes again.
 - **Footprint** = (1945 population / 60,000) hexes, floored at 0.08 hex. The populations live in
   `content/map/settlement_population_1945.yaml` (Village Statistics, 1945, read from the Wikipedia table on 2026-10-11:
-  owner-verify until checked against a scan; Beersheba's row there is garbled, 5,570 is its likely reading), read through
+  owner-verify until checked against a scan; Beersheba's 5,570 is on the scan's p. 33, agent-read (#2450)), read through
   `MapInputs.PopulationYaml`. The sim never reads the file: `SaveGameTests.TheKitPopulationFileIsOutsideTheContentHash`, and
   the player's `BOOT OK content 96035735...` is unchanged. Towns share seams (distance over radius), stay on land, and tint
   their ground in the baked biome texture.
