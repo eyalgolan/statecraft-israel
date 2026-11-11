@@ -68,7 +68,10 @@ namespace Statecraft.Game.Map.Collection
 
         void Update()
         {
-            if (!still) Place(SpitfireLoop.Clock());
+            if (still) return;
+            // New game's raid (#3000) flies every Dakota on its path until it ends; then the loop's clock again.
+            if (DakotaRaidFlight.Since(out float raid)) PlaceRaid(raid);
+            else Place(SpitfireLoop.Clock());
         }
 
         void OnEnable() => RenderPipelineManager.beginCameraRendering += Face;
@@ -90,8 +93,27 @@ namespace Statecraft.Game.Map.Collection
         {
             PlacedAt = seconds;
             float u = seconds - lag;
-            var at = SeaAirCollection.DakotaLoopOffset(u);
             var turn = SeaAirCollection.DakotaTurn(u, out var forward, out float bank);
+            Put(SeaAirCollection.DakotaLoopOffset(u), turn, forward, bank, seconds, u);
+        }
+
+        /// <summary>Puts the aircraft where New game's raid has it <paramref name="seconds"/> after the raid started
+        /// (DakotaRaidFlight, #3000): on its path at its raid time (the wing DakotaRaidFlight.TrailS behind the lead), as
+        /// <see cref="Place"/> does on the loop, its bombs at that raid time, which is their loop time on the pass over Tel Aviv.
+        /// <see cref="PlacedAt"/> stays where the loop last put it: the map's names are hidden while the raid flies.</summary>
+        internal void PlaceRaid(float seconds)
+        {
+            int plane = Mathf.RoundToInt(lag / SeaAirCollection.DakotaTrailSeconds);
+            float u = DakotaRaidFlight.U(seconds, plane), tau = DakotaRaidFlight.PathTime(u);
+            var turn = DakotaRaidFlight.Turn(tau, out var forward, out float bank);
+            Put(DakotaRaidFlight.Offset(tau), turn, forward, bank, seconds, u);
+        }
+
+        /// <summary>Puts the aircraft at <paramref name="at"/> from its loop's centre, turned by <paramref name="turn"/> (heading
+        /// <paramref name="forward"/>, <paramref name="bank"/> degrees), its propellers at their angle <paramref name="seconds"/>
+        /// into the clock, and its bombs as they are at <paramref name="u"/> into its loop.</summary>
+        void Put(Vector2 at, Quaternion turn, Vector3 forward, float bank, float seconds, float u)
+        {
             transform.localRotation = turn * level;
             var drawn = centre + new Vector3(at.x, 0f, at.y);
             transform.position = drawn - turn * offset;

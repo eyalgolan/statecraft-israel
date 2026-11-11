@@ -718,6 +718,9 @@
                 <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
         </ui:VisualElement>
+        <!-- New game's raid flight (RaidFlightPresenter, #3000): the Dakotas bomb Tel Aviv after the opening, before the raid
+             card. A clear layer over the map: a click on it, or Escape, skips the flight. -->
+        <ui:VisualElement name="raid-flight-layer" class="raid-flight-layer" />
         <!-- The Tel Aviv raid card on New game (RaidCardPresenter; owner, 8 Nov 2026): after the opening, before the turn 1
              advisors. One card in the event-card frame, its silent clip labelled as an AI illustration, and only OK.
              Editor drafts are labelled; a player build shows it only once it is reviewed. -->
