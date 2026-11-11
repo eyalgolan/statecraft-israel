@@ -460,6 +460,24 @@ namespace Statecraft.Sim
                     ContentLoader.RequiredSources(e.File, F($"{at}.sources"), v.Sources);
                     if (v.Title != "") CheckPlaceholders(c, e, F($"{at}.title"), v.Title, offices);
                     CheckPlaceholders(c, e, F($"{at}.text"), v.Text, offices);
+                    // #958 (owner, 11 November 2026: "Add Hebrew support first (Recommended)"): a variant's Hebrew follows the
+                    // card's (#1064, all or none), as late_text_he does: text_he on a card with Hebrew text, title_he exactly
+                    // when the variant has its own title, and neither on a card without.
+                    if (v.TitleHe != "" && v.Title == "") throw new ContentException(e.File, F($"{at}.title_he"), "only a variant with its own title has title_he");
+                    var hebrew = new List<(string Field, string Value)>();
+                    if (v.Title != "") hebrew.Add(("title_he", v.TitleHe));
+                    hebrew.Add(("text_he", v.TextHe));
+                    foreach (var (field, value) in hebrew)
+                    {
+                        if (e.TextHe == "")
+                        {
+                            if (value != "") throw new ContentException(e.File, F($"{at}.{field}"), "only a card with Hebrew text has a variant's Hebrew");
+                            continue;
+                        }
+                        if (value == "") throw new ContentException(e.File, F($"{at}.{field}"), "required: the card's text is in Hebrew too");
+                        if (!value.Any(ch => ch >= '\u05D0' && ch <= '\u05EA')) throw new ContentException(e.File, F($"{at}.{field}"), "must be Hebrew, in Hebrew letters");
+                        CheckPlaceholders(c, e, F($"{at}.{field}"), value, offices);
+                    }
                 }
                 if (e.Kind != EventKinds.Consequence)
                 {

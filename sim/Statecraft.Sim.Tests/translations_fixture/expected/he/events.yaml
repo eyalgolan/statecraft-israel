@@ -23,3 +23,14 @@ early:
   early_text: "מוקדם יותר מאשר בהיסטוריה."
   options:
     sign: "לחתום"
+variant:
+  title: "גרסה"
+  text: "בכל מקרה."
+  options:
+    record: "כפי שקרה"
+  variants:
+    "0":
+      title: "גרסה, במסלול שלך"
+      text: "במסלול שלך."
+    "1":
+      text: "במסלול אחר."

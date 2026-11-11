@@ -79,6 +79,8 @@
         "when": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/requirement" } },
         "title": { "type": "string", "description": "Optional; when absent, use the event's title." },
         "text": { "type": "string", "minLength": 1 },
+        "title_he": { "type": "string", "description": "title in Hebrew; required exactly when the variant has a title and the event has Hebrew text (#958)." },
+        "text_he": { "type": "string", "description": "text in Hebrew; required exactly when the event has Hebrew text (#958)." },
         "sources": {
           "type": "array",
           "minItems": 1,

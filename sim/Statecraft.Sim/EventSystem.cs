@@ -497,8 +497,7 @@ namespace Statecraft.Sim
         static string HebrewTitle(Content c, GameState s, GameEvent e)
         {
             var variant = Timeline.Variant(c, s, e);
-            return variant != null && variant.Title != "" ? Title(c, s, e)
-                : SnapshotText(c, s, FillDate(e, s.Date), e.Title, e.TitleHe);
+            return SnapshotText(c, s, FillDate(e, s.Date), variant != null && variant.Title != "" ? variant.Title : e.Title, TitleHe(c, s, e));
         }
         static string[] Context(string englishTitle, string hebrewTitle, params string[] values) =>
             new[] { englishTitle, hebrewTitle }.Concat(values).ToArray();
@@ -708,6 +707,25 @@ namespace Statecraft.Sim
         public static string Render(Content c, GameState s, GameEvent e) =>
             Cabinet.Fill(c, s, Timeline.Variant(c, s, e)?.Text
                 ?? (ShowsEarly(e, s.Date) ? e.EarlyText : ShowsLate(e, s.Date) ? e.LateText : e.Text), FillDate(e, s.Date));
+
+        /// <summary>#958 (owner, 11 November 2026: "Add Hebrew support first (Recommended)"): the Hebrew of
+        /// <see cref="Title(Content, GameState, GameEvent)"/>, unfilled, as title_he is: a matching variant's title_he when the
+        /// variant has its own title, else the event's title_he. Empty where that title has no Hebrew; the UI then shows the
+        /// English (#1064, fail open).</summary>
+        public static string TitleHe(Content c, GameState s, GameEvent e)
+        {
+            var v = Timeline.Variant(c, s, e);
+            return v != null && v.Title != "" ? v.TitleHe : e.TitleHe;
+        }
+
+        /// <summary>#958: the Hebrew of <see cref="Render(Content, GameState, GameEvent)"/>, unfilled: a matching variant's
+        /// text_he, else the early, late or ordinary text_he, picked as Render picks the English. Empty where that text has no
+        /// Hebrew (#1064, fail open).</summary>
+        public static string TextHe(Content c, GameState s, GameEvent e)
+        {
+            var v = Timeline.Variant(c, s, e);
+            return v != null ? v.TextHe : ShowsEarly(e, s.Date) ? e.EarlyTextHe : ShowsLate(e, s.Date) ? e.LateTextHe : e.TextHe;
+        }
 
         /// <summary>R-ENEMY-007 ("Dateless variants (Recommended)"): whether <paramref name="e"/>, shown on <paramref name="date"/>,
         /// shows its late text: it has one, and its own window has closed. A road variant (R-ALT-010) still comes first.</summary>

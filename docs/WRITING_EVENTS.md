@@ -42,7 +42,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `conditions` | no | Indicator bounds that must hold when it fires. See below. |
 | `kind` | no (default `historical`) | `consequence` for a card that exists only on a road not taken; `reconvergence` for an outside event with course-specific text. See below. |
 | `requires` | no | Fires only after every listed requirement holds. See below. |
-| `variants` | no | `kind: reconvergence` only. Course-specific title and text, each with `when`, `text`, optional `title` and `sources` (R-ALT-010). See "kind". |
+| `variants` | no | `kind: reconvergence` only. Course-specific title and text, each with `when`, `text`, optional `title` and `sources`, and, when the card has Hebrew, `text_he` and (with `title`) `title_he` (R-ALT-010, #958). See "kind". |
 | `objective` | no | Makes the event the completion card of an objective in `objectives.yaml`, which must name this event as its `card`. It fires only once the objective is completed (GDD loop only), and has exactly one option. See `docs/gdd/objective-card.md`. |
 | `site` | no | A swamp site in `sites.yaml` whose works the event is about. In the GDD loop it fires only while that site is being worked (R-SWAMP-002); the legacy loop ignores it. See `docs/gdd/fields-and-swamps.md`. |
 | `prisoners` | no | Makes the event a front's prisoner-exchange card: `egypt`, `jordan` (which also returns the Iraqi prisoners), `lebanon` or `syria`. It fires only while that front holds prisoners or the player's soldiers (GDD loop only), has exactly one option, and returns them and scores when it resolves (R-POW-004). |
@@ -202,6 +202,11 @@ Every road it names must have a window that closes on or before the reconvergenc
 while the card is shown. A variant that names an event's historical option also needs every consequence card that can
 `rejoin` that event (R-ALT-009) to close by then, since a rejoin makes that option hold. Variant title and text use the same checked office placeholders as the event itself. Only a
 reconvergence event may carry `variants`.
+
+On a card whose text is in Hebrew, each variant needs `text_he`, and a variant with its own `title` needs `title_he`
+(#958, owner, 11 November 2026: "Add Hebrew support first (Recommended)"). A variant with no title keeps the event's
+`title_he`. A card without Hebrew carries no variant Hebrew. The Hebrew file (`content/translations/he/events.yaml`)
+lists a variant's Hebrew under `variants`, keyed by its position in the event file (`"0"`, `"1"`, ...).
 
 ### deported
 
@@ -471,6 +476,9 @@ Errors are printed as `file: field: message`. These are the messages you are mos
 | `can still be open when this card opens` | A variant names a road whose window has not closed by this event's `from`. |
 | `while this card is open` | A variant names an event's historical option, and a consequence card that rejoins that event can still be open when this card opens. |
 | `a variant has text` | A variant's `text` is empty. |
+| `only a variant with its own title has title_he` | A variant has `title_he` but no `title` (#958). |
+| `only a card with Hebrew text has a variant's Hebrew` | A variant has `title_he` or `text_he` on a card whose text has no Hebrew (#958). |
+| `required: the card's text is in Hebrew too` | On a Hebrew card, a variant lacks `text_he`, or a titled variant lacks `title_he` (#958). |
 | `is already required` | Two `requires` entries name the same event (they could never both hold, or one is redundant). |
 
 A full message looks like this (an effect target misspelled `securty`):

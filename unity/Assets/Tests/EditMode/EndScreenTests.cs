@@ -542,6 +542,20 @@ public class EndScreenTests
         }
     }
 
+    /// <summary>#958: an objective whose card shows a variant titles it with the variant's Hebrew title in Hebrew, and its
+    /// English in English, as the card does.</summary>
+    [Test]
+    public void AnObjectivesVariantTitleIsInTheUiLanguage()
+    {
+        using var k = new Kit(He, Ended);
+        var s = k.Bridge.State;
+        var c = ContentLoader.Load(Paths.Content);   // a fresh copy: the variant below never reaches C
+        var o = c.Objectives[0];
+        c.Events.First(e => e.Id == o.Card).Variants.Add(new EventVariant { Title = "Fixture variant title", TitleHe = "כותרת גרסה לבדיקה" });
+        StringAssert.Contains("כותרת גרסה לבדיקה", EndScreenPresenter.Lines(c, s, He).Single(l => l.Name == "objective-" + o.Id).Text);
+        StringAssert.Contains("Fixture variant title", EndScreenPresenter.Lines(c, s, En).Single(l => l.Name == "objective-" + o.Id).Text);
+    }
+
     /// <summary>R-EVT-007 (owner, 2 November 2026, #2197: "Show on the end screen (Recommended)"): a Deport card that never
     /// fired, because its Deport came on the turn that ended the game (EndReport.DeportCards), shows on the end screen after
     /// the objectives: its title, then its text, as its card shows them, in the UI's language. A card that fired was shown on

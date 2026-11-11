@@ -419,6 +419,12 @@ def inline_hebrew(content: Path, ui_en: Path, ui_he: Path) -> tuple[str, str, st
             e["early_text"] = d["early_text_he"]
         e |= {"options": {o["id"]: o["text_he"] for o in d.get("options") or []
                           if isinstance(o, dict) and isinstance(o.get("id"), str) and isinstance(o.get("text_he"), str) and o["text_he"]}}
+        # #958: a variant's Hebrew (R-ALT-010), keyed by its index in the event file, as the sim's Translations.Write keys it.
+        variants = {str(i): ({"title": v["title_he"]} if isinstance(v.get("title_he"), str) and v["title_he"] else {}) | {"text": v["text_he"]}
+                    for i, v in enumerate(d.get("variants") or [])
+                    if isinstance(v, dict) and isinstance(v.get("text_he"), str) and v["text_he"]}
+        if variants:
+            e["variants"] = variants
         if isinstance(d.get("text_he_review"), str) and d["text_he_review"]:
             e["review"] = d["text_he_review"]
         events[eid] = e
