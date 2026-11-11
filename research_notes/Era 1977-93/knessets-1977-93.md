@@ -249,6 +249,8 @@ row, the row says so.
 | 26 Oct 1982 | Amnon Lin and Yitzhak Peretz (Likud; not the Shas member of the same name) move to the Alignment faction | Alignment 50, Likud 46 (6 Jun 1983) | [V] OD-P (their faction terms, PersonID 2437 and 2558); K-HIST-10 note 1 |
 | 13 Aug 1984 | End of term | Alignment 49, Likud 46, NRP 5, Agudat 4, Hadash 4, Tami 3, Tehiya 3, Shinui 2, Ratz 1, Rafi 1, Social Zionism 1, Druckman 1 | [V] OD-P (12 Aug 1984); K-HIST-10 notes 1 and last column |
 
+(11 Nov 2026) The reading voted on 22 Mar 1984: the scan of sitting 301 (Divrei HaKnesset booklet 23, printed pages 2066 and 2106) dates the sitting Thursday 22 Mar 1984 and records the vote on bill שפ"ד, the Dissolution of the Tenth Knesset Bill, 5744-1984, which the chair says was submitted by MK Shimon Peres and others: 61 for sending it to the committee for preliminary consideration, 58 for removing it from the agenda. The chair then announced that, by 61 votes to 58, the bill would go to the Constitution, Law and Justice Committee to be prepared for its first reading. So the 22 March vote was the preliminary reading, not a first reading. In the same sitting bill שע"ח (Charlie Biton, Meir Vilner, Tawfik Zayad and Tawfik Toubi) passed the same stage 60 to 58 [V, agent read 11 Nov 2026 on the page images; a person's check pending] KP-301: https://fs.knesset.gov.il//10/Plenum/10_ptm_530203.PDF (PDF 530203, linked to session 436732 in KNS_DocumentPlenumSession), PDF pages 1 and 41. This closes the scan check the follow-up left open under "The 1984 dissolution law and the 22 March preliminary vote".
+
 ### 11th Knesset (13 August 1984 to 21 November 1988)
 
 | Date | Change | Seats after | Source |
@@ -339,6 +341,46 @@ from Wikipedia [S], and their primary founding dates are [GAP].
 | Meretz | faction 9 Mar 1992 [V] OD-F; 1992 list, 12 seats [V] | 1992 as an alliance; exact date [GAP] |
 | United Torah Judaism | 1992 list, 4 seats; faction 13 Jul 1992 [V] | 1992 |
 
+(11 Nov 2026) Fourth pass on the founding dates. Every reading below is an agent's on 11 Nov 2026; a person's check is pending. Requests used the User-Agent `Mozilla/5.0 (research script)`. The Knesset's own faction pages (the older FactionPage.asp series, key KF-n for page PG=n) were read as Internet Archive copies made in 2016 to 2020, the copies cited in the key table below. Later copies checked for the Shas page (PG=2, 17 Aug 2022 and 19 Jan 2025) hold a script challenge page instead of the text; other pages' later copies were not checked. Each page describes the party's founding in the Knesset's words. That is an official account, not a founding or registration instrument, so a month or year below is [V] for what the Knesset page says and the exact founding day stays [GAP] unless stated.
+
+- Tehiya: a national party founded in October 1979, headed by Geula Cohen [V] KF-31. The Banai faction was set up during the 9th Knesset by Moshe Shamir and Geula Cohen and renamed Tehiya-Banai after four months [V] KF-54. Day [GAP].
+- Tzomet: founded by MK Rafael Eitan in 1983 [V] KF-20. This agrees with the October 1983 announcement in the follow-up's P5. Day [GAP].
+- Shas: founded ahead of the 11th Knesset election in 1984, first full name Shomrei Torah Sfaradim (Sephardi Torah Guardians), in protest at the small Sephardi share of the Agudat Yisrael list [V] KF-2. Month and day [GAP].
+- Tami: founded toward the end of the 9th Knesset, headed by MK Aharon Abuhatzeira after he left the NRP over the decision to lift his immunity [V] KF-40. No date.
+- Telem: founded on the eve of the 10th Knesset election by MK Moshe Dayan and two members who left the Likud [V] KF-43. No date.
+- Dash: a centre party founded ahead of the 9th Knesset election under Yigael Yadin [V] KF-47. No date; the 2 Nov 1976 in the table stays [S].
+- Arab Democratic Party: founded at the end of the 11th Knesset by MK Abdulwahab Darawshe after he left Labor over the first intifada [V] KF-21. No date; the 15 Feb 1988 in the table stays [S].
+- Degel Hatorah: founded under Rabbi Eliezer Menachem Shach on the eve of the 12th Knesset election [V] KF-23. No date.
+- Moledet: founded by Rehavam Ze'evi [V] KF-10. No date.
+- Meretz: at the end of the 12th Knesset the Mapam, Ratz and Shinui factions joined in one faction, and the three parties merged into one party in February 1997 [V] KF-4. Mapam's page says Mapam formed the Meretz faction with Ratz and Shinui during the 12th Knesset and that Meretz became a party in 1997 [V] KF-28. So 9 Mar 1992 (OD-F) is a faction merger, Meretz ran in 1992 as a joint list of three parties, and the single party dates from February 1997, outside this chapter. The day of the 1992 agreement stays [GAP].
+- United Torah Judaism: the name of the joint list and joint faction of Agudat Yisrael and Degel Hatorah from the 13th Knesset election [V] KF-8. No date.
+- Shlomzion: the page says only that the list, headed by Ariel Sharon, joined the Likud right after the election [V] KF-49. No founding date.
+- Progressive List for Peace, Yahad, Morasha: the PLP was founded ahead of the 11th election by a merger of the Jewish Alternative group, the Progressive Movement of Nazareth and other groups [V] KF-33; Yahad was a list set up by Ezer Weizman ahead of the 11th election [V] KF-38; Morasha was a list of the religious Zionist party Haim Druckman founded during the 10th Knesset and Avraham Verdiger's Poalei Agudat Yisrael [V] KF-39. No dates.
+- Registration dates: the Parties Law, 5752-1992, set up the parties register. Its adoption footnote dates its passage in the Knesset to 18 Mar 1992 (13 Adar II 5752); section 34 brings it into force one year after publication; section 31 adds section 4A to the Knesset Elections Law, so that only a party registered under the law may submit a list [V] L-PARTIES-92 (text layer read; the PDF's word order is reversed) and L-PARTIES-92C (consolidated text, sections 29, 31 and 34). Derived from those two sections, not printed in either source: the law came into force after the 23 Jun 1992 election, so no party in this chapter has a registration date under it for 1977 to 1992. The registration dates this note and the follow-up list as [GAP] are therefore not Parties Law records; the nearest official record for those years is each list's submission to the Central Elections Committee, which stays [GAP]. The page footers give publication in Sefer HaHukim 1395, 9 Apr 1992 (6 Nisan 5752; printed pp. 190 to 194) [V] L-PARTIES-92 (footer read on the page images of pp. 190, 193 and 194). With section 34 this puts entry into force at 9 Apr 1993 (derived, not printed). A web search summary called 9 Apr 1992 the adoption date; it is the publication date, and the summary is not used.
+
+| Key | Source (opened 11 Nov 2026) |
+|---|---|
+| KF-2 | Knesset, Shas faction page, [archive copy of 31 Dec 2019](https://web.archive.org/web/20191231135351/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=2) |
+| KF-4 | Knesset, Meretz faction page, [archive copy of 31 Dec 2019](https://web.archive.org/web/20191231135407/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=4) |
+| KF-8 | Knesset, United Torah Judaism faction page, [archive copy of 31 Dec 2019](https://web.archive.org/web/20191231135352/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=8) |
+| KF-10 | Knesset, Moledet faction page, [archive copy of 11 Nov 2019](https://web.archive.org/web/20191111232009/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=10) |
+| KF-20 | Knesset, Tzomet faction page, [archive copy of 12 Nov 2019](https://web.archive.org/web/20191112002049/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=20) |
+| KF-21 | Knesset, Arab Democratic Party faction page, [archive copy of 11 Nov 2019](https://web.archive.org/web/20191111231247/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=21) |
+| KF-23 | Knesset, Degel Hatorah faction page, [archive copy of 11 Nov 2019](https://web.archive.org/web/20191111230215/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=23) |
+| KF-28 | Knesset, Mapam faction page, [archive copy of 21 Dec 2019](https://web.archive.org/web/20191221183238/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=28) |
+| KF-31 | Knesset, Tehiya faction page, [archive copy of 11 Nov 2019](https://web.archive.org/web/20191111234606/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=31) |
+| KF-33 | Knesset, Progressive List for Peace faction page, [archive copy of 11 Nov 2019](https://web.archive.org/web/20191111225610/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=33) |
+| KF-38 | Knesset, Yahad faction page, [archive copy of 12 Nov 2019](https://web.archive.org/web/20191112000057/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=38) |
+| KF-39 | Knesset, Morasha faction page, [archive copy of 22 Aug 2016](https://web.archive.org/web/20160822073652/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=39) |
+| KF-40 | Knesset, Tami faction page, [archive copy of 12 Jan 2020](https://web.archive.org/web/20200112165223/http://www.knesset.gov.il:80/faction/heb/FactionPage.asp?PG=40) |
+| KF-43 | Knesset, Telem faction page, [archive copy of 12 Nov 2019](https://web.archive.org/web/20191112001800/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=43) |
+| KF-47 | Knesset, Dash faction page, [archive copy of 11 Nov 2019](https://web.archive.org/web/20191111234010/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=47) |
+| KF-49 | Knesset, Shlomzion faction page, [archive copy of 11 Nov 2019](https://web.archive.org/web/20191111234743/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=49) |
+| KF-54 | Knesset, Tehiya-Banai faction page, [archive copy of 11 Nov 2019](https://web.archive.org/web/20191111225953/http://www.knesset.gov.il/faction/heb/FactionPage.asp?PG=54) |
+| L-PARTIES-92 | Parties Law, 5752-1992, as published (Knesset file server): https://fs.knesset.gov.il/12/law/12_lsr_210835.pdf |
+| L-PARTIES-92C | Parties Law, consolidated text on gov.il (elections files, collection headed "ממשלה ומפלגות", September 2022): https://www.gov.il/files/bechirot/Government&parties/1law_of_parties.pdf |
+| KP-301 | Divrei HaKnesset, sitting 301 of the 10th Knesset, scan: https://fs.knesset.gov.il//10/Plenum/10_ptm_530203.PDF |
+
 ## 6. Conflicts
 
 - **C1. Eligible voters, 1977.** CEC-BF gives 2,236,478. K-RES-9, CEC-PCT and WP-1977 give 2,236,293. Two pages of the
@@ -376,7 +418,9 @@ the government in October 1977 (24 Oct 1977, K-HIST-9).
   in KNS_Person. Members who left the Knesset and were replaced are not listed as moves.
 - Founding dates of Shas, Meretz (as an alliance), Moledet, Degel Hatorah and Tzomet in a primary source.
   Third pass, 30 Oct 2026: Mapam's decision to join the joint list is dated 2 Feb 1992 and Eitan's leaving Tehiya 16 Nov 1987 by JTA bulletins read as page images; the Meretz agreement itself, the Ratz and Shinui decisions, Tzomet's founding, Shas, Degel Hatorah and the registration dates stay [GAP]. See the follow-up, "Third pass, 30 October 2026".
+  (11 Nov) Fourth pass: the Knesset's faction pages give October 1979 for Tehiya, 1983 for Tzomet and 1984, before the election, for Shas, with no day; Meretz was a faction merger in 1992 and one party only from February 1997; and the parties register dates from the Parties Law of 1992, in force after the 1992 election (derived from sections 31 and 34, not printed), so no party here has a registration date under it for 1977 to 1992. The Meretz agreement day, Degel Hatorah, Moledet and the other exact days stay [GAP]. See section 5, "(11 Nov 2026) Fourth pass".
 - The date of the committee's decision against Kach (C4): dated 5 Oct 1988 by the JTA bulletin on the second pass, 25 Oct 2026; the committee's own record is still [GAP]. The reading voted on 22 Mar 1984 (10th Knesset) remains [GAP].
+  (11 Nov) The reading voted on 22 Mar 1984 was the preliminary reading (61 to 58), read on the sitting's scan; see the note under the 10th Knesset table. The committee's own Kach record was not searched in this pass.
 - Whether 1 Nov 1988 was the end-of-term date fixed by law: answered provisionally on the second pass, 25 Oct 2026 (derived from the archived Basic Law text and calendar arithmetic, not printed in any source; amendments between 27 May 1987 and 1 Nov 1988 not checked, so still open; see the paragraph after the law table above and the follow-up).
 
 ## 8. What the records could look like
