@@ -11,7 +11,8 @@ goes: placement follows in a separate PR, and the owner decides it.
 or `settlements_1948.yaml`, and the mill's own point where a source gives one. The tile is
 `unity/Assets/Scripts/Map/HexTiles/Prototypes/VillageMill.cs`.
 
-**What closed (four villages that have a row, one that has none, and one mill with no village).** Two kinds of source were opened:
+**What closed (four villages that have a row, one that has none).** Two kinds of source were opened:
+(11 Nov) Also closed since: one mill with no village, Tahunet Abu Nur (below).
 
 1. The 1940s 1:20,000 Survey of Palestine sheets, read as images from Palestine Open Maps tiles. They print the word "Mill" (or
    "Mills") at a point. Four places carry it: Ghuweir Abu Shusha (three labels, one marked "Disused"), Beisan (one), Kabri (one) and
@@ -65,7 +66,10 @@ Coordinates read off a map label are the label's position, good to about 50 m at
 
 ## Disagreements
 
-Tahunet Abu Nur's place, side by side (a difference of map reading, not of fact):
+None between the sources read. One difference of time, not of fact: the 1870s pages and the 1940s sheet are about seventy years apart,
+so "had a mill in the 1870s" does not mean "had one in 1948". Only a printed "Mill" on the 1940s sheet is read as a 1948-era mill,
+and "Disused" on one Abu Shusha label means that mill may not have worked in 1948.
+(11 Nov) Since then, one difference of map reading, not of fact: Tahunet Abu Nur's place, side by side.
 
 | Source | What it gives | Position |
 |---|---|---|
@@ -74,10 +78,6 @@ Tahunet Abu Nur's place, side by side (a difference of map reading, not of fact)
 
 The two are about 400 m apart, the same east-west offset as "Tell Barak" against "Tall Mubarak", if those are one mound (a hypothesis, see the table) [C]. Neither is a surveyed mill point,
 and neither falls on a game row.
-
-Otherwise none between the sources read. One difference of time, not of fact: the 1870s pages and the 1940s sheet are about
-seventy years apart, so "had a mill in the 1870s" does not mean "had one in 1948". Only a printed "Mill" on the 1940s sheet is read
-as a 1948-era mill, and "Disused" on one Abu Shusha label means that mill may not have worked in 1948.
 
 ## Search log
 
@@ -108,7 +108,8 @@ as a 1948-era mill, and "Disused" on one Abu Shusha label means that mill may no
 ## Open gaps
 
 - A text source for a 1948 mill, its kind and its owner, at any of the four villages with a row.
-- Ras el 'Ain, Safed's wadi, el Mirr, the Jewish villages' mills.
+- Ras el 'Ain, Safed's wadi, el Mirr, Tahunet Abu Nur's village, the Jewish villages' mills.
+  (11 Nov) Tahunet Abu Nur has no village (see the 11 November rows above), so that part is closed.
 - Tahunet Abu Nur in 1948: whether the mill still stood or worked (the 1940s sheet prints none). It has no village and no row, so it
   cannot place the tile on a row in any case.
 - Edition of the map tiles.
