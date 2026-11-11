@@ -137,21 +137,27 @@ def test_wheel_zoom_follows_a_swipe_and_keeps_a_notch_at_one_step():
     assert r["px150,px200,px49"]["px49"][0] == pytest.approx(0.49, abs=0.02)
 
 
-def png(path, varied=True):
-    """A real PNG at `path`: a gradient, or one colour (a blank capture)."""
+def png(path, varied=True, size=(8, 8)):
+    """A real PNG at `path` of `size` pixels: a gradient, or one colour (a blank capture)."""
     from PIL import Image
-    im = Image.new("RGB", (8, 8), (40, 60, 80))
+    w, h = size
+    im = Image.new("RGB", (w, h), (40, 60, 80))
     if varied:
-        im.putdata([(x * 30, y * 30, 90) for y in range(8) for x in range(8)])
+        im.putdata([(x * 30 % 256, y * 30 % 256, 90) for y in range(h) for x in range(w)])
     im.save(path)
 
 
 class FakeBrowser:
-    """headed.Browser without Chrome: wait_for returns the queued lines; shot writes the PNG the test queued (a gradient by default)."""
+    """headed.Browser without Chrome: wait_for returns the queued lines; shot writes the PNG the test queued (a gradient by
+    default, 8x8); page_size answers as Runtime.evaluate would, with the queued (innerWidth, innerHeight, devicePixelRatio)
+    (8, 8, 1 by default) or raises a queued exception."""
     waits: list[str] = []
     console: list[str] = []
     shots: list = []
     contents: list = []       # per shot, in order: "varied", "blank" or "garbage"
+    png_sizes: list = []      # per shot, in order: the PNG's (width, height)
+    pages: list = []          # per page_size call, in order: (width, height, dpr) or an exception
+    calls: list = []          # "page_size" and "shot", in the order loadshot made them
 
     def __init__(self, *args, **kwargs):
         pass
@@ -175,12 +181,21 @@ class FakeBrowser:
 
     async def shot(self, sid, path):
         FakeBrowser.shots.append(path)
+        FakeBrowser.calls.append("shot")
         kind = FakeBrowser.contents.pop(0) if FakeBrowser.contents else "varied"
+        size = FakeBrowser.png_sizes.pop(0) if FakeBrowser.png_sizes else (8, 8)
         if kind == "garbage":
             Path(path).write_bytes(b"not a png")
         else:
-            png(path, varied=kind == "varied")
+            png(path, varied=kind == "varied", size=size)
         return path
+
+    async def page_size(self, sid):
+        FakeBrowser.calls.append("page_size")
+        page = FakeBrowser.pages.pop(0) if FakeBrowser.pages else (8, 8, 1)
+        if isinstance(page, Exception):
+            raise page
+        return page
 
 
 def test_loadshot_exits_1_on_a_boot_failure_before_or_after_loading(monkeypatch, tmp_path, capsys):
@@ -199,11 +214,13 @@ def test_loadshot_exits_1_on_a_boot_failure_before_or_after_loading(monkeypatch,
         assert "FAIL: BOOT FAIL" in capsys.readouterr().out
 
 
-def run_loadshot(monkeypatch, tmp_path, contents):
-    """loadshot through headed.main on a healthy boot whose two screenshots hold `contents`."""
+def run_loadshot(monkeypatch, tmp_path, contents, png_sizes=(), pages=()):
+    """loadshot through headed.main on a healthy boot whose two screenshots hold `contents` at `png_sizes`, on a page
+    that reports `pages` (8x8 PNGs of an 8x8 page at DPR 1 by default)."""
     monkeypatch.setattr(headed, "Browser", FakeBrowser)
     FakeBrowser.waits = ["BOOT phase=player started", "GAME OK 1948-05-15 turn 0 hash 00"]
     FakeBrowser.console, FakeBrowser.contents, FakeBrowser.shots = [], list(contents), []
+    FakeBrowser.png_sizes, FakeBrowser.pages, FakeBrowser.calls = list(png_sizes), list(pages), []
     return headed.main(["loadshot", "--build", str(tmp_path), "--out", str(tmp_path / "shot")])
 
 
@@ -223,6 +240,74 @@ def test_loadshot_exits_1_on_a_capture_that_does_not_decode(monkeypatch, tmp_pat
     for contents in (["garbage", "varied"], ["varied", "garbage"]):
         assert run_loadshot(monkeypatch, tmp_path, contents) == 1, contents
         assert "FAIL" in capsys.readouterr().out
+
+
+def test_loadshot_exits_1_when_a_capture_is_not_the_page_size_times_its_pixel_ratio(monkeypatch, tmp_path, capsys):
+    """#3043 item 1: a capture of the wrong size used to pass. The expected size is the page's own innerWidth x
+    innerHeight times its devicePixelRatio, read just before each capture, so the window and viewport stay as they are
+    (the #2700 caution); more than 1 px off in either dimension is a failure."""
+    for pngs, pages, wrong in (([(8, 8), (16, 8)], [(8, 8, 1), (8, 8, 1)], "16x8"),          # the capture after GAME OK
+                               ([(8, 4), (16, 8)], [(8, 4, 2), (8, 4, 2)], "8x4"),           # CSS size on a DPR 2 page
+                               ([(14, 8), (16, 7)], [(9, 5, 1.5), (9, 5, 1.5)], "16x7"),     # 2 px wide of 14x8
+                               ([(8, 8), (8, 6)], [(8, 8, 1), (8, 8, 1)], "8x6")):           # 2 px short
+        assert run_loadshot(monkeypatch, tmp_path, ["varied", "varied"], pngs, pages) == 1, (pngs, pages)
+        out = capsys.readouterr().out
+        assert "FAIL:" in out and wrong in out, out
+
+
+def test_loadshot_passes_a_capture_the_page_size_times_its_pixel_ratio_and_records_both(monkeypatch, tmp_path, capsys):
+    """#3043 item 1: DPR 2 (a Retina screen: device pixels, twice the CSS size), DPR 1, and 1 px of rounding for a
+    fractional ratio (9 x 1.5 = 13.5) all pass; each capture line records the PNG and page sizes."""
+    for pngs, pages, recorded in (([(16, 8), (16, 8)], [(8, 4, 2), (8, 4, 2)], "16x8, page 8x4 CSS px at DPR 2"),
+                                  ([(8, 8), (8, 8)], [(8, 8, 1), (8, 8, 1)], "8x8, page 8x8 CSS px at DPR 1"),
+                                  ([(13, 7), (14, 8)], [(9, 5, 1.5), (9, 5, 1.5)], "13x7, page 9x5 CSS px at DPR 1.5")):
+        assert run_loadshot(monkeypatch, tmp_path, ["varied", "varied"], pngs, pages) == 0, (pngs, pages)
+        out = capsys.readouterr().out
+        assert "FAIL" not in out and recorded in out, out
+        assert FakeBrowser.calls == ["page_size", "shot", "page_size", "shot"]      # read just before each capture
+
+
+def test_loadshot_exits_1_when_the_page_size_cannot_be_read(monkeypatch, tmp_path, capsys):
+    """#3043 item 1: a page mid-reload (Runtime.evaluate fails, or answers with no value) is a failure, not a pass."""
+    for pages, shots in (([RuntimeError("Runtime.evaluate: Execution context was destroyed")], 0),
+                         ([(8, 8, 1), ValueError("no page size (exceptionDetails)")], 1)):
+        assert run_loadshot(monkeypatch, tmp_path, ["varied", "varied"], pages=pages) == 1
+        out = capsys.readouterr().out
+        assert "FAIL:" in out and "page size" in out, out
+        assert len(FakeBrowser.shots) == shots
+
+
+def test_page_size_reads_the_window_and_ratio_over_runtime_evaluate(tmp_path):
+    """The real Browser.page_size: one Runtime.evaluate on the page's session, by value; an exception in the page or a
+    missing value raises, so loadshot fails instead of guessing."""
+    import shutil
+    b = headed.Browser(tmp_path)
+    answers, sent = [{"result": {"type": "object", "value": [1520, 640, 2]}},
+                     {"result": {"type": "object"}, "exceptionDetails": {"text": "Uncaught"}}], []
+
+    async def send(method, params=None, session=None, timeout=60):
+        sent.append((method, params, session))
+        return answers.pop(0)
+    b.send = send
+    assert asyncio.run(b.page_size("s1")) == (1520, 640, 2)
+    method, params, session = sent[0]
+    assert method == "Runtime.evaluate" and session == "s1" and params["returnByValue"] is True
+    for name in ("innerWidth", "innerHeight", "devicePixelRatio"):
+        assert name in params["expression"]
+    with pytest.raises(ValueError, match="page size"):
+        asyncio.run(b.page_size("s1"))
+    shutil.rmtree(b.profile, ignore_errors=True)
+
+
+def test_profile_exits_1_on_a_run_missing_a_configuration_from_every_pose(monkeypatch, tmp_path, capsys):
+    """#3043 item 2 through headed.main: every pose has the same configurations, so the per-pose check passed this run;
+    the toggles the game registers (web_check.VISUAL_TOGGLES) are missing from all of them."""
+    from test_web_check_shots import profile_lines
+    monkeypatch.setattr(headed, "Browser", FakeBrowser)
+    FakeBrowser.waits, FakeBrowser.console = ["PROFILE visual done"], profile_lines(labels=("all", "none"))
+    assert headed.main(["profile", "--build", str(tmp_path)]) == 1
+    out = capsys.readouterr().out
+    assert "FAIL" in out and "-labels" in out, out
 
 
 def test_profile_exits_1_on_a_partial_profile_and_0_on_a_whole_one(monkeypatch, tmp_path, capsys):
