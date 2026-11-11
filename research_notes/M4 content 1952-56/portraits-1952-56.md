@@ -17,6 +17,7 @@ The ids are those of `content/people.yaml`; none of the 20 has a `portrait:` ent
 - **2 of 20 have none: Haim Cohn and Israel Rokach.** Their only single-person portraits are Government Press Office (GPO)
   files under PD-Israel alone, and the CC BY 4.0 frames I found of them are group shots or do not name them (details below).
   (second pass, 27 Oct: Rokach does have one qualifying file, a Meitar frame whose NLI title names him; see "Second pass, 27 October" below. Haim Cohn still has none.)
+  (third pass, 11 Nov: Haim Cohn still has none; Dayan now has a portrait in `content/people.yaml` from another Meitar file. See "Third pass, 11 November" below.)
 - Sixteen of the 18 rest only on Knesset Archives portraits (CC BY-SA 4.0); Nurock has both kinds and Maklef only a Meitar frame. Those are **member portraits with no photograph
   date**: Commons gives only the span of the person's Knesset membership. For Carmel (member from 1958), Pinchas Sapir and
   Dayan (both from 1959) the photograph is probably later than 1956 [S]. Maklef and Nurock have dated Meitar frames
@@ -54,10 +55,13 @@ The ids are those of `content/people.yaml`; none of the 20 has a `portrait:` ent
   (second pass, 27 Oct: the same URL now opens and carries the GPO licence terms; read, see below. [V, agent read 27 Oct; a person's check pending])
 - **Not reachable:** `nli.org.il` record pages and `archives.gov.il` answered HTTP 403. [GAP]
   (second pass, 27 Oct: again HTTP 403 from `nli.org.il` and `archives.gov.il`, and from Europeana's item pages; still [GAP]. See below.)
+  (third pass, 11 Nov: HTTP 403 again from both, and from the NLI catalogue and API hosts; still [GAP]. See "Third pass, 11 November".)
 - **Not opened:** the IDF archive's catalogue search (`SearchCatalogTz.aspx`), Europeana, the Knesset site itself, and
   any search by the people's names in the Israel State Archives. Anything that depends on them is [GAP], not "none exists".
   (second pass, 27 Oct: Europeana was searched through its API and the Knesset site was tried; see below. The IDF catalogue and
   the Israel State Archives are still not searched.)
+  (third pass, 11 Nov: still not searched. The IDF catalogue is a browser form and this pass used no browser; the Israel State
+  Archives answered HTTP 403. Still [GAP].)
 
 ## The 18 with a qualifying file
 
@@ -114,6 +118,7 @@ record. Whether the face is the right man is the likeness check a person does.
   other explicit-US-status photograph of him. [GAP: the IDF archive catalogue and Europeana were not searched.]
   (second pass, 27 Oct: Europeana was searched, see below, and found no photograph of him from before 1980; the IDF archive
   catalogue is still not searched. Still [GAP] for that catalogue.)
+  (third pass, 11 Nov: a fresh Commons sweep found no new file of him; the IDF catalogue is still not searched. Still [GAP].)
 
 ### Israel Rokach (Wikidata Q129676) [V]
 
@@ -215,6 +220,8 @@ wrong, a dated correction sits right after the line, marked "second pass, 27 Oct
 - **Knesset site**, `https://main.knesset.gov.il/en/mk/pages/mk.aspx?mkid=620` and the older `knesset.gov.il/mk/eng/mk_eng.asp`
   form: both answered HTTP 303 and then a page at `https://www.knesset.gov.il/maintenance-page-geo` whose text says "The site is
   temporarily inaccessible from your location". [V, agent read 27 Oct; a person's check pending] Not spoofed. [GAP]
+  (third pass, 11 Nov: `mk.aspx?mkid=620` now answers HTTP 247 with a page that holds only a bot-check script and an empty body.
+  Not worked around. Still [GAP].)
 - **NLI** (`https://www.nli.org.il/en/archives/NNL_ARCHIVE_AL997008137543605171/NLI`): HTTP 403, "Checking your browser...".
   **Israel State Archives** (`https://www.archives.gov.il/`): HTTP 403. [GAP]
 
@@ -296,13 +303,96 @@ and a 1932 conference). [V, agent read 27 Oct; a person's check pending]
 - So the second pass found no qualifying file for Haim Cohn. "None found by these searches": the IDF catalogue and the Israel
   State Archives were not searched.
 
+## Third pass, 11 November 2026
+
+Added on 11 November 2026 for the [GAP] lines of this note. Like the second pass, it adds and changes nothing above; a dated
+"third pass, 11 Nov" line sits after each [GAP] line it touches. Refs #6. Research only: no image is added. Every claim in this
+section is "agent read 2026-11-11; a person must check the likeness and licence".
+
+**Result of the third pass.**
+
+- **Moshe Dayan has a portrait now.** `content/people.yaml` (the `dayan` entry, line 1136 on main `445ce494`) carries
+  `portrait: { file: promo/ref/people/Moshe_Dayan_CCBY_1948.jpg, license: CC BY 4.0, source: ".../File:Moshe_and_Ruth_Dayan_(997008137270105171).jpg" }`.
+  That matches the owner's scope update on #6 (Dayan done, 19 left). The other 19 still have no `portrait:` entry. [V]
+- **Haim Cohn still has no qualifying file.** A fresh Commons sweep found nothing new of him (details below). [GAP]
+- **Five Knesset Archives files that the first two passes did not list**, for Luz, Bar-Yehuda, Warhaftig, Carmel and Aran, and a
+  third Unna file. All are CC BY-SA 4.0 member portraits with no photograph date, like the ones above. Luz's and Warhaftig's are
+  taller than the files in the first table. [V]
+- **One Meitar frame of Maklef that does not qualify:** two men, and the caption does not say which is he (below). [C]
+- **Serlin and Barzilai:** no file taller than the ones in the first table was found, so both are still under the 512 px test.
+  [GAP]
+- **Every source that was [GAP] is still [GAP]:** NLI, the Israel State Archives and the gov.il photography page answered
+  HTTP 403; the Knesset site served a bot-check page; the IDF catalogue was not searched (it needs a browser, and this pass used
+  none).
+
+**Opened on 11 November 2026, and what each returned**
+
+- **Wikimedia Commons API**, `https://commons.wikimedia.org/w/api.php`. For each of the 19 people (not Dayan): a File-namespace
+  search, bitmaps only, 40 results a query, by the English and Hebrew name forms; `haswbstatement:P180=<Wikidata id>`; the
+  person's category; then `imageinfo` (size, licence short name, date, description) for every hit. Pool sizes: Cohn 49, Nurock 9,
+  Rokach 120, Serlin 75, Yosef Sapir 60, Aran 41, Luz 56, Pinchas Sapir 45, Barzilai 64, Bar-Yehuda 66, Carmel 56, Namir 55,
+  Maklef 49, Warhaftig 41, Ben-Meir 60, Susayeff 4, Tzur 40, Unna 12, Assaf 40. The hits under CC0, CC BY 4.0 or CC BY-SA 4.0 that
+  name the person and are not already in this note were then read on their file pages (`action=raw`). Later events (funerals,
+  the 1975 Rokach bridge, the 1979 Serlin hospital renaming), the French Joseph Serlin and Lyon street views were dropped by
+  their own titles and dates. [V]
+- **Thumbnails** (400 px, looked at in a scratch folder, not kept) of the Maklef frame and the Luz, Bar-Yehuda, Warhaftig and
+  Carmel files. [V]
+- **NLI**: `nli.org.il` record page, `merhav.nli.org.il` catalogue search and `api.nli.org.il`: HTTP 403 each. **Israel State
+  Archives**: `www.archives.gov.il` and `catalog.archives.gov.il`: HTTP 403. **gov.il photography page**: HTTP 403. [GAP]
+- **Knesset site**, `https://main.knesset.gov.il/en/mk/pages/mk.aspx?mkid=620`: HTTP 247, a page with one bot-check script and an
+  empty body. Not worked around. [GAP]
+- **IDF and Defence Establishment Archive**, `SearchCatalogTz.aspx`: HTTP 200, the same browser search form; no search was run.
+  [GAP]
+
+### Knesset Archives files not listed before
+
+All six carry the Knesset template set described above the first table: `{{Cc-by-sa-4.0|1={{Label|1=Q126911391}}}}`, creator
+"Knesset photographer" (`{{Creator|wikidata=Q131191898}}`), permission ticket VRTS 2024112910006311, and a
+`{{Knesset Archive|1=<code>}}` source whose code matches the first table. The date field is only the membership span. No US
+status is needed for a CC licence, and none is given. [V]
+
+| Person | File page (https://commons.wikimedia.org/wiki/File:...) | Licence | Size | Date as the page gives it | Identity | Note |
+|---|---|---|---|---|---|---|
+| Kadish Luz | `Kadish_Luz_(00360712).jpg` | CC BY-SA 4.0 | 600x870 | Knesset 1951-08-20 to 1969-11-17 | code 473 [S] | one man in an oval vignette, head and shoulders; looks older than he would in 1952-56; taller than `00360701` |
+| Yisrael Bar-Yehuda | `Israel_Bar-Yehuda_(00370388).jpg` | CC BY-SA 4.0 | 482x721 | Knesset 1949-02-14 to 1965-05-04 | code 310 [S] | one man with round glasses, a scan of a print with a deckled edge |
+| Zorach Warhaftig | `Zerach_Warhaftig_(00360248).jpg` | CC BY-SA 4.0 | 486x644 | Knesset 1949-02-14 to 1981-07-20 | code 398 [S] | one man, head and shoulders; looks older than he would in 1952-56; taller than `00360246` |
+| Moshe Carmel | `Moshe_Carmel_(00360632).jpg` | CC BY-SA 4.0 | 399x580 | Knesset 1958-06-09 to 1977-06-13 | code 467 [S] | one man, head and shoulders, white-haired; membership starts after 1956 |
+| Zalman Aran | `Zalman_Aran_(00330360).jpg` | CC BY-SA 4.0 | 414x588 | Knesset 1949-02-14 to 1969-11-17 | code 277 [S] | thumbnail not opened; smaller than `00010021` |
+| Moshe Unna | `Moshe_Unna_(una_moshe).jpg` | CC BY-SA 4.0 | 315x480 | Knesset 1949-02-14 to 1969-11-17 | code 245 [S] | thumbnail not opened; under 512 px tall: fails the size test |
+
+"Looks older" is only what the thumbnail shows; the photograph dates are still [GAP], and the likeness is for a person.
+
+### Maklef, 29 November 1949: does not qualify
+
+- `Mordechai_Maklef_(997008137135805171).jpg`, Benno Rothenberg, `{{cc-by-4.0|1={{Meitar Collection/license credit line|...}}}}`,
+  VRTS 2021092910005788, `{{taken on|1949-11-29|location=Israel}}`, 953x657. Title "מסיבה לכבוד השנתיים שחלפו מאז הכרזת האו"ם"
+  (my translation: a party for the second anniversary of the UN declaration); Hebrew description "בתצלום: מרדכי מקלף" (in the
+  photograph: Mordechai Maklef). [V]
+- The thumbnail shows two men in uniform side by side in the foreground and a crowd behind. The record names only Maklef and
+  does not say which of the two he is. **Two-person frame and identity unclear: not counted.** [C]
+
+### Haim Cohn: still none
+
+- The 49 files of the sweep, by the licence the API reports: 11 CC BY 4.0, all already in this note (the five June 1965
+  "Judges Israel" Meitar frames, the two June 1965 three-judge frames and the four 1980 IPPA frames); 1 CC BY-SA 3.0, a GPO
+  Flickr frame of 1959 whose description (President Ben-Zvi at Lydda with Ben-Gurion, Laskov and Nir) does not name him; 37
+  Public domain. [V]
+- The Public domain files are either `Cohen_haim.jpg` and `6 - MekorotOilAgreement.jpg` (both PD-Israel only, refused above) or
+  files of other men named Haim or Cohen (Weizmann, Bar-Lev, Laskov, Herzog, Levanon, Meguri-Cohen and others), plus an 1884
+  photomontage (`Berühmtheiten der Neuzeit, № I.jpg`, `{{PD-US-expired|PD-old-expired}}`) printed before he was born in 1911.
+  None is a qualifying photograph of him. [V]
+- He was not a Knesset member, so the Knesset Archives set has no file of him. **Still [GAP]:** the IDF catalogue, the Israel
+  State Archives and the NLI record pages were not reachable or not searched.
+
 ## Open for a person (not for this note)
 
 - The likeness check of every file above (owner's rule on #6).
 - [GAP] The photograph dates of the Knesset portraits. The Knesset Archives record pages, which may hold them, were not
   opened.
   (second pass, 27 Oct: the Knesset site answered "temporarily inaccessible from your location"; still [GAP]. [V, agent read 27 Oct; a person's check pending])
+  (third pass, 11 Nov: the Knesset site now serves a bot-check page; still [GAP].)
 - [GAP] Haim Cohn and Israel Rokach: a search of the IDF archive catalogue, Europeana and the Israel State Archives.
   (second pass, 27 Oct: Europeana done, see below; the IDF catalogue, the Israel State Archives and the Knesset record pages
   stay [GAP].)
+  (third pass, 11 Nov: unchanged; Haim Cohn is the only one of the 20 with no qualifying file.)
 - Which of the two or three files per person to choose, and the crop (a crop must stay at least 512 px tall).
