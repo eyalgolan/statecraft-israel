@@ -370,6 +370,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .event-requirement-unmet { color: var(--down); }
 .event-requirement, .event-requirement-unmet { font-size: 15px; }
 .lang-he .event-rejoin, .lang-he .event-effect, .lang-he .event-requirement, .lang-he .event-requirement-unmet { margin: -1px 46px 4px 0; }
+/* #2705 (owner, 11 November 2026: "One short line per option (Recommended)"): an option's unit orders share one line, so
+   the card keeps the decision layer's height; a card too narrow for it ends the line with an ellipsis instead of growing. */
+.event-orders { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
 .event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
 /* The capture dialog (CaptureDialogPresenter): under each option its plain description, then the sim's preview of what

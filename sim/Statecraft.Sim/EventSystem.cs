@@ -481,7 +481,7 @@ namespace Statecraft.Sim
                 var place = c.UnitOrderPlaces.TryGetValue((x.Unit, x.Q, x.R), out var p) ? p : Hex(x.Q, x.R);
                 var verb = x.Order == Combat.Attack ? "attack" : "go to";
                 Add(OptionEffectPreviewKind.UnitOrder, x.Unit, 0, $"{force.Name}: {verb} {place}", x.Unit, force.Name, "", x.Order,
-                    force.Name, place);
+                    force.Name, place, force.Type, Hex(x.Q, x.R));
             }
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {

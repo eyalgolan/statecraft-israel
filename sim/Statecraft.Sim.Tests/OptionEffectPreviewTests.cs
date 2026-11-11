@@ -173,9 +173,10 @@ public class OptionEffectPreviewTests
         Assert.Equal(new[] { "go_to", "go_to" }, orders.Select(r => r.Field));
         Assert.Equal(new[] { "carmeli", "brigade_7" }, orders.Select(r => r.ContextId));
         // The UI words the row from these: the unit row, the order, the unit's and the place's English names (Unity reads the
-        // Hebrew of map/units_1948.yaml itself, HebrewOverlay.UnityReads).
-        Assert.Equal(new[] { "", "", "carmeli", "go_to", "Carmeli Brigade", "Manara" }, orders[0].Cause.Args);
-        Assert.Equal(new[] { "", "", "brigade_7", "go_to", "7th Brigade", "al-Malikiyya" }, orders[1].Cause.Args);
+        // Hebrew of map/units_1948.yaml itself, HebrewOverlay.UnityReads), then the unit's type and the ordered hex, for a
+        // Hebrew line whose unit or place has no Hebrew name (owner, 11 November 2026: "Generic Hebrew term (Recommended)").
+        Assert.Equal(new[] { "", "", "carmeli", "go_to", "Carmeli Brigade", "Manara", "veteran_soldier", "15,3" }, orders[0].Cause.Args);
+        Assert.Equal(new[] { "", "", "brigade_7", "go_to", "7th Brigade", "al-Malikiyya", "veteran_soldier", "14,4" }, orders[1].Cause.Args);
         Assert.Equal(hash, s.Hash());
     }
 

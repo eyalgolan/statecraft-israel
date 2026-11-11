@@ -1107,7 +1107,7 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
     }
 
     /// <summary>#2705, R-EVT-005, R-ENEMY-005: an operation option lists the unit orders choosing it issues, each as given (its
-    /// unit and the sourced place it names), after the numeric effects and before the security level, in the UI's language.
+    /// unit and the sourced place it names), on one line after the numeric effects and before the security level, in the UI's language.
     /// Both GDD identities apply the orders (R-ENEMY-007), so both show them. The real Operation Hiram card in October 1948,
     /// the 7th Brigade arrived (R-UNIT-009); the Hebrew names come from the units file, as on the map.</summary>
     [TestCase(false, false)] [TestCase(true, false)] [TestCase(false, true)] [TestCase(true, true)]
@@ -1136,9 +1136,13 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         var shown = children.Skip(children.IndexOf(ui.Q<Button>("option-stop_at_ceasefire")) + 1).TakeWhile(x => !(x is Button))
             .OfType<Label>().Where(x => x.ClassListContains(EventCardPresenter.EffectClass))
             .Select(x => x.text.Replace(UiText.LeftToRightMark.ToString(), "")).ToList();
-        Assert.AreEqual(4, shown.Count, string.Join(" | ", shown));
-        Assert.AreEqual(hebrew ? new[] { "חטיבת כרמלי: תנועה אל מנרה", "חטיבה 7: תנועה אל אל-מאלכיה" }
-            : new[] { "Carmeli Brigade: go to Manara", "7th Brigade: go to al-Malikiyya" }, shown.Skip(1).Take(2).ToArray());
+        // One short line holds both orders (owner, 11 November 2026: "One short line per option (Recommended)").
+        Assert.AreEqual(3, shown.Count, string.Join(" | ", shown));
+        Assert.AreEqual(hebrew ? "חטיבת כרמלי: תנועה אל מנרה · חטיבה 7: תנועה אל אל-מאלכיה"
+            : "Carmeli Brigade: go to Manara · 7th Brigade: go to al-Malikiyya", shown[1]);
+        var lines = children.OfType<Label>().Where(x => x.ClassListContains(EventCardPresenter.OrdersClass)).ToList();
+        Assert.AreEqual(2, lines.Count, "one orders line under each of the two options");
+        Assert.IsTrue(lines.All(x => x.ClassListContains(EventCardPresenter.EffectClass)), "styled as an effect line");
         Assert.AreEqual(before, g.State.Hash(), "showing the orders changes nothing in the game");
     }
 }

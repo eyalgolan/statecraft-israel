@@ -36,6 +36,8 @@ namespace Statecraft.Game.UI
         public const string RejoinClass = "event-rejoin";
         /// <summary>One line under an option for one of its effects, from the sim's preview (#1125, R-EVT-005; Statecraft.uss).</summary>
         public const string EffectClass = "event-effect";
+        /// <summary>#2705: the effect line that holds an option's unit orders, kept to one line (Statecraft.uss).</summary>
+        public const string OrdersClass = "event-orders";
         public const string RequirementClass = "event-requirement";
         public const string MissingRequirementClass = "event-requirement-unmet";
         /// <summary>The red line under an operation option that waits for, or is ended by, its front's armistice (Q3).</summary>
@@ -374,11 +376,21 @@ namespace Statecraft.Game.UI
                 }
                 // What the option does, one line per effect, from the sim's preview (#1125, R-EVT-005): Unity only words it. Under
                 // the option like the rejoin line, so a Label takes no Tab stop. The rejoin effect has that line already, below.
+                // The unit orders share one short line, where the first stands (#2705; owner, 11 November 2026: "One short line
+                // per option (Recommended)"), so the card keeps the decision layer's height.
+                Label? orders = null;
                 foreach (var preview in EventSystem.OptionEffectPreviews(c, s, o))
                 {
                     if (preview.Kind == OptionEffectPreviewKind.Rejoin) continue;
-                    var effect = new Label(EffectLine(c, preview, text, Units));
+                    var line = EffectLine(c, preview, text, Units);
+                    if (preview.Kind == OptionEffectPreviewKind.UnitOrder && orders != null)
+                    {
+                        orders.text += text["event.effect.order_separator"] + line;
+                        continue;
+                    }
+                    var effect = new Label(line);
                     effect.AddToClassList("muted"); effect.AddToClassList(EffectClass);
+                    if (preview.Kind == OptionEffectPreviewKind.UnitOrder) { orders = effect; effect.AddToClassList(OrdersClass); }
                     options.Add(effect);
                 }
                 if (o.Rejoin == "") continue;
@@ -406,7 +418,7 @@ namespace Statecraft.Game.UI
         /// <paramref name="units"/> (#2705).</summary>
         public static string EffectLine(Content c, OptionEffectPreview row, UiText text, IReadOnlyList<UnitEntry>? units = null)
         {
-            if (row.Kind == OptionEffectPreviewKind.UnitOrder) return EventEffectText.UnitOrder(row.Cause, text, units);
+            if (row.Kind == OptionEffectPreviewKind.UnitOrder) return EventEffectText.UnitOrder(row.Cause, c, text, units);
             var key = "why.name." + row.ContextId;
             var name = row.Kind switch
             {

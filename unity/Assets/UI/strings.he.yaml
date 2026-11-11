@@ -1192,6 +1192,9 @@ event.effect.condition: "מצב הדיור"
 # with the unit (HE-15). Agent-drafted Hebrew; native review pending (#564).
 event.effect.go_to: "{0}: תנועה אל {1}"
 event.effect.attack: "{0}: התקפה על {1}"
+# #2705: between an option's unit orders, which share one line (owner, 11 November 2026: "One short line per option
+# (Recommended)"); the middle dot between facts on one line (UI-03), as card.offices_separator.
+event.effect.order_separator: " · "
 
 # The opening chain (#1484). Agent-drafted; approved by the owner, a native speaker, in chat on 24 October 2026 (about
 # 11:42 IDT): "Approved" (he_review: approved in advisor-messages.yaml, spec OQ-4). opening.move's בתורות הבאות:

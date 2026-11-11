@@ -88,7 +88,8 @@ namespace Statecraft.Sim
             EventCity = "event_city", EventUnlock = "event_unlock", EventPolicy = "event_policy",
             EventSetRung = "event_set_rung", EventRejoin = "event_rejoin", EventUnitOrder = "event_unit_order";
         // Grant: context then city id. City: context then city id, field. Rejoin: context then EN/HE title.
-        // Unit order (#2705): context then the unit row, the order (go_to, attack), the unit's and the place's English names.
+        // Unit order (#2705): context then the unit row, the order (go_to, attack), the unit's and the place's English names,
+        // the unit's type and the ordered hex ("q,r"), from which the Hebrew line names a unit or place with no Hebrew name.
         public const string MilitaryUpkeep = "military_upkeep";
         /// <summary>#1703, gdd-0.3 only (R-HOUSE-005): the cities' housing surcharge, a Money line (Target treasury) of minus
         /// Delta. No args.</summary>

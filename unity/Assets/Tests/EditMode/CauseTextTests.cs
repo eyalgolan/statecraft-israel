@@ -316,6 +316,28 @@ public class CauseTextTests
         }
     }
 
+    /// <summary>#2705 (owner, 11 November 2026: "Generic Hebrew term (Recommended)"): until a name list exists, a Hebrew unit
+    /// order whose unit has no Hebrew name names it by its type (unit.name.&lt;type&gt;) and the place by its hex (HexPlaces),
+    /// with no catalogue at all or with a row that has no name_he; with the row's Hebrew it reads as on the map. The English
+    /// line is the sim's.</summary>
+    [Test]
+    public void AUnitOrderWithNoHebrewNameUsesTheGenericHebrewTerm()
+    {
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        var option = C.Events.Single(e => e.Id == "operation_hiram").Options.Single(o => o.Id == "stop_at_ceasefire");
+        var order = EventSystem.OptionEffects(C, s, option).Single(x => x.Key == CauseKeys.EventUnitOrder);
+        Assert.AreEqual("Carmeli Brigade: go to Manara", CauseText.Line(order, C, NoRows, En));
+        var he = He;
+        var generic = he.Format("event.effect.go_to", he["unit.name.veteran_soldier"], HexPlaces.Of("15,3", C, he, null));
+        StringAssert.StartsWith("יחידת חיילים ותיקים: תנועה אל ", generic);
+        Assert.AreEqual(generic, CauseText.Line(order, C, NoRows, he), "no catalogue");
+        var unnamed = new[] { new UnitEntry { Id = "carmeli", Name = "Carmeli Brigade" } };
+        Assert.AreEqual(generic, CauseText.Line(order, C, unnamed, he), "a row with no name_he");
+        AssertHebrew(generic, order.Key);
+        var rows = UnitData.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        Assert.AreEqual("חטיבת כרמלי: תנועה אל מנרה", CauseText.Line(order, C, rows, he).Replace(UiText.LeftToRightMark.ToString(), ""));
+    }
+
     /// <summary>R-EFX-009 (#2457): the Debt line an option's debt_dollars writes (an EventAmount cause on "debt") is worded
     /// in both languages: English is the Message and starts "Debt"; Hebrew names חוב with the event's amount and title.</summary>
     [Test]
