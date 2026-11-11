@@ -64,8 +64,9 @@ Revision 21 October 2026, localisation follow-up: the Cabinet reads government a
 | aliyah-and-immigration | preferred | immigration | עלייה | Eyal |
 | mandate-sub-district | preferred | Mandate sub-districts | נפות המנדט | Eyal |
 | terrain | use-with-caution | terrain | open | Native reviewer |
-| front-line-and-control | preferred | the labels the strings use: 'Held by Israel', 'Held by Arab forces', 'Contested', "No-man's land", 'Israeli side', 'Arab side', 'Demilitarized zone' | open | Eyal; historian review for new labels |
+| front-line-and-control | preferred | the labels the strings use: 'Held by Israel', 'Held by Arab forces', 'Contested', "No-man's land", 'Israeli side of the armistice line', 'Arab side of the armistice line', 'Demilitarized zone' | open | Eyal; historian review for new labels |
 | city | pending-gdd | city | open | Eyal |
+| population-ledger | preferred | population ledger | מרשם האוכלוסין | Eyal |
 
 ## Conventions
 
@@ -1558,12 +1559,14 @@ Category: history-term. Scope: ui, docs.
 
 **Definition.** Who held an area on a date, as the map's control layer shows it. With the armistice lines, the map also names the two sides and the demilitarized zone.
 
-**English.** Preferred: the labels the strings use: 'Held by Israel', 'Held by Arab forces', 'Contested', "No-man's land", 'Israeli side', 'Arab side', 'Demilitarized zone'.
+**English.** Preferred: the labels the strings use: 'Held by Israel', 'Held by Arab forces', 'Contested', "No-man's land", 'Israeli side of the armistice line', 'Arab side of the armistice line', 'Demilitarized zone'.
 
 | In use | Where |
 |---|---|
 | Held by Israel | strings.en.yaml info.control_israel |
 | Held by Arab forces | strings.en.yaml info.control_arab |
+| Israeli side of the armistice line | strings.en.yaml info.control_side_israel |
+| Arab side of the armistice line | strings.en.yaml info.control_side_arab |
 | the Arab Liberation Army | strings.en.yaml control.holder_ala |
 | Demilitarized zone | strings.en.yaml info.control_dmz |
 | Front lines, {0}, approximate (Israel State Archives) | strings.en.yaml map.caption_held |
@@ -1574,6 +1577,8 @@ Category: history-term. Scope: ui, docs.
 |---|---|
 | בשליטת ישראל | strings.he.yaml info.control_israel |
 | בשליטת כוחות ערביים | strings.he.yaml info.control_arab |
+| הצד הישראלי של קו שביתת הנשק | strings.he.yaml info.control_side_israel |
+| הצד הערבי של קו שביתת הנשק | strings.he.yaml info.control_side_arab |
 | צבא ההצלה | strings.he.yaml control.holder_ala |
 | אזור מפורז | strings.he.yaml info.control_dmz |
 
@@ -1611,3 +1616,31 @@ Category: gdd-term. Scope: ui, docs.
 **Decision owner.** Eyal.
 
 **Pending GDD.** Further city design and terminology proposals remain owner-gated; the twelve-city content and city panel already exist.
+
+### population-ledger (preferred)
+
+Category: system. Scope: ui.
+
+**Definition.** The gdd-0.3 record of every person in a Historical game (#1689), which refusals name when an order needs people the ledger does not track yet.
+
+**English.** Preferred: population ledger.
+
+| In use | Where |
+|---|---|
+| who are not on the population ledger yet | strings.en.yaml workshop.refused_ledger_builders |
+| Craftsmen are not on the population ledger yet (#2476) | strings.en.yaml city.qualification_refused.ledger_craftsmen |
+| Craft training does not run on the population ledger yet (#2476) | strings.en.yaml unit.reinforce_refused.ledger_craftsman |
+
+**Hebrew.** Preferred: מרשם האוכלוסין.
+
+| In use | Where |
+|---|---|
+| אינם במרשם האוכלוסין | strings.he.yaml workshop.refused_ledger_builders, city.qualification_refused.ledger_craftsmen |
+| אינה פועלת במרשם האוכלוסין | strings.he.yaml unit.reinforce_refused.ledger_craftsman |
+
+**Recommendation (see status).**
+- English: Use 'population ledger' in player text; 'ledger' alone stays in code and comments.
+- Hebrew: Decided (owner, 10 November 2026, "Approve the term (Recommended)", relayed by the coordinator, #3020): מרשם האוכלוסין. The surrounding strings still go to the native reviewer (#564).
+- Reasons: (1) The term is new in the UI with #3020; no other string names the ledger.
+
+**Decision owner.** Eyal.

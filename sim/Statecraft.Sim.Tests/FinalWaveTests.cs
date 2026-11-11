@@ -91,6 +91,40 @@ public class FinalWaveTests
         Assert.Empty(ReleaseGate.AlternateUnsigned(c2));
     }
 
+    /// <summary>R-ALT-011, R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", checked through
+    /// the alternate-timeline gate): an armistice card's early text is a what-if, so a card with one and no person's
+    /// reviewed_by keeps a shareable build back; signed, it does not. A fixture card. The four real cards' early texts
+    /// (#1709 PR 2) land only with the owner's own sign-off on all four ("You, before they land (Recommended)"), which the
+    /// first assert above pins.</summary>
+    [Fact]
+    public void AShareableBuildNeedsAnEarlyArmisticeTextSignedOff()
+    {
+        const string card = @"
+id: armistice_egypt
+title: Armistice with Egypt
+text: 'Israel decides whether to sign.'
+early_text: 'The talks came sooner. {prime_minister} must decide.'
+office: prime_minister
+anchor: hard
+front_quiet: egypt
+from: 1949-02-15
+to: 1950-01-01
+sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
+options:
+  - id: sign
+    text: Sign the armistice
+    historical: true
+  - id: hold_out
+    text: Refuse and keep fighting
+    alternative: { basis: design }
+";
+        Assert.Equal(new[] { "armistice_egypt" }, ReleaseGate.AlternateUnsigned(AlternateTimelineTests.Load(("armistice_egypt.yaml", card))));
+        var ordinary = card.Replace("early_text: 'The talks came sooner. {prime_minister} must decide.'\n", "");
+        Assert.Empty(ReleaseGate.AlternateUnsigned(AlternateTimelineTests.Load(("armistice_egypt.yaml", ordinary))));
+        var signed = card + "status: fact-checked\nreviewed_by: a-reviewer\nreviewed_on: 2026-10-20\n";
+        Assert.Empty(ReleaseGate.AlternateUnsigned(AlternateTimelineTests.Load(("armistice_egypt.yaml", signed))));
+    }
+
     // ---- M2: Cause text is derived output, deterministic ----
 
     [Fact]

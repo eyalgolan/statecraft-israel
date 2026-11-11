@@ -465,7 +465,8 @@ A spot is clear when:
   aircraft's centre, are on land and at least 700 m beyond every railway and road corridor drawn while a token
   stands (a route opened after the last anchor's window, the 1949 rail link or the 1950 Tel Aviv–Netanya road, takes no
   spot; #786);
-- a ship has a sea hex;
+- a ship has a sea hex, and its whole drawn hull (the corvette, 6.0 km by 0.96 km at its heading) lies in the drawn
+  water; a ship tries the hex centres, then the points inside its sea hexes, and is never compact (#3038);
 - no other anchor whose window overlaps holds the hex.
 
 **Own side.** The map holds no 1948 front line yet, and the one-hex limit alone does not keep a token on its own side:

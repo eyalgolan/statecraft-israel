@@ -297,8 +297,8 @@ public class LastTurnObjectiveCardTests
         var newSave = g.Save.Write();
         var endLine = "end " + g.State.Hash();
         Assert.Contains(endLine + "\n", newSave);
-        Assert.StartsWith("statecraft-save 5\n", newSave);
-        return (c, newSave, newSave.Replace(endLine, "end " + old.Hash()).Replace("statecraft-save 5\n", "statecraft-save 3\n"));
+        Assert.StartsWith("statecraft-save 6\n", newSave);
+        return (c, newSave, newSave.Replace(endLine, "end " + old.Hash()).Replace("statecraft-save 6\n", "statecraft-save 3\n"));
     }
 
     // #2536: a game finished before the ending turn fired objective cards replays with its ending card added. That is the
@@ -328,14 +328,17 @@ public class LastTurnObjectiveCardTests
         Assert.Throws<SaveException>(() => GameSession.Load(c, wrong, out _));
     }
 
-    // #2605 review: a current-schema save was written after #2536, so it always has its ending cards; one without them was
-    // edited or damaged, and is refused like any other difference.
+    // #2605 review: a schema 5 or later save was written after #2536, so it always has its ending cards; a current one
+    // without them was edited or damaged, and is refused like any other difference. A schema 5 one (R-SAVE-006, #2544) is
+    // older rules, so it loads, but with replay_differs: the ending-card exception does not reach it.
     [Fact]
     public void ACurrentSchemaSaveWithoutItsEndingCardIsRefused()
     {
         var (c, _, oldSave) = FinishedWithAnEndingCard();
-        var edited = oldSave.Replace("statecraft-save 3\n", "statecraft-save 5\n");
+        var edited = oldSave.Replace("statecraft-save 3\n", "statecraft-save 6\n");
         Assert.Null(Assert.Throws<SaveException>(() => GameSession.Load(c, edited, out _)).Code);
+        GameSession.Load(c, oldSave.Replace("statecraft-save 3\n", "statecraft-save 5\n"), out var warnings);
+        Assert.Equal(new[] { GameSession.ReplayDiffers }, warnings);
     }
 
     // #2536: with other content the same save gives only content_changed, not replay_differs.

@@ -44,7 +44,10 @@ namespace Statecraft.Game.UI
         public static void DisableCovered(VisualElement root)
         {
             var r = root.Q("root") ?? root;
-            bool opening = r.ClassListContains(OpeningPresenter.OpenClass);
+            // The raid card on New game (RaidCardPresenter), and the raid flight before it (RaidFlightPresenter), cover the HUD
+            // as the opening does.
+            bool opening = r.ClassListContains(OpeningPresenter.OpenClass) || r.ClassListContains(RaidCardPresenter.OpenClass)
+                || r.ClassListContains(RaidFlightPresenter.OpenClass);
             bool start = r.ClassListContains(StartScreenPresenter.OpenClass) || opening;
             r.Q("start-screen")?.SetEnabled(!opening);
             bool screen = r.ClassListContains(ScreenOpenClass);
@@ -310,8 +313,24 @@ namespace Statecraft.Game.UI
             return true;
         }
 
+        /// <summary>The top-bar button of the screen that holds <paramref name="e"/>, or null when it is in no screen: where
+        /// <see cref="Close"/> hands a focus that was on the screen's contents. A presenter that closes the screens from a
+        /// press inside one (the Encyclopedia's "Show the opening advice again") asks this rather than the focus controller:
+        /// a focus change made while UI Toolkit is still dispatching that press is applied only after it, so focusedElement
+        /// still names the control in the closed screen (#3028).</summary>
+        public static Button? ButtonOfScreenAround(VisualElement root, VisualElement? e)
+        {
+            for (var v = e; v != null; v = v.parent)
+                foreach (var s in Screens)
+                    if (v.name == "screen-" + s) return root.Q<Button>("nav-" + s);
+            return null;
+        }
+
         /// <summary>The open screen's name, or null.</summary>
         public string? Current { get; private set; }
+        /// <summary>Raised with <see cref="Current"/> each time a screen opens or closes (TurnReportPresenter: a report that
+        /// waited for the enemy's moves opens once the player closes the screen they opened meanwhile, #2202).</summary>
+        public event System.Action<string?>? Changed;
 
         public void Toggle(string screen)
         {
@@ -337,6 +356,7 @@ namespace Statecraft.Game.UI
             // After the OnOpened action, which is what builds a screen's rows (CabinetPresenter, DefencePresenter):
             // before it there is nothing in the screen to hand the focus to.
             if (screen != null && presses.ByKeyboard) HandFocusTo(root.Q<VisualElement>("screen-" + screen));
+            Changed?.Invoke(screen);
         }
 
         /// <summary>Gives the keyboard focus to the screen just opened (accessibility audit, #41, the keyboard-only

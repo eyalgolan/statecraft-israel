@@ -237,6 +237,26 @@ public class AdvisorPopupTests
         Assert.IsTrue(rig.Session.Settings.Seen("t.teach"), "Escape is the X");
     }
 
+    /// <summary>#3028: a queue row takes no focus, so the player reaches it only by Tab. When it closes with the focus inside,
+    /// the focus goes to End turn, not to the control the player was on before (which only the opening tour gives back).</summary>
+    [TestCase(false)] [TestCase(true)]
+    public void AQueueRowReachedByTabGivesTheFocusToEndTurnWhenItCloses(bool hebrew)
+    {
+        using var rig = !hebrew ? new Rig() : new Rig(catalog: Fixture.Replace("level: new,", "level: new, he_review: approved,"),
+            text: UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text +
+                "\nadvisor.t.teach.text: \"Teach.\"\nadvisor.t.warn.text: \"Warn.\"\nadvisor.t.crit.text: \"Critical.\"\n", "strings.he.yaml"));
+        Focusable? Focused() => rig.Ui.Root.focusController.focusedElement;
+        var cabinet = rig.Ui.Q<Button>("nav-cabinet");
+        cabinet.Focus();
+        rig.Advisor.NewGame();
+        Assert.IsTrue(rig.Advisor.IsOpen, "precondition: the row shows");
+        Assert.AreSame(cabinet, Focused(), "precondition: it took no focus");
+        rig.Ui.Q<Button>("advisor-got-it").Focus();                    // as Tab would
+        Assert.IsTrue(rig.Advisor.Escape());
+        Assert.IsFalse(rig.Advisor.IsOpen);
+        Assert.AreSame(rig.Ui.Q<Button>("end-turn"), Focused());
+    }
+
     /// <summary>Spec 16: one Escape with the focus in the popup closes the popup only, as in the report panel (#1169).
     /// This unit fixture injects ScreenNav's TakesEscape ordering; GameRoot's boot hookup is covered by AdvisorGameTests.
     /// The Escape poll asks the popup before it

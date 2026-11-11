@@ -39,6 +39,7 @@ namespace Statecraft.Game.Map.Units
         internal Vector3 SlideOffset => moveOffset;
         float elapsed = Duration, attackLeft, hitLeft, hitDelay;
         int nextMoveDust;
+        bool held;     // the token waits at its old place for its beat (#2202, UnitLayer.Hold)
         bool firing;   // a figure plays the attack (else it waits for one, up to AttackWaitS)
         bool fired;    // an attack just ended: its figures go back to walking or standing
         float attackLength, resumeAt;   // the playing take's length; where a continued attack picks up
@@ -49,6 +50,8 @@ namespace Statecraft.Game.Map.Units
         Action? attackStarted, attackMissed;
 
         public bool Moving => elapsed < Duration;
+        /// <summary>The token waits where it was drawn, its unit already moved by the sim, until UnitLayer releases it (#2202).</summary>
+        public bool Held => held;
         /// <summary>An attack plays, or waits for a figure to play it.</summary>
         public bool Attacking => attackLeft > 0f;
         public bool Reacting => hitLeft > 0f;
@@ -58,11 +61,38 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Starts a slide from <paramref name="offset"/> (the old place less the new) to the unit's place.</summary>
         public void Begin(Vector3 offset)
         {
-            if (offset.sqrMagnitude < MinMoveM * MinMoveM) { if (Moving || Attacking || Reacting || HitPending) Snap(); return; }
+            bool wasHeld = held; held = false;
+            if (offset.sqrMagnitude < MinMoveM * MinMoveM) { if (wasHeld || Moving || Attacking || Reacting || HitPending) Snap(); return; }
             from = moveOffset = offset; elapsed = 0f; nextMoveDust = 0;
             ApplyPosition();
             enabled = true;
             Pose();
+            Changed?.Invoke();
+        }
+
+        /// <summary>Stands the token at <paramref name="offset"/> (the old place less the new) without sliding, until
+        /// <see cref="Unhold"/>: the move's slide stops, an attack or a hit plays on there. A token that cannot be seen does
+        /// not wait (it would slide only once shown, as <see cref="Begin"/>'s caller already skips it).</summary>
+        internal void Hold(Vector3 offset)
+        {
+            if (!gameObject.activeInHierarchy) return;
+            from = moveOffset = offset; elapsed = Duration; nextMoveDust = 0; held = true;
+            ApplyPosition();
+            if (!Attacking && !Reacting && !HitPending) enabled = false;   // a waiting token costs nothing per frame
+            Pose();
+            Changed?.Invoke();
+        }
+
+        /// <summary>Ends the wait: slides from the old place to the token's place (<paramref name="slide"/>), else puts it
+        /// there at once.</summary>
+        internal void Unhold(bool slide)
+        {
+            if (!held) return;
+            held = false;
+            var offset = moveOffset;
+            if (slide && offset.sqrMagnitude >= MinMoveM * MinMoveM) { Begin(offset); return; }
+            from = moveOffset = Vector3.zero;
+            ApplyPosition();
             Changed?.Invoke();
         }
 
@@ -275,10 +305,21 @@ namespace Statecraft.Game.Map.Units
             if (Moving || Attacking || Reacting || HitPending) Snap();
         }
 
+        /// <summary>Puts the component back as a new one, for a token UnitLayer builds again on the same root (#3055): what
+        /// the old pieces were playing stops as when a token is torn down (<see cref="OnDisable"/>), and UnitLayer then hands
+        /// the move, the attack and the hit on, as it does to a new token. Call it with the old pieces already taken off.</summary>
+        internal void Restart()
+        {
+            if (Moving || Attacking || Reacting || HitPending) Snap();
+            held = false; from = moveOffset = Vector3.zero; transform.position = Vector3.zero;
+            posed = 0; fired = false;
+            enabled = false;
+        }
+
         void Snap()
         {
             bool moved = transform.position != Vector3.zero;
-            fired = firing;
+            fired = firing; held = false;
             elapsed = Duration; attackLeft = hitLeft = hitDelay = 0f; firing = false; resumeAt = 0f;
             from = moveOffset = Vector3.zero; nextMoveDust = 0;
             DropAttackCue();

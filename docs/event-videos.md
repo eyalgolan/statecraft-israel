@@ -144,6 +144,35 @@ loop, and Yemen has one new shot made for it. All three follow the same rules as
   two card clips in the opening on 2 November 2026 ("Approve both") and the Yemen clip the same day ("Approve it"). A
   clip needs its caption, and a shareable build refuses a caption whose Hebrew is not `he_review: approved`.
 
+## On New game
+
+Owner, 8 Nov 2026: "show the bombing of tel aviv differently - as the game starts, show the player the planes coming from
+egypt and bombing tel aviv, and then flying back. then show an event card with an explanation about the bombing and how
+many were killed, with the video we have of people running from the bombing from what we did for the opening video. the
+player only has an option of clicking ok". The owner chose "15 May dawn raid (Recommended)" and "Film, raid, card,
+advisors (Recommended)". For the clip, owner, 8 Nov 2026: "only use the first video and dont cut it after 0.4 seconds",
+then "Yes, V19c whole (Recommended)"; these replace the earlier "V19c 0.45 s, then A1+B1 (Recommended)". For the toll,
+owner, 8 Nov 2026: "show the total number of killed accross all the egyptian raids on tel aviv", so the card gives the
+war's total for all the Egyptian air raids on Tel Aviv, with every figure found on its source list.
+
+- **When.** Only on New game (the start screen's or the top bar's): after the opening, before the turn 1 advisor chain.
+  Continue, a loaded game, the tools' `Begin` and the automated runs never show it (`GameRoot.PlayNewGameIntro`).
+- **The card.** One card in the event-card frame: title, text, the clip and only OK. Esc is the same OK. OK hands over to
+  the advisors. It reads no sim state and changes no number, so the goldens and the content hash cannot move for it.
+- **The content.** `unity/Assets/Resources/RaidIntro/raid-intro.yaml`, read strictly by `RaidCardContent.Parse`: every
+  fact has its source, the claim it supports and the date it was checked, and the Hebrew comes complete or not at all.
+- **The clip.** `tlv_raid_intro.mp4`: the opening film's shot V19c, whole (4.0 s), people running from a bombed street,
+  an AI-only clip (CC0, no photograph in it, so no credit line), looping silently in the card's frame with the cards'
+  `event.ai_label`. No card uses it, so it has no `event-videos.yaml` row; it is encoded with
+  `tools/encode_event_videos.py`'s `encode_command()`, and its `ASSETS.yaml` row records the whole recipe. A clip that fails
+  drops the frame and keeps the text and OK; with video off there is no frame.
+- **The gate.** A player build shows the card only when `status` is `sensitivity-reviewed`, every source is checked, the
+  Hebrew is `he_review: approved` and the clip is `sensitivity_reviewed: true` (`RaidCardContent.MayPresent`). The Editor
+  shows a draft with the opening's preview label. The owner reviewed the card on 10 November 2026 ("Approve text, HE,
+  clip", and "Approve as is" for the Hebrew), so player builds show it. `tools/tests/test_raid_intro_sources.py`
+  checks the sources, the `ASSETS.yaml` row (AI-generated, CC0, verified), the `docs/ai-disclosure.md` line and that the
+  card has no credit line.
+
 ## Where things are
 
 | What | Where |

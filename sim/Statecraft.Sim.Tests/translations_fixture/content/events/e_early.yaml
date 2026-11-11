@@ -1,0 +1,14 @@
+id: early
+title: Early
+text: Sooner.
+title_he: מוקדם
+text_he: מוקדם יותר.
+early_text: Sooner than in history.
+early_text_he: מוקדם יותר מאשר בהיסטוריה.
+front_quiet: egypt
+from: 1949-01-01
+options:
+  - id: sign
+    text: Sign
+    text_he: לחתום
+status: draft

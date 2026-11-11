@@ -101,6 +101,11 @@ namespace Statecraft.Game.Map
         public const string Ao = "Assets/Textures/Map/ao.png";
         /// <summary>The land (tools/land_bake.py, issue #33): rgb its linear colour, a its weight over the biome ground.</summary>
         public const string Land = "Assets/Textures/Map/landuse.png";
+        /// <summary>The furrows' strength (tools/land_bake.py, #2917): one uncompressed 8-bit channel, 1024 x 2048.</summary>
+        public const string Furrows = "Assets/Textures/Map/furrows.png";
+        /// <summary>One texel per farm block (tools/land_bake.py block_table, #2917): its angle and strip offset, 16 bits each,
+        /// read texel by texel, so uncompressed, unfiltered, no mips and never resized to a power of two.</summary>
+        public const string FieldBlocks = "Assets/Textures/Map/fieldblocks.png";
         /// <summary>The terrain water's mesh as heightmap samples (MapBuilder.WaterMeshBytes; Editor TerrainWaterBake), so a
         /// player does not derive it at boot (issue #195).</summary>
         public const string WaterMesh = "Assets/Textures/Map/terrain_water.bytes";

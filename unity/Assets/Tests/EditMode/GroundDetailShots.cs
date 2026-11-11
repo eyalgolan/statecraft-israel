@@ -93,9 +93,10 @@ public class GroundDetailShots
         yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
         UiTexture = rt;
         yield return Frames(5);
-        // CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3: every still
-        // would come out 1.33 times too wide (as UnitScaleShots). The opening's look-at follows the aspect, so it is set again.
-        Camera.main.aspect = 16f / 9f;
+        // The camera takes the 1920 x 1080 frame Shot renders through ShotCamera.Configure (#2882): a batch run's default
+        // aspect is 4:3, which would draw every still 1.33 times too wide. The opening's look-at follows the aspect, so it is
+        // set again.
+        ShotCamera.Configure(Camera.main, 1920, 1080);
         var rig = Camera.main.GetComponent<CameraRig>();
         var opening = Object.FindFirstObjectByType<MapScene>();
         rig.LookAt = CameraRig.OpeningLookAt(opening.Frame, Camera.main.aspect, opening.Settlements.First(s => s.Id == "tel_aviv"), opening.Settlements.First(s => s.Id == "jaffa"));

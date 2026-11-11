@@ -868,6 +868,54 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         Assert.AreEqual("Alternative course. It follows the government's decision: Hold the course (After the road).", banner.text);
     }
 
+    // R-WAR-008 (#1709; owner, 9 November 2026: "Separate early text (Recommended)", "Banner (Recommended)", "Ordinary text
+    // (Recommended)"): an armistice card shown before its `from` shows its early text, in Hebrew its early_text_he, under
+    // the event.alt_early banner; the same card on its date shows its ordinary text and no banner. The early texts are the
+    // real card's, in the words the owner approved (#1709, 9 November 2026); each is checked up to its first placeholder,
+    // since the card fills {prime_minister} with the minister's name.
+    [Test]
+    public void AnEarlyArmisticeCardShowsItsEarlyTextUnderTheWhatIfBannerInBothLanguages()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        var e = c.Events.Single(x => x.Id == "armistice_egypt");
+        static string UpToPlaceholder(string t) => t.IndexOf('{') is var i and >= 0 ? t.Substring(0, i) : t;
+        var earlyEn = UpToPlaceholder(e.EarlyText);
+        var earlyHe = UpToPlaceholder(e.EarlyTextHe);
+        Assert.That(earlyEn.Length, Is.GreaterThan(40), "precondition: the real card has its English early text");
+        Assert.That(earlyHe.Length, Is.GreaterThan(40), "precondition: the real card has its Hebrew early text");
+        foreach (var local in new[] { Text, He })
+        {
+            var hebrew = local["ui.lang"] == UiLanguage.Hebrew;
+            foreach (var early in new[] { true, false })
+            {
+                var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+                g.State.Date = early ? new System.DateTime(1948, 12, 15) : e.From;
+                g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+                using var ui = new UiTestKit();
+                using var card = new EventCardPresenter(ui.Root, new SimBridge(g, local), local, null);
+                card.Render();
+                var banner = ui.Q<Label>("event-alt-banner");
+                var body = ui.Q<Label>("event-text").text;
+                var where = $"{(hebrew ? "he" : "en")} early={early}";
+                if (early)
+                {
+                    Assert.AreEqual(DisplayStyle.Flex, banner.style.display.value, where);
+                    Assert.AreEqual(local["event.alt_early"], banner.text, where);
+                    StringAssert.StartsWith(hebrew ? "מסלול חלופי." : "Alternative course.", banner.text, where);
+                    Assert.IsTrue(body.StartsWith(hebrew ? earlyHe : earlyEn, System.StringComparison.Ordinal), $"{where}: {body}");
+                    Assert.IsFalse(body.Contains('{'), $"{where}: a placeholder is left: {body}");
+                }
+                else
+                {
+                    Assert.AreEqual(DisplayStyle.None, banner.style.display.value, where);
+                    Assert.AreEqual("", banner.text, where);
+                    Assert.IsFalse(body.Contains(hebrew ? earlyHe : earlyEn, System.StringComparison.Ordinal), $"{where}: {body}");
+                    StringAssert.Contains(hebrew ? "מצרים" : "Egypt", body, where);
+                }
+            }
+        }
+    }
+
     [Test]
     public void AnOrdinaryCardHasNoBanner()
     {

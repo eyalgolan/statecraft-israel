@@ -124,6 +124,16 @@ def test_next_version_reads_all_release_pages_through_the_runner(gh, runner):
     assert runner.calls == [cmd]
 
 
+def test_a_manual_version_is_checked_against_the_same_release_pages(gh, runner):
+    cmd = ["gh", "api", f"repos/{SLUG}/releases?per_page=100", "--paginate", "--slurp"]
+    runner.on(cmd, json.dumps([[{"tag_name": "v0.3.9", "draft": False}], [{"tag_name": "v0.3.1", "draft": False}]]))
+    assert gh.next_version("0.4.0") == "0.4.0"
+    with pytest.raises(Refused) as e:
+        gh.next_version("0.3.9")
+    assert e.value.gate == "version"
+    assert runner.calls == [cmd, cmd]
+
+
 @pytest.mark.parametrize("answer", ["not json", "{}", "[{}]", "[[{}]]", "[]"])
 def test_next_version_refuses_unknown_release_data(gh, runner, answer):
     runner.on(["gh", "api"], answer)

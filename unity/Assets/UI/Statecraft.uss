@@ -581,6 +581,24 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .end-screen-note { white-space: normal; margin-bottom: 14px; color: var(--ink-dim); }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
+/* #2202: the footer while the Arab forces' moves play (EnemyPlaybackBar). A layer along the window's foot that takes no
+   pointer, and a panel in its middle that does (Skip). The flag is large beside the side's name (owner, 8 November 2026:
+   "Flag + name (Recommended)"), 3:2 as the sourced cloths are near; it never scales past its box. Short-lived and drawn over
+   the info panel and the minimap where they meet it; on a narrow window it takes the width less the 16 px gutters
+   (EnemyPlaybackUiTests.TheSkipBarFitsAndMirrorsInHebrew). In Hebrew the row is mirrored, the flag at the right. */
+.enemy-playback { display: none; position: absolute; left: 16px; right: 16px; bottom: 16px; align-items: center; }
+.enemy-playback-panel { flex-direction: row; align-items: center; max-width: 720px; padding: 10px 14px; background-color: rgb(11, 18, 32); }
+.side-flag { width: 96px; height: 64px; flex-shrink: 0; margin-right: 14px; }
+.enemy-playback-lines { flex-grow: 1; flex-shrink: 1; min-width: 0; }
+.enemy-playback-side { white-space: normal; margin: 0; }
+.enemy-playback-step, .enemy-playback-action { white-space: normal; margin: 0; padding: 0; }
+.enemy-playback-skip { flex-shrink: 0; margin-left: 14px; white-space: normal; max-width: 220px; }
+.lang-he .enemy-playback-panel { flex-direction: row-reverse; }
+.lang-he .side-flag { margin-right: 0; margin-left: 14px; }
+.lang-he .enemy-playback-skip { margin-left: 0; margin-right: 14px; }
+.hud-three-row .side-flag { width: 60px; height: 40px; margin-right: 10px; }
+.lang-he.hud-three-row .side-flag { margin-right: 0; margin-left: 10px; }
+.hud-three-row .enemy-playback-skip { max-width: 120px; }
 /* The encyclopedia's button that opens the opening advice again: under the list, never squeezed by it. */
 .encyclopedia-opening { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
 .lang-he .encyclopedia-opening { align-self: flex-end; }
@@ -899,6 +917,26 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
     margin: 0;
     white-space: nowrap;
 }
+/* #803 (owner, 24 October 2026, "1521: 1. a 2.a"): a game settlement's control state as a short word tag under its name,
+   in one quiet colour for every state (the localities' own), never a number. The tag is the name's sibling in its slot,
+   lined up with the name by the anchor class below (the name's, without the lift); MapLabelsPresenter places the two as one. */
+.map-label-control {
+    position: absolute;
+    left: 0;
+    top: 0;
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
+    font-size: 15px;
+    color: rgb(232, 222, 200);
+    background-color: rgba(14, 22, 38, 0.72);
+    border-radius: 6px;
+    padding: 0 6px 1px 6px;
+    margin: 0;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+.map-label-control-centre { translate: -50% 0; }
+.map-label-control-left { translate: 0 0; }
+.map-label-control-right { translate: -100% 0; }
 .anchor-lower-centre { translate: -50% -100%; }
 .anchor-lower-left { translate: 0 -100%; }
 .anchor-lower-right { translate: -100% -100%; }
@@ -993,7 +1031,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    classes only presenters add (it gives a label each). */
 .lang-he, .lang-he .title, .lang-he .button, .lang-he Button, .lang-he .year, .lang-he .end-turn, .lang-he .draft,
 .lang-he .why-group, .lang-he .turn-report-heading, .lang-he .end-screen-outcome, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
-.lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .start-title, .lang-he .start-button {
+.lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .map-label-control, .lang-he .start-title, .lang-he .start-button {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;
 }
@@ -1287,3 +1325,19 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .opening-source-en, .lang-he .opening-source-en { -unity-text-align: upper-left; white-space: normal; }
 .opening-open .top-bar, .opening-open .left-column, .opening-open .community-column, .opening-open .right-column, .opening-open .event-layer, .opening-open .info-panel, .opening-open .screen, .opening-open .map-labels, .opening-open .start-screen, .opening-open .advisor-layer { display: none; }
 .loading .opening-layer { display: none; }
+/* The Tel Aviv raid card on New game (RaidCardPresenter): the opening's card frame over a dim backdrop, so the map of
+   Tel Aviv shows around it; the HUD under it is hidden as under the opening. The clip keeps 16:9 inside its frame
+   (contain) and gives way first on a short window; OK stays outside the scrolling text. */
+.raid-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; padding: 16px; background-color: rgba(5, 9, 18, 0.72); }
+.raid-layer > .raid-card { display: flex; max-height: 100%; padding: 12px 24px; }
+.raid-layer > .raid-card > .raid-scroll { flex-shrink: 1; min-height: 48px; }
+.raid-media { height: 400px; max-height: 45%; min-height: 0; flex-shrink: 1000; margin: 4px 0; justify-content: flex-end; background-size: contain; background-position-x: center; background-position-y: center; background-repeat: no-repeat; background-color: var(--navy-deep); border-width: 1px; border-color: var(--gold); }
+.raid-actions { flex-wrap: wrap; justify-content: center; flex-shrink: 0; }
+.raid-actions > Button { min-height: 44px; min-width: 160px; margin: 4px 6px; }
+.raid-open .top-bar, .raid-open .left-column, .raid-open .community-column, .raid-open .right-column, .raid-open .event-layer, .raid-open .info-panel, .raid-open .screen, .raid-open .map-labels, .raid-open .start-screen, .raid-open .advisor-layer { display: none; }
+.loading .raid-layer { display: none; }
+/* New game's raid flight before that card (RaidFlightPresenter, #3000): a clear layer over the whole map, so the Dakotas
+   show and any click on it skips the flight; the HUD under it is hidden as under the card, the map's names too. */
+.raid-flight-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0); }
+.raid-flight-open .top-bar, .raid-flight-open .left-column, .raid-flight-open .community-column, .raid-flight-open .right-column, .raid-flight-open .event-layer, .raid-flight-open .info-panel, .raid-flight-open .screen, .raid-flight-open .map-labels, .raid-flight-open .start-screen, .raid-flight-open .advisor-layer { display: none; }
+.loading .raid-flight-layer { display: none; }

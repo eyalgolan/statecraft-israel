@@ -132,14 +132,17 @@ namespace Statecraft.Sim
                 rows[row] = result.AsReadOnly();
             }
             // content/gdd03-balance.yaml `combat.armoured_factor`, `combat.artillery_range` and `combat.artillery_factor`; GDD docs/gdd/balance.md:175-177 at 605277df.
-            decimal Role(string key)
+            decimal Role(string key, string basis)
             {
-                var n = List(Required(key, "Default"), key, 1)[0];
+                var n = List(Required(key, basis), key, 1)[0];
                 if (n <= 0) throw Invalid(key, "requires a positive exact role factor");
                 return n;
             }
-            var armour = Role("combat.armoured_factor"); var artillery = Role("combat.artillery_factor");
-            var range = Integer(List(Required("combat.artillery_range", "Default"), "combat.artillery_range", 1)[0], "combat.artillery_range", true);
+            // R-COMBAT-007: the artillery factor is Agreed at 2, the live combat_percent 200 (C1, owner, 10 November 2026,
+            // #2918: "200% wins (Recommended)"); the armoured factor stays Default.
+            var armour = Role("combat.armoured_factor", "Default"); var artillery = Role("combat.artillery_factor", "Agreed");
+            // R-COMBAT-007: the range is Agreed (O5, owner, 1 November 2026, #1668: "2 hexes."; relabelled after #2918 C2).
+            var range = Integer(List(Required("combat.artillery_range", "Agreed"), "combat.artillery_range", 1)[0], "combat.artillery_range", true);
             return new Gdd03CombatCatalogue(thresholds, rows, draws, armour, artillery, range, sources);
         }
 
@@ -153,8 +156,10 @@ namespace Statecraft.Sim
             Scalar(c, "military.fortify_bonus", false);
             Scalar(c, "military.combat_xp_gain"); Scalar(c, "military.combat_xp_full");   // R-UNIT-011
             if (Scalar(c, "military.fortify_turns") != 1) throw Invalid("military.fortify_turns", "only the existing one-turn settlement is implemented");
-            // R-ORDER-002 (#2601): the rule names this value Agreed; Entry alone would also accept a Default row.
-            if (Entry(c, "military.fortify_turns").Basis != "Agreed") throw Invalid("military.fortify_turns", "must be Agreed (R-ORDER-002)");
+            // R-ORDER-002: the rule names both fortify rows Agreed (fortify_turns #2601; fortify_bonus O1, owner, 1 November 2026,
+            // #1668, relabelled after #2918 C2); Entry alone would also accept a Default row.
+            foreach (var key in new[] { "military.fortify_turns", "military.fortify_bonus" })
+                if (Entry(c, key).Basis != "Agreed") throw Invalid(key, "must be Agreed (R-ORDER-002)");
             foreach (var biome in new[] { "coastal_plain", "lowland", "valley", "hills", "mountains", "desert" })
             {
                 Terrain(c, biome, "infantry"); Terrain(c, biome, "armour"); Defence(c, biome);

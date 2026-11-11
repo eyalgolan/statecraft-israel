@@ -60,24 +60,124 @@ namespace Statecraft.Sim
         /// <summary>R-UNIT-005: sends the unit home at once, like CancelTraining returns a cohort (R-TRAIN-002): the unit
         /// leaves the map and its strength joins the nearest city's civilians, employed count untouched, so the people count
         /// in the city's jobs and housing rules from the same turn. Refused, state untouched, with <see cref="Check"/>'s
-        /// reason.</summary>
+        /// reason. On a Historical ledger game (#1725 PR 7) the formation's soldiers are records instead: see
+        /// <see cref="LedgerSendHome"/>.</summary>
         internal static string? Give(Content c, GameState s, int unitId,
                                      IReadOnlyDictionary<int, AttackRecord>? attacked, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: on a Historical ledger the soldiers sent home are records
             var refused = Check(c, s, unitId, attacked);
             if (refused != null) return refused;
             var u = s.Units[unitId];
             var city = Nearest(c, u.Q, u.R);
+            var back = 0;
+            if (s.PopulationLedger.IsHistorical)
+            {
+                refused = LedgerSendHome(c, s, u, city, out back);
+                if (refused != null) return refused;
+            }
+            else
+            {
+                var x = s.Cities[city];
+                s.Cities[city] = x.WithCounts(x.Civilians + u.Strength, x.Employed, x.Refugees);
+            }
             s.Units.Remove(unitId);
-            var x = s.Cities[city];
-            s.Cities[city] = x.WithCounts(x.Civilians + u.Strength, x.Employed, x.Refugees);
-            var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;
-            why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), u.Strength, FormattableString.Invariant(
-                $"Unit {unitId} is sent home: its {u.Strength * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now"),
-                key: WhyKeys.SentHome, units: new[] { new UnitRef(u) },
-                args: new[] { (u.Strength * ppu).ToString(CultureInfo.InvariantCulture), city }));
+            why.Add(SentHomeLine(c, s, u, u.Strength, city));
+            if (back > 0)   // the ledger path only (owner, 8 November 2026: "Yes, one Why line (Recommended)"), as Training's Cancel writes it
+                why.Add(ArmsReturnedLine(c, city, unitId, back));
             return null;
+        }
+
+        /// <summary>R-UNIT-005's Why line, in people (Q-CIV-4): <paramref name="count"/> population units of unit
+        /// <paramref name="u"/> are civilians in <paramref name="city"/> now. Send home writes it for the unit's strength and,
+        /// for a surrendering formation's leftover records (owner, 9 November 2026: "Yes, reuse Send home's (Recommended)"),
+        /// Combat's surrender for the leftovers, both before the Arms line.</summary>
+        internal static Cause SentHomeLine(Content c, GameState s, Unit u, int count, string city)
+        {
+            var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;
+            return new Cause("map", u.Id.ToString(CultureInfo.InvariantCulture), count, FormattableString.Invariant(
+                $"Unit {u.Id} is sent home: its {count * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now"),
+                key: WhyKeys.SentHome, units: new[] { new UnitRef(u) },
+                args: new[] { (count * ppu).ToString(CultureInfo.InvariantCulture), city });
+        }
+
+        /// <summary>"Yes, one Why line (Recommended)" (owner, 8 November 2026): the line naming the <paramref name="back"/> Arms
+        /// that unit <paramref name="unitId"/>'s records returned to the stock in <paramref name="city"/>. Written by Send home
+        /// and, for a surrendering formation's leftover records (owner, 9 November 2026: "Sent home (Recommended)"), by
+        /// Combat's surrender.</summary>
+        internal static Cause ArmsReturnedLine(Content c, string city, int unitId, int back) =>
+            new Cause("city", "arms", back, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: unit {unitId} returned {back} Arms"), key: CauseKeys.SentHomeArmsReturned, args: new[] { city, CauseKeys.Number(unitId) });
+
+        /// <summary>R-UNIT-005 on a Historical ledger game (#1699, #1725 PR 7; owner, 8 November 2026, #1725
+        /// issuecomment-6726421643 and issuecomment-6727007834). "Every soldier in it (Recommended)": every active-soldier record
+        /// serving the formation's target (<see cref="Training.FormationTarget"/>) leaves service. "Refuse with a reason
+        /// (Recommended)": when the formation's strength differs from those records, the order is refused with a plain reason
+        /// and nothing changes. "Nearest city, unemployed (Recommended)": each record becomes a free civilian without an
+        /// assignment located in <paramref name="city"/> (its region plus the city), so the city houses it from the same turn.
+        /// "Settled in (Recommended)": its reception ticks are reception.turns. "Keep both (Recommended)": its military
+        /// qualification and combat XP stay. "Back to Arms stock (Recommended)": its issued military item leaves the record and
+        /// goes back to the stock once. "No, records only (Recommended)": no aggregate city field is written. The records are
+        /// written in one validated commit; the caller removes the unit after it and, for "Yes, one Why line (Recommended)",
+        /// writes one Why line naming the <paramref name="back"/> Arms returned. Null when done, else the reason. The records'
+        /// change is <see cref="RecordsHome"/> then <see cref="CommitHome"/>; a surrender's leftover records share
+        /// <see cref="RecordsHome"/> and <see cref="ReturnArms"/>, written in the capture's one ledger commit
+        /// (<see cref="PopulationLedger.Capture"/>).</summary>
+        static string? LedgerSendHome(Content c, GameState s, Unit u, string city, out int back)
+        {
+            back = 0;
+            var target = Training.FormationTarget(c, u.Id);
+            var serving = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.ActiveSoldier
+                && string.Equals(p.Assignment.Target, target, StringComparison.Ordinal)).ToList();
+            if (serving.Count != u.Strength)
+                return string.Format(CultureInfo.InvariantCulture, Training.LedgerRefusedStrength, u.Id, serving.Count, u.Strength);
+            var civilians = RecordsHome(c, serving, city, out var items);
+            back = CommitHome(s, civilians, items);
+            return null;
+        }
+
+        /// <summary>R-UNIT-005 on a Historical ledger, the records leaving service (owner, 8 November 2026): each of
+        /// <paramref name="serving"/> as a free civilian without an assignment located in <paramref name="city"/> (its region
+        /// plus the city; "Nearest city, unemployed (Recommended)"), reception ticks reception.turns ("Settled in
+        /// (Recommended)"), qualification and combat XP kept ("Keep both (Recommended)"), its issued military item taken off
+        /// and counted in <paramref name="items"/> ("Back to Arms stock (Recommended)"). Writes nothing: a missing region or
+        /// reception.turns throws here, before the caller's first write; the ledger's own location check comes in the commit
+        /// that writes them. Send home's ledger path and, for "Sent home (Recommended)" (owner, 9 November 2026), a
+        /// surrendering formation's leftover records (Prisoners.CaptureRecords, in the capture's own commit) use it.</summary>
+        internal static List<PopulationUnit> RecordsHome(Content c, IEnumerable<PopulationUnit> serving, string city, out int items)
+        {
+            var region = c.PlayerRegions.AtLocation(city)?.Id
+                ?? throw new InvalidOperationException("No region in regions.yaml for " + city + " (R-POP-004).");
+            var location = new PopulationLocation(region, city: city);
+            var received = c.RequirePopulationInteger("reception.turns");
+            var issued = 0;
+            var civilians = serving.Select(p =>
+            {
+                var e = p.Equipment;
+                if (e.MilitaryId != null) issued++;
+                return new PopulationUnit(p.Id, PopulationStatus.FreeCivilian, received, location, PopulationAssignment.Unassigned,
+                    p.Profession, p.Tier, p.WorkXp, p.Qualification, p.CombatXp, new PopulationEquipment(e.ToolsId, e.ToolsPaid),
+                    p.Captor, p.Home);
+            }).ToList();
+            items = issued;
+            return civilians;
+        }
+
+        /// <summary>Writes <see cref="RecordsHome"/>'s records in one validated commit ("No, records only (Recommended)": no
+        /// aggregate city field), then returns their <paramref name="items"/> issued items to the Arms stock once ("Back to
+        /// Arms stock (Recommended)") and gives the Arms added.</summary>
+        internal static int CommitHome(GameState s, IReadOnlyCollection<PopulationUnit> civilians, int items)
+        {
+            s.PopulationLedger.Commit(civilians, Array.Empty<PopulationTarget>());
+            return ReturnArms(s, items);
+        }
+
+        /// <summary>"Back to Arms stock (Recommended)": <paramref name="items"/> issued items go back to the stock once, after
+        /// the records' commit; gives the Arms added.</summary>
+        internal static int ReturnArms(GameState s, int items)
+        {
+            var back = (int)Math.Min(items, (long)int.MaxValue - s.Arms);   // the stock stops at int.MaxValue, as Training's cancel leaves it
+            s.Arms += back;
+            return back;
         }
 
         /// <summary>The nearest of the cities by hex distance to its settlement hex; a tie takes the city's id in ordinal

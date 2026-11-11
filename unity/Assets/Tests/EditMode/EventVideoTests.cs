@@ -47,13 +47,15 @@ public class EventVideoTests
         var problems = EventVideoMapping.Problems(rows, C, id => Photos.Find(id) != null, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
         Assert.IsNotEmpty(EventVideoMapping.Load(), "the game finds the mapping in Resources");
-        // Every file in the folder has a row (no stray clip ships): here, or an opening panel's clip (OpeningClipTests).
+        // Every file in the folder has a row (no stray clip ships): here, an opening panel's clip (OpeningClipTests) or the
+        // raid card's on New game (RaidCardTests).
         var files = Directory.GetFiles(EventVideoMapping.ClipFolder, "*.mp4").Select(Path.GetFileName).OrderBy(x => x).ToArray();
         var outcomes = EventVideoMapping.ParseOutcomes(File.ReadAllText(EventVideoMapping.Path));   // the End Turn clips (OutcomeClipTests)
         var mapped = rows.Concat(outcomes).Select(r => r.File).ToList();
         var openingOnly = AssetDatabase.LoadAssetAtPath<OpeningContent>("Assets/Resources/OpeningContent.asset").Read().Panels
             .Where(p => p.Clip != null).Select(p => p.Clip!.File).Except(mapped);   // law_of_return and iraqi_exodus are card rows
-        CollectionAssert.AreEqual(mapped.Concat(openingOnly).OrderBy(x => x).ToArray(), files);
+        var raid = RaidCardContent.Parse(File.ReadAllText(RaidCardContent.SourcePath)).Clip.File;
+        CollectionAssert.AreEqual(mapped.Concat(openingOnly).Append(raid).OrderBy(x => x).ToArray(), files);
     }
 
     [Test]
@@ -233,6 +235,27 @@ public class EventVideoTests
         Assert.IsFalse(r.Shows("event-illustration"), "and the switch is gone for this event");
         Assert.AreEqual(credit, r.Credit.text, "the photograph and its credit are back");
         Assert.AreEqual("Illustration", r.Switch.text);
+    }
+
+    /// <summary>#3004 item 3: while End turn's enemy playback holds the card out of view (HeldForPlayback; owner, 8 November
+    /// 2026: "Hide it, bring back (Recommended)"), its AI clip stops; when the card comes back the clip plays again (from its
+    /// start), as the player left the switch.</summary>
+    [UnityTest]
+    public IEnumerator AHeldCardStopsItsIllustrationAndPlaysItAgainWhenItComesBack()
+    {
+        LogAssert.ignoreFailingMessages = true;   // the edit-mode VideoPlayer may log while it prepares
+        using var r = new Rig("law_of_return", From(Rows));
+        yield return Frames(4);
+        Press(r.Switch);
+        yield return Frames(2);
+        Assert.IsTrue(r.Card.IllustrationShown, "precondition: the clip plays");
+        r.Card.HeldForPlayback = true;
+        yield return Frames(2);
+        Assert.IsFalse(r.Card.IllustrationShown, "held out of view: the clip is stopped");
+        r.Card.HeldForPlayback = false;
+        yield return Frames(2);
+        Assert.IsTrue(r.Card.IllustrationShown, "back in view: the clip plays again");
+        Assert.AreEqual("Photograph", r.Switch.text, "the switch is still on");
     }
 
     [UnityTest]

@@ -1,11 +1,12 @@
 # yaml-language-server: $schema=../schema/event.schema.json
 id: education_registration_1951
 title: Schools in the Transit Camps
-text: 'The coalition is split over schooling for immigrant children in the transit camps: the religious parties oppose a religious stream run by the labour movement. {education_minister} brings a registration plan to the Knesset.'
+text: 'The coalition is split over schooling for immigrant children in the transit camps: the religious parties oppose a religious stream run by the labour movement. {education_minister} is preparing a registration plan to put before the Knesset.'
 # For the native reviewer (#564): מעברות follows he.wiki "מעברה": https://he.wikipedia.org/wiki/מעברה . "זרם דתי
 # המנוהל בידי תנועת העבודה" translates the English and is not a proper name; check it against the Knesset minutes below.
+# For the native reviewer (#564): "נערכת לקראת הבאתה לכנסת" is new for #2578 (a plan in preparation) and needs a native check.
 title_he: בתי הספר במעברות
-text_he: 'הקואליציה מפולגת בסוגיית חינוך ילדי העולים במעברות: המפלגות הדתיות מתנגדות לזרם דתי המנוהל בידי תנועת העבודה. תוכנית רישום מטעם {education_minister} מובאת לכנסת.'
+text_he: 'הקואליציה מפולגת בסוגיית חינוך ילדי העולים במעברות: המפלגות הדתיות מתנגדות לזרם דתי המנוהל בידי תנועת העבודה. תוכנית רישום מטעם {education_minister} נערכת לקראת הבאתה לכנסת.'
 anchor: hard
 office: education_minister
 # The event opened on its first cited plenum record, 12 February 1951 (owner ruling, 18 October 2026, #457 item 9),

@@ -262,16 +262,58 @@ public class EncyclopediaScreenTests
         CollectionAssert.Contains(entries, "encyclopedia-page-public_support", "approved in Hebrew on 3 Nov 2026");
     }
 
-    /// <summary>Under gdd-0.3 a lost city alone does not end the game (R-END-003, #1668): the defeat page says so.</summary>
+    /// <summary>Under gdd-0.3 a lost city alone does not end the game (R-END-003, #1668): the defeat page says so, in both
+    /// languages, and the old war-loss sentence (a city held at a turn's end loses the game at once) is gone (#2733 item 11).</summary>
     [Test]
-    public void Gdd03DefeatPageHasNoWarLoss()
+    public void Gdd03DefeatPageHasNoWarLoss([Values(false, true)] bool hebrew)
     {
+        var text = hebrew ? He : En;
         using var ui = new UiTestKit();
         using var nav = new ScreenNav(ui.Root);
-        using var pedia = new EncyclopediaPresenter(ui.Root, En, AdvisorCatalog.Load(), nav, null, SaveGame.Gdd03Ruleset);
+        using var pedia = new EncyclopediaPresenter(ui.Root, text, AdvisorCatalog.Load(), nav, null, SaveGame.Gdd03Ruleset);
         pedia.Open("defeat");
-        Assert.AreEqual(En["advisor.page.defeat.gdd03.text"], ui.Q<Label>("encyclopedia-page-text").text);
+        var line = ui.Q<Label>("encyclopedia-page-text").text;
+        Assert.AreEqual(text["advisor.page.defeat.gdd03.text"], line);
+        AssertContainsOrdinal(hebrew ? "אובדן עיר לבדו אינו מסיים את המשחק" : "Losing a city does not end the game by itself", line,
+            "the page says a lost city alone does not end the game");
+        foreach (var warLoss in hebrew ? new[] { "המשחק אבוד מיד", "מחזיקה באחת הערים שלנו" } : new[] { "the game is lost at once", "holds one of our cities" })
+            StringAssert.DoesNotContain(warLoss, line, "the old war-loss sentence is gone");
     }
+
+    /// <summary>R-COMBAT-001, R-COMBAT-004: under gdd-0.3 player attacks neither check nor spend Arms, while military training
+    /// still takes them when it starts and is refused when the stock runs short. The Arms page says so in both languages,
+    /// and the older rulesets keep the text where each attack spends Arms (#2733 item 12). The gdd-0.3 page names no attack
+    /// at all: if a later text mentions attacks, it must say they spend no Arms, and this test changes with it.</summary>
+    [Test]
+    public void Gdd03ArmsPageSaysAttacksSpendNoArmsInBothLanguages([Values(false, true)] bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        using var ui = new UiTestKit();
+        using var nav = new ScreenNav(ui.Root);
+        using (var pedia = new EncyclopediaPresenter(ui.Root, text, AdvisorCatalog.Load(), nav, null, SaveGame.Gdd03Ruleset))
+        {
+            pedia.Open("arms");
+            Assert.AreEqual("arms", pedia.ShowingPage);
+            var line = ui.Q<Label>("encyclopedia-page-text").text;
+            Assert.AreEqual(text["advisor.page.arms.gdd03.text"], line);
+            foreach (var training in hebrew ? new[] { "אימון צבאי לוקח ממנו כשהוא מתחיל", "אימון שדורש נשק נדחה" }
+                         : new[] { "Military training takes them when it starts", "training that needs Arms is refused" })
+                AssertContainsOrdinal(training, line, "training still takes Arms and is refused without them");
+            foreach (var attack in hebrew ? new[] { "התקפ", "תקיפ" } : new[] { "attack" })
+                StringAssert.DoesNotContain(attack, line.ToLowerInvariant(), "gdd-0.3 attacks neither check nor spend Arms");
+        }
+
+        using var ui2 = new UiTestKit();
+        using var nav2 = new ScreenNav(ui2.Root);
+        using var older = new EncyclopediaPresenter(ui2.Root, text, AdvisorCatalog.Load(), nav2, null, SaveGame.GddRuleset);
+        older.Open("arms");
+        AssertContainsOrdinal(hebrew ? "וכל התקפה מוציאה ממנו" : "each attack spends them", ui2.Q<Label>("encyclopedia-page-text").text,
+            "gdd-0.1 keeps the attack price (R-COMBAT-004)");
+    }
+
+    // Ordinal, not StringAssert's culture compare, which ignores direction marks in Hebrew (#1790).
+    static void AssertContainsOrdinal(string expected, string actual, string message) =>
+        Assert.That(actual.IndexOf(expected, System.StringComparison.Ordinal) >= 0, Is.True, $"{message}: expected \"{expected}\" in \"{actual}\"");
 
     static void AssertNoAttention(string all)
     {

@@ -81,8 +81,10 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   reproducible only on the same toolchain.
 - `land_bake.py` writes `unity/Assets/Textures/Map/landuse.png` (the land-use colour and weight: field parcels with
   farm tracks, garrigue, terraces and scrub, placed by slope, rainfall and towns) from the heightmap, the CHELSA rainfall,
-  the hex biomes and the 1948 settlements (no network); `StatecraftLand.hlsl` lays it over the biome ground. Re-run it
-  whenever one of those inputs changes.
+  the hex biomes and the 1948 settlements (no network); `StatecraftLand.hlsl` lays it over the biome ground. It also
+  writes `furrows.png` (each texel's furrow strength) and `fieldblocks.png` (each farm block's angle and strip offset),
+  from which `GroundDetail.shader` draws fine furrows along the same parcels (#2917). Re-run it whenever one of those
+  inputs changes.
 - `terrain_graph.py` writes `unity/Assets/Shaders/StatecraftTerrain.shadergraph` from Unity's "Terrain Simple" template
   with one Custom Function node (`StatecraftTerrain.hlsl`); re-run it only when that function's inputs or outputs change.
 - `art_compare.py` puts screenshots next to the promo image of their pose, writes deuteranopia and protanopia copies and
@@ -100,8 +102,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   "Post-merge Unity run" below).
 - `headed.py` drives a WebGL build in a headed Chrome for Testing over CDP (real GPU, real mouse events, a temporary
   profile deleted on exit): `boot` (?bootlog phase timings, optional CPU throttling), `navpairs` (same-frame click pairs
-  under ?navlog), `loadshot` (screenshots during the load) and `profile` (visual v1's `?vprofile` in a headed window at a
-  chosen DPR); `boot --runs N --baseline MS` checks the boot budget. Its browser test runs only with `pytest --headed`.
+  under ?navlog), `loadshot` (screenshots during the load; each must be the page's CSS size times its pixel ratio, within
+  1 px) and `profile` (visual v1's `?vprofile` in a headed window at a chosen DPR; every toggle and pose in `web_check.py`'s
+  lists, which `test_visual_toggles.py` checks against the C#); `boot --runs N --baseline MS` checks the boot budget. Its browser test runs only with `pytest --headed`.
 - `yaml12.py` is how the tools, scripts and their tests read YAML. `yaml12.load` resolves plain scalars by the YAML 1.2
   core schema and refuses duplicate keys, where `yaml.safe_load` follows YAML 1.1 (`yes` becomes True, `1:30` becomes
   90, `2026-10-15` becomes a date). That matches YamlDotNet's reads into string fields, not its bool and int fields,
@@ -236,6 +239,10 @@ and what is public are in `docs/RELEASING.md`, "Nightly builds". It runs on the 
   pass, it turns `itch_enabled` on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off. A night pushes to itch
   only while `savetest_itch_target` names a separate project and `itch_evidence` records that PASS; otherwise its log line says
   `itch: skipped (<reason>)`, naming the missing key or the problem (#2056).
+- A night that `main()` refuses before `run_night` starts (a corrupt `config.json`, or a lock-system failure) still
+  sets `last_run_day` in `state.json` while it can take `run.lock` again, so the next night does not also record it as
+  MISSED (#3010). A refused `savetest` run does not set it: the save test is not the 03:00 run, so its refusal says
+  nothing about whether that night ran (owner, 10 Nov 2026, #3024).
 - The boot-time baseline is the median headless boot of the first 5 PUBLISHED nights; later nights must stay within
   the spread of those 5. To measure it again (a new machine, a new Chrome), delete `boot_baseline` from `state.json`;
   the next 5 published nights record it.
@@ -272,6 +279,13 @@ run it again. Then:
 ```bash
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.statecraft.nightly.plist
 ```
+
+A by-hand night can choose its version instead of the next patch, for a minor bump such as
+`uv run tools/nightly.py run --manual --version 0.4.0` from the clone. `--version` is refused without `--manual`, when
+it is not plain X.Y.Z, and when it is not above every published vX.Y.Z; the launchd job never passes it, so the next
+scheduled night is one patch above whatever was published last (v0.4.1 after v0.4.0). It is also refused while the
+job's own draft of another version from an earlier night is open (`open_draft` in `state.json`): delete that draft
+release by hand, then set `open_draft` and `open_draft_id` to `null` in `state.json`.
 
 A change to `nightly_launch.py` or `nightly_state.py` needs the `cp` again; a change to `nightly.py` does not.
 

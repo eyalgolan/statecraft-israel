@@ -1,8 +1,8 @@
 using Statecraft.Sim;
 
 /// <summary>#1725 PR 3, the teacher part (Refs #1689): the training centre's one veteran pioneer teacher in the Historical
-/// ledger. Owner, 7 November 2026 (#1689 comment 6704565066), "Yes to all three (Recommended)": "the training centre's one
-/// veteran pioneer teacher is a Haifa census unit". Owner, 7 November 2026, relayed by the coordinator (no comment link):
+/// ledger. Owner, 7 November 2026 (#1689 comment 6704565066), "Yes to all three (Recommended)": the training centre's one
+/// veteran pioneer teacher is a Haifa census unit. Owner, 7 November 2026, relayed by the coordinator (no comment link):
 /// starting veterans' work XP "0 (Recommended)"; the teacher "Takeable, but last (Recommended)". Maintainer call (the
 /// coordinator, eyalgolan-30, 7 November 2026): the teacher is the last census/haifa ordinal.</summary>
 public class HistoricalPioneerTeacherTests

@@ -71,6 +71,7 @@ namespace Statecraft.Sim
             var built = Built(c, s, city);
             if (count > built) return built == 1 ? Refused(RefusedBuiltOne, name) : Refused(RefusedBuilt, name, built);
             var list = pending as IReadOnlyCollection<Command> ?? pending.ToList();
+            if (s.PopulationLedger.IsHistorical) return LedgerCheck(c, s, city, count, list, name);
             var job = list.OfType<AssignWorkers>().Where(w => w.City == city && w.Role == "job").Select(w => (int?)w.Count).Max();
             var byDefault = x.JobsDefault && job == null;
             var staffed = Staffed(s, city);
@@ -80,6 +81,30 @@ namespace Statecraft.Sim
             var free = x.Civilians + x.Craftsmen - Math.Max(x.JobsDefault ? 0 : x.Employed, job ?? 0) - staffed - Projects.Builders(s, city) - Projects.Starting(s, city, list) - Training.Ordered(city, list);
             if (count - staffed > free) return Refused(byDefault ? RefusedPeople : RefusedPeopleNoJob, name, Math.Max(0, free));
             return null;
+        }
+
+        /// <summary><see cref="Check"/> on a Historical ledger game, past its city, ruleset, count and built checks (#3020; owner,
+        /// 8 November 2026, "Fix in the UI PR (Recommended)", #2966): the records, as <see cref="LedgerStaff"/> reads them. The
+        /// builders refusal, then the newly staffed workshops against the city's unassigned free-civilian records (and the
+        /// workers the order would release), less the records this turn's queued Train and reassignment orders there take
+        /// (Training.Ordered) and the builder each queued start may take (R-CITY-011), as the aggregate check counts them. No
+        /// city field is read. Nothing changes.</summary>
+        static string? LedgerCheck(Content c, GameState s, string city, int count, IReadOnlyCollection<Command> pending, string name)
+        {
+            if (Projects.Builders(s, city) > 0) return Refused(LedgerRefusedBuilders, name);
+            var built = BuiltIn(c, s, city);
+            int on = 0, released = 0;
+            for (int i = 0; i < built.Count; i++)
+            {
+                var staffed = s.Workshops.TryGetValue(built[i].Id, out var w) && w.Staffed;
+                if (i < count && !staffed) on++;
+                else if (i >= count && staffed)
+                    released += OnTarget(s, built[i].Id).Count(p => p.Status == PopulationStatus.FreeCivilian
+                        && string.Equals(p.Location?.City, city, StringComparison.Ordinal));
+            }
+            if (on == 0) return null;
+            var free = LedgerFree(s, city).Count + released - Training.Ordered(city, pending) - Projects.Starting(s, city, pending);
+            return on > free ? Refused(LedgerRefusedFree, name, Math.Max(0, free)) : null;
         }
 
         /// <summary>R-ARMS-005: the city's built workshops (a project whose kind has a worker slot, R-ARMS-004), in ascending id.</summary>
@@ -111,7 +136,8 @@ namespace Statecraft.Sim
         /// for a negative count, more than the city's built workshops, or more newly staffed than its people without a job.</summary>
         internal static string? Staff(Content c, GameState s, string city, int count, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: on a Historical ledger the workers are records
+            if (s.PopulationLedger.IsHistorical) return LedgerStaff(c, s, city, count, why);
             if (Check(c, s, city, count, Array.Empty<Command>()) is string refused) return refused;
             var name = PlayerText.Settlement(c, city);
             var built = BuiltIn(c, s, city);
@@ -129,8 +155,115 @@ namespace Statecraft.Sim
                 if (s.Workshops.TryGetValue(built[i].Id, out var w)) { if (w.Staffed != on) s.Workshops[w.Project] = w.WithStaffed(on); }
                 else if (on) s.Workshops.Add(built[i].Id, new Workshop(built[i].Id, true, AggregateTier));
             }
-            why.Add(new Cause("city", city, count - staffed, FormattableString.Invariant($"{name}: arms workshops staffed: {count}"),
-                key: CauseKeys.WorkshopWorkers, args: new[] { CauseKeys.Number(count) }));
+            why.Add(StaffedLine(city, name, count - staffed, count));
+            return null;
+        }
+
+        /// <summary>R-ARMS-005: a staffing order's Why line, the same for the aggregate cities and a Historical ledger game.</summary>
+        static Cause StaffedLine(string city, string name, int delta, int count) =>
+            new Cause("city", city, delta, FormattableString.Invariant($"{name}: arms workshops staffed: {count}"),
+                key: CauseKeys.WorkshopWorkers, args: new[] { CauseKeys.Number(count) });
+
+        // #1725 PR 7, producer 07: the refusals only a Historical ledger game gives. Internal, not Refused* constants, as
+        // Training's are; the UI reads them through PopulationLedger.Refusals (#3020).
+        /// <summary>Owner, 8 November 2026, Q7 "Unassigned, lowest id (Rec.)": more newly staffed workshops than the city's
+        /// unassigned free-civilian records.</summary>
+        internal const string LedgerRefusedFree = "{0} has {1} free civilians without an assignment";
+
+        /// <summary>Owner, 8 November 2026, "Refuse with a reason (Recommended)": a staffing order in a city with builders
+        /// (R-CITY-011), which are city counts and not records yet.</summary>
+        internal const string LedgerRefusedBuilders = "{0} has builders on city projects, who are not on the population ledger yet";
+
+        /// <summary>Owner, 8 November 2026, Q1 "Work assignment (Rec.)": the Work target a workshop's worker record holds.</summary>
+        internal static string WorkerTarget(int project) => "workshop/" + project.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        /// <summary>Owner, 8 November 2026, Q7 "Unassigned, lowest id (Rec.)": the city's free-civilian records with no
+        /// assignment, located in the city, ascending id. A worker (Industry or a workshop), a farmer on a field, a teacher, a
+        /// trainee and a refugee are not among them.</summary>
+        static List<PopulationUnit> LedgerFree(GameState s, string city) => s.PopulationLedger.Units
+            .Where(p => p.Status == PopulationStatus.FreeCivilian && p.Assignment.Kind == PopulationAssignmentKind.Unassigned
+                && string.Equals(p.Location?.City, city, StringComparison.Ordinal)).ToList();   // Units is ascending id
+
+        /// <summary>The records on the workshop's Work target, ascending id: its worker, or none.</summary>
+        static List<PopulationUnit> OnTarget(GameState s, int project)
+        {
+            var target = WorkerTarget(project);
+            return s.PopulationLedger.Units.Where(p => p.Assignment.Kind == PopulationAssignmentKind.Work
+                && string.Equals(p.Assignment.Target, target, StringComparison.Ordinal)).ToList();
+        }
+
+        /// <summary>Owner, 8 November 2026, Q6 "Waits, stays staffed (Rec.)": the workshop's bound worker when it is still a
+        /// free civilian of the workshop's city on its target, else null (the worker is gone and the workshop waits).</summary>
+        static PopulationUnit? LedgerWorker(GameState s, int project, string city)
+        {
+            var on = OnTarget(s, project);
+            if (on.Count > 1) throw new InvalidOperationException("Arms workshop " + project.ToString(System.Globalization.CultureInfo.InvariantCulture) + " has more than one worker record (R-ARMS-004, worker_slots 1).");
+            var p = on.FirstOrDefault();
+            return p != null && p.Status == PopulationStatus.FreeCivilian && string.Equals(p.Location?.City, city, StringComparison.Ordinal) ? p : null;
+        }
+
+        /// <summary>Owner, 8 November 2026, Q4 "Only craftsmen discount (Rec.)": only a craftsman apprentice or expert lowers
+        /// the price; every other record (profession None, a farmer or pioneer at any tier, a craftsman novice) is priced
+        /// Ordinary, IL 5m.</summary>
+        static SyntheticWorkshopTier TierOf(PopulationUnit p) => p.Profession != CivilianProfession.Craftsman ? AggregateTier
+            : p.Tier == CivilianTier.Apprentice ? SyntheticWorkshopTier.Apprentice
+            : p.Tier == CivilianTier.Expert ? SyntheticWorkshopTier.Expert : AggregateTier;
+
+        /// <summary>R-ARMS-005 on a Historical ledger game (#1725 PR 7, producer 07). Owner, 8 November 2026: Q2 "Keep existing
+        /// order (Rec.)", Q7 "Unassigned, lowest id (Rec.)", Q1 "Work assignment (Rec.)", Q8 "Keep tier field (Rec.)". The
+        /// same standing order: the city's first <paramref name="count"/> built workshops, in ascending id, are staffed. A
+        /// workshop no longer staffed releases its worker record (an unassigned free civilian again, in place); then each
+        /// newly staffed workshop, in ascending project id, takes the lowest-id unassigned free civilian of the city, who
+        /// holds a Work assignment on <see cref="WorkerTarget"/> (bound now if it is not yet) with no profession, tier or XP
+        /// change (Q55), and the workshop is priced at that record's tier (<see cref="TierOf"/>), its cycle kept. Every check
+        /// comes before the first write, and the records and targets are one validated commit. No city field is read or
+        /// written: Q3 "Wait for Industry records (Rec.)", so no count of people without a job is made here.</summary>
+        static string? LedgerStaff(Content c, GameState s, string city, int count, List<Cause> why)
+        {
+            if (!s.Cities.ContainsKey(city)) return Training.RefusedNoCity;
+            if (c.Ruleset != SaveGame.Gdd03Ruleset) return Cities.RefusedNoRole;
+            if (count < 0) return Cities.RefusedNegativeWorkers;
+            var name = PlayerText.Settlement(c, city);
+            var built = BuiltIn(c, s, city);
+            if (count > built.Count) return built.Count == 1 ? Refused(RefusedBuiltOne, name) : Refused(RefusedBuilt, name, built.Count);
+            // R-CITY-011's builders are city counts (CityProject.Builder), not records, so which records they are is not known.
+            // Refused with a reason before any write rather than guessed (owner, 8 November 2026: "Refuse with a reason (Recommended)").
+            if (Projects.Builders(s, city) > 0) return Refused(LedgerRefusedBuilders, name);
+            var on = new List<int>(); var off = new List<int>();
+            for (int i = 0; i < built.Count; i++)
+            {
+                s.Workshops.TryGetValue(built[i].Id, out var w);
+                var staff = i < count;
+                if (staff && w?.Staffed != true) on.Add(built[i].Id);
+                else if (!staff && w?.Staffed == true) off.Add(built[i].Id);
+            }
+            var released = new SortedDictionary<int, PopulationUnit>();
+            foreach (var project in off)
+                foreach (var p in OnTarget(s, project))
+                    released[p.Id] = p.WithPlacement(p.Status, p.Location, PopulationAssignment.Unassigned, p.Captor, p.Home);
+            var free = LedgerFree(s, city).Concat(released.Values.Where(p => p.Status == PopulationStatus.FreeCivilian
+                && string.Equals(p.Location?.City, city, StringComparison.Ordinal))).OrderBy(p => p.Id).ToList();
+            if (on.Count > free.Count) return Refused(LedgerRefusedFree, name, free.Count);
+            var region = c.PlayerRegions.AtLocation(city)?.Id
+                ?? throw new InvalidOperationException("No region in regions.yaml for " + city + " (R-POP-004).");
+            var changed = new SortedDictionary<int, PopulationUnit>(released);
+            var bind = new List<PopulationTarget>();
+            var tiers = new Dictionary<int, SyntheticWorkshopTier>();
+            for (int i = 0; i < on.Count; i++)
+            {
+                var p = free[i]; var target = WorkerTarget(on[i]);
+                if (s.PopulationLedger.Target(target) == null) bind.Add(new PopulationTarget(target, PopulationAssignmentKind.Work, region));
+                changed[p.Id] = p.WithPlacement(p.Status, p.Location, new PopulationAssignment(PopulationAssignmentKind.Work, target), p.Captor, p.Home);
+                tiers[on[i]] = TierOf(p);
+            }
+            var staffed = Staffed(s, city);
+            s.PopulationLedger.Commit(changed.Values.ToList(), bind);
+            foreach (var project in off) s.Workshops[project] = s.Workshops[project].WithStaffed(false);
+            foreach (var project in on)
+                s.Workshops[project] = s.Workshops.TryGetValue(project, out var w)
+                    ? new Workshop(project, true, tiers[project], w.PaidCost, w.Progress)
+                    : new Workshop(project, true, tiers[project]);
+            why.Add(StaffedLine(city, name, count - staffed, count));
             return null;
         }
 
@@ -147,29 +280,50 @@ namespace Statecraft.Sim
         public static void Produce(Content c, GameState s, List<Cause> why)
         {
             if (c.Ruleset != SaveGame.Gdd03Ruleset || s.Workshops.Count == 0) return;
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);   // #1725 PR 7: on a Historical ledger each workshop has its worker record
+            var ledger = s.PopulationLedger.IsHistorical;
             var rules = Rules(c);
             var ceiling = c.RulesAt(s.Date).Mvp!.DebtCeiling!.Value;
             var held = Cities.Held(c, s);
             var working = new Dictionary<string, int>(StringComparer.Ordinal);
+            // #1725 PR 7 review S2: on a Historical ledger every workshop the loop reaches has its worker records checked
+            // first, in the loop's own order, so a corrupted ledger (more than one record on a target) throws before any write.
+            if (ledger)
+                foreach (var w in s.Workshops.Values)
+                {
+                    if (!w.Staffed) continue;
+                    var city = s.CityProjects[w.Project].City;
+                    if (!held.Contains(city)) LedgerWorker(s, w.Project, city);
+                }
             foreach (var w in s.Workshops.Values.ToList())
             {
                 if (!w.Staffed) continue;
                 var city = s.CityProjects[w.Project].City;
                 if (held.Contains(city)) continue;
                 var name = PlayerText.Settlement(c, city);
-                var x = s.Cities[city];
-                // R-CITY-011: step 5's builders took their people first.
-                if (!working.TryGetValue(city, out var taken)) taken = Projects.Builders(s, city);
-                if (taken >= x.Civilians + x.Craftsmen - x.Employed)
+                // #1725 PR 7, producer 07 (owner, 8 November 2026, Q6 "Waits, stays staffed (Rec.)"; Q3 "Wait for Industry
+                // records (Rec.)"): on a Historical ledger the workshop works when its own bound worker is there, a named
+                // record no builder can take (R-CITY-011), so no count of the city's people without a job is read.
+                var worker = ledger ? LedgerWorker(s, w.Project, city) : null;
+                var noWorker = ledger && worker == null;
+                if (!ledger)
+                {
+                    var x = s.Cities[city];
+                    // R-CITY-011: step 5's builders took their people first.
+                    if (!working.TryGetValue(city, out var taken)) taken = Projects.Builders(s, city);
+                    noWorker = taken >= x.Civilians + x.Craftsmen - x.Employed;
+                    if (!noWorker) working[city] = taken + 1;
+                }
+                if (noWorker)
                 {
                     why.Add(new Cause("city", city, 0, $"{name}: an arms workshop has no worker without a job this month", key: CauseKeys.WorkshopPaused, args: new[] { NoWorker, w.Project.ToString(System.Globalization.CultureInfo.InvariantCulture) }));
                     continue;
                 }
-                working[city] = taken + 1;
                 var cycle = w;
                 if (cycle.PaidCost == null)
                 {
+                    // Q8 "Keep tier field (Rec.)": a new cycle is priced at the worker record's tier, kept in WorkerTier.
+                    if (worker != null) cycle = new Workshop(cycle.Project, cycle.Staffed, TierOf(worker));
                     var price = Price(rules, cycle);
                     var left = s.Treasury - (double)price;   // R-MONEY-003's debt after: the debt plus what the Treasury lacks
                     if (left < 0 && s.Debt - left > ceiling)

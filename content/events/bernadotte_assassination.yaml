@@ -6,7 +6,7 @@ text: 'Lehi gunmen assassinated the UN mediator, Count Folke Bernadotte, in Jeru
 # לח"י, אצ"ל, צה"ל; "לח"י ... הוכרזו ארגוני טרור"): https://he.wikipedia.org/wiki/פולקה_ברנדוט
 # "צעדי האכיפה" for "crackdown": a sober term, kept by Beri's native read in #2073 (31 Oct 2026).
 title_he: המתווך נרצח
-text_he: 'אנשי לח"י התנקשו בחיי מתווך האו"ם, הרוזן פולקה ברנדוט, בירושלים ב־17 בספטמבר, יום לאחר שהשלים את תוכניתו השנייה. תקנות לשעת חירום הכריזו על לח"י כארגון טרור, כ־250 מחבריו נעצרו, ולגדודי האצ"ל בירושלים ניתנו 24 שעות להתפרק ולהשתלב בצה"ל. על {prime_minister} להחליט אם הממשלה תמשיך בצעדי האכיפה.'
+text_he: 'אנשי לח״י התנקשו בחיי מתווך האו״ם, הרוזן פולקה ברנדוט, בירושלים ב־17 בספטמבר, יום לאחר שהשלים את תוכניתו השנייה. תקנות לשעת חירום הכריזו על לח״י כארגון טרור, כ־250 מחבריו נעצרו, ולגדודי האצ״ל בירושלים ניתנו 24 שעות להתפרק ולהשתלב בצה״ל. על {prime_minister} להחליט אם הממשלה תמשיך בצעדי האכיפה.'
 anchor: hard
 tags: [security, terror]
 office: prime_minister
@@ -41,7 +41,7 @@ to: 1948-10-16
 options:
   - id: outlaw
     text: Keep Lehi outlawed and its members under arrest, and hold the Irgun in Jerusalem to disbanding into the IDF
-    text_he: 'להותיר את לח"י מחוץ לחוק ואת אנשיו במעצר, ולעמוד על כך שהאצ"ל בירושלים יתפרק וישתלב בצה"ל'
+    text_he: 'להותיר את לח״י מחוץ לחוק ואת אנשיו במעצר, ולעמוד על כך שהאצ״ל בירושלים יתפרק וישתלב בצה״ל'
     historical: true
     recommended: true
     effects:

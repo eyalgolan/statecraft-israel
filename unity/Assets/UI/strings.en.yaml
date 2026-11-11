@@ -35,17 +35,20 @@ hud.caption.fx: "Foreign currency"
 hud.caption.cohesion: "Social cohesion"
 # Each meter's tip says what the meter is and what moves it, under its number in words (MeterTip, #2200; owner's option 1:
 # one key per HudModel.MeterIds id). treasury, immigration, cohesion and standing are sentences of the encyclopedia pages
-# (advisor.page.money_debt, .immigration, .national_meters), word for word. security, support and fx had no page then and
+# (advisor.page.money_debt, .immigration, .national_meters), word for word, except treasury's debt ceiling sentence
+# (Pools.BuyArms RefusedDebtCeiling, R-ARMS-002; not the arms workshop's waiting cycle, Workshops.Produce R-ARMS-006,
+# which runs only under gdd-0.3, while this tip shows in every ruleset) and cohesion's event cards clause
+# (EventSystem through EffectsSystem.Shift on morale), added for #2459. security, support and fx had no page then and
 # are written from the code: security from model.yaml's border_villages_secure effect (its office's competence and budget,
 # EffectsSystem.Multiplier) and event shifts; support from EffectsSystem.Approval and model.yaml's voter_groups, with
 # coalition stability moving toward it (PoliticsSystem.UpdateStability, R-GOV-001); fx from EconomySystem.Apply's flows,
 # EconomySystem.ConvertDollars (R-MONEY-004) and fx_crisis, which stops the Food import (R-FOOD-002), and event effects on
 # fx_reserves (R-EFX-001).
-hud.tip.treasury: "Money comes in from taxes and from every filled job, and goes out on government spending, the upkeep of our military formations, training and building. When a cost is more than we have, it is still paid: Money stops at zero and the rest becomes debt."
+hud.tip.treasury: "Money comes in from taxes and from every filled job, and goes out on government spending, the upkeep of our military formations, training and building. When a cost is more than we have, it is still paid: Money stops at zero and the rest becomes debt. But an Arms purchase that would pass the debt ceiling is refused."
 hud.tip.immigration: "The immigrants arrive as the historical figures bring them, and each city takes a share in proportion to its people. They wait as refugees, and each turn some of them become civilians without work; how many depends on the minister in charge of immigration."
 hud.tip.security: "Security moves with the choices made on event cards. Border villages add to it, more with an able and well-funded Minister of Agriculture."
 hud.tip.support: "Public support is the average approval of the voter groups, each weighing two of Social cohesion, Security, housing and Food. Coalition stability moves toward it every turn."
-hud.tip.cohesion: "Social cohesion rises and falls with housing, work, Food, rationing and Security."
+hud.tip.cohesion: "Social cohesion rises and falls with housing, work, Food, rationing and Security, and with the choices made on event cards."
 hud.tip.standing: "International support moves with the choices made on event cards."
 hud.tip.fx: "Foreign currency comes in from exports, donations and loans, and goes out on imports, which grow with the population, and on dollars converted into Money on the Defence screen during the war. Event cards can add to it or take from it. Once it runs out, the Food import stops until it recovers."
 # The other static texts of Game.uxml, each set by the presenter that owns its element (#193). Each English string is
@@ -147,7 +150,7 @@ advisor.page.truces.text: "Accept a truce on its card, and our attack orders are
 advisor.page.capture.title: "Capturing a place"
 advisor.page.capture.text: "A military unit that stops on an enemy-held place open to capture takes it at once; passing through does not. The capture dialog then lists its answers in a fixed order, each with what it changes at once or the reason it is refused. Raid and withdraw brings our units out and returns the place to enemy control; Occupy keeps one unit there for a set number of turns, at a Money cost each turn. The choice is yours; it takes effect at End turn, and until it is given, the units stay."
 advisor.page.enemy_phase.title: "The enemy's turn"
-advisor.page.enemy_phase.text: "When you end the turn, every enemy unit receives its orders, by the same rules as ours. In the historical game each Arab force follows its own script toward its historical target. A unit off its script attacks a neighbouring position only when it has a clear edge, and otherwise fortifies. The enemy's attacks are fought as the turn resolves, and none comes inside a truce window."
+advisor.page.enemy_phase.text: "When you end the turn, every enemy unit receives its orders, by the same rules as ours. In the historical game each Arab force follows its own script toward its historical target. A unit off its script attacks a neighbouring position only when it has a clear edge, and otherwise fortifies. The enemy's attacks are fought as the turn resolves, and none comes inside a truce window. After you end the turn, the map plays their moves one at a time; Esc skips them, and Settings can turn them off."
 # The Objectives screen (#1189): every objective in objectives.yaml, done or not, the player's date beside the historical
 # one, and no score (owner, 20 October 2026). The objective card's wording (#380). {0} the player's date,
 # {1} the historical date (objectives.open: {0}). The names are objectives.yaml's (#1208).
@@ -175,6 +178,8 @@ settings.title: "Settings"
 settings.tiltshift: "Blur at the top and bottom of the map"
 settings.on: "On"
 settings.off: "Off"
+# #2202 (owner, 2 November 2026, Q6 a): whether End turn plays the Arab forces' moves on the map.
+settings.enemymoves: "Show the Arab forces' moves on the map"
 # The WebGL companion switch (#1119); the Hebrew awaits native review.
 settings.companion: "Screen reader companion"
 settings.quality: "Quality"
@@ -270,6 +275,9 @@ event.objective_late_one: "Completed 1 month later than in history."
 # event.alt_origin_no_record. event.rejoin sits under an option that returns the course to the record (R-ALT-009).
 event.alt_origin: "Alternative course. It follows the government's decision: {0} ({1}). In the record: {2}."
 event.alt_origin_no_record: "Alternative course. It follows the government's decision: {0} ({1})."
+# event.alt_early: the banner of an armistice card shown before its date, with its early text (R-WAR-008, #1709; owner,
+# 9 November 2026: "Banner (Recommended)", these words).
+event.alt_early: "Alternative course. These talks came sooner than in the record."
 event.rejoin: "Returns to the recorded course."
 # The capture dialog (GDD Phase 6 PR 10, #802; CaptureDialogPresenter). SENSITIVE: the owner reviews every line here, in
 # both languages, before any shareable build (plan 2026-10-15-gdd-phase-6.md, PR 10's gate). Q-UI-1 (b) (owner, 18 October
@@ -543,6 +551,23 @@ report.enemy_move: "{0} moved to a new position"
 report.enemy_attack: "{0} launched an attack on one of your units"
 report.enemy_fortify: "{0} fortified its position"
 report.unit: "Force {0}"
+# The footer while the Arab forces' moves play (#2202, EnemyPlaybackBar): the side whose turn it is, by its side id (owner,
+# 8 November 2026: "Flag + name (Recommended)"; playback.title for a side with no key), the beat's place in the turn
+# ({0} of {1}), the folded last beat, and Skip with its tooltip (the spoken text). The beat's actions reuse report.enemy_move
+# and report.enemy_attack.
+playback.title: "The Arab forces' turn"
+playback.turn_egypt: "Egypt's turn"
+playback.turn_jordan: "Jordan's turn"
+playback.turn_syria: "Syria's turn"
+playback.turn_iraq: "Iraq's turn"
+playback.turn_lebanon: "Lebanon's turn"
+playback.turn_ala: "The Arab Liberation Army's turn"
+playback.turn_local_arab_forces: "Local Arab forces' turn"
+# The owner, 9 November 2026: "\"Step n of m\" (Recommended)": an attack also advances the count.
+playback.step: "Step {0} of {1}"
+playback.folded: "The other moves at once"
+playback.skip: "Skip the Arab forces' moves"
+playback.skip_tip: "Skip the Arab forces' moves and return the map to your view (Esc)"
 # The arms workshops' lines (#1701 A1; owner, 2 November 2026: "Yes, in the panel (Recommended)", whose option gave both
 # lines' wording): {0} the city's name. A no-worker pause is on the Why screen only.
 report.workshops: "Arms workshops"
@@ -567,6 +592,10 @@ end.parameter: "{0}: {1}"
 end.population: "Population: {0}"
 end.population_history: "Population: {0}; CBS, Jewish population, {1}: {2}"
 end.date: "Ended on {0}"
+# The score's parts (#812; R-SCORE-001), right after the score: EndReport.ScoreParts; the prisoner points only when above 0.
+end.score_objectives: "Score from objectives: {0:N0}"
+end.score_timing: "Score from early completion: {0:N0}"
+end.score_prisoners: "Score from prisoners returned: {0:N0}"
 cabinet.coalition: "Coalition: {0} of {1} {3} · stability {2}"
 cabinet.vacant: "(vacant)"
 cabinet.person: "{0} · {1} · competence {2}, loyalty {3}"
@@ -730,10 +759,16 @@ unit.service.navy: "Navy"
 # A formation raised in play has no historical unit row: its card uses the sim's type, strength and home city (#1396).
 unit.type.veteran_soldier: "Veteran soldiers"
 unit.strength: "Strength: {0}"
+# A damaged formation (#2432): {0} its strength now, {1} its full strength (R-TRAIN-004: the strength before its first loss;
+# an enemy unit's, its starting force's), in population units as unit.strength.
+unit.strength_of: "Strength: {0} of {1}"
 unit.home_city: "Home city: {0}"
 unit.position: "At {0} since {1}"
 unit.position_plain: "At {0}"
 unit.formed: "Formed {0}"
+# A unit's Formed line with its strength (#2432): {0} unit.formed, {1} unit.strength or unit.strength_of, on one line so the
+# card is no taller than before the strength was shown.
+unit.formed_strength: "{0} · {1}"
 unit.commander: "First commander: {0}"
 unit.aircraft.s199: "Avia S-199"
 unit.aircraft.spitfire: "Supermarine Spitfire LF Mk IXe"
@@ -873,6 +908,9 @@ workshop.refused_built_one: "{0} has 1 arms workshop"
 workshop.refused_built: "{0} has {1} arms workshops"
 workshop.refused_people: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
 workshop.refused_people_no_job: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
+# #3020: a staffing order's refusals only a Historical ledger game gives (Workshops.LedgerRefused*), the sim's own English.
+workshop.refused_ledger_free: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
+workshop.refused_ledger_builders: "{0} has builders on city projects, who are not on the population ledger yet"
 # R-CITY-011 (#1700, #2477), gdd-0.3 only: a city project being built, whether it has a builder, and its city's builder
 # stepper: {0} the city's projects with a builder (or the ordered count), {1} its projects being built. The refusals are
 # the sim's own English (Projects.RefusedBeingBuilt*), {0} the city, {1} a count; past its free people the build order
@@ -881,6 +919,21 @@ city.project_builder: "This project: has a builder"
 city.project_no_builder: "This project: no builder, waiting"
 city.builders: "Projects with a builder: {0} of {1}"
 city.builders_ordered: "Projects with a builder at End turn: {0} of {1}"
+# #1722 (R-HOUSE-005), gdd-0.3 only: the city's housing readout, the sim's Cities.HousingOutlook on the state as it is
+# now: {0} the surcharge a turn (Money) or the condition after the overflow or Social cohesion's change a turn; {1} the
+# threshold the term starts below (a percent).
+city.housing_surcharge: "Housing surcharge now: {0} a turn (condition below {1})"
+city.housing_no_surcharge: "Housing surcharge now: none (condition {0} or more)"
+city.housing_falls: "Overflow now lowers the condition to {0}"
+city.housing_cohesion: "Social cohesion now: {0} a turn (condition below {1})"
+# #1722 (R-PROJ-001 to R-PROJ-003, R-CITY-011), gdd-0.3 only: the city's own list of its projects. {0} the kind, then for
+# one being built {1} its turns of work done, {2} the kind's turns, {3} the cost paid at its start, {4} city.list_builder or
+# city.list_no_builder; for a built one {1} the day it was finished, {2} the cost.
+city.list_header: "This city's projects: {0}"
+city.list_building: "{0}: work {1} of {2} · cost {3} · {4}"
+city.list_built: "{0}: finished on {1} · cost {2}"
+city.list_builder: "has a builder"
+city.list_no_builder: "no builder, waiting"
 builder.refused_being_built_one: "{0} has 1 city project being built"
 builder.refused_being_built: "{0} has {1} city projects being built"
 site.available: "A designated site for a new yishuv"
@@ -956,6 +1009,18 @@ advisor.opening.training.text: "Training uses civilians without work, Money, and
 advisor.opening.move.text: "A unit moves at once, and terrain sets the cost of each hex. A farther destination creates a route that continues on later turns."
 advisor.opening.event.text: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
 advisor.opening.objectives.text: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
+# The war, the armies and the first turn's moves: the plan's copy (#2933), approved with the plan.
+advisor.opening.invasion.text: "On 15 May 1948 Egypt, Syria and Iraq sent armies into the country. Transjordan's Arab Legion, marked Jordan on the map, stood at Ramallah and near Bab al-Wad. Your brigades must hold them."
+advisor.opening.units.text: "Lebanon's army stood at the border, and the Arab League's volunteers were already here. Select any unit on the map to see whose it is."
+advisor.opening.cities.text: "Your cities hold your people, jobs and training, and work there brings in Money. Select a city to see them."
+advisor.opening.move_how.text: "To move, select a brigade, press Move, then click a lit hex. Click a farther hex and the brigade goes there over several turns."
+advisor.opening.orders.text: "A brigade with no order holds up End turn. Fortify and Hold stay until you change them, and a route carries on by itself. Skip this turn lasts one turn."
+advisor.opening.end_turn.text: "When no unit needs orders, press End turn. If the button says a unit needs orders, pressing it takes you to that unit. The month then plays out and a report follows."
+# The later lessons (#2933 section 3): the issue's words.
+advisor.lesson.report.text: "That report shows what moved and what was fought. If the truce was accepted, your brigades cannot attack until it ends."
+advisor.lesson.attack.text: "The truce period is over. Select a brigade next to an enemy to see Attack and its odds. An attack can force the enemy back."
+advisor.lesson.stakes.text: "Your score counts objectives, how early you reach them, and prisoners returned. Battles wear brigades down. If Money and Food stay exhausted, the game ends."
+advisor.lesson.combat.text: "When fighting breaks out, the report shows losses and who fell back. Select a brigade next to an enemy to see Attack and its odds."
 advisor.next: "Next"
 advisor.done: "Done"
 # {0} the step, {1} the steps in the chain now.
@@ -1033,7 +1098,9 @@ advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs shor
 
 # Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
 city.workers_ordered: "At End turn: {0}"
-city.workers_cost: "At End turn · Order cost: {0:0.0} Attention"
+city.workers_cost: "At End turn · Workers change: {0:0.0} Attention"
+# Where the city trains, the workers line {0} adds the Train order's Attention price (every Train order costs the same).
+city.train_cost: "{0} · Each Train order: {1:0.0} Attention"
 
 share.site_picture: "Picture copied: paste it into the post"
 share.site_text: "Only the text was copied. Use Share or Download the picture."
@@ -1138,6 +1205,9 @@ city.assign_refused.negative: "The number of workers cannot be negative"
 city.qualification_refused.return_count: "Return at least one group"
 city.qualification_refused.reassign_count: "Reassign at least one group"
 city.qualification_refused.no_qualification: "There is no such qualification"
+# #3020: the craftsmen and pioneer orders' refusals only a Historical ledger game gives (Qualification.LedgerRefused*).
+city.qualification_refused.ledger_craftsmen: "Craftsmen are not on the population ledger yet (#2476)"
+city.qualification_refused.ledger_free_pioneers: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
 unit.order_refused.not_pioneer: "Only a pioneer unit takes that order"
 unit.order_refused.pioneer_busy: "That unit is at work; stop the work first"
 training.cancel_refused.no_group: "There is no such training group"
@@ -1177,6 +1247,13 @@ unit.reinforce_refused.no_industry: "{0} has no completed industry project"
 unit.reinforce_refused.no_hakhshara: "{0} has no Hakhshara"
 unit.reinforce_refused.idle: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
 unit.reinforce_refused.arms: "{0}: not enough Arms for {1} (need {2}, have {3})"
+# #3020: Train's and Reinforce's refusals only a Historical ledger game gives (Training.LedgerRefused*); ledger_strength is
+# Send home's too. The sim's own English.
+unit.reinforce_refused.ledger_craftsman: "Craft training does not run on the population ledger yet (#2476)"
+unit.reinforce_refused.ledger_camp_full: "{0}'s military camp has room for {1} more trainees (capacity {2})"
+unit.reinforce_refused.ledger_strength: "Unit {0} has {1} soldiers on record but strength {2}"
+unit.reinforce_refused.ledger_carried: "A civilian without work in {0} already carries a military item"
+unit.reinforce_refused.ledger_halutz_trade: "A farmer or craftsman in {0} cannot train as a halutz"
 
 # #1682 remaining Cause producers. English report wording preserved.
 why.cause.workers_assigned: "{0}: {1} in work"   # {1} is "1 group"/"N groups" (CauseText.Groups, #2530)
@@ -1223,6 +1300,8 @@ why.cause.training_started: "{0}: {1} began {2}{3}, cost {4}"
 why.cause.training_arms: "{0}: {1} took {2} Arms"
 why.cause.training_cancelled: "{0}: {1} left {2}; the Money spent is not returned"
 why.cause.training_arms_returned: "{0}: {1} returned {2} Arms"
+# #3020: Send home on a Historical ledger game (#2975): {0} the city, {1} the unit's number, {2} the Arms back in the stock.
+why.cause.sent_home_arms_returned: "{0}: unit {1} returned {2} Arms"
 why.cause.replacements_stopped: "{0}: unit {1} is no longer in {0}, so its replacements stop training"
 why.cause.replacements_joined: "{0}: {1} finished {2} and joined unit {3}"
 why.cause.military_trained: "{0}: {1} finished {2} and are {3}"
@@ -1244,6 +1323,9 @@ why.cause.advisory_budget_rejected: "{0} voted against the budget, but its vote 
 why.cause.budget_rejected: "{0} voted the budget down"
 why.cause.place_captured: "{0} is captured: Israeli units hold it and no enemy unit is there. {1}It awaits a decision"
 why.cause.enemy_regained: "{0} is under enemy control again: enemy units hold it and no Israeli unit is there{1}"
+# R-CTRL-006 (#1305): enemy units took a player's locality; Israeli units took it back.
+why.cause.place_lost: "{0} is lost: enemy units hold it and no Israeli unit is there"
+why.cause.place_retaken: "{0} is retaken: Israeli units hold it again and no enemy unit is there"
 why.cause.place_annexed: "{0} is annexed. {1}"
 why.cause.place_withdrawn: "{0}{1} {2}"
 why.cause.place_deported: "{0}: Deport. Its residents are displaced and the place is depopulated"
@@ -1307,6 +1389,10 @@ opening.begin: "Continue to the map"
 opening.return: "Return to the start screen"
 opening.count: "Step {0} of {1}"
 opening.preview: "Editor preview: draft text; human source checks pending."
+
+# The Tel Aviv raid card on New game (RaidCardPresenter; owner, 8 Nov 2026: "the player only has an option of clicking
+# ok"). Its text and sources are in Resources/RaidIntro/raid-intro.yaml; its preview label is opening.preview.
+raid.ok: "OK"
 
 # #813 (R-MONEY-004; owner, 2 November 2026: "Spend the dollars (Recommended)"): the Defence screen's dollar conversion.
 # The refusals are EconomySystem's own words, shown in the end-of-turn toast.

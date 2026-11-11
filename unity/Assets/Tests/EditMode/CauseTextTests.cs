@@ -569,6 +569,7 @@ public class CauseTextTests
             new Cause("draft", "arms", -3, "Town: basic training took 3 Arms", key: CauseKeys.TrainingArms, args: new[] { "town", "basic" }),
             new Cause("draft", "town", 3, "Town: 3 groups left basic training; the Money spent is not returned", key: CauseKeys.TrainingCancelled, args: new[] { "3", "basic" }),
             new Cause("draft", "arms", 3, "Town: basic training returned 3 Arms", key: CauseKeys.TrainingArmsReturned, args: new[] { "town", "basic" }),
+            new Cause("city", "arms", 3, "Town: unit 42 returned 3 Arms", key: CauseKeys.SentHomeArmsReturned, args: new[] { "town", "42" }),   // #3020 (Demobilization.ArmsReturnedLine)
             new Cause("draft", "town", 0, "Town: unit 42 is no longer in Town, so its replacements stop training", key: CauseKeys.ReplacementsStopped, args: new[] { "42" }),
             new Cause("draft", "town", 3, "Town: 3 groups finished basic training and joined unit 42", key: CauseKeys.ReplacementsJoined, args: new[] { "3", "basic", "42" }),
             new Cause("draft", "town", 3, "Town: 3 groups finished artillery training and are artillery", key: CauseKeys.MilitaryTrained, args: new[] { "3", "artillery", "artillery" }),
@@ -590,6 +591,8 @@ public class CauseTextTests
             new Cause("draft", "budget", 0, "Body voted the budget down", key: CauseKeys.BudgetRejected, args: new[] { "leg" }),
             new Cause("draft", "town", 0, "Town is captured: Israeli units hold it and no enemy unit is there. Its residents fled. It awaits a decision", key: CauseKeys.PlaceCaptured, args: new[] { "1" }),
             new Cause("draft", "town", 0, "Town is under enemy control again: enemy units hold it and no Israeli unit is there. Its residents fled when it was captured", key: CauseKeys.EnemyRegained, args: new[] { "1" }),
+            new Cause("draft", "town", 0, "Town is lost: enemy units hold it and no Israeli unit is there", key: CauseKeys.PlaceLost),   // R-CTRL-006 (#1305)
+            new Cause("draft", "town", 0, "Town is retaken: Israeli units hold it again and no enemy unit is there", key: CauseKeys.PlaceRetaken),
             new Cause("draft", "town", 0, "Town is annexed. Its residents fled when it was captured, so no people, homes or jobs are added", key: CauseKeys.PlaceAnnexed, args: new[] { "1" }),
             new Cause("draft", "town", 0, "Town: Israeli units withdrew and it is under enemy control again. Its residents fled when it was captured", key: CauseKeys.PlaceWithdrawn, args: new[] { "1", "1" }),
             new Cause("draft", "town", 0, "Town: Deport. Its residents are displaced and the place is depopulated", key: CauseKeys.PlaceDeported),
@@ -645,9 +648,26 @@ public class CauseTextTests
             CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
             CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
             CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned,
-            CauseKeys.FieldFood }), rows.Select(x => x.Key).Distinct(), "all remaining keys");   // FieldFood (#2471): only the gdd-0.3 field fixture makes it, no turn yet, so no wording yet
+            CauseKeys.FieldFood }), rows.Select(x => x.Key).Distinct(), "all remaining keys");   // FieldFood (#2471): only the gdd-0.3 field fixture makes it, no turn yet, so no wording yet ("Per field, words later (Recommended)")
         var appointed = rows.Single(x => x.Key == CauseKeys.Appointed);
         StringAssert.Contains("התפקיד שנשמר", CauseText.Line(appointed, c, NoRows, he, names), "historical title, not current title");
+    }
+
+    // #3020 (#2975): Send home's Arms line on a Historical ledger game names the city, the unit and the Arms back, in English
+    // as the sim's own message and in Hebrew as why.cause.training_arms_returned does, with the city's Hebrew name.
+    [Test]
+    public void SentHomeArmsReturnedNamesTheCityTheUnitAndTheArms()
+    {
+        var c = RemainingFixture();
+        var names = new Dictionary<string, string> { ["town"] = "עיר" };
+        var row = new Cause("city", "arms", 3, "Town: unit 42 returned 3 Arms", key: CauseKeys.SentHomeArmsReturned, args: new[] { "town", "42" });
+        Assert.IsTrue(string.Equals("{0}: unit {1} returned {2} Arms", En["why.cause.sent_home_arms_returned"], StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals(row.Message, CauseText.Line(row, c, NoRows, En), StringComparison.Ordinal));
+        var he = CauseText.Line(row, c, NoRows, He, names);
+        AssertHebrew(he, row.Key);
+        Assert.IsTrue(string.Equals(He.Format("why.cause.sent_home_arms_returned", "עיר", "42", 3.0), he, StringComparison.Ordinal), he);
+        foreach (var part in new[] { "עיר", "יחידה", "42", "3" })
+            Assert.GreaterOrEqual(he.IndexOf(part, StringComparison.Ordinal), 0, part);
     }
 
     [Test]

@@ -265,12 +265,12 @@
         "values": [1]
         "note": "Per-turn, non-stacking cadence Default; post-MVP like its row."
   "food.shortage_cohesion_max":
-    "basis": "Agreed"
-    "note": "Reception, housing and shortages: national points per turn multiplied by unmet share; Agreed. Documentation only; undecided (docs/gdd/balance.md). The current simulation's food_supply calculation reads rules.yaml mvp.k_food and the unmet share, with no matching maximum. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Reception, housing and shortages: national points per turn multiplied by unmet share; Default, not operative in the MVP. Owner, 10 November 2026, on #2918 (https://github.com/eyalgolan/statecraft-israel/issues/2918#issuecomment-6766460488): \"Same answer for all 4 (Recommended)\", the answer given for military.strength (S3), \"Default, not operative (Recommended)\". The current simulation's food_supply calculation reads rules.yaml mvp.k_food and the unmet share, with no matching maximum. Source: #1668 balance.md at 605277df."
     "values": [10]
   "food.shortage_combat_slope":
-    "basis": "Agreed"
-    "note": "Reception, housing and shortages: next-turn own strength reduction multiplied by unmet share; Agreed. Documentation only; undecided (docs/gdd/balance.md). The current simulation has no shortage-to-combat-strength term. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Reception, housing and shortages: next-turn own strength reduction multiplied by unmet share; Default, not operative in the MVP. Owner, 10 November 2026, on #2918 (https://github.com/eyalgolan/statecraft-israel/issues/2918#issuecomment-6766460488): \"Same answer for all 4 (Recommended)\", the answer given for military.strength (S3), \"Default, not operative (Recommended)\". The current simulation has no shortage-to-combat-strength term. Source: #1668 balance.md at 605277df."
     "values": [1]
   "import.arms_price":
     "basis": "Agreed"
@@ -353,8 +353,8 @@
     "note": "Military and control: Money per active formation per turn, independent of strength (R-UNIT-010), from the turn it graduates (27M-8), excluding basic trainees. Owner ruling, 30 October 2026 (#2013 balance rows): \"Keep the set values (Recommended)\". 0.05 Money; Amir's 1 is a declined proposal. Source: #1668 balance.md at 605277df."
     "values": [0.05]
   "military.strength":
-    "basis": "Agreed"
-    "note": "Military and control: strength units: untrained / trained / veteran; Agreed. Documentation only; undecided (docs/gdd/balance.md). Combat currently reads each unit's stored Strength, with no matching MVP scalar. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Military and control: strength units: untrained / trained / veteran; Default, not operative in the MVP. Owner, 10 November 2026, S3 on #2918 (https://github.com/eyalgolan/statecraft-israel/issues/2918#issuecomment-6766460488): \"Default, not operative (Recommended)\". The owner kept a recruit and a veteran_soldier equal for now (C3, 10 November 2026, https://github.com/eyalgolan/statecraft-israel/issues/2918#issuecomment-6765662598: \"Keep equal for now (Recommended)\"). Combat currently reads each unit's stored Strength, with no matching MVP scalar. Source: #1668 balance.md at 605277df."
     "values": [1, 2, 3]
   "military.combat_xp_gain":
     "basis": "Agreed"
@@ -365,8 +365,8 @@
     "note": "Military and control: XP ticks per survived engagement / ticks to veteran; Agreed. Source: #1668 balance.md at 605277df."
     "values": [5]
   "military.refugee_multiplier":
-    "basis": "Agreed"
-    "note": "Military and control: unitless strength multiplier until reception complete; Agreed. Documentation only; undecided (docs/gdd/balance.md). The current simulation applies no refugee strength multiplier. Source: #1668 balance.md at 605277df."
+    "basis": "Default"
+    "note": "Military and control: unitless strength multiplier until reception complete; Default, not operative in the MVP. Owner, 10 November 2026, on #2918 (https://github.com/eyalgolan/statecraft-israel/issues/2918#issuecomment-6766460488): \"Same answer for all 4 (Recommended)\", the answer given for military.strength (S3), \"Default, not operative (Recommended)\". The current simulation applies no refugee strength multiplier. Source: #1668 balance.md at 605277df."
     "values": [0.75]
   "military.fort_bonus":
     "basis": "Default"
@@ -374,11 +374,11 @@
     "values": [50]
   "military.fortify_turns":
     "basis": "Agreed"
-    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Default. Source: #1668 balance.md at 605277df."
+    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Agreed (O1). Source: #1668 balance.md at 605277df."
     "values": [1]
   "military.fortify_bonus":
-    "basis": "Default"
-    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Default. Source: #1668 balance.md at 605277df."
+    "basis": "Agreed"
+    "note": "Military and control: percent defence for a settled Fortify order. The owner-approved answer O1 (1 November 2026, #1668 issuecomment-6553884547): +25%, one turn to set; relabelled from Default after the #2918 C2 audit. Source: #1668 balance.md at 605277df."
     "values": [25]
   "military.stack_limit":
     "basis": "Default"
@@ -486,13 +486,13 @@
     "note": "Movement and engagement defaults: unitless role multiplier; Default. Source: #1668 balance.md at 605277df."
     "values": [1.50]
   "combat.artillery_range":
-    "basis": "Default"
-    "note": "Movement and engagement defaults: hex support range; cannot attack alone or hold ground; Default range; retained role. Source: #1668 balance.md at 605277df."
+    "basis": "Agreed"
+    "note": "Movement and engagement defaults: hex support range; cannot attack alone or hold ground; retained role. The owner-approved answer O5 (1 November 2026, https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6553884547): \"2 hexes.\"; relabelled from Default after the #2918 C2 audit. Source: #1668 balance.md at 605277df."
     "values": [2]
   "combat.artillery_factor":
-    "basis": "Default"
-    "note": "Movement and engagement defaults: unitless role multiplier; Default. Source: #1668 balance.md at 605277df."
-    "values": [1]
+    "basis": "Agreed"
+    "note": "Movement and engagement defaults: unitless role multiplier. The owner's answer C1 (10 November 2026, https://github.com/eyalgolan/statecraft-israel/issues/2918#issuecomment-6765662598): \"200% wins (Recommended)\"; 2 matches the live combat_percent 200 in unit_types.yaml (was Default 1). Source: #1668 balance.md at 605277df."
+    "values": [2]
   "combat.loss_cohorts":
     "basis": "Default"
     "note": "Movement and engagement defaults: combatant population cohort removed on loss result; Default abstract loss granularity. Source: #1668 balance.md at 605277df."
@@ -511,7 +511,7 @@
     "values": [60]
   "absorption.population_target":
     "basis": "Agreed"
-    "note": "Objectives: people, not population units (about 1,000 units at D2's 1,000 people a unit); threshold must be exceeded. Owner, 1 November 2026: \"Main's base x 0.3's tiers (Recommended)\". Retained approved baseline, a labelled design value. Source: #1668 balance.md at 605277df."
+    "note": "Objectives: people, not population units (about 1,000 units at D2's 1,000 people a unit); the target is reached at or above it (owner, 9 November 2026, #1714: \"At or above, both (Recommended)\"). Owner, 1 November 2026: \"Main's base x 0.3's tiers (Recommended)\". Retained approved baseline, a labelled design value. Source: #1668 balance.md at 605277df."
     "values": [1000000]
   "absorption.max_overflow":
     "basis": "Agreed"

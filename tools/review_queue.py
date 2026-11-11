@@ -57,6 +57,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # under python -I the script's folder is not on sys.path
 import review_record  # noqa: E402
+import yaml12  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "docs" / "review-queue.md"
@@ -200,9 +201,18 @@ def signed_rows(text: str) -> list[SignedRow]:
     return out
 
 
+def _compose(text: str, rel: str):
+    """The YAML node tree of a file's text; text that is not YAML is a QueueError naming the file and line (#2532)."""
+    try:
+        return yaml.compose(text)
+    except yaml.YAMLError as e:
+        raise QueueError(yaml12.not_yaml(rel, e)) from e
+
+
 def scan(text: str, rel: str) -> list[Entry]:
-    """The flags and the reviewed statuses in one YAML file, with their lines; no git."""
-    root = yaml.compose(text)
+    """The flags and the reviewed statuses in one YAML file, with their lines; no git. Raises QueueError on text that is
+    not YAML."""
+    root = _compose(text, rel)
     entries: list[Entry] = []
     if root is None:
         return entries
@@ -253,7 +263,7 @@ def scan_translations(repo: Path, rel: str) -> list[Entry]:
     agent-checked, listed as the inline flag it replaces, with the row and sources of its English record (the sources stay
     there): a content entry's record by its key; an event's by its id, with its text_he_sources, else the event's own
     sources."""
-    root = yaml.compose((repo / rel).read_text(encoding="utf-8"))
+    root = _compose((repo / rel).read_text(encoding="utf-8"), rel)
     entries: list[Entry] = []
     parsed: dict[str, dict] = {}
     events: dict[str, dict] | None = None
@@ -266,7 +276,7 @@ def scan_translations(repo: Path, rel: str) -> list[Entry]:
             if events is None:
                 events = {}
                 for path in sorted((repo / "content" / "events").glob("*.yaml")):
-                    tree = yaml.compose(path.read_text(encoding="utf-8"))
+                    tree = _compose(path.read_text(encoding="utf-8"), path.relative_to(repo).as_posix())
                     top = {_scalar(a): b for a, b in tree.value} if isinstance(tree, yaml.MappingNode) else {}
                     if "id" in top:
                         events[_scalar(top["id"])] = top
@@ -278,7 +288,7 @@ def scan_translations(repo: Path, rel: str) -> list[Entry]:
         where, _, name = rest.rpartition(".")
         if file not in parsed:
             path = repo / "content" / file
-            tree = yaml.compose(path.read_text(encoding="utf-8")) if path.is_file() else None
+            tree = _compose(path.read_text(encoding="utf-8"), path.relative_to(repo).as_posix()) if path.is_file() else None
             parsed[file] = {".".join(ids): n for ids, n in _records(tree)}
         record = parsed[file].get(where)
         fields = {_scalar(a): b for a, b in record.value} if record is not None else {}

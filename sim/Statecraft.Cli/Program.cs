@@ -79,9 +79,10 @@ catch (ContentException e) { Console.Error.WriteLine($"Content error: {e.Message
 
 // --release-gate: the sensitivity gate before a build is shared (spec 5.5; tools/package_release.py, Build -shareable).
 // Exit 0 and "RELEASE GATE OK" when every sensitive event is sensitivity-reviewed and (R-ALT-011, Q-ALT-9) every
-// consequence card and every event with variants has a person's reviewed_by, and (R-UNIT-006, Q-START-3) every
-// units_1948.yaml row a new game starts a unit from is fact-checked with no field sourced after its
-// checked_on, and (Q-TGT-3 (b)) every settlement_targets.yaml row is sensitivity-reviewed; else exit 3 naming them.
+// consequence card, every event with variants and every armistice card with an early_text (R-WAR-008) has a person's
+// reviewed_by, and (R-UNIT-006, Q-START-3) every units_1948.yaml row a new game starts a unit from is fact-checked with
+// no field sourced after its checked_on, and (Q-TGT-3 (b)) every settlement_targets.yaml row is sensitivity-reviewed;
+// else exit 3 naming them.
 if (Array.IndexOf(args, "--release-gate") >= 0)
 {
     var open = ReleaseGate.SensitiveUnreviewed(content);
@@ -143,7 +144,7 @@ bool auto = autoMode == "historical";
 
 for (int t = 0; t < turns && state.GameOver == null; t++)
 {
-    Briefing(content, state);
+    Briefing.Write(content, state, Console.Out);
     var commands = auto ? HistoricalAI.Commands(content, state).ToList() : ReadCommands();
     if (commands == null) break;
     var result = Simulation.Step(content, state, commands);
@@ -154,20 +155,6 @@ for (int t = 0; t < turns && state.GameOver == null; t++)
 Console.WriteLine($"End {state.Date:yyyy-MM-dd}: population {state.TotalPopulation:N0}, level {state.Rung}, treasury {state.Treasury:0.0}, debt {state.Debt:0.0}, fx {state.FxReserves:0.0}, stability {state.CoalitionStability:0.00}{(state.GameOver != null ? ", GAME OVER: " + state.GameOver : "")}");
 Console.WriteLine($"State hash {state.Hash()}");
 return 0;
-
-static void Briefing(Content c, GameState s)
-{
-    var gov = Offices.Government(c, s.Date);
-    var attention = c.UsesAttention ? $" | attention {s.Attention:0.0}" : "";
-    Console.WriteLine($"== {s.Date:yyyy-MM-dd} | turn {s.Turn} | {gov?.Name} | security level {s.Rung}{attention}");
-    foreach (var id in s.PendingEvents)
-    {
-        var e = c.Events.First(x => x.Id == id);
-        var fillDate = EventSystem.FillDate(e, s.Date);   // after the window ends, name the last in-window holder
-        Console.WriteLine($"  EVENT {e.Id}: {Offices.Fill(c, e.Title, fillDate)} - {EventSystem.Render(c, e, s.Date)}");
-        foreach (var o in e.Options) Console.WriteLine($"    {o.Id}: {Offices.Fill(c, o.Text, fillDate)}");
-    }
-}
 
 static List<Command>? ReadCommands()
 {

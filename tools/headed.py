@@ -9,7 +9,8 @@ serves a WebGL build with web_check's handler, and drives it over one browser-le
 
   boot      boot-phase timings from ?bootlog (optionally under CPU throttling): where the start-up time goes
   navpairs  pairs of clicks on a screen button and a second target, d ms apart or in one frame, under ?navlog
-  loadshot  screenshots during the load and once ready; a boot-failure line ends the run with exit 1
+  loadshot  screenshots during the load and once ready; a boot-failure line, or a capture that is blank after GAME OK,
+            does not decode or is not the page's CSS size times its pixel ratio, ends the run with exit 1
   profile   visual v1's ?vprofile in a headed 1920x1080 window at --dpr (frame rate uncapped)
   wheel     wheel zoom under ?camlog (#43): a touchpad-like swipe, mouse notches in pixels and lines, over the map and a panel
 
@@ -60,9 +61,43 @@ def left_column_button(index: int, window: tuple[int, int] = WINDOW) -> tuple[in
 WHY = left_column_button(3)   # Why? moved from the top bar to the left icon column (#602)
 
 
+# The start screen's bottom stack and action row in panel units, from Statecraft.uss: the body's 28 px bottom padding, the
+# panel's 1 px border and 20 px bottom padding, the community row (40 px high, 8 px above it); a .start-button is 300 px
+# wide (min-width) and 50 px high with 10 px and 4 px margins.
+START_PANEL_BOTTOM, START_BUTTON = 28 + 1 + 20 + 40 + 8, (300 + 2 * 10, 50 + 2 * 4)
+# The action row a fresh profile shows: no save, so no Continue; the reviewed opening's replay; Star on GitHub (#1168).
+START_ROW = ("start-new-game", "start-opening-replay", "start-star")
+
+
+def start_new_game_button(lang: str = "en", window: tuple[int, int] = WINDOW) -> tuple[int, int]:
+    """The centre of the start screen's New game in CSS pixels, from Statecraft.uss (refs #3003): the panel sits at the
+    bottom of the window (a wide window, so no .start-band), its action row centred and START_ROW's buttons all
+    START_BUTTON wide; in Hebrew (?lang=he) the row runs right to left (.lang-he .start-actions: row-reverse), so New game
+    is mirrored about the centre. Scaled as left_column_button. A headed capture on 10 Nov 2026 at 0be35a517 (main
+    59fdd6924 plus #3003) measured (541, 657) and (1026, 657); this gives (543, 657) and (1025, 657) (Star on GitHub's label
+    and signs make it a few px wider than 300 in English)."""
+    if lang not in ("en", "he"):
+        raise ValueError(f"no start screen layout for lang={lang!r}")
+    w, h = window
+    scale = ((w / 1920) * (h / 1080)) ** 0.5
+    bw, bh = START_BUTTON
+    offset = (START_ROW.index("start-new-game") + 0.5 - len(START_ROW) / 2) * bw   # from the row's centre
+    if lang == "he":
+        offset = -offset
+    return round(w / 2 + offset * scale), round(h - (START_PANEL_BOTTOM + bh / 2) * scale)
+
+
+def query_lang(query: str) -> str:
+    """The UI language a page query asks for (UiLanguage: ?lang=he), English without one."""
+    return "he" if "lang=he" in query.split("&") else "en"
+
+
 # For `wheel`, in a fixed 1568x752 CSS viewport (Playwright's, from the #43 browser runs): START_NEW, the start screen's
-# New Game button; MAP, open map clear of the HUD; PANEL, the End Turn button in the top bar.
-WHEEL_VIEWPORT, START_NEW, MAP, PANEL = (1568, 752), (784, 693), (300, 400), (1500, 44)
+# New Game button (START_NEW_BY_LANG for a ?lang=he page); MAP, open map clear of the HUD; PANEL, the End Turn button in
+# the top bar.
+WHEEL_VIEWPORT, MAP, PANEL = (1568, 752), (300, 400), (1500, 44)
+START_NEW_BY_LANG = {lang: start_new_game_button(lang, WHEEL_VIEWPORT) for lang in ("en", "he")}
+START_NEW = START_NEW_BY_LANG["en"]
 
 
 def pad_swipe() -> list[float]:
@@ -186,6 +221,11 @@ FIRST_FRAME_SCRIPT = """(() => {
 })();"""
 
 
+# loadshot's expected capture size (#3043): Page.captureScreenshot with no clip captures the page's viewport in device
+# pixels, the CSS size times the ratio.
+PAGE_SIZE = "[window.innerWidth, window.innerHeight, window.devicePixelRatio]"
+
+
 class Browser:
     def __init__(self, build: Path, port=8766, width=WINDOW[0], height=WINDOW[1], dpr=None, uncapped=False,
                  viewport=None, keep_awake=False):
@@ -287,6 +327,16 @@ class Browser:
         data = (await self.send("Page.captureScreenshot", {"format": "png"}, session=sid))["data"]
         Path(path).write_bytes(base64.b64decode(data))
         return path
+
+    async def page_size(self, sid) -> tuple[float, float, float]:
+        """The page's (innerWidth, innerHeight, devicePixelRatio) now; ValueError when the page answers with an exception
+        or no such value (a page mid-reload), RuntimeError (from send) when CDP refuses the call."""
+        r = await self.send("Runtime.evaluate", {"expression": PAGE_SIZE, "returnByValue": True}, session=sid)
+        value = r.get("result", {}).get("value")
+        if "exceptionDetails" in r or not (isinstance(value, list) and len(value) == 3
+                                           and all(isinstance(v, (int, float)) and v > 0 for v in value)):
+            raise ValueError(f"no page size from Runtime.evaluate: {r}")
+        return tuple(value)
 
     async def click(self, sid, x, y):
         for e in burst_events([(x, y)]):
@@ -394,6 +444,42 @@ def shot_error(path, blank_is_error: bool) -> str | None:
     return None
 
 
+def png_size(path) -> tuple[int, int]:
+    """The width and height in a PNG's IHDR header (as web_check's ShotCollector reads them)."""
+    head = Path(path).read_bytes()[:24]
+    return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
+
+
+def size_error(path, page) -> str | None:
+    """Why the PNG at `path` (one shot_error passed) is not the capture of a page of `page` = (innerWidth, innerHeight,
+    devicePixelRatio): its header size is more than 1 px from round(CSS size x ratio) in either dimension (1 px for a
+    fractional ratio's rounding). #3043: the window keeps its size (the #2700 caution), so the page reports what it is."""
+    w, h = png_size(path)
+    cw, ch, dpr = page
+    ew, eh = round(cw * dpr), round(ch * dpr)
+    if abs(w - ew) > 1 or abs(h - eh) > 1:
+        return f"{path} is {w}x{h}, the page is {cw:g}x{ch:g} CSS px at DPR {dpr:g} ({ew}x{eh})"
+    return None
+
+
+class CaptureFailed(Exception):
+    """A loadshot capture that is no capture; the message is the FAIL reason."""
+
+
+async def capture(b, sid, path, blank_is_error: bool) -> str:
+    """loadshot's capture: the page size read just before the screenshot, then shot_error and size_error. Returns the
+    line to print, which records the PNG and page sizes; raises CaptureFailed with the FAIL reason."""
+    try:
+        page = await b.page_size(sid)
+    except (RuntimeError, ValueError, asyncio.TimeoutError) as e:
+        raise CaptureFailed(f"could not read the page size before {path} ({e})") from e
+    await b.shot(sid, path)
+    if error := (shot_error(path, blank_is_error) or size_error(path, page)):
+        raise CaptureFailed(error)
+    w, h = png_size(path)
+    return f"{path} {w}x{h}, page {page[0]:g}x{page[1]:g} CSS px at DPR {page[2]:g}"
+
+
 async def loadshot(args):
     async with Browser(args.build) as b:
         sid = await b.open("bootlog", args.cpu)
@@ -404,22 +490,18 @@ async def loadshot(args):
         if "BOOT FAIL" in line:
             print(f"FAIL: {line}")
             return 1
-        path = await b.shot(sid, args.out + "-loading.png")
-        if error := shot_error(path, blank_is_error=False):
-            print(f"FAIL: {error}")
+        try:
+            print(await capture(b, sid, args.out + "-loading.png", blank_is_error=False))
+            line = await b.wait_for(sid, r"^GAME OK|BOOT FAIL")
+            if "BOOT FAIL" in line:
+                print(f"FAIL: {line}")
+                return 1
+            await asyncio.sleep(2)
+            print(line)
+            print(await capture(b, sid, args.out + "-after.png", blank_is_error=True))
+        except CaptureFailed as e:
+            print(f"FAIL: {e}")
             return 1
-        print(path)
-        line = await b.wait_for(sid, r"^GAME OK|BOOT FAIL")
-        if "BOOT FAIL" in line:
-            print(f"FAIL: {line}")
-            return 1
-        await asyncio.sleep(2)
-        print(line)
-        path = await b.shot(sid, args.out + "-after.png")
-        if error := shot_error(path, blank_is_error=True):
-            print(f"FAIL: {error}")
-            return 1
-        print(path)
         return 0
 
 
@@ -430,10 +512,11 @@ async def wheel(args):
     results = {}
     for label, steps in WHEEL_CASES:
         async with Browser(args.build, viewport=WHEEL_VIEWPORT) as b:
-            sid = await b.open("camlog", init_script=WHEEL_SEEN_SCRIPT)
+            query = "camlog"
+            sid = await b.open(query, init_script=WHEEL_SEEN_SCRIPT)
             await b.wait_for(sid, r"^GAME OK")
             await asyncio.sleep(3)
-            await b.click(sid, *START_NEW)
+            await b.click(sid, *START_NEW_BY_LANG[query_lang(query)])
             await b.wait_for(sid, r"^CAMERA ")
             await asyncio.sleep(2)
             out = []
