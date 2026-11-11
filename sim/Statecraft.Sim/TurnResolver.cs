@@ -13,6 +13,7 @@ namespace Statecraft.Sim
         /// of a year long).</summary>
         public static void Resolve(Content c, GameState s, DateTime next, double yearFraction, List<Cause> why)
         {
+            if (s.PopulationLedger.IsHistorical) throw new NotSupportedException("The dark turn is held: TurnResolver.Resolve does not run a Historical ledger game yet; gdd-0.3 integration is held.");   // #1725 PR 6 until the dark-turn PR (R-POP-002)
             PopulationLedger.RefuseAggregate(s);
             if (!c.IsGdd) return;
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop

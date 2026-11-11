@@ -300,6 +300,31 @@ public class EnemyPlaybackUiTests
         Assert.AreEqual(1, held.Count(h => !h));
     }
 
+    /// <summary>#3004 item 2: End turn pressed again while the moves play, on a turn with no moves to play (here the switch
+    /// is off, the same path: EnemyTurnPlayback.Stepped ends the old playback with the hold let go before the bridge raises
+    /// TurnEnded). The report opens once, for the new turn: Showing never fires with the previous turn.</summary>
+    [Test]
+    public void EndTurnMidPlaybackWithNoMovesToPlayShowsTheReportOnceForTheNewTurn()
+    {
+        var extra = Fakes.Move(911, 0, 0, 1, 0, side: "egypt");   // the first turn has a move to play, whatever the sim did
+        using var k = new Kit(En, (s, o) => { var r = s.EndTurn(o); return new StepResult(r.State, r.Why.Append(extra).ToArray(), r.Rejected); });
+        var shown = new List<StepResult?>();
+        k.Report.Showing += r => shown.Add(r);
+        k.Bridge.EndTurn();
+        var first = k.Bridge.Session.Last;
+        k.Playback.Tick(0.05f);
+        Assert.IsTrue(k.Playback.Active, "fixture: the first turn's moves play");
+        Assert.IsEmpty(shown, "precondition: the report waits for them");
+        k.On = false;   // nothing plays for the next turn
+        k.Bridge.EndTurn();
+        var latest = k.Bridge.Session.Last;
+        Assert.AreNotSame(first, latest, "fixture: a second turn ran");
+        Assert.IsFalse(k.Playback.Active || k.Playback.Pending, "fixture: no moves play for it");
+        Assert.IsTrue(k.Report.IsOpen, "the report opens at once");
+        Assert.AreEqual(1, shown.Count, "once, not first for the previous turn and again for the new one");
+        Assert.AreSame(latest, shown[0], "for the new turn");
+    }
+
     /// <summary>End turn pressed with a screen open (the top bar stays enabled under a side screen): End turn closes the
     /// screen, as it did before the playback, so the moves play on the open map and the report opens when they end,
     /// without waiting for the player to close a screen they never asked to keep (#2967 review 9 November, S1).</summary>

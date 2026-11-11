@@ -68,8 +68,14 @@ namespace Statecraft.Game.UI
         /// <summary>Sets the direction of every text element under the root from its text.</summary>
         public void Apply() => root.Query<TextElement>().ForEach(t => Apply(t, t.text));
 
+        /// <summary>#2202: the same next-frame pass as after a turn, a click or a key press, for texts a presenter builds with
+        /// none of them (the turn report and the event card when the Arab forces' moves end). Nothing once disposed.</summary>
+        public void Later() { if (!disposed) later(); }
+        bool disposed;
+
         public void Dispose()
         {
+            disposed = true;
             pending?.Pause(); pending = null;
             bridge.Changed -= later;
             root.UnregisterCallback(onText, TrickleDown.TrickleDown);

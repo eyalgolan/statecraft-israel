@@ -58,9 +58,12 @@ public static class ShaderChecks
         return false;
     }
 
-    public static List<string> Gles3Errors(Shader shader)
+    /// <summary>The GLES3 compile errors of every pass, for the default variants and for each of <paramref name="extra"/>
+    /// keyword sets (a shader's own multi_compile keywords, which the defaults do not cover: GroundDetail's SC_FURROWS).</summary>
+    public static List<string> Gles3Errors(Shader shader, params string[][] extra)
     {
         if (shader == null) throw new ArgumentNullException(nameof(shader));
+        var variants = Variants.Concat(extra).ToArray();
         var errors = new List<string>();
         int usable = 0;
         var data = ShaderUtil.GetShaderData(shader);
@@ -75,7 +78,7 @@ public static class ShaderChecks
                 var pass = sub.GetPass(p);
                 if (ExcludesGles3(pass.SourceCode)) continue;
                 built++;
-                foreach (var keywords in Variants)
+                foreach (var keywords in variants)
                     foreach (var stage in new[] { ShaderType.Vertex, ShaderType.Fragment })
                     {
                         var info = pass.CompileVariant(stage, keywords, ShaderCompilerPlatform.GLES3x, BuildTarget.WebGL, true);

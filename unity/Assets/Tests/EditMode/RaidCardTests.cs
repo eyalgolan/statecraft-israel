@@ -27,16 +27,17 @@ public class RaidCardTests
     }
 
     [Test]
-    public void TheShippedCardIsADraftThatOnlyTheEditorPreviews()
+    public void TheShippedCardIsReviewedSoAPlayerBuildShowsIt()
     {
         var data = RaidCardContent.Load();
         Assert.IsNotNull(data, "Resources/" + RaidCardContent.ResourcePath + " loads");
-        Assert.AreEqual("draft", data!.Status, "the card stays draft until a human review");
-        Assert.AreEqual(OpeningContent.HePending, data.HeReview);
-        Assert.IsFalse(data.Clip.SensitivityReviewed, "the owner's sensitivity review of the clip is pending");
-        Assert.IsFalse(data.Reviewed);
-        Assert.IsFalse(RaidCardContent.MayPresent(data, editorPreview: false), "a player never sees the draft");
-        Assert.IsTrue(RaidCardContent.MayPresent(data, editorPreview: true), "the Editor shows it, labelled, for QA");
+        // Owner, 10 November 2026: "Approve text, HE, clip", and "Approve as is" for the Hebrew (native read, #564).
+        Assert.AreEqual(Statecraft.Sim.ReleaseGate.ReviewedStatus, data!.Status, "the owner reviewed the card");
+        Assert.AreEqual(OpeningContent.HeApproved, data.HeReview, "the owner's native read of the Hebrew");
+        Assert.IsTrue(data.Clip.SensitivityReviewed, "the owner's sensitivity review of the clip");
+        Assert.IsTrue(data.Reviewed);
+        Assert.IsTrue(RaidCardContent.MayPresent(data, editorPreview: false), "a player build shows the reviewed card");
+        Assert.IsTrue(RaidCardContent.MayPresent(data, editorPreview: true));
         Assert.IsTrue(data.Sources.Count >= 2 && data.Sources.All(s => s.IsChecked), "every source carries its checked date");
         Assert.IsTrue(data.Clip.AiGenerated);
         Assert.IsTrue(File.Exists(Path.Combine(Application.streamingAssetsPath, "video", data.Clip.File)),
@@ -60,9 +61,9 @@ public class RaidCardTests
         Assert.IsTrue(RaidCardContent.MayPresent(clip, editorPreview: true), "the Editor preview relaxes only the reviews");
     }
 
-    [TestCase("status: draft", "status: draft\nextra: 1", TestName = "an unknown key")]
-    [TestCase("status: draft", "status: draft\nstatus: draft", TestName = "a repeated key")]
-    [TestCase("he_review: pending", "he_review: maybe", TestName = "a he_review that is neither pending nor approved")]
+    [TestCase("status: sensitivity-reviewed", "status: sensitivity-reviewed\nextra: 1", TestName = "an unknown key")]
+    [TestCase("status: sensitivity-reviewed", "status: sensitivity-reviewed\nstatus: draft", TestName = "a repeated key")]
+    [TestCase("he_review: approved", "he_review: maybe", TestName = "a he_review that is neither pending nor approved")]
     [TestCase("title_he: ", "# title_he: ", TestName = "Hebrew that is not complete")]
     [TestCase("  ai_generated: true", "  ai_generated: false", TestName = "an AI clip not marked as one")]
     [TestCase("  sensitive: true", "  sensitive: false", TestName = "a clip of the raid's aftermath not marked sensitive")]
@@ -114,7 +115,7 @@ public class RaidCardTests
         Assert.AreEqual("raid-ok", buttons[0].name);
         Assert.AreEqual(Text(lang)["raid.ok"], buttons[0].text);
         Assert.AreEqual(Text(lang)["opening.preview"], ui.Q<Label>("raid-preview").text);
-        Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("raid-preview").style.display.value, "the Editor draft is labelled");
+        Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("raid-preview").style.display.value, "the reviewed card has no draft label");
         bool he = lang == "he";
         Assert.AreEqual(he ? data.TitleHe : data.Title, ui.Q<Label>("raid-title").text);
         Assert.AreEqual(he ? data.TextHe : data.Text, ui.Q<Label>("raid-text").text);
@@ -127,12 +128,21 @@ public class RaidCardTests
     }
 
     [Test]
-    public void AReviewedCardHidesThePreviewLabel()
+    public void AReviewedCardHidesThePreviewLabelAndADraftShowsIt()
     {
-        using var ui = new UiTestKit();
-        using var card = new RaidCardPresenter(ui.Root, ReviewedFixture(), Text("en"), _ => { }, () => { });
-        card.Show();
-        Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("raid-preview").style.display.value);
+        using (var ui = new UiTestKit())
+        using (var card = new RaidCardPresenter(ui.Root, ReviewedFixture(), Text("en"), _ => { }, () => { }))
+        {
+            card.Show();
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("raid-preview").style.display.value);
+        }
+        var draft = ReviewedFixture(); draft.Status = "draft";
+        using (var ui = new UiTestKit())
+        using (var card = new RaidCardPresenter(ui.Root, draft, Text("en"), _ => { }, () => { }))
+        {
+            card.Show();
+            Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("raid-preview").style.display.value, "the Editor draft is labelled");
+        }
     }
 
     [Test]

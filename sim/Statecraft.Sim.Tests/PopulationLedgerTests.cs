@@ -259,4 +259,20 @@ public class PopulationLedgerTests
         Assert.Throws<ArgumentException>(() => s.PopulationLedger.Replace(WithTier(profession, tier)));
         Assert.Equal(before, s.Describe());
     }
+
+    // #3020: PopulationLedger.Refusals, the UI's way to the refusals only a Historical ledger game gives, holds every
+    // LedgerRefused* constant in the sim and only them, each by its "Class.Constant" name with its own text; the constants
+    // themselves stay internal (#2964 Q4, owner, 8 November 2026: "With the UI PR (Recommended)").
+    [Fact]
+    public void RefusalsHoldsEveryLedgerRefusalConstantByName()
+    {
+        var fields = typeof(PopulationLedger).Assembly.GetTypes()
+            .SelectMany(t => t.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static))
+            .Where(f => f.IsLiteral && f.FieldType == typeof(string) && f.Name.StartsWith("LedgerRefused", StringComparison.Ordinal))
+            .ToList();
+        Assert.Equal(9, fields.Count);
+        Assert.All(fields, f => Assert.True(f.IsAssembly, f.Name + " stays internal"));
+        var expected = fields.ToDictionary(f => f.DeclaringType!.Name + "." + f.Name, f => (string)f.GetRawConstantValue()!);
+        Assert.Equal(expected.OrderBy(x => x.Key, StringComparer.Ordinal), PopulationLedger.Refusals.OrderBy(x => x.Key, StringComparer.Ordinal));
+    }
 }

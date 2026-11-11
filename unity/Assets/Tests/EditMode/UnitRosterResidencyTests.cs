@@ -203,6 +203,10 @@ public class UnitRosterResidencyTests
             var holders = Tokens(layer).GetComponentsInChildren<UnitFigureResidency>(true);
             Assert.Greater(layer.FigurePrefetchCount, NoOwners,
                 "reactivation marks the handoff without destroying a child inside the activation callback");
+            // A Far answered under the inactive layer is put on once the holder is shown again: an inactive Animator can be
+            // neither posed nor measured, and Unity warns at the try (#3055, the warning NoUnexpectedReceived catches).
+            foreach (var holder in holders.Where(h => UnitFigures.Arrived(h.ModelId)))
+                Assert.IsTrue(UnitFigures.Dressed(holder.transform), holder.name + ": its answered Far is put on when shown");
             LogAssert.NoUnexpectedReceived();
             layer.FlushPrefetchRetirement();
             Assert.AreEqual(NoOwners, layer.FigurePrefetchCount,

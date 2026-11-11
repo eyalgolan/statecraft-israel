@@ -305,6 +305,17 @@ namespace Statecraft.Game.Map.Units
             if (Moving || Attacking || Reacting || HitPending) Snap();
         }
 
+        /// <summary>Puts the component back as a new one, for a token UnitLayer builds again on the same root (#3055): what
+        /// the old pieces were playing stops as when a token is torn down (<see cref="OnDisable"/>), and UnitLayer then hands
+        /// the move, the attack and the hit on, as it does to a new token. Call it with the old pieces already taken off.</summary>
+        internal void Restart()
+        {
+            if (Moving || Attacking || Reacting || HitPending) Snap();
+            held = false; from = moveOffset = Vector3.zero; transform.position = Vector3.zero;
+            posed = 0; fired = false;
+            enabled = false;
+        }
+
         void Snap()
         {
             bool moved = transform.position != Vector3.zero;

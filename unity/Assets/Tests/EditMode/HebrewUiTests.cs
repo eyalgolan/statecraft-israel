@@ -239,6 +239,52 @@ public class HebrewUiTests
         Assert.IsEmpty(missing, "no Hebrew string for:\n" + string.Join("\n", missing));
     }
 
+    // #3020 (#2964 Q4, owner, 8 November 2026: "With the UI PR (Recommended)"; #2986): each of the nine refusals only a
+    // Historical ledger game gives maps to its own key. Their constants stay internal; PopulationLedger.Refusals names each
+    // (the sim's PopulationLedgerTests.RefusalsHoldsEveryLedgerRefusalConstantByName proves it holds every LedgerRefused*
+    // constant and only them). Each format is filled with distinct values as the sim fills it: the English is the sim's own
+    // text, the Hebrew is its line with the Hebrew town in its slot, its placeholders in the English's order, and no Latin
+    // letter left.
+    [Test]
+    public void EveryLedgerRefusalHasItsOwnKeyInBothLanguages()
+    {
+        var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+        var namesHe = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.NameHe);
+        var place = c.SettlementNames.Single(x => x.Value == "Rishon LeZion");
+        object townSlot = new object();
+        var filled = new Dictionary<string, (string key, object[] values)>
+        {
+            ["Training.LedgerRefusedCraftsman"] = ("unit.reinforce_refused.ledger_craftsman", new object[0]),
+            ["Training.LedgerRefusedCampFull"] = ("unit.reinforce_refused.ledger_camp_full", new object[] { townSlot, 7, 50 }),
+            ["Training.LedgerRefusedStrength"] = ("unit.reinforce_refused.ledger_strength", new object[] { 41, 3, 5 }),
+            ["Training.LedgerRefusedCarried"] = ("unit.reinforce_refused.ledger_carried", new object[] { townSlot }),
+            ["Training.LedgerRefusedHalutzTrade"] = ("unit.reinforce_refused.ledger_halutz_trade", new object[] { townSlot }),
+            ["Workshops.LedgerRefusedFree"] = ("workshop.refused_ledger_free", new object[] { townSlot, 6 }),
+            ["Workshops.LedgerRefusedBuilders"] = ("workshop.refused_ledger_builders", new object[] { townSlot }),
+            ["Qualification.LedgerRefusedCraftsmen"] = ("city.qualification_refused.ledger_craftsmen", new object[0]),
+            ["Qualification.LedgerRefusedFreePioneers"] = ("city.qualification_refused.ledger_free_pioneers", new object[] { townSlot, 6 }),
+        };
+        CollectionAssert.AreEquivalent(filled.Keys, Statecraft.Sim.PopulationLedger.Refusals.Keys, "every ledger refusal is filled here");
+        object English(object v) => v == townSlot ? place.Value : v;
+        object Hebrew(object v) => v == townSlot ? namesHe[place.Key] : v;
+        string Slots(string line) => string.Join(",", Regex.Matches(line, @"\{\d+\}").Cast<Match>().Select(m => m.Value));
+        Assert.AreEqual(filled.Count, filled.Values.Select(v => v.key).Distinct().Count(), "each refusal has its own key");
+        foreach (var entry in filled)
+        {
+            var (key, values) = entry.Value;
+            var format = Statecraft.Sim.PopulationLedger.Refusals[entry.Key];
+            Assert.AreEqual(Regex.Matches(format, @"\{\d+\}").Count, values.Length, entry.Key + ": one value a slot");
+            var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values.Select(English).ToArray());
+            Assert.IsTrue(string.Equals(reason, SimBridge.ReasonText(En, reason, c, namesHe), StringComparison.Ordinal), "the English string is the sim's own: " + reason);
+            var he = SimBridge.ReasonText(He, reason, c, namesHe);
+            Assert.IsTrue(Regex.IsMatch(he, "[\u05D0-\u05EA]"), "no Hebrew string for: " + reason);
+            Assert.IsFalse(Regex.IsMatch(he, "[A-Za-z]"), "Latin letters in the Hebrew for " + reason + ": " + he);
+            Assert.AreEqual(Slots(En[key]), Slots(He[key]), key + ": the Hebrew line takes its values in the English's order");
+            var expected = values.Length == 0 ? He[key] : He.Format(key, values.Select(Hebrew).ToArray());
+            Assert.IsTrue(string.Equals(expected, he, StringComparison.Ordinal), key + ": expected '" + expected + "', got '" + he + "'");
+        }
+    }
+
     // #2707 batch 3, the owner's option (b): a capture or end-of-occupation answer the end of turn refuses reuses the capture
     // dialog's reviewed capture.refusal.* line in both languages (settlement-control-strings-review.yaml gains nothing), with
     // the place's Hebrew name in its slot. The answers with no reviewed line that fits stay the sim's English.
@@ -404,6 +450,142 @@ public class HebrewUiTests
         Assert.IsTrue(nav.Close(), "the player closes Settings");
         Assert.IsTrue(Report().IsOpen, "the turn's report opens");
         Assert.AreEqual(He["report.title"], Ui.Q<Label>("turn-report-title").text, "in Hebrew");
+    }
+
+    /// <summary>#2202: with the Arab forces' moves on (the default), the turn report opens when they end (Holding false).
+    /// Its lines are new labels with their words set before they join the panel, so no text change reaches UiDirection, and
+    /// End turn's own pass ran before they existed. A line that mixes Hebrew with a value ("כסף (נטו): שינוי של IL -6.1m")
+    /// must still read right to left. GameRoot plays no moves in EditMode (Application.isPlaying), so the test raises its
+    /// playback's Holding, which runs GameRoot's own holding handler. Red-first: nothing walked the tree after the release,
+    /// and the lines stayed Inherit (laid out left to right).</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheReportThatOpensAfterTheEnemyMovesReadsRightToLeft()
+    {
+        var restore = OnTexture(1920, 1080);
+        try
+        {
+            var game = BootHebrewForTheHold();
+            for (int i = 0; i < 2; i++) yield return null;
+            RaiseHolding(game, true);
+            game.Bridge!.EndTurn();
+            Assert.IsTrue(HeldReport(game).Waiting, "precondition: the report waits for the moves");
+            for (int i = 0; i < 2; i++) yield return null;             // End turn's own pass runs before any report line exists
+            Assert.IsFalse(HeldReport(game).IsOpen, "precondition: the report is still held");
+
+            RaiseHolding(game, false);                                 // the moves end
+            Assert.IsTrue(HeldReport(game).IsOpen, "precondition: the report opens when the moves end");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            ReportLinesDirected("the report opened when the Arab forces' moves ended");
+        }
+        finally { restore(); }
+    }
+
+    /// <summary>#2202: as above, when the player opened a screen while the moves played: the report waits for it
+    /// (TurnReportPresenter.ShowWhenFree) and opens when it closes. Closed here by ScreenNav.Close, as Escape's Cancel closes
+    /// it, with no click or submit that would make UiDirection walk the tree. Red-first: the report built on that close
+    /// kept Inherit, as did one built at the release.</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheReportThatWaitedForAScreenAfterTheEnemyMovesReadsRightToLeft()
+    {
+        var restore = OnTexture(1920, 1080);
+        try
+        {
+            var game = BootHebrewForTheHold();
+            for (int i = 0; i < 2; i++) yield return null;
+            RaiseHolding(game, true);
+            game.Bridge!.EndTurn();
+            for (int i = 0; i < 2; i++) yield return null;
+            UiTestKit.Press(Ui.Q<Button>("nav-settings"));             // opened while the moves play
+            Assert.IsTrue(ScreenNav.IsOpen(Ui.Q("screen-settings")), "precondition: Settings is open");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            RaiseHolding(game, false);                                 // the moves end under Settings
+            Assert.IsFalse(HeldReport(game).IsOpen, "precondition: the report waits for Settings");
+            Assert.IsTrue(HeldReport(game).Waiting, "precondition: the report still waits");
+            for (int i = 0; i < 2; i++) yield return null;             // any pass the release scheduled runs now
+            var nav = (ScreenNav)typeof(GameRoot).GetField("nav", Private)!.GetValue(game)!;
+            Assert.IsTrue(nav.Close(), "the player closes Settings (Escape)");
+            Assert.IsTrue(HeldReport(game).IsOpen, "precondition: the report opens when Settings closes");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            ReportLinesDirected("the report opened when Settings closed after the Arab forces' moves");
+        }
+        finally { restore(); }
+    }
+
+    /// <summary>#2202: the event card held while the moves play renders again when they end (HeldForPlayback false), which
+    /// builds new option buttons with their words already set. Every option's text carries its Attention price
+    /// (event.option_cost, "{0} (עולה {1:0.0} תשומת לב)"; rules.yaml choose_event_option: 1), so it mixes Hebrew with a number.
+    /// The opening card (idf_founding) is the card here: it is open on every new game, while the card after a given End turn
+    /// depends on the turn's draws; the release path is the same. Red-first: the rebuilt options stayed Inherit.</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheCardThatComesBackAfterTheEnemyMovesReadsRightToLeft()
+    {
+        var restore = OnTexture(1920, 1080);
+        try
+        {
+            var game = BootHebrewForTheHold();
+            for (int i = 0; i < 2; i++) yield return null;
+            Assert.IsNotNull(game.Card?.Shown, "precondition: the opening card is open");
+            RaiseHolding(game, true);
+            Assert.IsTrue(game.Card!.HeldForPlayback, "precondition: GameRoot's holding handler holds the card");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            RaiseHolding(game, false);                                 // the moves end: the card renders again
+            Assert.IsFalse(game.Card.HeldForPlayback, "precondition: the card is back");
+            for (int i = 0; i < 2; i++) yield return null;
+
+            var options = Ui.Q("event-options").Query<Button>().ToList()
+                .Where(b => b.name.StartsWith("option-", StringComparison.Ordinal)).ToList();
+            Assert.IsNotEmpty(options, $"precondition: the card ({game.Card.Shown?.Id}) has option buttons");
+            Assert.IsTrue(options.Any(b => UiDirection.RightToLeft(b.text) && b.text.Any(char.IsDigit)),
+                "precondition: an option mixes Hebrew with its price: " + string.Join(" | ", options.Select(b => b.text)));
+            foreach (var b in options)
+                Assert.AreEqual(LanguageDirection.RTL, b.languageDirection,
+                    $"after the Arab forces' moves the card's option '{b.name}' must read right to left: {b.text}");
+        }
+        finally { restore(); }
+    }
+
+    const System.Reflection.BindingFlags Private = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+
+    /// <summary>A new game in Hebrew on the panel OnTexture set up (settings in the test's folder).</summary>
+    GameRoot BootHebrewForTheHold()
+    {
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        game.Language = UiLanguage.Hebrew;
+        game.Begin(Inputs, 0);
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "precondition: the UI is in Hebrew");
+        return game;
+    }
+
+    static TurnReportPresenter HeldReport(GameRoot game) => (TurnReportPresenter)typeof(GameRoot).GetField("report", Private)!.GetValue(game)!;
+
+    /// <summary>Raises GameRoot's own playback's Holding, as EnemyTurnPlayback does when its moves start (true) and end
+    /// (false): its subscriber is GameRoot's holding handler.</summary>
+    static void RaiseHolding(GameRoot game, bool held)
+    {
+        var playback = typeof(GameRoot).GetField("playback", Private)!.GetValue(game);
+        Assert.IsNotNull(playback, "precondition: GameRoot built its playback");
+        var holding = (Action<bool>?)typeof(EnemyTurnPlayback).GetField("Holding", Private)!.GetValue(playback);
+        Assert.IsNotNull(holding, "precondition: GameRoot listens to its playback's Holding");
+        holding!(held);
+    }
+
+    /// <summary>Every heading and cause line of the open report has the direction of its own text, and at least one heading
+    /// mixes Hebrew with a number (no vacuous pass).</summary>
+    static void ReportLinesDirected(string after)
+    {
+        var headings = Ui.Query<Label>(className: "turn-report-heading").ToList();
+        Assert.IsTrue(headings.Any(l => UiDirection.RightToLeft(l.text) && l.text.Any(char.IsDigit)),
+            "precondition: a report heading mixes Hebrew with a number: " + string.Join(" | ", headings.Select(l => l.text)));
+        foreach (var l in headings.Where(l => UiDirection.RightToLeft(l.text)))
+            Assert.AreEqual(LanguageDirection.RTL, l.languageDirection, $"after {after}: the heading '{l.name}' must read right to left: {l.text}");
+        var lines = headings.Concat(Ui.Query<Label>(className: "turn-report-cause").ToList()).Cast<TextElement>().ToList();
+        Directed(lines, after);
     }
 
     /// <summary>The language switch in Settings (#1036): a press rebuilds the UI in the other language at once, over the same

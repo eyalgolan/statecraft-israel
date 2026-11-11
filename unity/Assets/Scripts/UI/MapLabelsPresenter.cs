@@ -89,6 +89,8 @@ namespace Statecraft.Game.UI
         public const float MaxKitCover = 0.1f;
         /// <summary>The population-tier badge (issue #710) inside a city's or town's pill, and the class that makes room for it.</summary>
         public const string TierClass = "map-label-tier", WithTierClass = "map-label-with-tier";
+        /// <summary>#803: a game settlement's control tag, a short word under its name (owner, 24 October 2026, "1521: 1. a 2.a").</summary>
+        public const string ControlBadgeClass = "map-label-control";
         /// <summary>OWNER-APPROVED DESIGN VALUES (#710, 18 October 2026, "Accept as shipped"): tiers 1 to 9, doubling
         /// from 1,000 people (under 1,000 is tier 1, 1,000-1,999 tier 2, ..., 128,000 and over tier 9). The badge is at
         /// the start of the name, mirrored in Hebrew, and remains part of the pill at every zoom where the pill is shown.</summary>
@@ -117,7 +119,7 @@ namespace Statecraft.Game.UI
         sealed class Item
         {
             public Settlement Settlement = null!; public Vector3 MarkerTop; public Bounds[] Kit = null!, Marker = null!; public VisualElement Slot = null!;
-            public Label Label = null!; public Spot First; public bool IsCity, IsLocality, TopVisible, KitInFront, ShownLast = true;
+            public Label Label = null!; public Label? Control; public bool ControlShown; public Spot First; public bool IsCity, IsLocality, TopVisible, KitInFront, ShownLast = true;
             public Vector2 TopPanel; public Rect KitPanel, Around, Placed; public string? Tip;
         }
 
@@ -127,6 +129,7 @@ namespace Statecraft.Game.UI
         readonly CameraRig? rig;
         readonly Func<float>? zoomDistance;
         readonly bool hebrew;
+        readonly Func<Statecraft.Sim.SettlementControl, string?>? controlText;   // #803: a record's map tag words, or none
         readonly List<Item> items = new List<Item>();        // in placing (priority) order
         readonly List<Item> settlementOrder = new List<Item>();
         readonly List<VisualElement> occluders = new List<VisualElement>();
@@ -209,7 +212,8 @@ namespace Statecraft.Game.UI
 
         public MapLabelsPresenter(VisualElement root, MapScene map, Camera camera, Func<float>? zoomDistance = null, Func<Statecraft.Game.Map.Kits.Localities.Place, string?>? tipText = null,
             Func<IReadOnlyList<Bounds[]>?>? keepClear = null, IReadOnlyDictionary<string, decimal>? population = null,
-            Func<int, decimal, string>? tierTip = null, bool hebrew = false, IReadOnlyList<Statecraft.Sim.MapLocation>? locations = null)
+            Func<int, decimal, string>? tierTip = null, bool hebrew = false, IReadOnlyList<Statecraft.Sim.MapLocation>? locations = null,
+            Func<Statecraft.Sim.SettlementControl, string?>? controlText = null)
         {
             var tip = tipText ?? DefaultTip;
             onLabelGeometry = _ => geometryDirty = true;
@@ -219,6 +223,7 @@ namespace Statecraft.Game.UI
             this.map = map;
             this.zoomDistance = zoomDistance;
             this.hebrew = hebrew;
+            this.controlText = controlText;
             rig = camera.TryGetComponent(out CameraRig r) ? r : null;
             container.Clear();   // one layer, one owner: the newest presenter (GameRoot makes one per Begin)
             var labels = new List<Label>(); var slots = new List<VisualElement>();
@@ -257,12 +262,25 @@ namespace Statecraft.Game.UI
                     });
                     tierText = (tierTip ?? DefaultTierTip)(tier, people);
                 }
+                // #803 (owner, 24 October 2026, "1521: 1. a 2.a"): the place's control state as a short word tag under its
+                // name, hidden until SetSettlementControl gives it a record. It starts where the name does (its anchor's share
+                // of its own width), and Refresh places the name and the tag as one block, so the name keeps its pill.
+                Label? control = null;
+                if (controlText != null)
+                {
+                    control = new Label { name = "control-" + s.Id, pickingMode = PickingMode.Ignore };
+                    control.AddToClassList(ControlBadgeClass);
+                    control.AddToClassList(ControlBadgeClass + (anchorClass == Left ? "-left" : anchorClass == Right ? "-right" : "-centre"));
+                    control.style.display = DisplayStyle.None;
+                    control.RegisterCallback(onLabelGeometry);
+                    slot.Add(control);
+                }
                 container.Add(slot);
                 labels.Add(label); slots.Add(slot);
                 var top = MarkerTop(map, s);
                 settlementOrder.Add(new Item
                 {
-                    Settlement = s, MarkerTop = top, Kit = KitBounds(map, s, top), Marker = MarkerBox(s, top), Slot = slot, Label = label, IsCity = s.Type == "city", Tip = tierText,
+                    Settlement = s, MarkerTop = top, Kit = KitBounds(map, s, top), Marker = MarkerBox(s, top), Slot = slot, Label = label, Control = control, IsCity = s.Type == "city", Tip = tierText,
                     First = anchorClass == Left ? Spot.AboveLeft : anchorClass == Right ? Spot.AboveRight : Spot.AboveCentre,
                 });
             }
@@ -475,6 +493,26 @@ namespace Statecraft.Game.UI
             return mask;
         }
 
+        /// <summary>#803: shows each game settlement's control tag for its record in <paramref name="control"/> (the bridge's
+        /// GameState.Settlements), and hides it for a place with none. Only the tags change: the names are never rebuilt.</summary>
+        public void SetSettlementControl(IReadOnlyDictionary<string, Statecraft.Sim.SettlementControl> control)
+        {
+            if (controlText == null) return;
+            foreach (var it in settlementOrder)
+            {
+                if (it.Control == null) continue;
+                var words = control.TryGetValue(it.Settlement.Id, out var record) ? controlText(record) : null;
+                bool show = !string.IsNullOrEmpty(words);
+                if (show && it.Control.text != words) { it.Control.text = words; geometryDirty = true; }
+                if (show != it.ControlShown)
+                {
+                    it.ControlShown = show;
+                    it.Control.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+                    geometryDirty = true;
+                }
+            }
+        }
+
         public void Refresh(bool force = false)
         {
             SyncRouteLabels();
@@ -548,12 +586,19 @@ namespace Statecraft.Game.UI
                 bool shown = it.KitInFront && it.TopVisible && (it.IsLocality || !HiddenByZoom(it.Settlement.Type, distance));
                 var at = new Vector2(it.KitPanel.center.x, it.KitPanel.yMin - LiftPx);   // the slot: the USS anchor puts the pill above the kit
                 var shift = Vector2.zero;
+                float tag = 0f;   // the shown tag's height: the slot (the name's bottom) sits that far above the block's bottom
                 if (shown)
                 {
 #if UNITY_EDITOR
                     LabelSizeReadsForTests++;
 #endif
                     var size = new Vector2(it.Label.resolvedStyle.width, it.Label.resolvedStyle.height);
+                    if (it.ControlShown && it.Control != null)   // #803: the name and its tag under it are placed as one block
+                    {
+                        float tagWidth = it.Control.resolvedStyle.width, tagHeight = it.Control.resolvedStyle.height;
+                        if (float.IsNaN(tagWidth) || tagWidth <= 0f || float.IsNaN(tagHeight)) size.x = float.NaN;   // not laid out yet
+                        else { size = new Vector2(Mathf.Max(size.x, tagWidth), size.y + tagHeight); tag = tagHeight; }
+                    }
                     if (!laidOut || float.IsNaN(size.x) || size.x <= 0f) sizesKnown = false;   // not laid out yet: show it, place on a later refresh
                     else
                     {
@@ -580,7 +625,7 @@ namespace Statecraft.Game.UI
                 }
                 it.ShownLast = shown;
                 it.Slot.style.visibility = shown ? Visibility.Visible : Visibility.Hidden;
-                if (shown && laidOut) it.Slot.style.translate = new Translate(at.x + shift.x, at.y + shift.y);
+                if (shown && laidOut) it.Slot.style.translate = new Translate(at.x + shift.x, at.y + shift.y - tag);
             }
             foreach (var x in routeLabels)
             {
@@ -811,7 +856,7 @@ namespace Statecraft.Game.UI
             removeToggle?.Invoke(); removeToggle = null;
             foreach (var e in occluders) e.UnregisterCallback(onOccluderGeometry);
             container.UnregisterCallback(onContainerGeometry);
-            foreach (var it in items) it.Label.UnregisterCallback(onLabelGeometry);
+            foreach (var it in items) { it.Label.UnregisterCallback(onLabelGeometry); it.Control?.UnregisterCallback(onLabelGeometry); }
             occluders.Clear();
             foreach (var slot in Slots) slot.RemoveFromHierarchy();
             foreach (var slot in LocalitySlots) slot.RemoveFromHierarchy();

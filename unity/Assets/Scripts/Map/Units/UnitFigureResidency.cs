@@ -20,6 +20,10 @@ namespace Statecraft.Game.Map.Units
         CollectionResidencyView? view;
         readonly List<(string key, Vector3 at, float radius)> residencyAnchors = new List<(string, Vector3, float)>(1);
         bool nearWanted, initialized, draws = true, retainFar;
+        /// <summary>A Far original answered while this holder was inactive (its layer hidden): it is put on when the holder is
+        /// active again (<see cref="OnEnable"/>). An inactive Animator cannot be posed or measured, so a swap then would draw
+        /// the figure unposed and at its unposed height (#3055).</summary>
+        GameObject? farOnEnable;
         Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire;
         internal void Initialize(string model, CollectionResidencyPolicy policy,
             Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? source, bool draw = true, bool retainFar = false,
@@ -52,7 +56,11 @@ namespace Statecraft.Game.Map.Units
             UnitFigures.AnswerOwned(model, detail, prefab);
             // A gate answer can synchronously rebuild the layer and destroy this draw:false prefetch holder.
             if (!draws) return;
-            if (detail == CollectionDetail.Far && prefab != null) UnitFigures.Swap(transform, model, prefab);
+            if (detail == CollectionDetail.Far && prefab != null)
+            {
+                if (gameObject.activeInHierarchy) UnitFigures.Swap(transform, model, prefab);
+                else farOnEnable = prefab;
+            }
             if (detail == CollectionDetail.Near) UnitFigureDetail.Of(transform).OwnedArrived(model);
             // A holder dressed below an inactive layer acquires its cached Far only when the layer is reactivated. Mark
             // that handoff for UnitLayer.LateUpdate: never destroy the gate holder inside this answer/lifecycle stack.
@@ -122,6 +130,7 @@ namespace Statecraft.Game.Map.Units
         }
         IReadOnlyList<UnityEngine.Object> Clear()
         {
+            farOnEnable = null;   // a released Far is not put on later
             var gone = new List<UnityEngine.Object>();
             var holder = transform.Find(UnitFigures.ModelName);
             if (holder != null)
@@ -145,6 +154,8 @@ namespace Statecraft.Game.Map.Units
                 if (retainFar) Refresh(false);
                 else if (!Application.isPlaying) Refresh(true);
             }
+            var far = farOnEnable; farOnEnable = null;
+            if (far != null && draws && UnitFigures.Arrived(id)) UnitFigures.Swap(transform, id, far);
         }
         void OnDisable()
         {

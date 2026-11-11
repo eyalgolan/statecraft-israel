@@ -128,6 +128,30 @@ def test_hebrew_acronyms_use_the_gershayim_character():
             assert not HEBREW_ACRONYM_STRAIGHT_QUOTE.search(value), (file, value)
 
 
+def test_event_hebrew_acronyms_use_the_gershayim_character():
+    # #2537, HE-06 (docs/WRITING_UI_HE.md, settled in #630): event titles, texts and option labels write gershayim as
+    # U+05F4 too. Every value under a key ending in _he is checked; comments may quote a source verbatim and are not.
+    def hebrew_values(node, path):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if isinstance(value, str) and str(key).endswith('_he'):
+                    yield path + (key,), value
+                else:
+                    yield from hebrew_values(value, path + (key,))
+        elif isinstance(node, list):
+            for i, item in enumerate(node):
+                yield from hebrew_values(item, path + (i,))
+
+    files = sorted((ROOT / 'content/events').glob('*.yaml'))
+    assert files
+    checked = 0
+    for file in files:
+        for path, value in hebrew_values(yaml12.load(file.read_text(encoding='utf-8')), ()):
+            checked += 1
+            assert not HEBREW_ACRONYM_STRAIGHT_QUOTE.search(value), (file.name, path, value)
+    assert checked > 100
+
+
 def test_every_cabinet_refusal_has_both_strings_and_the_english_is_the_sims_wording():
     """#901: every return path of Cabinet.CheckReason names a kind; the Cabinet screen formats it from
     cabinet.reason.<kind>. Each kind needs a key in both files, and the English key must be the sim's own English text
@@ -175,3 +199,19 @@ def test_the_hebrew_plural_of_a_turn_is_torot_never_torim():
                 'defence.turn_quarter', 'defence.turn_month', 'defence.turn_week',
                 'advisor.opening.move.text', 'advisor.opening.move.cue.2', 'advisor.ben_gurion.defeat_economy.text'):
         assert 'תורות' in he[key], key
+
+
+def test_the_money_and_cohesion_meter_tips_name_the_debt_ceiling_and_event_cards():
+    """#2459: Money's tip says a cost past what we have becomes debt, but an Arms purchase that would take the debt past
+    mvp.debt_ceiling is refused (Pools.BuyArms, RefusedDebtCeiling, R-ARMS-002). The tip shows in every ruleset, so it
+    must not name the arms workshop's waiting cycle (Workshops.Produce, R-ARMS-006), which runs only under gdd-0.3. Event cards move Social cohesion directly (EventSystem's
+    effects through EffectsSystem.Shift on morale, e.g. altalena), as the Security and International support tips
+    already say. Both tips must say so, in English and in Hebrew (the same words as arms.refused_debt_ceiling and
+    hud.tip.security)."""
+    en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
+    assert 'debt ceiling' in en['hud.tip.treasury']
+    assert 'Arms purchase' in en['hud.tip.treasury'] and 'workshop' not in en['hud.tip.treasury']
+    assert 'תקרת החוב' in he['hud.tip.treasury']
+    assert 'רכישת נשק' in he['hud.tip.treasury'] and 'סדנ' not in he['hud.tip.treasury']
+    assert 'event cards' in en['hud.tip.cohesion']
+    assert 'כרטיסי האירוע' in he['hud.tip.cohesion']

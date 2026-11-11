@@ -1570,6 +1570,55 @@ public class CityPanelTests
         Assert.AreEqual(text.Format("city.workers", GddHexPanel.Groups(text, before)), ui.Q<Label>("city-workers").text);
     }
 
+    // #2978 (owner, 9 November 2026: "Enabled + toast (Recommended)"): an order the Attention left cannot pay for keeps its
+    // button, and the press is refused with a toast that says why, as Build does (CityProjectPanelTests). Red first: Train
+    // asked End turn's preview, which charges Attention, so it greyed out with nothing to say why.
+    [Test]
+    public void ATrainOrderTheAttentionCannotPayStaysEnabledAndTheBridgeSaysWhy([Values] bool hebrew)
+    {
+        var t = hebrew ? He : En;
+        var refusals = new System.Collections.Generic.List<string>();
+        using var ui = new UiTestKit();
+        var bridge = Bridge(t, s => s.Attention = 1.0);
+        bridge.Refused += refusals.Add;
+        using var panel = Panel(ui, bridge, t);
+        panel.Show(CityHex.q, CityHex.r);
+        var order = new Train(City, "recruit", 1);
+        Assert.IsFalse(bridge.CanPay(order), "precondition: 1.0 Attention left, a Train order costs 2.0 at level 5");
+        foreach (var track in new[] { "recruit", "halutz", "artillery", "armoured_car" })
+            Assert.IsTrue(ui.Q<Button>("city-train-" + track).enabledSelf, track + ": only the Attention is short, so the button stays");
+        UiTestKit.Press(ui.Q<Button>("city-train-recruit"));
+        Assert.IsEmpty(bridge.Queued, "the bridge refuses the press");
+        Assert.AreEqual(1.0, bridge.AttentionLeft!.Value, 1e-9, "the refused press spends nothing");
+        Assert.AreEqual(new[] { t.Format("order.no_attention", bridge.Price(order)!.Value, 1.0) }, refusals);
+    }
+
+    // The guard for that path: with the Attention short, a Train order the rules refuse anyway still greys out. With no Arms
+    // a recruit group is refused (R-ARMS-003), while a halutz group takes none and keeps its button.
+    [Test]
+    public void WithTheAttentionShortTrainStillGreysOutForItsOwnRules()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { s.Attention = 1.0; s.Arms = 0; });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsFalse(bridge.CanPay(new Train(City, "recruit", 1)), "precondition: the Attention is short");
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf, "R-ARMS-003: the stock cannot cover one recruit group");
+        Assert.IsTrue(ui.Q<Button>("city-train-halutz").enabledSelf, "pioneer training takes no Arms");
+    }
+
+    // And with every civilian in work (R-TRAIN-001), no Train button is offered, whatever the Attention.
+    [Test]
+    public void WithTheAttentionShortTrainStillNeedsACivilianWithoutWork()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { s.Attention = 1.0; Counts(50, 50)(s); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        foreach (var track in new[] { "recruit", "halutz" })
+            Assert.IsFalse(ui.Q<Button>("city-train-" + track).enabledSelf, track + ": no civilian is free to train");
+    }
+
     [Test]
     public void TheWorkersLineAlsoPricesATrainOrder([Values] bool hebrew)
     {

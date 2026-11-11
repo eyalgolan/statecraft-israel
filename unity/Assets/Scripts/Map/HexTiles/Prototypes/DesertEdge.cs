@@ -10,12 +10,14 @@ namespace Statecraft.HexTiles.Prototypes
     /// its banks. Desert rocks are scattered, two of them large. A Bedouin camp of three long, low, dark goat-hair tents
     /// sits on the far flank. There are no people or animals, few pieces, and the unit spot stays open.
     ///
-    /// Each tent is two or three dark Box stand-ins in a row along its heading (until Tal Heuberger's tiles:desert_edge/tent
-    /// model arrives from the hex-props bundle, see HexProps), because the Box stand-in is fixed at 0.65 of its width tall. A row reads long and low; boxes sit just apart, so their tops
-    /// never overlap.
+    /// Each tent is one of Tal Heuberger's tiles:desert_edge/tent models (the hex-props bundle, see HexProps), as long as a
+    /// row of two or three boxes. Where the model does not draw (HexTileContext.DrawsModel), the tent is that row of dark Box
+    /// stand-ins along its heading instead, because the Box stand-in is fixed at 0.65 of its width tall: a row reads long
+    /// and low. One placement per box would draw a whole tent model per box (#3077).
     ///
     /// Triangle budget by arithmetic (caps below, with measured per-model counts): 6 acacias x ~1,160 = 6,960. 9 rocks x
-    /// ~700 = 6,300. 9 tent boxes x under 50 = under 450. Total under 13,800 of 25,000.</summary>
+    /// ~700 = 6,300. 3 tents x 1,842 (the tent's OBJ) = 5,526. Total about 18,800 of 25,000. With the box rows instead, 9
+    /// boxes x 16 = 144, total about 13,400.</summary>
     [HexPrototype("desert_edge", Kind = "nature")]
     public sealed class DesertEdge : IHexPrototype
     {
@@ -78,12 +80,14 @@ namespace Statecraft.HexTiles.Prototypes
             }
 
             // 3. The Bedouin camp on the far flank: up to three tents along the contour, staggered up and down the slope,
-            //    each a row of two or three dark boxes along its heading.
+            //    each one tent model along its heading, or a row of two or three dark boxes where the model does not draw.
+            //    Both draw the same random numbers, so the acacias and rocks after them are drawn alike.
             float campBearing = side + 180f + ctx.Range(-35f, 35f);
             var camp = ctx.At(campBearing, ctx.Range(0.52f, 0.58f));
             var radial = Flat(camp - ctx.Centre).normalized;
             var contour = new Vector3(radial.z, 0f, -radial.x);
             float[] stagger = { 0f, 0.07f, -0.02f };
+            bool tentModel = ctx.DrawsModel(Tent, camp);
             for (int j = 0; j < MaxTents; j++)
             {
                 int boxes = 2 + ctx.Rng.Next(2);
@@ -91,6 +95,15 @@ namespace Statecraft.HexTiles.Prototypes
                 var centre = camp + contour * ((j - 1) * 0.21f * s) + radial * (stagger[j] * s);
                 var dir = Quaternion.Euler(0f, turn, 0f) * contour;
                 float yaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+                if (tentModel)
+                {
+                    // The model's long side (its z) along the heading, as long as the row: the boxes' centres span
+                    // (boxes - 1) x 1.04 w and each draws w x PieceScale wide, and PlaceByWidth scales by PieceScale too.
+                    float length = w + (boxes - 1) * 1.04f * w / HexScale.PieceScale, r = 0.75f * length;
+                    if (ctx.InUnitSpot(centre, r) || NearWadi(centre, r + 0.03f * s)) continue;
+                    if (ctx.PlaceByWidth(Tent, centre, yaw, length, StandIn.Box, TentBlack, maxSlopeDeg: 40f)) taken.Add((centre, r));
+                    continue;
+                }
                 for (int b = 0; b < boxes; b++)
                 {
                     var at = centre + dir * ((b - 0.5f * (boxes - 1)) * 1.04f * w);

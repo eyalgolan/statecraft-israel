@@ -34,11 +34,13 @@ hud.caption.cohesion: "לכידות חברתית"
 # sentences of the reviewed encyclopedia pages (advisor.page.money_debt, .immigration, .national_meters), split from them;
 # security, support and fx are new. Agent-drafted Hebrew, all seven: native review: owner, 3 Nov 2026 (HE batch 1:
 # "All fine as they are").
-hud.tip.treasury: "כסף נכנס ממסים ומכל משרה מאוישת, ויוצא על הוצאות הממשלה, על אחזקת העוצבות הצבאיות שלנו, על אימון ועל בנייה. כשעלות גבוהה ממה שיש לנו, היא משולמת בכל זאת: הכסף נעצר באפס והיתרה הופכת לחוב."
+# For the native reviewer (#564): agent-drafted, #2459 (the debt ceiling sentence; the rest is as reviewed)
+hud.tip.treasury: "כסף נכנס ממסים ומכל משרה מאוישת, ויוצא על הוצאות הממשלה, על אחזקת העוצבות הצבאיות שלנו, על אימון ועל בנייה. כשעלות גבוהה ממה שיש לנו, היא משולמת בכל זאת: הכסף נעצר באפס והיתרה הופכת לחוב. אבל רכישת נשק שהייתה חוצה את תקרת החוב נדחית."
 hud.tip.immigration: "העולים מגיעים לפי הנתונים ההיסטוריים, וכל עיר מקבלת חלק לפי מספר האנשים בה. הם ממתינים כפליטים, ובכל תור חלק מהם הופכים לאזרחים ללא עבודה; כמה מהם, תלוי בשר האחראי על העלייה."
 hud.tip.security: "הביטחון זז בעקבות הבחירות בכרטיסי האירוע. יישובי הספר מוסיפים לו, ויותר מכך כששר החקלאות מוכשר ומשרדו מתוקצב היטב."
 hud.tip.support: "התמיכה הציבורית היא ממוצע התמיכה של קבוצות הבוחרים, וכל קבוצה שוקלת שניים מבין הלכידות החברתית, הביטחון, הדיור והמזון. יציבות הקואליציה נעה לעברה בכל תור."
-hud.tip.cohesion: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון."
+# For the native reviewer (#564): agent-drafted, #2459 (the event cards clause; the rest is as reviewed)
+hud.tip.cohesion: "הלכידות החברתית עולה ויורדת עם הדיור, התעסוקה, המזון, הקיצוב והביטחון, ובעקבות הבחירות בכרטיסי האירוע."
 hud.tip.standing: "התמיכה הבינלאומית זזה בעקבות הבחירות בכרטיסי האירוע."
 hud.tip.fx: "מטבע החוץ נכנס מיצוא, מתרומות ומהלוואות, ויוצא על יבוא שגדל עם האוכלוסייה ועל דולרים שמומרים לכסף במסך הביטחון בזמן המלחמה. כרטיסי האירוע יכולים להוסיף לו או לגרוע ממנו. כשהוא אוזל, יבוא המזון נעצר עד שהוא מתאושש."
 # Native review: owner, 3 Nov 2026 (HE batch 5: "approve all"; recorded on #564, issuecomment-6610635087).
@@ -694,6 +696,11 @@ end.population: "אוכלוסייה: {0}"
 end.population_history: "אוכלוסייה: {0}; האוכלוסייה היהודית לפי הלמ״ס ב־{1}: {2}"
 # For the native reviewer (#564): the end screen's end date (#2545).
 end.date: "הסתיים ב־{0}"
+# For the native reviewer (#564): the score's parts on the end screen (#812); "ניקוד" as hud.score, "שבויים שהוחזרו" as
+# defence.prisoners_returned, "השלמה מוקדמת" for the months-early bonus.
+end.score_objectives: "ניקוד מיעדים: {0:N0}"
+end.score_timing: "ניקוד מהשלמה מוקדמת: {0:N0}"
+end.score_prisoners: "ניקוד משבויים שהוחזרו: {0:N0}"
 
 # For the native reviewer (#564)
 cabinet.coalition: "קואליציה: {0} מתוך {1} {3} · יציבות {2}"
@@ -1084,12 +1091,29 @@ workshop.refused_built: "{0}: סדנאות נשק בנויות: {1}"
 # issuecomment-6610635087).
 workshop.refused_people: "{0}: אין די אזרחים ובעלי מלאכה (יש\u00A0{1})"
 workshop.refused_people_no_job: "{0}: אין די אזרחים ובעלי מלאכה ללא משרה (יש\u00A0{1})"
+# #3020: a staffing order's refusals only a Historical ledger game gives, as in strings.en.yaml. "מרשם האוכלוסין" is the
+# population ledger. For the native reviewer (#564): agent-drafted, #3020.
+workshop.refused_ledger_free: "{0}: אין די אזרחים פנויים ללא שיבוץ (יש\u00A0{1})"
+workshop.refused_ledger_builders: "{0}: יש בונים במיזמים עירוניים, והם עדיין אינם במרשם האוכלוסין"
 # R-CITY-011 (#1700, #2477), gdd-0.3 only: a city project being built and its city's builder stepper, as in
 # strings.en.yaml. Counts as "Label: N" (HE-04), as city.workshops_*. Agent-drafted Hebrew, for the native reviewer (#564).
 city.project_builder: "המיזם הזה: יש בונה"
 city.project_no_builder: "המיזם הזה: אין בונה, בהמתנה"
 city.builders: "מיזמים בבנייה עם בונה: {0} מתוך {1}"
 city.builders_ordered: "מיזמים בבנייה עם בונה בסיום התור: {0} מתוך {1}"
+# #1722 (R-HOUSE-005), gdd-0.3 only: the city's housing readout, as in strings.en.yaml. The surcharge's word "היטל דיור"
+# is the owner's choice (2 Nov 2026: "היטל דיור (Recommended)"), as in why.cause.housing_surcharge. Agent-drafted Hebrew, for the native reviewer (#564).
+city.housing_surcharge: "היטל דיור כעת: {0} בכל תור (מצב הדיור מתחת ל־{1})"
+city.housing_no_surcharge: "היטל דיור כעת: אין (מצב הדיור {0} ומעלה)"
+city.housing_falls: "החריגה מהדיור מורידה כעת את מצב הדיור ל־{0}"
+city.housing_cohesion: "לכידות חברתית כעת: {0} בכל תור (מצב הדיור מתחת ל־{1})"
+# #1722 (R-PROJ-001 to R-PROJ-003, R-CITY-011), gdd-0.3 only: the city's own list of its projects, as in strings.en.yaml.
+# Counts as "Label: N" (HE-04). Agent-drafted Hebrew, for the native reviewer (#564).
+city.list_header: "המיזמים של העיר: {0}"
+city.list_building: "{0}: עבודה {1} מתוך {2} · עלות: {3} · {4}"
+city.list_built: "{0}: הבנייה הושלמה ב־{1} · עלות: {2}"
+city.list_builder: "יש בונה"
+city.list_no_builder: "אין בונה, בהמתנה"
 builder.refused_being_built_one: "{0}: יש רק מיזם עירוני אחד בבנייה"
 builder.refused_being_built: "{0}: מיזמים עירוניים בבנייה: {1}"
 # Agent-drafted Hebrew; native review pending (#564).
@@ -1434,6 +1458,9 @@ city.assign_refused.negative: "מספר העובדים לא יכול להיות 
 city.qualification_refused.return_count: "יש להחזיר לפחות קבוצה אחת"
 city.qualification_refused.reassign_count: "יש לשבץ מחדש לפחות קבוצה אחת"
 city.qualification_refused.no_qualification: "אין הכשרה כזאת"
+# #3020, as in strings.en.yaml; the English's issue number is left out. For the native reviewer (#564): agent-drafted, #3020.
+city.qualification_refused.ledger_craftsmen: "בעלי מלאכה עדיין אינם במרשם האוכלוסין"
+city.qualification_refused.ledger_free_pioneers: "{0}: אין די חלוצים פנויים ללא עבודה (יש\u00A0{1})"
 unit.order_refused.not_pioneer: "הפקודה הזאת מתאימה רק ליחידת חלוצים"
 unit.order_refused.pioneer_busy: "היחידה עסוקה בעבודה; יש לעצור את העבודה קודם"
 training.cancel_refused.no_group: "אין קבוצת אימון כזאת"
@@ -1474,6 +1501,13 @@ unit.reinforce_refused.no_industry: "{0}: אין מיזם תעשייה שהוש�
 unit.reinforce_refused.no_hakhshara: "{0}: אין מחנה הכשרה"
 unit.reinforce_refused.idle: "{0}: אין די אזרחים ללא עבודה (יש {1})"
 unit.reinforce_refused.arms: "{0}: אין די כלי נשק ל{1} (נדרשים {2}, יש {3})"
+# #3020: Train's and Reinforce's refusals only a Historical ledger game gives, as in strings.en.yaml; the English's issue
+# number is left out. Counts as "Label: N" (HE-04). For the native reviewer (#564): agent-drafted, #3020.
+unit.reinforce_refused.ledger_craftsman: "הכשרת בעלי מלאכה עדיין אינה פועלת במרשם האוכלוסין"
+unit.reinforce_refused.ledger_camp_full: "{0}: אין די מקום במחנה הצבאי (מקומות פנויים: {1}, קיבולת: {2})"
+unit.reinforce_refused.ledger_strength: "יחידה {0}: חיילים רשומים: {1}, אך הכוח: {2}"
+unit.reinforce_refused.ledger_carried: "{0}: אזרח ללא עבודה כבר מחזיק בפריט צבאי"
+unit.reinforce_refused.ledger_halutz_trade: "{0}: חקלאי או בעל מלאכה אינו יכול לעבור הכשרת חלוצים"
 
 # #1682 remaining Cause producers. Agent-drafted Hebrew: native-review-pending (#564). why.cause.wages_paid:
 # native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
@@ -1527,6 +1561,8 @@ why.cause.training_started: "{0}: תחילת {2}{3}, קבוצות: {1}, עלות
 why.cause.training_arms: "{0}: {1}, נשק שנצרך: {2}"
 why.cause.training_cancelled: "{0}: הפסקת {2}, קבוצות: {1}; הכסף שהוצא לא יוחזר"
 why.cause.training_arms_returned: "{0}: {1}, נשק שהוחזר: {2}"
+# #3020, as in strings.en.yaml and as why.cause.training_arms_returned. For the native reviewer (#564): agent-drafted, #3020.
+why.cause.sent_home_arms_returned: "{0}: יחידה {1}, נשק שהוחזר: {2}"
 why.cause.replacements_stopped: "{0}: יחידה {1} כבר אינה ב{0}, ולכן הופסק אימון התגבורת שלה"
 why.cause.replacements_joined: "{0}: סיום {2} והצטרפות ליחידה {3}, קבוצות: {1}"
 why.cause.military_trained: "{0}: סיום {2}, קבוצות: {1}, הכשרה: {3}"

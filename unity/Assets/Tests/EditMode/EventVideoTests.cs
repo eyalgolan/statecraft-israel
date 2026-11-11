@@ -237,6 +237,27 @@ public class EventVideoTests
         Assert.AreEqual("Illustration", r.Switch.text);
     }
 
+    /// <summary>#3004 item 3: while End turn's enemy playback holds the card out of view (HeldForPlayback; owner, 8 November
+    /// 2026: "Hide it, bring back (Recommended)"), its AI clip stops; when the card comes back the clip plays again (from its
+    /// start), as the player left the switch.</summary>
+    [UnityTest]
+    public IEnumerator AHeldCardStopsItsIllustrationAndPlaysItAgainWhenItComesBack()
+    {
+        LogAssert.ignoreFailingMessages = true;   // the edit-mode VideoPlayer may log while it prepares
+        using var r = new Rig("law_of_return", From(Rows));
+        yield return Frames(4);
+        Press(r.Switch);
+        yield return Frames(2);
+        Assert.IsTrue(r.Card.IllustrationShown, "precondition: the clip plays");
+        r.Card.HeldForPlayback = true;
+        yield return Frames(2);
+        Assert.IsFalse(r.Card.IllustrationShown, "held out of view: the clip is stopped");
+        r.Card.HeldForPlayback = false;
+        yield return Frames(2);
+        Assert.IsTrue(r.Card.IllustrationShown, "back in view: the clip plays again");
+        Assert.AreEqual("Photograph", r.Switch.text, "the switch is still on");
+    }
+
     [UnityTest]
     public IEnumerator TabReachesTheSwitchAfterTheOptionsAndHide()
     {

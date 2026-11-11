@@ -17,7 +17,11 @@ namespace Statecraft.Game.Boot
     /// A handler key is its event and <see cref="HandlerName"/> (a second handler of the same name gets "#2", and so on), in
     /// the order the handlers ran; a section key is "@" and its name, its time summed over the turn, in the order first seen.
     /// Presentation only: it never changes what runs or in what order, and with the flag off every hook is one static bool
-    /// read (no Stopwatch read, no allocation).</summary>
+    /// read (no Stopwatch read, no allocation).
+    /// Reading the line (#3057): sections nest, so do not sum the "@" fields: @UnitLayer.Show contains @UnitLayer.Rebuild,
+    /// and @SpecialBuildingModels contains @SpecialBuildingModels.Replan and @SpecialBuildingModels.Residency. In WebGL every
+    /// value #2957 recorded is a multiple of 0.1 ms, so there "=0.00" means under about 0.1 ms, not zero (the likely cause,
+    /// not checked in a browser: browsers coarsen performance.now(), which the WebGL Stopwatch reads).</summary>
     public static class TurnProbe
     {
         public const string Flag = "turnlog", Prefix = "TURNLOG", Version = "1";

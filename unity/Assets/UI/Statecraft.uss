@@ -917,6 +917,26 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
     margin: 0;
     white-space: nowrap;
 }
+/* #803 (owner, 24 October 2026, "1521: 1. a 2.a"): a game settlement's control state as a short word tag under its name,
+   in one quiet colour for every state (the localities' own), never a number. The tag is the name's sibling in its slot,
+   lined up with the name by the anchor class below (the name's, without the lift); MapLabelsPresenter places the two as one. */
+.map-label-control {
+    position: absolute;
+    left: 0;
+    top: 0;
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf");
+    font-size: 15px;
+    color: rgb(232, 222, 200);
+    background-color: rgba(14, 22, 38, 0.72);
+    border-radius: 6px;
+    padding: 0 6px 1px 6px;
+    margin: 0;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+.map-label-control-centre { translate: -50% 0; }
+.map-label-control-left { translate: 0 0; }
+.map-label-control-right { translate: -100% 0; }
 .anchor-lower-centre { translate: -50% -100%; }
 .anchor-lower-left { translate: 0 -100%; }
 .anchor-lower-right { translate: -100% -100%; }
@@ -1011,7 +1031,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    classes only presenters add (it gives a label each). */
 .lang-he, .lang-he .title, .lang-he .button, .lang-he Button, .lang-he .year, .lang-he .end-turn, .lang-he .draft,
 .lang-he .why-group, .lang-he .turn-report-heading, .lang-he .end-screen-outcome, .lang-he .party-group-heading, .lang-he .section-title, .lang-he .card-initials, .lang-he .card-name, .lang-he .house-size,
-.lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .start-title, .lang-he .start-button {
+.lang-he .big-figure, .lang-he .map-label, .lang-he .map-label-tooltip, .lang-he .map-label-control, .lang-he .start-title, .lang-he .start-button {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/FrankRuhlLibre/FrankRuhlLibre-Medium.ttf");
     -unity-text-generator: advanced;
 }
@@ -1316,3 +1336,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .raid-actions > Button { min-height: 44px; min-width: 160px; margin: 4px 6px; }
 .raid-open .top-bar, .raid-open .left-column, .raid-open .community-column, .raid-open .right-column, .raid-open .event-layer, .raid-open .info-panel, .raid-open .screen, .raid-open .map-labels, .raid-open .start-screen, .raid-open .advisor-layer { display: none; }
 .loading .raid-layer { display: none; }
+/* New game's raid flight before that card (RaidFlightPresenter, #3000): a clear layer over the whole map, so the Dakotas
+   show and any click on it skips the flight; the HUD under it is hidden as under the card, the map's names too. */
+.raid-flight-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0); }
+.raid-flight-open .top-bar, .raid-flight-open .left-column, .raid-flight-open .community-column, .raid-flight-open .right-column, .raid-flight-open .event-layer, .raid-flight-open .info-panel, .raid-flight-open .screen, .raid-flight-open .map-labels, .raid-flight-open .start-screen, .raid-flight-open .advisor-layer { display: none; }
+.loading .raid-flight-layer { display: none; }

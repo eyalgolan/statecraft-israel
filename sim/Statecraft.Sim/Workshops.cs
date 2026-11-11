@@ -71,6 +71,7 @@ namespace Statecraft.Sim
             var built = Built(c, s, city);
             if (count > built) return built == 1 ? Refused(RefusedBuiltOne, name) : Refused(RefusedBuilt, name, built);
             var list = pending as IReadOnlyCollection<Command> ?? pending.ToList();
+            if (s.PopulationLedger.IsHistorical) return LedgerCheck(c, s, city, count, list, name);
             var job = list.OfType<AssignWorkers>().Where(w => w.City == city && w.Role == "job").Select(w => (int?)w.Count).Max();
             var byDefault = x.JobsDefault && job == null;
             var staffed = Staffed(s, city);
@@ -80,6 +81,30 @@ namespace Statecraft.Sim
             var free = x.Civilians + x.Craftsmen - Math.Max(x.JobsDefault ? 0 : x.Employed, job ?? 0) - staffed - Projects.Builders(s, city) - Projects.Starting(s, city, list) - Training.Ordered(city, list);
             if (count - staffed > free) return Refused(byDefault ? RefusedPeople : RefusedPeopleNoJob, name, Math.Max(0, free));
             return null;
+        }
+
+        /// <summary><see cref="Check"/> on a Historical ledger game, past its city, ruleset, count and built checks (#3020; owner,
+        /// 8 November 2026, "Fix in the UI PR (Recommended)", #2966): the records, as <see cref="LedgerStaff"/> reads them. The
+        /// builders refusal, then the newly staffed workshops against the city's unassigned free-civilian records (and the
+        /// workers the order would release), less the records this turn's queued Train and reassignment orders there take
+        /// (Training.Ordered) and the builder each queued start may take (R-CITY-011), as the aggregate check counts them. No
+        /// city field is read. Nothing changes.</summary>
+        static string? LedgerCheck(Content c, GameState s, string city, int count, IReadOnlyCollection<Command> pending, string name)
+        {
+            if (Projects.Builders(s, city) > 0) return Refused(LedgerRefusedBuilders, name);
+            var built = BuiltIn(c, s, city);
+            int on = 0, released = 0;
+            for (int i = 0; i < built.Count; i++)
+            {
+                var staffed = s.Workshops.TryGetValue(built[i].Id, out var w) && w.Staffed;
+                if (i < count && !staffed) on++;
+                else if (i >= count && staffed)
+                    released += OnTarget(s, built[i].Id).Count(p => p.Status == PopulationStatus.FreeCivilian
+                        && string.Equals(p.Location?.City, city, StringComparison.Ordinal));
+            }
+            if (on == 0) return null;
+            var free = LedgerFree(s, city).Count + released - Training.Ordered(city, pending) - Projects.Starting(s, city, pending);
+            return on > free ? Refused(LedgerRefusedFree, name, Math.Max(0, free)) : null;
         }
 
         /// <summary>R-ARMS-005: the city's built workshops (a project whose kind has a worker slot, R-ARMS-004), in ascending id.</summary>
@@ -139,8 +164,8 @@ namespace Statecraft.Sim
             new Cause("city", city, delta, FormattableString.Invariant($"{name}: arms workshops staffed: {count}"),
                 key: CauseKeys.WorkshopWorkers, args: new[] { CauseKeys.Number(count) });
 
-        // #1725 PR 7, producer 07: the refusal only a Historical ledger game gives. Internal, not a Refused* constant: no
-        // player reaches it yet (Simulation.Step still refuses a ledger game, R-POP-002), and the UI string follows when it does.
+        // #1725 PR 7, producer 07: the refusals only a Historical ledger game gives. Internal, not Refused* constants, as
+        // Training's are; the UI reads them through PopulationLedger.Refusals (#3020).
         /// <summary>Owner, 8 November 2026, Q7 "Unassigned, lowest id (Rec.)": more newly staffed workshops than the city's
         /// unassigned free-civilian records.</summary>
         internal const string LedgerRefusedFree = "{0} has {1} free civilians without an assignment";
