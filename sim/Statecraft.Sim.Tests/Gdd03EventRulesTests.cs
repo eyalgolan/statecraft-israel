@@ -218,7 +218,7 @@ public class Gdd03EventRulesTests
     public void RealCatalogueExcludesNoWholeCardAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
-        Assert.Equal(41, old.Events.Count);   // Deport's two cards (#801) are not excluded
+        Assert.Equal(42, old.Events.Count);   // Deport's two cards (#801) are not excluded; jordan_nonaggression_talks (#807) is not either
         Assert.Equal(old.Events.Count - Excluded.Length, modern.Events.Count);
         Assert.Equal(Excluded, old.Events.Select(e => e.Id).Except(modern.Events.Select(e => e.Id)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.Equal(old.Events.Where(e => !Excluded.Contains(e.Id)).Select(e => e.Id), modern.Events.Select(e => e.Id));
@@ -567,6 +567,7 @@ public class Gdd03EventRulesTests
         "jerusalem_ceasefire:b850682a7736dcf2870550322f32a2d5c30963a05529dc9162dd68c9234648d6", // re-pinned for #1065 (Beri's native Hebrew read)
         "jerusalem_demilitarisation_guard:a9693784deafaad901268afd8a0c47a2f5b7d5f75eba33d6180f94b62913fb53", // re-pinned for #1065 (owner's native read; flag removed in 05b5777d9), then for the stale reviewer comment (comment-only)
         "jerusalem_military_government:526dbc88eabe4691e3ee1f3ed2c5fdeb640f11ae0a7a632c63066175b9c18176", // re-pinned for #1065 (Beri's native Hebrew read)
+        "jordan_nonaggression_talks:2b6acc583d7ad69c7c366282a18d35ad43fb2e634d9cb71961bf27bd2d2d8ed8", // pinned for #807 (new draft card, Q-NEW-1)
         "latrun_proposal:c35f17ffa48d949b432ce9205a245048bd50bf660940206245e8f0d6f5b62916", // re-pinned for #1065 (Beri's native Hebrew read), then for #2087 (R-ENEMY-005 unit order: Harel toward Latrun; owner rulings, 1 and 2 November 2026, order targets; hex re-derived on the 4.4 km grid by tools/unit_anchor_hexes.py and its units_1948.yaml line citations updated; card text, Hebrew and review status unchanged)
         "law_of_return:d5d7f352eaa63e8f57a0f3fcdcbba82791e4ea3cd267afd8adee9d6b01a2f052", // re-pinned for #1065 (Beri's native Hebrew read), then for #2551 (R-TURN-002: `from` a turn earlier and its comment)
         "maabarot_policy:12e53e14fe3b045f7c18b75ac7af68acf079c17968baf6c82df2435675eb0884", // re-pinned for #1065 (Beri's native Hebrew read)
@@ -675,7 +676,7 @@ public class Gdd03EventRulesTests
         Assert.Contains("not an anchor", e.Message);
     }
     [Fact]
-    public void AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
+    public void AllFortyTwoSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
     {
         var root = Path.Combine(RealContentTests.ContentRoot(), "events");
         var files = Directory.GetFiles(root, "*.yaml").OrderBy(x => x, StringComparer.Ordinal).ToArray();

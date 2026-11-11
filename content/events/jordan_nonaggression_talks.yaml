@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+# Refs #807 (GDD Phase 7 PR 3) and #135. Owner decision Q-NEW-1 (#784, 17 October 2026, "as recommended"): a soft card,
+# window from 15 February 1950, the cabinet's recorded choice as the historical option, Jerusalem worded with care.
+# Draft as posted on #807: https://github.com/eyalgolan/statecraft-israel/issues/807#issuecomment-6245703774
+# Status draft: the source passages below were re-opened by an AI agent on 11 November 2026, not checked by a person
+# (CONTENT_POLICY section 2, rule 6). A person's check of every source is still needed before fact-checked.
+# Q-NEW-2 (mention the union of the two banks in this card's follow-up text) is left open: events have no follow-up
+# text field, so the owner is asked where that sentence goes.
+id: jordan_nonaggression_talks
+title: Non-Aggression Talks with Jordan
+text: 'At a night meeting, Jordan''s King agreed with Israel''s negotiators that a full peace was not possible at that time, and then proposed a five-year renewable non-aggression pact instead. It would keep the armistice lines, allow free dealings between the two countries with a free zone at Haifa, set up committees to study the remaining issues, and give the UN mutual guarantees of free access to the Holy Places. He also suggested an Israeli concession to Arab property owners and reserved his claim to an outlet to the sea. {prime_minister} must decide whether Israel accepts the proposal in principle.'
+# For the native reviewer (#564): Beri read and approved the Hebrew of the draft on 18 October 2026
+# (https://github.com/eyalgolan/statecraft-israel/issues/807#issuecomment-6247628270). One change since: the last
+# sentence read "{prime_minister} צריך להחליט", a verb that fits one gender after a placeholder (HE-15,
+# docs/WRITING_UI_HE.md), so it now reads "על {prime_minister} להחליט", as the other cards do. That change is an AI
+# agent's, so the card carries text_he_review until a person has read it. "אי-התקפה" keeps the hyphen Beri approved.
+title_he: שיחות אי-התקפה עם ירדן
+text_he: 'בפגישה לילית הסכים מלך ירדן עם נציגי ישראל ששלום מלא אינו אפשרי באותה עת, ובמקומו הציע הסכם אי-התקפה לחמש שנים, הניתן לחידוש. ההסכם ישמור על קווי שביתת הנשק, יאפשר קשרים חופשיים בין שתי המדינות עם אזור חופשי בחיפה, יקים ועדות שיבחנו את השאלות הפתוחות, וייתן לאו״ם ערבויות הדדיות לחופש הגישה למקומות הקדושים. המלך הציע גם ויתור ישראלי כלשהו לבעלי רכוש ערבים, ושמר לעצמו את תביעתו למוצא לים. על {prime_minister} להחליט אם ישראל מקבלת את ההצעה עקרונית.'
+text_he_review: agent-checked
+anchor: soft
+office: prime_minister
+# The King's proposal was made at the meeting of the night of 17 February 1950 (FRUS 1950 V d364, McDonald, 19 February:
+# Shiloah's account); the cabinet's agreement in principle was announced at the meeting of the night of 24 February
+# (FRUS 1950 V d370). R-TURN-002: the window opens on the 15th on or before the decision, the 15 February 1950 turn, as
+# Q-NEW-1 set it, and closes after one turn. The card reaches the player two days before the meeting, so its text gives
+# the meeting no date.
+from: 1950-02-15
+to: 1950-03-15
+# Talks with the King follow the armistice he signed (research_notes/GDD phase 7/candidate-events-1948-51.md,
+# section 2a).
+requires: [{ event: armistice_jordan, option: sign }]
+options:
+  - id: agree_in_principle
+    text: Agree in principle and negotiate the details
+    text_he: להסכים עקרונית ולנהל משא ומתן על הפרטים
+    historical: true
+    recommended: true
+    effects:
+      # DESIGN VALUE (D-H2): not a historical figure and not a moral judgement of either answer. The Conciliation
+      # Commission welcomed the reported agreement (JTA, bulletin of 3 March 1950, dateline Geneva, 2 March).
+      - { target: intl_standing, delta: 0.02 }
+  - id: hold_out_for_peace
+    text: Hold out for a full peace treaty
+    text_he: לעמוד על חוזה שלום מלא
+    # No record was found of anyone in the cabinet arguing for this in February 1950 (research note, section 2a).
+    alternative: { basis: design }
+    effects:
+      # DESIGN VALUE (D-H2): the mirror of the historical option; not a historical figure and not a moral judgement.
+      - { target: intl_standing, delta: -0.02 }
+# Source checks below are AI-agent reads, not human approval.
+sources:
+  # FRUS 1950 V d364, McDonald (Tel Aviv), 19 February 1950: at the meeting of the night of 17 February it was "agreed
+  # between Shiloah and Samir and King that now impossible make peace"; the King's four proposals (a five-year renewable
+  # non-aggression pact maintaining the armistice lines; free intercourse with a free zone at Haifa; study committees;
+  # mutual guarantees to the UN on access to and protection of the holy places); some Israeli concession to Arab
+  # property owners; his claim to a sea outlet reserved. The telegram prints "February 1 Shiloah consulted", which the
+  # card does not use.
+  - { url: "https://history.state.gov/historicaldocuments/frus1950v05/d364", checked: 2026-11-11 }
+  # FRUS 1950 V d370, McDonald, 26 February 1950: at the meeting of the night of 24 February "Shiloah announced Israel
+  # cabinet agreement in principle King's five year nonaggression proposal"; both sides initialled an "agreed set of
+  # principles".
+  - { url: "https://history.state.gov/historicaldocuments/frus1950v05/d370", checked: 2026-11-11 }
+  # FRUS 1950 V d366, US delegation Geneva, 21 February 1950: Eban and Rafael reported that Jordan proposed a "five-year
+  # non-aggression pact as practical half-way step between armistice and peace".
+  - { url: "https://history.state.gov/historicaldocuments/frus1950v05/d366", checked: 2026-11-11 }
+  # FRUS 1950 V d382, McDonald, 3 March 1950: Jordan's draft of 28 February eliminated the "non-aggression pact", the
+  # five years and "freedom of commerce and trade"; Shiloah called it "retrogression".
+  - { url: "https://history.state.gov/historicaldocuments/frus1950v05/d382", checked: 2026-11-11 }
+  # FRUS 1950 V d399, McDonald, 9 March 1950: the meeting of 7 March agreed to "adjourn" but "not break off" the talks.
+  - { url: "https://history.state.gov/historicaldocuments/frus1950v05/d399", checked: 2026-11-11 }
+  # JTA, bulletin of 3 March 1950 (dateline Geneva, 2 March): "The whole Conciliation Commission is delighted with the
+  # Israel-Transjordan agreement." Read on the bulletin's page image, pdfs.jta.org/1950/1950-03-03_043.pdf.
+  - { url: "https://www.jta.org/archive/u-n-expecis-speedy-completion-of-formalities-on-israel-trans-jordan-peace-pact", checked: 2026-11-11 }
+status: draft

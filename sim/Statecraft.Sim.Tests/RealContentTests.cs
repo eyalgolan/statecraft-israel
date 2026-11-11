@@ -269,7 +269,9 @@ public class RealContentTests
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
         // railway_complete left them after a person's read of its two newspaper pages and the booklet, 25 Oct 2026 (#1410).
         // deport_acre and deport_nazareth (#801) left them with the owner's sensitivity sign-off, 2 Nov 2026 ("Approve both cards", #2197).
-        var draftEvents = new[] { "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure" };
+        // jordan_nonaggression_talks (#807, Q-NEW-1) joined them on 11 Nov 2026: its sources are an AI agent's reads, and a
+        // person's check is still pending.
+        var draftEvents = new[] { "first_new_yishuv", "jerusalem_demilitarisation_guard", "jordan_nonaggression_talks", "rafah_force_pressure" };
         Assert.Equal(draftEvents, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
         // A sensitive event submitted fact-checked waits here for the owner's sensitivity review; the maintainer sets
         // sensitivity-reviewed and empties this list. reparations_vote (#1564) left it on 25 Oct 2026 ("Approve all three", #1575).
@@ -651,7 +653,8 @@ public class RealContentTests
         var s = GoldenRun.Play(C, new DateTime(1952, 1, 1));
         Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);   // the run reaches the game's end, 15 January 1952 (R-LOOP-004)
         var expected = new[] { "clothing_rationing_1950", "education_registration_1951", "forex_crisis_1951", "frumkin_commission",
-            "iraqi_exodus", "israel_bonds", "law_of_return", "maabarot_policy", "ministry_supply_crisis", "reparations_claim" };
+            "iraqi_exodus", "israel_bonds", "jordan_nonaggression_talks", "law_of_return", "maabarot_policy", "ministry_supply_crisis",
+            "reparations_claim" };
         var missing = expected.Where(id => !s.FiredEvents.Contains(id)).ToList();
         Assert.True(missing.Count == 0, "Never fired: " + string.Join(", ", missing));
         Assert.DoesNotContain("hula_drainage", s.FiredEvents);   // R-SWAMP-002: it waits for works at the Hula, and this run starts none

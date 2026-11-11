@@ -29,7 +29,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
    # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 832e8ccc38e3fb36228826816b452477fbbd6ab667ee30cdaef40e5b1b2fe869"
-   # and "GOLDEN OK hash1952 841f05536a49b68cd10d3f1ca548e559098415119284d483620f14bb6a4bb44e"
+   # and "GOLDEN OK hash1952 c81ce234805c5cc3940611438469e090fca17cb977478c44ce052e42c01a3314"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
      --expect "SMOKE OK 5 turns 1948-10-15 12f088f62bd0694ae59b5f6472751579ad96c2198308d0869a8cf795f1aad051"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90

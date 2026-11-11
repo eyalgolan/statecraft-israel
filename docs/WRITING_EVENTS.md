@@ -366,8 +366,8 @@ One of `draft`, `fact-checked`, `historian-reviewed`, `sensitivity-reviewed`; an
 
 - `draft`: a work in progress. A pull request for `content/` should not stay at this.
 - `fact-checked`: a person checked every claim against its sources. This is what you submit. The content tests
-  require `fact-checked` on every non-sensitive event in `content/`, except three that stay `draft` by name:
-  `first_new_yishuv`, `jerusalem_demilitarisation_guard` and `rafah_force_pressure`.
+  require `fact-checked` on every non-sensitive event in `content/`, except four that stay `draft` by name:
+  `first_new_yishuv`, `jerusalem_demilitarisation_guard`, `jordan_nonaggression_talks` and `rafah_force_pressure`.
 - `historian-reviewed`: planned for M4, not a gate yet. How a review is done and recorded until then:
   [HISTORIAN_REVIEW.md](HISTORIAN_REVIEW.md).
 - `sensitivity-reviewed`: set by the maintainer for events with a sensitive tag (see above).

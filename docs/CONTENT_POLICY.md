@@ -21,8 +21,9 @@ a different choice under its own name (see `TRADEMARK.md`).
 These rules protect the game and the people in it. They are not a viewpoint:
 
 1. **Every fact is sourced.** Every date, number, name and office in `content/` carries `sources:` (a citation or a
-   URL, plus the date it was checked) and a review `status`. As of M3 every fact is at least `fact-checked`, except records that stay `draft`, among them three
-   events (`first_new_yishuv`, `jerusalem_demilitarisation_guard` and `rafah_force_pressure`; `RealContentTests` pins the list). Events
+   URL, plus the date it was checked) and a review `status`. As of M3 every fact is at least `fact-checked`, except records that stay `draft`, among them four
+   events (`first_new_yishuv`, `jerusalem_demilitarisation_guard`, `jordan_nonaggression_talks` and `rafah_force_pressure`;
+   `RealContentTests` pins the list). Events
    with a sensitive tag must also be `sensitivity-reviewed` before any build leaves the maintainer's machine; the
    simulation enforces that (`Statecraft.Cli --release-gate`, the `-shareable` build flag and
    `tools/package_release.py` all refuse otherwise). Historian review is planned for M4 and is not yet a gate.
