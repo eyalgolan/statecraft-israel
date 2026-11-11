@@ -78,7 +78,8 @@ Every [V] in this note was an agent's reading on 2026-10-22, unless the tag give
 - **Regional council, municipal and moshav sites** were not read for this note. Two that Wikipedia cites were tried:
   the Megiddo Regional Council page on Midrakh Oz (`http://www.megido.org.il/info/yesh/midrach-oz.htm`, marked dead by
   English Wikipedia; not fetched again) and the Mele'a moshav site (`http://www.homee.co.il/מלאה/`, cited by Hebrew
-  Wikipedia; not fetched). **[GAP]**
+  Wikipedia; not fetched). **[GAP]** (11 Nov: both read through the Wayback Machine; see the third pass. Other
+  regional council and municipal sites are still not read.)
 - **Not tried, known blocked** (`settlements-1949-51.md`): the NLI historical press (JPress) and the Israel State
   Archives. So **no contemporaneous newspaper was read for any row**; every newspaper date below is as Wikipedia
   cites it. Books cited by Wikipedia and not read: Yehuda Grinker, *The Immigration of the Atlas Jews* (Hebrew, 1973),
@@ -102,6 +103,59 @@ was found for any row below, so every day stays [GAP].
 - (26 Oct) **Israel Government Year-Book 5719 [1958]** (archive.org item `israelgovernment0000vari`): its metadata
   says `access-restricted-item: true` and the plain-text download returned HTTP 302 (not followed). Not read.
 
+## Third pass on the [GAP] rows (11 Nov 2026)
+
+Opened on 11 November 2026 for #27. Every page below was read on 2026-11-11 with `curl` (a generic User-Agent, no
+personal identifier) unless the line says otherwise. Web searches were used only to find pages; no search result is
+cited as a source. Quotes are under 15 words and copied as printed. No exact founding day was found for any row, so
+the days of Migdal HaEmek, Hazor HaGelilit and Poriyya Illit stay **[GAP]**.
+
+- (11 Nov) **Hazor HaGelilit (row 13): month found, day still [GAP].** Simcha Guetta-Bukobza, "יחסי מושבה-מעברה
+  בראש פנה בשנים 1950-1953", in *מחקרים חדשים של הגליל*, vol. 3 (Tel-Hai College, 2018), p. 250, PDF on the author's
+  site: https://simcha-gweta-bukobza.com/_files/ugd/893935_266edefd9e2f452a86613614b575d94e.pdf . Quote: "במרץ 1953
+  הגיעו התושבים הראשונים". The same page says the evacuees of the Rosh Pinna ma'abara moved to Hazor during 1953 and
+  names the newcomers as mostly from Tunis, Tripoli and Persia; its note 100 cites a letter of the Hazor settlers of
+  March 1953 in the Israel State Archives (not read). Second source on the year: *Encyclopaedia Judaica* (2nd ed.),
+  "Hazor", as reproduced by Encyclopedia.com,
+  https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/hazor . Quote: "its first housing
+  schemes were ready in 1953"; it also says "The site was chosen in 1950". So **March 1953 [S]** for the first
+  residents; the day is **[GAP]**.
+- (11 Nov) **Migdal HaEmek (row 7): a third source on the year, day still [GAP].** *Encyclopaedia Judaica*, "Migdal
+  Ha-Emek", Jewish Virtual Library, https://www.jewishvirtuallibrary.org/migdal-ha-emek . Quote: "founded in 1952 with
+  the aim of absorbing inhabitants of transitory immigrant camps". With CBS that is two sources for 1952 against both
+  Wikipedias' 1953; the row stays [C], with 1952 still preferred. Current Hebrew Wikipedia
+  (https://he.wikipedia.org/w/index.php?oldid=44151893, "מגדל העמק") now also cites Davar of 23 January 1953, "ישוב חדש
+  במבואות נצרת". The NLI page of that article returned HTTP 403 (a browser check); its Wayback copy
+  (https://web.archive.org/web/20241223085319/https://www.nli.org.il/he/newspapers/dav/1953/01/23/01/article/72)
+  holds only page images, no text, so it was **not read**. The Sha'arim article of 16 December 1952 has no Wayback copy.
+  JPress pages could not be read without a browser, which this pass did not use. Searched and not found: a founding
+  day in English Wikipedia, Wikidata (Q168337, year only, imported from Wikipedia) and web searches in Hebrew for the
+  municipality's history page.
+- (11 Nov) **Poriyya Illit (row 16): day still [GAP].** Read: current Hebrew Wikipedia (same `oldid` 43177261, no
+  change, no newspaper citation for 1955); Wikidata Q2916666 (year 1955 only, imported from Wikipedia); *Encyclopaedia
+  Judaica*, "Poriyyah", https://www.jewishvirtuallibrary.org/poriyyah , which covers the 1912 farm, Alummot in 1940 and
+  the 1949 work village of Poriyya (Neve Oved) but has no 1955 settlement; JTA site search `Poria` and `Poriah` (pages 1
+  and 2 each, no archive item about the village). Not found: the Emek HaYarden Regional Council page on the village.
+- (11 Nov) **Ma'ale Gilboa (row 26): earlier attempt still [GAP], one pointer against it.** JTA, 7 August 1963,
+  https://www.jta.org/archive/american-rabbis-adopt-military-agricultural-settlement-in-israel . Quote: "established
+  last year by a group of Orthodox Israeli youth at Mount Gilboa". JTA, 15 November 1963,
+  https://www.jta.org/archive/mizrachi-womens-convention-votes-250000-for-project-in-israel . Quote: "the first
+  pioneering settlement on the mountain". Neither names the settlement; reading them as Ma'ale Gilboa, and the second
+  as saying no earlier settlement stood on the mountain in 1963, is my reading. It does not rule out a short 1952
+  attempt. Also read: current Hebrew Wikipedia (same `oldid` 43417875); JTA site search `Gilboa settlement` and `Mount
+  Gilboa` (pages 1 and 2 each): no 1952 item.
+- (11 Nov) **Sources not reached (Midrakh Oz and Mele'a pages): now read through the Wayback Machine.**
+  - Megiddo Regional Council, Midrakh Oz page, Wayback copy of 4 March 2016:
+    https://web.archive.org/web/20160304031237/http://www.megido.org.il/info/yesh/midrach-oz.htm . Quote: "מושב מדרך
+    עוז הוקם ב-1952 על ידי מייסדים שעלו מתימן". Year and founders only; it gives no day, so the row 5 day stays [C].
+    It agrees with both Wikipedias that a ma'abara on the lands of al-Mansi came first and was dismantled after a year.
+  - Mele'a moshav site, Wayback copy of 21 October 2026:
+    https://web.archive.org/web/20261021191043/https://www.homee.co.il/%D7%9E%D7%9C%D7%90%D7%94/ . Quotes: "ראשוני
+    התושבים עלו על הקרקע במלאה בשנת 1956." and "במקומם, הגיעו עולים חדשים מפולין". It gives the year only (no day)
+    and does not say where the first settlers came from; on the order it agrees with English Wikipedia (Polish
+    immigrants came after most founders left), against Hebrew Wikipedia. See row 17.
+- (11 Nov) **Defunct localities founded 1952-56.** Not searched in this pass; still **[GAP]**.
+
 ## Summary table
 
 Coordinates: CBS 2024, lat N, lon E, today's site. "Founded" is the best-supported date; see the row for the sources.
@@ -121,7 +175,7 @@ Coordinates: CBS 2024, lat N, lon E, today's site. "Founded" is the best-support
 | 10 | Dishon / דישון | 21 | Moshav | 6 Jul 1953 **[S]**; 1953 **[V]** | 33.08216, 35.51898 | None found |
 | 11 | Atsmon Segev / עצמון שגב | 24 | Nahal outpost (1953), village, re-founded 1979 | Aug 1953 **[S, Wikipedia]**; 1953 **[V]** | 32.86576, 35.25177 | "Nahala'im H Mi'ar", "Segev" (Oct 1953), later Atzmon |
 | 12 | Shezor / שזור | 24 | Nahal outpost, then moshav | 31 Aug 1953 **[S]**; 1953 **[V]** | 32.93317, 35.35273 | None found |
-| 13 | Hazor HaGelilit / חצור הגלילית | 21 | Ma'abarot, then development town | 1953 **[V]**; English Wikipedia 1952 to 1953 | 32.98321, 35.54393 | None found |
+| 13 | Hazor HaGelilit / חצור הגלילית | 21 | Ma'abarot, then development town | 1953 **[V]**; first residents Mar 1953 **[S]**; English Wikipedia 1952 to 1953 | 32.98321, 35.54393 | None found |
 | 14 | Metav / מיטב | 23 | Moshav | 21 Jul 1954 **[S]**; 1954 **[V]** | 32.54586, 35.30081 | Earlier "Ta'anakh C" |
 | 15 | Peqi'in HaHadasha / פקיעין החדשה | 24 | Moshav (first cooperative) | 6 Feb 1955 **[S]**; Feb 1955 **[V]** | 32.98395, 35.32256 | None found |
 | 16 | Poriyya Illit / פוריה עילית | 22 | Re-settled 1955; separate locality 1991 | 1955 **[V]** | 32.73048, 35.54659 | Earlier "Poria-Alumot" |
@@ -250,6 +304,7 @@ Common sources, cited by short name in every row:
   חדשים בגליל" for the first months under the name Mujdal (not read), which would put a settlement there in 1952 (my
   reading). English Wikipedia: "Migdal HaEmek was established in 1953 as a ma'abara for Jews from Arab countries". Not
   in Gvati. **I prefer 1952** (CBS, and the December 1952 citation), with low confidence; the day is **[GAP]**.
+  *Encyclopaedia Judaica* (Jewish Virtual Library, read 2026-11-11) also gives 1952; see the third pass.
 - **Founders. [S, Wikipedia]** Hebrew Wikipedia: the first residents came from the Shimron and Ramat Yishai
   ma'abarot, and people from Manchuria, Harbin, Magadan and Tianjin.
 - **Renames. [S, Wikipedia]** Hebrew Wikipedia: "בחודשיו הראשונים נקרא היישוב מוג'דל כשם הכפר הערבי שעל אדמותיו
@@ -349,7 +404,8 @@ Common sources, cited by short name in every row:
 - **Founded 1953. [V]** CBS: 1953. Hebrew Wikipedia: the town began with two ma'abarot, "Hatzor A" and "Hatzor B",
   "שהוקמו לצורך קליטת העולים החדשים שהגיעו לארץ בגל העלייה ההמונית בשנת 1953" (the sentence can be read as dating
   the ma'abarot or the wave of immigration to 1953; my reading). English Wikipedia (paraphrased, its dash not reproduced): founded
-  in 1952 to 1953 as a transit camp; infobox 1953. Not in Gvati. The day is **[GAP]**.
+  in 1952 to 1953 as a transit camp; infobox 1953. Not in Gvati. **First residents March 1953 [S]**
+  (Guetta-Bukobza, p. 250, third pass); *Encyclopaedia Judaica*: first housing ready in 1953. The day is **[GAP]**.
 - **Later dates. [V]** Local council in 1956 (both Wikipedias).
 - **Founders. [S, Wikipedia]** Hebrew Wikipedia: "מייסדי חצור הגלילית היו עולים מצפון אפריקה".
 - **Renames.** None found. Named after Tel Hazor (both Wikipedias).
@@ -409,7 +465,9 @@ Common sources, cited by short name in every row:
   1957 and were replaced by immigrants from Morocco. English Wikipedia: "by Jewish immigrants and refugees to Israel
   from Morocco". English Wikipedia also gives the reverse order: "by the end of 1957 most of the original
   settlers moved out, with Jewish immigrants from Poland moving in to replace them". I prefer the Hebrew account
-  (more detail), but that is my reading.
+  (more detail), but that is my reading. (11 Nov) The moshav's own site, read through the Wayback Machine, agrees
+  with English Wikipedia on the order: "במקומם, הגיעו עולים חדשים מפולין" (third pass). That preference is withdrawn;
+  the row stays [C] with no preference.
 - **Renames.** None found. Gvati: from the verse "המלאה הזרע אשר תזרעו", which it cites as "(דברים י"ב, ט')".
 - **Coordinates.** CBS 32.56354, 35.23756 (code 164).
 - **Sources.** CBS; Gvati; https://he.wikipedia.org/w/index.php?oldid=43761711 ("מלאה");
@@ -535,7 +593,8 @@ Common sources, cited by short name in every row:
   "קיבוץ מעלה גלבוע, הוקם כהיאחזות נח"ל ב-29 בנובמבר 1962" (citing Ma'ariv, 2 Dec 1962, not read). English Wikipedia:
   "The kibbutz was founded in 1962 as a Nahal settlement", infobox "founded = 1963". **I prefer 29 November 1962**
   (CBS and both Wikipedias), so the row is out of the window. Whether Gvati's 1952 date marks an earlier attempt on the
-  site is **[GAP]**.
+  site is **[GAP]**. Two JTA items of 1963 (third pass) call the 1962 outpost the first settlement on the mountain,
+  on my reading; that does not rule out a 1952 attempt.
 - **Renames. [S, Wikipedia]** Hebrew Wikipedia: the Nahal called it "מצפור הגלבוע".
 - **Site note. [S, Wikipedia]** English Wikipedia: "on land near the former depopulated Palestinian village of
   Khirbat al-Jawfa". Given as worded.
@@ -614,10 +673,11 @@ Common sources, cited by short name in every row:
 
 - **Defunct localities** founded 1952-56 in the north were not searched for systematically (neither CBS nor Gvati
   lists them); Hemdat Yamim is the one that turned up.
-- **No newspaper of the time was read**; every newspaper date above is as Wikipedia cites it.
+- **No newspaper of the time was read**; every newspaper date above is as Wikipedia cites it. The JTA items of
+  1963 in the third pass are the only reports of the time read, and they are about Ma'ale Gilboa.
 - **Days** confirmed by two sources only for Addirim (Hebrew and English Wikipedia; Gvati agrees on day and month but
   not year) and Midrakh Oz (both Wikipedias give 12 December, Gvati 12 November, so it stays [C]). Every other day is single-source, conflicting or missing; Migdal HaEmek, Hazor HaGelilit and Poriyya
-  Illit have no day at all.
+  Illit have no day at all (Hazor HaGelilit has a month, March 1953, from the third pass).
 - **Gvati year slips.** Three Gvati dates disagree with every other source read by six to ten years (Addirim 1950,
   Lehavot HaBashan 1952, Ma'ale Gilboa 1952). The Negev note found the same kind of disagreement (Sde Tzvi, Ein
   Gedi). For the dated file, Gvati is best used for the day only where CBS agrees on the year.
