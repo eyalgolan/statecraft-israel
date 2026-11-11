@@ -109,8 +109,9 @@ namespace Statecraft.Sim
             var slots = Gdd03FieldRates.FromCatalogue(content.Gdd03Balance
                 ?? throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.field.slots", "required under gdd-0.3")).SlotsPerField;
             var authored = new HashSet<string>(Gdd03FieldFixture.Fields(content).Select(f => f.Id), StringComparer.Ordinal);
-            // #1725 PR 3, an agent's reading (not an owner ruling): an Industry target is an entry as a field is, available at the freeze with its own
-            // capacity (the city's job_slots), an upper bound that its consumer (#2469's Industry income) rechecks.
+            // #1725 PR 3 (owner, 11 November 2026, #1725: "A: available now (Recommended)"): an Industry target is an entry as
+            // a field is, available at the freeze from turn one with its own capacity (the city's job_slots, R-CITY-007), an
+            // upper bound that its consumer (#2469's Industry income) rechecks.
             var fields = ledger.Bindings.Targets.Where(t => t.Kind == PopulationAssignmentKind.Work
                     && (authored.Contains(t.Id) || t.WorkKind == PopulationWorkKind.Industry))
                 .Select(t => new Gdd03SyntheticFacilitySnapshot(t.Id, true, t.Capacity ?? slots)).ToArray();
