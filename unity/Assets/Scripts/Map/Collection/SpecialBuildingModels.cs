@@ -554,7 +554,7 @@ namespace Statecraft.Game.Map.Collection
         /// (MapScene.UnitTokens, fixed at the map's build) are still present, until &gt; date. The plan reads the date only through
         /// KitGround.OnToken, which reaches exactly the set {token : until &gt; date}; those sets are nested (a later date's set is
         /// inside an earlier one's), so two dates with the same count have the same set, whichever way the date moves.</summary>
-        static int TokenEpoch(MapScene map, DateTime date)
+        internal static int TokenEpoch(MapScene map, DateTime date)
         {
             int n = 0;
             foreach (var t in map.UnitTokens) if (t.until > date) n++;
