@@ -636,10 +636,10 @@ public class Gdd03BasicTrainingFixtureTests
         }
     }
 
-    // #2739's rounding rule (proposed in the PR; the owner set none): when the ledger's scale doesn't divide the cap's people,
-    // the camp takes the whole records that fit, rounded down, so it never holds more people than the cap. At 3,000 a record
-    // 50,000 people is 16 records (48,000), and the 17th is refused. A scale where not even one record fits refuses the
-    // fixture, rather than leaving a camp that can train no one.
+    // #2739's rounding rule (owner, 7 Nov 2026, "Round down, refuse 0"; re-confirmed 11 Nov 2026): when the ledger's scale
+    // doesn't divide the cap's people, the camp takes the whole records that fit, rounded down, so it never holds more people
+    // than the cap. At 3,000 a record 50,000 people is 16 records (48,000), and the 17th is refused. A scale where not even
+    // one record fits refuses the fixture, rather than leaving a camp that can train no one.
     [Fact] public void AnUnevenScaleRoundsTheCampCapDown()
     {
         var c = Catalogue("population.people_per_unit", Agreed(3_000)); var s = Crowd(c, null, 20); var f = Fixture(c, s, spare: 20);

@@ -7,6 +7,9 @@ research part only, opened by the owner's ruling of 22 October 2026 on #49). Res
 for the game, and no file in `content/` is changed. The `aliyah.yaml` rows, #102's emigration rows and the calibration
 checkpoints stay paused.
 
+Third pass, 11 November 2026: the 1957, 1976 and 1977 emigration rows of section 3a are rechecked; the final CBS figures
+for 1976 and 1977 are in section 8i (new lines marked "(11 Nov)"). Research only, as above.
+
 ## Purpose
 
 Fix sourced values for §2.4 and §5.4 of [the 1957-1977 design](../../docs/superpowers/specs/2026-10-10-era-1957-1977-design.md):
@@ -288,7 +291,18 @@ estimate". Period totals are **derived** (average x years):
   with a full stop where the other cells have a comma. Both are read as thousands (10,292 and 7,649).
 - 1957 alone is [GAP] in Bachi (24 Oct: CBS prints 11,400 for 1957, see 8c): it sits inside the 1955-57 average. The average applied to one year gives 10,394 (or 9,333),
   which is a per-year rate for 1955-57, not a sourced 1957 figure.
+  - (11 Nov) [V] 1957, re-read from the page image of SA14 Table 13, page 121 (PDF p. 146), "Emigrants, by Population
+    Groups and Year of Emigration (1948-1962)": "All Emigrants (Estimate)" 11,400 (Jews 11,000, others 400, rate 6.4
+    per 1,000 Jews); "Persons Declaring Emigration" 6,411 (Jews 6,039, others 372). Same values as 8c. Note (1) of the
+    table: "As from 1961, a new definition of "All Emigrants" is being used", so 1957 is on the old method.
+    https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf
 - 1976 and 1977 are [GAP] in Bachi, whose series ends in 1975 (24 Oct: CBS estimates for both years are in 8c).
+  - (11 Nov) [V] Final, unbracketed CBS figures now read for both years: residents who left in the year and did not
+    return within four years, 16.0 thousand for 1976 and 14.7 thousand for 1977. Source: SA No. 33 (1982), Table iv/5
+    "Residents departing, by period of stay abroad", page 122 (PDF p. 162), thousands, column "Thereof: stayed abroad
+    over 4 years"; the same cells in SA No. 34 (1983), Table iv/5, page 127 (PDF p. 170). Neither value is in brackets
+    (the table's note 1: "Data in brackets are forecasts"). Details and the earlier editions' ranges are in 8i.
+    https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1982_num33.pdf
 - What the columns measure, Bachi §9.1, page 116: the excess of departures over returns is set 2, headed "Very exaggerated" in his summary table; the
   revised estimates come from following up "the number of residents who left in each year and did not return after a
   given span of time"; and "Almost always these estimates of set 3 are lower than those of set 2. However, they have
@@ -759,3 +773,50 @@ tables (427,828; Jews 424,220) and could not explain it. Arithmetic from the Sta
   brackets (8c).
 - The introduction that explains the 1972-74 revision of the sources-of-growth table (8d); Sicron and Sabatello (not
   reachable, as before).
+- (11 Nov) The 1976-1977 part of the emigration bullet above is closed by 8i (final four-year figures 16.0 and 14.7
+  thousand). Emigration for 1958 on the four-year series stays [GAP].
+
+### 8i. Emigration 1976-1977, final figures (11 Nov)
+
+Third pass, 11 November 2026, by an agent; a person's check is still pending. Every cell below was read from the page
+image (rendered at 300 dpi for the 1975-1977 rows), not from the text layer. Editions opened on 2026-11-11, all in the
+same CBS folder as the table in section 8:
+
+| Key | Edition and table | Printed page (PDF p.) |
+|---|---|---|
+| SA30 | SA No. 30 (1979), .../shnaton1979_num30.pdf: Table iv/5 | 126 (169) |
+| SA32 | SA No. 32 (1981), .../shnaton1981_num32.pdf: Table iv/5 | 120 (160) |
+| SA33 | SA No. 33 (1982), https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1982_num33.pdf: Table iv/5 | 122 (162) |
+| SA34 | SA No. 34 (1983), .../shnaton1983_num34.pdf: Table iv/5 | 127 (170) |
+
+The SA No. 31 (1980) file, .../shnaton1980_num31.pdf, returned the CBS error page ("Oops, Something is wrong") on
+2026-11-11 and was not read.
+
+[V] Residents who left in the year and did not return within four years (SA32-SA34 heading "Thereof: stayed abroad
+over 4 years"; SA30 "stayed abroad up to", under the title "Residents who did not return from abroad within four
+years"), thousands, as each edition prints it. Brackets are the tables' own: "Figures in brackets are estimates" (SA30)
+and "Data in brackets are forecasts" (SA32, SA33, SA34).
+
+| Year of departure | SA28 (8c) | SA29 (8c) | SA30 | SA32 | SA33 | SA34 |
+|---|---|---|---|---|---|---|
+| 1974 | | (16.0-16.5) | 16.4 | 16.4 | 16.4 | 16.4 |
+| 1975 | (12.0-15.0) | (12.0-14.0) | (13.0) | 13.2 | 13.2 | 13.2 |
+| 1976 | (12.0-17.0) | (13.0-16.0) | (15.0) | 16.0 | 16.0 | 16.0 |
+| 1977 | | (10.0-15.0) | (11.0-13.0) | (14.0) | 14.7 | 14.7 |
+
+- The SA28 and SA29 columns are copied from 8c, not re-read in this pass.
+- 1976 is first printed without brackets in SA32 (1981), 1977 in SA33 (1982). SA33 and SA34 agree on both, so the
+  values are settled: 1976 16.0 thousand, 1977 14.7 thousand. Both sit inside SA29's ranges (13.0-16.0, at the top;
+  10.0-15.0).
+- Other columns of the same rows, SA33 page 122, for context: all departing 256.9 (1976) and 290.4 (1977); not back
+  after one year 32.7 and 30.4; after two years 22.2 and 20.8; after three years 18.0 and 16.6. The "did not return till
+  end 1981" column (16.0 and 14.7 in SA33) is end-of-year-of-edition, so it changes by edition (SA34: 14.2 and 13.4,
+  "till end 1982"); the four-year column is the fixed one.
+- SA34's note 2 says that for 1959-1965 the "did not return" column refers to residents who did not return till end
+  1981. It does not touch the four-year column used here.
+- Net-view check, derived from 8c: Jewish immigrants minus the migration balance was 12.5 (1976) and 14.3 (1977)
+  thousand, against the final four-year figures 16.0 and 14.7. The four-year count covers all residents, not Jews alone,
+  so the two are not expected to match.
+- [C] Preferred for #102's yearly rows: these final values (16.0 and 14.7) replace the bracketed ranges 8c names for
+  1976 and 1977. 1957 stays 11,400 (old CBS method, re-read this pass under section 3a), and 1958 stays [GAP] on the
+  four-year series.
