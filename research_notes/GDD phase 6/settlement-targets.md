@@ -241,7 +241,10 @@ later sent to prisoner-of-war camps and others to Egyptian-held Majdal or Gaza. 
 October, the Arab inhabitants were gone (p. 467). [V]
 
 **Population baseline.** 5,570 in the "Beersheba" row on 1 April 1945. The repo file calls the source row garbled
-and 5,570 its most likely reading; it is unchecked against the scan. [W] [GAP]
+and 5,570 its most likely reading. An AI agent read the scan on 11 November 2026 (*Village Statistics 1945*, printed
+p. 33): the row prints the total as "5.570", and its parts add up to it (Moslems 5,360, Christians 200, Others 10);
+see `research_notes/Map/village-statistics-1945-scan-check.md`. No person has checked that reading yet, and the repo
+row stays `owner-verify`. [W] [GAP]
 
 **Existing cards.** `operation_yoav.yaml` records Beersheba's capture in its sourced comments; its text does not name
 the town. `first_new_yishuv.yaml` mentions the Beersheba bedouin in a comment.
