@@ -676,8 +676,8 @@ Common sources, cited by short name in every row:
 
 - **Defunct localities** founded 1952-56 in the north were not searched for systematically (neither CBS nor Gvati
   lists them); Hemdat Yamim is the one that turned up.
-- **No newspaper of the time was read**; every newspaper date above is as Wikipedia cites it. The JTA items of
-  1963 in the third pass are the only reports of the time read, and they are about Ma'ale Gilboa.
+- **No newspaper of the time was read**; every newspaper date above is as Wikipedia cites it.
+  (11 Nov) The JTA items of 1963 in the third pass are the only reports of the time read, and they are about Ma'ale Gilboa.
 - **Days** confirmed by two sources only for Addirim (Hebrew and English Wikipedia; Gvati agrees on day and month but
   not year) and Midrakh Oz (both Wikipedias give 12 December, Gvati 12 November, so it stays [C]). Every other day is single-source, conflicting or missing; Migdal HaEmek, Hazor HaGelilit and Poriyya
   Illit have no day at all.
