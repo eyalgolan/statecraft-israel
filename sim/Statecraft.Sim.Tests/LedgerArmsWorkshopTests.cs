@@ -451,4 +451,76 @@ public class LedgerArmsWorkshopTests
         Assert.Contains("integration is held", Assert.Throws<NotSupportedException>(call).Message);
         Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Empty(why);
     }
+
+    // #3020 item 3, owner, 8 November 2026: "Fix in the UI PR (Recommended)" (#2966; #1725 issuecomment-6725822701). On a
+    // ledger game Workshops.Check, the hex panel's staffing limit, reads the records as the order does: it gives exactly the
+    // refusal Cities.Assign gives (the builders refusal, then the count of unassigned free-civilian records), and accepts what
+    // the order accepts. Nothing changes. The aggregate twin's Check is the old one (it reads the city counts).
+    [Fact]
+    public void CheckOnTheLedgerGivesTheOrdersOwnRefusal()
+    {
+        var c = Gdd03();
+        var s = Dark(c); var twin = Aggregate(c);
+        Built(c, s, Haifa); Built(c, twin, Haifa);
+        Assert.Null(Cities.Assign(c, s, Haifa, Workshops.Role, 1, new List<Cause>()));
+        var left = Free(s, Haifa).Count;
+        for (int i = 0; i < left + 1; i++) Built(c, s, Haifa);
+        string? Order(int n) { var x = s.Clone(); return Cities.Assign(c, x, Haifa, Workshops.Role, n, new List<Cause>()); }
+        string? Check(int n, params Command[] pending)
+        {
+            var before = s.Describe(); var hash = s.Hash(); var ledger = s.PopulationLedger.Canonical().ToList();
+            var r = Workshops.Check(c, s, Haifa, n, pending);
+            Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash()); Assert.Equal(ledger, s.PopulationLedger.Canonical());
+            return r;
+        }
+
+        Assert.Equal($"Haifa has {left} free civilians without an assignment", Check(left + 2));
+        Assert.Equal(Order(left + 2), Check(left + 2));
+        Assert.Null(Check(left + 1));
+        Assert.Null(Order(left + 1));
+        Assert.Null(Check(0));
+        Assert.Equal($"Haifa has {left + 2} arms workshops", Check(left + 3));
+        Assert.Equal(Order(left + 3), Check(left + 3));
+        // The aggregate twin's Check still reads the city counts.
+        Assert.Null(Workshops.Check(c, twin, Haifa, 1, Array.Empty<Command>()));
+    }
+
+    // #3020 item 3: a city with a builder (R-CITY-011, a city count) gets the ledger order's builders refusal from Check too
+    // ("Refuse with a reason (Recommended)", owner, 8 November 2026), where the aggregate twin's Check, unchanged, accepts.
+    [Fact]
+    public void CheckOnTheLedgerRefusesACityWithABuilder()
+    {
+        var c = Gdd03();
+        var s = Dark(c); var twin = Aggregate(c);
+        foreach (var x in new[] { s, twin })
+        {
+            Built(c, x, Haifa);
+            var h = c.SettlementHexes.First(t => t.Id == Haifa);
+            var site = x.NextId++;
+            x.CityProjects.Add(site, new CityProject(site, "housing", Haifa, h.Q, h.R + 1, 2, builder: true));
+        }
+        const string reason = "Haifa has builders on city projects, who are not on the population ledger yet";
+        Assert.Equal(reason, Workshops.Check(c, s, Haifa, 1, Array.Empty<Command>()));
+        Assert.Equal(reason, Cities.Assign(c, s.Clone(), Haifa, Workshops.Role, 1, new List<Cause>()));
+        // LedgerStaff refuses before it reads the count, so an order to staff none is refused the same way.
+        Assert.Equal(reason, Workshops.Check(c, s, Haifa, 0, Array.Empty<Command>()));
+        Assert.Equal(reason, Cities.Assign(c, s.Clone(), Haifa, Workshops.Role, 0, new List<Cause>()));
+        Assert.Null(Workshops.Check(c, twin, Haifa, 1, Array.Empty<Command>()));
+    }
+
+    // #3020 item 3, as the aggregate Check does (#1722 slice E, #2289): this turn's queued Train orders in the city take
+    // their records first, so a count Check accepts is still accepted whichever order runs first.
+    [Fact]
+    public void CheckOnTheLedgerCountsThisTurnsTrainingOrders()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        Built(c, s, Haifa);
+        Assert.Null(Cities.Assign(c, s, Haifa, Workshops.Role, 1, new List<Cause>()));
+        var left = Free(s, Haifa).Count;
+        for (int i = 0; i < 3; i++) Built(c, s, Haifa);
+        var train = new Train(Haifa, "recruit", left - 1);
+        Assert.Null(Workshops.Check(c, s, Haifa, 2, new Command[] { train }));
+        Assert.Equal("Haifa has 1 free civilians without an assignment", Workshops.Check(c, s, Haifa, 3, new Command[] { train }));
+    }
 }

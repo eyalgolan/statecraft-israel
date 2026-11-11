@@ -12,7 +12,8 @@ namespace Statecraft.HexTiles.Prototypes
     ///   at its nearest, so the unit spot stays open. Its perimeter is a ring of thin stand-in posts
     ///   (tiles:kibbutz_negev/fence_post). The gate faces the centre, and a dirt road runs from it through the centre.
     /// - Inside the fence: a dining hut (sandbox:kit_kibbutz_2) facing the gate, three prefab huts (sandbox:kit_negev_2 and _3, 0.12 S),
-    ///   two small canvas tents (tiles:kibbutz_negev/tent, 0.055 S, as DesertEdge keeps its tents under the building size), and the wooden water tower as the signature
+    ///   two small canvas tents (tiles:kibbutz_negev/tent, 0.055 S, as DesertEdge keeps its tents under the building size; drawn as
+    ///   Tal Heuberger's khaki canvas tent, HexModels.PropAliases), and the wooden water tower as the signature
     ///   (tiles:kibbutz_negev/water_tower: a Palm stand-in reads as a frame with the barrel on top). No kibbutz is named.
     /// - The water line: work began in January 1947 on a line from the Nir Am area, and by October 1947 water reached the
     ///   southernmost points (the Hebrew article, checked 2026-10-19). It is a narrow painted dirt stroke from the back of
@@ -28,6 +29,8 @@ namespace Statecraft.HexTiles.Prototypes
     /// - 3 desert rocks x 700 = 2,100.
     /// - 1 figure (proto:figure-kibbutz-woman-v1, assumed 4,000) = 4,000.
     /// - Stand-ins: 30 fence posts, 2 tents, the tower and 4 tamarisks, about 37 x 60 = 2,220.
+    /// - Later, the 2 tents as Tal Heuberger's khaki canvas tent (#1955; owner, 10 November 2026): 2 x 3,988 = 7,976 in place of
+    ///   their 2 Box stand-ins (32), so the measured 36,633 below becomes at most 44,577 of 45,000.
     /// - Total about 16,500 of 20,000.</summary>
     [HexPrototype("kibbutz_negev", Kind = "village", Region = "south")]
     public sealed class KibbutzNegev : IHexPrototype

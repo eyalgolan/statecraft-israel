@@ -82,20 +82,21 @@ def test_the_real_card_has_its_sources_and_hebrew():
     assert source_problems(actual()) == []
 
 
-def test_the_real_card_is_a_draft_that_is_not_shareable():
-    assert actual()["status"] == "draft"
-    assert set(shareable_problems(actual())) == {
+def test_the_real_card_is_reviewed_and_shareable():
+    """Owner, 10 November 2026: "Approve text, HE, clip", and "Approve as is" for the Hebrew (native read, #564)."""
+    assert actual()["status"] == "sensitivity-reviewed"
+    assert shareable_problems(actual()) == []
+
+
+def test_a_draft_fixture_is_not_shareable():
+    """Only an in-memory fixture: this test never writes review markers to disk."""
+    doc = copy.deepcopy(actual())
+    doc["status"], doc["he_review"] = "draft", "pending"
+    doc["clip"]["sensitivity_reviewed"] = False
+    assert set(shareable_problems(doc)) == {
         "the card needs the owner's sensitivity review",
         "the Hebrew needs a native read (he_review: approved)",
         "the clip needs the owner's sensitivity review"}
-
-
-def test_a_reviewed_fixture_is_shareable():
-    """Only an in-memory fixture: this test never writes review markers to disk."""
-    doc = copy.deepcopy(actual())
-    doc["status"], doc["he_review"] = "sensitivity-reviewed", "approved"
-    doc["clip"]["sensitivity_reviewed"] = True
-    assert shareable_problems(doc) == []
 
 
 def test_missing_impossible_and_short_dates_are_not_checks():

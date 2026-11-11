@@ -247,7 +247,7 @@ public class EndScreenTests
         Assert.IsTrue(k.End.IsOpen, "a loaded ended game opens on its end screen");
         var s = k.Bridge.State; var r = EndReport.For(C, s);
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        var expected = new[] { "outcome", "date", "score", "score-reference" }.Concat(r.Objectives.Select(o => "objective-" + o.Id))
+        var expected = new[] { "outcome", "date", "score", "score-objectives", "score-timing", "score-reference" }.Concat(r.Objectives.Select(o => "objective-" + o.Id))
             .Concat(new[] { "cohesion", "standing", "population", "population-sources" }).Select(n => "end-screen-" + n);
         CollectionAssert.AreEqual(expected, names, "the report's parts, in order");
         Assert.AreEqual(En["end.outcome.mvp_ended"], k.Line("outcome"));
@@ -272,6 +272,63 @@ public class EndScreenTests
             Date(anchor.Date), anchor.Jews.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)), k.Line("population"));
         // ...and the anchor's sources (R-END-006, #2545), by host as the unit card gives its sources.
         Assert.AreEqual(En.Format("unit.sources", "www.cbs.gov.il"), k.Line("population-sources"));
+    }
+
+    /// <summary>#812 (GDD Phase 7 PR 9: "the score and its parts"; R-SCORE-001): right after the score, one row per part of
+    /// it as the sim recorded it (EndReport.ScoreParts): objective points, the early-completion bonuses and the prisoner
+    /// points, so the rows add up to the score. Ended completes one objective a month early (100 + 5, rules.yaml
+    /// objective_points, objective_bonus_per_month); 1,200 prisoner points are set directly with the score kept equal to the
+    /// parts, since the screen formats the recorded parts and computes nothing. A part over 999 takes the invariant group
+    /// separator in both languages (the Mac runs he_IL).</summary>
+    [Test]
+    public void ShowsEveryPartOfTheScore()
+    {
+        using var k = new Kit(En, s => { Ended(s); s.ScorePrisonerPoints += 1200; s.Score += 1200; });
+        var st = k.Bridge.State; var parts = EndReport.For(C, st).ScoreParts;
+        Assert.AreEqual(100, parts.ObjectivePoints, "precondition: one objective's points");
+        Assert.AreEqual(5, parts.TimingBonuses, "precondition: one month early");
+        Assert.AreEqual(1200, parts.PrisonerPoints, "precondition: the prisoner points set");
+        Assert.AreEqual(st.Score, parts.ObjectivePoints + parts.TimingBonuses + parts.PrisonerPoints, "precondition: the parts sum to the score");
+        var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
+        var at = names.IndexOf("end-screen-score");
+        Assert.GreaterOrEqual(at, 0, "the score row: " + string.Join(", ", names));
+        CollectionAssert.AreEqual(new[] { "end-screen-score", "end-screen-score-objectives", "end-screen-score-timing", "end-screen-score-prisoners" },
+            names.Skip(at).Take(4), "the parts follow the score");
+        Assert.AreEqual("Score from objectives: 100", k.Line("score-objectives"));
+        Assert.AreEqual("Score from early completion: 5", k.Line("score-timing"));
+        Assert.AreEqual("Score from prisoners returned: 1,200", k.Line("score-prisoners"));
+        var he = EndScreenPresenter.Lines(C, st, He);
+        Assert.AreEqual("ניקוד מיעדים: \u200e100\u200e", he.Single(l => l.Name == "score-objectives").Text);
+        Assert.AreEqual("ניקוד מהשלמה מוקדמת: \u200e5\u200e", he.Single(l => l.Name == "score-timing").Text);
+        Assert.AreEqual("ניקוד משבויים שהוחזרו: \u200e1,200\u200e", he.Single(l => l.Name == "score-prisoners").Text);
+    }
+
+    /// <summary>#812: the prisoner points show only when some were scored. The #812 notice: "Do not invent zero/placeholder
+    /// prisoner or war rows". Objectives and timing still show, the zero one included: the objective is completed on its
+    /// historical date, so it earns no timing bonus (R-SCORE-001, HistoricalDatesScoreNoBonus), and no prisoners went home.</summary>
+    [Test]
+    public void ShowsThePrisonerPointsOnlyWhenSomeWereScored()
+    {
+        using var k = new Kit(En, s =>
+        {
+            var first = C.Objectives.Single(o => o.Id == "absorb_immigrants");   // on its historical date: no timing bonus
+            Objectives.Record(C, s, C.RulesAt(s.Date).Mvp!, first.Id, first.ReferenceDate, new List<Cause>());
+            s.Date = C.End;
+            s.GameOver = GameOverCodes.MvpEnded;
+        });
+        var parts = EndReport.For(C, k.Bridge.State).ScoreParts;
+        Assert.AreEqual(0, parts.PrisonerPoints, "precondition: no prisoners returned");
+        Assert.AreEqual(0, parts.TimingBonuses, "precondition: no timing bonus");
+        var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
+        CollectionAssert.DoesNotContain(names, "end-screen-score-prisoners", "no prisoner row at 0");
+        var at = names.IndexOf("end-screen-score");
+        Assert.GreaterOrEqual(at, 0, "the score row: " + string.Join(", ", names));
+        CollectionAssert.AreEqual(new[] { "end-screen-score", "end-screen-score-objectives", "end-screen-score-timing" },
+            names.Skip(at).Take(3), "objectives and timing follow the score, a zero part included");
+        Assert.AreEqual("Score from early completion: 0", k.Line("score-timing"));
+        var he = EndScreenPresenter.Lines(C, k.Bridge.State, He);
+        Assert.IsFalse(he.Any(l => l.Name == "score-prisoners"), "nor in Hebrew");
+        Assert.AreEqual("ניקוד מהשלמה מוקדמת: \u200e0\u200e", he.Single(l => l.Name == "score-timing").Text);
     }
 
     /// <summary>#2545 (R-END-006): the sources row follows the anchor. A game that ends before the first anchor has no

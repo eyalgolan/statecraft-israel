@@ -440,6 +440,67 @@ public class AdvisorOpeningTests
         Assert.AreEqual("Show the opening advice again", rig.Ui.Q<Button>("encyclopedia-opening").text);
     }
 
+    /// <summary>#3028 (spec 16: the popup "gives it back with FocusReturn"): closing the tour gives the focus back to the
+    /// control that opened it. From the Encyclopedia that is its rail button: the screen's own button is in a screen that
+    /// closed, and ScreenNav.Close has already handed the focus to the rail button before the tour opens.</summary>
+    [TestCase(false)] [TestCase(true)]
+    public void ClosingTheTourOpenedFromTheEncyclopediaGivesTheFocusBackToItsButton(bool hebrew)
+    {
+        using var rig = new Rig(hebrew ? He : En, Store(), approved: true);
+        rig.Card.Collapse(takeFocus: false);                         // a new game opens on a card: out of the way
+        Focusable? Focused() => rig.Ui.Root.focusController.focusedElement;
+        var rail = rig.Ui.Q<Button>("nav-encyclopedia");
+        rail.Focus(); UiTestKit.Press(rail);                         // Tab to the Encyclopedia and Enter
+        rig.Ui.Q<Button>("encyclopedia-opening").Focus(); rig.Ui.Press("encyclopedia-opening");
+        Assert.IsTrue(rig.Advisor.InChain, "precondition: the tour is open");
+        Assert.IsNull(rig.Nav.Current, "precondition: the Encyclopedia closed");
+        Assert.AreSame(rig.Ui.Q<Button>("advisor-got-it"), Focused(), "precondition: Next has the focus");
+        Assert.IsTrue(rig.Advisor.Escape());
+        Assert.IsFalse(rig.Advisor.InChain);
+        Assert.AreSame(rail, Focused(), "back to the Encyclopedia's button, not End turn");
+    }
+
+    /// <summary>#3028: a tour opened with the focus on any control gives it back there when it closes, by Escape or by the
+    /// X alike, and each tour remembers its own opener.</summary>
+    [TestCase(false)] [TestCase(true)]
+    public void ClosingATourOpenedByHandGivesTheFocusBackToTheOpener(bool hebrew)
+    {
+        using var rig = new Rig(hebrew ? He : En, Store(), approved: true);
+        rig.Card.Collapse(takeFocus: false);
+        Focusable? Focused() => rig.Ui.Root.focusController.focusedElement;
+        var next = rig.Ui.Q<Button>("advisor-got-it");
+        var cabinet = rig.Ui.Q<Button>("nav-cabinet"); var budget = rig.Ui.Q<Button>("nav-budget");
+        cabinet.Focus(); rig.Advisor.OpenChain();
+        Assert.IsTrue(rig.Advisor.InChain, "precondition: the tour is open");
+        Assert.AreSame(next, Focused(), "precondition: Next has the focus");
+        Assert.IsTrue(rig.Advisor.Escape());
+        Assert.AreSame(cabinet, Focused(), "Escape: back to the opener, not End turn");
+        budget.Focus(); rig.Advisor.OpenChain();
+        Assert.AreSame(next, Focused(), "precondition: Next has the focus again");
+        rig.Ui.Press("advisor-close");                               // Press moves no focus: it is still on Next
+        Assert.IsFalse(rig.Advisor.InChain);
+        Assert.AreSame(budget, Focused(), "the X: back to this tour's opener");
+    }
+
+    /// <summary>#3028 guard: an opener that cannot take the focus when the tour closes (disabled, or gone from the panel)
+    /// leaves it on End turn, never nowhere.</summary>
+    [TestCase(false, false)] [TestCase(false, true)] [TestCase(true, false)] [TestCase(true, true)]
+    public void AnOpenerThatCannotTakeTheFocusFallsBackToEndTurn(bool hebrew, bool detached)
+    {
+        using var rig = new Rig(hebrew ? He : En, Store(), approved: true);
+        rig.Card.Collapse(takeFocus: false);
+        Focusable? Focused() => rig.Ui.Root.focusController.focusedElement;
+        var opener = rig.Ui.Q<Button>("nav-cabinet");
+        if (detached) { opener = new Button { name = "test-opener" }; rig.Ui.Root.Q("root").Add(opener); }
+        opener.Focus();
+        Assert.AreSame(opener, Focused(), "precondition: the opener has the focus");
+        rig.Advisor.OpenChain();
+        Assert.AreSame(rig.Ui.Q<Button>("advisor-got-it"), Focused(), "precondition: Next has the focus");
+        if (detached) opener.RemoveFromHierarchy(); else opener.SetEnabled(false);
+        Assert.IsTrue(rig.Advisor.Escape());
+        Assert.AreSame(rig.Ui.Q<Button>("end-turn"), Focused(), detached ? "the opener left the panel" : "the opener is disabled");
+    }
+
     [Test]
     public void WithNoCardTheEventStepIsLeftOut()
     {

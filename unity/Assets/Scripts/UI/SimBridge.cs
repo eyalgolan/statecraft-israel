@@ -329,6 +329,10 @@ namespace Statecraft.Game.UI
             [Cabinet.RefusedPresident] = "cabinet.reason.president",
             [Cabinet.RefusedPersonUnknown] = "cabinet.reason.person_unknown",
             [Cabinet.RefusedNoGovernment] = "cabinet.reason.no_government",
+            // #3020: the refusals only a Historical ledger game gives (#1725 PR 7), with no values. Their constants stay internal
+            // (#2964 Q4), so they are read by name from PopulationLedger.Refusals.
+            [PopulationLedger.Refusals["Training.LedgerRefusedCraftsman"]] = "unit.reinforce_refused.ledger_craftsman",
+            [PopulationLedger.Refusals["Qualification.LedgerRefusedCraftsmen"]] = "city.qualification_refused.ledger_craftsmen",
         };
 
         /// <summary>The sim's refusals that carry values (#2072: Combat.Check's Arms, Training.Reinforce's unit, settlement,
@@ -379,6 +383,15 @@ namespace Statecraft.Game.UI
             (Cabinet.RefusedAlreadyHolds, "cabinet.reason.already_holds"),
             (Cabinet.RefusedNotCareerOfficer, "cabinet.reason.not_career_officer"),
             (Cabinet.RefusedPartyNotCoalition, "cabinet.reason.party_not_coalition"),
+            // #3020: the refusals only a Historical ledger game gives (#1725 PR 7) that carry values: Train's and Reinforce's
+            // (LedgerRefusedStrength is Send home's too), a workshop staffing order's and a pioneer reassignment's.
+            (PopulationLedger.Refusals["Training.LedgerRefusedCampFull"], "unit.reinforce_refused.ledger_camp_full"),
+            (PopulationLedger.Refusals["Training.LedgerRefusedStrength"], "unit.reinforce_refused.ledger_strength"),
+            (PopulationLedger.Refusals["Training.LedgerRefusedCarried"], "unit.reinforce_refused.ledger_carried"),
+            (PopulationLedger.Refusals["Training.LedgerRefusedHalutzTrade"], "unit.reinforce_refused.ledger_halutz_trade"),
+            (PopulationLedger.Refusals["Workshops.LedgerRefusedFree"], "workshop.refused_ledger_free"),
+            (PopulationLedger.Refusals["Workshops.LedgerRefusedBuilders"], "workshop.refused_ledger_builders"),
+            (PopulationLedger.Refusals["Qualification.LedgerRefusedFreePioneers"], "city.qualification_refused.ledger_free_pioneers"),
         }.Select(x => (new Regex("^" + string.Join("(.+?)", Regex.Split(x.format, @"\{\d+(?::[^}]*)?\}").Select(Regex.Escape)) + "$"), x.key)).ToArray();
 
         /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonFormats"/>),
@@ -416,6 +429,8 @@ namespace Statecraft.Game.UI
                 "unit.reinforce_refused.idle" => n == "1" ? "1 civilian without work" : n + " civilians without work",
                 "workshop.refused_people" => n == "1" ? "1 civilian or craftsman" : n + " civilians and craftsmen",
                 "workshop.refused_people_no_job" => n == "1" ? "1 civilian or craftsman without a job" : n + " civilians and craftsmen without a job",
+                "workshop.refused_ledger_free" => n == "1" ? "1 free civilian without an assignment" : n + " free civilians without an assignment",   // #3020
+                "city.qualification_refused.ledger_free_pioneers" => n == "1" ? "1 free pioneer without work" : n + " free pioneers without work",   // #3020
                 _ => values[1],
             };
             return values;
@@ -544,30 +559,33 @@ namespace Statecraft.Game.UI
             var date = TurnStart.Date;
             Boot.TurnProbe.BeginTurn(TurnStart.Turn, date);   // ?turnlog (#2905): this call's sim step and handlers, one line
             var stepFrom = Boot.TurnProbe.Start();
-            try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
-            catch (Exception e)   // any exception (M3 final review M7): never leave a queue that fails on every End Turn
+            try   // the finally closes the probed turn on every path, an exception included (#3057); off, it does nothing
             {
-                // A refusal (ArgumentException) is a clear warning, anything else the full exception: both leave a trace.
-                if (e is ArgumentException) UnityEngine.Debug.LogWarning("End Turn refused: " + e.Message);
-                else UnityEngine.Debug.LogException(e);
+                try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
+                catch (Exception e)   // any exception (M3 final review M7): never leave a queue that fails on every End Turn
+                {
+                    Boot.TurnProbe.Step(stepFrom);   // the failed step is timed too (#3057)
+                    // A refusal (ArgumentException) is a clear warning, anything else the full exception: both leave a trace.
+                    if (e is ArgumentException) UnityEngine.Debug.LogWarning("End Turn refused: " + e.Message);
+                    else UnityEngine.Debug.LogException(e);
+                    deferred.Clear(); skipped.Clear();
+                    LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
+                    var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
+                    var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
+                    Notify(Changed, nameof(Changed));
+                    Notify(TurnEnded, failed.Rejected, nameof(TurnEnded));
+                    return failed;
+                }
+                Boot.TurnProbe.Step(stepFrom);
+                LastBatch = batch; LastBatchDate = date;
                 deferred.Clear(); skipped.Clear();
-                LastBatch = Array.Empty<Command>(); LastBatchDate = default(DateTime);
-                var reason = text["order.failed"];   // the message stays in the log above, not on screen (#622)
-                var failed = new StepResult(State, new Cause[0], batch.Select(x => new Rejection(x, reason)).ToList());
+                Notify(Stepped, r, nameof(Stepped));
                 Notify(Changed, nameof(Changed));
-                Notify(TurnEnded, failed.Rejected, nameof(TurnEnded));
-                Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log);
-                return failed;
+                Notify(CombatResolved, Engagements(r.Why.Skip(replayed)), nameof(CombatResolved));
+                Notify(TurnEnded, r.Rejected, nameof(TurnEnded));
+                return r;
             }
-            Boot.TurnProbe.Step(stepFrom);
-            LastBatch = batch; LastBatchDate = date;
-            deferred.Clear(); skipped.Clear();
-            Notify(Stepped, r, nameof(Stepped));
-            Notify(Changed, nameof(Changed));
-            Notify(CombatResolved, Engagements(r.Why.Skip(replayed)), nameof(CombatResolved));
-            Notify(TurnEnded, r.Rejected, nameof(TurnEnded));
-            Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log);
-            return r;
+            finally { Boot.TurnProbe.EndTurn(UnityEngine.Debug.Log); }
         }
 
         /// <summary>Switches to another session (a loaded save), dropping queued orders and the last batch's metadata.</summary>

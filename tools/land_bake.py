@@ -19,6 +19,10 @@ groves in the citrus belt) with soft rims and hedges, some block edges as farm t
 stony soil and grass, terraces along the real contours, scrub. Writes, row 0 = north:
   unity/Assets/Textures/Map/landuse.png  RGBA8, COLOUR_W x COLOUR_H (about 79 x 105 m): rgb the land's colour (sRGB,
       spread into the empty texels), a its weight over the biome ground (2 x 2 samples per texel)
+  unity/Assets/Textures/Map/furrows.png  L8, FURROW_W x FURROW_H (about 158 x 211 m): how strongly GroundDetail.shader
+      draws its fine furrows (#2917): by the parcel's crop, off rims, hedges, tracks and groves, times the fields' weight
+  unity/Assets/Textures/Map/fieldblocks.png  RGBA8, one texel per farm block: its angle and strip offset (block_table),
+      so the shader lays the furrows along these parcels without the 64-bit hash
 The geography is real (slope, rain, towns); the parcels are procedural. Deterministic: the same PNG on every run."""
 import json
 import math
@@ -38,6 +42,8 @@ ROOT = Path(__file__).resolve().parents[1]
 MAP_DIR = ROOT / "unity" / "Assets" / "StreamingAssets" / "map"
 CONTENT = ROOT / "content" / "map"
 OUT = ROOT / "unity" / "Assets" / "Textures" / "Map" / "landuse.png"
+FURROWS_OUT = OUT.with_name("furrows.png")
+BLOCKS_OUT = OUT.with_name("fieldblocks.png")
 WIDTH, HEIGHT = 1024, 2048
 SLOPE_SMOOTH_M = 300.0           # the slope that decides "flat" is averaged over about this radius
 FLAT_SLOPE = (0.035, 0.075)      # rise/run: fully arable below the first, none above the second
@@ -63,6 +69,10 @@ HEDGE_HALF_M = 75.0              # a hedge or tree line along a parcel edge: abo
 TRACK_HALF_M = 70.0              # a farm track along a block edge: about 140 m
 BUSH_CELL_M, BUSH_R_M = 300.0, 100.0   # at most one bush per cell, about 2.5 texels across, with a baked shadow
 BUSH_SHADOW = (0.966, -0.259)    # east-south-east: away from the sun (MapLighting.SunAzimuth 285 degrees)
+# The furrows (#2917): GroundDetail.shader draws them, fine lines along the bake's own rows, from two textures written here.
+FURROW_W, FURROW_H = 1024, 2048  # furrows.png: each texel the mean furrow strength of 2 x 2 colour texels (about 158 x 211 m)
+BLOCK_PAD = 1                    # fieldblocks.png: block columns and rows beyond the map's on each side, for the wobble
+ANGLE_MIN, ANGLE_SPAN = -0.35, 0.7 + math.pi / 2   # block_angle's range, which fieldblocks.png's 16 bits span
 VERTICAL_EXAGGERATION = tb.VERTICAL_EXAGGERATION
 PALETTE_BRIGHTNESS, PALETTE_MAX = 1.107, 0.95   # MapPalette.Brightness and MaxChannel: the land sits in the biome palette
 SRGB = {  # the land's colours (sRGB, before PALETTE_BRIGHTNESS), sampled from promo/final/03's ground and tuned on renders.
@@ -165,20 +175,27 @@ def value_noise(x: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
     return (a + (b - a) * ux) * (1 - uy) + (c + (d - c) * ux) * uy
 
 
-def paint_samples(x: np.ndarray, y: np.ndarray, fields: np.ndarray, orchards: np.ndarray, wet: np.ndarray,
-                  elev: np.ndarray, grad: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Linear colour (..., 3) and weight (...) of the land at map points (x m east, y m north; elev real metres, grad its
-    rise per metre). Weight 0 leaves the biome's own ground."""
-    col = {k: linear(v) for k, v in SRGB.items()}
-    patch = value_noise(x / 2600.0 + 3.1, y / 2600.0 + 3.1, 1)          # one patch noise for every patchy choice
-    # Farm blocks: a wobbled grid, each block turned by up to +-20 degrees (a few by 90) about its own centre.
+def block_wobble(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Map points (x m east, y m north) in farm-block units: a wobbled grid, so the blocks are not a lattice. The furrows'
+    shader repeats this (GroundDetail.shader, ScFieldRows), so change both together."""
     wx = 0.275 * np.sin(y / 4100.0 + np.sin(x / 6700.0))
     wy = 0.275 * np.sin(x / 3900.0 + np.sin(y / 5300.0))
-    bpx, bpy = x / BLOCK_M + wx, y / BLOCK_M + wy
+    return x / BLOCK_M + wx, y / BLOCK_M + wy
+
+
+def block_angle(bh: np.ndarray) -> np.ndarray:
+    """A block's turn about its own centre (radians) from its hash: up to +-20 degrees, a few by 90."""
+    return (bh - 0.5) * 0.7 + np.where(bh > 0.8, math.pi / 2, 0.0)
+
+
+def field_layout(x: np.ndarray, y: np.ndarray) -> dict[str, np.ndarray]:
+    """The field parcels at map points (x m east, y m north): the block, its local frame (lx across the strips, ly along
+    them, metres from the block's centre), the strip and parcel indices and hashes, and the distances to their edges."""
+    bpx, bpy = block_wobble(x, y)
     bix, biy = np.floor(bpx), np.floor(bpy)
     bfx, bfy = bpx - bix, bpy - biy
     bh = hash01(bix, biy, 2)
-    ang = (bh - 0.5) * 0.7 + np.where(bh > 0.8, math.pi / 2, 0.0)
+    ang = block_angle(bh)
     qx, qy = (bfx - 0.5) * BLOCK_M, (bfy - 0.5) * BLOCK_M
     lx, ly = np.cos(ang) * qx - np.sin(ang) * qy, np.sin(ang) * qx + np.cos(ang) * qy
     # Strips across the block, each cut into parcels of its own length (1.1-2.6 km).
@@ -188,24 +205,42 @@ def paint_samples(x: np.ndarray, y: np.ndarray, fields: np.ndarray, orchards: np
     len_m = 1100.0 + 1500.0 * ch
     sy = ly / len_m + ch * 5.0
     pj = np.floor(sy)
-    ph, pv, po = hash01(ci, pj, bix, biy, 4), hash01(ci, pj, bix, biy, 5), hash01(ci, pj, bix, biy, 6)
-    edge_m = np.minimum(np.minimum(sx - ci, ci + 1 - sx) * STRIP_M, np.minimum(sy - pj, pj + 1 - sy) * len_m)
-    # The crop: 0.30 green, 0.20 ochre, 0.17 ploughed, 0.13 fallow, 0.20 grass; in the citrus belt up to 55% groves.
-    kinds = [(0.30, "green", 0.20), (0.50, "ochre", 0.08), (0.67, "plough", 0.24), (0.80, "fallow", 0.0), (1.01, "grass", 0.0)]
-    crop = np.zeros(x.shape + (3,)); gain = np.zeros(x.shape); done = np.zeros(x.shape, dtype=bool)
-    for upto, name, g in kinds:
+    across_m = np.minimum(sx - ci, ci + 1 - sx) * STRIP_M
+    along_m = np.minimum(sy - pj, pj + 1 - sy) * len_m
+    return {"bpx": bpx, "bpy": bpy, "bix": bix, "biy": biy, "bfx": bfx, "bfy": bfy, "lx": lx, "sx": sx, "ci": ci,
+            "sy": sy, "pj": pj, "across_m": across_m, "along_m": along_m,
+            "ph": hash01(ci, pj, bix, biy, 4), "pv": hash01(ci, pj, bix, biy, 5), "po": hash01(ci, pj, bix, biy, 6)}
+
+
+def paint_samples(x: np.ndarray, y: np.ndarray, fields: np.ndarray, orchards: np.ndarray, wet: np.ndarray,
+                  elev: np.ndarray, grad: np.ndarray, furrows: bool = False):
+    """Linear colour (..., 3) and weight (...) of the land at map points (x m east, y m north; elev real metres, grad its
+    rise per metre). Weight 0 leaves the biome's own ground. With furrows, also each point's furrow strength (...), 0..1:
+    how strongly GroundDetail.shader draws the fine furrows there (furrows.png)."""
+    col = {k: linear(v) for k, v in SRGB.items()}
+    patch = value_noise(x / 2600.0 + 3.1, y / 2600.0 + 3.1, 1)          # one patch noise for every patchy choice
+    # Farm blocks: a wobbled grid, each block turned by up to +-20 degrees (a few by 90) about its own centre.
+    f = field_layout(x, y)
+    bpx, bpy, bix, biy, bfx, bfy = f["bpx"], f["bpy"], f["bix"], f["biy"], f["bfx"], f["bfy"]
+    lx, sx, ci, sy, pj = f["lx"], f["sx"], f["ci"], f["sy"], f["pj"]
+    ph, pv, po, across_m, along_m = f["ph"], f["pv"], f["po"], f["across_m"], f["along_m"]
+    edge_m = np.minimum(across_m, along_m)
+    # The crop: 0.30 green, 0.20 ochre, 0.17 ploughed, 0.13 fallow, 0.20 grass; in the citrus belt up to 55% groves. The
+    # last number is the crop's furrow strength: ploughland's furrows the most, a green crop's rows, faint stubble.
+    kinds = [(0.30, "green", 0.20, 0.6), (0.50, "ochre", 0.08, 0.35), (0.67, "plough", 0.24, 1.0), (0.80, "fallow", 0.0, 0.0),
+             (1.01, "grass", 0.0, 0.0)]
+    crop = np.zeros(x.shape + (3,)); gain = np.zeros(x.shape); furrow = np.zeros(x.shape); done = np.zeros(x.shape, dtype=bool)
+    for upto, name, g, fg in kinds:
         m = ~done & (ph < upto)
-        crop[m] = col[name]; gain[m] = g; done |= m
+        crop[m] = col[name]; gain[m] = g; furrow[m] = fg; done |= m
     grove = po < orchards * 0.55
-    crop[grove] = col["orchard"]; gain[grove] = 0.12
+    crop[grove] = col["orchard"]; gain[grove] = 0.12; furrow[grove] = 0.0   # the groves' rows are their trees
     rows = 0.6 * np.sin(lx * (2 * math.pi / 320.0))                     # rows (symbolic: 320 m apart, about 3 texels)
     crop *= ((1 + gain * rows) * (0.92 + 0.16 * pv))[..., None]
     rim = smoothstep(30.0, 100.0, edge_m)[..., None]                    # soft grassy rims (promo 03)
     farmed = col["grass"] * (1 - rim) + crop * rim
     # Hedges and tree lines: chosen per edge (the hash of the edge itself), so both parcels draw the same line, HEDGE_HALF_M
     # either side of it.
-    across_m = np.minimum(sx - ci, ci + 1 - sx) * STRIP_M
-    along_m = np.minimum(sy - pj, pj + 1 - sy) * len_m
     hedge = (((across_m < HEDGE_HALF_M) & (hash01(np.floor(sx + 0.5), bix, biy, 9) > 0.45))
              | ((along_m < HEDGE_HALF_M) & (hash01(ci, np.floor(sy + 0.5), bix, biy, 10) > 0.45)))[..., None]
     farmed = np.where(hedge, farmed * 0.25 + col["hedge"] * 0.75, farmed)
@@ -213,6 +248,7 @@ def paint_samples(x: np.ndarray, y: np.ndarray, fields: np.ndarray, orchards: np
     track_x = (np.minimum(bfx, 1 - bfx) * BLOCK_M < TRACK_HALF_M) & (hash01(np.floor(bpx + 0.5), biy, 7) > 0.65)
     track_y = (np.minimum(bfy, 1 - bfy) * BLOCK_M < TRACK_HALF_M) & (hash01(bix, np.floor(bpy + 0.5), 11) > 0.65)
     farmed = np.where((track_x | track_y)[..., None], col["dust"] * 0.85 + farmed * 0.15, farmed)
+    furrow = furrow * rim[..., 0] * ~hedge[..., 0] * ~(track_x | track_y)
     farm_w = fields * smoothstep(0.08, 0.22, patch * 0.6 + fields * 0.5)
 
     # The wet unfarmed hills: patches of stony soil and grass (garrigue), terraces on the slopes, scrub.
@@ -253,17 +289,22 @@ def paint_samples(x: np.ndarray, y: np.ndarray, fields: np.ndarray, orchards: np
 
     w = farm_w + wild_w
     colour = (farmed * farm_w[..., None] + hill * wild_w[..., None]) / np.maximum(w, 1e-6)[..., None]
+    if furrows:
+        return colour, np.clip(w, 0.0, 1.0), np.clip(furrow * farm_w, 0.0, 1.0)
     return colour, np.clip(w, 0.0, 1.0)
 
 
-def paint_land(fields: np.ndarray, orchards: np.ndarray, wet: np.ndarray, elev: np.ndarray, meta: dict) -> np.ndarray:
+def paint_land(fields: np.ndarray, orchards: np.ndarray, wet: np.ndarray, elev: np.ndarray,
+               meta: dict) -> tuple[np.ndarray, np.ndarray]:
     """RGBA8 COLOUR_W x COLOUR_H (row 0 = north): rgb the land's linear colour, a its weight, from SUPERSAMPLE^2 samples per
-    texel. The masks are WIDTH x HEIGHT, the elevation the heightmap's (row 0 = north)."""
+    texel; and the furrow strength, L8 FURROW_W x FURROW_H (row 0 = north), the mean of its texel's samples. The masks are
+    WIDTH x HEIGHT, the elevation the heightmap's (row 0 = north)."""
     width_m, length_m = meta["width_km"] * 1000, meta["length_km"] * 1000
     dx, dy = tb.spacing_m(meta)
     gy, gx = np.gradient(elev.astype(np.float64), dy, dx)
     grad = np.hypot(gx, gy)
     out = np.zeros((COLOUR_H, COLOUR_W, 4))
+    furrow = np.zeros((COLOUR_H, COLOUR_W))
     ss = SUPERSAMPLE
     offs = (np.arange(ss) + 0.5) / ss
     chunk = 256
@@ -276,15 +317,41 @@ def paint_land(fields: np.ndarray, orchards: np.ndarray, wet: np.ndarray, elev: 
         y = length_m - FR / COLOUR_H * length_m
         my, mx = FR / COLOUR_H * HEIGHT - 0.5, FC / COLOUR_W * WIDTH - 0.5
         hy, hx = FR / COLOUR_H * (meta["height"] - 1), FC / COLOUR_W * (meta["width"] - 1)
-        c, w = paint_samples(x, y, bilinear(fields, my, mx), bilinear(orchards, my, mx), bilinear(wet, my, mx),
-                             bilinear(elev.astype(np.float64), hy, hx), bilinear(grad, hy, hx))
+        c, w, fs = paint_samples(x, y, bilinear(fields, my, mx), bilinear(orchards, my, mx), bilinear(wet, my, mx),
+                                 bilinear(elev.astype(np.float64), hy, hx), bilinear(grad, hy, hx), furrows=True)
         rgbw = np.concatenate([c * w[..., None], w[..., None]], axis=-1)   # premultiplied, so the box filter weighs colour
         n = len(rows)
         rgbw = rgbw.reshape(n, ss, COLOUR_W, ss, 4).mean(axis=(1, 3))
         out[rows] = np.concatenate([rgbw[..., :3] / np.maximum(rgbw[..., 3:], 1e-6), rgbw[..., 3:]], axis=-1)
+        furrow[rows] = fs.reshape(n, ss, COLOUR_W, ss).mean(axis=(1, 3))
     out[..., :3] = dilate_colour(out[..., :3], out[..., 3] > 0.5 / 255)
     out[..., :3] = encode_srgb(out[..., :3])
-    return tb.to_u8(out)
+    k = COLOUR_W // FURROW_W
+    furrow = furrow.reshape(FURROW_H, k, FURROW_W, k).mean(axis=(1, 3))
+    return tb.to_u8(out), tb.to_u8(furrow)
+
+
+def block_table(meta: dict) -> np.ndarray:
+    """RGBA8 BLOCKS_W x BLOCKS_H (row 0 = north): one texel per farm block, the block (bix, biy) at column bix + BLOCK_PAD,
+    row BLOCKS_H - 1 - (biy + BLOCK_PAD), so every block the wobble reaches on the map has one. rg its angle and ba its
+    strips' offset (frac(bh * 7), what places the strips across it), each 16 bits, high byte first: the angle as
+    (ang - ANGLE_MIN) / ANGLE_SPAN. The hash is 64-bit, which a shader cannot repeat; with this table GroundDetail.shader
+    rebuilds each point's place in its block and strip exactly (block_wobble) and lays the furrows along the bake's
+    parcels."""
+    bw, bh_ = blocks_size(meta)
+    biy, bix = np.mgrid[0:bh_, 0:bw] - BLOCK_PAD
+    bh = hash01(bix, biy, 2)
+    ang16 = np.round((block_angle(bh) - ANGLE_MIN) / ANGLE_SPAN * 65535).astype(np.int64)
+    off16 = np.round(np.mod(bh * 7.0, 1.0) * 65536).astype(np.int64) % 65536
+    rgba = np.stack([ang16 >> 8, ang16 & 255, off16 >> 8, off16 & 255], axis=-1).astype(np.uint8)
+    return rgba[::-1]   # row 0 = north: biy rises northwards
+
+
+def blocks_size(meta: dict) -> tuple[int, int]:
+    """The block table's columns and rows: every block index the wobbled grid reaches over the map (block_wobble moves a
+    point by at most 0.275 blocks), with BLOCK_PAD more on each side."""
+    return (math.ceil(meta["width_km"] * 1000 / BLOCK_M) + 2 * BLOCK_PAD,
+            math.ceil(meta["length_km"] * 1000 / BLOCK_M) + 2 * BLOCK_PAD)
 
 
 def encode_srgb(c: np.ndarray) -> np.ndarray:
@@ -317,7 +384,7 @@ def dilate_colour(rgb: np.ndarray, filled: np.ndarray, passes: int = DILATE_PASS
     return rgb
 
 
-def bake() -> np.ndarray:
+def bake() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     elev, meta = tb.load_heightmap(MAP_DIR)
     hexes = json.loads((CONTENT / "hexes.json").read_text())
     xk, yk = texel_km(meta)
@@ -355,15 +422,19 @@ def bake() -> np.ndarray:
     for _ in range(LAND_INTO_WATER):
         land = tb.shrink(land)
     land = ~land
-    rgba = paint_land(fields * land, orchards * land, wet * land, elev, meta)
-    return rgba
+    rgba, furrows = paint_land(fields * land, orchards * land, wet * land, elev, meta)
+    return rgba, furrows, block_table(meta)
 
 
 def main() -> None:
-    rgba = bake()
+    rgba, furrows, blocks = bake()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     Image.fromarray(rgba, "RGBA").save(OUT)
+    Image.fromarray(furrows, "L").save(FURROWS_OUT)
+    Image.fromarray(blocks, "RGBA").save(BLOCKS_OUT)
     print(f"wrote {OUT} ({COLOUR_W} x {COLOUR_H}): land weight mean {rgba[..., 3].mean() / 255:.3f}")
+    print(f"wrote {FURROWS_OUT} ({FURROW_W} x {FURROW_H}): furrow strength mean {furrows.mean() / 255:.3f}")
+    print(f"wrote {BLOCKS_OUT} ({blocks.shape[1]} x {blocks.shape[0]} blocks)")
 
 
 if __name__ == "__main__":

@@ -35,17 +35,20 @@ hud.caption.fx: "Foreign currency"
 hud.caption.cohesion: "Social cohesion"
 # Each meter's tip says what the meter is and what moves it, under its number in words (MeterTip, #2200; owner's option 1:
 # one key per HudModel.MeterIds id). treasury, immigration, cohesion and standing are sentences of the encyclopedia pages
-# (advisor.page.money_debt, .immigration, .national_meters), word for word. security, support and fx had no page then and
+# (advisor.page.money_debt, .immigration, .national_meters), word for word, except treasury's debt ceiling sentence
+# (Pools.BuyArms RefusedDebtCeiling, R-ARMS-002; not the arms workshop's waiting cycle, Workshops.Produce R-ARMS-006,
+# which runs only under gdd-0.3, while this tip shows in every ruleset) and cohesion's event cards clause
+# (EventSystem through EffectsSystem.Shift on morale), added for #2459. security, support and fx had no page then and
 # are written from the code: security from model.yaml's border_villages_secure effect (its office's competence and budget,
 # EffectsSystem.Multiplier) and event shifts; support from EffectsSystem.Approval and model.yaml's voter_groups, with
 # coalition stability moving toward it (PoliticsSystem.UpdateStability, R-GOV-001); fx from EconomySystem.Apply's flows,
 # EconomySystem.ConvertDollars (R-MONEY-004) and fx_crisis, which stops the Food import (R-FOOD-002), and event effects on
 # fx_reserves (R-EFX-001).
-hud.tip.treasury: "Money comes in from taxes and from every filled job, and goes out on government spending, the upkeep of our military formations, training and building. When a cost is more than we have, it is still paid: Money stops at zero and the rest becomes debt."
+hud.tip.treasury: "Money comes in from taxes and from every filled job, and goes out on government spending, the upkeep of our military formations, training and building. When a cost is more than we have, it is still paid: Money stops at zero and the rest becomes debt. But an Arms purchase that would pass the debt ceiling is refused."
 hud.tip.immigration: "The immigrants arrive as the historical figures bring them, and each city takes a share in proportion to its people. They wait as refugees, and each turn some of them become civilians without work; how many depends on the minister in charge of immigration."
 hud.tip.security: "Security moves with the choices made on event cards. Border villages add to it, more with an able and well-funded Minister of Agriculture."
 hud.tip.support: "Public support is the average approval of the voter groups, each weighing two of Social cohesion, Security, housing and Food. Coalition stability moves toward it every turn."
-hud.tip.cohesion: "Social cohesion rises and falls with housing, work, Food, rationing and Security."
+hud.tip.cohesion: "Social cohesion rises and falls with housing, work, Food, rationing and Security, and with the choices made on event cards."
 hud.tip.standing: "International support moves with the choices made on event cards."
 hud.tip.fx: "Foreign currency comes in from exports, donations and loans, and goes out on imports, which grow with the population, and on dollars converted into Money on the Defence screen during the war. Event cards can add to it or take from it. Once it runs out, the Food import stops until it recovers."
 # The other static texts of Game.uxml, each set by the presenter that owns its element (#193). Each English string is
@@ -589,6 +592,10 @@ end.parameter: "{0}: {1}"
 end.population: "Population: {0}"
 end.population_history: "Population: {0}; CBS, Jewish population, {1}: {2}"
 end.date: "Ended on {0}"
+# The score's parts (#812; R-SCORE-001), right after the score: EndReport.ScoreParts; the prisoner points only when above 0.
+end.score_objectives: "Score from objectives: {0:N0}"
+end.score_timing: "Score from early completion: {0:N0}"
+end.score_prisoners: "Score from prisoners returned: {0:N0}"
 cabinet.coalition: "Coalition: {0} of {1} {3} · stability {2}"
 cabinet.vacant: "(vacant)"
 cabinet.person: "{0} · {1} · competence {2}, loyalty {3}"
@@ -901,6 +908,9 @@ workshop.refused_built_one: "{0} has 1 arms workshop"
 workshop.refused_built: "{0} has {1} arms workshops"
 workshop.refused_people: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
 workshop.refused_people_no_job: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
+# #3020: a staffing order's refusals only a Historical ledger game gives (Workshops.LedgerRefused*), the sim's own English.
+workshop.refused_ledger_free: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
+workshop.refused_ledger_builders: "{0} has builders on city projects, who are not on the population ledger yet"
 # R-CITY-011 (#1700, #2477), gdd-0.3 only: a city project being built, whether it has a builder, and its city's builder
 # stepper: {0} the city's projects with a builder (or the ordered count), {1} its projects being built. The refusals are
 # the sim's own English (Projects.RefusedBeingBuilt*), {0} the city, {1} a count; past its free people the build order
@@ -1195,6 +1205,9 @@ city.assign_refused.negative: "The number of workers cannot be negative"
 city.qualification_refused.return_count: "Return at least one group"
 city.qualification_refused.reassign_count: "Reassign at least one group"
 city.qualification_refused.no_qualification: "There is no such qualification"
+# #3020: the craftsmen and pioneer orders' refusals only a Historical ledger game gives (Qualification.LedgerRefused*).
+city.qualification_refused.ledger_craftsmen: "Craftsmen are not on the population ledger yet (#2476)"
+city.qualification_refused.ledger_free_pioneers: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
 unit.order_refused.not_pioneer: "Only a pioneer unit takes that order"
 unit.order_refused.pioneer_busy: "That unit is at work; stop the work first"
 training.cancel_refused.no_group: "There is no such training group"
@@ -1234,6 +1247,13 @@ unit.reinforce_refused.no_industry: "{0} has no completed industry project"
 unit.reinforce_refused.no_hakhshara: "{0} has no Hakhshara"
 unit.reinforce_refused.idle: "{0} has {1}"   # the count names its noun (SimBridge.CountNoun, #2530)
 unit.reinforce_refused.arms: "{0}: not enough Arms for {1} (need {2}, have {3})"
+# #3020: Train's and Reinforce's refusals only a Historical ledger game gives (Training.LedgerRefused*); ledger_strength is
+# Send home's too. The sim's own English.
+unit.reinforce_refused.ledger_craftsman: "Craft training does not run on the population ledger yet (#2476)"
+unit.reinforce_refused.ledger_camp_full: "{0}'s military camp has room for {1} more trainees (capacity {2})"
+unit.reinforce_refused.ledger_strength: "Unit {0} has {1} soldiers on record but strength {2}"
+unit.reinforce_refused.ledger_carried: "A civilian without work in {0} already carries a military item"
+unit.reinforce_refused.ledger_halutz_trade: "A farmer or craftsman in {0} cannot train as a halutz"
 
 # #1682 remaining Cause producers. English report wording preserved.
 why.cause.workers_assigned: "{0}: {1} in work"   # {1} is "1 group"/"N groups" (CauseText.Groups, #2530)
@@ -1280,6 +1300,8 @@ why.cause.training_started: "{0}: {1} began {2}{3}, cost {4}"
 why.cause.training_arms: "{0}: {1} took {2} Arms"
 why.cause.training_cancelled: "{0}: {1} left {2}; the Money spent is not returned"
 why.cause.training_arms_returned: "{0}: {1} returned {2} Arms"
+# #3020: Send home on a Historical ledger game (#2975): {0} the city, {1} the unit's number, {2} the Arms back in the stock.
+why.cause.sent_home_arms_returned: "{0}: unit {1} returned {2} Arms"
 why.cause.replacements_stopped: "{0}: unit {1} is no longer in {0}, so its replacements stop training"
 why.cause.replacements_joined: "{0}: {1} finished {2} and joined unit {3}"
 why.cause.military_trained: "{0}: {1} finished {2} and are {3}"

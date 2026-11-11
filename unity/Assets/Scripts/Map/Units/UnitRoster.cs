@@ -43,7 +43,8 @@ namespace Statecraft.Game.Map.Units
             && Figures == o.Figures && ArtType == o.ArtType && Flying == o.Flying && Headgear.SequenceEqual(o.Headgear)
             && Vehicles.SequenceEqual(o.Vehicles) && SimId == o.SimId && Raised == o.Raised
             && (StateUnit == null && o.StateUnit == null || StateUnit != null && o.StateUnit != null
-                && StateUnit.Type == o.StateUnit.Type && StateUnit.Strength == o.StateUnit.Strength && StateUnit.HomeCity == o.StateUnit.HomeCity);
+                && StateUnit.Type == o.StateUnit.Type && StateUnit.Strength == o.StateUnit.Strength && StateUnit.Full == o.StateUnit.Full
+                && StateUnit.HomeCity == o.StateUnit.HomeCity);
         public override bool Equals(object? o) => Equals(o as UnitToken);
         public override int GetHashCode() => HashCode.Combine(Unit.Id, Anchor.Place, Figures, ArtType, Flying);
         public override string ToString() => $"{Unit.Id}@{Anchor.Place}:{ArtType}x{Figures}{(Headgear.Count > 0 ? "[" + string.Join("/", Headgear) + "]" : "")}{(Vehicles.Count > 0 ? "+" + string.Join("+", Vehicles) : "")}{(Flying ? " flying" : "")}";

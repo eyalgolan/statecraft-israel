@@ -62,6 +62,7 @@ namespace Statecraft.Game.UI
         StartScreenPresenter? start;
         OpeningPresenter? opening;
         RaidCardPresenter? raid;
+        RaidFlightPresenter? raidFlight;
         EventCardPresenter? card;
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
@@ -91,6 +92,7 @@ namespace Statecraft.Game.UI
         OutcomePresenter? outcomes;
         EnemyTurnPlayback? playback;
         TurnReportPresenter? report;
+        UiDirection? direction;   // Hebrew only
         EndScreenPresenter? end;
         /// <summary>Set by SwitchLanguage for its Begin: the player had closed the end screen, so the rebuilt one stays closed.</summary>
         bool endClosed;
@@ -129,6 +131,9 @@ namespace Statecraft.Game.UI
         /// <summary>Whether the last Begin was a smoke run: the language switch then leaves the UI as it is, so the golden-seed
         /// game never gets the autosave and New Game a normal Begin gives (SwitchLanguage).</summary>
         bool smokeRun;
+        /// <summary>True while Shutdown disposes the presenters: the start screen's Dispose reports it closed, which must not
+        /// play a New game's intro (the raid flight, card or advisors) for a session that is going away (#3003).</summary>
+        bool shuttingDown;
 
         public SimBridge? Bridge { get; private set; }
         /// <summary>Where the autosave lives; null (the default) = SaveStore.ForPlatform(). Tests set a temporary folder.</summary>
@@ -147,6 +152,12 @@ namespace Statecraft.Game.UI
         /// <summary>The Tel Aviv raid card on New game outside Play mode: off by default, as OpeningInEditMode; its own tests
         /// set it.</summary>
         internal bool RaidCardInEditMode { get; set; }
+        /// <summary>The raid flight before that card (#3000) outside Play mode: off by default, as RaidCardInEditMode; its own
+        /// tests set it, with <see cref="RaidFlightForTests"/>.</summary>
+        internal bool RaidFlightInEditMode { get; set; }
+        /// <summary>Tests: flies the raid in place of the Dakotas (EditMode has no frame clock to fly them by): given what to
+        /// call when it ends by itself, returns how to stop it, or null when there is nothing to fly.</summary>
+        internal Func<Action, Action?>? RaidFlightForTests { get; set; }
         /// <summary>The start menu's music (#39) outside Play mode: off by default, so EditMode tests stay silent and fetch
         /// nothing; its wiring test sets it.</summary>
         internal bool MenuMusicInEditMode { get; set; }
@@ -428,6 +439,9 @@ namespace Statecraft.Game.UI
             cabinet = Own(new CabinetPresenter(root, bridge, text, portraits));
             // After End Turn, what changed in the top bar and the sim's causes (#1037); under an outcome clip, which plays first.
             report = Own(new TurnReportPresenter(root, bridge, text, nav!));
+            // #2202: its lines are new labels with their words set, which UiDirection only sees on its next pass. The report
+            // can open with nothing that schedules one: when the enemy moves end, or when a screen it waited for closes.
+            report.Showing += turn => { if (turn != null) direction?.Later(); };
             // "Share" (#1170), from Settings and the turn report: the frame is captured at its end, before the panel shows.
             var sharePanel = share = Own(new SharePresenter(root, bridge, text, done => StartCoroutine(ShareShot.Capture(done))));
             // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
@@ -547,7 +561,7 @@ namespace Statecraft.Game.UI
             if (smoke == 0) Own(new AchievementReporter(bridge, () => PlatformServices.Current));
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
-            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || raid?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
+            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || raidFlight?.HoldsThePointer == true || raid?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
             var terrain = map.Terrain;
             var size = terrain.terrainData.size;
             var oldBounds = cameraController.Bounds;
@@ -614,7 +628,8 @@ namespace Statecraft.Game.UI
             attacks.Claimed = play.Claims;
             // The card first, then the report, as at an End turn with no playback: the card comes into view with its cue, then
             // the report covers it.
-            Action<bool> holding = held => { if (card != null) card.HeldForPlayback = held; if (report != null) report.Held = held; };
+            // #2202: the released card and report build new texts with no turn, click or key press: UiDirection walks them.
+            Action<bool> holding = held => { if (card != null) card.HeldForPlayback = held; if (report != null) report.Held = held; if (!held) direction?.Later(); };
             play.Holding += holding;
             owned.Add(new Undo(() => play.Holding -= holding));   // disposed before the playback: its last release touches neither
             Own(new EnemyPlaybackBar(root, text, play, bridge)).Units = unitData;
@@ -726,6 +741,22 @@ namespace Statecraft.Game.UI
                         shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
                         () => advisor?.NewGame(),
                         video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
+            }
+            // The Dakotas' raid before that card (#3000, PR 2 of #2968; the Dakotas by "Reuse Dakotas (Recommended)"): only where
+            // the card shows, and only with video on, so never in the automated runs (CardVideo.ForcedOff) nor in EditMode but
+            // where a test asks for it (RaidFlightInEditMode). It flies the Dakotas already on the map (DakotaRaidFlight) and
+            // reads no sim state; a click or Escape skips it, and the card follows either way (PlayNewGameIntro).
+            if (raid != null && video != null && (Application.isPlaying || RaidFlightInEditMode))
+            {
+                Func<Action, Action?> fly = RaidFlightForTests ?? (ended =>
+                {
+                    if (!Application.isPlaying || !Statecraft.Game.Map.Collection.DakotaRaidFlight.Start()) return null;
+                    var poll = root.schedule.Execute(() => { if (Statecraft.Game.Map.Collection.DakotaRaidFlight.Over) ended(); }).Every(100);
+                    return () => { poll.Pause(); Statecraft.Game.Map.Collection.DakotaRaidFlight.Stop(); };
+                });
+                raidFlight = Own(new RaidFlightPresenter(root, fly,
+                    shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
+                    () => raid?.Show()));
             }
             // The start screen goes up in the same frame the loading state ends, so the HUD never flashes before it. While it
             // shows, the camera keys are off (keyboard pan would otherwise move the hidden map; plan amendment A4).
@@ -853,7 +884,7 @@ namespace Statecraft.Game.UI
                     if (start != null) start.FreshGameOpened -= freshOpened;
                 }));
             }
-            if (hebrew) Own(new UiDirection(root, bridge));
+            if (hebrew) direction = Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
             if (setCompanion != null && CompanionWanted()) setCompanion(true);
             DiagLog.BootPhase("screens ready");
@@ -1115,10 +1146,14 @@ namespace Statecraft.Game.UI
         /// <summary>What a new game plays after its opening, or at once without one (owner, 8 Nov 2026, "Film, raid, card,
         /// advisors (Recommended)"): the raid card, whose OK starts the turn 1 advisor chain; the chain at once when there is no
         /// card. Never on Continue or a load (the start screen's close calls Resume then). New game can report one game twice
-        /// (the start screen's close and Started); RaidCardPresenter.Show and AdvisorPresenter.NewGame both ignore the second.</summary>
+        /// (the start screen's close and Started); RaidCardPresenter.Show and AdvisorPresenter.NewGame both ignore the second,
+        /// and so does this while the raid flight (#3000) or the card it leads to is up. The flight, where there is one, flies
+        /// first and shows the card when it ends or is skipped.</summary>
         void PlayNewGameIntro()
         {
-            if (raid != null) raid.Show();
+            if (shuttingDown || raidFlight?.IsOpen == true || raid?.IsOpen == true) return;
+            if (raidFlight != null) raidFlight.Show();
+            else if (raid != null) raid.Show();
             else advisor?.NewGame();
         }
 
@@ -1128,6 +1163,7 @@ namespace Statecraft.Game.UI
         void Shutdown(bool keepCompanionPage = false)
         {
             StopAllCoroutines();
+            shuttingDown = true;
             // The card first: disposing the start screen uncovers the decision layer, and a card still waiting for it would
             // then render and load the photo catalog for a game that is going away (#592; since the GDD cutover a new game's
             // card waits under the screen, so New Game's Begin would load it).
@@ -1140,10 +1176,11 @@ namespace Statecraft.Game.UI
             owned.Clear();
             savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; raid = null; card = null; outcomes = null; playback = null; report = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; raidFlight = null; raid = null; card = null; outcomes = null; playback = null; report = null; direction = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
+            shuttingDown = false;
         }
 
         /// <summary>Draws the placements only when State.Placements with the built city projects (PlacementLayer.Drawn, #1123)
@@ -1301,6 +1338,13 @@ namespace Statecraft.Game.UI
             // A reviewed opening is part of the normal media path: the instrument uses its actual Skip control.
             if (hud.ClassListContains(OpeningPresenter.OpenClass)
                 && !Press(root.Q<Button>("opening-skip"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
+            // So is the raid flight after it (RaidFlightPresenter, #3000): skipped as a player's Escape skips it; the card follows.
+            if (hud.ClassListContains(RaidFlightPresenter.OpenClass))
+            {
+                var flight = root.Q("raid-flight-layer");
+                using (var cancel = NavigationCancelEvent.GetPooled()) { cancel.target = flight; flight.SendEvent(cancel); }
+                if (hud.ClassListContains(RaidFlightPresenter.OpenClass)) { log("FIRST CARD FAIL the raid flight did not skip"); yield break; }
+            }
             // So is the raid card after it (RaidCardPresenter): its only control, OK.
             if (hud.ClassListContains(RaidCardPresenter.OpenClass)
                 && !Press(root.Q<Button>("raid-ok"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
@@ -1344,11 +1388,13 @@ namespace Statecraft.Game.UI
             // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
-            // Nor does the opening's (#530), over all but those two, in the frame it closes too; nor the raid card's after it (its OK).
+            // Nor does the opening's (#530), over all but those two, in the frame it closes too; nor the raid flight's after it
+            // (#3000, which shows the card); nor the raid card's after that (its OK).
             // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
             if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true
                 && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true
                 && opening?.ClosedThisFrame != true && opening?.Escape() != true
+                && raidFlight?.ClosedThisFrame != true && raidFlight?.Escape() != true
                 && raid?.ClosedThisFrame != true && raid?.Escape() != true)
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
