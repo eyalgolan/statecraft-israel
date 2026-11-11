@@ -299,10 +299,13 @@ class FakeGame:
     UnitLayer logs them: `tokens[turn]` (Israeli, enemy) for the new game's turn 0 at once, and for each later turn just
     before its TURN line (SimBridge raises Changed before TurnEnded); a turn missing from `tokens` logs no line."""
 
-    def __init__(self, units=0, card=None, hebrew=False, answers=True, opening=None, tokens=None):
+    def __init__(self, units=0, card=None, hebrew=False, answers=True, opening=None, tokens=None, raid=None, flight=True):
         self.tail, self.units, self.answers = wc.ConsoleTail(), units, answers
         self.card, self.hebrew, self.actions, self.turn = card or EN_CARD, hebrew, [], 1
         self.opening = opening   # #530: the opening's layout while it covers the window (top bar included), until Skip
+        # #3003: the raid card's layout once the opening is gone, until its OK; with `flight`, the raid flight's clear layer
+        # (#3000) covers the window first, and any press on it ends the flight and shows the card (RaidFlightPresenter).
+        self.raid, self.flight = raid, flight and raid is not None
         self.tokens = {0: (10, 2), 1: (10, 3)} if tokens is None else tokens
         self.drawn = wc.UnitsOnMap(wait=0.05)
         self.draw(0)
@@ -319,6 +322,10 @@ class FakeGame:
         if self.opening is not None:
             return next((name for (x0, x1, y0, y1), name in self.opening if x0 <= x <= x1 and y0 <= y <= y1),
                         "opening-card" if 440 <= x <= 1480 else "opening-layer")
+        if self.flight:
+            return "raid-flight-layer"
+        if self.raid is not None:
+            return next((name for (x0, x1, y0, y1), name in self.raid if x0 <= x <= x1 and y0 <= y <= y1), "raid-layer")
         if self.hebrew:
             x = wc.INFO_PANEL_LEFT + wc.INFO_PANEL_RIGHT - x
         inside = wc.INFO_PANEL_LEFT <= x <= wc.INFO_PANEL_RIGHT and y >= 1080 - wc.INFO_PANEL_BOTTOM - wc.INFO_PANEL_MAX_HEIGHT
@@ -336,6 +343,18 @@ class FakeGame:
             self.nav(f"ui click count=1 target={target}")
             if target == "opening-skip":
                 self.opening = None
+        elif self.flight and self.opening is None:   # a press ends the flight and shows the card, which takes the release
+            self.flight = False
+            self.nav(f"ui pointerdown id=0 at ({x}, {y}) target=raid-flight-layer path=raid-flight-layer.raid-flight-layer "
+                     f"< root.event-open.raid-flight-open.root modals=-")
+            if kind == "click":                  # the 0.4.1 nightly's trace: the click goes to their common ancestor
+                self.nav(f"ui pointerup id=0 at ({x}, {y}) target=raid-layer")
+                self.nav("ui click count=1 target=root")
+        elif kind == "click" and self.raid is not None:          # the card takes every click while it shows
+            target = self.at(x, y)
+            self.nav(f"ui click count=1 target={target}")
+            if target == "raid-ok":
+                self.raid = None
         elif kind == "click" and (x, y) in (wc.END_TURN, wc.END_TURN_HE):
             self.nav("ui click count=1 target=end-turn")
             if self.units == 0:
@@ -369,6 +388,11 @@ HE_OPENING = [((800, 948, 582, 628), "opening-skip"), ((966, 1028, 582, 628), "o
               ((1040, 1102, 582, 628), "opening-back"), ((794, 1108, 578, 632), "VisualElement")]
 FAR_OPENING = [((900, 1000, 560, 600), "opening-next"), ((1100, 1200, 560, 600), "opening-skip")]
 NO_SKIP_OPENING = [((900, 1000, 560, 600), "opening-next")]
+# The raid card (#3003) at 1920x1080: the opening's card frame centred over a dim backdrop (Statecraft.uss .raid-layer), its
+# title, clip and scrolling text over one centred row with only OK (Game.uxml .raid-actions, min-width 160 px).
+EN_RAID = [((880, 1040, 900, 944), "raid-ok"), ((700, 1220, 560, 890), "raid-text"), ((700, 1220, 150, 550), "raid-media"),
+           ((690, 1230, 120, 960), "raid-card")]
+NO_OK_RAID = [((700, 1220, 560, 890), "raid-text"), ((690, 1230, 120, 960), "raid-card")]
 NO_SKIP_CARD = [((84, 536, 1010, 1064), "info-reason"), ((96, 180, 976, 1002), "info-move"), ((84, 536, 960, 1009), "VisualElement")]
 
 
@@ -471,6 +495,65 @@ def test_start_screen_check_skips_the_opening_after_new_game():
     assert game.opening is None
     check.feed("TURN 1 1948-06-15 hash bb")
     assert check.done
+
+
+@pytest.mark.parametrize("hebrew,layout", [(False, EN_OPENING), (True, HE_OPENING)])
+def test_end_turn_answers_the_raid_flight_and_card_after_the_opening_as_a_player_does(hebrew, layout, capsys):
+    """#3003: after the opening's Skip the raid flight's clear layer covers End turn. End turn's press ends the flight and
+    shows the raid card, which takes the release, so the click reaches root (the 0.4.1 nightly's pass 3). EndTurn presses
+    the card's OK, found with middle-button probes, then End turn again."""
+    game = FakeGame(hebrew=hebrew, opening=layout, raid=EN_RAID)
+    end_turn = wc.END_TURN_HE if hebrew else wc.END_TURN
+    assert _end_turn(game)() == 0 and game.opening is None and game.raid is None and not game.flight
+    clicks = [a for a in game.actions if a.startswith("click:")]
+    assert len(clicks) == 5 and clicks[0] == clicks[2] == clicks[4] == _clicks(end_turn)[0], \
+        "End turn, the opening's Skip, End turn (the flight takes it), OK, End turn"
+    x, y = (int(v) for v in clicks[3].split(":")[1].split(","))
+    assert next(name for (x0, x1, y0, y1), name in EN_RAID if x0 <= x <= x1 and y0 <= y <= y1) == "raid-ok"
+    assert game.tail.wait(wc.TURN_STATE, 0, 0) is not None
+    out = capsys.readouterr().out
+    assert "the click reached root (pressed raid-flight-layer)" in out and f"click raid-ok at ({x}, {y})" in out
+
+
+def test_end_turn_presses_ok_on_a_raid_card_shown_without_the_flight():
+    """With no flight (no Dakota to fly, or the flight already over) the card itself takes End turn's click."""
+    game = FakeGame(raid=EN_RAID, flight=False)
+    assert _end_turn(game)() == 0 and game.raid is None
+    clicks = [a for a in game.actions if a.startswith("click:")]
+    assert len(clicks) == 3 and clicks[0] == clicks[2] == _clicks(wc.END_TURN)[0], "End turn, OK, End turn"
+
+
+def test_end_turn_fails_on_a_raid_card_without_ok():
+    with pytest.raises(ValueError, match="RAID FAIL the raid card covers End turn, but no raid-ok"):
+        _end_turn(FakeGame(opening=EN_OPENING, raid=NO_OK_RAID))()
+
+
+def test_end_turn_fails_when_the_raid_card_is_still_there_after_ok():
+    game = FakeGame(raid=EN_RAID)
+
+    def stuck(action):           # OK is pressed, but the card stays over End turn
+        layout = game.raid
+        game(action)
+        game.raid = layout
+    with pytest.raises(ValueError, match="END TURN FAIL the click at \\(1840, 45\\) did not press end-turn .*reached raid-layer"):
+        wc.EndTurn(stuck, game.tail, False, settle=lambda s: None, answer=0.05, turn_wait=0.05)()
+
+
+def test_end_turn_still_fails_a_click_that_reaches_root_off_the_raid_flight():
+    """Only a press the raid flight took explains a click that reached root; any other still fails."""
+    game = FakeGame()
+
+    def elsewhere(action):
+        game.actions.append(action)
+        game.nav("ui pointerdown id=0 at (1840, 45) target=top-bar path=top-bar < root.root modals=-")
+        game.nav("ui click count=1 target=root")
+    with pytest.raises(ValueError, match="END TURN FAIL the click at \\(1840, 45\\) did not press end-turn .*reached root\\)"):
+        wc.EndTurn(elsewhere, game.tail, False, settle=lambda s: None, answer=0.05, turn_wait=0.05)()
+
+
+def test_end_turn_answers_the_raid_only_before_a_new_games_first_turn():
+    with pytest.raises(ValueError, match="END TURN FAIL the click at \\(1840, 45\\) did not press end-turn .*reached root"):
+        _end_turn(FakeGame(raid=EN_RAID)).click_end_turn(opening=False)
 
 
 def test_a_click_that_does_not_press_skip_fails():
