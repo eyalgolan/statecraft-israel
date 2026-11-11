@@ -16,7 +16,7 @@ Searched again and not found. Read: ..." and the list of what was read.
 
 Third pass (11 November 2026, Refs #61, branch `research/61-jerusalem-corridor`): the remaining
 [GAP] rows were worked again, except the Neve Ya'akov rename (handled in #2242). Everything marked
-"(11 Nov)" was opened and read on 2026-11-11 by an AI agent (Claude Code), with the same
+"(11 Nov)" was opened and read on 2026-11-11 by an AI agent (Claude Code), with a generic
 User-Agent; a person's check of those readings is pending (CONTENT_POLICY section 2, item 6).
 Rows on a rename, an abandonment or a dissolution are recorded as facts with their sources only;
 none is judged here and all stay with the owner's sensitivity review.
@@ -432,13 +432,18 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   (North)", a unit inside the Jerusalem Sub-District table (part 3, Kalya); no source read names its
   land unit, so the sub-district stays [GAP].
 - (11 Nov) **Nearest dated point, the kibbutz cemetery** (not the settlement's centre). he.wiki
-  `בית העלמין של בית הערבה ההיסטורית`, oldid **43025685**, prints 31.800644, 35.54189; the cemetery
+  `בית העלמין של בית הערבה ההיסטורית`, oldid **43025685**, prints 31.800644, 35.54189 (from Wikidata
+  Q111893924; the wikitext at that oldid has no coordinate); the cemetery
   "היה בשימוש קיבוץ בית הערבה מיום הקמתו בדצמבר 1940" and the article repeats the abandonment "ב-20
   במאי 1948" [S, Wikipedia]. Wikidata Q111893924 prints the same pair [S, Wikidata], so it is not
   independent. The point is about 4.1 km east of he.wiki's Beit HaArava point (0.00673 degrees of
   latitude, about 749 m; 0.04299 degrees of longitude, about 4.07 km; computed here) and about 6.3 km
-  from the Wikidata Q2777198 point. The cemetery article's December 1940 is a different month and
-  year from the October 1939 founding above; recorded only. Coordinate of the settlement: [GAP].
+  from the Wikidata Q2777198 point. "מיום הקמתו בדצמבר 1940" is ambiguous: "הקמתו" can be the
+  kibbutz's founding or the cemetery's. The same oldid's infobox (`{{בית קברות}}`) gives the cemetery
+  `תאריך הקמה=1940`, its background section dates the kibbutz "ב-8 באוקטובר 1939", and the
+  first two of the five people its list says are buried there died on 13 December 1940
+  [S, Wikipedia]. Recorded as ambiguous, not as a second founding date. Coordinate of the
+  settlement: [GAP].
 
 ### Gush Etzion: Kefar Etzion, Masuot Yitzhak, Ein Tzurim and Revadim
 - Four kibbutzim (Gvati, narrative: "ארבעה קיבוצים היו בגוש: כפר־עציון, משׂוּאוֹת, עין־צורים
@@ -507,9 +512,14 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   coordinate. Site coordinates for Ein Tzurim and Revadim: [GAP].
 - (11 Nov) **The date of Village Statistics 1945.** The foreword of the archive.org scan
   https://archive.org/details/palestine-village-statistics-1945 (text layer; a 1970 Beirut reprint
-  whose foreword is signed "S. H.") says the figures are "as on 1 April 1945"; en.wiki `Village
-  Statistics, 1945` oldid 1359600351 cites the title "Village Statistics, April, 1945". **Our
-  reading:** on that date only Kefar Etzion (1943) of the four kibbutzim stood (Masuot Yitzhak August
+  whose foreword is signed "S. H.") gives two dates. Land: "the ownership holdings of the land as
+  between Arabs, Jews, Public and Others as on 1 April 1945". Population: the foreword quotes the
+  Department of Statistics' Explanatory Note, "The population estimates given in ‘Village Statistics’
+  show for each inhabited place in Palestine the number of persons, classified by religion at the end
+  of 1944", and the editor writes "estimated population by community as at the end of 1944". The
+  population figures are estimates, not counts. en.wiki `Village Statistics, 1945` oldid 1359600351
+  cites the title "Village Statistics, April, 1945". **Our reading:** at the end of 1944, and still on
+  1 April 1945, only Kefar Etzion (1943) of the four kibbutzim stood (Masuot Yitzhak August
   or November 1945, Ein Tzurim October 1946, Revadim February 1947, above), which fits Beit Ummar's
   80 Jews being Kefar Etzion's; no source read says so, so the sub-district question stays open.
 
@@ -536,7 +546,8 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - (11 Nov) The 1931 census page is now read: Jericho sub-district, unit "Dead Sea", Jews 216 + 14 =
   230 of 535 persons (part 1b); the unit is not named for the works.
 - (11 Nov) **Site of the 1929 camp, page coordinate.** he.wiki `חוף לידו (ים המלח)`, oldid
-  **41556005**, prints 31.773333, 35.507778; "בשנת 1929 הוקם במקום מחנה עבודה", the site keeps
+  **41556005**, prints 31.773333, 35.507778 (from Wikidata Q6576987; the wikitext at that oldid has
+  no coordinate); "בשנת 1929 הוקם במקום מחנה עבודה", the site keeps
   "שרידי מתקנים של חברת אשלג ארץ-ישראלית", and in 1934 workers' housing of "24 דירות ב-4 מבנים" was
   built [S, Wikipedia]. he.wiki `קליה (קיבוץ)` oldid 43794257 has the same 1929 camp, and he.wiki
   `חברת אשלג ארץ-ישראלית` oldid 43741713 puts a memorial sign for the northern works at the Lido
@@ -552,8 +563,8 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   has no unit named for the four kibbutzim and the only Jewish population in it is Beit Ummar's 80.
   The sub-district of the four kibbutzim is still not established by a source; the 1945 Hebron table
   is the best candidate, our reading.
-  (11 Nov) The 1945 figures are "as on 1 April 1945", when
-  only Kefar Etzion of the four stood (part 3); still not proven.
+  (11 Nov) The 1945 population figures are estimates "at the end of 1944" (land: "as on 1 April
+  1945"), when only Kefar Etzion of the four stood (part 3); still not proven.
 - [GAP] **Kalya.** (24 Oct) Moved to part 3: en.wiki gives a 1929 company settlement destroyed in 1948
   and the 1945 table has a Potash unit with 1,270 Jews. Still open: whether Kalya itself, as
   opposed to the northern concession as a whole, is the unit; the 1931 census page was not opened;
