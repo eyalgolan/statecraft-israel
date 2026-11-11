@@ -551,7 +551,8 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - [GAP] **Gush Etzion in Village Statistics 1945.** (24 Oct) Partly closed, part 3: the Hebron table
   has no unit named for the four kibbutzim and the only Jewish population in it is Beit Ummar's 80.
   The sub-district of the four kibbutzim is still not established by a source; the 1945 Hebron table
-  is the best candidate, our reading. (11 Nov) The 1945 figures are "as on 1 April 1945", when
+  is the best candidate, our reading.
+  (11 Nov) The 1945 figures are "as on 1 April 1945", when
   only Kefar Etzion of the four stood (part 3); still not proven.
 - [GAP] **Kalya.** (24 Oct) Moved to part 3: en.wiki gives a 1929 company settlement destroyed in 1948
   and the 1945 table has a Potash unit with 1,270 Jews. Still open: whether Kalya itself, as
@@ -562,16 +563,18 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - [GAP] **Completeness of part 3.** (24 Oct) The 1945 Jerusalem table's nine Jewish-population rows
   are all accounted for (part 1b), which supports but does not prove completeness: kibbutzim inside
   an Arab village's land unit have no row. Gvati's other places lost in the war (Kefar Darom,
-  Mishmar HaYarden) are outside this region. (11 Nov) Not worked again.
+  Mishmar HaYarden) are outside this region.
 - **Census of Palestine 1931**: (24 Oct) used, from page images, for the Jerusalem sub-district and
   two Bethlehem pages (part 1b). Not read: the Hebron and Jericho sub-district tables and the Ramle
-  table (Kefar Uriyya). (11 Nov) The Jericho table is now read (part 1b); Hebron and Ramle are not.
+  table (Kefar Uriyya).
+  (11 Nov) The Jericho table is now read (part 1b); Hebron and Ramle are not.
 - [GAP] **Coordinates of abandoned, moved and merged places**: (24 Oct) found as page coordinates,
   tagged [S, Wikipedia] or [S, Wikidata], for Atarot, Neve Ya'akov, Har Tuv, Moza, Migdal Eder,
   Kefar Etzion, Masuot Yitzhak (Gush Etzion), Kefar Uriyya and Kalya (parts 2 and 3). None is a
   surveyed point or a map-sheet reading; no Survey of Palestine sheet was opened. Beit HaArava has two
   conflicting pairs and none is used; Ein Tzurim and Revadim (Gush Etzion) and the 1946 site of
-  Newe Ilan have none. (11 Nov) Newe Ilan's 1946 site now has a page coordinate (part 2) and Kalya's
+  Newe Ilan have none.
+  (11 Nov) Newe Ilan's 1946 site now has a page coordinate (part 2) and Kalya's
   1929 camp has one (part 3). Beit HaArava has only its cemetery's point, not the settlement's
   (part 3). Ein Tzurim and Revadim have an area (Rosh Tzurim), not a site point.
 - [GAP] **Rename years** for Kefar Uriyya (from Qiryat Moshe) and Neve Ya'akov (from the Hebrew
@@ -587,7 +590,7 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   of https://benyehuda.org/read/14684 fetched on 2026-10-24 by another lane of this project (about
   21,000 non-empty lines); a search for lines that begin with "ירושלים" found six: five are running
   prose or a bibliography entry, and the one standing alone is a cell in a rainfall table (mm),
-  "ירושלים 550", not a locality row. (11 Nov) Not worked again.
+  "ירושלים 550", not a locality row.
 - **Gvati day versus CBS year.** Where they agree on the year the row is [V]; the day rests on Gvati
   alone, and as `settlements-1949-51.md` notes, it can be a day or more off other sources. All six
   CBS rows have a Gvati row; none of the places in part 3 has one for its pre-1948 site.
