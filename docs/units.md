@@ -66,7 +66,10 @@ The Blender-built model follows the owner's rulings of 8 November 2026 on #2734 
 - **Rear-fuselage band: "Add the band".** White, blue, white, round the fuselage ahead of the fin. Source: Efrati p. 4,
   the IAF command's order of 31 May 1948: "An additional white-blue-white recognition band was to be applied ahead of the
   vertical fin". The same page adds that "Airplanes delivered from abroad were rushed into service in their original
-  colors", and the Spitfire captions on pp. 12 and 14 name no band; it is drawn by the owner's ruling. No source gives its
+  colors", and the Spitfire captions on pp. 12 and 14 name no band; the nearest evidence that the squadron wore one is
+  Efrati p. 11's caption of its Avia D-120, whose "fuselage identification white-blue-white blue center stripe" lacked
+  "the blue Star of David" for "lack of time or lack of paint". The band is drawn by the owner's ruling, without a star
+  (owner, 11 November 2026: "No star, as ruled (Recommended)"). No source gives its
   width or place, so both are a DESIGN VALUE in `tools/spitfire_101_model.py` (`BAND_Z`, centred 3.75 m behind the centre
   of gravity; `BAND_STRIPE`, 0.10 m a stripe).
 - **101 Squadron insignia: "Paint it, left side"**, and, for its shape's source, **"Yes, paint from p. 11"**. Painted on
