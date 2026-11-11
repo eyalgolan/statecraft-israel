@@ -294,6 +294,12 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   43173897 has "קיבוץ שהתפרק ב-1956"; he.wiki `נווה אילן (קיבוץ משלט)` oldid 43217458 has
   `ננטש = 1961` in its infobox, and Wikidata Q125844895 has dissolved 1961 (P576). Both dates are
   after 15 May 1948; no reading is offered, and the row is for the owner's review.
+- (11 Nov) The body of the same oldid 43217458 gives several steps. The last 80 members left at the end of
+  1955 (it cites HaBoker, 15.12.1955); the same paragraph has about forty members staying on until the last
+  left in December 1956, and the next paragraph opens "בשנת 1956 עזבו אחרוני הקיבוצניקים". From summer 1956 a
+  youth group from Kfar HaYarok and Youth Aliyah was placed there, and in early 1961 "עזבו הצעירים את המקום
+  והקיבוץ פורק" (it cites Maariv, 4.4.1961). The 1956 and 1961 dates may refer to these different steps; no
+  reading is offered. [S, Wikipedia; agent read 2026-11-11; a person's check pending]
 
 ## 3. Places that stood before 15 May 1948 and are not CBS localities today
 
