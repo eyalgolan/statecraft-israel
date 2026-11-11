@@ -1,9 +1,10 @@
 # Where the Lebanese army stood on 15 May 1948 (#1871, research part)
 
 Status: **draft, needs a person to check**. This is research only. An AI agent opened every source marked "agent read" below
-on 28 October, 3 November and 11 November 2026 and recorded the day it opened each. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person
+on 28 October and 3 November 2026 and recorded the day it opened each. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person
 to check every claim against its source before use. This note changes nothing in `content/`, `sim/` or `unity/`; placing the
 token is a separate PR.
+(11 Nov) An AI agent also opened sources on 11 November 2026 (the 11 November pass below); the same person's check applies.
 
 ## Question and result
 
@@ -70,8 +71,8 @@ Tags: `[V, agent read 2026-10-28; a person's check pending]` for a source whose 
 1. **Who held al-Malikiyya on 15 May.** Dupuy p. 45: the Lebanese, after a counter-attack from across the border. The owner's ruling
    on #226 (ruling 2; dated 11 October 2026 in `research_notes/GDD phase 5/arab-forces-1948.md`, section 5) reads word for
    word (issue #226 on GitHub, read 28 October 2026): "al-Malikiyya, 15 May: the newer research applies (the ALA on 15 May; the Lebanese 3rd Battalion from 6 June). The
-   card notes Lorch's account." The newer research is he.wiki and the official Lebanese account. he.wiki was read on 11 November (pass below); the
-   official Lebanese account was not.
+   card notes Lorch's account." The newer research is he.wiki and the official Lebanese account, which this box has not read.
+   (11 Nov) he.wiki was read on 11 November (pass below); the official Lebanese account was not.
    The JTA of 17 May has the Lebanese a mile inside the border with no place; the JTA of 18 May has 200 Lebanese soldiers
    killed in the "Malakia area" on 16 May. Nothing read here settles who held the village on 15 May.
 2. **6 June or 7 June for the second fall, and who took it.** Dupuy p. 47: the Lebanese took it on the evening of 6 June. JTA
@@ -232,14 +233,16 @@ pages were read from it (PDF page = printed page plus 26 for pp. 211 to 224).
 
 ## Open gaps
 
-- Morris p. 260 and p. 258 (lending copy, not opened). The Hughes chapter is no longer a gap (11 November pass).
-- The official Lebanese account (as he.wiki cites it) and any Lebanese army history giving the 15 May position; the Lebanese
-  unit war diaries Hughes cites (1st and 3rd Bataillons de Chasseurs Libanais) were not seen here.
+- Morris p. 260 and p. 258, and the Hughes chapter pp. 204-227 (both lending copies, not opened).
+  (11 Nov) Morris is still a lending copy, not opened. The Hughes chapter is no longer a gap (11 November pass).
+- The official Lebanese account (as he.wiki cites it) and any Lebanese army history giving the 15 May position.
+  (11 Nov) The Lebanese unit war diaries Hughes cites (1st and 3rd Bataillons de Chasseurs Libanais) were not seen here either.
 - Maayan (2004), cited by he.wiki (with Maayan and Erlich and Sela) for the newer research on the first al-Malikiyya battle,
   not opened (scan link HTTP 404). Gelber (2004) pp. 210-212, cited by he.wiki with Morris (2010) pp. 284-286 for the general
   agreement that the Lebanese army did not invade on 15 May (not for a 15 May place), not opened.
-- UN S/ documents of May to June 1948 (none with a Lebanese place opened).
+- UN S/ documents of May to June 1948 (none opened): a Lebanese or Mediator report with a place is the likeliest source for 15 May.
+  (11 Nov) Still none with a Lebanese place opened.
 - The 15 May place itself: the nearest dated source is 19 May (Hughes p. 211, al-Naqura). Which option to use is for the owner.
-- The day of the Israeli capture in Operation Hiram is no longer open: 31 October, about 05:00 to 06:00 (Ben-Gurion diary;
-  O'Ballance p. 191 agrees). A person's check of the diary scan is pending.
+- The day of the Israeli capture in Operation Hiram is no longer open: 31 October, about 05:00 to 06:00 (Ben-Gurion diary, table above). A person's check of the diary scan is pending.
+  (11 Nov) O'Ballance p. 191 agrees on the day.
 - The dating of the sentence at Dupuy p. 83 (no day printed; about 9 July is derived from the page).
