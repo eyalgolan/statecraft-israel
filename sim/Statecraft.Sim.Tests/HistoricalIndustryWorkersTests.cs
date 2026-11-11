@@ -127,6 +127,31 @@ public class HistoricalIndustryWorkersTests
         Assert.Equal(work.Target, ledger.Units.Single(u => u.Id == own.Id).Assignment.Target);
     }
 
+    static GameState Fixture(Content c, string region, string city) => PopulationLedger.CreateFixture(c,
+        new PopulationBindings(new[] { new PopulationLocation(region) }, new[] { new PopulationTarget("test/industry",
+            PopulationAssignmentKind.Work, region, workKind: PopulationWorkKind.Industry, city: city, capacity: 1) },
+            Array.Empty<string>(), Array.Empty<string>()),
+        Array.Empty<PopulationInventoryRow>(), mode: Mode.Historical);
+
+    // R-POP-002 (ValidateCities): an Industry target's city is a census city (cities.yaml, R-CITY-006) of its own region in
+    // regions.yaml. A census city of another region is refused, and so is a member location of the region that is not a
+    // census city; the refusal names the target and the region. The region's own census city is accepted.
+    [Fact]
+    public void AnIndustryTargetNeedsACensusCityOfItsRegion()
+    {
+        var c = Gdd03();
+        var census = new HashSet<string>(c.Cities.Select(x => x.Id), StringComparer.Ordinal);
+        var region = c.PlayerRegions.AtLocation("haifa")!;
+        var elsewhere = c.Cities.First(x => c.PlayerRegions.AtLocation(x.Id)!.Id != region.Id).Id;
+        var notCensus = region.MemberLocations.First(p => !census.Contains(p));
+        foreach (var city in new[] { elsewhere, notCensus })
+        {
+            var e = Assert.Throws<ArgumentException>(() => Fixture(c, region.Id, city));
+            Assert.Equal("Industry target test/industry needs a census city of region " + region.Id + " (R-POP-002).", e.Message);
+        }
+        Assert.True(Fixture(c, region.Id, "haifa").PopulationLedger.IsInitialized);
+    }
+
     // The work kind: an Industry target is a Work target with its city and a nonnegative capacity; any other target has
     // neither. A target without the work kind keeps its canonical text, so no existing state hash moves.
     [Fact]
