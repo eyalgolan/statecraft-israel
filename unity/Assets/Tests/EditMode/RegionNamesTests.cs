@@ -119,11 +119,10 @@ public class RegionNamesTests
     }
 
     static readonly string[] Gaps = {
-        "zone.syria_dmz_north.name", "zone.syria_dmz_south.name",
+        "zone.syria_dmz_north.name",
         "line.egypt_mv1950_demarcation.name",
         "line.egypt_mv1950_zone_lines.name",
-        "line.jordan_adl_iraqi_c_east.name", "line.jordan_adl_iraqi_b_wadi_ara.name", "line.jordan_adl_iraqi_a_triangle.name",
-        "line.jordan_adl_iraqi_c_south.name", "line.jordan_adl_a_latrun.name", "line.jordan_adl_bc_south.name", "line.jordan_adl_d_arava.name"
+        "line.jordan_adl_a_latrun.name", "line.jordan_adl_d_arava.name"
     };
     static readonly Dictionary<string, string> ArmisticeIdentities = new Dictionary<string, string> {
         {"line.egypt_mv1950_demarcation.label_note", "פשרת שעה, 1950"}, {"line.egypt_mv1950_zone_lines.label_note", "פשרת שעה, 1950"},
@@ -133,7 +132,14 @@ public class RegionNamesTests
         {"line.lebanon_adl.name", "קו שביתת הנשק: הגבול הבין־לאומי"}, {"line.syria_adl.name", "קו שביתת הנשק"},
         // Owner-approved captions, 27 Oct 2026 (signed-map reconciliation still open).
         {"zone.syria_dmz_central.name", "האזור המפורז (ישראל–סוריה), החלק המרכזי: דרדרה, הירדן ומשמר־הירדן"},
-        {"line.egypt_adl_gaza.name", "קו שביתת הנשק (מצרים–ישראל) של 1949, גזרת עזה־רפיח: מוצא ודי חזי עד עזה"}
+        {"line.egypt_adl_gaza.name", "קו שביתת הנשק (מצרים–ישראל) של 1949, גזרת עזה־רפיח: מוצא ודי חזי עד עזה"},
+        // Owner-approved wording, 11 Nov 2026 (#2525); rows stay native-review-pending.
+        {"zone.syria_dmz_south.name", "האזור המפורז (ישראל–סוריה), החלק הדרומי: עין־גב וחמה"},
+        {"line.jordan_adl_iraqi_a_triangle.name", "קו שביתת הנשק (ירדן–ישראל), קו A, מבקעה עד כפר קאסם (סעיף 6, פסקה 3(א), עד 8 במאי 1949)"},
+        {"line.jordan_adl_iraqi_b_wadi_ara.name", "קו שביתת הנשק (ירדן–ישראל), קו A, ודי ערה, מזבובה עד בקעה (סעיף 6, פסקה 3(ב), עד 22 במאי 1949)"},
+        {"line.jordan_adl_iraqi_c_south.name", "קו שביתת הנשק (ירדן–ישראל), קו A, מכפר קאסם עד חירבת דיר-ערב (סעיף 6, פסקה 3(ג), עד 17 ביולי 1949)"},
+        {"line.jordan_adl_bc_south.name", "קו שביתת הנשק (ירדן–ישראל), מירושלים עד ים המלח (קו B, גזרת חברון - ים-המלח)"},
+        {"line.jordan_adl_iraqi_c_east.name", "קו שביתת הנשק (ירדן–ישראל), קו A, מזבובה עד הירדן (סעיף 6, פסקה 3(ג), עד 17 ביולי 1949)"}
     };
     static string Agreement(string front) => front switch {
         "egypt" => "הסכם מצרים-ישראל על שביתת נשק כללית",
@@ -166,7 +172,7 @@ public class RegionNamesTests
         }
         StringAssert.Contains("NEEDS-RESEARCH", followup);
         // All newly supplied rows remain pending; parser support for removal is not a human sign-off.
-        Assert.AreEqual(59, Inputs.RegionNamesYaml.Split(new[] {"    name_he_review: native-review-pending"}, StringSplitOptions.None).Length - 1);
+        Assert.AreEqual(65, Inputs.RegionNamesYaml.Split(new[] {"    name_he_review: native-review-pending"}, StringSplitOptions.None).Length - 1);
     }
 
     [Test]
