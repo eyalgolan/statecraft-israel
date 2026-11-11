@@ -1093,9 +1093,12 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(Tokens(map, d1), Tokens(map, d2), "premise: the same dated tokens");
             Assert.Greater(HexPropModels.Wants(map, d2).Count, HexPropModels.Wants(map, d1).Count, "premise: a station opens");
             var layer = Show(map, d1);
+            var people = map.Terrain.transform.Find(CivilianPeople.Name)!.GetComponent<CivilianPeople>();
+            var list = people.Wanted;
             int replans = layer.Replans;
             var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
             CollectionGeometryFixture.People(map, d2, Array.Empty<Statecraft.Sim.Placement>(), c);
+            Assert.IsTrue(ReferenceEquals(list, people.Wanted), "premise: the civilians' list is the same (CivilianPeople swaps it only on a change)");
             CollectionGeometryFixture.Rural(map);
             CollectionGeometryFixture.Special(map, d2);
             HexPropModels.ShowAt(map, d2);
@@ -1117,9 +1120,12 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(HexPropModels.Wants(map, d1).SequenceEqual(HexPropModels.Wants(map, d2)), "premise: the same stations");
             Assert.AreNotEqual(Tokens(map, d1), Tokens(map, d2), "premise: a dated token leaves");
             var layer = Show(map, d1);
+            var people = map.Terrain.transform.Find(CivilianPeople.Name)!.GetComponent<CivilianPeople>();
+            var list = people.Wanted;
             int replans = layer.Replans;
             var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
             CollectionGeometryFixture.People(map, d2, Array.Empty<Statecraft.Sim.Placement>(), c);
+            Assert.IsTrue(ReferenceEquals(list, people.Wanted), "premise: the civilians' list is the same (CivilianPeople swaps it only on a change)");
             CollectionGeometryFixture.Rural(map);
             CollectionGeometryFixture.Special(map, d2);
             HexPropModels.ShowAt(map, d2);
