@@ -193,21 +193,24 @@ general way to move those powers to another minister; it brought a bill for one:
   Comptroller has these services audited "במשרד העלייה" until their move to Interior in March 1952. The two can both
   hold (a decision in October 1951, a physical move of the services in March 1952); no source read joins them.
 
-- Negative search for the instrument (2026-10-23; re-run 2026-11-11 where noted), with what each returned:
+- Negative search for the instrument (2026-10-23), with what each returned:
+  (11 Nov) Re-run on 2026-11-11 where noted below.
   - Reshumot / Yalkut HaPirsumim: the Nevo scans (`nevo.co.il/law_word/law10/yalkut-NNNN.pdf`) answer scripted
     requests with a reCAPTCHA page, so no Yalkut issue of October 1951 to March 1952 was read; Hebrew web searches for
-    "העברת סמכויות" with "שר העליה" and "שר הפנים" returned only later transfers. **not reached.** Re-run
-    2026-11-11: `yalkut-0200.pdf` still returns the Nevo captcha page; a web search for "12א לחוק המעבר" with "חוק
-    השבות" returned no 1950s notice. **not reached**, so no section 12א notice (after August 1952) was looked for in
-    the Yalkut itself.
+    "העברת סמכויות" with "שר העליה" and "שר הפנים" returned only later transfers. **not reached.**
+    (11 Nov) Re-run 2026-11-11: `yalkut-0200.pdf` still returns the Nevo captcha page; a web search for "12א לחוק
+    המעבר" with "חוק השבות" returned no 1950s notice. **not reached**, so no section 12א notice (after August 1952) was
+    looked for in the Yalkut itself.
   - Government protocols and the State Archives catalogue: catalog.archives.gov.il and archives.gov.il return HTTP
-    403 (again on 2026-11-11). **not reached.**
+    403. **not reached.**
+    (11 Nov) HTTP 403 again on 2026-11-11. **not reached.**
   - *Government Year-Book* 5712 (1951) and 5713 (1952): no online copy found (archive.org search: no hit; HathiTrust
-    returns 403; the Google Books API refused on quota). Re-run 2026-11-11: an archive.org title search finds only the
-    5719 (1958) volume. **not reached.**
+    returns 403; the Google Books API refused on quota). **not reached.**
+    (11 Nov) Re-run 2026-11-11: an archive.org title search finds only the 5719 (1958) volume. **not reached.**
   - knesset.gov.il redirects to a geo-block page from this network, so the Knesset legislation page for the Law of
-    Return was not read live. The Knesset file server (fs.knesset.gov.il) does answer: the bill and the protocols
-    above were read from it on 2026-11-11.
+    Return and its bill file were not read live.
+    (11 Nov) The Knesset file server (fs.knesset.gov.il) does answer: the bill and the protocols above were read from
+    it on 2026-11-11.
 
 What the statutes show:
 
@@ -227,10 +230,17 @@ What the statutes show:
   Knesset PDF, re-read 2026-10-23) is Sefer HaHukim 163, 3 Elul 5714 (1 September 1954), p. 174; it is signed by Moshe
   Sharett as Prime Minister and Yosef Serlin as "שר הבריאות" and "ממלא מקום שר הפנים" (two lines under his name), and
   its footnote gives the bill and its explanatory notes as "ה"ח 192, תשי"ד, עמ' 88". [V, agent read 2026-10-23; a
-  person's check pending] That explanatory note was reached on 2026-11-11: it gives the reason as "חיסול משרד העליה
-  והעברת תפקידיו למשרד הפנים", with no date or instrument (quoted in full above). [V] Law of Return amendment bill 1954.
-- **Who exercised the Law of Return powers from 8 October 1951 to 23 August 1954: still a [GAP].** No source read names
-  a minister who signed visas or refusals under the Law of Return in that interval. What the sources do say: the
+  person's check pending] That explanatory note is the likeliest place for the reason; it was **not reached** (Knesset
+  site geo-blocked, no other copy found).
+  (11 Nov) That explanatory note was reached on 2026-11-11: it gives the reason as "חיסול משרד העליה והעברת תפקידיו
+  למשרד הפנים", with no date or instrument (quoted in full above). [V] Law of Return amendment bill 1954.
+- **Who exercised the Law of Return powers from 8 October 1951 to 23 August 1954: not found.** No source read names a
+  minister for them in that interval. The Comptroller (above) has the immigration and naturalisation services
+  inside "משרד העלייה" until March 1952 and inside the Ministry of the Interior after it, but says nothing of the
+  statutory power itself. That Shapira, as Interior Minister, exercised it is a guess and is not stated here as
+  fact.
+  (11 Nov) Still a [GAP] after the 11 November pass. No source read names a minister who signed visas or refusals
+  under the Law of Return in that interval. What the sources do say: the
   government decided to abolish the ministry and move its functions to Interior (Yosef, November 1951; the 1954 bill's
   note); the services moved to Interior in March 1952 (Comptroller); in August 1952 an MP still asked for the Law of
   Return function to be *listed* as passing to Interior, and the Knesset voted down the Klibanov/Bader amendment, read here as that schedule; section 12א let the
