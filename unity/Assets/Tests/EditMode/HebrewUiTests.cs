@@ -239,6 +239,52 @@ public class HebrewUiTests
         Assert.IsEmpty(missing, "no Hebrew string for:\n" + string.Join("\n", missing));
     }
 
+    // #3020 (#2964 Q4, owner, 8 November 2026: "With the UI PR (Recommended)"; #2986): each of the nine refusals only a
+    // Historical ledger game gives maps to its own key. Their constants stay internal; PopulationLedger.Refusals names each
+    // (the sim's PopulationLedgerTests.RefusalsHoldsEveryLedgerRefusalConstantByName proves it holds every LedgerRefused*
+    // constant and only them). Each format is filled with distinct values as the sim fills it: the English is the sim's own
+    // text, the Hebrew is its line with the Hebrew town in its slot, its placeholders in the English's order, and no Latin
+    // letter left.
+    [Test]
+    public void EveryLedgerRefusalHasItsOwnKeyInBothLanguages()
+    {
+        var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+        var namesHe = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.NameHe);
+        var place = c.SettlementNames.Single(x => x.Value == "Rishon LeZion");
+        object townSlot = new object();
+        var filled = new Dictionary<string, (string key, object[] values)>
+        {
+            ["Training.LedgerRefusedCraftsman"] = ("unit.reinforce_refused.ledger_craftsman", new object[0]),
+            ["Training.LedgerRefusedCampFull"] = ("unit.reinforce_refused.ledger_camp_full", new object[] { townSlot, 7, 50 }),
+            ["Training.LedgerRefusedStrength"] = ("unit.reinforce_refused.ledger_strength", new object[] { 41, 3, 5 }),
+            ["Training.LedgerRefusedCarried"] = ("unit.reinforce_refused.ledger_carried", new object[] { townSlot }),
+            ["Training.LedgerRefusedHalutzTrade"] = ("unit.reinforce_refused.ledger_halutz_trade", new object[] { townSlot }),
+            ["Workshops.LedgerRefusedFree"] = ("workshop.refused_ledger_free", new object[] { townSlot, 6 }),
+            ["Workshops.LedgerRefusedBuilders"] = ("workshop.refused_ledger_builders", new object[] { townSlot }),
+            ["Qualification.LedgerRefusedCraftsmen"] = ("city.qualification_refused.ledger_craftsmen", new object[0]),
+            ["Qualification.LedgerRefusedFreePioneers"] = ("city.qualification_refused.ledger_free_pioneers", new object[] { townSlot, 6 }),
+        };
+        CollectionAssert.AreEquivalent(filled.Keys, Statecraft.Sim.PopulationLedger.Refusals.Keys, "every ledger refusal is filled here");
+        object English(object v) => v == townSlot ? place.Value : v;
+        object Hebrew(object v) => v == townSlot ? namesHe[place.Key] : v;
+        string Slots(string line) => string.Join(",", Regex.Matches(line, @"\{\d+\}").Cast<Match>().Select(m => m.Value));
+        Assert.AreEqual(filled.Count, filled.Values.Select(v => v.key).Distinct().Count(), "each refusal has its own key");
+        foreach (var entry in filled)
+        {
+            var (key, values) = entry.Value;
+            var format = Statecraft.Sim.PopulationLedger.Refusals[entry.Key];
+            Assert.AreEqual(Regex.Matches(format, @"\{\d+\}").Count, values.Length, entry.Key + ": one value a slot");
+            var reason = string.Format(System.Globalization.CultureInfo.InvariantCulture, format, values.Select(English).ToArray());
+            Assert.IsTrue(string.Equals(reason, SimBridge.ReasonText(En, reason, c, namesHe), StringComparison.Ordinal), "the English string is the sim's own: " + reason);
+            var he = SimBridge.ReasonText(He, reason, c, namesHe);
+            Assert.IsTrue(Regex.IsMatch(he, "[\u05D0-\u05EA]"), "no Hebrew string for: " + reason);
+            Assert.IsFalse(Regex.IsMatch(he, "[A-Za-z]"), "Latin letters in the Hebrew for " + reason + ": " + he);
+            Assert.AreEqual(Slots(En[key]), Slots(He[key]), key + ": the Hebrew line takes its values in the English's order");
+            var expected = values.Length == 0 ? He[key] : He.Format(key, values.Select(Hebrew).ToArray());
+            Assert.IsTrue(string.Equals(expected, he, StringComparison.Ordinal), key + ": expected '" + expected + "', got '" + he + "'");
+        }
+    }
+
     // #2707 batch 3, the owner's option (b): a capture or end-of-occupation answer the end of turn refuses reuses the capture
     // dialog's reviewed capture.refusal.* line in both languages (settlement-control-strings-review.yaml gains nothing), with
     // the place's Hebrew name in its slot. The answers with no reviewed line that fits stay the sim's English.

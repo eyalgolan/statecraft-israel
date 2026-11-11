@@ -66,6 +66,7 @@ Revision 21 October 2026, localisation follow-up: the Cabinet reads government a
 | terrain | use-with-caution | terrain | open | Native reviewer |
 | front-line-and-control | preferred | the labels the strings use: 'Held by Israel', 'Held by Arab forces', 'Contested', "No-man's land", 'Israeli side of the armistice line', 'Arab side of the armistice line', 'Demilitarized zone' | open | Eyal; historian review for new labels |
 | city | pending-gdd | city | open | Eyal |
+| population-ledger | preferred | population ledger | מרשם האוכלוסין | Eyal |
 
 ## Conventions
 
@@ -1615,3 +1616,31 @@ Category: gdd-term. Scope: ui, docs.
 **Decision owner.** Eyal.
 
 **Pending GDD.** Further city design and terminology proposals remain owner-gated; the twelve-city content and city panel already exist.
+
+### population-ledger (preferred)
+
+Category: system. Scope: ui.
+
+**Definition.** The gdd-0.3 record of every person in a Historical game (#1689), which refusals name when an order needs people the ledger does not track yet.
+
+**English.** Preferred: population ledger.
+
+| In use | Where |
+|---|---|
+| who are not on the population ledger yet | strings.en.yaml workshop.refused_ledger_builders |
+| Craftsmen are not on the population ledger yet (#2476) | strings.en.yaml city.qualification_refused.ledger_craftsmen |
+| Craft training does not run on the population ledger yet (#2476) | strings.en.yaml unit.reinforce_refused.ledger_craftsman |
+
+**Hebrew.** Preferred: מרשם האוכלוסין.
+
+| In use | Where |
+|---|---|
+| אינם במרשם האוכלוסין | strings.he.yaml workshop.refused_ledger_builders, city.qualification_refused.ledger_craftsmen |
+| אינה פועלת במרשם האוכלוסין | strings.he.yaml unit.reinforce_refused.ledger_craftsman |
+
+**Recommendation (see status).**
+- English: Use 'population ledger' in player text; 'ledger' alone stays in code and comments.
+- Hebrew: Decided (owner, 10 November 2026, "Approve the term (Recommended)", relayed by the coordinator, #3020): מרשם האוכלוסין. The surrounding strings still go to the native reviewer (#564).
+- Reasons: (1) The term is new in the UI with #3020; no other string names the ledger.
+
+**Decision owner.** Eyal.

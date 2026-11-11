@@ -1088,6 +1088,10 @@ workshop.refused_built: "{0}: סדנאות נשק בנויות: {1}"
 # issuecomment-6610635087).
 workshop.refused_people: "{0}: אין די אזרחים ובעלי מלאכה (יש\u00A0{1})"
 workshop.refused_people_no_job: "{0}: אין די אזרחים ובעלי מלאכה ללא משרה (יש\u00A0{1})"
+# #3020: a staffing order's refusals only a Historical ledger game gives, as in strings.en.yaml. "מרשם האוכלוסין" is the
+# population ledger. For the native reviewer (#564): agent-drafted, #3020.
+workshop.refused_ledger_free: "{0}: אין די אזרחים פנויים ללא שיבוץ (יש\u00A0{1})"
+workshop.refused_ledger_builders: "{0}: יש בונים במיזמים עירוניים, והם עדיין אינם במרשם האוכלוסין"
 # R-CITY-011 (#1700, #2477), gdd-0.3 only: a city project being built and its city's builder stepper, as in
 # strings.en.yaml. Counts as "Label: N" (HE-04), as city.workshops_*. Agent-drafted Hebrew, for the native reviewer (#564).
 city.project_builder: "המיזם הזה: יש בונה"
@@ -1451,6 +1455,9 @@ city.assign_refused.negative: "מספר העובדים לא יכול להיות 
 city.qualification_refused.return_count: "יש להחזיר לפחות קבוצה אחת"
 city.qualification_refused.reassign_count: "יש לשבץ מחדש לפחות קבוצה אחת"
 city.qualification_refused.no_qualification: "אין הכשרה כזאת"
+# #3020, as in strings.en.yaml; the English's issue number is left out. For the native reviewer (#564): agent-drafted, #3020.
+city.qualification_refused.ledger_craftsmen: "בעלי מלאכה עדיין אינם במרשם האוכלוסין"
+city.qualification_refused.ledger_free_pioneers: "{0}: אין די חלוצים פנויים ללא עבודה (יש\u00A0{1})"
 unit.order_refused.not_pioneer: "הפקודה הזאת מתאימה רק ליחידת חלוצים"
 unit.order_refused.pioneer_busy: "היחידה עסוקה בעבודה; יש לעצור את העבודה קודם"
 training.cancel_refused.no_group: "אין קבוצת אימון כזאת"
@@ -1491,6 +1498,13 @@ unit.reinforce_refused.no_industry: "{0}: אין מיזם תעשייה שהוש�
 unit.reinforce_refused.no_hakhshara: "{0}: אין מחנה הכשרה"
 unit.reinforce_refused.idle: "{0}: אין די אזרחים ללא עבודה (יש {1})"
 unit.reinforce_refused.arms: "{0}: אין די כלי נשק ל{1} (נדרשים {2}, יש {3})"
+# #3020: Train's and Reinforce's refusals only a Historical ledger game gives, as in strings.en.yaml; the English's issue
+# number is left out. Counts as "Label: N" (HE-04). For the native reviewer (#564): agent-drafted, #3020.
+unit.reinforce_refused.ledger_craftsman: "הכשרת בעלי מלאכה עדיין אינה פועלת במרשם האוכלוסין"
+unit.reinforce_refused.ledger_camp_full: "{0}: אין די מקום במחנה הצבאי (מקומות פנויים: {1}, קיבולת: {2})"
+unit.reinforce_refused.ledger_strength: "יחידה {0}: חיילים רשומים: {1}, אך הכוח: {2}"
+unit.reinforce_refused.ledger_carried: "{0}: אזרח ללא עבודה כבר מחזיק בפריט צבאי"
+unit.reinforce_refused.ledger_halutz_trade: "{0}: חקלאי או בעל מלאכה אינו יכול לעבור הכשרת חלוצים"
 
 # #1682 remaining Cause producers. Agent-drafted Hebrew: native-review-pending (#564). why.cause.wages_paid:
 # native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they are").
@@ -1544,6 +1558,8 @@ why.cause.training_started: "{0}: תחילת {2}{3}, קבוצות: {1}, עלות
 why.cause.training_arms: "{0}: {1}, נשק שנצרך: {2}"
 why.cause.training_cancelled: "{0}: הפסקת {2}, קבוצות: {1}; הכסף שהוצא לא יוחזר"
 why.cause.training_arms_returned: "{0}: {1}, נשק שהוחזר: {2}"
+# #3020, as in strings.en.yaml and as why.cause.training_arms_returned. For the native reviewer (#564): agent-drafted, #3020.
+why.cause.sent_home_arms_returned: "{0}: יחידה {1}, נשק שהוחזר: {2}"
 why.cause.replacements_stopped: "{0}: יחידה {1} כבר אינה ב{0}, ולכן הופסק אימון התגבורת שלה"
 why.cause.replacements_joined: "{0}: סיום {2} והצטרפות ליחידה {3}, קבוצות: {1}"
 why.cause.military_trained: "{0}: סיום {2}, קבוצות: {1}, הכשרה: {3}"
