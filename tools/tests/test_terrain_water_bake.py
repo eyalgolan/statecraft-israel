@@ -102,7 +102,7 @@ def fingerprint(parts: list[str]) -> str:
 
 # The fingerprint of the water mesh's C# code (code_fingerprint). Re-pin only after re-baking (TerrainWaterBake.Bake) and
 # checking that test_the_bake_is_the_water_mesh_of_the_shipped_heightmap still passes (update the port if the rule changed).
-PINNED_CODE = "fdad272ee743459a6ad34457d01c2c4cb2df1aba635fba0f409346b82434d4e4"
+PINNED_CODE = "8ecec6866c3d6b9f6590ee288ee6c5b8db97f9e46acd93d74bcb668ab20bd53c"
 
 
 def code_fingerprint() -> str:
@@ -126,10 +126,10 @@ def test_the_water_mesh_code_is_the_one_the_bake_was_made_with():
         "in tools/tests/test_terrain_water_bake.py if the rule changed, then re-pin PINNED_CODE there")
 
 
-def wet_and_drawn() -> tuple[np.ndarray, np.ndarray, np.ndarray, int, int]:
+def wet_and_drawn() -> tuple[np.ndarray, np.ndarray, np.ndarray, int, int, np.float32]:
     """WaterMeshGrid's inputs in numpy: Unity's heights [y, x], its wet samples (Wet), the cells it draws [cy, cx] (a wet
-    sample within WaterMeshReach of a corner: every such cell is in the mesh, as a cell or inside a fan), WaterMeshBlock
-    and WaterMeshReach."""
+    sample within WaterMeshReach of a corner: every such cell is in the mesh, as a cell or inside a fan), WaterMeshBlock,
+    WaterMeshReach and the Dead Sea's 1948 level in 0..1 heights (WaterMesh draws every sample below it at it)."""
     meta = json.loads((MAP / "heightmap.json").read_text())
     h = unity_heights()
     res = h.shape[1]
@@ -156,15 +156,16 @@ def wet_and_drawn() -> tuple[np.ndarray, np.ndarray, np.ndarray, int, int]:
     w = np.pad(wet, R)                                                 # near: a wet sample within R (out of the map: dry)
     near = np.logical_or.reduce([w[j:j + res, i:i + res] for j in range(2 * R + 1) for i in range(2 * R + 1)])
     drawn = near[:-1, :-1] | near[:-1, 1:] | near[1:, :-1] | near[1:, 1:]          # [cy, cx]
-    return h, wet, drawn, B, R
+    return h, wet, drawn, B, R, dead_sea
 
 
 def water_mesh() -> tuple[np.ndarray, np.ndarray]:
     """MapBuilder.WaterMeshGrid in numpy: the vertices' samples (x | y << 16) and the triangles as samples (n, 3), in the
     C#'s winding. The quadtree is walked a level at a time over the whole map instead of block by block: a block of s
-    cells is flat (one fan) when every one of its cells has four wet corners of one height, and it is looked at when its
-    parent was looked at, was not flat and has a drawn cell."""
-    h, wet, drawn, B, R = wet_and_drawn()
+    cells is flat (one fan) when every one of its cells has four wet corners of one drawn height (the Dead Sea's
+    1948 level for a sample below it), and it is looked at when its parent was looked at, was not flat and has a drawn
+    cell."""
+    h, wet, drawn, B, R, dead_sea = wet_and_drawn()
     res = h.shape[1]
     cells = res - 1
 
@@ -174,7 +175,8 @@ def water_mesh() -> tuple[np.ndarray, np.ndarray]:
     bw = np.pad(block_wet, 1)
     relevant = np.logical_or.reduce([bw[1 + j:1 + j + blocks, 1 + i:1 + i + blocks] for j in (-1, 0, 1) for i in (-1, 0, 1)])
 
-    c00, c10, c01, c11 = h[:-1, :-1], h[:-1, 1:], h[1:, :-1], h[1:, 1:]
+    drawn_h = np.maximum(h, dead_sea)                                  # Flat compares the heights WaterMesh draws
+    c00, c10, c01, c11 = drawn_h[:-1, :-1], drawn_h[:-1, 1:], drawn_h[1:, :-1], drawn_h[1:, 1:]
     flat_cell = (wet[:-1, :-1] & wet[:-1, 1:] & wet[1:, :-1] & wet[1:, 1:]) & (c00 == c10) & (c00 == c01) & (c00 == c11)
 
     def per_block(a: np.ndarray, s: int, how) -> np.ndarray:
@@ -234,7 +236,7 @@ def test_the_mesh_is_under_every_texel_the_coast_draws_as_water():
     texel below 0.5, the Dead Sea's 1948 water too (#16), lies on a drawn cell. Texel (j, i), row 0 north, is the mean of
     samples j..j+1, i..i+1 (tools/terrain_bake.py to_texels): Unity's cell (cx = i, cy = cells - 1 - j)."""
     from PIL import Image
-    _, _, drawn, _, _ = wet_and_drawn()
+    _, _, drawn, _, _, _ = wet_and_drawn()
     with Image.open(UNITY / "Textures/Map/coast.png") as im:
         coast = np.asarray(im)
     wet_cells = (coast < 128)[::-1]                                    # [cy, cx]

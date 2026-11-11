@@ -909,7 +909,7 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>The water inside the map (issue #195): MapBuilder.BuildWaterMesh's copy of the terrain's surface over the
-        /// water and its shore, drawn with a copy of Sea.mat in its terrain-water mode (Sea.shader _ScTerrainWater), which
+        /// water and its shore (flat at the Dead Sea's 1948 level over the basin below it, #16), drawn with a copy of Sea.mat in its terrain-water mode (Sea.shader _ScTerrainWater), which
         /// adds the water's colour times its coverage on top of the terrain graph (black there); the land adds 0 (no discard: whole quads, #306). Drawn
         /// right after the terrain, before the other opaques (TerrainWaterQueue); no depth write, no shadow, no collider
         /// (clicks still pick only the terrain). The water's shading thus stays out of the terrain's fragment shader, whose
@@ -941,7 +941,7 @@ namespace Statecraft.Game.Map
             if (terrainWaterMesh != null)
             {
                 if (MapBuilder.TryReadWaterMesh(terrainWaterMesh.bytes, data.heightmapResolution, heights, out var grid, out var indices, out var why))
-                    return assets.Own(MapBuilder.WaterMesh(data.heightmapResolution, data.size, heights, grid, indices));
+                    return assets.Own(MapBuilder.WaterMesh(data.heightmapResolution, data.size, heights, elevMinM, grid, indices));
                 Debug.LogWarning($"MAP {MapTexturePaths.WaterMesh}: {why}; deriving the water mesh at load");
             }
             return MapBuilder.BuildWaterMesh(data, heights, elevMinM, assets);
