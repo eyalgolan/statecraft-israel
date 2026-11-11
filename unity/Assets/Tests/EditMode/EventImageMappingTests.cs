@@ -20,8 +20,8 @@ public class EventImageMappingTests
     static IReadOnlyList<EventImageMapping.Row> Rows => EventImageMapping.Parse(File.ReadAllText(EventImageMapping.Path));
 
     /// <summary>Cards without a wired photograph (docs/event-images.md). The railway card and #939's alternate follow-ups
-    /// are not wired yet; the seven other fallbacks had no suitable photograph found. No photograph was searched for
-    /// jordan_nonaggression_talks (#807, a draft card), so it shows the Prime Minister's portrait plate.
+    /// are not wired yet; the seven other fallbacks had no suitable photograph found.
+    /// No photograph was searched for jordan_nonaggression_talks (#807, a draft card), so it shows the Prime Minister's portrait plate.
     /// Cards without an office have no portrait plate either. Deport's two cards (#801) never carry a picture (Q-CARD-3 (a))
     /// and have no office, so they show no image at all.</summary>
     static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks", "railway_complete",

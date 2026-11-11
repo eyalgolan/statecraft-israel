@@ -21,12 +21,12 @@ a different choice under its own name (see `TRADEMARK.md`).
 These rules protect the game and the people in it. They are not a viewpoint:
 
 1. **Every fact is sourced.** Every date, number, name and office in `content/` carries `sources:` (a citation or a
-   URL, plus the date it was checked) and a review `status`. As of M3 every fact is at least `fact-checked`, except records that stay `draft`, among them four
-   events (`first_new_yishuv`, `jerusalem_demilitarisation_guard`, `jordan_nonaggression_talks` and `rafah_force_pressure`;
-   `RealContentTests` pins the list). Events
+   URL, plus the date it was checked) and a review `status`. As of M3 every fact is at least `fact-checked`, except records that stay `draft`, among them three
+   events (`first_new_yishuv`, `jerusalem_demilitarisation_guard` and `rafah_force_pressure`; `RealContentTests` pins the list). Events
    with a sensitive tag must also be `sensitivity-reviewed` before any build leaves the maintainer's machine; the
    simulation enforces that (`Statecraft.Cli --release-gate`, the `-shareable` build flag and
    `tools/package_release.py` all refuse otherwise). Historian review is planned for M4 and is not yet a gate.
+   (11 Nov 2026) A fourth draft event, `jordan_nonaggression_talks` (#807), joined that list; `RealContentTests` pins it too.
 2. **No invented quotes.** No words are attributed to a real person unless they are sourced verbatim. Event text
    describes; it does not put speech in anyone's mouth. The one exception is the advisors (David Ben-Gurion, Golda
    Meyerson (later Meir) and Moshe Dayan), by owner ruling, 23 October 2026: "Labelled game dialogue". Their lines are

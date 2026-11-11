@@ -12,8 +12,8 @@ the card's own event was found (Q-ABS-3, #1039). The GDD objective card `first_n
 
 The `railway_complete` card and #939's alternate follow-up cards, `jerusalem_demilitarisation_guard` and
 `rafah_force_pressure`, have no photograph wired yet. The two Deport follow-up cards, `deport_acre` and
-`deport_nazareth`, have none by design (Q-CARD-3 (a), "no image", in each card's header comment). The draft card
-`jordan_nonaggression_talks` (#807) shows the Prime Minister's portrait: no photograph of the 1950 talks has been
+`deport_nazareth`, have none by design (Q-CARD-3 (a), "no image", in each card's header comment).
+The draft card `jordan_nonaggression_talks` (#807) shows the Prime Minister's portrait: no photograph of the 1950 talks has been
 searched for yet.
 
 Owner ruling 2026-10-11 (summarised; recorded in `docs/CONTENT_POLICY.md` section 4):
