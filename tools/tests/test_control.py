@@ -472,7 +472,13 @@ def test_grey_in_the_opening_period_is_only_where_a_source_puts_it():
     # #1183 (4.4 km): Afula's hex takes the Nazareth sub-district by borders_bake rule 5, but its centre is in the
     # Lajjun-Zir'in overlay (Jenin), so the hex is grey in a sub-district the list does not name.
     rule5 = {(7, 13): "jenin"}
+    # Rule 8's grey is derived (a hex holding both communities, no mapped settlement: #1659), not dated by a source: it is
+    # admitted only on its own marker set, and only over a 9 July Israeli hex. Unmarked grey stays forbidden outside the list.
+    mixed = getattr(cb, "mixed_contested_hexes", lambda _h: set())(HEXES)
     for qr, c in CODES.items():
+        if c[OPEN] == "c" and qr in mixed:
+            assert c[T1] == "I", ("rule 8 greys only over Israel", qr, c[T1])
+            continue
         if c[OPEN] == "c":
             assert rule5.get(qr, SUB_KEY[SUBS[qr]]) in allowed, (qr, SUB_KEY[SUBS[qr]])
             if qr in SHARED_CONTESTED:   # grey by the shared-hex rule (Ramla's point), in the Ramle sub-district
@@ -755,3 +761,64 @@ def test_the_bake_runs_the_exemption_check_first(monkeypatch):
     monkeypatch.setattr(cb, "OVERLAY_EXEMPT", {"no_such_settlement": next(iter(cb.OVERLAY_EXEMPT.values()))})
     with pytest.raises(SystemExit, match="no_such_settlement from contested_opening_hula: no such settlement"):
         cb.build()
+
+
+# --- #1659 rule 8: a hex holding both an Arab and a Jewish place (localities_1948 `kind`) and no mapped settlement is
+# contested in the opening period (owner, 27 October 2026, "Contested where no settlement"; "No, #686 wins"; 10 November
+# 2026, "Leave it Arab-held (Recommended)", "Opening period only (Recommended)" and "Skip field hexes (Recommended)").
+# Re-derived on the 4.4 km grid.
+LOCALITIES = {p["id"]: p for p in yaml12.load((MAP / "localities_1948.yaml").read_text(encoding="utf-8"))["places"]}
+RULE8 = {(-2, 20): ("herzliya", "abu_kishk")}
+# Mixed hexes with no settlement that are #1691 Q4 opening field hexes (content/regions.yaml field_hexes, Israeli-held on
+# 15 May by that ruling): F10 and F16 stay Israeli (owner, 10 November 2026, "Skip field hexes (Recommended)").
+RULE8_FIELD = {(2, 14): ("binyamina", "caesarea"), (-1, 20): ("kfar_saba", "kfar_saba_2")}
+REGION_FIELDS = {(h["q"], h["r"]) for r in yaml12.load((ROOT / "content" / "regions.yaml").read_text(encoding="utf-8"))["player_regions"]
+                 for h in r.get("field_hexes", [])}
+
+
+def loc_hex(pid: str) -> tuple:
+    p = LOCALITIES[pid]
+    return hg.settlement_hex(p["lon"], p["lat"], HEXES)
+
+
+@pytest.mark.parametrize("qr", sorted(RULE8))
+def test_a_mixed_hex_with_no_settlement_is_contested_in_the_opening_period_only(qr):
+    for pid in RULE8[qr]:
+        assert loc_hex(pid) == qr, (pid, "the place the hex is named by has moved: re-derive")
+    assert CODES[qr] == "c" + "I" * (len(PERIODS) - 1), (qr, CODES[qr])
+
+
+def test_rule_8s_marker_set_is_exactly_its_one_hex():
+    assert hasattr(cb, "mixed_contested_hexes"), "rule 8's grey needs its own marker set"
+    assert cb.mixed_contested_hexes(HEXES) == set(RULE8)
+
+
+@pytest.mark.parametrize("qr", sorted(RULE8_FIELD))
+def test_a_mixed_hex_that_is_an_opening_field_hex_stays_israeli(qr):
+    for pid in RULE8_FIELD[qr]:
+        assert loc_hex(pid) == qr, (pid, "the place the hex is named by has moved: re-derive")
+    assert qr in REGION_FIELDS, (qr, "no longer a field hex in content/regions.yaml")
+    assert hasattr(cb, "mixed_contested_hexes"), "rule 8's grey needs its own marker set"
+    assert qr not in cb.mixed_contested_hexes(HEXES)
+    assert CODES[qr] == "I" * len(PERIODS), (qr, CODES[qr])
+
+
+def test_rule_8_counts_nesher_as_neither_side_and_greys_only_over_israel():
+    """(5, 10): Nesher (mixed_locality), Balad al-Sheikh and al-Tira; Arab-held at the opening on the 9 July line
+    (owner, 10 November 2026: "Leave it Arab-held (Recommended)"; the line itself is #1804's)."""
+    assert loc_hex("nesher") == loc_hex("balad_al_sheikh") == loc_hex("al_tira_haifa") == (5, 10)
+    assert LOCALITIES["nesher"]["kind"] == "mixed_locality"
+    assert CODES[(5, 10)] == "AAcIIIIIIIIIIIII"
+    assert "mixed_locality" not in cb.MIXED_ARAB | cb.MIXED_JEWISH
+
+
+@pytest.mark.parametrize("pids", [("nahariya", "al_bassa", "az_zeeb"), ("ness_ziona", "al_qubayba_ramla"),
+                                  ("givat_brenner", "aqir")])
+def test_the_mixed_hexes_686_settled_stay_israeli(pids):
+    """Owner, 27 October 2026, "No, #686 wins": #686's ruling 2 of 16 October keeps every hex of the Acre and Ramle
+    sub-districts but Acre's and Yibna's on its 9 July side (Nahariya, al-Bassa and al-Zib named), at (9, 5), (-5, 24) and
+    (-5, 25) on the 4.4 km grid."""
+    qr = loc_hex(pids[0])
+    assert all(loc_hex(p) == qr for p in pids), pids
+    assert CODES[qr] == "I" * len(PERIODS), (qr, CODES[qr])
+    assert qr not in getattr(cb, "mixed_contested_hexes", lambda _h: set())(HEXES)
