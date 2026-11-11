@@ -517,4 +517,41 @@ public class CityBuildersTests
         Assert.Equal(jobFirst.State.Hash(), startFirst.State.Hash());
         Assert.Equal(Step(c, jobFirst.State).State.Hash(), Step(c, startFirst.State).State.Hash());
     }
+
+    // R-PROJ-003 at step 5, R-CITY-002 at step 6 (D-A6), with docs/gdd/loop-switch.md "Turn boundaries and resolution":
+    // "Snapshot retained courses and projects so completion cannot produce a second turn's output" and step 5's "new
+    // capacity is usable next planning phase". An industry project built on a turn adds its job slots at step 5, but step 6
+    // still pays only the jobs the turn began with: nobody works the new slots that turn. The job default (R-CITY-009) fills
+    // them on the housing step, after production; a manual city can order them at the next planning. Either way the new
+    // jobs are first paid the turn after. Wages are compared with a city of the same size and no project, turn by turn, so
+    // the month lengths cancel.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Gdd03NewJobSlotsArePaidFromTheTurnAfterCompletion(bool jobsDefault)
+    {
+        double Wages(StepResult r) => r.Why.Single(w => w.Key == CauseKeys.WagesPaid && w.Target == "town_a").Delta;
+        var (c, s) = Game(civilians: 12, employed: 8, jobs: 8, jobsDefault: jobsDefault);
+        var id = Add(s, "industry", 2, 0, 1, true);   // one turn to go, with its builder: built this turn
+        var (rc, rs) = Game(civilians: 12, employed: 8, jobs: 11, jobsDefault: false);   // the reference: 8 in work, then 11
+        Assert.Equal("Town A has 8 jobs", Assert.Single(Step(c, s, new AssignWorkers("town_a", "job", 11)).Rejected).Reason);
+
+        var built = Step(c, s);
+        Assert.Empty(built.Rejected);
+        Assert.NotNull(built.State.CityProjects[id].BuiltOn);
+        Assert.Equal(11, built.State.Cities["town_a"].JobSlots);   // the slots are added on the completion turn, at step 5
+        var completed = built.Why.ToList().FindIndex(w => w.Key == CauseKeys.ProjectCompleted);
+        var paid = built.Why.ToList().FindIndex(w => w.Key == CauseKeys.WagesPaid && w.Target == "town_a");
+        Assert.InRange(completed, 0, paid - 1);   // completion resolves before production
+        var refTurn1 = Step(rc, rs);
+        Assert.Equal(Wages(refTurn1), Wages(built), 12);   // but production pays the turn's 8 jobs, not 11
+        Assert.Equal(jobsDefault ? 11 : 8, built.State.Cities["town_a"].Employed);   // the default fills them after production
+
+        var next = Step(c, built.State, jobsDefault ? Array.Empty<Command>() : new Command[] { new AssignWorkers("town_a", "job", 11) });
+        Assert.Empty(next.Rejected);
+        var refTurn2 = Step(rc, refTurn1.State, new AssignWorkers("town_a", "job", 11));
+        Assert.Empty(refTurn2.Rejected);
+        Assert.Equal(11, next.State.Cities["town_a"].Employed);
+        Assert.Equal(Wages(refTurn2), Wages(next), 12);   // the 11 jobs are paid from the turn after completion
+    }
 }

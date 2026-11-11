@@ -330,7 +330,8 @@ public class LedgerHalutzLinkTests
         var ledger = s.PopulationLedger;
         var teacher = ledger.Get(Teacher(s));
         var region = Region(c, TelAviv);
-        var field = ledger.Units.First(p => p.Assignment.Kind == PopulationAssignmentKind.Work && p.Location?.Region == region);
+        var field = ledger.Units.First(p => p.Assignment.Kind == PopulationAssignmentKind.Work && p.Location?.Region == region
+            && p.Assignment.Target!.StartsWith(HistoricalPopulation.FarmerPrefix, StringComparison.Ordinal));
         ledger.Replace(teacher.WithPlacement(teacher.Status, new PopulationLocation(region, city: TelAviv), field.Assignment, teacher.Captor, teacher.Home));
         var why = new List<Cause>();
         var returned = ledger.NextPopulationId;
