@@ -116,6 +116,16 @@ namespace Statecraft.HexTiles
 
         public float Range(float min, float max) => min + (float)Rng.NextDouble() * (max - min);
 
+        /// <summary>Whether <paramref name="model"/> draws as a model here rather than as its stand-in, decided as the board's
+        /// renderer decides it (HexBoardRenderer.Emit): a streamed id (a hex prop while playing, a Collection alias) draws its
+        /// prefab once the stream answers; any other id draws if HexModels finds its prefab (the AssetDatabase in the editor,
+        /// else Resources). For a prototype whose stand-in is placed differently from its model (DesertEdge's tents).</summary>
+        public bool DrawsModel(string model, Vector3 at)
+        {
+            var id = HexModels.Resolve(model, at);
+            return HexCollectionFigures.Streams(id) || HexModels.Prefab(id) != null;
+        }
+
         /// <summary>A model sized by its largest footprint side, <paramref name="widthM"/> (buildings, rocks).</summary>
         public bool PlaceByWidth(string model, Vector3 at, float yawDeg, float widthM, StandIn standIn, Color? tint = null, float maxSlopeDeg = 30f) =>
             PlaceByWidthExact(model, at, yawDeg, widthM * HexScale.PieceScale, standIn, tint, maxSlopeDeg);
