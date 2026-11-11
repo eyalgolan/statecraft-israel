@@ -798,7 +798,7 @@ namespace Statecraft.Game.Map
             var unitHexes = Hexes.hexes.Select(h => new Statecraft.Sim.MapHex { Q = h.q, R = h.r, Lon = h.lon, Lat = h.lat, ElevM = h.elev_m, Land = h.land, Biome = h.biome }).ToList();
             UnitHexes = unitHexes;
             var unitGround = new Units.UnitGround(SettlementFootprints, RouteCorridors, unitHexes,
-                (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, hexSizeM);
+                (lon, lat) => { var w = Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); }, hexSizeM, Units.UnitLayer.Water(this));
             var clearings = new List<(Vector2 centre, float radius)>();
             var unitRings = new List<(Vector2 centre, float radius)>();
             var datedRings = new List<(Vector2 centre, float radius, DateTime until)>();

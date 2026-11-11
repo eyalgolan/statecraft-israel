@@ -10,6 +10,10 @@ namespace Statecraft.Sim
         readonly decimal conditionMax, moneyThreshold, moneySlope, cohesionThreshold;
         readonly decimal maxCohesionLoss, overflowPp, repairPp;
         internal string OverflowBasis { get; }
+        /// <summary>The condition below which the surcharge is charged and below which cohesion is lost (R-HOUSE-005), for
+        /// <see cref="Cities.HousingOutlook"/>'s readout.</summary>
+        internal double MoneyThreshold => (double)moneyThreshold;
+        internal double CohesionThreshold => (double)cohesionThreshold;
 
         Gdd03HousingFormula(Gdd03BalanceCatalogue c)
         {

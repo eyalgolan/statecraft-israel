@@ -1283,6 +1283,29 @@ public class GameSceneTests
         Assert.IsNull(units.Selected);
     }
 
+    /// <summary>#803 Task 5: GameRoot keeps the map's settlement tags in step with bridge.State on every Changed, without a
+    /// new name label: a record shows its tag, and removing it hides the tag.</summary>
+    [Test]
+    public void TheMapTagsFollowTheBridgeWithoutANewNameLabel()
+    {
+        var root = Boot(language: UiLanguage.English);
+        var b = root.Bridge!; var labels = root.Labels!;
+        var name = labels.Labels.Single(l => l.name == "label-nazareth");
+        var tag = labels.Slots.Single(x => x.name == "slot-nazareth").Q<Label>(className: MapLabelsPresenter.ControlBadgeClass);
+        Assert.IsNotNull(tag, "Nazareth has a tag");
+        Assert.IsFalse(b.State.Settlements.ContainsKey("nazareth"), "precondition: no record at the start");
+        Assert.AreEqual(DisplayStyle.None, tag.style.display.value, "no record, no tag");
+        b.State.Settlements["nazareth"] = new SettlementControl("israel", SettlementControl.Occupied, turns: 4);
+        b.Replace(b.Session);   // Changed, as after a turn
+        Assert.AreEqual(Text["map.control.occupied"], tag.text);
+        Assert.AreEqual(DisplayStyle.Flex, tag.style.display.value, "the record shows its tag");
+        Assert.AreSame(name, labels.Labels.Single(l => l.name == "label-nazareth"), "the same name label");
+        Assert.AreEqual(name.text, labels.Slots.Single(x => x.name == "slot-nazareth").Q<Label>("label-nazareth").text, "the name stays");
+        b.State.Settlements.Remove("nazareth");
+        b.Replace(b.Session);
+        Assert.AreEqual(DisplayStyle.None, tag.style.display.value, "the record is gone: the tag hides");
+        Assert.AreSame(name, labels.Labels.Single(l => l.name == "label-nazareth"));
+    }
 }
 
 /// <summary>#2340 L2 (#2521): with the start screen closed, Escape withdraws a New Game request armed from the top bar, and

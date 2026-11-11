@@ -888,9 +888,13 @@ namespace Statecraft.Game.UI
                 var slot = old == null ? -1 : queue.IndexOf(old);
                 if (slot >= 0) queue[slot] = press; else queue.Add(press);
                 var preview = Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(queue).ToList());
-                var rejected = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press));
-                if (rejected == null) reinforce = press;
-                else if (SimBridge.ReasonText(text, rejected.Reason, c, townNamesHe) is var said && !refusals.Contains(said)) refusals.Add(said);
+                var refusal = preview.Rejected.FirstOrDefault(x => ReferenceEquals(x.Command, press))?.Reason;
+                // #2978 (owner, 9 November 2026: "Enabled + toast (Recommended)"): an Attention shortfall keeps the button and the bridge
+                // refuses the press with order.no_attention, so only the sim's Reinforce rule is asked, on the state the queue leaves.
+                if (refusal != null && s.GameOver == null && !bridge.CanPay(press))
+                    refusal = Training.Reinforce(c, Simulation.Preview(c, bridge.TurnStart, bridge.Session.Committed.Concat(bridge.Queued).ToList()).State, ru, home.Id, n, new List<Cause>());
+                if (refusal == null) reinforce = press;
+                else if (SimBridge.ReasonText(text, refusal, c, townNamesHe) is var said && !refusals.Contains(said)) refusals.Add(said);
             }
             reinforceButton.style.display = reinforce != null ? DisplayStyle.Flex : DisplayStyle.None;
             if (reinforce is Reinforce offer) reinforceButton.text = text.Format("unit.order.reinforce", offer.Count);

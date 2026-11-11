@@ -547,8 +547,19 @@ namespace Statecraft.Game.Map.Collection
         void OnDestroy() { residency?.Dispose(); residency = null; }
 
         MapScene? map; DateTime date; bool shown;
-        IReadOnlyList<Want> workshops = Array.Empty<Want>();
-        int ruralVersion;
+        int ruralVersion, tokenEpoch, peopleVersion;
+        float maxPropOffsetShown; bool townEdgeFallbackShown;
+
+        /// <summary>The dated tokens' epoch on <paramref name="date"/> (#3056): how many of the map's dated tokens
+        /// (MapScene.UnitTokens, fixed at the map's build) are still present, until &gt; date. The plan reads the date only through
+        /// KitGround.OnToken, which reaches exactly the set {token : until &gt; date}; those sets are nested (a later date's set is
+        /// inside an earlier one's), so two dates with the same count have the same set, whichever way the date moves.</summary>
+        static int TokenEpoch(MapScene map, DateTime date)
+        {
+            int n = 0;
+            foreach (var t in map.UnitTokens) if (t.until > date) n++;
+            return n;
+        }
 
         internal static bool Same(IReadOnlyList<Want> a, IReadOnlyList<Want> b)
         {
@@ -592,23 +603,42 @@ namespace Statecraft.Game.Map.Collection
                 layer = go.AddComponent<SpecialBuildingModels>(); layer.map = map;
             }
             if (layer.residencyView == null) layer.ConfigureResidency(map.Residency.Special, null);
-            // GameRoot calls this on every refresh. The layer rebuilds on events only, never per frame: the game date changes
-            // (the dated list and the dated tokens' clearance both follow it), the built arms workshops change (one completed, or
-            // one left the state), or, while a wanted row keeps off the farm scenes (KeepsOffFarms: the workshops and Tal's four
-            // props, so every date the well stands), the farm scenes' plan does. Its version (RuralLife.VersionOf) moves only
-            // when RuralLife.Show is given other wants or other ground to keep clear of (the civilians follow the date, the
-            // placements, the settlements and the city projects); HexPropModels rebuilds on it too, so both stand on one plan.
+            // GameRoot calls this on every refresh. The layer re-plans on events only, never per frame, keyed on what the plan
+            // (PlanWithRoutes) reads, not on the raw date (#3056): W the whole wanted list (the dated rows and the built arms
+            // workshops, with each workshop's own built date), T the dated tokens still present (the plan's only other read of
+            // the date), P the civilians' list it keeps clear of (CivilianPeople.WantedVersion; the civilians follow the date,
+            // the placements, the settlements and the city projects), R while a wanted row keeps off the farm scenes
+            // (KeepsOffFarms: the workshops and Tal's four props, so every date the well stands) the farm scenes' plan
+            // (RuralLife.VersionOf, which HexPropModels rebuilds on too, so both stand on one plan), and S the two test seams.
             var next = workshops.Count == 0 ? Placements(date) : Placements(date).Concat(workshops).ToList();
             int rural = next.Any(KeepsOffFarms) ? RuralLife.VersionOf(map) : 0;
-            if (layer.shown && layer.date == date && Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
-            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
+            int tokens = TokenEpoch(map, date);
+            // As the plan finds the civilians (PlanWithRoutes): no layer, no figures, the same as an empty list (version 0).
+            var shownPeople = map.Terrain.transform.Find(CivilianPeople.Name)?.GetComponent<CivilianPeople>();
+            int people = shownPeople != null ? shownPeople.WantedVersion : 0;
+            bool same = layer.shown && Same(layer.wants, next) && layer.tokenEpoch == tokens && layer.peopleVersion == people
+                && layer.ruralVersion == rural && layer.maxPropOffsetShown == MaxPropOffset && layer.townEdgeFallbackShown == TownEdgeFallback;
+            // The plan is the same on either date; the field still follows the game, so a later Rebuild plans on today's date.
+            layer.date = date;
+            if (same) return layer;
+            layer.shown = true; layer.tokenEpoch = tokens; layer.peopleVersion = people; layer.ruralVersion = rural;
+            layer.maxPropOffsetShown = MaxPropOffset; layer.townEdgeFallbackShown = TownEdgeFallback;
             layer.Show(next); return layer;
         }
 
         internal void ShowForTest(IReadOnlyList<Want> wants) => Show(wants);
 
+#if UNITY_EDITOR
+        /// <summary>How many times the layer has re-planned on a Show (ShowAt past its early-out, or ShowForTest): a test aid
+        /// (#3056), not in a player.</summary>
+        internal int Replans { get; private set; }
+#endif
+
         void Show(IReadOnlyList<Want> wants)
         {
+#if UNITY_EDITOR
+            Replans++;
+#endif
             this.wants = wants;
             var probe = Boot.TurnProbe.Start();   // ?turnlog (#2905): the replan and the residency apart
             Replan(log: true);

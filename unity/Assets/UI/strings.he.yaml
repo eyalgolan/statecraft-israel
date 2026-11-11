@@ -1087,6 +1087,19 @@ city.project_builder: "המיזם הזה: יש בונה"
 city.project_no_builder: "המיזם הזה: אין בונה, בהמתנה"
 city.builders: "מיזמים בבנייה עם בונה: {0} מתוך {1}"
 city.builders_ordered: "מיזמים בבנייה עם בונה בסיום התור: {0} מתוך {1}"
+# #1722 (R-HOUSE-005), gdd-0.3 only: the city's housing readout, as in strings.en.yaml. The surcharge's word "היטל דיור"
+# is the owner's choice (2 Nov 2026: "היטל דיור (Recommended)"), as in why.cause.housing_surcharge. Agent-drafted Hebrew, for the native reviewer (#564).
+city.housing_surcharge: "היטל דיור כעת: {0} בכל תור (מצב הדיור מתחת ל־{1})"
+city.housing_no_surcharge: "היטל דיור כעת: אין (מצב הדיור {0} ומעלה)"
+city.housing_falls: "החריגה מהדיור מורידה כעת את מצב הדיור ל־{0}"
+city.housing_cohesion: "לכידות חברתית כעת: {0} בכל תור (מצב הדיור מתחת ל־{1})"
+# #1722 (R-PROJ-001 to R-PROJ-003, R-CITY-011), gdd-0.3 only: the city's own list of its projects, as in strings.en.yaml.
+# Counts as "Label: N" (HE-04). Agent-drafted Hebrew, for the native reviewer (#564).
+city.list_header: "המיזמים של העיר: {0}"
+city.list_building: "{0}: עבודה {1} מתוך {2} · עלות: {3} · {4}"
+city.list_built: "{0}: הבנייה הושלמה ב־{1} · עלות: {2}"
+city.list_builder: "יש בונה"
+city.list_no_builder: "אין בונה, בהמתנה"
 builder.refused_being_built_one: "{0}: יש רק מיזם עירוני אחד בבנייה"
 builder.refused_being_built: "{0}: מיזמים עירוניים בבנייה: {1}"
 # Agent-drafted Hebrew; native review pending (#564).

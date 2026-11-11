@@ -967,6 +967,161 @@ namespace Statecraft.Game.Tests
             finally { CivilianPeople.Request = savedPeople; RuralLife.Request = savedRural; }
         }
 
+        // ---- #3056 (B of #2905): ShowAt's early-out keys on what the plan reads, not on the raw date ----
+
+        static Dictionary<string, GameObject> DrawnObjects(SpecialBuildingModels layer) =>
+            layer.Placed.Select(p => p.Key).ToDictionary(k => k, k => layer.transform.Find(k)!.gameObject);
+
+        static void AssertSameObjects(SpecialBuildingModels layer, Dictionary<string, GameObject> before, string why)
+        {
+            foreach (var kv in before)
+            {
+                var now = layer.transform.Find(kv.Key);
+                Assert.IsTrue(now != null && ReferenceEquals(kv.Value, now.gameObject), $"{why}: {kv.Key} is the same object, not rebuilt");
+            }
+            Assert.AreEqual(before.Count, layer.transform.childCount, $"{why}: no model added or removed");
+        }
+
+        /// <summary>Every row the layer draws stands where <see cref="SpecialBuildingModels.Plan"/> puts it on
+        /// <paramref name="date"/> with every model available (the farm scenes' plan as the layer reads it, RuralLife.PlanOf),
+        /// and every row the plan places is drawn.</summary>
+        static void AssertDrawnOnThePlan(MapScene map, SpecialBuildingModels layer, DateTime date)
+        {
+            var plan = SpecialBuildingModels.Plan(map, date, SpecialBuildingModels.Placements(date), _ => true, false)
+                .ToDictionary(x => x.want.Key, x => x.at);
+            var drawn = layer.Placed.ToDictionary(p => p.Key, p => new Vector2(p.At.x, p.At.z));
+            CollectionAssert.AreEquivalent(plan.Keys, drawn.Keys, "the rows the plan places are the ones drawn");
+            foreach (var kv in plan) Assert.Less((drawn[kv.Key] - kv.Value).magnitude, 1e-3f, kv.Key + " drawn where the plan puts it");
+        }
+
+        /// <summary>RED on main (#3056): a new game date that changes nothing the plan reads (the same rows, the same dated
+        /// tokens, the same civilians' list) does not re-plan or rebuild the layer. 15 August to 15 September 1949: after the
+        /// 1948 rows leave (1 January 1949) and the last dated token's window ends (units_1948.yaml's last To, 20 July 1949),
+        /// before Netanya's factory (28 July 1950); the villagers' last days are all in 1948 and no camp is built, so the
+        /// civilians' list is the same too. Each premise is asserted.</summary>
+        [TestCase("he-IL")] [TestCase("en-US")]
+        public void ADateChangeThatChangesNothingThePlanReadsSkipsTheReplan(string culture)
+        {
+            var savedCulture = System.Globalization.CultureInfo.CurrentCulture;
+            var savedPeople = CivilianPeople.Request;
+            CivilianPeople.Request = (id, detail, done) => { };
+            try
+            {
+                System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(culture);
+                var map = OpenMap();
+                var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+                var none = Array.Empty<Statecraft.Sim.Placement>();
+                var d1 = new DateTime(1949, 8, 15); var d2 = new DateTime(1949, 9, 15);
+                Assert.IsTrue(SpecialBuildingModels.Same(SpecialBuildingModels.Placements(d1), SpecialBuildingModels.Placements(d2)), "premise: the same rows");
+                Assert.AreEqual(map.UnitTokens.Count(t => t.until > d1), map.UnitTokens.Count(t => t.until > d2), "premise: the same dated tokens");
+                var people = CollectionGeometryFixture.People(map, d1, none, c)!;
+                var layer = CollectionGeometryFixture.Special(map, d1)!;
+                AnswerAll();
+                var list = people.Wanted;
+                Assert.Greater(list.Count, 0, "premise: the civilians are wanted");
+                var before = DrawnObjects(layer);
+                Assert.Greater(before.Count, 0, "premise: models are drawn");
+                int replans = layer.Replans;
+
+                CollectionGeometryFixture.People(map, d2, none, c);
+                Assert.IsTrue(ReferenceEquals(list, people.Wanted), "premise: the civilians' list is the same (CivilianPeople swaps it only on a change)");
+                CollectionGeometryFixture.Special(map, d2);
+                Assert.AreEqual(replans, layer.Replans, "the new date changes nothing the plan reads: no replan");
+                CollectionAssert.IsEmpty(asked, "nothing asked for again");
+                AssertSameObjects(layer, before, "the new date");
+            }
+            finally { CivilianPeople.Request = savedPeople; System.Globalization.CultureInfo.CurrentCulture = savedCulture; }
+        }
+
+        /// <summary>RED on main (#3056): the civilians' list changing at the same date re-plans, with no farm-scene plan shown
+        /// (so RuralLife.VersionOf stays 0 and cannot carry the change): two city projects being built add their builders to
+        /// the civilians (CivilianPeople.Wants), whose ground the plan keeps clear of. The layer then draws on the new plan.</summary>
+        [TestCase("he-IL")] [TestCase("en-US")]
+        public void TheCiviliansListChangingAtTheSameDateReplansWithNoRuralLifeShown(string culture)
+        {
+            var savedCulture = System.Globalization.CultureInfo.CurrentCulture;
+            var savedPeople = CivilianPeople.Request;
+            CivilianPeople.Request = (id, detail, done) => { };
+            try
+            {
+                System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo(culture);
+                var map = OpenMap();
+                var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+                var none = Array.Empty<Statecraft.Sim.Placement>();
+                var d = new DateTime(1948, 6, 15);
+                var people = CollectionGeometryFixture.People(map, d, none, c)!;
+                var layer = CollectionGeometryFixture.Special(map, d)!;
+                AnswerAll();
+                Assert.AreEqual(0, RuralLife.VersionOf(map), "premise: no farm-scene plan is shown, so its version cannot carry the change");
+                var old = people.Wanted.ToList();
+                int replans = layer.Replans;
+
+                var projects = new[] { "hadera", "rehovot" }.Select((city, i) =>
+                {
+                    var h = c.SettlementHexes.Single(x => x.Id == city);
+                    return new Statecraft.Sim.CityProject(i + 1, "housing", city, h.Q, h.R, 2, null);
+                }).ToList();
+                CollectionGeometryFixture.People(map, d, none, c, null, projects);
+                Assert.IsFalse(old.SequenceEqual(people.Wanted), "premise: the civilians' list changed (the builders)");
+                CollectionGeometryFixture.Special(map, d);
+                AnswerAll();
+                Assert.AreEqual(replans + 1, layer.Replans, "the civilians' list changed at the same date: one replan");
+                AssertDrawnOnThePlan(map, layer, d);
+            }
+            finally { CivilianPeople.Request = savedPeople; System.Globalization.CultureInfo.CurrentCulture = savedCulture; }
+        }
+
+        /// <summary>A dated token's window ending with the same rows re-plans (the plan keeps clear of the tokens still present,
+        /// KitGround.OnToken), and the layer draws on the plan of the new date: the day before the first window that ends in
+        /// 1949 after the 1948 rows leave, then that day.</summary>
+        [Test]
+        public void ATokenWindowEndingWithTheSameRowsReplansOntoTheNewPlan()
+        {
+            var map = OpenMap();
+            var ends = map.UnitTokens.Select(t => t.until)
+                .Where(u => u > SpecialBuildingModels.Year1948To && u < new DateTime(1950, 7, 28)).OrderBy(u => u).ToList();
+            Assert.Greater(ends.Count, 0, "premise: a dated token's window ends after the 1948 rows and before Netanya's factory");
+            var d2 = ends[0]; var d1 = d2.AddDays(-1);
+            Assert.IsTrue(SpecialBuildingModels.Same(SpecialBuildingModels.Placements(d1), SpecialBuildingModels.Placements(d2)), "premise: the same rows");
+            Assert.AreNotEqual(map.UnitTokens.Count(t => t.until > d1), map.UnitTokens.Count(t => t.until > d2), "premise: a dated token leaves");
+            var layer = CollectionGeometryFixture.Special(map, d1)!;
+            AnswerAll();
+            int replans = layer.Replans;
+            CollectionGeometryFixture.Special(map, d2);
+            AnswerAll();
+            Assert.AreEqual(replans + 1, layer.Replans, "a token's window ended: one replan");
+            AssertDrawnOnThePlan(map, layer, d2);
+        }
+
+        /// <summary>The quality tier and the locale are not plan inputs (#3056): switching the low tier on and the culture from
+        /// he-IL to en-US, at the same date, re-plans and rebuilds nothing.</summary>
+        [Test]
+        public void ALowTierOrLocaleChangeDoesNotReplan()
+        {
+            var savedCulture = System.Globalization.CultureInfo.CurrentCulture;
+            bool savedLow = Statecraft.Game.Map.Kits.TownModelLayer.LowTier;
+            try
+            {
+                System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("he-IL");
+                Statecraft.Game.Map.Kits.TownModelLayer.LowTier = false;
+                var map = OpenMap();
+                var d = new DateTime(1948, 6, 15);
+                var layer = CollectionGeometryFixture.Special(map, d)!;
+                AnswerAll();
+                var before = DrawnObjects(layer);
+                Assert.Greater(before.Count, 0, "premise: models are drawn");
+                int replans = layer.Replans;
+
+                Statecraft.Game.Map.Kits.TownModelLayer.LowTier = true;
+                System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+                CollectionGeometryFixture.Special(map, d);
+                Assert.AreEqual(replans, layer.Replans, "the tier and the locale are not plan inputs: no replan");
+                CollectionAssert.IsEmpty(asked, "nothing asked for again");
+                AssertSameObjects(layer, before, "the tier and the locale");
+            }
+            finally { Statecraft.Game.Map.Kits.TownModelLayer.LowTier = savedLow; System.Globalization.CultureInfo.CurrentCulture = savedCulture; }
+        }
+
         // ---- #1701 slice F (owner, 27 October 2026: "Arms workshops (Recommended)"): b21 on each built arms workshop, gdd-0.3 only ----
 
         /// <summary>The real content, fresh (the shared copy is never changed), with every era under <paramref name="ruleset"/>.</summary>

@@ -229,9 +229,12 @@ namespace Statecraft.Game.UI
             return n;
         }
 
-        /// <summary>The pans and dwells at full pace (Q3), then, if the whole passes Cap, each pan and dwell shrunk by the
-        /// same share of the way to its minimum, so the replay is exactly Cap long; the slides never shrink. With at most
-        /// MaxBeats beats the minimums sum to well under Cap (8 x 1.05 s at the most), so the cap is always met.</summary>
+        /// <summary>The pans and dwells at full pace (Q3), then, if the whole passes Cap less the return glide, each pan and
+        /// dwell shrunk by the same share of the way to its minimum, so the beats are exactly that long; the slides never
+        /// shrink. The camera's glide back to the player's view after the last beat (EnemyTurnPlayback.Next) is at most PanMax
+        /// (CameraGlide.Seconds), so the whole playback, return included, stays within Cap (#3004). With at most MaxBeats
+        /// beats the minimums with their slides sum to at most Cap - PanMax (one kept attack beat, 1.05 s, and seven folded
+        /// beats that slide and fight, 1.45 s each), so the cap is always met.</summary>
         static void Pace(List<UnitBeat> beats)
         {
             float slides = 0f, full = 0f, least = 0f;
@@ -246,8 +249,9 @@ namespace Statecraft.Game.UI
                 full += b.Pan + b.Dwell;
                 least += MinPan(b) + MinDwell(b);
             }
-            if (slides + full <= Timing.Cap || full <= least) return;
-            float share = Math.Max(0f, (Timing.Cap - slides - least) / (full - least));
+            const float beatsCap = Timing.Cap - Timing.PanMax;   // the return glide's longest is left for it
+            if (slides + full <= beatsCap || full <= least) return;
+            float share = Math.Max(0f, (beatsCap - slides - least) / (full - least));
             foreach (var b in beats)
             {
                 b.Pan = MinPan(b) + share * (b.Pan - MinPan(b));

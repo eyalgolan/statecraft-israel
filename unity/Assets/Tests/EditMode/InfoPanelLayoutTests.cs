@@ -274,10 +274,12 @@ public class InfoPanelLayoutTests
     }
 
     /// <summary>R-CITY-011 (#2477 review): a housing repair being built shows on its city's own hex, outside the folded
-    /// project list (GddHexPanel.Repairs), with its line, its builder line and the city's stepper. Under gdd-0.3, at every
+    /// project list (GddHexPanel.Repairs), with the city's stepper; since #1722 its line and its builder are its row in the
+    /// city's project list (owner, 8 November 2026: "Drop the old lines here (Recommended)"). Under gdd-0.3, at every
     /// window size (the stacked bars and the short windows included) in English and Hebrew, the panel lies in the window, clear
     /// of the minimap, the left column and the top bar, and every shown label lies inside the panel (or the panel scrolls to
-    /// it) with its text fitting its box, as TheGddCityAndSitePanelsFitEveryWindow asks of the city's own hex.</summary>
+    /// it) with its text fitting its box, as TheGddCityAndSitePanelsFitEveryWindow asks of the city's own hex. #1722: with the
+    /// city's housing readout and its project list (the repair's row and its Cancel) in the city's block.</summary>
     [UnityTest]
     public IEnumerator ACityHexWithARepairBeingBuiltFitsEveryWindow_RCity011([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
@@ -295,7 +297,8 @@ public class InfoPanelLayoutTests
                 yield return Rendered(w, h, g, (root, info) => info.Show(city.Q, city.R), root =>
                 {
                     var panel = root.Q("info-panel"); var window = root.worldBound;
-                    foreach (var name in new[] { "city-repair-state", "city-repair-builder", "city-builders" })
+                    // #1722: the city's housing readout and its project list (the repair, with its Cancel) on the same block.
+                    foreach (var name in new[] { "city-builders", "city-surcharge", "city-list-header", $"city-list-project-{id}", $"city-list-project-{id}-cancel" })
                         if (root.Q(name) is not { } e || !Shown(e)) { problems.Add($"{at}: precondition: {name} shows"); return; }
                     if (!Inside(panel.worldBound, window)) problems.Add($"{at}: the panel {panel.worldBound} leaves the window {window}");
                     foreach (var other in new[] { "minimap", "left-column", "top-bar" })
