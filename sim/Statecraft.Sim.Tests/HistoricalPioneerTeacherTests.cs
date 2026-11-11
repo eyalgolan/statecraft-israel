@@ -95,7 +95,8 @@ public class HistoricalPioneerTeacherTests
     // Industry assignment in ascending population id (#1692, owner answer of 3 November 2026). The teacher has the highest id
     // of Haifa's census records, so taking Haifa's first k records by ascending id reaches it only when k is all of them.
     // At the start Haifa's employed are fewer than its records less one, so a default up to its employed never reaches it.
-    // No ledger producer runs the job default or Train yet (#1725 PR 6 and PR 7); this pins the order they will read.
+    // #1725 PR 3 gives the start's employed their Industry records the same way: Haifa's first `employed` records by
+    // ascending id hold Industry work, and the teacher is among the jobless after them, again the last.
     [Fact]
     public void TheTeacherIsTakenLastByAscendingId()
     {
@@ -103,13 +104,15 @@ public class HistoricalPioneerTeacherTests
         var haifa = Census(s).Where(x => x.Row.Source == Haifa).Select(x => x.Unit).OrderBy(u => u.Id).ToList();
         var teacher = haifa.Single(u => u.Profession != CivilianProfession.None);
         Assert.Equal(haifa.Max(u => u.Id), teacher.Id);
-        var jobless = haifa.Where(u => u.Status == PopulationStatus.FreeCivilian && u.Assignment.Kind == PopulationAssignmentKind.Unassigned).ToList();
-        Assert.Equal(haifa.Count, jobless.Count);
-        for (int k = 1; k <= jobless.Count; k++)
-            Assert.Equal(k == jobless.Count, jobless.Take(k).Any(u => u.Id == teacher.Id));
+        for (int k = 1; k <= haifa.Count; k++)
+            Assert.Equal(k == haifa.Count, haifa.Take(k).Any(u => u.Id == teacher.Id));
         var employed = s.C.Cities.Single(city => city.Id == "haifa").Employed;
         Assert.True(employed < haifa.Count - 1);
-        Assert.DoesNotContain(jobless.Take(employed), u => u.Id == teacher.Id);
+        Assert.DoesNotContain(haifa.Take(employed), u => u.Id == teacher.Id);
+        Assert.All(haifa.Take(employed), u => Assert.Equal(HistoricalPopulation.IndustryTarget("haifa"), u.Assignment.Target));
+        var jobless = haifa.Where(u => u.Status == PopulationStatus.FreeCivilian && u.Assignment.Kind == PopulationAssignmentKind.Unassigned).ToList();
+        Assert.Equal(haifa.Skip(employed).Select(u => u.Id), jobless.Select(u => u.Id));
+        Assert.Equal(teacher.Id, jobless.Last().Id);
     }
 
     // The count is content's start.pioneer_teachers (1, Agreed), which the ruling's "one" matches. No ruling places a second

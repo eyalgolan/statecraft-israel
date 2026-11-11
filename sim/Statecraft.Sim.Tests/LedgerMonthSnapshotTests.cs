@@ -13,15 +13,18 @@ public class LedgerMonthSnapshotTests
 
     static string Ledger(GameState s) => string.Join("\n", s.PopulationLedger.Canonical());
 
-    // The synthetic month the field fixtures build for the same people: every authored field available, one slot each.
+    // The synthetic month the field fixtures build for the same people: every authored field available, one slot each, and
+    // (#1725 PR 3) every census city's Industry available with its job_slots.
     static Gdd03SyntheticMonthContext Synthetic(Content c, GameState s) => Gdd03SyntheticMonthContext.CreateSynthetic(
         SaveGame.Gdd03Ruleset, s.Turn, s.PopulationLedger.Units,
-        Gdd03FieldFixture.Fields(c).Select(f => new Gdd03SyntheticFacilitySnapshot(f.Id, true, 1)),
+        Gdd03FieldFixture.Fields(c).Select(f => new Gdd03SyntheticFacilitySnapshot(f.Id, true, 1))
+            .Concat(c.Cities.Select(x => new Gdd03SyntheticFacilitySnapshot(HistoricalPopulation.IndustryTarget(x.Id), true, x.JobSlots))),
         Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
 
     // #1716, R-FOOD-002 (#2470): the snapshot holds every living own record of the ledger once, in id order, with its
-    // opening record; the facility entries are the ledger's bound field Work targets, in ordinal order, so each farmer
-    // on a field is work-eligible (an upper bound: the consumer rechecks it).
+    // opening record; the facility entries are the ledger's bound field Work targets with one slot each, and (#1725 PR 3)
+    // its Industry targets with their capacity, in ordinal order, so each farmer on a field and each Industry worker is
+    // work-eligible (an upper bound: the consumer rechecks it).
     [Fact]
     public void TheSnapshotHoldsEveryLivingOwnRecordOnce()
     {
@@ -34,12 +37,18 @@ public class LedgerMonthSnapshotTests
         Assert.Equal(units, month.OpeningPeople);
         Assert.Equal(units.Count, Pools.Rations(month.OpeningPeople));
         Assert.Equal(s.Turn, month.MonthOrdinal);
-        var fields = units.Where(u => u.Assignment.Kind == PopulationAssignmentKind.Work).Select(u => u.Assignment.Target!)
-            .Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList();
+        var targets = units.Where(u => u.Assignment.Kind == PopulationAssignmentKind.Work).Select(u => u.Assignment.Target!)
+            .Distinct(StringComparer.Ordinal).ToList();
+        var fields = targets.Where(t => t.StartsWith("field/", StringComparison.Ordinal)).ToList();
+        // Every census city's Industry target has an entry, a city with no employed too.
+        var industry = c.Cities.Select(x => HistoricalPopulation.IndustryTarget(x.Id)).ToList();
         Assert.NotEmpty(fields);
-        Assert.All(fields, f => Assert.StartsWith("field/", f));
-        Assert.Equal(fields, month.Facilities.Select(f => f.Id));
-        Assert.All(month.Facilities, f => Assert.True(f.AvailableAtMonthFreeze && f.OpeningCapacity == 1));
+        Assert.All(targets, t => Assert.True(fields.Contains(t) || industry.Contains(t), t));
+        Assert.Equal(fields.Concat(industry).OrderBy(x => x, StringComparer.Ordinal), month.Facilities.Select(f => f.Id));
+        Assert.All(month.Facilities, f => Assert.True(f.AvailableAtMonthFreeze));
+        Assert.All(month.Facilities.Where(f => fields.Contains(f.Id)), f => Assert.Equal(1, f.OpeningCapacity));
+        Assert.All(month.Facilities.Where(f => industry.Contains(f.Id)), f => Assert.Equal(
+            c.Cities.Single(x => HistoricalPopulation.IndustryTarget(x.Id) == f.Id).JobSlots, f.OpeningCapacity));
         Assert.Equal(units.Where(u => u.Assignment.Kind == PopulationAssignmentKind.Work).Select(u => u.Id), month.WorkEligibleIds);
         Assert.Empty(month.CourseEligibleIds); Assert.Empty(month.ReceptionEligibleIds);
         Assert.Empty(month.Housing); Assert.Empty(month.PendingEntries);
