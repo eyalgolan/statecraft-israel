@@ -1588,11 +1588,10 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(2L * 96, work.bearings, "each of the two workshops walks its city's edge once, on 96 bearings");
             // Points and point tests pinned exactly (#3062 gate step): the values are the PLAN-WORK line's, measured in he_IL and
             // en_US, and lie within the bounds above (at most 768 points and 28,416 point tests).
-            // TODO(#3062): batch 5 gate supplies the real counts. -1 is a placeholder that fails until then.
-            const long PlanWorkEdgePoints_TODO = -1;   // batch 5 gate supplies the real count (PLAN-WORK <p> edge points)
-            const long PlanWorkPointTests_TODO = -1;   // batch 5 gate supplies the real count (PLAN-WORK <t> point tests)
-            Assert.AreEqual(PlanWorkEdgePoints_TODO, work.points, "the two walks make exactly the points measured at the gate");
-            Assert.AreEqual(PlanWorkPointTests_TODO, work.tests, "the two walks run exactly the point tests measured at the gate");
+            const long PlanWorkEdgePoints = 600;
+            const long PlanWorkPointTests = 3541;
+            Assert.AreEqual(PlanWorkEdgePoints, work.points, "the two walks make exactly the points measured at the gate");
+            Assert.AreEqual(PlanWorkPointTests, work.tests, "the two walks run exactly the point tests measured at the gate");
         }
 
         /// <summary>#2876: the four major cities (TownModels.IsMajorCity) draw their kit blocks from 40 km out (owner, 6 November
