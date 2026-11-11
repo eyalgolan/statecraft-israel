@@ -91,13 +91,13 @@ namespace Statecraft.Sim
         /// turn, after the player's orders, and harvest, Industry income and Food all read it. The opening people are the
         /// ledger's living own records (<see cref="PopulationLedger.Units"/>), in id order; the facility entries are the
         /// ledger's bound Work targets that are authored fields (Gdd03FieldFixture ids,
-        /// field/q,r), in ordinal order, each available at the freeze with `field.slots`
-        /// capacity. Owner, 8 November 2026, "Yes, recheck (Recommended)": that availability is only an upper bound, and a
+        /// field/q,r), each available at the freeze with `field.slots`
+        /// capacity, and (#1725 PR 3) its Industry targets, each available with its own capacity, in ordinal order. Owner, 8 November 2026, "Yes, recheck (Recommended)": that availability is only an upper bound, and a
         /// consumer rechecks an entry (its id and opening record are kept) against the live state before using it. The
         /// month ordinal is the turn (<see cref="GameState.Turn"/>). Every check comes before anything is built, and it
         /// writes nothing: the state, its hash and the ledger are unchanged. A synthetic or Open ledger, an aggregate game
         /// and any other content are refused (R-POP-002); so is a ledger with a Work, Course, Reception or Teaching target
-        /// that is not a field, whose entry no ruling defines yet (<see cref="CreateSynthetic"/>'s inventory check).</summary>
+        /// that is neither a field nor an Industry target, whose entry no ruling defines yet (<see cref="CreateSynthetic"/>'s inventory check).</summary>
         internal static Gdd03SyntheticMonthContext CreateLive(Content content, GameState state)
         {
             if (content == null) throw new ArgumentNullException(nameof(content));
@@ -109,8 +109,11 @@ namespace Statecraft.Sim
             var slots = Gdd03FieldRates.FromCatalogue(content.Gdd03Balance
                 ?? throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.field.slots", "required under gdd-0.3")).SlotsPerField;
             var authored = new HashSet<string>(Gdd03FieldFixture.Fields(content).Select(f => f.Id), StringComparer.Ordinal);
-            var fields = ledger.Bindings.Targets.Where(t => t.Kind == PopulationAssignmentKind.Work && authored.Contains(t.Id))
-                .Select(t => new Gdd03SyntheticFacilitySnapshot(t.Id, true, slots)).ToArray();
+            // #1725 PR 3, an agent's reading (not an owner ruling): an Industry target is an entry as a field is, available at the freeze with its own
+            // capacity (the city's job_slots), an upper bound that its consumer (#2469's Industry income) rechecks.
+            var fields = ledger.Bindings.Targets.Where(t => t.Kind == PopulationAssignmentKind.Work
+                    && (authored.Contains(t.Id) || t.WorkKind == PopulationWorkKind.Industry))
+                .Select(t => new Gdd03SyntheticFacilitySnapshot(t.Id, true, t.Capacity ?? slots)).ToArray();
             return CreateSynthetic(SaveGame.Gdd03Ruleset, state.Turn, ledger.Units, fields,
                 Array.Empty<Gdd03SyntheticHousingSnapshot>(), Array.Empty<Gdd03SyntheticPendingEntry>());
         }
