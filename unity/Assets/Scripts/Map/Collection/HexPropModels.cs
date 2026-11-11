@@ -288,12 +288,21 @@ namespace Statecraft.Game.Map.Collection
             // rebuild on it too, so both stand on one plan).
             int rural = RuralLife.VersionOf(map);
             if (layer.shown && layer.date == date && SpecialBuildingModels.Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
+#if UNITY_EDITOR
+            layer.Replans++;
+#endif
             layer.fixedWants ??= FixedWants(map);
             layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
             layer.wants = StationWants(map, date); layer.wants.AddRange(layer.fixedWants);
             layer.standaloneDirty = true; layer.BuildStandaloneIfDue(inRender: false);
             return layer;
         }
+
+#if UNITY_EDITOR
+        /// <summary>How many times ShowAt has passed its early-out and re-planned the standalone props: a test aid (#2905), not
+        /// in a player.</summary>
+        internal int Replans { get; private set; }
+#endif
 
         void Ask()
         {
