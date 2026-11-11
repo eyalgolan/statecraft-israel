@@ -236,8 +236,8 @@ Revivim articles both say "משלושת המצפים".
   full as text): 1943, no day. he.wiki `היוגב`, oldid **43132613**: its core manned Beit Eshel "משנת
   1943 עד לאחר מלחמת העצמאות". All [S]. Summer 1943 agrees with the August 1943 of the article
   above; the day is not in any of them.
-- (11 Nov, second pass) **Two more points.** Avnei Moreshet prints 31° 14.008 N, 34° 48.79 E, which
-  is **31.233467, 34.813167** (computed here), 10 m from the he.wiki point above. The Moreshet map
+- (11 Nov, second pass) **Two more points.** Avnei Moreshet has 31° 14.008 N, 34° 48.79 E in its page source (inside an HTML comment, not
+  shown on the page), which is **31.233467, 34.813167** (computed here), 10 m from the he.wiki point above. The Moreshet map
   page has 31.232612, 34.8126 in its map markup (the latitude and longitude labels in the page source
   are swapped; read here by value), 0.12 km from the he.wiki point (computed here). [S] each; none
   says where its point comes from, so they are not shown to be independent.
@@ -247,16 +247,20 @@ Revivim articles both say "משלושת המצפים".
   "כשיתאפשר הדבר"; and "מיד לאחר כיבוש באר שבע ועזיבת אנשי בית אשל, הפסיק המשלט להתקיים", citing
   Brezner, pp. 295-296 (not opened). They went first to Kfar Vitkin, where their families had been
   housed "מאז הפינוי בחודש ינואר", then to a temporary camp, and in 1950 to Hayogev. [S] Derived
-  from Blitz with the JTA dateline above: the members left after Be'er Sheva was taken on 21
-  October 1948, at a date not printed there.
+  from Blitz with the JTA dateline above (**our reading**, not Blitz's words): the members left
+  after Be'er Sheva was taken on 21 October 1948, at a date not printed there.
 - (11 Nov, second pass) **[C] on the month of the evacuation to Kfar Vitkin.** The shimur.org page:
-  "ובינואר 1949 פונו תושביו למחנה זמני בכפר ויתקין". [S] Blitz puts the families' move to Kfar
-  Vitkin in January during the siege, and the members' leaving right after the capture of Be'er
-  Sheva. **Our reading:** the shimur.org January 1949 may fold the families' January move and the
+  "ובינואר 1949 פונו תושביו למחנה זמני בכפר ויתקין". [S] Blitz, p. 23, dates the evacuation of the
+  women and children "ב-21 בינואר 1948" (by the British, via Be'er Sheva to Nir Am, then to Kfar
+  Vitkin), and p. 30 has the members decide to leave toward the end of the second truce, the
+  outpost ending right after the capture of Be'er Sheva and their leaving. **Our reading:** the shimur.org January 1949 may fold the families' January move and the
   members' later leaving into one; this is not decided, and both are given.
 - (11 Nov, second pass) **[C] on Hayogev's year.** Blitz gives 1950 for the move to the permanent
   site; he.wiki `היוגב` gives August 1949 (citing Davar of 22 August 1949, not opened) and a stay in
   the buildings of the Megiddo airfield first; Gvati's row above gives 1 August 1949. All given.
+  he.wiki `היוגב` also dates the cornerstone of the permanent houses to April 1950 (citing Davar of
+  28 April 1950, not opened), which may be the move Blitz dates to 1950. **Our reading:** the dates
+  may describe different steps; not decided.
 
 ## 2. The six kibbutzim of 1941 to 1944
 
@@ -321,8 +325,8 @@ of Negev settlement. Be'erot Yitzhak has its own section below.
   https://www.nli.org.il/en/newspapers/haolam/1929/10/18/01/article/6/ . Every National Library
   newspaper address tried on 2026-11-11 (the article itself, the Hebrew and English newspaper
   search pages and the API host) returned HTTP 403 with a "Checking your browser" page, and the
-  old JPress address returned HTTP 410, so the article was not read. The same sentence in en.wiki
-  also cites Avneri, *The Claim of Dispossession*, Yad Tabenkin, 2009, p. 218, and Doron, *The
+  old JPress address returned HTTP 410, so the article was not read. The same en.wiki sentence goes
+  on "and possibly subsequently destroyed", cited to Avneri, *The Claim of Dispossession*, Yad Tabenkin, 2009, p. 218, and Doron, *The
   Negev. An Anthology*, 1949, p. 90 (neither opened). [S, Wikipedia] Derived from the article's
   date only: abandoned by 18 October 1929; this is not a reading of the article. An Amudanan search
   for `רוחמה 1929` returned P37312, which is about the Jewish community of Gaza in 1929, not
@@ -582,7 +586,8 @@ explicitly it is recorded below; otherwise the original position is [GAP].
     after Yom Kippur, 6 October 1946; "במקום הוקמו 3 צריפים ומגדל מים", the security house was
     added in 1947, and the place was not damaged in the War of Independence; point
     `31.413340, 34.745910`, 0.23 km from the CBS point (computed here). [S, Wikipedia] he.wiki
-    `שובל (קיבוץ)` (above) dates the water tower near the dining room to 1947 and records no move.
+    `שובל (קיבוץ)` (above): a photo caption dates the building of the water tower near the dining
+    room to 1947, the body has "3 צריפים ומגדל מים" put up at the founding, and no move is recorded.
     [S, Wikipedia] **Derived:** the October 1946 site is taken to be the present locality, at the
     CBS point; [S, Wikipedia], not a 1946 survey.
 - **Kfar Darom.** **Not in the CBS file and no Gvati appendix row.** [V, checked] he.wiki
@@ -797,13 +802,15 @@ a separate point, not Sa'ad under another name.
   February 1947**; they are not shown to be independent, so the day is [S] on each. Kark spells the
   land "חולה"; Amudanan has "חזע'לה" and the Moreshet map "חזלה". Recorded as printed; whether these
   are one name is not decided here.
-- (11 Nov, second pass) **Still a destination in December 1947.** Moreshet map of the War of
+- (11 Nov, second pass) **A December 1947 encounter on the way to it.** Moreshet map of the War of
   Independence, "בדרך לעלומים (חזלה)" (https://moreshet-map.org.il/?p=2957): an encounter on the
   way to Alumim (Hazla) dated "14 בדצמבר 1947", placed today "מצפון לרמת חובב". [S] Its map point,
-  31.16505563, 34.75597952, is a road point, 4.77 km from the Amudanan point above (computed here),
-  not the settlement. **Derived:** a road "to Alumim (Hazla)" was named in December 1947, which
-  sits ill with Amudanan's "soon abandoned" and fits the CET post-war departure better; this is
-  not a date for the leaving. CET item 13006 (above) gives the post-war departure again, no day.
+  31.16505563, 34.75597952 (the latitude and longitude labels in the page source are swapped, as on
+  ?p=2945), is 4.77 km from the Amudanan point above (computed here); the page has no text beyond
+  its data fields. **Our reading:** the point marks the encounter, not the settlement, and a page
+  that titles a 14 December 1947 encounter "on the way to Alumim (Hazla)" sits ill with Amudanan's
+  "soon abandoned" and fits the CET post-war departure better; the title is the map's, not shown to
+  be a 1947 name, and this is not a date for the leaving. CET item 13006 (above) gives the post-war departure again, no day.
   The abandonment day stays [GAP]; he.wiki has no article `עלומים (חזלה)` or `חזלה` (MediaWiki API,
   "missing").
 
@@ -911,8 +918,8 @@ separately here.
   and `אופקים 1947` found nothing for it); the day of every post-war move.
 - (11 Nov, second pass) **What the fifth pass added.** Hatzerim and Shoval: October 1946 site
   derived as the present locality (security houses inside the kibbutz since 1947, no move recorded;
-  [S, Wikipedia]). Alumim at Hazla: 7 February 1947 from a second source (Kark, CET 14824), and the
-  name still a destination on 14 December 1947 (Moreshet map). Beit Eshel: leaving narrowed to after
+  [S, Wikipedia]). Alumim at Hazla: 7 February 1947 from a second source (Kark, CET 14824), and a
+  14 December 1947 encounter titled on the way to it (Moreshet map; our reading). Beit Eshel: leaving narrowed to after
   21 October 1948 (Blitz), with [C] on January 1949 (shimur.org) and on Hayogev's year. Still
   [GAP]: Beit Eshel's founding day and leaving day; Ramat HaNegev's coordinate and its March 1949
   day; the day Alumim at Hazla was given up; Ruhama's 1929 day (Ha-Olam not reached, see section
