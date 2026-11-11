@@ -113,7 +113,7 @@ PRs 1 to 12 have their owner answers recorded in the Phase 6 plan (#1060, #1069)
 - [x] **Done: `docs/rules/mvp.md`, R-END-005 and R-END-006.** PR 7 the simulation end report (#1149; #810).
 - [ ] **Open: #811.** PR 8 Unity event-card effects.
 - [ ] **Open: #812.** PR 9 Unity end screen. The end screen shows the end report (#1156), the war loss's line (`end.outcome.defeat_war`), the score's reference line (#1964, #1967), the score's parts (#3078) and the prisoners returned (#1969); the history notes remain (their code path is #1966). Q-END-3 and Q-DEF-4 are decided and recorded (#997, #1069); the Hebrew defeat text goes to native-speaker review.
-- [ ] **Open: #530.** PR 10 opening cutscene. Q-OPEN-3 through Q-OPEN-5 are decided and recorded (#1069).
+- [x] **Done: the opening cutscene.** PR 10 opening cutscene; the owner's Hebrew read is recorded (#3094; #530 closed 11 Nov 2026). Q-OPEN-3 through Q-OPEN-5 are decided and recorded (#1069).
 - [x] **Done: the first-turn guide.** PR 11 onboarding for the GDD loop: a five-step guide, skippable and re-openable (#1209; #42 closed), with follow-ups (#1225, #1234, #1286).
 - [ ] **Open: #813.** PR 12 balance pass; the target is a 120-minute session since 30 October 2026, when the owner chose the option labelled "120 (data wins)" ([#1687](https://github.com/eyalgolan/statecraft-israel/issues/1687#issuecomment-6511461164); below), and it also decides the IL 250m debt ceiling and the loyalty floor of 5 (owner, 18 Oct 2026).
 - [ ] **Open: #814.** PR 13 MVP release: `mvp-end`, `smoke-mvp`, WebGL and GitHub pre-release. The MVP ships WebGL only; desktop players and IL2CPP parity move to #905 after the MVP.
