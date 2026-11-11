@@ -600,6 +600,12 @@ SKIP = "info-skip"
 # apart (a button is wider than that, the row's gaps narrower) to the row, then along it.
 OPENING, OPENING_SKIP = "opening-", "opening-skip"
 OPENING_ROW = {"opening-back", "opening-next", OPENING_SKIP}
+# The raid (#3003): after the opening, once raid-intro.yaml is reviewed, a player build with video on (CardVideo.ForcedOff)
+# flies the raid over a clear layer that covers the whole window (Statecraft.uss .raid-flight-layer; top bar hidden), then
+# shows the raid card (.raid-layer) until its only button, OK. Any press on the flight ends it and shows the card in that
+# same press (RaidFlightPresenter), so the card takes the release and End turn's click reaches their common ancestor, root
+# (the 0.4.1 nightly's pass 3, 11 Nov 2026). OK sits centred under the card's scrolling text, so it is found like Skip.
+RAID, RAID_FLIGHT, RAID_OK = "raid-", "raid-flight-layer", "raid-ok"
 # Well over the units a turn has needing orders (8 on a new game, 9 on turn 2, 0.3.0 RC): a turn that never ends fails.
 MAX_SKIPS = 40
 
@@ -610,9 +616,10 @@ class EndTurn:
     most `max_skips` times (GameRoot.Smoke's loop, through the browser). The unit card's buttons move with its text, so
     Skip is found where the game draws it: a middle-button probe reports the element under it (?navlog NAV_DOWN) and acts
     on nothing (a left press on the card's text can move the unit, NAV_MAP), then a left click presses Skip. When the
-    opening (#530) takes the first End turn click, its own Skip is pressed the same way and End turn clicked again. A
-    missed End turn, a probe the map takes, a card or an opening with no Skip, or a turn that never ends fails at once.
-    Returns the number of units Skipped."""
+    opening (#530) takes the first End turn click, its own Skip is pressed the same way and End turn clicked again; so is
+    the raid card's OK when the raid flight or card (#3003) takes it, on this EndTurn's first call only. A missed End
+    turn, a probe the map takes, a card or an opening with no Skip, a raid card with no OK, a raid on a later call, or a
+    turn that never ends fails at once. Returns the number of units Skipped."""
 
     def __init__(self, action, tail: ConsoleTail, hebrew: bool, settle=time.sleep, max_skips=MAX_SKIPS, answer=5.0,
                  turn_wait=3.0, viewport=VIEWPORT):
@@ -621,10 +628,15 @@ class EndTurn:
         self.point = END_TURN_HE if hebrew else END_TURN
         self.viewport, self.bottom = viewport, viewport[1] - INFO_PANEL_BOTTOM
         self.skip_at: tuple[int, int] | None = None  # where Skip was last: cards of one kind keep it there
+        # The raid plays only on New game (GameRoot.PlayNewGameIntro: never on Continue or a load), and each driver's
+        # first End turn follows New game: so only this EndTurn's first call may answer it, once; a later raid fails.
+        self.raid_due = True
 
     def __call__(self) -> int:
+        raid, self.raid_due = self.raid_due, False
         for skips in range(self.max_skips + 1):
-            since = self.click_end_turn(opening=skips == 0)   # the opening shows only before a new game's first turn
+            since = self.click_end_turn(opening=skips == 0,   # the opening shows only before a new game's first turn
+                                        raid=raid and skips == 0)
             if self.tail.wait(TURN_STATE, since, self.turn_wait) is not None:
                 print(f"END TURN the turn ended after {skips} Skip(s)")
                 return skips
@@ -636,9 +648,11 @@ class EndTurn:
                 return skips
         raise ValueError(f"END TURN FAIL End turn still selected a unit needing orders after {self.max_skips} Skips")
 
-    def click_end_turn(self, opening: bool) -> int:
+    def click_end_turn(self, opening: bool, raid: bool | None = None) -> int:
         """Clicks End turn; the console mark before the click that pressed it. With `opening`, a click the opening takes is
-        answered as a player does: its Skip (skip_opening), then End turn again."""
+        answered as a player does: its Skip (skip_opening), then End turn again. With `raid` (as `opening` unless given),
+        so is a click the raid flight or card takes: the card's OK (press_raid_ok), then End turn again."""
+        raid = opening if raid is None else raid
         x, y = self.point
         since = self.tail.mark()
         print(f"click end-turn at ({x}, {y})")
@@ -650,34 +664,51 @@ class EndTurn:
         if opening and other is not None and other.group(1).startswith(OPENING):
             print(f"END TURN the click reached {other.group(1)}: the opening covers End turn, so press its Skip")
             self.skip_opening()
+            self.settle(1)                           # the top bar shows again, or the raid flight covers it
+            return self.click_end_turn(opening=False, raid=raid)
+        down = self.tail.wait(NAV_DOWN, since, 0)    # the press of this click: the flight's layer when the flight took it
+        flew = down is not None and down.group(1) == RAID_FLIGHT
+        if raid and other is not None and (flew or other.group(1).startswith(RAID)):
+            pressed = f" (pressed {RAID_FLIGHT})" if flew else ""
+            print(f"END TURN the click reached {other.group(1)}{pressed}: the raid covers End turn, so press the card's OK")
+            self.settle(1)                           # the card lays out
+            self.press_raid_ok()
             self.settle(1)                           # the top bar shows again
-            return self.click_end_turn(opening=False)
+            return self.click_end_turn(opening=False, raid=False)
         raise ValueError(f"END TURN FAIL the click at ({x}, {y}) did not press end-turn within {self.answer:g} s{reached}")
 
     def skip_opening(self) -> None:
         """Presses the opening's Skip where the game draws it (OPENING_ROW), found with middle-button probes."""
+        self.press_covering(OPENING_ROW, OPENING_SKIP, "OPENING", "the opening")
+
+    def press_raid_ok(self) -> None:
+        """Presses the raid card's OK where the game draws it, found with middle-button probes."""
+        self.press_covering({RAID_OK}, RAID_OK, "RAID", "the raid card")
+
+    def press_covering(self, row_names: set[str], button: str, what: str, cover: str) -> None:
+        """Presses `button` of a centred row of `row_names` on a layer that covers End turn: down two columns 30 px apart
+        to the row, then along it."""
         cx, seen, row = self.viewport[0] // 2, [], None
         for y in range(PROBE_INSET, self.viewport[1] - PROBE_INSET, 10):
             for x in (cx, cx - 30):
                 target = self.press(x, y)
                 seen.append(target)
-                if target in OPENING_ROW:
+                if target in row_names:
                     row = (x, y)
                     break
             if row is not None:
                 break
         points = [] if row is None else [row] + [(x, row[1]) for dx in range(10, cx, 10) for x in (cx + dx, cx - dx)]
         for x, y in points:
-            if (target := self.press(x, y)) == OPENING_SKIP:
+            if (target := self.press(x, y)) == button:
                 since = self.tail.mark()
-                print(f"click {OPENING_SKIP} at ({x}, {y})")
+                print(f"click {button} at ({x}, {y})")
                 self.action(f"click:{x},{y}")
-                if self.tail.wait(NAV_CLICK, since, self.answer, OPENING_SKIP) is None:
-                    raise ValueError(f"OPENING FAIL the click at ({x}, {y}) did not press {OPENING_SKIP} within "
-                                     f"{self.answer:g} s")
+                if self.tail.wait(NAV_CLICK, since, self.answer, button) is None:
+                    raise ValueError(f"{what} FAIL the click at ({x}, {y}) did not press {button} within {self.answer:g} s")
                 return
             seen.append(target)
-        raise ValueError(f"OPENING FAIL the opening covers End turn, but no {OPENING_SKIP} was found (its row at y "
+        raise ValueError(f"{what} FAIL {cover} covers End turn, but no {button} was found (its row at y "
                          f"{row[1] if row else 'none'}; pressed {', '.join(dict.fromkeys(seen))})")
 
     def skip(self, since: int) -> bool:
