@@ -1,7 +1,7 @@
 # Where the Lebanese army stood on 15 May 1948 (#1871, research part)
 
 Status: **draft, needs a person to check**. This is research only. An AI agent opened every source marked "agent read" below
-on 28 October and 3 November 2026 and recorded the day it opened each. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person
+on 28 October, 3 November and 11 November 2026 and recorded the day it opened each. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person
 to check every claim against its source before use. This note changes nothing in `content/`, `sim/` or `unity/`; placing the
 token is a separate PR.
 
@@ -132,10 +132,95 @@ Searches of 3 November 2026 (same box, built-in tools; WebSearch and WebFetch us
 | `moulahazat.com` "Malikiya Battle And Lebanese Politics" (a blog) | n/a | 1 page | opened: "May" and "October" only, no day, no source for them; not cited |
 | archive.org lending copies, Morris `1948historyoffir00morr` and Hughes chapter `warforpalestiner0000unse_t0u0` | n/a | HTTP 403 and 401 | none |
 
+## 11 November 2026 pass: O'Ballance, Hughes's chapter and Maayan and Erlich
+
+An AI agent opened the page images (or, for the wiki, the wikitext of the stated revision) of every row below on 11 November
+2026. A person's check is still pending for each. Nothing here changes `content/`; the place for the token stays the owner's
+or a person's choice (options at the end of this section).
+
+**Correction to the rows above.** The Hughes chapter is not lending-only: an open scan of the whole book (2nd edition, 2007) is
+on the Internet Archive as `the-war-for-palestine-rewriting-the-history-of-1948-eugene-l.-rogan-avi-shlaim`. The chapter's
+pages were read from it (PDF page = printed page plus 26 for pp. 211 to 224).
+
+**Short answer, updated.**
+
+- **15 May:** still no source read names a place the Lebanese army itself held on 15 May. The newer accounts say where it was
+  instead: Hughes (p. 211) has the army ordered to defend and, on 19 May, dug in "at al-Naqura, on their side of the
+  frontier" (a unit war diary); Maayan and Erlich (2000, p. 110) have most of it "in the coastal area and the Marj Uyun
+  sector", in defensive positions; he.wiki (קרבות מלכיה) has two battalions "north of Rosh HaNikra" on 15 May, a sentence with
+  no citation of its own. Hughes (p. 212) and Maayan and Erlich (pp. 108-109) both give al-Malikiyya in May to the ALA, with
+  only Lebanese volunteers and a liaison officer in the village; this agrees with the owner's ruling on #226. O'Ballance
+  (p. 113), like Dupuy p. 45, has the Lebanese drive the Israelis out of al-Malikiyya, but a few days after the Israeli
+  capture, with no date and no 15 May place [C].
+- **6 June to 8 July:** Hughes (pp. 213-214) gives the Lebanese army's one attack, by 436 men of its 3rd Battalion from 10:00 on
+  5 June, and its handing al-Malikiyya and Qadas to the ALA "on 8 July". This is the first source read here that prints the
+  8 July end date directly; the row's `end_note` takes it from en.wiki citing Hughes.
+- **Hiram:** O'Ballance (pp. 190-191) has the 7th Brigade take Saliha "and then" al-Malikiyya, and the operation "drew to a
+  close about six o'clock on the morning of October 31st". That agrees with Dupuy p. 104 and the Ben-Gurion diary (31 October,
+  05:00 to 06:00). Hughes (p. 218) adds that on 28 October the ALA was told by the Lebanese army to withdraw from
+  al-Malikiyya.
+
+| Claim | Source and page or URL | Printed text | Tag | Day read |
+|---|---|---|---|---|
+| The Israelis took Nabi Yusha on 17 May; "Next" they took al-Malikiyya "by a surprise assault" and held it "only ... a few days" before the Lebanese, "about 800 men, with only mortar support", drove them out. No date for the Lebanese attack, no place for 15 May | Edgar O'Ballance, *The Arab-Israeli War 1948* (Faber, 1956), p. 113 (Internet Archive `in.ernet.dli.2015.51540`, open; PDF page = printed page plus 1; the index confirms the pages cited here) | "Next, the Israelis turned their attention to the frontier post of Malikiya, on the Lebanon border, which they took by a surprise assault. But they had only been in possession for a few days when they in turn were attacked by the Lebanese, who drove them out and occupied the post themselves." / "it consisted of an infantry attack by about 800 men, with only mortar supprt." (the scan's spelling) | [V, agent read 2026-11-11; a person's check pending] [C] with Hughes p. 212 and Maayan and Erlich pp. 108-111 | 2026-11-11 |
+| The Syrian plan was to advance westward "in conjunction with Lebanese attacks from the north"; a plan, no place | O'Ballance p. 112 | "in conjunction with Lebanese attacks from the north" | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| In O'Ballance's summary of the first weeks, "the Lebanese had taken Malikiya, and only Nabi Yusha prevented their linking up with the Syrians" | O'Ballance p. 123 | "To the north, the Lebanese had taken Malikiya, and only Nabi Yusha prevented their linking up with the Syrians." | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| Operation Hiram: Carmel's column took "first ... the village of Saliha and then" al-Malikiyya, where troops from the Upper Jordan Valley "joined up" with him; the operation "drew to a close about six o'clock on the morning of October 31st"; the Israelis occupied Lebanese ground "from the Litani River in the north to Malikiya in the south" and "The Lebanese offered little resistance" | O'Ballance pp. 190-191 | "first taking the village of Saliha and then occupying Malikiya, the frontier post." / "Operation 'Hiram' drew to a close about six o'clock on the morning of October 31st" / "The Lebanese offered little resistance." | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| After 10-11 May the Arab high command gave the Lebanese army the coastal attack "from Ras al-Naqura to Acre"; on 14-15 May Chehab asked that Lebanon's role be redefined "as one of defense"; a US cable of 2 May: some troops "had moved to the frontier" with orders not to cross | Matthew Hughes, "Collusion across the Litani? Lebanon and the 1948 War", in Eugene L. Rogan and Avi Shlaim (eds), *The War for Palestine*, 2nd ed. (Cambridge, 2007), p. 211, notes 45-47 (open scan above) | "attacking down the coast from Ras al-Naqura to Acre" / "request that the Arab high command redefine Lebanon's role as one of defense" / "some Lebanese troops had moved to the frontier, 'they had specific orders against crossing into Palestine'" | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| 18 May communiqué: the army deployed defensively "all along the border"; by 25 May (US cable) "barely inside Palestine"; on 19 May Lebanese units "dug in at al-Naqura, on their side of the frontier" (note 52: war diary of the 1st Bataillon de Chasseurs Libanais, 19 May 1948). The nearest dated place to 15 May in any source read here; it is dated 19 May, not 15 May | Hughes p. 211, notes 50-52 | "deployed the army defensively to stop attacks by a superior enemy all along the border" / "taken defensive positions barely inside Palestine" / "Lebanese army units on 19 May dug in at al-Naqura, on their side of the frontier." | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| al-Malikiyya lies "700 meters over the border inside Palestine/Israel"; Palmach 1st Battalion (Yiftach) attacked it on 12 May, "capturing it on 13-14 May"; Israelis "forced out of the village in a running battle on 15-16 May"; Israelis retook it on 28-29 May (note 55: some sources give 18-19 May) | Hughes p. 212, notes 54-55 (n. 54 cites Lorch's Hebrew history, pp. 257-264) | "Located 700 meters over the border inside Palestine/Israel" / "attacked Malikiyya on 12 May, capturing it on 13-14 May. The Israelis were forced out of the village in a running battle on 15-16 May" | [V, agent read 2026-11-11; a person's check pending] [C] with Dupuy p. 45 (night of 14-15 May, Lebanese counter-attack after dawn on 15 May) | 2026-11-11 |
+| Before 5 June "no Lebanese military presence in the village aside from some Lebanese volunteers and a liaison officer (a Major Muhammad Zughayb)"; the ALA's 2nd Yarmuk Battalion under Adib al-Shishakli took it "earlier in May" (note 57: Kimche; war diary of the 3rd Bataillon de Chasseurs Libanais; *Le Jour*, 17 May 1948) | Hughes p. 212, note 57 | "before 5 June there was no Lebanese military presence in the village aside from some Lebanese volunteers and a liaison officer" / "It was the ALA's 2nd Yarmuk battalion ... that had taken Malikiyya from the Israelis earlier in May" | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| 5 June: "at 10.00 hrs on 5 June, 436 Lebanese soldiers of the 3rd battalion gathered for an attack on Malikiyya"; the battle was over by about 17:30-18:00; victory parade at Bint Jubayl on 9 June | Hughes p. 213 | "at 10.00 hrs on 5 June, 436 Lebanese soldiers of the 3rd battalion gathered for an attack on Malikiyya" / "On 9 June, the Lebanese held a victory parade in Bint Jubayl" | [V, agent read 2026-11-11; a person's check pending] [C] with Dupuy p. 47 (evening of 6 June) | 2026-11-11 |
+| "the Lebanese army handed Malikiyya and Qadas over to the ALA on 8 July and returned to its side of the border" | Hughes p. 214 | "At all events, the Lebanese army handed Malikiyya and Qadas over to the ALA on 8 July and returned to its side of the border." | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| Hiram: on the day of the attack the ALA battalion "in Malikiyya" was short of ammunition; US diplomats on 28 October: "Lebanese Army Headquarters has issued orders to KAUKJI forces to withdraw"; the ALA "was told to withdraw from Malikiyya" | Hughes pp. 217-218, notes 102 and 119 | "the ALA battalion in Malikiyya had insufficient ammunition for offense or defense" / "The ALA was told to withdraw from Malikiyya and Blida (inside Lebanon) as well" | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| Israeli intelligence (SHAI) report of 12 May: 5,000 Lebanese and Syrian soldiers along the border "from Banias to Ras al-Naqura" (an Israeli claim of the time, which the article goes on to dispute) | Mordechai Maayan and Haggai Erlich, "An integrative method for the study of the 1948 war: the case of the Malikiyya battles (May-June 1948)" (Hebrew; title translated here), *Historia* 6 (2000), pp. 97-138, p. 106 (scan linked from he.wiki's bibliography, Google Drive file id `0B7U4UrQXxcphNTAzNWIwZWQtOTlkOS00NWVjLTgxMzYtMzc0NDEwMTBlYjY5`; two printed pages per scan page) | "מבאניאס ועד ראס אלנאקורה" | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| Lebanon "deliberately avoided" taking part in the 15 May invasion, and it was not its regular army but the ALA that attacked at al-Malikiyya on the night of 14-15 May | Maayan and Erlich, p. 108, note 40 | "לבנון נמנעה במתכוון מליטול חלק בפלישת ה־15 במאי" / "ולא צבאה הסדיר היה זה שתקף במאלכיה בליל 14–15 במאי, אלא 'צבא ההצלה'" | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| The village was held by about 70 Lebanese ALA volunteers under Lt. Muhammad Zughayb; Lebanon lent Shishakli a platoon of four Marmon-Harrington armoured cars at the end of April, and artillery support | Maayan and Erlich, p. 109, notes 43-44 | (paraphrase of the Hebrew; no quote kept) | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| The bulk of the Lebanese army "was not in the area at all but was deployed in the coastal area and the Marj Uyun sector"; the few units that were there held defensive positions against an Israeli invasion | Maayan and Erlich, p. 110 | "רובו המכריע לא נכח כלל באזור אלא היה ערוך באזור החוף ובגיזרת מרג' עיון" | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| "The Lebanese army did not fight the Palmach's 1st Battalion on 15 May; it did not try to invade Palestine" | Maayan and Erlich, p. 111, note 47 | "צבא לבנון לא נלחם אפוא בגדוד הראשון של הפלמ"ח ב־15 במאי; הוא לא ניסה לפלוש לפלסטין" | [V, agent read 2026-11-11; a person's check pending] [C] with Dupuy p. 45 and O'Ballance p. 113 | 2026-11-11 |
+| 28-29 May: the ALA's Druze battalion and the Lebanese army units in al-Malikiyya withdrew to Lebanon without contact | Maayan and Erlich, pp. 114-115 | (paraphrase; no quote kept) | [V, agent read 2026-11-11; a person's check pending] | 2026-11-11 |
+| On 15 May the Lebanese army, two battalions, "was deployed on 15 May north of Rosh HaNikra" and was to move south along the coast road; the sentence has no citation of its own (the paragraph's nearest notes cite Maayan 2004, Maayan and Erlich 2000 pp. 106-111, and Sela 2004) | he.wiki, קרבות מלכיה, oldid 43149857 (26 April 2026), https://he.wikipedia.org/w/index.php?oldid=43149857 | "צבא לבנון בסד"כ שני גדודים היה ערוך ב-15 במאי מצפון לראש הנקרה" | [S] | 2026-11-11 |
+
+**Where the sources disagree, added.**
+
+5. **Who drove the Palmach out of al-Malikiyya in mid-May.** Dupuy p. 45 and O'Ballance p. 113: the Lebanese (O'Ballance: about
+   800 men, a few days after the Israeli capture). Hughes p. 212 and Maayan and Erlich pp. 108-111: the ALA, with no Lebanese
+   army in the village before 5 June. The owner's ruling on #226 follows the second group.
+6. **The day of the Lebanese attack in June.** Hughes p. 213: 5 June, over by about 18:00. Dupuy p. 47: by the evening of 6 June.
+   JTA (above): 6 to 7 June. The row's window starts on 6 June (owner, 28 October).
+
+**Options for a 15 May place (for the owner or a person; not chosen here).** Coordinates are en.wiki's for each place
+(oldids given); "hex" is the nearest hex in `content/map/hexes.json` by a straight-line check on 11 November 2026, which a
+person should rerun with the repo's own tool.
+
+| Option | Place | Sources | Caveat |
+|---|---|---|---|
+| A | an-Naqoura / Ras al-Naqura, Lebanese side of the coastal frontier (33.11833, 35.14; en.wiki An-Naqoura, oldid 1377550364; nearest hex q 10, r 4, about 2 km off) | Hughes p. 211 (war diary, 19 May); he.wiki קרבות מלכיה (15 May, "north of Rosh HaNikra", uncited); Maayan and Erlich p. 110 ("coastal area"); Dupuy p. 43 (plan axis from Nakura) | The dated source is for 19 May, not 15 May; the 15 May sentence is uncited wiki text |
+| B | Marj Uyun sector (Marjayoun, 33.36194, 35.58972; en.wiki Marjayoun, oldid 1378551991) | Maayan and Erlich p. 110 | Undated within May; north of the map's top edge (lat1 33.35 in `hexes.json`), so it would need an edge hex (nearest q 17, r 0) |
+| C | The frontier at al-Malikiyya, Lebanese side (the row's current point and hex q 14, r 4) | Dupuy p. 45 (Lebanese take the village on 15 May, which the owner's #226 ruling set aside); JTA 17 and 18 May; CIA, week to 26 May ("on the frontier"); Hughes p. 211 (2 May cable, "moved to the frontier") | No source read places the regular army at this point on 15 May; the village itself was the ALA's |
+| D | No token before 6 June (the row as it stands) | Hughes p. 212 and Maayan and Erlich pp. 108-111 (no Lebanese army in al-Malikiyya before 5 June); the row's `to_verify` | Leaves the army off the map for 15 May to 5 June |
+
+**Search log, 11 November 2026** (same box; curl with a generic User-Agent; page images rendered locally with PyMuPDF):
+
+| Query or source | Result |
+|---|---|
+| Internet Archive `in.ernet.dli.2015.51540` (O'Ballance) | open; full text and page images read; rows above |
+| Internet Archive `the-war-for-palestine-rewriting-the-history-of-1948-eugene-l.-rogan-avi-shlaim` (Rogan and Shlaim, 2nd ed.) | open; Hughes chapter pp. 204-227 text layer searched, pp. 211-214 and 217-218 checked on the page images |
+| Internet Archive `edgeofsword00lorc` (Lorch, *The Edge of the Sword*) | full text HTTP 401 (restricted); not read |
+| Internet Archive `arabsatwarmilita0000poll` (Pollack, *Arabs at War*) | restricted; not read |
+| he.wiki קרבות מלכיה, oldid 43149857, wikitext | read; led to the Maayan and Erlich scan |
+| Google Drive scan of Maayan and Erlich (2000), file id above | downloaded; 22 scan pages, pp. 106-115 read on the images |
+| Google Drive scan of Maayan (2004), linked from the same article | HTTP 404; not read |
+| he.wiki צבא לבנון, oldid 43193413; en.wiki 1948 Arab-Israeli War, oldid 1384584539 | revision ids noted; not read for this pass |
+
 ## Open gaps
 
-- Morris p. 260 and p. 258, and the Hughes chapter pp. 204-227 (both lending copies, not opened).
-- The official Lebanese account (as he.wiki cites it) and any Lebanese army history giving the 15 May position.
-- UN S/ documents of May to June 1948 (none opened): a Lebanese or Mediator report with a place is the likeliest source for 15 May.
-- The day of the Israeli capture in Operation Hiram is no longer open: 31 October, about 05:00 to 06:00 (Ben-Gurion diary, table above). A person's check of the diary scan is pending.
+- Morris p. 260 and p. 258 (lending copy, not opened). The Hughes chapter is no longer a gap (11 November pass).
+- The official Lebanese account (as he.wiki cites it) and any Lebanese army history giving the 15 May position; the Lebanese
+  unit war diaries Hughes cites (1st and 3rd Bataillons de Chasseurs Libanais) were not seen here.
+- Maayan (2004) and Gelber (2004) pp. 210-212, cited by he.wiki for the 15 May deployment, not opened.
+- UN S/ documents of May to June 1948 (none with a Lebanese place opened).
+- The 15 May place itself: the nearest dated source is 19 May (Hughes p. 211, al-Naqura). Which option to use is for the owner.
+- The day of the Israeli capture in Operation Hiram is no longer open: 31 October, about 05:00 to 06:00 (Ben-Gurion diary;
+  O'Ballance p. 191 agrees). A person's check of the diary scan is pending.
 - The dating of the sentence at Dupuy p. 83 (no day printed; about 9 July is derived from the page).
