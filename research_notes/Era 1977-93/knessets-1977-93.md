@@ -24,7 +24,7 @@ Every [V] in this note was an agent's reading on 2026-10-13, unless the tag give
 
 ## Sources and how they were read
 
-Every request used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+Every request used a research User-Agent that named the project's repository.
 
 The Knesset's HTML pages (knesset.gov.il, main.knesset.gov.il, m.knesset.gov.il) return HTTP 247 with a bot challenge to
 a script, so they were read as Internet Archive copies. The Knesset's OData service and its file server

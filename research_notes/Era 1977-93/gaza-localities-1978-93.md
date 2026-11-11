@@ -103,7 +103,7 @@ only in `research_notes/Era 1957-77/gaza-localities-1967-77.md` (row 4) and has 
   every query with its count is in "Searches". The search is fuzzy, so I kept only returned items whose text contains a row name, and read the context of each. For every item cited with a day I opened the bulletin PDF
   (`http://pdfs.jta.org/<year>/<date>_<no>.pdf`; the PDFs are page images with no text layer), read it through PyMuPDF at 250 dpi and RapidOCR (the OCR drops spaces and mangles some words) and read the dateline.
   **Dates rule:** the archive page shows the bulletin date; the event date comes from the dateline in the PDF and from "yesterday" or "Sunday" read against it.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
 
 ## Summary table
 

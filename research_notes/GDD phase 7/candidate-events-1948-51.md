@@ -43,7 +43,7 @@ it is the one place in these files where an Israeli cabinet decision is on recor
 - Quotation marks below are verbatim from the source named. They are here for the reader to check the source; none is
   meant for event text. Real people are named in citations and as office-holders; event text would use office
   placeholders (`docs/WRITING_EVENTS.md`).
-- Requests were made with the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- Requests were made with a research User-Agent that named the project's repository.
   Wikipedia was read through the MediaWiki API and used only for leads; no fact below rests on it alone.
 - Turns are monthly, from the 15th (issue #135, owner comment). "The 15 February 1950 turn" means the turn that starts
   on that day.

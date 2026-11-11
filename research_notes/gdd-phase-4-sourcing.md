@@ -24,7 +24,7 @@ See also Agam's parallel note ([#612](https://github.com/eyalgolan/statecraft-is
   answered HTTP 403 to every scripted request today, so I read no Hebrew newspaper page myself. The Israel Air Force
   site (iaf.org.il) also answered 403. Where a Hebrew paper is named below, it is either [P] (read by Agam in a browser
   on #384, 14 October 2026) or [S] (cited by a Wikipedia article). The press links are listed so a human can open them.
-- Every request used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- Every request used a research User-Agent that named the project's repository.
 
 Every [V] in this note was an agent's reading on 2026-10-15, unless the tag gives a later date; a person's check is pending for all of them.
 

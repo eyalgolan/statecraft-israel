@@ -19,7 +19,7 @@ owner ruling 2026-10-14). Not sovereignty, ownership or population.
 - Copyright notes are factual, not legal advice, and follow D-A, D-B and D-C: the repository takes **facts** (where a
   line ran, which side held a place on a date) and redraws them by its own method. No map image was copied into the
   repository; downloads stayed in the session scratchpad, with their SHA-256 below.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
   Nothing was logged into or submitted.
 - Wikipedia is cited by article and the revision read (en.wiki API, `prop=extracts|revisions`, 2026-10-15).
 
