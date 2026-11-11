@@ -898,7 +898,18 @@ namespace Statecraft.Game.Map.Units
                 var hitFlash = AddRenderer(badge.transform, "HitFlash", MeshFor("badge-plate", UnitBadge.PlateMesh),
                     hitPlate, -UnitBadge.GlyphLift * 0.5f);
                 hitFlash.enabled = false;
-                AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
+                // #2432: a military sim unit's strength in pips under a smaller glyph (UnitBadge.PipsMesh), one shared mesh per
+                // strength and full strength, built here with the tokens (a change of either rebuilds them, UnitToken.Equals),
+                // so nothing is done per frame; the squadron, the ships and a map-only token have no sim strength and no pips.
+                bool pips = t.StateUnit != null && t.StateUnit.Side != "";
+                AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service + (pips ? "-pips" : ""), () => UnitBadge.GlyphMesh(t.Unit.Service, pips)),
+                    badgeGlyph, -UnitBadge.GlyphLift);
+                if (pips)
+                {
+                    int strength = t.StateUnit!.Strength, full = Mathf.Max(strength, UnitDamage.FullStrength(shownContent, t.StateUnit));
+                    AddRenderer(badge.transform, "Pips", MeshFor(FormattableString.Invariant($"badge-pips-{strength}/{full}"), () => UnitBadge.PipsMesh(strength, full)),
+                        badgeGlyph, -UnitBadge.GlyphLift);
+                }
                 // The badge's cube and the pieces (the flag and the figures as they stand now); FaceCamera moves both with the camera.
                 var pieces = standing;
                 if (pieces is Bounds s) { if (flag != null) s.Encapsulate(WorldBox(flag)); foreach (var m in meshes) if (m != null && m.sharedMesh != null) s.Encapsulate(WorldBox(m)); pieces = s; }
