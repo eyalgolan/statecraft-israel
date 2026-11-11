@@ -1188,6 +1188,7 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     work = Path(job) / "savetest" / stamp
     evidence: dict = {"tag": tag, "target": cfg.savetest_itch_target}
     result, detail = "INCONCLUSIVE", ""
+    written: Path | None = None   # the evidence.json this run wrote, if any
     try:
         with savetest_lock(Path(job)) as held:
             if not held:
@@ -1204,19 +1205,29 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
         evidence.update(result=result, detail=detail)
         if work.is_dir():
             (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            written = work / "evidence.json"
         if result == "PASS":
             enable_itch(config_path, work / "evidence.json")
     except (Stop, OSError) as e:   # #2684 review: a failure after the test still gets its one SAVETEST record
         result = "INCONCLUSIVE"
         detail = f"{e.gate}: {e.detail}" if isinstance(e, Stop) else f"{type(e).__name__}: {e}"
         evidence.update(result=result, detail=detail)
+        written = None   # a file from the first write now disagrees with this result
         if work.is_dir():
             try:
                 (work / "evidence.json").write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n",
                                                      encoding="utf-8")
+                written = work / "evidence.json"
             except OSError:
                 pass   # LOG.md stays the record when the evidence file itself cannot be written
-    record(Path(job) / "LOG.md", cfg.handoff, f"SAVETEST {result} tag={tag} {detail}".rstrip())
+    line = f"SAVETEST {result} tag={tag} {detail}".rstrip()
+    record(Path(job) / "LOG.md", cfg.handoff, line)
+    try:   # the command's own output says why, not only the result word; LOG.md stays the record
+        print(line)
+        if written:
+            print(f"evidence: {written}")
+    except (OSError, UnicodeError):
+        pass   # a terminal that cannot take the line never changes the result
     return result
 
 
