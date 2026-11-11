@@ -38,6 +38,11 @@ Primary and official:
 | Knesset 1, session 135 | Plenum protocol, Wednesday 3 May 1950 (16 Iyar 5710): debate "סיפוח האזורים הערביים שממערב לירדן לממלכת הירדן-ההאשמית" and the vote | https://fs.knesset.gov.il//1/Plenum/1_ptm_254420.doc |
 | Law of Return 1950 | חוק השבות, תש"י-1950, as published (Sefer HaHukim 51, 5710, p. 159), Knesset scan | https://fs.knesset.gov.il/1/law/1_lsr_209667.pdf |
 | Law of Return amendment 1954 | חוק השבות (תיקון), תשי"ד-1954 (Law No. 55), Knesset scan | https://fs.knesset.gov.il/2/law/2_lsr_209666.pdf |
+| Law of Return amendment bill 1954 | הצעת חוק השבות (תיקון), תשי"ד-1954, with its explanatory notes: הצעות חוק 192, 28 Shevat 5714 (1 February 1954), p. 88, Knesset scan; read 2026-11-11 (#1423) | https://fs.knesset.gov.il/2/law/2_ls1_288580.PDF |
+| Knesset 2, session 17 | Plenum protocol, Second Knesset, 17th session, Monday 12 November 1951: first reading of חוק המעבר (תיקון), תשי"ב-1951 (bill in הצעות חוק 92), Justice Minister Dov Yosef presenting, printed pp. 356-357 (PDF pp. 4-5); read 2026-11-11 (#1423) | https://fs.knesset.gov.il/2/Plenum/2_ptm_250284.pdf |
+| Knesset 2, session 119 | Plenum protocol, Tuesday 12 August 1952 (21 Av 5712): second and third readings of חוק המעבר (תיקון), תשי"ב-1952, printed pp. 2912-2917 (PDF pp. 20-25); first cited on the issue by a contributor on 26 October 2026, re-read 2026-11-11 (#1423) | https://fs.knesset.gov.il/%5C2%5CPlenum%5C2_ptm_250314.pdf |
+| Entry into Israel Law 1952, Knesset scan | חוק הכניסה לישראל, תשי"ב-1952, as published (Sefer HaHukim 111, 15 Elul 5712, 5 September 1952, p. 354 onward), Knesset scan; read 2026-11-11 (#1423) | https://fs.knesset.gov.il/2/law/2_lsr_211754.pdf |
+| JTA 12 Oct 1951 | JTA, "New Israel Cabinet Holds First Meeting; Discusses Reorganization", 12 October 1951; read 2026-11-11 (#1423) | https://www.jta.org/archive/new-israel-cabinet-holds-first-meeting-discusses-reorganization |
 | Entry into Israel Law 1952 | Entry into Israel Law, 5712-1952, English translation on the UNODC legal library | https://www.unodc.org/cld/uploads/res/document/law-no--5712-1952--entry-into-israel-law_html/Entry_Into_Israel_1952.pdf |
 | Comptroller report 3 | דין וחשבון שנתי מס' 3, the State Comptroller's report for the 1951/52 financial year (Jerusalem, 31 December 1952): chapter ט "משרד הפנים", p. 75 (a one-page scan); read 2026-10-23 (#1423) | https://library.mevaker.gov.il/sites/DigitalLibrary/Documents/1950-2008/1952-3/1952-3-322-Pnim.pdf |
 | Comptroller report 3, front matter | The same report's title page and table of contents (its ministry chapters, pp. V-IX, include none for a Ministry of Immigration); read 2026-10-23 (#1423) | https://library.mevaker.gov.il/sites/DigitalLibrary/Documents/1950-2008/1952-3/1952-3-001.pdf |
@@ -104,8 +109,10 @@ holder).**
   row exists for any government after the Second).
 - The Knesset approved the government on Monday 8 October 1951 (session 13); the OData rows start that day. [V]
 - Neither the presentation nor the two-day debate (sessions 12 and 13) mentions the end of the Ministry of Immigration:
-  the words "משרד העלייה" and "שר העלייה" do not occur in either protocol (text search of both). **not found**: any
-  government statement, in the Knesset record, explaining the change.
+  the words "משרד העלייה" and "שר העלייה" do not occur in either protocol (text search of both; re-run 2026-11-11 with
+  the period spelling "העליה" as well, no hit). **not found** in those two sessions: any government statement
+  explaining the change. The first one found is the Justice Minister's, on 12 November 1951 (see "What the government
+  said about the mechanism" below).
 - he.wiki משרד העלייה והקליטה: the state's Ministry of Immigration ("המשרד לעלייה") worked from 1948 to 1951; it dealt
   with bringing immigrants to the country but not with their absorption, which stayed with other ministries and the
   Jewish Agency's absorption department; Shapira headed it. The next ministry in this field was the Ministry of
@@ -132,16 +139,70 @@ One official record dates the move of the ministry's services, and puts it in **
   that day; the Comptroller audited these services "במשרד העלייה" up to the end of the year under review and dates their
   move to Interior to March 1952; it does not say who the minister was. Both are recorded; the note does not choose
   between "the office ended" and "the department ended".
-- Negative search for the instrument (2026-10-23), with what each returned:
+
+**What the government said about the mechanism (#1423, agent read 2026-11-11 from the Knesset page scans; a person's
+check pending).** No transfer instrument dated October 1951 was found. The Knesset record instead shows the government
+saying that, in law, it had no general way to move one minister's statutory powers to another, and bringing a bill
+for one:
+
+- 12 November 1951, first reading of the Transition Law (Amendment) bill (הצעות חוק 92). Justice Minister Dov Yosef:
+  "והנה כעת, כשהוקמה הממשלה החדשה והוחלט להכניס שינויים בהרכב המשרדים, לחסל שני משרדים, משרד העליה והמשרד לנפגעי
+  מלחמה, ולהעביר חלק מהסמכויות ממשרד החקלאות למשרד המסחר והתעשיה, הוברר לנו, שכדי לבצע את כוונתנו בסידורים
+  החדשים, היינו צריכים להביא לכנסת מספר חוקים, חוק בקשר לכל תיקון לחוק מסויים." ("Now, when the new government was
+  formed and it was decided to change the make-up of the ministries, to abolish two ministries, the Ministry of
+  Immigration and the Ministry for War Casualties, and to move some powers from the Ministry of Agriculture to the
+  Ministry of Commerce and Industry, it became clear to us that to carry out our intention we would have to bring the
+  Knesset a number of laws, one for each amendment of a given law.") He gives the bill's text as "סמכויות הנתונות לשר
+  פלוני על-פי החוק, רשאית הממשלה להעבירן, כולן או מקצתן, לשר אחר." [V] Knesset 2, session 17, printed p. 356
+  (right column, continuing in the left).
+- 12 August 1952, second and third readings. Baruch Azania, for the Constitution, Law and Justice Committee, gives
+  the section as a new section 12א of
+  the Transition Law, 5709-1949: "12א(א) סמכויות הנתונות לשר פלוני על-פי החוק, רשאית הממשלה להעבירן, כולן או
+  מקצתן, לשר אחר", with a subsection (ב) that a decision to transfer powers is published in Reshumot and notified to
+  the Knesset (moved by Ya'akov Shapira, Mapai). [V] Knesset 2, session 119, printed p. 2912. Ya'akov Klibanov
+  (General Zionists) moved a schedule
+  listing the transfers made since the government was formed: "שהתפקיד שניתן לפי חוק השבות לשר העליה, יצויין בתוספת
+  זו בתפקיד העובר משר העליה לשר הפנים. גם לגבי פקודת העליה מועבר תפקיד שר העליה לשר הפנים." ("that the function
+  given by the Law of Return to the Minister of Immigration be listed in this schedule as a function passing from the
+  Minister of Immigration to the Minister of the Interior. Under the Immigration Ordinance too, the Minister of
+  Immigration's function passes to the Minister of the Interior.") He calls these "השינויים, שחלו למעשה בתקופה זו
+  בהרכב הממשלה ובחלוקת התפקידים בה" ("the changes that have in practice occurred in this period"). [V] same, p. 2913.
+  In the vote, "התיקון של חברי-הכנסת י. קליבנוב וי. בדר לא נתקבל" and "סעיף 12(א), בנוסח הוועדה, נתקבל"; Shapira's
+  subsection (ב) was then accepted. [V] same, p. 2915 (p. 2913 records a separate vote, also lost, on Klibanov's motion
+  to send the bill back to committee). The amended law was accepted at third reading on p. 2917 (read from the PDF
+  text layer, not the page image; it matches the 26 October 2026 comment on the issue). [S] for p. 2917.
+- Reading: a proposal in August 1952 to *record* the Law of Return function as passing from Immigration to Interior
+  shows that, ten months after 8 October 1951, the Knesset record had no such transfer on the statute book. It does
+  not show that no transfer was ever made: section 12א, once in force, let the government make one by a decision
+  published in Reshumot. **not found**: any section 12א notice for the Law of Return or the Immigration Ordinance
+  (Yalkut HaPirsumim was not reachable; see below).
+- 1 February 1954, the government's bill to amend the Law of Return. Its explanatory note: "שאר התיקונים המוצעים
+  נובעים מחיסול משרד העליה והעברת תפקידיו למשרד הפנים." ("The other proposed amendments follow from the abolition of
+  the Ministry of Immigration and the transfer of its functions to the Ministry of the Interior.") It gives no date,
+  instrument or minister for that transfer. [V] Law of Return amendment bill 1954, p. 88. (Its main purpose was a new
+  ground to refuse a visa, a criminal past; the note says the existing law gave no hold to refuse such people.)
+- Press: JTA, 12 October 1951, of the new cabinet's first meeting: the reorganisation "has become necessary in view of
+  the fact that the Ministry of Immigration is being dissolved and its duties are being taken over by other
+  ministries"; it names no ministry. [S] JTA 12 Oct 1951.
+- **[C], in part, with the Comptroller.** Yosef (November 1951) speaks of abolishing the ministry as decided; the
+  Comptroller has these services audited "במשרד העלייה" until their move to Interior in March 1952. The two can both
+  hold (a decision in October 1951, a physical move of the services in March 1952); no source read joins them.
+
+- Negative search for the instrument (2026-10-23; re-run 2026-11-11 where noted), with what each returned:
   - Reshumot / Yalkut HaPirsumim: the Nevo scans (`nevo.co.il/law_word/law10/yalkut-NNNN.pdf`) answer scripted
     requests with a reCAPTCHA page, so no Yalkut issue of October 1951 to March 1952 was read; Hebrew web searches for
-    "העברת סמכויות" with "שר העליה" and "שר הפנים" returned only later transfers. **not reached.**
+    "העברת סמכויות" with "שר העליה" and "שר הפנים" returned only later transfers. **not reached.** Re-run
+    2026-11-11: `yalkut-0200.pdf` still returns the Nevo captcha page; a web search for "12א לחוק המעבר" with "חוק
+    השבות" returned no 1950s notice. **not reached**, so no section 12א notice (after August 1952) was looked for in
+    the Yalkut itself.
   - Government protocols and the State Archives catalogue: catalog.archives.gov.il and archives.gov.il return HTTP
-    403. **not reached.**
+    403 (again on 2026-11-11). **not reached.**
   - *Government Year-Book* 5712 (1951) and 5713 (1952): no online copy found (archive.org search: no hit; HathiTrust
-    returns 403; the Google Books API refused on quota). **not reached.**
+    returns 403; the Google Books API refused on quota). Re-run 2026-11-11: an archive.org title search finds only the
+    5719 (1958) volume. **not reached.**
   - knesset.gov.il redirects to a geo-block page from this network, so the Knesset legislation page for the Law of
-    Return and its bill file were not read live.
+    Return was not read live. The Knesset file server (fs.knesset.gov.il) does answer: the bill and the protocols
+    above were read from it on 2026-11-11.
 
 What the statutes show:
 
@@ -150,20 +211,26 @@ What the statutes show:
   charged with the implementation of this law"); section 2(b) gave the same minister the power to refuse a visa. It is
   signed by Shapira as "שר העליה". [V] Law of Return 1950 (Knesset scan of Sefer HaHukim).
 - The Entry into Israel Law, 5712-1952, gives the visa, residence, frontier-control and removal powers to the
-  **Minister of the Interior**. [S] Entry into Israel Law 1952 (UNODC translation; the day of passage was not checked).
+  **Minister of the Interior**. [S] Entry into Israel Law 1952 (UNODC translation). The Knesset scan's footnote: passed
+  "ביום ה' באלול תשי"ב (26 באוגוסט 1952)", published in Sefer HaHukim 111 (5 September 1952), p. 354. [V] Entry into
+  Israel Law 1952, Knesset scan (the footnote). Its text layer also has section 15(א) "שר הפנים ממונה על ביצוע חוק
+  זה" and section 19 repealing the Immigration Ordinance, 1941 (read from the text layer, not the image). [S]
 - The Law of Return (Amendment), 5714-1954, passed on **23 August 1954**, replaced "שר העליה" with "שר הפנים" in
   sections 2 and 5 of the Law of Return. [V] Law of Return amendment 1954 (Knesset scan). So the statute itself still
   named the Minister of Immigration for almost three years after the office ended. The same scan (Wayback copy of the
   Knesset PDF, re-read 2026-10-23) is Sefer HaHukim 163, 3 Elul 5714 (1 September 1954), p. 174; it is signed by Moshe
   Sharett as Prime Minister and Yosef Serlin as "שר הבריאות" and "ממלא מקום שר הפנים" (two lines under his name), and
   its footnote gives the bill and its explanatory notes as "ה"ח 192, תשי"ד, עמ' 88". [V, agent read 2026-10-23; a
-  person's check pending] That explanatory note is the likeliest place for the reason; it was **not reached** (Knesset
-  site geo-blocked, no other copy found).
-- **Who exercised the Law of Return powers from 8 October 1951 to 23 August 1954: not found.** No source read names a
-  minister for them in that interval. The Comptroller (above) has the immigration and naturalisation services
-  inside "משרד העלייה" until March 1952 and inside the Ministry of the Interior after it, but says nothing of the
-  statutory power itself. That Shapira, as Interior Minister, exercised it is a guess and is not stated here as
-  fact.
+  person's check pending] That explanatory note was reached on 2026-11-11: it gives the reason as "חיסול משרד העליה
+  והעברת תפקידיו למשרד הפנים", with no date or instrument (quoted in full above). [V] Law of Return amendment bill 1954.
+- **Who exercised the Law of Return powers from 8 October 1951 to 23 August 1954: still a [GAP].** No source read names
+  a minister who signed visas or refusals under the Law of Return in that interval. What the sources do say: the
+  government decided to abolish the ministry and move its functions to Interior (Yosef, November 1951; the 1954 bill's
+  note); the services moved to Interior in March 1952 (Comptroller); in August 1952 an MP still asked for the Law of
+  Return function to be *listed* as passing to Interior, and the Knesset declined that schedule; section 12א let the
+  government transfer statutory powers by a Reshumot notice from then on; the statute named "שר העליה" until 23 August
+  1954. Whether a section 12א notice moved the Law of Return powers, and when, is **not found**. That the Interior
+  Minister exercised them throughout is a reading, not a sourced fact, and is not stated here as one.
 - The Interior Minister from 8 October 1951 was the same person, Shapira, who had held Interior alongside Immigration
   since 10 March 1949 (Knesset OData: GovMinistryID 724 from 10 March 1949, 735 from 1 November 1950, 746 from
   8 October 1951; `people.yaml` has the same terms). [V] Knesset OData. The holder and the Interior portfolio both run
