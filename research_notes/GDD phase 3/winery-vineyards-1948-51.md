@@ -211,3 +211,93 @@ snippets were not re-read for this check.
 passing: one borrowed page of Viteles, or a JPress hit on the 1949-51 vintage there, would settle it. If the owner wants
 Rishon LeZion anyway, the winery could rest on the town's wine cellars rather than its vineyards (those too are only
 [Sn] for 1948-51), but that changes the GDD's "a winery requires areas for grapes" and is the owner's call.
+
+## Prepared for the person's check (issue #1928, agent read 2026-11-11; a person's check pending)
+
+This section adds to the note above and changes none of it. An AI agent prepared it so that the person doing the #1928
+check can open each source at the right page and know what to look for. Nothing here is a person's check, and no row
+above or below is marked as checked by a person. Requests used a generic user agent and carried no owner identifier.
+
+How the pages were found: the archive.org scan data (`<id>_scandata.xml`, readable without an account) maps each
+printed page to a leaf, and the archive.org full-text search (`/services/search/beta/page_production/?service_backend=fts`,
+with `identifier:<id>` in the query) returns a line or two around each match. Overlapping lines were joined, as in the
+2026-10-31 check. For the three lending-only books the page itself was not opened: `<id>_page_numbers.json` returned
+HTTP 401 and the search-inside service (`/fulltext/inside.php`) returned "Item not available" on 2026-11-11.
+
+### What the person opens
+
+| # | Claim it tests | Where to open it | Look for (under 15 words) | What the agent found on 2026-11-11 |
+|---|---|---|---|---|
+| P1 | Rishon's own farming is "largely viniculture" | Hoffman, *The Land and People of Israel* (1950 scan), p. 109, leaf 147: https://archive.org/details/bwb_P2-AFF-053/page/n147 (borrowing needed) | "In this case it is largely viniculture." | [Sn] Index line "Rishon le Zion, 109" and scan data put p. 109 on leaf 147. The passage, joined from search lines, goes on: grapes are "brought in by the three hundred growers who are members of the cooperative which runs the plant". It does not say where those growers farm. Page not opened. |
+| P2 | Same text, later edition | Hoffman, 1955 scan, p. 109: https://archive.org/details/landpeopleofisra0000gail (borrowing needed) | "Rishon le Zion is famous for its wine cellars." | [Sn] Same sentences and the same index line, "Rishon le Zion, 109". Page not opened. |
+| P3 | Vineyards around the town feed the Rishon cellars | Halperin, *Changing Patterns in Israel Agriculture* (1957), p. 20, leaf 36: https://archive.org/details/changingpatterns0000haim/page/n36 (borrowing needed) | "vineyards whose produce is processed in the huge wine-cellars of Rishon-Lezion" | [Sn] The book's index has "Wine cellars, 20", and the scan data put p. 20 on leaf 36. Joined lines place the sentence in the section headed "The Lowland" ("The Judean Plain, flanked by the Judean Highlands"), after "Characteristic of this area are the extensive citrus groves and the". So it describes the whole Judean Plain, not the town. No year in the lines read. |
+| P4 | Land "set aside" for wine grapes for the Rishon cellars | Halperin (1957), same book, section on the mountains of Judea (page not found; search inside for "Rishon- Lezion cellars") | "set aside for the cul- tivation of wine grapes" | [Sn] Joined lines place this sentence in the Jerusalem Corridor section, not near Rishon: "This section of the Mountains of Judea forms the eastern part of the Jerusalem Corridor. It is bounded by the Judean Lowland and the Transjordan frontier", then "Stone-fruits, late varieties of grapes, figs and apples, do best in this district. In recent years special areas have been set aside for the cul- tivation of wine grapes by growers connected with the Rishon- Lezion cellars." If the page confirms this, it is grapes grown elsewhere for the cellars, and it does not support the town's own vineyards (see the resource comment in `content/cities.yaml`). |
+| P5 | Co-operative members in Zikhron Ya'akov, March 1951 | Viteles, *A History of the Co-operative Movement in Israel* (1966), chapter "Vintners of the wine cellars" (page not found): https://archive.org/details/historyofcoopera0000vite_b5e9 (borrowing needed) | "signed by sixty members residing in Zichron Yaacov" | [Sn] Same snippets as on 2026-10-16. No area or tonnage in the lines read. |
+| P6 | The town's vineyards after 1931 | Viteles (1966), same chapter, the arbitration of 26 March 1940 (page not found; search inside for "Since 1931 the vintners") | "Since 1931 the vintners in the south had uprooted their vineyards" | [Sn] Joined lines: the arbitrators "reported that the vintners of Rishon and Rehovot in 1939 delivered only 2,200 kantars to the Rishon wine cellars compared with 14,120 kantars in 1930. Since 1931 the vintners in the south had uprooted their vineyards and planted citrus groves. The Vigneronne management then authorized Zichron Yaacov and other Shomron moshavot to plant specified areas of vineyards". The tribunal is dated 26 March 1940, so this is pre-1948. It sits against "largely viniculture" [C]. |
+| P7 | The cellars were working and exporting in 1949-50 | JTA Daily News Bulletin, 27 July 1950, p. 5: http://pdfs.jta.org/1950/1950-07-27_143.pdf (free, no account) | "shipped from the famous Rishon Wine Cellars" | [V, agent read 2026-11-11] Page image read again: header "J.T.A. NEWS -5- 7/27/50", dateline "NEW YORK, July 26. (JTA)", the 35,000 cases, $900,000 and "approximately $700,000 over wine exports to the U.S. during 1949" all as quoted above. |
+| P8 | Rothschild's first vineyards near the town; replanting with citrus | English Wikipedia, "Carmel Winery", https://en.wikipedia.org/w/index.php?title=Carmel_Winery&oldid=1328303280 (free) | "His first vineyards were planted near Rishon LeZion" | [S, agent read 2026-11-11] Fetched; that sentence, "Many of the vineyards were uprooted and replanted with citrus trees" and "supplies the Rishon LeZion Winery" are all on the page. |
+| P9 | Citrus became the town's main branch | Encyclopaedia Judaica, 2nd ed., "Rishon Le-Zion", https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/rishon-le-zion (free) | "Citrus groves became the principal farming branch." | [S, agent read 2026-11-11] Fetched; both quotes above are on the page. The citrus sentence sits between figures for 1907-1917 and a sentence on the First World War. |
+| P10 | National wine-grape crop 1948/49 to 1950/51 | CBS SA No. 2, Table 7 (PDF page 74 of `shnaton1951_num2.pdf`); SA No. 3, Table 8 (PDF page 80 of `shnaton1952_num3.pdf`), both at https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/ (free) | "Wine grapes" row, Jewish farming: 7,200 / 7,400 / 6,250 t | [V, agent read 2026-11-11] Both PDFs fetched. SA No. 2 Table 7 text has 7,200 produced and 6,913 marketed (1948/49), 7,400 and 7,180 (1949/50); SA No. 3 Table 8 has 6,250 and 6,081. The PDF page numbers are the file's, not the printed page numbers given above. |
+
+### New sources reached on 2026-11-11
+
+- **[V, agent read 2026-11-11; a person's check pending]** *The Jerusalem Post*, 5 December 1950, p. 4, "Readers' Letters",
+  "RISE IN WINE PRICES", signed "Public Relations Section, Ministry of Finance, Jerusalem, Nov. 30":
+  https://archive.org/details/per_jerusalem-post_the-jerusalem-post_1950-12-05_26_7423/page/n3 (free, no account). Page
+  image read: "The present supply of wine-grapes does not cover even the requirements of local consumption", "stocks in
+  the wine cellars have dwindled", and "the country has been compelled to import, against foreign exchange, substantial
+  quantities of raw-materials for the manufacture of wine. Although it is intended to plant new vineyards during this
+  season, they are expected to yield fruit only three years hence." A dated 1950 government statement that Israel's
+  cellars were short of local grapes and imported raw material. It names no town and no cellar, so it does not place
+  vineyards in Rishon LeZion; it is the first dated item for the third claim (supply from elsewhere), at national level.
+- **[V, agent read 2026-11-11; a person's check pending]** *The Jerusalem Post*, 14 August 1950, p. 2, by Victor
+  Perlstein, on the visit of Professor Tommaso Castelli of Perugia:
+  https://archive.org/details/per_jerusalem-post_the-jerusalem-post_1950-08-14_26_7331/page/n1 (free). Page image read:
+  wine "is sufficient for local consumption. There is little left over for export, so that any expansion must first come
+  in the vineyards." National; no town named. It reads against the 5 December letter on local sufficiency (the two are
+  four months apart).
+- **[S, agent read 2026-11-11]** Adam S. Montefiore, "RIP Rishon Cellars 1890-2017", 23 February 2017,
+  https://www.adammontefiore.com/?p=4917 (HTTP 403 on 2026-10-16, reached on 2026-11-11): "However the last vineyard did
+  not leave Rishon until well into the 1970's." A wine historian's article with no footnote and no 1948-51 date. If it is
+  right, some vineyard was still in the town in 1948-51, but it gives no area and is secondary.
+- **[Sn]** Halperin (1957) has a table with "Wine grapes 7,200 7,400 6,250 8,000 9,500 12,600" (the first three match
+  the CBS above) and a list "Wine Grapes: Northern Negev (33·3%), Southern District (18·2%), Jerusalem Mountains (12·2%),
+  Mountains of Ephraim (11%), Lower Galilee (9·5%), Western Jezreel Valley (7·8%) and elsewhere". The lines read show
+  neither the year nor what the shares measure. The Lowland, Rishon's district, is not among the named districts. Worth
+  a look on the page by the person (search inside for "Wine Grapes: Northern Negev").
+- **None found.** archive.org full-text search on 2026-11-11 of *The Jerusalem Post* collection (`pub_jerusalem-post`,
+  512 issues dated 1948-05 to 1951-12, mostly from 1950-51) for "Rishon" with "vineyards", "vintage" or "grapes", and for
+  "wine cellars", "wine growers", "vine growers", "vintners" and "wine grapes": up to 30 hits each, none placing
+  vineyards in Rishon LeZion. The OCR is poor, so this is not proof of absence. Only one Palestine Post issue for
+  1948-50 was found on archive.org (14 December 1948, not searched for this).
+
+### Claim to evidence, additions
+
+| Claim | Evidence added on 2026-11-11 | Dated 1948-51? | Grade |
+|---|---|---|---|
+| Halperin's "land set aside ... by growers connected with the Rishon-Lezion cellars" is about the town | Joined lines put it in the Jerusalem Corridor section | No (1957, "In recent years") | [Sn], [C] with the resource comment |
+| Halperin's vineyards "processed in the huge wine-cellars" are the town's own | Joined lines put it in "The Lowland" (the Judean Plain), p. 20 | No (1957) | [Sn] |
+| The cellars' grapes came from outside the town | Halperin, Jerusalem Corridor growers (1957); Hoffman, "three hundred growers" of the co-operative (place not stated) | No | [Sn] |
+| Israel's cellars were short of local grapes and imported raw material | Jerusalem Post, 5 December 1950, p. 4 | Yes (30 November 1950), national | [V, agent read 2026-11-11; a person's check pending] |
+| The town's vineyards gave way to citrus after 1931 | Viteles, 1940 arbitration | No (pre-1948) | [Sn], [C] with Hoffman |
+| Some vineyard stayed in the town into the 1970s | Montefiore 2017 | No (undated, implies 1948-51) | [S] |
+| The town's own vineyards existed in 1948-51 | Still nothing dated | Not found | [G] |
+
+### For the person, in order
+
+1. Halperin, the Jerusalem Corridor passage (P4). If the page confirms it, the third source in the `vineyards` comment
+   in `content/cities.yaml` is about growers in the hills, and the comment should say so.
+2. Hoffman p. 109 (P1): read the whole Rishon paragraph, note the edition and whether it gives any year.
+3. Halperin p. 20 (P3) and the "Wine Grapes" shares list.
+4. Viteles (P5, P6): the 1951 letter and the 1940 arbitration, with page numbers.
+5. The free items (P7 to P10 and the two Jerusalem Post pages) need no account and take a few minutes.
+
+The agent's reading of these sources does not change the conclusion of the 2026-10-31 check: nothing read dates the
+town's own vineyards to 1948-51. The new items lean the other way (vineyards moving to Shomron by 1940, cellar growers
+in the Jerusalem Corridor by 1957, imported raw material in 1950), against one undated secondary line that a vineyard
+stayed into the 1970s. The proposed wording above still stands for the person to review. If P4 is confirmed, the person
+may also want to drop "land set aside ... Rishon-Lezion cellars" from the comment, or say it is about the Jerusalem
+Corridor. Nothing in `content/` is changed here.
+
+Not reached on 2026-11-11: JPress and the NLI newspaper pages (HTTP 403), winesisrael.com `/en/159/` (HTTP 403); the
+pages of Hoffman, Halperin and Viteles (lending only, as above).
