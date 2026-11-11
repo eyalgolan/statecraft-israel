@@ -67,6 +67,14 @@ def test_name_constants_resolve_and_unrelated_constants_are_not_toggles():
     assert "city-projects-toggle" not in found                         # GddHexPanel.ToggleName is a UI element name
 
 
+def test_the_furrows_toggle_is_expected_in_every_profile():
+    """#3070 (#2917) registers "furrows" (GroundDetail.FurrowToggle) with the ground detail pass, beside "grounddetail" and
+    "groundscrub", on every map build, so every ?vprofile run prices "-furrows": a required toggle, not an optional one."""
+    found = registered()
+    assert found.get("furrows") == {"Map/GroundDetail.cs"}, found.get("furrows")
+    assert "furrows" in wc.VISUAL_TOGGLES and "furrows" not in wc.OPTIONAL_VISUAL_TOGGLES
+
+
 def test_the_optional_toggles_are_the_flag_only_ones():
     """The train is built only for a train mode or from its service date (RouteLayer.Build) and the unit showcase only
     under ?units (UnitShowcase.Requested, GameRoot): a plain ?vprofile run may lack them. Every other toggle is expected."""
