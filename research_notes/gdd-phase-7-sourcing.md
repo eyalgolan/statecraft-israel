@@ -142,35 +142,40 @@ One official record dates the move of the ministry's services, and puts it in **
 
 **What the government said about the mechanism (#1423, agent read 2026-11-11 from the Knesset page scans; a person's
 check pending).** No transfer instrument dated October 1951 was found. The Knesset record instead shows the government
-saying that, in law, it had no general way to move one minister's statutory powers to another, and bringing a bill
-for one:
+saying that, while it could decide which minister used the powers it had inherited from the Mandate High
+Commissioner and his council, each law passed since the state was founded named its own minister, and it had no
+general way to move those powers to another minister; it brought a bill for one:
 
 - 12 November 1951, first reading of the Transition Law (Amendment) bill (הצעות חוק 92). Justice Minister Dov Yosef:
   "והנה כעת, כשהוקמה הממשלה החדשה והוחלט להכניס שינויים בהרכב המשרדים, לחסל שני משרדים, משרד העליה והמשרד לנפגעי
-  מלחמה, ולהעביר חלק מהסמכויות ממשרד החקלאות למשרד המסחר והתעשיה, הוברר לנו, שכדי לבצע את כוונתנו בסידורים
+  מלחמה, ולהעביר חלק מהסמכויות ממשרד-החקלאות למשרד-המסחר-והתעשיה, הוברר לנו, שכדי לבצע את כוונתנו בסידורים
   החדשים, היינו צריכים להביא לכנסת מספר חוקים, חוק בקשר לכל תיקון לחוק מסויים." ("Now, when the new government was
   formed and it was decided to change the make-up of the ministries, to abolish two ministries, the Ministry of
   Immigration and the Ministry for War Casualties, and to move some powers from the Ministry of Agriculture to the
   Ministry of Commerce and Industry, it became clear to us that to carry out our intention we would have to bring the
   Knesset a number of laws, one for each amendment of a given law.") He gives the bill's text as "סמכויות הנתונות לשר
   פלוני על-פי החוק, רשאית הממשלה להעבירן, כולן או מקצתן, לשר אחר." [V] Knesset 2, session 17, printed p. 356
-  (right column, continuing in the left).
+  (right column, continuing in the left). On the same page Yosef draws the line: for laws from the Mandate, "הממשלה
+  רשאית לפי החוק מדי פעם בפעם להחליט, איזה שר משרי המדינה רשאי להשתמש בסמכויות אלה מטעם הממשלה במקום הממשלה";
+  for "חוקים שחוקקנו מאז קום המדינה", "נקבע בכל חוק וחוק, ששר מסויים אחראי לביצועו". [V] same, p. 356.
 - 12 August 1952, second and third readings. Baruch Azania, for the Constitution, Law and Justice Committee, gives
   the section as a new section 12א of
   the Transition Law, 5709-1949: "12א(א) סמכויות הנתונות לשר פלוני על-פי החוק, רשאית הממשלה להעבירן, כולן או
   מקצתן, לשר אחר", with a subsection (ב) that a decision to transfer powers is published in Reshumot and notified to
   the Knesset (moved by Ya'akov Shapira, Mapai). [V] Knesset 2, session 119, printed p. 2912. Ya'akov Klibanov
-  (General Zionists) moved a schedule
+  (General Zionists), giving the reasons for MK חת's reservation (the name as printed), proposed a schedule
   listing the transfers made since the government was formed: "שהתפקיד שניתן לפי חוק השבות לשר העליה, יצויין בתוספת
-  זו בתפקיד העובר משר העליה לשר הפנים. גם לגבי פקודת העליה מועבר תפקיד שר העליה לשר הפנים." ("that the function
+  זו כתפקיד העובר משר העליה לשר הפנים. גם לגבי פקודת העליה מועבר תפקיד שר העליה לשר הפנים." ("that the function
   given by the Law of Return to the Minister of Immigration be listed in this schedule as a function passing from the
   Minister of Immigration to the Minister of the Interior. Under the Immigration Ordinance too, the Minister of
   Immigration's function passes to the Minister of the Interior.") He calls these "השינויים, שחלו למעשה בתקופה זו
   בהרכב הממשלה ובחלוקת התפקידים בה" ("the changes that have in practice occurred in this period"). [V] same, p. 2913.
-  In the vote, "התיקון של חברי-הכנסת י. קליבנוב וי. בדר לא נתקבל" and "סעיף 12(א), בנוסח הוועדה, נתקבל"; Shapira's
+  In the vote, "התיקון של חברי-הכנסת י. קליבנוב וי. בדר לא נתקבל" (read here as that schedule; the vote line does
+  not describe the amendment) and "סעיף 12(א), בנוסח הוועדה, נתקבל"; Shapira's
   subsection (ב) was then accepted. [V] same, p. 2915 (p. 2913 records a separate vote, also lost, on Klibanov's motion
-  to send the bill back to committee). The amended law was accepted at third reading on p. 2917 (read from the PDF
-  text layer, not the page image; it matches the 26 October 2026 comment on the issue). [S] for p. 2917.
+  to send the bill back to committee). The amended law was accepted at third reading on p. 2917: "חוק המעבר (תיקון),
+  תשי"ב-1952, נתקבל." [V] same, p. 2917 (on the same page MK Bar-Yehuda, Mapam, speaks of "ההצבעה של
+  הקריאה השלישית" in this case; the line matches the 26 October 2026 comment on the issue).
 - Reading: a proposal in August 1952 to *record* the Law of Return function as passing from Immigration to Interior
   shows that, ten months after 8 October 1951, the Knesset record had no such transfer on the statute book. It does
   not show that no transfer was ever made: section 12א, once in force, let the government make one by a decision
@@ -213,8 +218,9 @@ What the statutes show:
 - The Entry into Israel Law, 5712-1952, gives the visa, residence, frontier-control and removal powers to the
   **Minister of the Interior**. [S] Entry into Israel Law 1952 (UNODC translation). The Knesset scan's footnote: passed
   "ביום ה' באלול תשי"ב (26 באוגוסט 1952)", published in Sefer HaHukim 111 (5 September 1952), p. 354. [V] Entry into
-  Israel Law 1952, Knesset scan (the footnote). Its text layer also has section 15(א) "שר הפנים ממונה על ביצוע חוק
-  זה" and section 19 repealing the Immigration Ordinance, 1941 (read from the text layer, not the image). [S]
+  Israel Law 1952, Knesset scan (the footnote). Section 15(א) reads "שר הפנים ממונה על ביצוע חוק זה." and
+  section 19 repeals the Immigration Ordinance, 1941 ("פקודת העליה, 1941", "בטלה"); the law is signed by Moshe Shapira
+  as "שר הפנים". [V] same, p. 356.
 - The Law of Return (Amendment), 5714-1954, passed on **23 August 1954**, replaced "שר העליה" with "שר הפנים" in
   sections 2 and 5 of the Law of Return. [V] Law of Return amendment 1954 (Knesset scan). So the statute itself still
   named the Minister of Immigration for almost three years after the office ended. The same scan (Wayback copy of the
@@ -227,7 +233,7 @@ What the statutes show:
   a minister who signed visas or refusals under the Law of Return in that interval. What the sources do say: the
   government decided to abolish the ministry and move its functions to Interior (Yosef, November 1951; the 1954 bill's
   note); the services moved to Interior in March 1952 (Comptroller); in August 1952 an MP still asked for the Law of
-  Return function to be *listed* as passing to Interior, and the Knesset declined that schedule; section 12א let the
+  Return function to be *listed* as passing to Interior, and the Knesset voted down the Klibanov/Bader amendment, read here as that schedule; section 12א let the
   government transfer statutory powers by a Reshumot notice from then on; the statute named "שר העליה" until 23 August
   1954. Whether a section 12א notice moved the Law of Return powers, and when, is **not found**. That the Interior
   Minister exercised them throughout is a reading, not a sourced fact, and is not stated here as one.
