@@ -37,9 +37,11 @@ namespace Statecraft.Game.Map.Units
         Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, hitPlate = null!, rim = null!;
         readonly Dictionary<string, Material[]> flagCloth = new Dictionary<string, Material[]>();   // per side, made on first use
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
-        /// <summary>The meshes built for the tokens drawn now (each base's draped top, lip and ring follow its own ground):
-        /// destroyed when the tokens are rebuilt and with the layer, so no roster change leaks them (review of #559, M1).</summary>
-        readonly List<Mesh> tokenMeshes = new List<Mesh>();
+        /// <summary>The meshes built for each token drawn now (each base's draped top, lip and ring follow its own ground), in
+        /// the order of <see cref="badges"/>: destroyed when that token is built again or dropped and with the layer, so no
+        /// roster change leaks them (review of #559, M1).</summary>
+        readonly List<List<Mesh>> tokenMeshes = new List<List<Mesh>>();
+        List<Mesh>? buildingMeshes;   // the token being built's
         List<UnitToken>? roster;
         readonly Dictionary<string, UnitFigureResidency> figurePrefetch = new Dictionary<string, UnitFigureResidency>();
         readonly HashSet<string> wantedFigurePrefetch = new HashSet<string>(StringComparer.Ordinal);
@@ -133,6 +135,9 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The figures' and flags' share of their scale now (<see cref="UnitShowcase.ZoomScale"/>, #2430): only the game
         /// camera sets it, as it turns them, and only a new value touches them.</summary>
         float zoomShown = 1f;
+        /// <summary>A rebuild built new figures at their own scale beside kept ones at <see cref="zoomShown"/>: the next
+        /// <see cref="FaceCamera"/> scales them all.</summary>
+        bool rescaleDue;
         /// <summary>A badge sits this share of its token's base radius behind the trio, seen from the camera, and
         /// <see cref="BadgeAsideM"/> to the side away from its flag's pole on screen (a compact token's pole cannot stand
         /// further out than its base's edge).</summary>
@@ -163,6 +168,11 @@ namespace Statecraft.Game.Map.Units
         readonly List<UnitTokenMotion?> motions = new List<UnitTokenMotion?>();
         /// <summary>Each token's sim unit (-1 for a row with no sim unit), in the order of <see cref="badges"/>.</summary>
         readonly List<int> drawnSims = new List<int>();
+        /// <summary>Each token's root, what it was built from and its kit-tree hole (if any), in the order of
+        /// <see cref="badges"/>: a rebuild keeps a token whose unit did not change (#3055).</summary>
+        readonly List<Transform> tokenRoots = new List<Transform>();
+        List<PlacedToken> drawnPlaced = new List<PlacedToken>();
+        readonly List<(Vector2 centre, float radius)?> tokenHoles = new List<(Vector2, float)?>();
         /// <summary>The sim units whose tokens the last rebuild dropped, and where each was drawn then: a destroyed unit's
         /// dust rises there (<see cref="PlayDestroyed"/>).</summary>
         readonly Dictionary<int, Vector3> gone = new Dictionary<int, Vector3>();
@@ -327,8 +337,8 @@ namespace Statecraft.Game.Map.Units
             if (turn) turnedFor = yaw;
             var turning = Quaternion.Euler(0f, turnedFor ?? 0f, 0f);   // as the figures stand now (yaw 0 until first turned)
             float zoom = cam == Camera.main ? UnitShowcase.ZoomScale(Kits.TownModelLayer.ViewDistance(cam)) : zoomShown;
-            bool rescale = zoom != zoomShown;
-            zoomShown = zoom;
+            bool rescale = rescaleDue || zoom != zoomShown;
+            zoomShown = zoom; rescaleDue = false;
             for (int i = 0; i < badges.Count; i++)
             {
                 var b = badges[i]; if (b == null) continue;
@@ -412,9 +422,10 @@ namespace Statecraft.Game.Map.Units
         }
 
         /// <summary>Draws the units for <paramref name="state"/> (read only). Rebuilds the tokens only when the roster
-        /// changed; returns true when it did. A selected unit that is no longer drawn is deselected. A moved unit's token
-        /// slides from where it was drawn (<see cref="AnimateMoves"/>) unless <paramref name="slide"/> is false: another game
-        /// (New Game) reuses the sim ids, so its tokens are drawn where they stand.</summary>
+        /// changed, and then builds or destroys only the tokens that changed (#3055); returns true when it did. A selected
+        /// unit that is no longer drawn is deselected. A moved unit's token slides from where it was drawn
+        /// (<see cref="AnimateMoves"/>) unless <paramref name="slide"/> is false: another game (New Game) reuses the sim ids,
+        /// so its tokens are all built again, where they stand.</summary>
         public bool Show(Content content, GameState state, bool slide = true)
         {
             if (!slide) ReleaseAll(snap: true);   // another game: nothing waits from the last one
@@ -676,9 +687,15 @@ namespace Statecraft.Game.Map.Units
 
         Vector3 Centre(AnchorSpot s) => UnitShowcase.Ground(map, new Vector3((float)s.X, 0f, (float)s.Z));
 
-        /// <summary>The ground the units are placed on (footprints, routes, land) for a built map.</summary>
+        /// <summary>The ground the units are placed on (footprints, routes, land, and the water a ship's hull must lie in) for a
+        /// built map.</summary>
         public static UnitGround Ground(MapScene map, IReadOnlyList<MapHex> hexes) =>
-            new UnitGround(map.SettlementFootprints, map.RouteCorridors, hexes, XZ(map), map.Hexes.hex_size_km * 1000f);
+            new UnitGround(map.SettlementFootprints, map.RouteCorridors, hexes, XZ(map), map.Hexes.hex_size_km * 1000f, Water(map));
+
+        /// <summary>The built map's drawn water (KitGround.Water over its terrain: the sea is the heightmap's 0 m), which a ship's
+        /// whole hull must lie in (issue #3038); null before the terrain is built.</summary>
+        public static Func<float, float, bool>? Water(MapScene map) =>
+            map.Terrain == null ? null : new Kits.KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM).Water;
 
         static Func<double, double, Vector2> XZ(MapScene map) => (lon, lat) => { var w = map.Frame.ToWorld(lon, lat, 0); return new Vector2(w.x, w.z); };
 
@@ -708,13 +725,19 @@ namespace Statecraft.Game.Map.Units
             return mats;
         }
 
-        /// <summary>Takes a mesh built for one token: freed with the tokens (<see cref="FreeTokenMeshes"/>).</summary>
-        Mesh TokenMesh(Mesh m) { tokenMeshes.Add(UnitPlinth.Upload(m)); return m; }
+        /// <summary>Takes a mesh built for the token being built: freed with that token (<see cref="FreeMeshes"/>).</summary>
+        Mesh TokenMesh(Mesh m) { buildingMeshes!.Add(UnitPlinth.Upload(m)); return m; }
 
         void FreeTokenMeshes()
         {
-            foreach (var m in tokenMeshes) if (m != null) { if (Application.isPlaying) Destroy(m); else DestroyImmediate(m); }
+            foreach (var list in tokenMeshes) FreeMeshes(list);
             tokenMeshes.Clear();
+        }
+
+        static void FreeMeshes(List<Mesh> list)
+        {
+            foreach (var m in list) if (m != null) { if (Application.isPlaying) Destroy(m); else DestroyImmediate(m); }
+            list.Clear();
         }
 
         static UnitModels.Headgear Hat(string headgear) => headgear switch
@@ -745,20 +768,48 @@ namespace Statecraft.Game.Map.Units
             // Where each unit was drawn, so a unit the rebuild drops (destroyed, as the turn's lines say) raises its dust there.
             gone.Clear();
             for (int i = 0; i < drawnSims.Count && i < trios.Count; i++) if (drawnSims[i] >= 0) gone[drawnSims[i]] = DrawnAt(i);
-            var outgoing = new List<GameObject>();
-            for (int i = tokensRoot.childCount - 1; i >= 0; i--)
+            // #3055: each unit drawn before keeps its token's root (same key as the hand-over above). A token built from the
+            // same unit, anchor, spot and looks (PlacedToken's equality) is kept whole; any other is built again on its root.
+            // Another game (slide false) reuses the sim ids, so nothing of the old one is kept.
+            var was = new Dictionary<(int sim, string row), int>();
+            int drawn = Math.Min(Math.Min(tokenRoots.Count, drawnSims.Count), Math.Min(Math.Min(drawnPlaced.Count, motions.Count), tokenMeshes.Count));
+            for (int i = 0; slide && i < drawn; i++)
+                if (tokenRoots[i] != null && !was.ContainsKey(Key(drawnSims[i], tokenRoots[i].name))) was[Key(drawnSims[i], tokenRoots[i].name)] = i;
+            var from = new int[placed.Count];   // the old token each one is drawn on, or -1 for a new one
+            var same = new bool[placed.Count];  // and whether it is kept whole
+            var taken = new bool[tokenRoots.Count];
+            for (int j = 0; j < placed.Count; j++)
             {
-                var old = tokensRoot.GetChild(i).gameObject;
+                from[j] = -1;
+                if (!was.TryGetValue(Key(placed[j].Token.StateUnit?.Id ?? -1, placed[j].Token.Unit.Id), out int i) || taken[i]) continue;
+                taken[i] = true; from[j] = i;
+                same[j] = drawnPlaced[i].Equals(placed[j]) && (motions[i] != null) == AnimateMoves;
+            }
+            var outgoing = new List<GameObject>();
+            void Retire(GameObject old)
+            {
                 // Roster holders retain Far through deactivation and release it only on destruction. Deactivate before
                 // deferred Destroy so these outgoing holders are never considered a live prefetch handoff target.
                 old.SetActive(false);
                 old.transform.SetParent(null);
                 outgoing.Add(old);
             }
+            var kept = new HashSet<Transform>();
+            for (int i = 0; i < taken.Length; i++) if (taken[i]) kept.Add(tokenRoots[i]); else if (i < tokenMeshes.Count) FreeMeshes(tokenMeshes[i]);
+            for (int i = tokensRoot.childCount - 1; i >= 0; i--)
+                if (!kept.Contains(tokensRoot.GetChild(i))) Retire(tokensRoot.GetChild(i).gameObject);
+            for (int j = 0; j < placed.Count; j++)
+            {
+                if (from[j] < 0 || same[j]) continue;
+                var root = tokenRoots[from[j]];
+                FreeMeshes(tokenMeshes[from[j]]);
+                for (int c = root.childCount - 1; c >= 0; c--) Retire(root.GetChild(c).gameObject);
+                if (motions[from[j]] is UnitTokenMotion m && m != null) m.Restart();   // as a new token's (the hand-over follows)
+            }
             // The outgoing holders are destroyed only after the new tokens have acquired their models, as the player's
             // deferred Destroy already does: an edit-mode rebuild must not drop a model's last owner in between and ask the
             // source again for a request still in flight (or release an arrived model) only to re-acquire it.
-            try { BuildTokens(drawnAt, firing, hits); }
+            try { BuildTokens(drawnAt, firing, hits, from, same); }
             finally { foreach (var old in outgoing) if (Application.isPlaying) Destroy(old); else DestroyImmediate(old); }
             foreach (int id in drawnSims) gone.Remove(id);
         }
@@ -771,24 +822,47 @@ namespace Statecraft.Game.Map.Units
 
         void BuildTokens(IReadOnlyDictionary<(int sim, string row), Vector3> drawnAt,
             IReadOnlyDictionary<(int sim, string row), float> firing,
-            IReadOnlyDictionary<(int sim, string row), (float left, float delay)> hits)
+            IReadOnlyDictionary<(int sim, string row), (float left, float delay)> hits, int[] from, bool[] same)
         {
             pickVersion++;
-            FreeTokenMeshes();
+            // What each old token holds, by its old index (from): a kept token takes its own entries over unchanged.
+            var oldRoots = tokenRoots.ToArray(); var oldMeshes = tokenMeshes.ToArray(); var oldHoles = tokenHoles.ToArray();
+            var oldMotions = motions.ToArray(); var oldBadges = badges.ToArray(); var oldHomes = badgeHomes.ToArray();
+            var oldTrios = trios.ToArray(); var oldBoxes = keepClear.ToArray();
+            tokenRoots.Clear(); tokenMeshes.Clear(); tokenHoles.Clear();
             motions.Clear();
             drawnSims.Clear();
             foreach (var p in placed) drawnSims.Add(p.Token.StateUnit?.Id ?? -1);
+            drawnPlaced = placed;
             badges.Clear(); badgeHomes.Clear(); facedFor = null;
-            trios.Clear(); turnedFor = null; zoomShown = 1f;   // the new figures stand as at yaw 0, at their own scale
+            // The new figures stand as at yaw 0 and at their own scale, the kept ones as the last camera turned them: FaceCamera
+            // turns and scales them all.
+            trios.Clear(); turnedFor = null; rescaleDue = true;
             treeHoles.Clear();
             keepClear = new List<Bounds[]>();   // a new list, so the labels see the change
             keepClearSpare = new List<Bounds[]>(); slid = false;   // and a spare no label pass has seen
             float hex = map.Hexes.hex_size_km * 1000f;
-            foreach (var p in placed)
+            for (int n = 0; n < placed.Count; n++)
             {
+                var p = placed[n];
                 var t = p.Token;
-                var go = new GameObject(t.Unit.Id);
-                go.transform.SetParent(tokensRoot, false);
+                if (same[n])
+                {
+                    int i = from[n];
+                    tokenRoots.Add(oldRoots[i]); tokenMeshes.Add(oldMeshes[i]); tokenHoles.Add(oldHoles[i]);
+                    if (oldHoles[i] is { } kept) treeHoles.Add(kept);
+                    badges.Add(oldBadges[i]); badgeHomes.Add(oldHomes[i]); trios.Add(oldTrios[i]); keepClear.Add(oldBoxes[i]);
+                    continue;
+                }
+                GameObject go;
+                if (from[n] >= 0) { go = oldRoots[from[n]].gameObject; go.name = t.Unit.Id; }   // its old pieces are gone (Rebuild)
+                else
+                {
+                    go = new GameObject(t.Unit.Id);
+                    go.transform.SetParent(tokensRoot, false);
+                }
+                buildingMeshes = new List<Mesh>();
+                (Vector2 centre, float radius)? hole = null;
                 var centre = Centre(p.Spot);
                 var foot = centre;   // where the badge's height is measured from
                 float top, plinth = 0f;
@@ -801,7 +875,7 @@ namespace Statecraft.Game.Map.Units
                         float k = UnitShowcase.DrawSpread * hex * Spread(p.Spot);
                         plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), k));
                         foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, TokenMesh, MeshFor, paint, rim, FlagCloth);
-                        treeHoles.Add((new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter));
+                        hole = (new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter);
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
                         float highest = foot.y;   // the badge clears the highest figure (on a slope the uphill one stands higher)
                         bool israel = t.Unit.Side == UnitData.Israel;
@@ -859,7 +933,7 @@ namespace Statecraft.Game.Map.Units
                         if (!t.Flying && StillBox(go.transform, null, Array.Empty<MeshFilter>()) is Bounds aircraft)
                         {
                             var flat = new Vector2(aircraft.center.x, aircraft.center.z);
-                            treeHoles.Add((flat, new Vector2(aircraft.extents.x, aircraft.extents.z).magnitude));
+                            hole = (flat, new Vector2(aircraft.extents.x, aircraft.extents.z).magnitude);
                         }
                         top = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
                         break;
@@ -892,20 +966,43 @@ namespace Statecraft.Game.Map.Units
                 var hitFlash = AddRenderer(badge.transform, "HitFlash", MeshFor("badge-plate", UnitBadge.PlateMesh),
                     hitPlate, -UnitBadge.GlyphLift * 0.5f);
                 hitFlash.enabled = false;
-                AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
+                // #2432: a military sim unit's strength in pips under a smaller glyph (UnitBadge.PipsMesh), one shared mesh per
+                // strength and full strength, built here with the tokens (a change of either rebuilds them, UnitToken.Equals),
+                // so nothing is done per frame; the squadron, the ships and a map-only token have no sim strength and no pips.
+                bool pips = t.StateUnit != null && t.StateUnit.Side != "";
+                AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service + (pips ? "-pips" : ""), () => UnitBadge.GlyphMesh(t.Unit.Service, pips)),
+                    badgeGlyph, -UnitBadge.GlyphLift);
+                if (pips)
+                {
+                    int strength = t.StateUnit!.Strength, full = Mathf.Max(strength, UnitDamage.FullStrength(shownContent, t.StateUnit));
+                    AddRenderer(badge.transform, "Pips", MeshFor(FormattableString.Invariant($"badge-pips-{strength}/{full}"), () => UnitBadge.PipsMesh(strength, full)),
+                        badgeGlyph, -UnitBadge.GlyphLift);
+                }
                 // The badge's cube and the pieces (the flag and the figures as they stand now); FaceCamera moves both with the camera.
                 var pieces = standing;
                 if (pieces is Bounds s) { if (flag != null) s.Encapsulate(WorldBox(flag)); foreach (var m in meshes) if (m != null && m.sharedMesh != null) s.Encapsulate(WorldBox(m)); pieces = s; }
                 keepClear.Add(pieces is Bounds p2 ? new[] { new Bounds(badge.transform.position, Vector3.one * UnitBadge.SizeM), p2 }
                     : new[] { new Bounds(badge.transform.position, Vector3.one * UnitBadge.SizeM) });
+                tokenHoles.Add(hole);
+                if (hole is { } h) treeHoles.Add(h);
+                tokenMeshes.Add(buildingMeshes);
+                tokenRoots.Add(go.transform);
             }
+            buildingMeshes = null;
+            for (int n = 0; n < tokenRoots.Count; n++) tokenRoots[n].SetSiblingIndex(n);   // the children in the tokens' order
             FaceCamera(Camera.main);   // the badges as the main camera sees them until a render turns them
             HideTrees();
             for (int i = 0; i < placed.Count; i++)
             {
-                if (!AnimateMoves) { motions.Add(null); continue; }
-                var token = tokensRoot.GetChild(i);
-                var motion = token.gameObject.AddComponent<UnitTokenMotion>();
+                if (same[i]) { motions.Add(oldMotions[from[i]]); continue; }   // a kept token's move, attack or hit plays on
+                var token = tokenRoots[i];
+                var reused = from[i] >= 0 ? oldMotions[from[i]] : null;
+                if (!AnimateMoves)
+                {
+                    if (reused != null) { if (Application.isPlaying) Destroy(reused); else DestroyImmediate(reused); }
+                    motions.Add(null); continue;
+                }
+                var motion = reused != null ? reused : token.gameObject.AddComponent<UnitTokenMotion>();
                 motion.enabled = false;   // runs only while it moves or attacks
                 motion.SimId = placed[i].Token.StateUnit?.Id ?? -1;
                 motion.Changed = () => { pickVersion++; facedFor = null; slid = true; };   // FaceCamera sets the badge and the boxes where the token is drawn

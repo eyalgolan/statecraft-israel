@@ -229,11 +229,17 @@ public partial class DesignValuesTests
     [InlineData("military.active_money", "Agreed", "0.05", Keep, Oct30)]
     [InlineData("prisoner.return_points", "Agreed", "10", "\"10 per unit, main (Recommended)\"", Nov1)]
     [InlineData("military.fortify_bonus", "Agreed", "25", "owner-approved answer O1 (1 November 2026, #1668 issuecomment-6553884547): +25%, one turn to set", Nov1)]
+    [InlineData("combat.artillery_range", "Agreed", "2", "owner-approved answer O5 (1 November 2026, https://github.com/eyalgolan/statecraft-israel/pull/1668#issuecomment-6553884547): \"2 hexes.\"", Nov1)]
+    [InlineData("combat.artillery_factor", "Agreed", "2", "C1 (10 November 2026, https://github.com/eyalgolan/statecraft-israel/issues/2918#issuecomment-6765662598): \"200% wins (Recommended)\"", "10 November 2026")]
     [InlineData("transit.cost", "Default", "0.50", PostMvp, Nov1)]
     [InlineData("reception.queue_cohesion_loss", "Default", "1", PostMvp, Nov1)]
     [InlineData("housing.max_deterioration", "Default", "10", "declined by the owner", Oct30)]
     [InlineData("housing.overflow_deterioration", "Agreed", "5", "\"Yes, 5 pp under GDD 0.3 (Recommended)\"", "2 November 2026")]
     [InlineData("field.slots", "Agreed", "1", "\"One farmer per field (Recommended)\"", "3 November 2026")]
+    [InlineData("military.strength", "Default", "1 2 3", S3, Nov10)]
+    [InlineData("military.refugee_multiplier", "Default", "0.75", S3All, Nov10)]
+    [InlineData("food.shortage_combat_slope", "Default", "1", S3All, Nov10)]
+    [InlineData("food.shortage_cohesion_max", "Default", "10", S3All, Nov10)]
     public void Gdd03RowsFollowTheOwnersLaterRulings(string key, string basis, string values, string ruling, string date)
     {
         var row=ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance!.Values[key];
@@ -246,7 +252,8 @@ public partial class DesignValuesTests
         foreach(var part in row.Parts.Values) Assert.DoesNotContain("Agreed",part.Note);
     }
     const string D2="\"Approve all six (Recommended)\"", Keep="\"Keep the set values (Recommended)\"",
-        PostMvp="\"Approve all 79 (Recommended)\"", Oct30="30 October 2026", Nov1="1 November 2026";
+        PostMvp="\"Approve all 79 (Recommended)\"", Oct30="30 October 2026", Nov1="1 November 2026",
+        S3="\"Default, not operative (Recommended)\"", S3All="\"Same answer for all 4 (Recommended)\"", Nov10="10 November 2026";
     [Theory]
     [InlineData("0")][InlineData("1")][InlineData("34")][InlineData("-1")][InlineData("1.5")]
     public void Gdd03LoaderRefusesEveryNumericArmyGuessWhileDeferred(string number)

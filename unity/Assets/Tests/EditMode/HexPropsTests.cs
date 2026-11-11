@@ -215,6 +215,34 @@ public class HexPropsTests
         Assert.That(ctx.Placements.Count(p => p.Model == id), Is.GreaterThan(0), tile + " places " + id);
     }
 
+    /// <summary>#3077: desert_edge draws one tent model per camp tent, so at most its three (DesertEdge.MaxTents), both where
+    /// the editor loads the tent from the AssetDatabase and where it streams (a player; here a test source). Each camp tent
+    /// was a row of two or three placements of the tent id, and each drew a whole tent model, up to nine on the tile.</summary>
+    [Test]
+    public void TheDesertEdgeDrawsAtMostOneTentModelPerCampTent()
+    {
+        const string tent = "tiles:desert_edge/tent";
+        var hexes = new[] { (2, -1, 1948), (-3, 5, 7), (11, -8, 31415), (0, 0, 1), (5, 2, 42) };
+        void Check(string where)
+        {
+            foreach (var (q, r, seed) in hexes)
+            {
+                var ctx = new HexTileContext(q, r, new FlatSurface(), seed);
+                HexPrototypes.Create("desert_edge").Build(ctx);
+                Assert.That(ctx.Placements.Count(p => p.Model == tent), Is.InRange(1, 3), $"{where}: desert_edge ({q},{r}) seed {seed}: tent models");
+            }
+        }
+        Assert.IsNotNull(HexModels.Prefab(tent), "the editor loads the tent from the AssetDatabase");
+        Check("editor");
+        HexCollectionFigures.PropSource = (_, __, ___) => { };
+        try
+        {
+            Assert.IsTrue(HexCollectionFigures.Streams(tent));
+            Check("streamed");
+        }
+        finally { HexCollectionFigures.PropSource = null; }
+    }
+
     static void Step(IEnumerator run, int frames)
     {
         var stack = new Stack<IEnumerator>();

@@ -44,8 +44,9 @@ namespace Statecraft.Sim
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (commands == null) throw new ArgumentNullException(nameof(commands));
             if (commands.Any(x => x == null)) throw new ArgumentException("Commands cannot contain null.", nameof(commands));
-            // R-POP-002: fixture ledger producers/consumers are not integrated with the aggregate loop.
-            PopulationLedger.RefuseAggregate(state);
+            // R-POP-002 (#1725 PR 6, owner 8 November 2026, "Historical mode alone (Rec.)"): a dark start's Historical ledger
+            // comes in, and an order whose system is not ledger-ready refuses on the clone; a synthetic or Open ledger does not.
+            PopulationLedger.RefuseUnlessHistorical(state);
             CommandText.Validate(commands);
 
             var s = state.Clone();
@@ -61,8 +62,10 @@ namespace Statecraft.Sim
             var attacked = new Dictionary<int, AttackRecord>();
             var actions = new List<OperationAction>();
             RunOrders(c, s, commands, spent, attacked, why, rejected, actions);
-            // A delegated card's unit orders share the turn's movement and attacks (R-ENEMY-005, R-ENEMY-008).
-            EventSystem.Delegate(c, s, why, spent, rejected, actions, attacked);
+            // A delegated card's unit orders share the turn's movement and attacks (R-ENEMY-005, R-ENEMY-008). On a ledger game
+            // only a waiting card is handed over, and Delegate still refuses it (R-POP-002, "Only if none pending (Rec.)").
+            if (!s.PopulationLedger.IsInitialized || s.PendingEvents.Count > 0)
+                EventSystem.Delegate(c, s, why, spent, rejected, actions, attacked);
 
             var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
             // The next era's start, or the game's end (the last era's end, or mvp.end in the GDD loop, R-LOOP-004), is a

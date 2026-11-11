@@ -168,8 +168,10 @@ war's total for all the Egyptian air raids on Tel Aviv, with every figure found 
   drops the frame and keeps the text and OK; with video off there is no frame.
 - **The gate.** A player build shows the card only when `status` is `sensitivity-reviewed`, every source is checked, the
   Hebrew is `he_review: approved` and the clip is `sensitivity_reviewed: true` (`RaidCardContent.MayPresent`). The Editor
-  shows the draft with the opening's preview label. `tools/tests/test_raid_intro_sources.py` checks the sources, the
-  `ASSETS.yaml` row (AI-generated, CC0, verified), the `docs/ai-disclosure.md` line and that the card has no credit line.
+  shows a draft with the opening's preview label. The owner reviewed the card on 10 November 2026 ("Approve text, HE,
+  clip", and "Approve as is" for the Hebrew), so player builds show it. `tools/tests/test_raid_intro_sources.py`
+  checks the sources, the `ASSETS.yaml` row (AI-generated, CC0, verified), the `docs/ai-disclosure.md` line and that the
+  card has no credit line.
 
 ## Where things are
 

@@ -53,6 +53,14 @@ namespace Statecraft.Game.UI
             _ => throw new ArgumentOutOfRangeException(nameof(id), id, "not a top-bar meter"),
         };
 
+        /// <summary>#803 (R-CTRL-019): the lines a meter's tip always shows, whatever the turn's causes: for International
+        /// support, the places the player's Deports have depopulated while there are any; none for any other meter. MeterTip
+        /// puts them before the causes' heading, so MaxCauses never drops them.</summary>
+        public static IReadOnlyList<string> PersistentCauses(UiText text, GameState state, string meter) =>
+            meter == "standing" && state.DisplacedByPlayer > 0
+                ? new[] { text.Format("hud.standing_displaced_places", state.DisplacedByPlayer) }
+                : Array.Empty<string>();
+
         /// <summary>The main causes behind a meter in <paramref name="turn"/> (#1037): the sim's own causes
         /// (StepResult.Why) for the quantity the meter shows. Immigration's causes are this turn's arrivals, not causes of
         /// the difference from the preceding turn. Each is worded by <paramref name="line"/> (CauseText.Line: the player's

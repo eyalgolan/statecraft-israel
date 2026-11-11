@@ -76,8 +76,8 @@ namespace Statecraft.Sim
             RefusedNotPioneer = "Only a pioneer unit takes that order", RefusedPioneerBusy = "That unit is at work; stop the work first",
             RefusedNoQualification = "There is no such qualification";
 
-        // #1725: the refusal only a Historical ledger game gives. Internal, not a Refused* constant: no player reaches it yet
-        // (Simulation.Step still refuses a ledger game, R-POP-002), and the UI string follows when it does.
+        // #1725: the refusal only a Historical ledger game gives. Internal, not a Refused* constant, as Training's are; the
+        // UI reads it through PopulationLedger.Refusals (#3020).
         /// <summary>Owner, 9 November 2026, "Refuse for now (Recommended)": ReturnCraftsmen and ReassignCraftsmen are refused
         /// with a plain reason until #2476 makes craftsmen exist on the ledger (the Historical start has none, and the craftsman
         /// course is refused until then, Training.LedgerRefusedCraftsman).</summary>
@@ -223,7 +223,7 @@ namespace Statecraft.Sim
             && p.Assignment.Kind == PopulationAssignmentKind.Unassigned && p.Profession == CivilianProfession.Pioneer;
 
         /// <summary>#1725 PR 7: R-QUAL-005's refusal on a Historical ledger game when the city has fewer free pioneer records
-        /// than the groups asked for. Internal, as Training's ledger refusals are: no player reaches it yet (R-POP-002).</summary>
+        /// than the groups asked for. Internal, as Training's ledger refusals are; the UI reads it through PopulationLedger.Refusals (#3020).</summary>
         internal const string LedgerRefusedFreePioneers = "{0} has {1} free pioneers without work";
 
         /// <summary>R-QUAL-005: <paramref name="count"/> of the city's qualified halutz groups (<paramref name="track"/>

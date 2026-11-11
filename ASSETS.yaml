@@ -1687,6 +1687,18 @@ rules:
     source: "tools/land_bake.py (issue #33): the land-use colour and weight (procedural field parcels with farm tracks, garrigue, terraces and scrub) placed by: slope and water from the Copernicus DEM-derived heightmap (Copernicus-DEM); rainfall from CHELSA V2.1 bio12 (CC0-1.0) bias-corrected by the IMS station normals of content/map/precip_stations.json (data.gov.il dataset 481, IMS-data.gov.il, decision D6); content/map/hexes.json biomes (this project's own content, CC-BY-SA-4.0); and the town coordinates of content/map/settlements_1948.yaml (Wikipedia API, CC-BY-SA-4.0) for the citrus belt. Procedural, not AI-generated; attribution in NOTICE"
     status: verified
     note: "Decision D13 decided (owner, 2026-10-14, docs/oss/DECISIONS.md): CC BY-SA 4.0, the most restrictive input (the 1948 settlement coordinates from Wikipedia); the DEM, CHELSA and IMS findings accepted as recorded."
+  - glob: "unity/Assets/Textures/Map/furrows.png"
+    licence: CC-BY-SA-4.0
+    source: "tools/land_bake.py (issue #2917): how strongly the ground detail pass draws furrows, by the same procedural field parcels and the same inputs as landuse.png (its row above: the Copernicus DEM-derived heightmap, Copernicus-DEM; CHELSA V2.1 bio12, CC0-1.0, with the IMS station normals, decision D6; content/map/hexes.json; content/map/settlements_1948.yaml, Wikipedia API, CC-BY-SA-4.0). Procedural: no image model; attribution in NOTICE"
+    ai_generated: true
+    status: verified
+    note: "Licensed as landuse.png under decision D13 (owner, 2026-10-14, docs/oss/DECISIONS.md): baked in the same pass from the same inputs. ai_generated is true because Claude Code wrote the code that bakes it (#2917); no generative image model made any pixel."
+  - glob: "unity/Assets/Textures/Map/fieldblocks.png"
+    licence: CC-BY-SA-4.0
+    source: "tools/land_bake.py (issue #2917): each procedural farm block's angle and strip offset, from the bake's seeded hash and the heightmap's extent (unity/Assets/StreamingAssets/map/heightmap.json, Copernicus-DEM), so the ground detail pass lays furrows along landuse.png's parcels. No geography or facts in it. Procedural: no image model"
+    ai_generated: true
+    status: verified
+    note: "Licensed as landuse.png under decision D13, as a by-product of the same bake. ai_generated is true because Claude Code wrote the code that bakes it (#2917); no generative image model made any pixel."
   - glob: "unity/Assets/Resources/Map/BiomeColours.bytes"
     licence: CC-BY-SA-4.0
     source: "The biome ground colours (issue #321, #529), baked by Editor BiomeColourBake from the biomes and centres of content/map/hexes.json, the heightmap's bounds (unity/Assets/StreamingAssets/map/heightmap.json) and this project's MapPalette.Ground colours. The biomes are derived by tools/hexgrid.py from the Copernicus DEM GLO-30-derived heightmap (Copernicus-DEM), CHELSA V2.1 bio12 rainfall (CC0-1.0) and the IMS station normals of content/map/precip_stations.json (data.gov.il dataset 481, decision D6); no new facts; attribution in NOTICE"
