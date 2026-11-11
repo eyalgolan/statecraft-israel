@@ -121,21 +121,29 @@ the days of Migdal HaEmek, Hazor HaGelilit and Poriyya Illit stay **[GAP]**.
   https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/hazor . Quote: "its first housing
   schemes were ready in 1953"; it also says "The site was chosen in 1950". So **March 1953 [S]** for the first
   residents; the day is **[GAP]**.
-- (11 Nov) **Migdal HaEmek (row 7): a third source on the year, day still [GAP].** *Encyclopaedia Judaica*, "Migdal
+  The same article, p. 248 (with its note 86), says the Rosh Pinna ma'abara was cleared bit by bit from late February
+  1953: "החל מסוף פברואר 1953 המעברה הלכה והתחסלה בהדרגה", most evacuees moving to Hazor. That does not contradict
+  March 1953 for the first residents.
+- (11 Nov) **Migdal HaEmek (row 7): a second read source for 1952, day still [GAP].** *Encyclopaedia Judaica*, "Migdal
   Ha-Emek", Jewish Virtual Library, https://www.jewishvirtuallibrary.org/migdal-ha-emek . Quote: "founded in 1952 with
-  the aim of absorbing inhabitants of transitory immigrant camps". With CBS that is two sources for 1952 against both
-  Wikipedias' 1953; the row stays [C], with 1952 still preferred. Current Hebrew Wikipedia
+  the aim of absorbing inhabitants of transitory immigrant camps". With CBS that is two read sources for 1952 against
+  both Wikipedias' 1953 (the Sha'arim citation of December 1952 is known only through Hebrew Wikipedia); the row stays
+  [C], with 1952 still preferred. Current Hebrew Wikipedia
   (https://he.wikipedia.org/w/index.php?oldid=44151893, "מגדל העמק") now also cites Davar of 23 January 1953, "ישוב חדש
-  במבואות נצרת". The NLI page of that article returned HTTP 403 (a browser check); its Wayback copy
-  (https://web.archive.org/web/20241223085319/https://www.nli.org.il/he/newspapers/dav/1953/01/23/01/article/72)
-  holds only page images, no text, so it was **not read**. The Sha'arim article of 16 December 1952 has no Wayback copy.
+  במבואות נצרת". The NLI page of that article returned HTTP 403 (a browser check). Its only Wayback copy, of 30
+  September 2023
+  (https://web.archive.org/web/20230930041556/https://www.nli.org.il/he/newspapers/dav/1953/01/23/01/article/72),
+  holds the page images and, in its page metadata, a cut-off OCR headline: "ישוב חדש במבואות נצרת / יוצאי סין -
+  הראשונים שעברו למקום", which breaks off a few words later. It gives no founding day, so the article was **not read**.
+  The subhead (people from China were the first to move there) fits the founders line in row 7 (my reading). The Sha'arim article of 16 December 1952 has no Wayback copy.
   JPress pages could not be read without a browser, which this pass did not use. Searched and not found: a founding
   day in English Wikipedia, Wikidata (Q168337, year only, imported from Wikipedia) and web searches in Hebrew for the
   municipality's history page.
 - (11 Nov) **Poriyya Illit (row 16): day still [GAP].** Read: current Hebrew Wikipedia (same `oldid` 43177261, no
   change, no newspaper citation for 1955); Wikidata Q2916666 (year 1955 only, imported from Wikipedia); *Encyclopaedia
   Judaica*, "Poriyyah", https://www.jewishvirtuallibrary.org/poriyyah , which covers the 1912 farm, Alummot in 1940 and
-  the 1949 work village of Poriyya (Neve Oved) but has no 1955 settlement; JTA site search `Poria` and `Poriah` (pages 1
+  the 1949 work village (kefar avodah) of Poriyya but has no 1955 settlement (it lists the Neveh Oved quarter
+  separately and does not say which quarter the 1949 village became); JTA site search `Poria` and `Poriah` (pages 1
   and 2 each, no archive item about the village). Not found: the Emek HaYarden Regional Council page on the village.
 - (11 Nov) **Ma'ale Gilboa (row 26): earlier attempt still [GAP], one pointer against it.** JTA, 7 August 1963,
   https://www.jta.org/archive/american-rabbis-adopt-military-agricultural-settlement-in-israel . Quote: "established
@@ -150,11 +158,15 @@ the days of Migdal HaEmek, Hazor HaGelilit and Poriyya Illit stay **[GAP]**.
     https://web.archive.org/web/20160304031237/http://www.megido.org.il/info/yesh/midrach-oz.htm . Quote: "מושב מדרך
     עוז הוקם ב-1952 על ידי מייסדים שעלו מתימן". Year and founders only; it gives no day, so the row 5 day stays [C].
     It agrees with both Wikipedias that a ma'abara on the lands of al-Mansi came first and was dismantled after a year.
-  - Mele'a moshav site, Wayback copy of 21 October 2026:
+    The Wayback index lists 4 March 2016 as a full capture and served it on 2026-11-11; its records of 2 June and 21
+    August 2016 are revisits with the same content, so a link may land on 2 June 2016 with the same text.
+  - Mele'a page on homee.co.il ("אתר הבית", a rural housing and property portal, not the moshav's own site; cited by
+    Hebrew Wikipedia), Wayback copy of 21 October 2026:
     https://web.archive.org/web/20261021191043/https://www.homee.co.il/%D7%9E%D7%9C%D7%90%D7%94/ . Quotes: "ראשוני
     התושבים עלו על הקרקע במלאה בשנת 1956." and "במקומם, הגיעו עולים חדשים מפולין". It gives the year only (no day)
     and does not say where the first settlers came from; on the order it agrees with English Wikipedia (Polish
-    immigrants came after most founders left), against Hebrew Wikipedia. See row 17.
+    immigrants came after most founders left), against Hebrew Wikipedia. The blurb names no source and says the moshav
+    "יחגוג בקרוב 60 שנה", so it was written about 2016; it is a weak third account. See row 17.
 - (11 Nov) **Defunct localities founded 1952-56.** Not searched in this pass; still **[GAP]**.
 
 ## Summary table
@@ -467,9 +479,11 @@ Common sources, cited by short name in every row:
   from Morocco". English Wikipedia also gives the reverse order: "by the end of 1957 most of the original
   settlers moved out, with Jewish immigrants from Poland moving in to replace them". I prefer the Hebrew account
   (more detail), but that is my reading.
-  (11 Nov) The moshav's own site, read through the Wayback Machine, agrees
-  with English Wikipedia on the order: "במקומם, הגיעו עולים חדשים מפולין" (third pass). That preference is withdrawn;
-  the row stays [C] with no preference.
+  (11 Nov) The homee.co.il page on Mele'a (a rural housing portal, not the moshav's own site; read through the
+  Wayback Machine, third pass) agrees with English Wikipedia on the order: "במקומם, הגיעו עולים חדשים מפולין". It is
+  an unsourced portal blurb of about 2016, so it does not settle the order. But the preference above rested only on
+  "more detail", and with one more account, however weak, against it, I withdraw it: the row stays [C] with no
+  preference.
 - **Renames.** None found. Gvati: from the verse "המלאה הזרע אשר תזרעו", which it cites as "(דברים י"ב, ט')".
 - **Coordinates.** CBS 32.56354, 35.23756 (code 164).
 - **Sources.** CBS; Gvati; https://he.wikipedia.org/w/index.php?oldid=43761711 ("מלאה");
@@ -596,8 +610,9 @@ Common sources, cited by short name in every row:
   "The kibbutz was founded in 1962 as a Nahal settlement", infobox "founded = 1963". **I prefer 29 November 1962**
   (CBS and both Wikipedias), so the row is out of the window. Whether Gvati's 1952 date marks an earlier attempt on the
   site is **[GAP]**.
-  (11 Nov) Two JTA items of 1963 (third pass) call the 1962 outpost the first settlement on the mountain,
-  on my reading; that does not rule out a 1952 attempt.
+  (11 Nov) A JTA item of 7 August 1963 dates a Mount Gilboa settlement to the year before, and one of 15 November 1963
+  calls a settlement there "the first pioneering settlement on the mountain" (third pass). Neither names it; that both
+  mean the 1962 outpost is my reading. That does not rule out a 1952 attempt.
 - **Renames. [S, Wikipedia]** Hebrew Wikipedia: the Nahal called it "מצפור הגלבוע".
 - **Site note. [S, Wikipedia]** English Wikipedia: "on land near the former depopulated Palestinian village of
   Khirbat al-Jawfa". Given as worded.
