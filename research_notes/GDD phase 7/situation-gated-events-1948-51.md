@@ -29,6 +29,7 @@ for R-TURN-003 if the historical run is in that situation on that turn. This not
 - Every URL below was opened on **2026-10-16** (the check date for all of them). Two research helpers read the pages
   first; every quotation tagged [V] below was then re-fetched and matched verbatim in the page text by the note's
   author, the same day. JTA bulletin dates are the pages' own `datePublished`. The Suez complaint sources added for issue #1426 (section 1d) were read on **2026-10-23** by an AI agent; a person's check is pending. The seamen's strike sources added for issue #1425 (section 2a) were read on **2026-10-23** (JTA 24 and 27 Dec 1951 on **2026-10-27**) by an AI agent; a person's check is pending.
+  (11 Nov) Later passes for issue #1425 were read on **2026-11-02**, **2026-11-03** and **2026-11-11** (dated in their tags), also by an AI agent; a person's check is pending.
 - Tags, as in the #135 note:
   - **[V] verified**: read in a primary or official record (FRUS, UN resolution text) or in the period press (JTA
     Daily News Bulletin), quoted verbatim.
@@ -217,6 +218,7 @@ Turn: 15 November 1951 (the same turn as `forex_crisis_1951`; just **after** the
   second month".
 - **Start, Monday 12 November 1951** (issue #1425; read 2026-10-23 from the scans by Claude Code, an AI, not yet by a
   person):
+  (11 Nov) 13 November in he.wiki and by JTA's 13 Dec count; see the third pass below.
   - [V] JTA Daily News Bulletin, 13 Nov 1951 (Vol. XVIII No. 219), p. 3, "350 Israel Seamen Halt Work in Dispute with
     Histadrut", dateline "HAIFA, Nov. 12": "Some 350 Israeli seamen today 'resigned' from their jobs in a dispute
     between the seamen's union and the Histadrut. As a result, three Israeli vessels are tied up in the harbor here."
@@ -269,6 +271,7 @@ Turn: 15 November 1951 (the same turn as `forex_crisis_1951`; just **after** the
     a "new approach for an agreement" with the Histadrut was reported on 4 December, with negotiations that "now appear near" (JTA 4 Dec); the end came through an agreement with the
     organising committee of the new Histadrut-sponsored union (JTA 26 Dec).
   - **Steps between the start and the end, and the aftermath** (2 Nov 2026, agent read, four bulletin page images viewed; JTA search `search=seamen` over 28 Dec 1951 to 30 Jun 1952 finds one other Israeli item on the strike after its end, 14 Mar 1952, the last row below (a 30 Jan 1952 item on Polish seamen is not this strike); the items of 6, 7, 12, 18 and 19 Dec 1951 that the search also returns are unread, and are left for a later pass, as are the other November and December items that it returns):
+    (11 Nov) The third pass below reads those items.
     - [V, agent read 2026-11-02; a person's check pending] JTA Daily News Bulletin, 10 Dec 1951 (Vol. XVIII No. 237), p. 1, "Attempt to End Israeli Seamen's Strike Fails Again", dateline "JERUSALEM, Dec. 9. (JTA)": the strikers "refused to return to work before negotiations were begun with the Histadrut, as had been demanded by the labor federation"; "This week-end saw the launching of a new nationwide seamen's union by the Histadrut under the leadership of Shaul Avigor"; most strikers refused to join it, and the Histadrut-formed union refused to guarantee that all would be rehired. The captain of the *Tel Aviv*, Itzhak Aharanowitz (as printed), "became the first captain to throw in his lot with the strikers". The same item has the Histadrut secretary-general reporting that 10 ships had sailed with volunteer crews. http://pdfs.jta.org/1951/1951-12-10_237.pdf
     - [V, agent read 2026-11-02; a person's check pending] JTA Daily News Bulletin, 12 Dec 1951 (No. 239), p. 1, "Israel Parliament Urges Striking Seamen to Return to Work", dateline "JERUSALEM, Dec. 11. (JTA)": the Knesset "today adopted a resolution calling upon the striking Israeli seamen to cease their month-old strike"; Ben-Gurion, as Acting Minister of Communication, said they had been "misled by a small group of political saboteurs" and that he was "ready to receive their delegation"; Pinkas told the house the merchant marine employed 1,100 seamen when the strike began, 882 Israelis and 218 foreigners, and, in JTA's words, insisted the action was not a strike but a walk-out. These are the speakers' statements, not findings. http://pdfs.jta.org/1951/1951-12-12_239.pdf
     - [V, agent read 2026-11-02; a person's check pending] JTA Daily News Bulletin, 17 Dec 1951 (Vol. XVIII No. 242), p. 4, "Scores of Police, Israeli Seamen Injured in Clashes in Haifa", dateline "HAIFA, Dec. 16. (JTA)": the clash was over a police force removing crews from two freighters, the *Tel Aviv* and the *Rimon*; the crew of the *Tel Aviv* held out in the engine room for several hours. (This is the item the 17 December line above quotes.) http://pdfs.jta.org/1951/1951-12-17_242.pdf
@@ -276,6 +279,104 @@ Turn: 15 November 1951 (the same turn as `forex_crisis_1951`; just **after** the
     - [V, agent read 2026-11-03; a person's check pending] JTA Daily News Bulletin, 14 Mar 1952 (No. 52 by the file name; the volume number was not read), p. 3, "Noted Israeli Poet Fined for Participating in Illegal Demonstration", dateline "TEL AVIV, March 13. (JTA)": "Abraham Shlonsky, well known Hebrew poet, was fined three Israeli pounds today after being found guilty of participating in an illegal demonstration. Mr. Shlonsky took part in a Mapam demonstration held in favor of striking Israeli seamen last December." (page image viewed; the scan reads "fined three Iszaeli pounds" and "Mr, Shlonsky took pert", normalised here). The item gives no date for the demonstration, so which December demonstration it was is not found; the fine was imposed on 13 March 1952 ("today" in the dateline). https://www.jta.org/archive/noted-israeli-poet-fined-for-participating-in-illegal-demonstration , http://pdfs.jta.org/1952/1952-03-14_052.pdf
   - [S] he.wiki also records an earlier, separate dispute on the *Negba* that began in Marseille in June 1951 and spread
     to other Shoham ships in July 1951; it is not part of the November-December dispute and is not a start date for it.
+- **Third pass for issue #1425 (11 Nov 2026, read by Claude Code, an AI; a person's check pending).** It reads the
+  JTA items the 2 Nov pass left unread and two secondary sources by Boaz Garfinkel. It does **not** settle the end day:
+  the [C] between 23, 24 and 25 December stays. Hebrew dailies are still not reached: on 11 Nov 2026 the NLI newspaper
+  pages (`nli.org.il/he/newspapers/...`) and `jpress.org.il` returned HTTP 403, and archive.org still has no *Jerusalem
+  Post* item for December 1951 (`identifier:per_jerusalem-post_the-jerusalem-post_1951-12*`, 0 found).
+  - JTA search `https://www.jta.org/wp-json/wp/v2/archive?search=seamen&after=1951-11-01T00:00:00&before=1952-01-01T00:00:00`
+    (run 11 Nov 2026) returned 38 items; the seamen items not cited above are listed here. Three page images were
+    viewed (marked "page image"); the rest were read in the jta.org text only, which is the scan's transcription, so
+    their wording is not checked against the scan.
+  - [V, agent read 2026-11-11, page image; a person's check pending] JTA Daily News Bulletin, 14 Dec 1951 (Vol. XVIII No. 241), p. 2, "Israeli Strikers in New York Told
+    to Resist Police Debarkation", dateline "TEL AVIV, Dec. 13. (JTA)": "The strike in Israel entered its second month
+    today, with fewer prospects than ever of a peaceful settlement. Contact was broken off between a committee
+    representing the new Histadrut-sponsored national seamen's union and the striking seamen". http://pdfs.jta.org/1951/1951-12-14_241.pdf
+    - Check against the start: "second month today" on 13 December counts from 13 November, the day the *Jerusalem
+      Post* of 13 Nov says "the rest of the seamen are to go ashore tomorrow morning", and the day he.wiki gives for
+      the resignations; it does not fit a 12 November start exactly (our arithmetic). Both days stay side by side:
+      12 November (JTA 13 Nov dateline; *Jerusalem Post* 13 Nov; Garfinkel, below) and 13 November (he.wiki; this item's
+      count). Our reading, not a source: 12 November is the day the crews signed off, 13 November the day most went ashore.
+  - [V, agent read 2026-11-11, page image; a person's check pending] JTA Daily News Bulletin, 3 Dec 1951 (Vol. XVIII No. 232), p. 4, "Shipping Company and Israeli
+    Seamen's Union Sign Agreement", dateline "HAIFA, Dec. 2. (JTA)": "The first break in the more than three-week-old
+    strike of Israeli seamen came today when the union and the Dizengoff Shipping Company signed an agreement for
+    operating the S.S. Meir Dizengoff with its regular crew. The agreement was concluded without the intervention of
+    the Histadrut." (Our arithmetic: 12 November to 2 December is 20 days elapsed, 21 counting both ends, so "more than
+    three-week-old" is loose for either start day.) http://pdfs.jta.org/1951/1951-12-03_232.pdf
+  - [V, agent read 2026-11-11, page image; a person's check pending] JTA Daily News Bulletin, 19 Dec 1951 (Vol. XVIII No. 244), p. 2, "Israeli Ships' Officers Vote to
+    Continue Strike Pending Negotiations", dateline "TEL AVIV, Dec. 18. (JTA)": "Striking ships' officers here and in
+    Haifa today voted against returning to their posts unconditionally, as demanded by the Histadrut-sponsored maritime
+    union." So the strike was still on, at least for the officers, on 18 December. http://pdfs.jta.org/1951/1951-12-19_244.pdf
+  - [V, agent read 2026-11-11, jta.org text only; a person's check pending] 19 Nov 1951, "Lsraeli Seamen Offer to End Strike; Three Vessels Sail" (title as on jta.org):
+    union representatives said they would end the strike "in a matter of hours if the Histadrut would grant the union
+    autonomy within the labor federation set-up for a period of one year"; the second and third ships with volunteer
+    crews left Haifa. https://www.jta.org/archive/lsraeli-seamen-offer-to-end-strike-three-vessels-sail
+  - [V, agent read 2026-11-11, jta.org text only; a person's check pending] 23 Nov 1951: the crew of the S.S. *Galila* "refused to leave the vessels"; the *Kedma* had
+    sailed for Marseilles "with a crew of 50 'volunteers' replacing 50 striking seamen". https://www.jta.org/archive/israel-seamens-strike-situation-tense-union-decries-volunteers
+  - [V, agent read 2026-11-11, jta.org text only; a person's check pending] 26 Nov 1951: police "forced all 60 striking members of the crew of the S. S. Galila to leave
+    the vessel"; the *Negba* crew struck on docking with 400 immigrants from North Africa; the union wrote to the
+    International Transport Workers Federation. https://www.jta.org/archive/tense-situation-at-port-of-haifa-strikers-refuse-to-leave-ship
+  - [V, agent read 2026-11-11, jta.org text only; a person's check pending] 27 Nov 1951: police "forcibly ejected the striking crewmen" (the text reads "tile"); "A
+    number of Italian sailors were flown to this country today to operate strikebound vessels." https://www.jta.org/archive/striking-seamen-dragged-off-ship-by-israeli-police-several-injured
+  - [V, agent read 2026-11-11, jta.org text only; a person's check pending] 6 Dec 1951: disorder in the Knesset "last night" (5 December) when Mapam and Communist members demanded the strike be
+    taken first; the praesidium later "promised to receive a delegation of striking seamen". https://www.jta.org/archive/leftists-provoke-disorder-in-knesset-over-seamens-strike
+  - [V, agent read 2026-11-11, jta.org text only; a person's check pending] 7 Dec 1951: "a minority of the strikers appealed to the Histadrut to form a new main-time
+    union" (as transcribed); the outcome was said to rest on the crews of the *Tel Aviv* and the *Rimon*. https://www.jta.org/archive/seamens-strike-in-israel-approaching-critical-stage
+  - [V, agent read 2026-11-11, jta.org text only; a person's check pending] 12 Dec 1951: Tel Aviv port labourers "declared a one-hour strike to express solidarity with
+    the seamen"; police arrested Abraham Shlonsky "later at his home" after a Mapam street demonstration held "last night"
+    (11 December), on the charge of "participating and addressing an illegal demonstration". Our reading, not a source:
+    this may be the December demonstration for which the 14 Mar 1952 row above has him fined. https://www.jta.org/archive/clashes-between-striking-seamen-and-volunteers-continue
+  - [V, agent read 2026-11-11, jta.org text only; a person's check pending] Abroad: the crew of the *Yafo* struck in New York (12 Dec) and the *Haifa* in Baltimore
+    (13 Dec); the National Maritime Union would not intervene (13 Dec); 26 of the *Yafo* crew were taken to Ellis Island
+    "on orders from the Israeli Government" (17 Dec), and 34 of the *Haifa* crew joined them (18 Dec); the 60 were
+    expected to leave for Israel "in the next few days" (19 Dec; this item is also on the viewed 19 Dec page image,
+    p. 2, dateline "NEW YORK, Dec. 18. (JTA)"). https://www.jta.org/archive/israeli-crew-declares-strike-on-ship-on-reaching-new-york-port ,
+    https://www.jta.org/archive/maritime-union-refuses-aid-to-striking-israel-seamen-in-new-york ,
+    https://www.jta.org/archive/strike-of-israeli-seamen-in-new-york-ended-26-face-deportation ,
+    https://www.jta.org/archive/second-striking-israeli-crew-held-on-ellis-island ,
+    https://www.jta.org/archive/striking-israeli-seamen-in-u-s-to-leave-country-in-a-few-days
+  - [V, agent read 2026-11-11, jta.org text only; a person's check pending] 18 Dec 1951: "More than 3,000 persons" demonstrated in Tel Aviv "last night" (17 December), addressed by Israel Galili;
+    the Histadrut statement called the seamen's action "provocative"; the same item, in JTA's own words, gives 55 policemen injured over the
+    weekend (the 17 Dec item says thirty). https://www.jta.org/archive/3000-demonstrate-in-tel-aviv-streets-support-striking-seamen
+  - [S, agent read 2026-11-11; a person's check pending] Boaz Garfinkel, "הפעלת הצבא לשבירת שביתות נהגי הקטרים והימאים בשנת 1951", *Iyunim* 34 (2020), pp. 147-171,
+    doi:10.51854/bguy-34A106, read from the Wayback copy
+    `http://web.archive.org/web/20250415231620/https://in.bgu.ac.il/bgi/iyunim/34/Boaz-Garfinkel.pdf` (the live URL
+    returned a bot check). p. 150: "ב־12 בנובמבר 1951 פרצה שביתת הימאים הגדולה ... זו נמשכה 43 ימים, והקיפה כ־840
+    ימאים" (on 12 November 1951 the great seamen's strike broke out ... it lasted 43 days and involved about 840 seamen).
+    p. 151: the removals from the ships peaked "ב־14 בדצמבר 1951, ביום שישי השחור" (on 14 December 1951, Black Friday),
+    the *Rimon* and the *Tel Aviv*. No end day is given in the pages read. p. 169: from the cabinet minutes of
+    18 November 1951 (State Archives, as cited there, not read here), the Prime Minister: "אם יהיה הכרח לא אפקפק להעלות
+    את חיל הים על אניות הצי המסחרי שלנו" (if necessary I will not hesitate to put the navy on our merchant ships), and
+    the Chief of Staff, Yigael Yadin, opposed it (Garfinkel citing Kafkafi). The text layer is right-to-left and was
+    re-ordered by hand for these quotes, so the wording needs a person's check against the page.
+  - [S, agent read 2026-11-11; a person's check pending] Boaz Garfinkel, "'המגייסים שלי לשמאל ולקומוניזם היו יוסף אלמוגי, מרדכי נמיר ודוד בן־גוריון': 70 שנים לשביתת
+    הימאים", *Pigumim*, 29 Apr 2021 (`datePublished`), https://pigumim.org.il/70-years-sailors-strike/ : the general
+    meeting decided on a collective resignation "למחרת, יום שני ה־12 בנובמבר 1951"; on Thursday 13 December the
+    strikers' delegates and Shaul Avigor reached understandings ("השביתה תיפסק, כל הימאים השובתים יוחזרו לאוניותיהם
+    בהקדם") and the next morning was "יום שישי השחור"; "ביום שישי שבוע לאחר מכן ... הצביע כינוס הימאים בעד סיום
+    השביתה" (on the Friday a week later the seamen's convention voted to end the strike); "ב־24 בדצמבר 1951 הסתיימה
+    שביתת הימאים" (the strike ended on 24 December 1951). It quotes the 1952 pamphlet *על כן סער הים* (not read):
+    "ארבעים־ושלושה יום".
+  - **Disagreements, side by side (none settled here):**
+    - 13 December: Garfinkel (*Pigumim*) has understandings reached with Avigor that day; JTA's "TEL AVIV, Dec. 13" item
+      has contact "broken off" that day.
+    - The convention's vote: "the Friday a week later" than 14 December (*Pigumim*) would be Friday 21 December (our
+      arithmetic, not the source's words); JTA has the compromise on 23 December and the general meeting's 400-3 vote in
+      a "TEL AVIV, Dec. 25" item; he.wiki has the general meeting on 24 December (citing *HaBoker* 25 Dec, not read).
+    - The end: 23 December (IDI survey), 24 December (*Pigumim*; he.wiki for the vote), 25 December (two JTA datelines).
+      "43 days" (Garfinkel; IDI; the 1952 pamphlet as quoted) is 12 November to 24 December counting both ends, or
+      12 November to 25 December elapsed (our arithmetic); it does not choose between them.
+    - Numbers: about 350 sailors (JTA 13 Nov; *Jerusalem Post* 13 Nov), "over 600 seamen and 17 vessels at its height"
+      (JTA 27 Dec), about 840 (Garfinkel). Police injured on 14-15 December: thirty (JTA 17 Dec), 55 (JTA 18 Dec). Strikers held on
+      Ellis Island: 60 (JTA 19 Dec), 59 deported (JTA 21 Dec).
+  - he.wiki "שביתת הימאים (1951)", revision 41687321 (2025-08-19T17:02:31Z), read through the API on 11 Nov 2026, is
+    a pointer only: its Hebrew press citations for November and December 1951 (*HaBoker* 13, 20 and 21 Nov and 25 Dec; *Haaretz* 14, 15, 16, 18, 21, 22,
+    27, 28 and 29 Nov and 12 Dec; *Davar* 25 Nov and 2 Dec; *Maariv* 5 and 18 Nov; *Al HaMishmar* 8, 19, 23 and 25 Nov;
+    *Kol HaAm* 11, 14 and 27 Nov) are the next reads once NLI opens. en.wiki
+    search ("seamen strike 1951 Histadrut", 11 Nov 2026) found no article on the strike.
+  - For #807 (our arithmetic from the turn rule in Conventions, not a recommendation): a card dated from 12 or
+    13 November reaches the player on the 15 November 1951 turn; every candidate end day (23 to 25 December) falls in
+    the 15 December 1951 turn, so the strike spans two turns whichever end day is right.
 - **Options on the record:** the government's line was police action, call-up notices and foreign crews; a negotiated
   settlement through the Histadrut was the other course being tried. Sensitivity: low; keep to the labour dispute.
 
