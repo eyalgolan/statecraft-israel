@@ -382,7 +382,7 @@ defence.rung5: "5  Full war"
 defence.turn_quarter: "turns of a quarter"
 defence.turn_month: "turns of a month"
 defence.turn_week: "turns of a week"
-defence.command: "Minister of Defense {0} · Chief of Staff {1}"
+defence.command: "{0} {1} · Chief of Staff {2}"   # {0} is the office's title (content/offices.yaml, #2533)
 defence.ceasefire: "If full war goes on, the UN imposes a ceasefire in {0}"   # {0} is "1 week"/"N weeks" (DefencePresenter.Weeks, #2530)
 defence.order: "Ordered: level {0} to {1}"
 defence.mob: "{0} of reserves called up (level {1} needs at least {2})"
