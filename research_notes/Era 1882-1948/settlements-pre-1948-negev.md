@@ -315,7 +315,8 @@ of Negev settlement. Be'erot Yitzhak has its own section below.
   Amudanan put the Ottoman arrest of the workers first and the looting after. en.wiki `Ruhama`, oldid
   **1375228739**, says the Ottomans "deported all workers from Ruhama" in 1917, no day. [S, Wikipedia]
   The same en.wiki revision says "In 1929, Ruhama was completely abandoned", citing *Ha-Olam* of 18
-  October 1929, which was not opened (the NLI newspaper site was not tried from here). [S, Wikipedia]
+  October 1929, which was not opened (the NLI newspaper site returned HTTP 403; see the second-pass
+  line below). [S, Wikipedia]
   No day for 1929: JTA archive REST search, 15 August 1929 to 31 December 1930, run 2026-11-11 for
   `Ruhamah`, `Rouhama` and `Ruchamah` (0 items each) and `Jemama` (10 items, none naming the colony
   or the village in its text). The 1929 day stays [GAP].
@@ -519,8 +520,8 @@ explicitly it is recorded below; otherwise the original position is [GAP].
   - (11 Nov) **October 1946 site, a second source.** Amudanan P154531 ("בארי הישנה נאחביר") prints
     **31.43099437529, 34.466063462666** for the water tower and security house, and calls it the
     first location of Be'eri, which "עלה על הקרקע" on 6 October 1946. [S] It is 2 m from the
-    security-house table's point above and 2.48 km from the CBS point, bearing 109 degrees (computed
-    here), so the two pages give one point and may not be independent. **Our reading:** the first
+    security-house table's point above and 2.48 km from the CBS point (bearing 109 degrees from this
+    point to the CBS point, computed here), so the two pages give one point and may not be independent. **Our reading:** the first
     site is the Nahabir point. The tower and the security house stand on it, and no page read here
     dates them to the first night, so the point is good for the site, not for the first tents.
 - **Gal-On.** he.wiki `גלאון`, oldid **43897874**: "במוצאי יום הכיפורים ה'תש"ז, 5-6 באוקטובר 1946,
@@ -551,7 +552,7 @@ explicitly it is recorded below; otherwise the original position is [GAP].
   - (11 Nov) **The first hill, October 1946.** Amudanan P929695 ("הגבעה הראשונה") prints
     **31.359877430911, 34.710575733661** and calls it the original site where the first members of
     Mishmar HaNegev settled on the night after Yom Kippur 1946, with the floors of the houses still
-    there. [S] It is 0.73 km from the CBS point, bearing 57 degrees, and 0.76 km from the table's
+    there. [S] It is 0.73 km from the CBS point (bearing 57 degrees from this point to the CBS point), and 0.76 km from the table's
     second-hill point (computed here). The `משמר הנגב` article above says the move was about 500 m
     north; the computed figures are about 0.75 km to the north-east. [C] on distance and direction,
     both given; the October 1946 point is the Amudanan one, [S].
