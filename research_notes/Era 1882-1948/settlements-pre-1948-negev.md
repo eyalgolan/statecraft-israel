@@ -19,6 +19,11 @@ pending (CONTENT_POLICY section 2, item 6). The tags keep this note's meaning (s
 page read by the agent is still [S] unless two independent sources agree. Rows on an abandonment or a
 depopulation are recorded as facts with their sources only, for the owner's sensitivity review.
 
+Fifth pass (11 November 2026, Refs #97, branch `research/97-negev-gaps-b`): the rows still [GAP]
+after the fourth pass were worked again. Everything marked "(11 Nov, second pass)" was read on
+2026-11-11 by an AI agent (Claude Code) with the same generic User-Agent, under the same tags and the
+same pending person's check as the fourth pass.
+
 ## How it was done
 
 - Every page was fetched on 23 October 2026 with the User-Agent
@@ -73,6 +78,14 @@ depopulation are recorded as facts with their sources only, for the owner's sens
   history** item 13004 (Eliyahu Kanaani, "רוחמה - היישוב היהודי הראשון בנגב (1917-1912)", in M. Naor
   (ed.), *יישוב הנגב, 1900-1960*, Yad Ben-Zvi, 1985), https://www.lib.cet.ac.il/pages/item.asp?item=13004,
   was read in full. Distances are **computed here** with the same haversine as the 25 Oct pass.
+- (11 Nov, second pass) **The CET history** item 14824 (Ruth Kark, "תנופת ההתיישבות בנגב בעשור
+  שקדם לקום המדינה"), https://www.lib.cet.ac.il/pages/item.asp?item=14824, was read in full. Alan
+  Blitz's paper on the Beit Eshel and Nevatim bloc (2013) was read in full as the text layer of its
+  PDF. he.wiki was read as raw wikitext through the MediaWiki API: `בתי הביטחון בנגב הצפוני`
+  42567087, `חצרים` 43555845, `שובל (קיבוץ)` 44069091, `היוגב` 43132613.
+  The Moreshet map of the War of Independence (moreshet-map.org.il), the Avnei Moreshet site
+  (makom.hamoreshet.org.il), shimur.org and the Palmach history database were read as rendered
+  pages. Distances use the same haversine (R 6371.0088 km).
 
 **Tags**, as in `settlements-1949-51.md`:
 - **[V] verified**: two or more independent sources agree, or one authoritative primary source.
@@ -213,6 +226,37 @@ Revivim articles both say "משלושת המצפים".
   46.48 E, which is **31.235000, 34.812911** (computed here); the he.wiki point in this section,
   31.233472, 34.813272, is 0.17 km from it (computed here). Two Wikipedia points, neither from a
   survey; [S, Wikipedia] for both.
+- (11 Nov, second pass) **Founding day: still [GAP].** Four more pages give a year or a season and
+  no day. The Council for Conservation of Heritage Sites page
+  (https://shimur.org/sites/מצפה-בית-אשל/): "בקיץ 1943 הקימה קרן קימת לישראל" the three mitzpim.
+  Avnei Moreshet (https://makom.hamoreshet.org.il/landmark/mitzpe-beit-eshel/): one of three mitzpim
+  set up "בקיץ 1943". Moreshet map of the War of Independence (https://moreshet-map.org.il/?p=2945):
+  "הוקם בשנת 1943, כקילומטר וחצי מדרום מזרח לבאר שבע". Alan Blitz, "גוש בית אשל-נבטים במלחמת
+  העצמאות", 5 November 2013 (http://www.blitz.org.il/files/Beth%20Eshel%201948.pdf, 40 pages, read in
+  full as text): 1943, no day. he.wiki `היוגב`, oldid **43132613**: its core manned Beit Eshel "משנת
+  1943 עד לאחר מלחמת העצמאות". All [S]. Summer 1943 agrees with the August 1943 of the article
+  above; the day is not in any of them.
+- (11 Nov, second pass) **Two more points.** Avnei Moreshet prints 31° 14.008 N, 34° 48.79 E, which
+  is **31.233467, 34.813167** (computed here), 10 m from the he.wiki point above. The Moreshet map
+  page has 31.232612, 34.8126 in its map markup (the latitude and longitude labels in the page source
+  are swapped; read here by value), 0.12 km from the he.wiki point (computed here). [S] each; none
+  says where its point comes from, so they are not shown to be independent.
+- (11 Nov, second pass) **Leaving: narrowed, day still [GAP].** Blitz, p. 30: the last young women
+  left on 6 September (1948, from the chapter) and the members began a hunger strike on 9
+  September; toward the end of the second truce the members decided to leave and go north
+  "כשיתאפשר הדבר"; and "מיד לאחר כיבוש באר שבע ועזיבת אנשי בית אשל, הפסיק המשלט להתקיים", citing
+  Brezner, pp. 295-296 (not opened). They went first to Kfar Vitkin, where their families had been
+  housed "מאז הפינוי בחודש ינואר", then to a temporary camp, and in 1950 to Hayogev. [S] Derived
+  from Blitz with the JTA dateline above: the members left after Be'er Sheva was taken on 21
+  October 1948, at a date not printed there.
+- (11 Nov, second pass) **[C] on the month of the evacuation to Kfar Vitkin.** The shimur.org page:
+  "ובינואר 1949 פונו תושביו למחנה זמני בכפר ויתקין". [S] Blitz puts the families' move to Kfar
+  Vitkin in January during the siege, and the members' leaving right after the capture of Be'er
+  Sheva. **Our reading:** the shimur.org January 1949 may fold the families' January move and the
+  members' later leaving into one; this is not decided, and both are given.
+- (11 Nov, second pass) **[C] on Hayogev's year.** Blitz gives 1950 for the move to the permanent
+  site; he.wiki `היוגב` gives August 1949 (citing Davar of 22 August 1949, not opened) and a stay in
+  the buildings of the Megiddo airfield first; Gvati's row above gives 1 August 1949. All given.
 
 ## 2. The six kibbutzim of 1941 to 1944
 
@@ -271,6 +315,18 @@ of Negev settlement. Be'erot Yitzhak has its own section below.
   No day for 1929: JTA archive REST search, 15 August 1929 to 31 December 1930, run 2026-11-11 for
   `Ruhamah`, `Rouhama` and `Ruchamah` (0 items each) and `Jemama` (10 items, none naming the colony
   or the village in its text). The 1929 day stays [GAP].
+- (11 Nov, second pass) **1929: day still [GAP]; the Ha-Olam article was not reached.** The
+  en.wiki `Ruhama` reference (oldid 1375228739, still the current revision) names the *Ha-Olam*
+  article of 18 October 1929, p. 1, "On the Establishment of Beacons", at
+  https://www.nli.org.il/en/newspapers/haolam/1929/10/18/01/article/6/ . Every National Library
+  newspaper address tried on 2026-11-11 (the article itself, the Hebrew and English newspaper
+  search pages and the API host) returned HTTP 403 with a "Checking your browser" page, and the
+  old JPress address returned HTTP 410, so the article was not read. The same sentence in en.wiki
+  also cites Avneri, *The Claim of Dispossession*, Yad Tabenkin, 2009, p. 218, and Doron, *The
+  Negev. An Anthology*, 1949, p. 90 (neither opened). [S, Wikipedia] Derived from the article's
+  date only: abandoned by 18 October 1929; this is not a reading of the article. An Amudanan search
+  for `רוחמה 1929` returned P37312, which is about the Jewish community of Gaza in 1929, not
+  Ruhama.
 - **[C] on the founding of the present kibbutz.** The article gives both: "ב-1 בדצמבר 1943 עלו חברי
   השומר הצעיר, חידשו את הבאר והחלו להקים גדר ואת מבני הקיבוץ, טקס העלייה הרשמית לקרקע התבצע במרץ
   1944 ומהווה את ראשיתו של היישוב הנוכחי". [S, Wikipedia] So 1 December 1943 is the arrival and March 1944 the
@@ -469,6 +525,18 @@ explicitly it is recorded below; otherwise the original position is [GAP].
   attack "ב-14 ביולי 1948". [S, Wikipedia]
 - **Hatzerim.** he.wiki `חצרים`, oldid **43555845**: "הקיבוץ הוקם במוצאי יום כיפור בשנת 1946 על
   אדמות קלטה כחלק מ־11 הנקודות". [S, Wikipedia] No move recorded.
+  - (11 Nov, second pass) **October 1946 position: the present kibbutz, derived.** he.wiki `בתי
+    הביטחון בנגב הצפוני`, oldid 42567087: its introduction names Hatzerim and Shoval as places
+    where the security houses "נשארו בתי הביטחון בתחום היישוב ומשמשים את צורכי המשק", against
+    Nevatim, Be'eri and Urim, which moved. Its Hatzerim row: the kibbutz went up the night after Yom
+    Kippur 1946, and in March 1947 the security house was built "במרכז הקיבוץ", at
+    `31.241389, 34.712778`, 0.16 km from the CBS point (computed here). [S, Wikipedia] he.wiki
+    `חצרים` (above) records that in the early 1950s, faced with salty soil, the members decided to
+    stay where they were and wash the soil. [S, Wikipedia] Kark, CET item 14824 (see "How it was
+    done"), says the settlers from Beit Eshel walked five hours, going round Be'er Sheva, and that
+    the huts came from Be'erot Yitzhak, with no point. [S] **Derived:** no source read here records
+    a move, and the 1947 security house stands inside today's kibbutz, so the October 1946 site is
+    taken to be the present locality, at the CBS point; [S, Wikipedia], not a 1946 survey.
 - **Mishmar HaNegev.** he.wiki `משמר הנגב`, oldid **44065142**: "שהוקם כחלק ממבצע י"א הנקודות
   במוצאי יום כיפור תש"ז, 6 באוקטובר 1946", and "לאחר שנה הועתק הקיבוץ למקומו הנוכחי על גבעה שכנה
   כ-500 מטר צפונה", the first site now called "הגבעה הראשונה". [S, Wikipedia]
@@ -508,6 +576,15 @@ explicitly it is recorded below; otherwise the original position is [GAP].
   באדמות קרן קיימת לישראל ב'ביר זבאלה' במוצאי יום כיפור, 6 באוקטובר 1946". [S, Wikipedia] Gvati gives the
   same day, so the date is [V]. **Intended name:**
   the founders wanted "אילת"; the settling institutions chose Shoval. [S, Wikipedia]
+  - (11 Nov, second pass) **October 1946 position: the present kibbutz, derived.** he.wiki `בתי
+    הביטחון בנגב הצפוני`, oldid 42567087, names Shoval with Hatzerim as a place whose security
+    house stayed inside the locality (see Hatzerim). Its Shoval row: the kibbutz went up the night
+    after Yom Kippur, 6 October 1946; "במקום הוקמו 3 צריפים ומגדל מים", the security house was
+    added in 1947, and the place was not damaged in the War of Independence; point
+    `31.413340, 34.745910`, 0.23 km from the CBS point (computed here). [S, Wikipedia] he.wiki
+    `שובל (קיבוץ)` (above) dates the water tower near the dining room to 1947 and records no move.
+    [S, Wikipedia] **Derived:** the October 1946 site is taken to be the present locality, at the
+    CBS point; [S, Wikipedia], not a 1946 survey.
 - **Kfar Darom.** **Not in the CBS file and no Gvati appendix row.** [V, checked] he.wiki
   `כפר דרום`, oldid **42998094**: "במוצאי יום הכיפורים תש"ז -1946 יושב המקום, על ידי גרעין של הקיבוץ
   הדתי", and `תאריך נטישה = 18 באוגוסט 2005`. Its coordinates are in a map template,
@@ -657,6 +734,16 @@ Beit Eshel. [V, checked]
   2026-10-29): "Ramat", 1 March to 30 April 1949, 7 items (all on one page); "Ramath Hanegev", 1 January to
   31 December 1949, 8 items; the text of every item was searched for "Ramat Hanegev", "Ramat Negev" and
   "Ramath Hanegev", with no match. The coordinate and the March 1949 day stay [GAP].
+- (11 Nov, second pass) **Coordinate and day: still [GAP].** Palmach history item 5381
+  (https://palmach.org.il/history/database/?itemId=5381, the training group's page) repeats the
+  founding by 40 members on 19 November 1947 and "במארס 1949 התפרק היישוב", no day. It and item 7973
+  add that in mid-November 1947 the group moved from Masada to Nir Am, "שנקבעה כבסיס היציאה
+  להתיישבות חדשה", and that in June 1948 the members were mobilised again to hold positions (Bir
+  Asluj, the Imara police station, Khuleiqat) and escort convoys. [S] No point and no day. Not
+  found either: he.wiki has no article `רמת הנגב (קיבוץ)` or `אופקים (קיבוץ)` (MediaWiki API,
+  "missing"); the Moreshet map site search for `רמת הנגב`, `אופקים` and `משמרות` returned no page
+  for it; Amudanan full-text searches for `קיבוץ רמת הנגב`, `רמת הנגב 1947` and `רמת הנגב 1949
+  התפרק` returned no results.
 
 ### Halutza
 Not in the CBS file under this name and no Gvati appendix row. [V, checked] It moved east in 1949
@@ -703,6 +790,22 @@ a separate point, not Sa'ad under another name.
   punctured." [S] (web text only; its PDF `1947/1947-06-16_141.pdf` was not opened). So the name
   is in JTA two weeks before the 30 June "set up today" item; nothing is concluded from that. The
   other three items were not opened.
+- (11 Nov, second pass) **Founding day, a second source.** Kark, CET item 14824 (see "How it was
+  done"): three more points went up on "י"ז בשבט תש"ז (7 בפברואר 1947)", Mivtahim, Shorashim and
+  Alumim, the last "על אדמת חולה, בין באר-שבע לרביבים". [S] 17 Shevat 5707 is Friday 7 February
+  1947 (computed here with `convertdate`). With the Haganah page above, two sources give **7
+  February 1947**; they are not shown to be independent, so the day is [S] on each. Kark spells the
+  land "חולה"; Amudanan has "חזע'לה" and the Moreshet map "חזלה". Recorded as printed; whether these
+  are one name is not decided here.
+- (11 Nov, second pass) **Still a destination in December 1947.** Moreshet map of the War of
+  Independence, "בדרך לעלומים (חזלה)" (https://moreshet-map.org.il/?p=2957): an encounter on the
+  way to Alumim (Hazla) dated "14 בדצמבר 1947", placed today "מצפון לרמת חובב". [S] Its map point,
+  31.16505563, 34.75597952, is a road point, 4.77 km from the Amudanan point above (computed here),
+  not the settlement. **Derived:** a road "to Alumim (Hazla)" was named in December 1947, which
+  sits ill with Amudanan's "soon abandoned" and fits the CET post-war departure better; this is
+  not a date for the leaving. CET item 13006 (above) gives the post-war departure again, no day.
+  The abandonment day stays [GAP]; he.wiki has no article `עלומים (חזלה)` or `חזלה` (MediaWiki API,
+  "missing").
 
 ## 5. Be'erot Yitzhak, the original Negev site
 
@@ -806,6 +909,14 @@ separately here.
   kibbutz); Ruhama's 1929 day; Beit Eshel's founding and leaving days (Amudanan P192589 gives 1943 and
   no day); Ramat HaNegev's coordinate (Amudanan searches for `רמת הנגב קיבוץ`, `רמת-הנגב`, `משמרות`
   and `אופקים 1947` found nothing for it); the day of every post-war move.
+- (11 Nov, second pass) **What the fifth pass added.** Hatzerim and Shoval: October 1946 site
+  derived as the present locality (security houses inside the kibbutz since 1947, no move recorded;
+  [S, Wikipedia]). Alumim at Hazla: 7 February 1947 from a second source (Kark, CET 14824), and the
+  name still a destination on 14 December 1947 (Moreshet map). Beit Eshel: leaving narrowed to after
+  21 October 1948 (Blitz), with [C] on January 1949 (shimur.org) and on Hayogev's year. Still
+  [GAP]: Beit Eshel's founding day and leaving day; Ramat HaNegev's coordinate and its March 1949
+  day; the day Alumim at Hazla was given up; Ruhama's 1929 day (Ha-Olam not reached, see section
+  8).
 - Coordinates were taken from CBS, from Amudanan, and from coordinates written into the articles
   themselves. None was measured off a map, and no hex was computed here, since
   `tools/settlement_hexes.py` stays with #61.
@@ -827,3 +938,8 @@ separately here.
 - **No map was measured.** Every coordinate comes from CBS or from a figure written in a source;
   none was taken off a map, and no hex was computed, since `tools/settlement_hexes.py` stays
   with #61.
+- (11 Nov, second pass) **The National Library newspaper site was not reached.** Every
+  `www.nli.org.il` newspaper address and `api.nli.org.il` tried on 2026-11-11 returned HTTP 403 with
+  a "Checking your browser" page, and the old `web.nli.org.il` JPress address returned HTTP 410. No
+  login or browser was used to get past it, so *Ha-Olam* of 18 October 1929 (Ruhama) and Davar of
+  22 August 1949 (Hayogev) were not read.
