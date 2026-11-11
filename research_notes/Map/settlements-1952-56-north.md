@@ -78,7 +78,8 @@ Every [V] in this note was an agent's reading on 2026-10-22, unless the tag give
 - **Regional council, municipal and moshav sites** were not read for this note. Two that Wikipedia cites were tried:
   the Megiddo Regional Council page on Midrakh Oz (`http://www.megido.org.il/info/yesh/midrach-oz.htm`, marked dead by
   English Wikipedia; not fetched again) and the Mele'a moshav site (`http://www.homee.co.il/מלאה/`, cited by Hebrew
-  Wikipedia; not fetched). **[GAP]** (11 Nov: both read through the Wayback Machine; see the third pass. Other
+  Wikipedia; not fetched). **[GAP]**
+  (11 Nov: both read through the Wayback Machine; see the third pass. Other
   regional council and municipal sites are still not read.)
 - **Not tried, known blocked** (`settlements-1949-51.md`): the NLI historical press (JPress) and the Israel State
   Archives. So **no contemporaneous newspaper was read for any row**; every newspaper date below is as Wikipedia
@@ -175,7 +176,7 @@ Coordinates: CBS 2024, lat N, lon E, today's site. "Founded" is the best-support
 | 10 | Dishon / דישון | 21 | Moshav | 6 Jul 1953 **[S]**; 1953 **[V]** | 33.08216, 35.51898 | None found |
 | 11 | Atsmon Segev / עצמון שגב | 24 | Nahal outpost (1953), village, re-founded 1979 | Aug 1953 **[S, Wikipedia]**; 1953 **[V]** | 32.86576, 35.25177 | "Nahala'im H Mi'ar", "Segev" (Oct 1953), later Atzmon |
 | 12 | Shezor / שזור | 24 | Nahal outpost, then moshav | 31 Aug 1953 **[S]**; 1953 **[V]** | 32.93317, 35.35273 | None found |
-| 13 | Hazor HaGelilit / חצור הגלילית | 21 | Ma'abarot, then development town | 1953 **[V]**; first residents Mar 1953 **[S]**; English Wikipedia 1952 to 1953 | 32.98321, 35.54393 | None found |
+| 13 | Hazor HaGelilit / חצור הגלילית | 21 | Ma'abarot, then development town | 1953 **[V]**; English Wikipedia 1952 to 1953 | 32.98321, 35.54393 | None found |
 | 14 | Metav / מיטב | 23 | Moshav | 21 Jul 1954 **[S]**; 1954 **[V]** | 32.54586, 35.30081 | Earlier "Ta'anakh C" |
 | 15 | Peqi'in HaHadasha / פקיעין החדשה | 24 | Moshav (first cooperative) | 6 Feb 1955 **[S]**; Feb 1955 **[V]** | 32.98395, 35.32256 | None found |
 | 16 | Poriyya Illit / פוריה עילית | 22 | Re-settled 1955; separate locality 1991 | 1955 **[V]** | 32.73048, 35.54659 | Earlier "Poria-Alumot" |
@@ -404,8 +405,8 @@ Common sources, cited by short name in every row:
 - **Founded 1953. [V]** CBS: 1953. Hebrew Wikipedia: the town began with two ma'abarot, "Hatzor A" and "Hatzor B",
   "שהוקמו לצורך קליטת העולים החדשים שהגיעו לארץ בגל העלייה ההמונית בשנת 1953" (the sentence can be read as dating
   the ma'abarot or the wave of immigration to 1953; my reading). English Wikipedia (paraphrased, its dash not reproduced): founded
-  in 1952 to 1953 as a transit camp; infobox 1953. Not in Gvati. **First residents March 1953 [S]**
-  (Guetta-Bukobza, p. 250, third pass); *Encyclopaedia Judaica*: first housing ready in 1953. The day is **[GAP]**.
+  in 1952 to 1953 as a transit camp; infobox 1953. Not in Gvati. The day is **[GAP]**.
+  (11 Nov) **First residents March 1953 [S]** (Guetta-Bukobza, p. 250, third pass); *Encyclopaedia Judaica*: first housing ready in 1953.
 - **Later dates. [V]** Local council in 1956 (both Wikipedias).
 - **Founders. [S, Wikipedia]** Hebrew Wikipedia: "מייסדי חצור הגלילית היו עולים מצפון אפריקה".
 - **Renames.** None found. Named after Tel Hazor (both Wikipedias).
@@ -465,7 +466,8 @@ Common sources, cited by short name in every row:
   1957 and were replaced by immigrants from Morocco. English Wikipedia: "by Jewish immigrants and refugees to Israel
   from Morocco". English Wikipedia also gives the reverse order: "by the end of 1957 most of the original
   settlers moved out, with Jewish immigrants from Poland moving in to replace them". I prefer the Hebrew account
-  (more detail), but that is my reading. (11 Nov) The moshav's own site, read through the Wayback Machine, agrees
+  (more detail), but that is my reading.
+  (11 Nov) The moshav's own site, read through the Wayback Machine, agrees
   with English Wikipedia on the order: "במקומם, הגיעו עולים חדשים מפולין" (third pass). That preference is withdrawn;
   the row stays [C] with no preference.
 - **Renames.** None found. Gvati: from the verse "המלאה הזרע אשר תזרעו", which it cites as "(דברים י"ב, ט')".
@@ -593,7 +595,8 @@ Common sources, cited by short name in every row:
   "קיבוץ מעלה גלבוע, הוקם כהיאחזות נח"ל ב-29 בנובמבר 1962" (citing Ma'ariv, 2 Dec 1962, not read). English Wikipedia:
   "The kibbutz was founded in 1962 as a Nahal settlement", infobox "founded = 1963". **I prefer 29 November 1962**
   (CBS and both Wikipedias), so the row is out of the window. Whether Gvati's 1952 date marks an earlier attempt on the
-  site is **[GAP]**. Two JTA items of 1963 (third pass) call the 1962 outpost the first settlement on the mountain,
+  site is **[GAP]**.
+  (11 Nov) Two JTA items of 1963 (third pass) call the 1962 outpost the first settlement on the mountain,
   on my reading; that does not rule out a 1952 attempt.
 - **Renames. [S, Wikipedia]** Hebrew Wikipedia: the Nahal called it "מצפור הגלבוע".
 - **Site note. [S, Wikipedia]** English Wikipedia: "on land near the former depopulated Palestinian village of
@@ -677,7 +680,8 @@ Common sources, cited by short name in every row:
   1963 in the third pass are the only reports of the time read, and they are about Ma'ale Gilboa.
 - **Days** confirmed by two sources only for Addirim (Hebrew and English Wikipedia; Gvati agrees on day and month but
   not year) and Midrakh Oz (both Wikipedias give 12 December, Gvati 12 November, so it stays [C]). Every other day is single-source, conflicting or missing; Migdal HaEmek, Hazor HaGelilit and Poriyya
-  Illit have no day at all (Hazor HaGelilit has a month, March 1953, from the third pass).
+  Illit have no day at all.
+  (11 Nov) Hazor HaGelilit now has a month, March 1953, from the third pass.
 - **Gvati year slips.** Three Gvati dates disagree with every other source read by six to ten years (Addirim 1950,
   Lehavot HaBashan 1952, Ma'ale Gilboa 1952). The Negev note found the same kind of disagreement (Sde Tzvi, Ein
   Gedi). For the dated file, Gvati is best used for the day only where CBS agrees on the year.
