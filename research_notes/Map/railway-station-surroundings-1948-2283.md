@@ -1,4 +1,4 @@
-# What stood beside the 1948 railway stations: six stations on the Lod to Haifa line, then eight on the Jerusalem and Jezreel Valley lines, then six on the Lod to Gaza line (#2283, research part)
+# What stood beside the 1948 railway stations: six stations on the Lod to Haifa line, then eight on the Jerusalem and Jezreel Valley lines (#2283, research part)
 
 Status: **draft, needs a person to check**. This is research only. An AI agent opened every source marked "agent read" below on
 3 November 2026 and recorded the day it opened each. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person to
