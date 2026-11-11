@@ -18,7 +18,7 @@ namespace Statecraft.Sim
         public int? MaxProgressTicks { get; }
         /// <summary>#1725 PR 3: <see cref="PopulationWorkKind.Industry"/> for a city's Industry, else None.</summary>
         public PopulationWorkKind WorkKind { get; }
-        /// <summary>#1725 PR 3: an Industry target's city, a census city of its region (#1692 Q27: "a worker works in their
+        /// <summary>#1725 PR 3: an Industry target's city, a census city of its region (Q27: "a worker works in their
         /// own city"); null for every other target.</summary>
         public string? City { get; }
         /// <summary>#1725 PR 3: the most records an Industry target holds, the city's job_slots (R-CITY-007); null for every
@@ -433,7 +433,7 @@ namespace Statecraft.Sim
                     var target = bindings.Target(p.Assignment);
                     if (target.Region != p.Location!.Region || (kind == PopulationAssignmentKind.Course && p.Assignment.ProgressTicks > target.MaxProgressTicks))
                         throw new ArgumentException("Assignment region/progress is inconsistent.");
-                    // #1725 PR 3, #1692 Q27: "a worker works in their own city".
+                    // #1725 PR 3, Q27: "a worker works in their own city".
                     if (target.City != null && !string.Equals(p.Location!.City, target.City, StringComparison.Ordinal))
                         throw new ArgumentException("An Industry worker works in their own city (R-POP-002).");
                     if (target.Capacity is int capacity)

@@ -6,7 +6,7 @@ using Statecraft.Sim;
 /// Industry (Recommended)": every employed unit starts in Industry. The #1725 PR 3 bullet: a work kind and a capacity on
 /// <c>PopulationTarget</c>, checked in <c>Validate</c>; the capacity is each city's <c>job_slots</c> (R-CITY-007), and
 /// <c>start.industry_slots</c> is the 10,000-scale value, never a city's Industry capacity. #1692 (owner, 3 November 2026,
-/// "Approve all three (Recommended)"): records gain the Industry assignment in ascending population id; its Q27, "a worker
+/// "Approve all three (Recommended)"): records gain the Industry assignment in ascending population id. Q27: "a worker
 /// works in their own city". Farmers stay out of employed (#1725 PR 4); the Haifa teacher is taken last (#1689 comment
 /// 6710877137, "Takeable, but last (Recommended)").</summary>
 public class HistoricalIndustryWorkersTests
@@ -105,7 +105,7 @@ public class HistoricalIndustryWorkersTests
         Assert.Equal(c.Cities.Single(x => x.Id == "haifa").JobSlots, Census(s, "haifa").Count(u => InIndustry(u, "haifa")));
     }
 
-    // #1692 Q27, "a worker works in their own city": a record of another city in the same region is refused on an Industry
+    // Q27, "a worker works in their own city": a record of another city in the same region is refused on an Industry
     // target, while the target's own city's record is accepted. Several census cities share a region, so the region check
     // alone would not catch it.
     [Fact]
