@@ -153,7 +153,7 @@ hexes:   # [q, r, codes: one per period], ordered by r then q
   - [5, 19, "AMMMMMMMMMMJJJJJ"]
   - [6, 19, "AMMMMMMMMMMJJJJJ"]
   - [7, 19, "AMMMMMMMMMMJJJJJ"]
-  - [-2, 20, "IIIIIIIIIIIIIIII"]
+  - [-2, 20, "cIIIIIIIIIIIIIII"]
   - [-1, 20, "IIIIIIIIIIIIIIII"]
   - [0, 20, "AMMMMMMMMMMJJJJJ"]
   - [1, 20, "AMMMMMMMMMMJJJJJ"]
