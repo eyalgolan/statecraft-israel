@@ -158,6 +158,8 @@ The DOC's date header has a transcription error; the day-to-document link comes 
 and document metadata. The facsimile was not opened, so a scan check remains **[GAP]**. Adoption, publication
 and the preliminary vote's date must not be substituted for one another.
 
+(11 Nov) Scan check done. **[V, agent read 11 Nov 2026 on the page images; a person's check pending]** The scan of sitting 301, PDF 530203 (linked to session 436732 in KNS_DocumentPlenumSession), has the header "יום חמישי, י"ח באדר ב' התשמ"ד (22 במרס 1984)" on its first page (printed p. 2066). On PDF page 41 (printed p. 2106) the vote on שפ"ד is 61 to send it for preliminary consideration in committee and 58 to remove it from the agenda, and the chair says: "ברוב של 61 קולות לעומת 58 קולות הוחלט להעביר את הצעת החוק שעליה הצבענו עכשיו לוועדת החוקה, חוק ומשפט, להכנתה לקריאה ראשונה." The scan agrees with the DOC [J5] and with K8's date. Source: https://fs.knesset.gov.il//10/Plenum/10_ptm_530203.PDF
+
 ### The 1988 election day and the regular-term question
 
 **[V]** Section 1(1) of the Twelfth Knesset Elections (Temporary Provisions) Law identifies
