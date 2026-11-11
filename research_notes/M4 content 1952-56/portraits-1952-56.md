@@ -313,7 +313,7 @@ section is "agent read 2026-11-11; a person must check the likeness and licence"
 
 - **Moshe Dayan has a portrait now.** `content/people.yaml` (the `dayan` entry, line 1136 on main `445ce494`) carries
   `portrait: { file: promo/ref/people/Moshe_Dayan_CCBY_1948.jpg, license: CC BY 4.0, source: ".../File:Moshe_and_Ruth_Dayan_(997008137270105171).jpg" }`.
-  That matches the owner's scope update on #6 (Dayan done, 19 left). The other 19 still have no `portrait:` entry. [V]
+  That matches the agent's scope update on #6 of 3 Nov (issuecomment-6603745924: Dayan done, 19 left). The other 19 still have no `portrait:` entry. [V]
 - **Haim Cohn still has no qualifying file.** A fresh Commons sweep found nothing new of him (details below). [GAP]
 - **Five Knesset Archives files that the first two passes did not list**, for Luz, Bar-Yehuda, Warhaftig, Carmel and Aran, and a
   third Unna file. All are CC BY-SA 4.0 member portraits with no photograph date, like the ones above. Luz's and Warhaftig's are
@@ -366,10 +366,11 @@ status is needed for a CC licence, and none is given. [V]
 
 - `Mordechai_Maklef_(997008137135805171).jpg`, Benno Rothenberg, `{{cc-by-4.0|1={{Meitar Collection/license credit line|...}}}}`,
   VRTS 2021092910005788, `{{taken on|1949-11-29|location=Israel}}`, 953x657. Title "מסיבה לכבוד השנתיים שחלפו מאז הכרזת האו"ם"
-  (my translation: a party for the second anniversary of the UN declaration); Hebrew description "בתצלום: מרדכי מקלף" (in the
-  photograph: Mordechai Maklef). [V]
-- The thumbnail shows two men in uniform side by side in the foreground and a crowd behind. The record names only Maklef and
-  does not say which of the two he is. **Two-person frame and identity unclear: not counted.** [C]
+  (my translation: a party for the second anniversary of the UN declaration); Hebrew description "בתצלום: מרדכי מקלף במסיבה לכבוד השנתיים שחלפו מאז הכרזת האו"ם"
+  (in the photograph: Mordechai Maklef at the party for the two years since the UN declaration). The Commons page's depicted people are Maklef (Q1391515) and
+  Shimon Mazeh (Q2159932), and it carries `[[Category:Shimon Mazeh]]`. [V]
+- The thumbnail shows two men in uniform side by side in the foreground and a crowd behind. The NLI description names only Maklef; the
+  Commons page also names Shimon Mazeh. Neither says which man is which. **Two-person frame and identity unclear: not counted.** [C]
 
 ### Haim Cohn: still none
 
