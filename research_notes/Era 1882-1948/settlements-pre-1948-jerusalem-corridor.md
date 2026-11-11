@@ -16,8 +16,8 @@ Searched again and not found. Read: ..." and the list of what was read.
 
 Third pass (11 November 2026, Refs #61, branch `research/61-jerusalem-corridor`): the remaining
 [GAP] rows were worked again, except the Neve Ya'akov rename (handled in #2242). Everything marked
-"(11 Nov)" was opened and read on 2026-11-11 by an AI agent (Claude Code), with a generic
-User-Agent; a person's check of those readings is pending (CONTENT_POLICY section 2, item 6).
+"(11 Nov)" was opened and read on 2026-11-11 by an AI agent (Claude Code), with the same
+User-Agent as the earlier passes (later checks that day used a generic one); a person's check of those readings is pending (CONTENT_POLICY section 2, item 6).
 Rows on a rename, an abandonment or a dissolution are recorded as facts with their sources only;
 none is judged here and all stay with the owner's sensitivity review.
 
