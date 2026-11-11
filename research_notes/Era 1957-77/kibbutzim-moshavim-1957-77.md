@@ -75,7 +75,7 @@ The question: which kibbutzim and moshavim were founded between 1 January 1957 a
   village infobox is a template filled by a bot and carries no founding date; the Hebrew date is in its prose. English
   infoboxes often give a founding date that sometimes disagrees with the article's own text; both are given.
 - Hebrew dates were converted with the `convertdate` library (Python), month numbers as that library numbers them.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
 
 ## Summary table
 

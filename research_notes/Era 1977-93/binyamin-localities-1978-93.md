@@ -71,7 +71,7 @@ Facts only, docs only. All pages below were opened on **26 October 2026** (UTC) 
 - **Wikipedia** (Hebrew and English) was fetched through the MediaWiki API as wikitext of the current revision at the fetch; each revision is named in the last table (`oldid`). It is a lead and a cross-check, always [S].
 - **UN Special Committee reports** A/34/631 (1979) and A/35/425 (1980), the same two reports as in the Gaza notes of #165: fetched from `https://documents.un.org/api/symbol/access?l=en&t=pdf&s=<symbol>` on 2026-10-25 (6,762,152 and 4,475,171 bytes). A/34/631 pp. 20, 31, 34 and 98 and A/35/425 PDF p. 28 were read as page images. They compile press reports (the papers named in each paragraph; none opened), so they are [S].
 - **JTA Daily News Bulletin.** Searches through the archive's wp-json endpoint, every query and count in "Searches". For the three items whose event date this note uses (T1 to T3) I opened the bulletin PDF (`http://pdfs.jta.org/<year>/<date>_<no>.pdf`, scanned page images, no text layer) and read the page; **Dates rule:** the JTA archive page shows the bulletin date, the event date is resolved from the dateline of the item in the PDF and from "yesterday", "today" or a weekday read against that dateline. For every other JTA item named the archive page text was read and the PDF was not opened, so the event day is not resolved.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
 
 ## Summary table
 

@@ -36,7 +36,7 @@ of 19 April 1949 was **not reachable from this box** (see "The Al HaMishmar item
 - Tags: the full `[V, agent read 26 Oct 2026; a person's check pending]` when a source other than Wikipedia prints what the row
   claims; `[S]` for Wikipedia (read by `oldid`), its mirrors and a calculator; `[C]` for a conflict with both values kept;
   `[GAP]` for what is still open, with what was tried.
-- Requests used `curl` and the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`; no
+- Requests used `curl` and a research User-Agent that named the project's repository; no
   header was changed to get past a block. The built-in WebSearch and WebFetch tools were used (no Tavily key on this box); a
   search result was only ever used to find a page, and every page cited was then opened and read directly.
 - **Coordinates and hexes.** The CBS localities file 2024 (https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx)

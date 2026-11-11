@@ -39,7 +39,7 @@ The question: which Israeli localities, kibbutz, moshav, community settlement or
 - **Founding days: Gvati.** Haim Gvati, *100 Years of Settlement*, vol. 2, Ben-Yehuda Project edition, https://benyehuda.org/read/14684 (opened 2026-10-25, 1,348,249 bytes). Its narrative of the Valley ends with the settlements of 1977 (the passage closes with its count of 21) and its appendix (name, region, date of founding, affiliation, origin of the name) has no row for any of the 10 places: a full-text search of the file for each Hebrew name returned one place hit, Tomer in the narrative (below), and four hits of "בית־הערבה" that are all about the 1939 kibbutz. So Gvati does not date any of these founding days. [GAP]
 - **Wikipedia** (Hebrew and English) was fetched through the MediaWiki API as wikitext of the current revision at the fetch; each revision is named in the last table (`oldid`). It is a lead and a cross-check, always [S].
 - **JTA Daily News Bulletin.** Searches through the archive's wp-json endpoint, every query and count in "Searches". For every item used I opened the bulletin PDF (`http://pdfs.jta.org/<year>/<date>_<no>.pdf`), read it as scanned page images through PyMuPDF at 250 dpi and RapidOCR (the OCR drops spaces and mangles some words), and took the dateline from it. **Dates rule:** the JTA archive page shows the bulletin date; the event date is resolved from the dateline of the item in the PDF and from "yesterday", "last night" or a weekday read against that dateline.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
 
 ## Summary table
 

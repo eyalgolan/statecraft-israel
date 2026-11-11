@@ -38,7 +38,7 @@ page that is not the record; **[C]** two sources disagree, both kept; **[GAP]** 
 | JTA1 | JTA archive page text, 14 September 1948: https://www.jta.org/archive/arabs-continue-attacks-on-jewish-positions-capture-hills-fire-upon-u-n-observers | primary (news agency), page text | page text | 2026-11-01 |
 | P1, P2, P5 | Palestine Open Maps tile layers, as in the earlier note: `pal20k-1940s` (sheets 14-24 / 15-24 "Haifa" cover the point, per P3 `sheets.csv`), `pal100k-1950s` (sheet 02 "Haifa", catalogued 1958), `isr250k-1951`; tiles 15/19574-19576/13215-13217 and 13/4892-4894/3303-3305 | primary (maps), georeferenced by the site | tiles stitched, read by eye | 2026-11-01 |
 
-All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+All requests used a research User-Agent that named the project's repository.
 
 ## 1. Kiryat Shmuel, Haifa (the owner's starting training-centre host)
 

@@ -14,8 +14,8 @@ other addition is [S, Wikipedia], [C] or [GAP].
 
 ## How it was done
 
-- Every page was fetched on 23 October 2026 with the User-Agent
-  `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`. A search tool
+- Every page was fetched on 23 October 2026 with a research User-Agent
+  that named the project's repository. A search tool
   was used only to find pages; every page cited was then fetched and read directly.
 - **Founding year and coordinates (official).** Central Bureau of Statistics, localities file 2024,
   https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx (checked 2026-10-23),
@@ -234,7 +234,7 @@ of Negev settlement. Be'erot Yitzhak has its own section below.
   nothing for the other two: JTA archive search "Ruchama" 15 August 1929 to 30 June 1930 returned 1 item
   with no mention of Ruchama or Ruhama, and 1 January 1917 to 31 December 1920 returned 0 items (REST API
   `https://www.jta.org/wp-json/wp/v2/archive?search=Ruchama&after=1929-08-15T00:00:00&before=1930-06-30T00:00:00` (1 item) and `https://www.jta.org/wp-json/wp/v2/archive?search=Ruchama&after=1917-01-01T00:00:00&before=1920-12-31T00:00:00` (0 items), both HTTP 200 on re-run 2026-10-29 with the
-  User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`; the text of each returned item was searched for the two spellings). The 1929 and
+  research User-Agent that named the project's repository; the text of each returned item was searched for the two spellings). The 1929 and
   First World War abandonments stay [GAP]. Two other items in the 1936 to 1939 window name the colony
   without an abandonment: 18 February 1937 ("Several cows were killed in an attack by Arab bandits on the
   colony of Ruchama", dateline HAIFA, Feb. 17, page image read; `[V, agent read 2026-10-29; a person's check pending]`) and, in the same search, 22 June 1936 (not

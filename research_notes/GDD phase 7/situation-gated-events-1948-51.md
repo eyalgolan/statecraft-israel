@@ -41,7 +41,7 @@ for R-TURN-003 if the historical run is in that situation on that turn. This not
 - Turns are monthly, from the 15th. "The 15 May 1949 turn" means the turn that starts on that day.
   A card itself reaches the player on the first 15th on or after its `from` (section 3): a card whose window opens on
   28 May 1949 reaches the player on 15 June 1949.
-- Requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- Requests used a research User-Agent that named the project's repository.
   No Tavily key on this machine: searches used the built-in web search; Wikipedia only as a pointer.
 
 Every [V] in this note was an agent's reading on 2026-10-16, unless the tag gives a later date; a person's check is pending for all of them.
