@@ -287,7 +287,7 @@ namespace Statecraft.Game.UI
             var price = answer == null || ending ? null : bridge.Price(answer);
             var unpaid = answer != null && !ending && !bridge.CanPay(answer);
             endTurn?.EnableInClassList(EndTurnWaitingClass, !hiddenInCapture && unpaid);
-            if (Shown == null || Collapsed) video?.Stop();
+            if (Shown == null || Collapsed || heldForPlayback) video?.Stop();   // held (#3004): it plays again when the card is back
             if (Shown == null) { clip = null; clipAlt = null; ShowPhoto(null); return; }
             var e = Shown;
             var date = EventSystem.FillDate(e, s.Date);
@@ -513,7 +513,7 @@ namespace Statecraft.Game.UI
         /// of the photograph's credit; off, or when the clip fails, the photograph and its credit come back.</summary>
         void ApplyIllustration()
         {
-            var offered = clip != null && PhotoAlt != null && !Collapsed;
+            var offered = clip != null && PhotoAlt != null && !Collapsed && !heldForPlayback;
             illustrationSwitch.style.display = offered ? DisplayStyle.Flex : DisplayStyle.None;
             if (offered && illustration)
             {

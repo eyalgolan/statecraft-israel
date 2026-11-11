@@ -101,7 +101,7 @@ namespace Statecraft.Game.UI
             bridge.Changed += onChanged;
         }
 
-        /// <summary>True while the beats play (from <see cref="Start"/> to the end, Skip or Finish).</summary>
+        /// <summary>True while the beats play (from <see cref="Start"/> to the end, or Skip).</summary>
         public bool Active { get; private set; }
         /// <summary>True from End turn until the playback starts: the tokens are held and the report waits.</summary>
         public bool Pending => pending;
@@ -189,9 +189,6 @@ namespace Statecraft.Game.UI
             Stop(release);   // every held token stands on its place
             return true;
         }
-
-        /// <summary>As <see cref="Skip"/>: End turn again, or the UI rebuilt (a language switch).</summary>
-        public void Finish() => Skip();
 
         /// <summary>Another game (New Game, a load): its tokens are drawn where they stand, and its camera is its own.</summary>
         void Drop() => Stop();

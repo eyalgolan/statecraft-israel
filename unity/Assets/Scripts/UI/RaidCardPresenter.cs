@@ -26,7 +26,7 @@ namespace Statecraft.Game.UI
         readonly EventCallback<NavigationCancelEvent> onCancel;
         readonly PressSource presses;
         bool disposed;
-        int closedFrame = -1;
+        int closedFrame = -1, shownFrame = -1;
         public bool IsOpen { get; private set; }
         public bool ClosedThisFrame => closedFrame == Time.frameCount;
         public bool HoldsThePointer => IsOpen || ClosedThisFrame;
@@ -56,7 +56,15 @@ namespace Statecraft.Game.UI
             media.tooltip = hebrew && !string.IsNullOrWhiteSpace(data.Clip.AltHe) ? data.Clip.AltHe : data.Clip.Alt;
             onOk = () => Close(finish: true);
             ok.clicked += onOk;
-            onCancel = e => { if (Escape()) e.StopPropagation(); };
+            // One press, two readers (#3000): GameRoot's poll can skip the raid flight (or the opening) and so show this card,
+            // whose Show focuses OK, and the same Escape then reaches OK as the UI Cancel, in that frame or the next
+            // (OutcomePresenter.HoldsThePointer's one-frame margin). That Cancel was the press that showed the card: used, the
+            // card stays up. GameRoot's poll (Escape) is not held back: it reads a press only once.
+            onCancel = e =>
+            {
+                if (IsOpen && Time.frameCount - shownFrame <= 1) { e.StopPropagation(); return; }
+                if (Escape()) e.StopPropagation();
+            };
             layer.RegisterCallback(onCancel);
             presses = new PressSource(layer);
             layer.style.display = DisplayStyle.None;
@@ -67,7 +75,7 @@ namespace Statecraft.Game.UI
         public void Show()
         {
             if (disposed || IsOpen) return;
-            IsOpen = true;
+            IsOpen = true; shownFrame = Time.frameCount;
             root.AddToClassList(OpenClass); layer.style.display = DisplayStyle.Flex;
             ScreenNav.DisableCovered(root);
             shownChanged(true);

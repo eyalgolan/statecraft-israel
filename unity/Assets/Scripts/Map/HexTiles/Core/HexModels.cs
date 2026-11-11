@@ -112,6 +112,23 @@ namespace Statecraft.HexTiles
             // protos measure whole and keep drawing.
             ("proto:figure-sheep-lite-1948", "figure-sheep-idle-1948-v1", "far"),
             ("proto:figure-donkey-lite-1948", "figure-donkey-1948-v1", "far"),
+            // The five civilian hooks of the ma'abara and Negev kibbutz tiles (#1955; owner, 30 October 2026: "Yes to both"):
+            // Tal Heuberger's shipped Collection originals with the same ids, at the far level (one -stream prefab for both).
+            ("proto:figure-elder-immigrant-v1", "figure-elder-immigrant-v1", "far"),
+            ("proto:figure-immigrant-woman-v1", "figure-immigrant-woman-v1", "far"),
+            ("proto:figure-immigrant-child-v1", "figure-immigrant-child-v1", "far"),
+            ("proto:figure-yemenite-immigrant-v1", "figure-yemenite-immigrant-v1", "far"),
+            ("proto:figure-kibbutz-woman-v1", "figure-kibbutz-woman-v1", "far"),
+        };
+
+        /// <summary>Hex-tile prop ids drawn as one of Tal Heuberger's generated Collection props (one prefab for both details,
+        /// asked near like its other users), with the figures and under the same switch. The Negev kibbutz's two small tents
+        /// are the khaki canvas tent the camps use (#1955; owner, 10 November 2026: "Where it fits + one per tile
+        /// (Recommended)"). The desert tiles' goat-hair tents keep their boxes: one tent each would take negev_loess and
+        /// judean_desert past their triangle budgets.</summary>
+        public static readonly (string id, string prop)[] PropAliases =
+        {
+            ("tiles:kibbutz_negev/tent", CollectionCatalog.KhakiTent),
         };
 
         /// <summary>Off draws the proto figures again (a before shot, or a test of the fallback); call <see cref="Clear"/>
@@ -139,6 +156,7 @@ namespace Statecraft.HexTiles
 
         static readonly Dictionary<string, (string figure, string level)> figureOf =
             FigureAliases.ToDictionary(a => a.id, a => (a.figure, a.level), StringComparer.Ordinal);
+        static readonly Dictionary<string, string> propOf = PropAliases.ToDictionary(a => a.id, a => a.prop, StringComparer.Ordinal);
 
         internal static bool CollectionAlias(string id, out string figure, out CollectionDetail detail)
         {
@@ -156,6 +174,10 @@ namespace Statecraft.HexTiles
             {
                 figure = alias.figure; detail = alias.level == "far" ? CollectionDetail.Far : CollectionDetail.Near; return true;
             }
+            if (DrawCollectionFigures && propOf.TryGetValue(id, out var prop))
+            {
+                figure = prop; detail = CollectionDetail.Near; return true;
+            }
             figure = ""; detail = CollectionDetail.Far; return false;
         }
 
@@ -166,6 +188,17 @@ namespace Statecraft.HexTiles
 #if UNITY_EDITOR
             if (DrawCollectionFigures && figureOf.TryGetValue(id, out var f))
                 return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(FigurePath(f.figure, f.level));
+#endif
+            return null;
+        }
+
+        /// <summary>The Collection prefab a prop id draws in the editor (AssetDatabase), or null: in a player, not a prop
+        /// alias, or switched off.</summary>
+        static GameObject? CollectionProp(string id)
+        {
+#if UNITY_EDITOR
+            if (DrawCollectionFigures && propOf.TryGetValue(id, out var prop))
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(prop, CollectionDetail.Near));
 #endif
             return null;
         }
@@ -205,7 +238,7 @@ namespace Statecraft.HexTiles
             bool town = id.StartsWith(TownPrefix, StringComparison.Ordinal), alias = townOf.ContainsKey(id);
             var made = town || alias ? Town(town ? id : townOf[id]) : null;
             if (made != null) return prefabs[id] = made;
-            var figure = CollectionFigure(id) ?? StreamedProp(id) ?? HouseLevel(id);
+            var figure = CollectionFigure(id) ?? CollectionProp(id) ?? StreamedProp(id) ?? HouseLevel(id);
             if (figure != null) return prefabs[id] = figure;
             var prefab = town ? null : Resources.Load<GameObject>(PathOf(id));
             // Without the set (a player before the map scene has loaded it), not remembered, so the set is looked for again.

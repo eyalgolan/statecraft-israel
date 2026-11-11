@@ -402,6 +402,13 @@ namespace Statecraft.Game.Map.Collection
         public readonly List<string> Missing = new List<string>();
         public IReadOnlyList<Want> Wanted => wanted;
 
+        static int wantedVersions;
+        /// <summary>A stamp of <see cref="Wanted"/> (#3056): 0 for a layer's first, empty list, and a new number, unique across
+        /// layers, at every write of the list (Show, the only one after the field's initializer), so a reader that keeps the
+        /// stamp (SpecialBuildingModels.ShowAt's early-out) knows the list it planned against is the one shown. A layer that is
+        /// not there reads as 0 too: no figures, as an empty list.</summary>
+        internal int WantedVersion { get; private set; }
+
         public static CivilianPeople? ShowAt(MapScene map, DateTime date, IEnumerable<Placement> placements, Content content,
             IReadOnlyDictionary<string, SettlementControl>? control = null, IEnumerable<CityProject>? projects = null)
         {
@@ -422,7 +429,7 @@ namespace Statecraft.Game.Map.Collection
         void Show(List<Want> next)
         {
             if (next.SequenceEqual(wanted)) return;
-            wanted = next;
+            wanted = next; WantedVersion = ++wantedVersions;
             OriginalModelRequests.WhenVisible(this, () => { desiredDetails.Add(CollectionDetail.Far); RefreshResidency(); });
             Rebuild();
         }
