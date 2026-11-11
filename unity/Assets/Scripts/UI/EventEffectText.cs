@@ -1,5 +1,8 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Statecraft.Game.Map.Units;
 using Statecraft.Sim;
 
 namespace Statecraft.Game.UI
@@ -45,6 +48,8 @@ namespace Statecraft.Game.UI
                     return text.Format("event.effect.city", name, field, row.Amount);
                 case OptionEffectPreviewKind.ProjectUnlock:
                     return text.Format("event.effect.unlock", name);
+                case OptionEffectPreviewKind.UnitOrder:
+                    return UnitOrder(row.Cause, text, null);
                 case OptionEffectPreviewKind.SetPolicy:
                     return text.Format("event.effect.policy", name, row.Amount);
                 case OptionEffectPreviewKind.SetRung:
@@ -54,6 +59,30 @@ namespace Statecraft.Game.UI
                 default:
                     throw new ArgumentOutOfRangeException(nameof(row), "Unknown effect presentation category");
             }
+        }
+
+        /// <summary>#2705, R-EVT-005: an operation card's unit order as given, never its outcome, from the cause's arguments
+        /// (CauseKeys.EventUnitOrder: the row, the order, the unit's and the place's English names). In Hebrew the unit and the
+        /// place take their Hebrew from <paramref name="units"/> (map/units_1948.yaml, which Unity reads itself): the row's
+        /// name_he, and the place_he of its order target or anchor of that English name; the English where there is none.
+        /// The Why panel words the same cause.</summary>
+        public static string UnitOrder(Cause cause, UiText text, IReadOnlyList<UnitEntry>? units)
+        {
+            var a = cause.Args;
+            var key = a[3] switch
+            {
+                Movement.GoTo => "event.effect.go_to",
+                Combat.Attack => "event.effect.attack",
+                _ => throw new ArgumentOutOfRangeException(nameof(cause), "Unknown unit-order presentation label"),
+            };
+            string unit = a[4], place = a[5];
+            if (text["ui.lang"] == UiLanguage.Hebrew && units?.FirstOrDefault(x => x.Id == a[2]) is UnitEntry row)
+            {
+                if (!string.IsNullOrEmpty(row.NameHe)) unit = row.NameHe;
+                var named = (row.OrderTargets ?? new List<UnitAnchor>()).Concat(row.Anchors).FirstOrDefault(x => x.Place == place);
+                if (!string.IsNullOrEmpty(named?.PlaceHe)) place = named!.PlaceHe!;
+            }
+            return text.Format(key, unit, place);
         }
     }
 }

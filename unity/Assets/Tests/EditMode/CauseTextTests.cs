@@ -645,7 +645,7 @@ public class CauseTextTests
             CauseKeys.EventDelegatedPartial, CauseKeys.EventGrant, CauseKeys.EventNew, CauseKeys.EventPolicy,
             CauseKeys.OperationPostponed, CauseKeys.OperationLapsed, CauseKeys.OperationLapsedSigned, CauseKeys.OperationLapsedUnitLost,
             CauseKeys.OperationWaitsForArmistice,
-            CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock,
+            CauseKeys.EventRejoin, CauseKeys.EventSetRung, CauseKeys.EventStock, CauseKeys.EventUnlock, CauseKeys.EventUnitOrder,
             CauseKeys.MilitaryUpkeep, CauseKeys.HousingSurcharge, CauseKeys.HousingCohesion,
             CauseKeys.ObjectiveCompleted, CauseKeys.PrisonersReturned, CauseKeys.SoldiersReturned,
             CauseKeys.FieldFood }), rows.Select(x => x.Key).Distinct(), "all remaining keys");   // FieldFood (#2471): only the gdd-0.3 field fixture makes it, no turn yet, so no wording yet ("Per field, words later (Recommended)")

@@ -402,9 +402,10 @@ namespace Statecraft.Sim
                 : FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {field.Replace('_', ' ')} {(delta > 0 ? "+" : "")}{delta}");
 
         /// <summary>R-EVT-005: every effect of an option, in the order choosing it applies them (Resolve): the numeric
-        /// effects, the unit grants, city effects and project unlocks (R-EFX-006), the policies it sets (by id), the security
-        /// level, then rejoin. Each amount is the option's own; Resolve may apply less where an indicator meets its bound or
-        /// the Food or Arms stock its floor, and rounds both to whole units. The event card will read this list (Q-EVT-4,
+        /// effects, the unit grants, city effects and project unlocks (R-EFX-006), the unit orders it issues (R-ENEMY-005, #2705:
+        /// each order as given, to the place it names, not its outcome; a row with no unit on the board orders nobody, so it is
+        /// not listed), the policies it sets (by id), the security level, then rejoin. Each amount is the option's own; Resolve
+        /// may apply less where an indicator meets its bound or the Food or Arms stock its floor, and rounds both to whole units. The event card will read this list (Q-EVT-4,
         /// owner 17 October 2026; Phase 7 PR 8), so no number is computed in Unity.</summary>
         public static List<Cause> OptionEffects(Content c, GameState s, EventOption o) =>
             OptionEffectRows(c, s, o).Select(r => r.Cause).ToList();
@@ -419,7 +420,7 @@ namespace Statecraft.Sim
         {
             var rows = new List<OptionEffectPreview>();
             void Add(OptionEffectPreviewKind kind, string target, double delta, string message, string contextId, string contextName,
-                string amount, string field = "")
+                string amount, string field = "", params string[] extra)
             {
                 var key = kind switch
                 {
@@ -428,6 +429,7 @@ namespace Statecraft.Sim
                     OptionEffectPreviewKind.UnitGrant => CauseKeys.EventGrant,
                     OptionEffectPreviewKind.City => CauseKeys.EventCity,
                     OptionEffectPreviewKind.ProjectUnlock => CauseKeys.EventUnlock,
+                    OptionEffectPreviewKind.UnitOrder => CauseKeys.EventUnitOrder,
                     OptionEffectPreviewKind.SetPolicy => CauseKeys.EventPolicy,
                     OptionEffectPreviewKind.SetRung => CauseKeys.EventSetRung,
                     OptionEffectPreviewKind.Rejoin => CauseKeys.EventRejoin,
@@ -435,6 +437,7 @@ namespace Statecraft.Sim
                 };
                 var args = kind == OptionEffectPreviewKind.UnitGrant ? Context("", "", contextId)
                     : kind == OptionEffectPreviewKind.City ? Context("", "", contextId, field)
+                    : kind == OptionEffectPreviewKind.UnitOrder ? Context("", "", new[] { contextId, field }.Concat(extra).ToArray())
                     : kind == OptionEffectPreviewKind.Rejoin ? Context("", "", contextName,
                         SnapshotText(c, s, s.Date, c.Events.First(e => e.Id == contextId).Title, c.Events.First(e => e.Id == contextId).TitleHe))
                     : Context("", "");
@@ -469,6 +472,17 @@ namespace Statecraft.Sim
             foreach (var k in o.UnlockProjects)
                 Add(OptionEffectPreviewKind.ProjectUnlock, k, 1, Unlocked(c, k), k,
                     PlayerText.Capitalised(c.ProjectKinds.First(x => x.Id == k).Name), "");
+            foreach (var x in o.UnitOrders)
+            {
+                // The same check as Resolve's: a row with no unit on the board orders nobody (R-ENEMY-005).
+                int id = c.StartingForces.FindIndex(f => f.Row == x.Unit);
+                if (id < 0 || !s.Units.TryGetValue(id, out var u) || u.Side != c.StartingForces[id].Side || u.Type != c.StartingForces[id].Type) continue;
+                var force = c.StartingForces[id];
+                var place = c.UnitOrderPlaces.TryGetValue((x.Unit, x.Q, x.R), out var p) ? p : Hex(x.Q, x.R);
+                var verb = x.Order == Combat.Attack ? "attack" : "go to";
+                Add(OptionEffectPreviewKind.UnitOrder, x.Unit, 0, $"{force.Name}: {verb} {place}", x.Unit, force.Name, "", x.Order,
+                    force.Name, place);
+            }
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
                 var name = PlayerText.Target(c, kv.Key);

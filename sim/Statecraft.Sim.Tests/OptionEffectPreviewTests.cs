@@ -147,6 +147,49 @@ public class OptionEffectPreviewTests
         Assert.Equal("An industry project can now be built", row.Cause.Message);
     }
 
+    // #2705, R-EVT-005, R-ENEMY-005: an operation option's unit orders are listed where choosing it applies them (after the
+    // structured effects, before the security level), one row per order as given: its unit and the sourced place it names,
+    // never its outcome. Both GDD identities apply the orders (R-ENEMY-007, since #2621), so both list them. The real
+    // Operation Hiram card, loaded through the loader with each ruleset.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AnOperationOptionListsTheUnitOrdersChoosingItIssues(bool gdd03)
+    {
+        var c = HistoricalPopulationTests.Real(gdd03);
+        Assert.Equal(gdd03 ? SaveGame.Gdd03Ruleset : SaveGame.GddRuleset, c.Ruleset);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var option = c.Events.Single(e => e.Id == "operation_hiram").Options.Single(o => o.Id == "stop_at_ceasefire");
+        // The 7th Brigade arrives after the start (R-UNIT-009): until then Resolve orders nobody for its row, so none is listed.
+        Assert.Equal(new[] { "security", "carmeli", "rung" }, EventSystem.OptionEffectPreviews(c, s, option).Select(r => r.Cause.Target));
+        StartingForces.Arrive(c, s, new DateTime(1948, 10, 15));
+        var hash = s.Hash();
+        var rows = EventSystem.OptionEffectPreviews(c, s, option);
+        Assert.Equal(new[] { "security", "carmeli", "brigade_7", "rung" }, rows.Select(r => r.Cause.Target));
+        Assert.Equal(EventSystem.OptionEffects(c, s, option).Select(x => (x.Target, x.Message, x.Key)),
+            rows.Select(r => (r.Cause.Target, r.Cause.Message, r.Cause.Key)));
+        var orders = rows.Where(r => r.Cause.Key == "event_unit_order").ToList();
+        Assert.Equal(new[] { "Carmeli Brigade: go to Manara", "7th Brigade: go to al-Malikiyya" }, orders.Select(r => r.Cause.Message));
+        Assert.Equal(new[] { "go_to", "go_to" }, orders.Select(r => r.Field));
+        Assert.Equal(new[] { "carmeli", "brigade_7" }, orders.Select(r => r.ContextId));
+        // The UI words the row from these: the unit row, the order, the unit's and the place's English names (Unity reads the
+        // Hebrew of map/units_1948.yaml itself, HebrewOverlay.UnityReads).
+        Assert.Equal(new[] { "", "", "carmeli", "go_to", "Carmeli Brigade", "Manara" }, orders[0].Cause.Args);
+        Assert.Equal(new[] { "", "", "brigade_7", "go_to", "7th Brigade", "al-Malikiyya" }, orders[1].Cause.Args);
+        Assert.Equal(hash, s.Hash());
+    }
+
+    // R-ENEMY-008: an attack row is listed as an attack on the place it names (no shipped card has one yet).
+    [Fact]
+    public void AnAttackRowIsListedAsAnAttack()
+    {
+        var c = HistoricalPopulationTests.Real(false);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var option = new EventOption { Id = "probe", UnitOrders = new List<UnitOrderEffect> { new UnitOrderEffect { Unit = "carmeli", Order = Combat.Attack, Q = 15, R = 3 } } };
+        var row = Assert.Single(EventSystem.OptionEffectPreviews(c, s, option));
+        Assert.Equal(("Carmeli Brigade: attack Manara", "attack"), (row.Cause.Message, row.Field));
+    }
+
     [Fact]
     public void AnEmptyOptionHasNoInventedEffects()
     {

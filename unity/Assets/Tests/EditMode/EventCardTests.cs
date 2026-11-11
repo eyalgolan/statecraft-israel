@@ -1105,4 +1105,40 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
             .Query<Label>(className: EventCardPresenter.EffectClass).ToList().Select(x => x.text));
         Assert.IsFalse(joined.Contains("recorded course:", System.StringComparison.Ordinal), joined);
     }
+
+    /// <summary>#2705, R-EVT-005, R-ENEMY-005: an operation option lists the unit orders choosing it issues, each as given (its
+    /// unit and the sourced place it names), after the numeric effects and before the security level, in the UI's language.
+    /// Both GDD identities apply the orders (R-ENEMY-007), so both show them. The real Operation Hiram card in October 1948,
+    /// the 7th Brigade arrived (R-UNIT-009); the Hebrew names come from the units file, as on the map.</summary>
+    [TestCase(false, false)] [TestCase(true, false)] [TestCase(false, true)] [TestCase(true, true)]
+    public void AnOperationOptionListsItsUnitOrdersInTheUiLanguage(bool hebrew, bool gdd03)
+    {
+        var text = hebrew ? He : Text;
+        var c = gdd03 ? ContentLoader.Load(rel =>
+            {
+                var path = Path.Combine(Paths.Content, rel);
+                var yaml = File.Exists(path) ? File.ReadAllText(path) : null;
+                return rel == "eras.yaml" ? yaml!.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : yaml;
+            }, Directory.GetFiles(Path.Combine(Paths.Content, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)))
+            : ContentLoader.Load(Paths.Content);
+        Assert.AreEqual(gdd03 ? SaveGame.Gdd03Ruleset : SaveGame.GddRuleset, c.Ruleset, "precondition: the ruleset under test");
+        var e = c.Events.Single(x => x.Id == "operation_hiram");
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        StartingForces.Arrive(c, g.State, e.From);
+        g.State.Date = e.From;
+        g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(e.Id);
+        var before = g.State.Hash();
+        using var ui = new UiTestKit();
+        var unitRows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        using var card = new EventCardPresenter(ui.Root, new SimBridge(g, text), text, null) { Units = unitRows };
+        card.Render();
+        var children = ui.Q<VisualElement>("event-options").Children().ToList();
+        var shown = children.Skip(children.IndexOf(ui.Q<Button>("option-stop_at_ceasefire")) + 1).TakeWhile(x => !(x is Button))
+            .OfType<Label>().Where(x => x.ClassListContains(EventCardPresenter.EffectClass))
+            .Select(x => x.text.Replace(UiText.LeftToRightMark.ToString(), "")).ToList();
+        Assert.AreEqual(4, shown.Count, string.Join(" | ", shown));
+        Assert.AreEqual(hebrew ? new[] { "חטיבת כרמלי: תנועה אל מנרה", "חטיבה 7: תנועה אל אל-מאלכיה" }
+            : new[] { "Carmeli Brigade: go to Manara", "7th Brigade: go to al-Malikiyya" }, shown.Skip(1).Take(2).ToArray());
+        Assert.AreEqual(before, g.State.Hash(), "showing the orders changes nothing in the game");
+    }
 }

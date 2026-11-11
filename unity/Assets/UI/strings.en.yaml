@@ -997,6 +997,10 @@ event.effect.veteran_halutz: "Veteran Halutzim"
 event.effect.housing_capacity: "housing capacity"
 event.effect.job_slots: "job slots"
 event.effect.condition: "housing condition"
+# #2705, R-EVT-005: an operation card's unit order, as given (EventEffectText.UnitOrder). {0} the unit's name; {1} the
+# sourced place the order names (map/units_1948.yaml). Agent-drafted wording, no ruling yet.
+event.effect.go_to: "{0}: go to {1}"
+event.effect.attack: "{0}: attack {1}"
 
 # The opening chain (spec 9.2; AdvisorPresenter): game dialogue in each advisor's persona, labelled "Advisor", never a
 # quote. Each step is the advisor's recorded line, without balance values. opening.attention and opening.event use the

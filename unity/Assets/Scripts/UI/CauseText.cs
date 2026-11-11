@@ -96,6 +96,8 @@ namespace Statecraft.Game.UI
                 case CauseKeys.EventSetRung:
                 case CauseKeys.EventRejoin:
                     return Event(cause, c, text, namesHe);
+                case CauseKeys.EventUnitOrder:
+                    return EventEffectText.UnitOrder(cause, text, rows);   // #2705: only an option's preview, never an applied change
                 default:
                     return UnitNames.Line(cause, c, rows, text, namesHe);
             }

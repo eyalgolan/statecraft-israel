@@ -377,7 +377,7 @@ namespace Statecraft.Game.UI
                 foreach (var preview in EventSystem.OptionEffectPreviews(c, s, o))
                 {
                     if (preview.Kind == OptionEffectPreviewKind.Rejoin) continue;
-                    var effect = new Label(EffectLine(c, preview, text));
+                    var effect = new Label(EffectLine(c, preview, text, Units));
                     effect.AddToClassList("muted"); effect.AddToClassList(EffectClass);
                     options.Add(effect);
                 }
@@ -402,9 +402,11 @@ namespace Statecraft.Game.UI
 
         /// <summary>One option-effect row in the UI's language. An indicator, money or policy is named as the top bar and the Why
         /// panel name it (why.name.&lt;id&gt;, Hebrew in Hebrew), the sim's English name where the strings have none; a project
-        /// unlock takes the kind's own Hebrew name (ContentNames).</summary>
-        public static string EffectLine(Content c, OptionEffectPreview row, UiText text)
+        /// unlock takes the kind's own Hebrew name (ContentNames); a unit order its unit's and place's Hebrew from
+        /// <paramref name="units"/> (#2705).</summary>
+        public static string EffectLine(Content c, OptionEffectPreview row, UiText text, IReadOnlyList<UnitEntry>? units = null)
         {
+            if (row.Kind == OptionEffectPreviewKind.UnitOrder) return EventEffectText.UnitOrder(row.Cause, text, units);
             var key = "why.name." + row.ContextId;
             var name = row.Kind switch
             {

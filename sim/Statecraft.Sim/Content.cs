@@ -1542,6 +1542,9 @@ namespace Statecraft.Sim
         /// (row id, index): the hex unit_anchor_hexes.yaml gives it and its `to`, the day a card's order to it ends. An operation
         /// card may order the row's unit there as to an anchor (R-ENEMY-005). Empty in the legacy loop.</summary>
         public Dictionary<(string Row, int Target), (int Q, int R, DateTime To)> UnitOrderTargets = new Dictionary<(string Row, int Target), (int Q, int R, DateTime To)>();
+        /// <summary>The place an order target or anchor of map/units_1948.yaml names (its English `place`), by (row id, hex),
+        /// the order target's first: the event card names it beside a unit order (#2705, R-EVT-005). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Q, int R), string> UnitOrderPlaces = new Dictionary<(string Row, int Q, int R), string>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
         /// <summary>The GDD city project kinds (projects.yaml) this game's ruleset has (R-ARMS-004: a row's `rulesets`), in file

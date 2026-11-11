@@ -426,7 +426,7 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
     }
 
     // R-EVT-005: on the real content, for every option of every event on the turn its card reaches the player, the
-    // helper lists exactly the option's effects, policies and security level.
+    // helper lists exactly the option's effects, the unit orders of units on the board (#2705), policies and security level.
     [Fact]
     public void ThePreviewListsEveryEffectOnTheRealContent()
     {
@@ -443,7 +443,13 @@ sources: [{ url: https://example.org/event, checked: 2026-10-18 }]
                 : AltRun.Play(C, AltRun.RoadTo(C, e)).First(x => x.FiredEvents.Contains(e.Id));
             foreach (var o in e.Options)
             {
+                bool OnBoard(UnitOrderEffect x)
+                {
+                    int id = C.StartingForces.FindIndex(f => f.Row == x.Unit);
+                    return id >= 0 && s.Units.TryGetValue(id, out var u) && u.Side == C.StartingForces[id].Side && u.Type == C.StartingForces[id].Type;
+                }
                 var expected = o.Effects.Select(fx => (fx.Target, fx.Delta))
+                    .Concat(o.UnitOrders.Where(OnBoard).Select(x => (x.Unit, 0.0)))
                     .Concat(o.SetPolicy.OrderBy(k => k.Key, StringComparer.Ordinal).Select(k => (k.Key, k.Value)))
                     .Concat(o.SetRung.HasValue ? new[] { ("rung", (double)o.SetRung.Value) } : new (string, double)[0])
                     .Concat(o.Rejoin != "" ? new[] { ("rejoin", 0.0) } : new (string, double)[0]);
