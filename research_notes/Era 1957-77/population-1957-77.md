@@ -792,9 +792,10 @@ same CBS folder as the table in section 8:
 The SA No. 31 (1980) file, .../shnaton1980_num31.pdf, returned the CBS error page ("Oops, Something is wrong") on
 2026-11-11 and was not read.
 
-[V] Residents who left in the year and did not return within four years ("Thereof: stayed abroad over 4 years"),
-thousands, as each edition prints it. Brackets are the tables' own: "Figures in brackets are estimates" (SA30) and
-"Data in brackets are forecasts" (SA32, SA33, SA34).
+[V] Residents who left in the year and did not return within four years (SA32-SA34 heading "Thereof: stayed abroad
+over 4 years"; SA30 "stayed abroad up to", under the title "Residents who did not return from abroad within four
+years"), thousands, as each edition prints it. Brackets are the tables' own: "Figures in brackets are estimates" (SA30)
+and "Data in brackets are forecasts" (SA32, SA33, SA34).
 
 | Year of departure | SA28 (8c) | SA29 (8c) | SA30 | SA32 | SA33 | SA34 |
 |---|---|---|---|---|---|---|
