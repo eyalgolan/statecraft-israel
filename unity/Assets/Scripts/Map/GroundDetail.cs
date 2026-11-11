@@ -16,7 +16,9 @@ namespace Statecraft.Game.Map
     public sealed class GroundDetail : MonoBehaviour
     {
         public const string Name = "GroundDetail", MaterialResource = "Map/GroundDetail", ScrubMaterialResource = "Map/GroundScrub",
-            Toggle = "grounddetail", ScrubToggle = "groundscrub";
+            Toggle = "grounddetail", ScrubToggle = "groundscrub", FurrowToggle = "furrows";
+        /// <summary>The pass's furrows (#2917, GroundDetail.shader): a shader variant, so the "furrows" toggle prices them.</summary>
+        public const string FurrowKeyword = "SC_FURROWS";
         /// <summary>The queue right after the terrain (Terrain.mat 1998), over its lit colour and under everything else.</summary>
         public const int Queue = (int)RenderQueue.Geometry - 1;
         public const int TextureSize = 1024;
@@ -79,6 +81,7 @@ namespace Statecraft.Game.Map
             var template = Resources.Load<Material>(MaterialResource); var scrubTemplate = Resources.Load<Material>(ScrubMaterialResource);
             if (template == null || scrubTemplate == null) { Debug.LogWarning($"{MaterialResource} or {ScrubMaterialResource} is missing: no ground detail"); return null; }
             var material = assets.Own(new Material(template) { name = Name, renderQueue = Queue });
+            material.EnableKeyword(FurrowKeyword);
             var size = terrain.terrainData.size; var o = terrain.transform.position;
             Shader.SetGlobalTexture(DetailId, assets.Own(BuildTexture()));
             var classes = FillClasses(frame, hexes, out int nx, out int nz);
@@ -107,6 +110,7 @@ namespace Statecraft.Game.Map
             layer.mapRect = new Rect(o.x, o.z, size.x, size.z); layer.reliefM = size.y; layer.baseY = o.y;
             assets.OnTeardown(VisualToggles.Register(Toggle, set => layer.on = set));
             assets.OnTeardown(VisualToggles.Register(ScrubToggle, set => layer.scrubOn = set));
+            assets.OnTeardown(VisualToggles.Register(FurrowToggle, set => { if (set) material.EnableKeyword(FurrowKeyword); else material.DisableKeyword(FurrowKeyword); }));
             return layer;
         }
 
