@@ -617,9 +617,9 @@ class EndTurn:
     Skip is found where the game draws it: a middle-button probe reports the element under it (?navlog NAV_DOWN) and acts
     on nothing (a left press on the card's text can move the unit, NAV_MAP), then a left click presses Skip. When the
     opening (#530) takes the first End turn click, its own Skip is pressed the same way and End turn clicked again; so is
-    the raid card's OK when the raid flight or card (#3003) takes it. A missed End turn, a probe the map takes, a card or
-    an opening with no Skip, a raid card with no OK, or a turn that never ends fails at once. Returns the number of units
-    Skipped."""
+    the raid card's OK when the raid flight or card (#3003) takes it, on this EndTurn's first call only. A missed End
+    turn, a probe the map takes, a card or an opening with no Skip, a raid card with no OK, a raid on a later call, or a
+    turn that never ends fails at once. Returns the number of units Skipped."""
 
     def __init__(self, action, tail: ConsoleTail, hebrew: bool, settle=time.sleep, max_skips=MAX_SKIPS, answer=5.0,
                  turn_wait=3.0, viewport=VIEWPORT):
@@ -628,10 +628,15 @@ class EndTurn:
         self.point = END_TURN_HE if hebrew else END_TURN
         self.viewport, self.bottom = viewport, viewport[1] - INFO_PANEL_BOTTOM
         self.skip_at: tuple[int, int] | None = None  # where Skip was last: cards of one kind keep it there
+        # The raid plays only on New game (GameRoot.PlayNewGameIntro: never on Continue or a load), and each driver's
+        # first End turn follows New game: so only this EndTurn's first call may answer it, once; a later raid fails.
+        self.raid_due = True
 
     def __call__(self) -> int:
+        raid, self.raid_due = self.raid_due, False
         for skips in range(self.max_skips + 1):
-            since = self.click_end_turn(opening=skips == 0)   # the opening shows only before a new game's first turn
+            since = self.click_end_turn(opening=skips == 0,   # the opening shows only before a new game's first turn
+                                        raid=raid and skips == 0)
             if self.tail.wait(TURN_STATE, since, self.turn_wait) is not None:
                 print(f"END TURN the turn ended after {skips} Skip(s)")
                 return skips

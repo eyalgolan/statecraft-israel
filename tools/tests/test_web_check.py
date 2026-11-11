@@ -551,9 +551,42 @@ def test_end_turn_still_fails_a_click_that_reaches_root_off_the_raid_flight():
         wc.EndTurn(elsewhere, game.tail, False, settle=lambda s: None, answer=0.05, turn_wait=0.05)()
 
 
-def test_end_turn_answers_the_raid_only_before_a_new_games_first_turn():
+def test_click_end_turn_told_no_raid_fails_on_the_raid_flight():
     with pytest.raises(ValueError, match="END TURN FAIL the click at \\(1840, 45\\) did not press end-turn .*reached root"):
         _end_turn(FakeGame(raid=EN_RAID)).click_end_turn(opening=False)
+
+
+@pytest.mark.parametrize("flight,reached", [(True, "root"), (False, "raid-layer")])
+def test_end_turn_answers_the_raid_only_on_its_first_turn(flight, reached):
+    """The game plays the raid only on New game (GameRoot.PlayNewGameIntro: "Never on Continue or a load"). One EndTurn
+    answers it on its first End turn; a raid on any later call of the same EndTurn (PersistenceCheck's End turn after
+    Continue) still fails."""
+    game = FakeGame(raid=EN_RAID, flight=flight)
+    end_turn = _end_turn(game)
+    assert end_turn() == 0 and game.raid is None
+    game.raid, game.flight = EN_RAID, flight                     # the raid shows again before the next End turn
+    missed = f"END TURN FAIL the click at \\(1840, 45\\) did not press end-turn .*reached {reached}\\)"
+    with pytest.raises(ValueError, match=missed):
+        end_turn()
+    assert game.raid is not None, "the second raid's OK was not pressed"
+
+
+def test_persistence_check_answers_the_raid_after_new_game_but_fails_one_after_continue():
+    """#3003 on the --persistence run: the raid after New game is answered; one replayed after Continue must fail."""
+    game = FakeGame()
+    new_game, cont = _clicks(AT["start-new-game"], AT["start-continue"])
+
+    def player(action):
+        game(action)
+        if action in (new_game, cont):                           # the raid flight covers the window once the map shows
+            game.raid, game.flight = EN_RAID, True
+    check = wc.PersistenceCheck(player, _buttons(), game.tail, lambda seconds: None)
+    _played_to_the_settled_reload(check)
+    assert game.raid is None, "the raid after New game was answered"
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
+    missed = "END TURN FAIL the click at \\(1840, 45\\) did not press end-turn .*reached root\\)"
+    with pytest.raises(ValueError, match=missed):
+        check.feed("GAME OK 1948-06-15 turn 1 hash bb")
 
 
 def test_a_click_that_does_not_press_skip_fails():
