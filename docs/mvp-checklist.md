@@ -98,7 +98,7 @@ PRs 1 to 12 have their owner answers recorded in the Phase 6 plan (#1060, #1069)
 - [ ] **Open: #800.** PR 8 Deport, honest cost, no reward.
 - [x] **Done: `docs/rules/mvp.md`, R-EVT-007.** PR 9 displacement cards: `deport_acre` and `deport_nazareth`, both `sensitivity-reviewed` (#2197, #2292; #801 closed). Deport stays out of play (`mvp.deport_in_play: false`); #802 closed with it kept off. A person's read of the books behind the cards' history lines is still pending ([#801](https://github.com/eyalgolan/statecraft-israel/issues/801#issuecomment-6592883786)).
 - [x] **Done: #802.** PR 10 Unity capture and end-of-occupation dialogs are on `main` (#1317 and #1572 merged). Deport stays off: the owner ruled on 10 November 2026 to keep it off and close #802 ([#802](https://github.com/eyalgolan/statecraft-israel/issues/802#issuecomment-6777655139)).
-- [ ] **Open: #803.** PR 11 Unity settlement states on the map. The word tag under each name and International Support's count of depopulated places are on `main` (#2974); the side panel's state line with its turns left (the plan's Task 4) remains.
+- [ ] **Open: #803.** PR 11 Unity settlement states on the map. The word tag under each name and International Support's count of depopulated places are on `main` (#2974); so is the side panel's state line (#2603). Left: the after screenshots for #2974 and the one-click tag test.
 - [ ] **Open: #804.** PR 12 close.
 - [x] **Done: `docs/gdd/settlement-control.md`.** The final section records the owner's Phase 6 rulings (#1045; #532).
 
@@ -154,7 +154,7 @@ The first outside play-test (18 October). The plan of record for these is #1038.
 2. **Done: Phase 3.** City projects, the winery and the city panel are done (#1255, #1198, #1294).
 3. **Open: #785.** Finish the site reviews (the Hula sources' agent recheck is on `main`, #2503), then #792; corridors and objective 3 are done (#870, #1226).
 4. **Open: #751, #752 and #756, then #757.** Recruits, artillery acquisition, war state, unit orders, the Defence screen and the enemy AI are done (#1130, #1346, #1148, #1310, #1277, #1493, #1263, #2087; #749 closed).
-5. **Open: #800 and #803, then #804.** Capture, Raid, Occupy, annex or withdraw, the displacement cards and the capture dialogs are done (#1239, #1257, #1324, #1526, #2197, #1317, #1572; #802 closed with Deport kept off), and so are #803's map tags (#2974); Deport, #803's side panel and the phase close remain.
+5. **Open: #800 and #803, then #804.** Capture, Raid, Occupy, annex or withdraw, the displacement cards and the capture dialogs are done (#1239, #1257, #1324, #1526, #2197, #1317, #1572; #802 closed with Deport kept off), and so are #803's map tags (#2974); Deport, #803's screenshots and one-click test, and the phase close remain.
 6. **Open: #807 and #809.** Defeat, the event effects, ministers and simulation end report are done (#1246, #1072, #1147, #1149).
 7. **Open: the GDD 0.3 MVP issues (above), then #1716.** The switch-over turns gdd-0.3 on for players once every MVP issue in #1725 is closed or post-MVP; the implementation path then ends at the WebGL-only release in #814.
 
