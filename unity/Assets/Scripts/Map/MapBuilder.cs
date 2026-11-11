@@ -309,6 +309,11 @@ namespace Statecraft.Game.Map
 
         /// <summary>Lakes: flat water (a 3x3 height range within LakeFlatM) below LakeBelowM, tools/terrain_bake.py's rule.</summary>
         public const float LakeBelowM = -150f, LakeFlatM = 0.25f;
+        /// <summary>The Dead Sea's 1948 level (content/map/water.yaml dead_sea_1948, #16): tools/terrain_bake.py draws water
+        /// down there from the lake, so every sample at or below it is wet here (only the Dead Sea's basin lies this low;
+        /// a pit the fill does not reach gets mesh the coast leaves dry, which adds nothing). tools/tests/test_water.py
+        /// keeps it equal to the file's level_m.</summary>
+        public const float DeadSea1948M = -392f;
         /// <summary>The water mesh reaches this many heightmap samples past the last wet one: the shore's coverage ramp (about
         /// 70 m inland) and the coast texture's own resolution stay inside it.</summary>
         public const int WaterMeshReach = 2;
@@ -318,8 +323,8 @@ namespace Statecraft.Game.Map
         /// <summary>The surface the water inside the map is drawn on (issue #195; MapScene.TerrainWaterName): the terrain's own
         /// heightmap surface wherever the water's coverage can be above 0, so Sea.shader's terrain-water mode can add the water
         /// on top of the terrain instead of the terrain's own shader carrying it. Wet samples are the sea (within SeaToleranceM
-        /// of 0 m) and flat rift lakes (LakeBelowM, LakeFlatM); every cell within WaterMeshReach samples of one is drawn at
-        /// the heightmap's full resolution, except square blocks whose samples all share one height (the open sea, the lakes'
+        /// of 0 m), flat rift lakes (LakeBelowM, LakeFlatM) and the Dead Sea's 1948 water (DeadSea1948M); every cell within
+        /// WaterMeshReach samples of one is drawn at the heightmap's full resolution, except square blocks whose samples all share one height (the open sea, the lakes'
         /// flat middles), drawn as fans from the centre to every sample on their edge, so no edge has a T-junction.
         /// <paramref name="heights"/> are the ones the terrain was given (Unity's [y, x], 0..1): the terrain stores them at
         /// 16 bits, a few centimetres off, well inside the water's depth pull (Sea.shader).</summary>
@@ -346,12 +351,15 @@ namespace Statecraft.Game.Map
             float perMetre = VerticalExaggeration / size.y, zero = -elevMinM * perMetre;
             float seaLo = zero - SeaToleranceM * perMetre, seaHi = zero + SeaToleranceM * perMetre;
             float lakeBelow = (LakeBelowM - elevMinM) * perMetre, lakeFlat = LakeFlatM * perMetre;
-            // A sample is wet when it is sea, or the flat floor of a rift lake (its 3x3 neighbourhood within LakeFlatM).
+            float deadSea = (DeadSea1948M - elevMinM) * perMetre;
+            // A sample is wet when it is sea, the flat floor of a rift lake (its 3x3 neighbourhood within LakeFlatM), or at or
+            // below the Dead Sea's 1948 level.
             bool Wet(int x, int y)
             {
                 float h = heights[y, x];
                 if (h > seaLo && h < seaHi) return true;
                 if (h >= lakeBelow) return false;
+                if (h <= deadSea) return true;
                 float lo = h, hi = h;
                 for (int oy = -1; oy <= 1; oy++)
                     for (int ox = -1; ox <= 1; ox++)
