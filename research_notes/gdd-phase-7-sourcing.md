@@ -243,7 +243,8 @@ What the statutes show:
   under the Law of Return in that interval. What the sources do say: the
   government decided to abolish the ministry and move its functions to Interior (Yosef, November 1951; the 1954 bill's
   note); the services moved to Interior in March 1952 (Comptroller); in August 1952 an MP still asked for the Law of
-  Return function to be *listed* as passing to Interior, and the Knesset voted down the Klibanov/Bader amendment, read here as that schedule; section 12א let the
+  Return function to be *listed* as passing to Interior, and the Knesset voted down the Klibanov/Bader amendment,
+  read here as that schedule; section 12א let the
   government transfer statutory powers by a Reshumot notice from then on; the statute named "שר העליה" until 23 August
   1954. Whether a section 12א notice moved the Law of Return powers, and when, is **not found**. That the Interior
   Minister exercised them throughout is a reading, not a sourced fact, and is not stated here as one.
