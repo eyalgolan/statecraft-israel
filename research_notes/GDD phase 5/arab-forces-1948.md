@@ -62,8 +62,7 @@ Every [V] in this note was an agent's reading on 2026-10-13, unless the tag give
   Documents on the 1948 Palestine War" (*JPS* 27(3), 1998) (HTTP 403). David Tal, *War in Palestine 1948* (not on the
   Internet Archive). Aref al-Aref, *al-Nakba* (Internet Archive copy, but the OCR is unreadable). Pappé's books: no
   passage with Arab strength figures was found, so Pappé is not cited for any figure.
-- **Privacy.** Every request carried the User-Agent `statecraft-israel-research/1.0
-  (+https://github.com/eyalgolan/statecraft-israel)` and no personal identifier.
+- **Privacy.** Every request carried a research User-Agent that named the project's repository and no personal identifier.
 
 ## Summary: totals
 

@@ -436,7 +436,8 @@ defence.rung5: "5  מלחמה כוללת"
 defence.turn_quarter: "תורות של רבעון"
 defence.turn_month: "תורות של חודש"
 defence.turn_week: "תורות של שבוע"
-defence.command: "שר הביטחון {0} · הרמטכ״ל {1}"
+# {0} is the office's title for its holder (content/offices.yaml title_he / title_he_f, #2533)
+defence.command: "{0} {1} · הרמטכ״ל {2}"
 defence.ceasefire: "אם המלחמה תימשך במלוא עוצמתה, האו״ם יכפה הפסקת אש בעוד {0} שבועות"
 defence.order: "ניתנה פקודה: מדרגה {0} לדרגה {1}"
 defence.mob: "{0} מכוחות המילואים גויסו (דרגה {1} דורשת לפחות {2})"
@@ -914,6 +915,9 @@ unit.security: "רמת ביטחון {0} מתוך 5"
 unit.sources: "מקורות: {0}"
 unit.draft_wikipedia: "טיוטה: מוויקיפדיה בלבד, טרם נבדק מול מחקר שפורסם"
 unit.draft: "טיוטה: טרם נבדק בידי היסטוריון"
+# unit.fact_checked (#2918 P2): agent-drafted; native review: owner, 10 Nov 2026: "Approve as is". The impersonal "נבדק"
+# and "טרם נבדק בידי היסטוריון" of unit.draft, without its "טיוטה:" (a checked row is not called a draft).
+unit.fact_checked: "נבדק בידי אדם מול המקורות; טרם נבדק בידי היסטוריון"
 unit.defence: "פתיחת מסך הביטחון"
 # Hebrew draft for a raised unit's type and home city (#1399); native review: owner,
 # 3 Nov 2026 (HE batch 4: "Approve all as they are").
@@ -1640,8 +1644,8 @@ why.cause.ending.defeat_war: "האויב מחזיק בעיר"
 unit.confirm_move: "שליחת {0} אל {1}"
 
 # The opening's controls (#530), Hebrew agent-drafted: native review: owner, 3 Nov 2026 (HE batch 1: "All fine as they
-# are"), except opening.preview, for the native reviewer (#564). The historical prose is in opening.yaml, in English
-# and in Hebrew (title_he, text_he, country_he), with its own he_review there.
+# are"); opening.preview: owner, 11 Nov 2026 ("Approve as is (Recommended)"). The historical prose is in opening.yaml,
+# in English and in Hebrew (title_he, text_he, country_he), with its own he_review there.
 opening.replay: "צפייה חוזרת בפתיח"
 opening.back: "הקודם"
 opening.next: "הבא"

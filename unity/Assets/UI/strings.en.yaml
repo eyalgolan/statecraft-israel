@@ -382,7 +382,7 @@ defence.rung5: "5  Full war"
 defence.turn_quarter: "turns of a quarter"
 defence.turn_month: "turns of a month"
 defence.turn_week: "turns of a week"
-defence.command: "Minister of Defense {0} · Chief of Staff {1}"
+defence.command: "{0} {1} · Chief of Staff {2}"   # {0} is the office's title (content/offices.yaml, #2533)
 defence.ceasefire: "If full war goes on, the UN imposes a ceasefire in {0}"   # {0} is "1 week"/"N weeks" (DefencePresenter.Weeks, #2530)
 defence.order: "Ordered: level {0} to {1}"
 defence.mob: "{0} of reserves called up (level {1} needs at least {2})"
@@ -779,6 +779,9 @@ unit.security: "Security level {0} of 5"
 unit.sources: "Sources: {0}"
 unit.draft_wikipedia: "Draft: from Wikipedia only, not yet checked against a published history"
 unit.draft: "Draft: not yet checked by a historian"
+# A unit row a person has checked against its sources (units_1948.yaml status: fact-checked, no source checked after its
+# checked_on, #2722), shown instead of either draft note (#2918 P2; owner, 10 November 2026).
+unit.fact_checked: "Checked by a person against its sources; not yet by a historian"
 unit.defence: "Open the Defence screen"
 unit.raised_name: "{0}, {1}"
 # A unit raised in play, named as one formation in the Why lines and toasts ({0} of unit.raised_name): singular, as the

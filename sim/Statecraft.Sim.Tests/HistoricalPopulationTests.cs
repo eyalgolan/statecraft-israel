@@ -385,7 +385,8 @@ public class HistoricalPopulationTests
     }
 
     // R-POP-004, mvp.md R-CITY-004 fixture paragraph ("the standalone eligibility predicate requires completed reception,
-    // free-civilian status and no assignment"): every opening census civilian may start a civilian activity at once.
+    // free-civilian status and no assignment"): every opening census civilian without a job may start a civilian activity at
+    // once. Each city's employed hold Industry work (#1725 PR 3), so the predicate holds for them only once released.
     [Fact]
     public void EveryCensusCivilianCanStartCivilianActivity()
     {
@@ -393,8 +394,11 @@ public class HistoricalPopulationTests
         var inventory = HistoricalPopulation.Inventory(c);
         var ledger = HistoricalPopulation.LedgerFixture(c).PopulationLedger;
         var census = ledger.Units.Where((u, i) => inventory[i].Source.StartsWith(HistoricalPopulation.CensusPrefix, StringComparison.Ordinal)).ToList();
-        Assert.NotEmpty(census);
-        Assert.All(census, u => Assert.True(Gdd03ReceptionFixture.CanStartCivilianActivity(c, ledger, u)));
+        var jobless = census.Where(u => u.Assignment.Kind == PopulationAssignmentKind.Unassigned).ToList();
+        Assert.NotEmpty(jobless);
+        Assert.Equal(census.Count - c.Cities.Sum(x => x.Employed), jobless.Count);
+        Assert.All(jobless, u => Assert.True(Gdd03ReceptionFixture.CanStartCivilianActivity(c, ledger, u)));
+        Assert.All(census.Except(jobless), u => Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(c, ledger, u)));
     }
 
     // R-POP-004: a record whose city or formation has no region in regions.yaml is refused; no region is invented.
@@ -472,10 +476,11 @@ public class HistoricalPopulationTests
         }
     }
 
-    // R-POP-004 (owner, 7 November 2026): row 4 approved no farmer identities, the farmers come on top of the census, and
-    // row 3's Industry start is not wired in, so a census record stays a plain free civilian: no profession, no tier and no
-    // Work assignment. The one exception is the training centre's veteran pioneer teacher, the last census/haifa ordinal
-    // (owner, 7 November 2026, #1689 comment 6704565066; HistoricalPioneerTeacherTests), left out here by its row.
+    // R-POP-004 (owner, 7 November 2026): row 4 approved no farmer identities and the farmers come on top of the census, so
+    // a census record stays a plain free civilian: no profession and no tier. Row 3's Industry start (#1725 PR 3,
+    // HistoricalIndustryWorkersTests) is its only Work: its own city's Industry target. The one exception is the training
+    // centre's veteran pioneer teacher, the last census/haifa ordinal (owner, 7 November 2026, #1689 comment 6704565066;
+    // HistoricalPioneerTeacherTests), left out here by its row.
     [Fact]
     public void CensusRecordsButTheTeacherHaveNoProfessionTierOrWork()
     {
@@ -490,8 +495,11 @@ public class HistoricalPopulationTests
         {
             Assert.Equal(CivilianProfession.None, u.Profession);
             Assert.Equal(CivilianTier.None, u.Tier);
-            Assert.NotEqual(PopulationAssignmentKind.Work, u.Assignment.Kind);
+            if (u.Assignment.Kind == PopulationAssignmentKind.Work)
+                Assert.Equal(HistoricalPopulation.IndustryTarget(u.Location!.City!), u.Assignment.Target);
+            else Assert.Equal(PopulationAssignmentKind.Unassigned, u.Assignment.Kind);
         });
+        Assert.Equal(c.Cities.Sum(city => city.Employed), census.Count(u => u.Assignment.Kind == PopulationAssignmentKind.Work));
     }
 
     // R-POP-004, #1689 rows 5 to 8. Owner, 7 November 2026 (comment 6704389240): "Veteran for all 8 (Recommended)" and

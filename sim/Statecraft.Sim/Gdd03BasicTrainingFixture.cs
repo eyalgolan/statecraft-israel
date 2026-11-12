@@ -113,9 +113,9 @@ namespace Statecraft.Sim
         /// <summary>#2739, option 1 (owner, 7 November 2026): <c>military.camp_capacity</c> counts population units at D2's
         /// scale, rules.yaml's start-day <c>people_per_unit</c> (1,000), so 50 is 50,000 people (the catalogue note: "#1668's
         /// 5 places at 10,000 people a unit is 50 units at D2's 1,000 people a unit"). The fixture holds that many people in
-        /// records at the ledger's own scale: 50 at 1,000 a record, 5 at 10,000. Rounding rule (proposed in #2739's PR, not
-        /// an owner ruling): a scale that doesn't divide the people rounds down, so a camp never holds more people than the
-        /// cap, and a scale where not even one record fits is refused.</summary>
+        /// records at the ledger's own scale: 50 at 1,000 a record, 5 at 10,000. Rounding rule (owner, 7 November 2026, "Round
+        /// down, refuse 0"; re-confirmed 11 November 2026): a scale that doesn't divide the people rounds down, so a camp never
+        /// holds more people than the cap, and a scale where not even one record fits is refused.</summary>
         static int CampRecords(int capacity, int capacityPeoplePerUnit, int ledgerPeoplePerUnit)
         {
             long records = (long)capacity * capacityPeoplePerUnit / ledgerPeoplePerUnit;

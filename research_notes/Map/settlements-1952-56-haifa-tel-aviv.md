@@ -34,8 +34,8 @@ not searched for.
 
 ## How it was done
 
-- Every page was fetched on 23 October 2026 with `curl` or Python `urllib` (User-Agent
-  `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`), Wikipedia and Wikidata through
+- Every page was fetched on 23 October 2026 with `curl` or Python `urllib` (research User-Agent
+  that named the project's repository), Wikipedia and Wikidata through
   the MediaWiki API. No request carried a personal identifier. No web search result was used as a source.
 - **The candidate pool** is the union of three lists:
   1. every row of the CBS localities file 2024 in district 3 or 5 whose "שנת ייסוד" (year of founding) is 1952 to

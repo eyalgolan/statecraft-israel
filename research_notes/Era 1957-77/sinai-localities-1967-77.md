@@ -99,7 +99,7 @@ and for each: the founding date (and what it marks), coordinates from a named so
 - **Internet Archive and the Official Gazette.** Looked for a primary list (Statistical Abstract of Israel, Israel
   Government Year-Book, Israel Year Book) and for the Official Gazette notice that named the places; see "What was not
   done" for the exact queries and the blocks.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
 
 ## Summary table
 

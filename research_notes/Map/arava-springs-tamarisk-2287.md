@@ -1,7 +1,7 @@
 # Arava springs and oases with tamarisk, 1948-51 (#2287, research part)
 
 Status: **draft, needs a person to check**. This is research only. An AI agent opened every source marked "agent read" below on
-3 November 2026 and recorded the day it opened each. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person to
+3 November 2026, and the row dated 2026-11-11 on 11 November 2026, and recorded the day it opened each. `docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person to
 check every claim against its source before use. This note does not change `content/`, `sim/` or `unity/`, and it does not
 choose where the tile goes: placement follows in a separate PR, and the owner decides it.
 
@@ -23,7 +23,7 @@ between 1948 and 1951, with names, a point, whether a source records the tamaris
   settlement from 1951 [S].
 
 **What did not close, and stays [GAP]:** every row that asks for the tamarisk itself. No source opened here names tamarisk at any
-Arava spring in 1948-51. The maps print springs and a small repeated tree sign, not a species. See "Open gaps".
+Arava spring in 1948-51. The maps print springs, palm signs at the spring and scrub signs along the road (by comparison with other Survey of Palestine legends) [S], not a species. See "Open gaps".
 
 ## Answer table
 
@@ -47,7 +47,7 @@ value the agent derived from a map); [C] conflicting, both values kept; [GAP] st
 | Five Israeli soldiers were wounded "between Sodom and Ein Hussub on Sept. 21" 1951 (Ein Hussub is not matched here to any spring printed on the maps) | JTA, bulletin of 24 September 1951, item "News Brief" (`https://www.jta.org/archive/five-israeli-soldiers-were-wounded-three-of-them`); the original PDF dateline was not opened | "Five Israeli soldiers were wounded, three of them seriously, in an exchange of fire with unknown attackers, between Sodom and Ein Hussub on Sept. 21." | [V, agent read 2026-11-03; a person's check pending] for the web text; the PDF dateline is [GAP] | 2026-11-03 |
 | Palm oasis at a named Arava spring: "Date oasis in Ein Wiba in 1838. Drawing by Eduard Rubinson"; "At Ein Wiba, adjacent to Ein Yahav" | KKL-JNF, "Saving the Wild Date Palms of the Arava", 8 December 2021, `https://kkl-jnf.org/about-kkl-jnf/green-israel-news/press-releases-2021/date-palms-in-the-arava.aspx` | quoted; the page also says the palms "flourished around springs in the central Arava for thousands of years". It does not mention tamarisk | [V, agent read 2026-11-03; a person's check pending] for the palms; tamarisk [GAP] | 2026-11-03 |
 | The tamarisk itself at any Arava spring in 1948-51 | none found | no source opened names tamarisk at an Arava spring | [GAP] | 2026-11-03 |
-| What the small repeated tree sign on the 1946 and 1951 sheets means, and so whether the groves along the Ein Yotvata road are palm, tamarisk or acacia | the sheets' legend was not opened (tiles only) | the sign is printed in scattered rows along the road and the Yotvata flat on both sheets | [GAP] | 2026-11-03 |
+| What the tree signs on the 1946 and 1951 sheets mean, and so whether the groves along the Ein Yotvata road are palm, tamarisk or acacia | full scans from Palestine Open Maps (`https://palopenmaps.org/api/sheets`): Palestine 1:250,000 Sheet 3, 1946, `https://www.dropbox.com/s/z2oc3249byf3uwt/250k-46-Palestine-03.jpg?dl=1`; Israel 1:250,000 Sheet 3, May 1951, `https://www.dropbox.com/s/pybvxqhrfyisk8d/250k-51-Israel-03.jpg?dl=1`; for comparison, Palestine 1:20,000 Sheet 19-14 Jericho (1942 revision), `https://www.dropbox.com/sh/qos20k3m2np6a7y/AAAV0aGijnK7BQMN7KoY6fYwa/19-14.1942-Jericho.jpg?dl=1`, and Palestine 1:100,000 Sheet 16 Jebel Usdum (June 1945 revision, as printed by the Survey of Israel in November 1958: imprint "Revised, reproduced & reprinted by S. of P. June 1945." and "הדפס ע"י מחלקת המדידות ישראל, כסלו תשי"ט נובמבר 1958" (vowel points omitted); the API gives 1958), `https://www.dropbox.com/sh/kmtqcjk1x2yjs4t/AAAKfpUkrMfML_3IcmztqNqla/100k-58-16-Jebel%20Usdum.jpg?dl=1` | Neither 250k legend has a tree or vegetation entry: the 1946 legend's only land-cover entries are Marsh, Qa'a (mudflat) and Sand dunes; the 1951 legend's are Marsh, Mudflat and Sand dunes. Both sheets use two signs: along the road, small round crowns on a short stem, mostly with a tail (a few three-lobed); at the spring, three palm-like signs (a stem with drooping fronds), beside "Ein Ghadyan" on 1946 and beside "Ein Yotvata" on 1951. The Jericho legend shows "Palm Trees" as the frond sign and "Scrub" as the round tailed sign ("Forest" and "Fruit Trees" as three-lobed crowns); the Jebel Usdum "SCRUB" box is drawn with the same round tailed signs. No legend names tamarisk or acacia | [V, agent read 2026-11-11; a person's check pending] for the legends and signs; [S] for the reading palms at the spring and scrub along the road (by comparison; the 1:100,000 series both sheets say they were compiled from was not opened); species [GAP] | 2026-11-11 |
 
 ## Disagreements
 
@@ -79,7 +79,8 @@ All run on 3 November 2026 from the statecraft box, no Tavily key, so the built-
 
 - Tamarisk at any named spring in 1948-51: a botanical or travel source of the period (Glueck's *Rivers in the Desert*, the
   Palestine Exploration Fund or Survey of Israel reports, a Zohary or Feinbrun-Dothan flora with localities) was not reachable here.
-- The legend of the 1946 and 1951 sheets, to say what the tree sign shows.
+- The 1:100,000 legends the two sheets were compiled from, to confirm the signs: the 1946 sheet's compilation note gives
+  "1:100,000 South Levant 1943-46" for its eastern half, the 1951 sheet's "1:100,000 Series 1943-45".
 - Ein Wiba (Ein Weibeh) has a date oasis in 1838 per KKL but no point here; the 1951 sheet was not read for it.
 - Ein Hussub (JTA spelling): not matched to a spring on the maps; the Hatseva labels are the only Hazeva-area springs read, and the original bulletin dateline of the JTA item is not read.
 - Ein Evrona, Ein Netafim, Ein Tamar and Ein Husb under their Hebrew and Arabic names: not searched on the maps beyond the four areas above.

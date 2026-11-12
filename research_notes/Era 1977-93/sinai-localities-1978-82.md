@@ -102,7 +102,7 @@ The question: which Israeli localities and Nahal outposts were founded in Sinai 
   dateline in the PDF and from "today", "yesterday" or a weekday read against it. Datelines marked **(image)** I read on a
   rendered page image; those marked **(OCR)** only in OCR text (RapidOCR, which drops spaces and mangles words) and not
   checked on the image; "not read" means I did not look for it.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
 
 ## Summary table
 

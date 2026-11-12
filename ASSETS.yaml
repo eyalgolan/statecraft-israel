@@ -1709,9 +1709,14 @@ rules:
     source: "The minimap's painted relief (HUD round 2, #398), made by tools/minimap_bake.py from files already in this repository: a hill shade of the Copernicus DEM GLO-30-derived heightmap (unity/Assets/StreamingAssets/map/heightmap.*, Copernicus-DEM), the biome colour bake (Resources/Map/BiomeColours.bytes), the land-use and coast textures (Textures/Map/landuse.png, coast.png) and the sub-district hexes of content/map/subdistrict_hexes_1948.yaml (this project's own content, CC-BY-SA-4.0) for the rim of Mandatory Palestine. Procedural, not AI-generated; no new facts; attribution in NOTICE"
     status: verified
     note: "Decision D13 (owner, 2026-10-14, docs/oss/DECISIONS.md): CC BY-SA 4.0, the most restrictive input; the owner's decision (2026-10-15), relayed by the coordinator, is that this bake of the same D13 inputs follows it and is verified."
+  - glob: "unity/Assets/Textures/Map/coast.png"
+    licence: CC-BY-SA-4.0
+    source: "tools/terrain_bake.py: the signed distance to the shore from the Copernicus DEM GLO-30-derived heightmap (unity/Assets/StreamingAssets/map/heightmap.*, Copernicus-DEM), beach-scaled on the dune coasts of unity/Assets/Resources/Map/DuneCoasts.json (#388) except over each settlement's plot reach, computed from content/map/settlements_1948.yaml (coordinates from the Wikipedia API), localities_1948.yaml and settlement_population_1945.yaml (Village Statistics, 1945, as transcribed on Wikipedia), and hexes.json (this project's own content), all CC-BY-SA-4.0. Procedural, not AI-generated; attribution in NOTICE"
+    status: verified
+    note: "Decision D13 (owner, 2026-10-14, docs/oss/DECISIONS.md): CC BY-SA 4.0, the most restrictive input (the settlement files, read by the bake since #685). Owner, 2026-11-11: \"Own row, CC BY-SA (Recommended)\"."
   - glob: "unity/Assets/Textures/*"
     licence: Copernicus-DEM
-    source: "tools/terrain_bake.py from the Copernicus DEM GLO-30-derived heightmap (unity/Assets/StreamingAssets/map/heightmap.*): AO, curvature, sky-view (Map/terrain_bake.png), coast distance (Map/coast.png) and the AO copy (Map/ao.png); the terrain water's mesh samples (Map/terrain_water.bytes, Editor TerrainWaterBake from the same heightmap); attribution in NOTICE"
+    source: "tools/terrain_bake.py from the Copernicus DEM GLO-30-derived heightmap (unity/Assets/StreamingAssets/map/heightmap.*): AO, curvature, sky-view (Map/terrain_bake.png) and the AO copy (Map/ao.png); the terrain water's mesh samples (Map/terrain_water.bytes, Editor TerrainWaterBake from the same heightmap); attribution in NOTICE"
     status: verified
   # --- Unity Labs' CC0 VFX flipbooks: the Dakotas' bomb blasts and smoke columns over Tel Aviv (#2490; owner, 4 Nov 2026, "Yes, use Unity's CC0 set (Recommended)") ---
   - glob: "unity/Assets/Resources/Effects/Explosion01_5x5.png"

@@ -39,7 +39,7 @@ The question: which localities in today's CBS Golan subdistrict have a CBS year 
 - **JTA.** Searched through the JTA archive's own search (see "Searches"); the four bulletin PDFs cited (18 Aug 1977, 24 Jan 1978, 5 and 6 Nov 1991) were downloaded from http://pdfs.jta.org, OCR'd locally, and the dateline and quoted lines checked on the rendered page image.
 - **Wikipedia** (Hebrew and English) was fetched through the MediaWiki API as wikitext of the current revision; each revision is in the last table. Always [S]; a lead and a cross-check.
 - Hebrew dates were converted with the `convertdate` library (Python; month numbers as the library numbers them, Nisan = 1).
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
 
 ## Summary table
 
