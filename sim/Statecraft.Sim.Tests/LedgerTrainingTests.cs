@@ -15,7 +15,7 @@ using Statecraft.Sim;
 /// 8. "Enforce it here (Rec.)": camp capacity, 50 records per camp city, over all military tracks.
 /// 9. "Start + runtime bind (Rec.)": the start facilities' Course targets are bound at Initialize, plus one all-or-nothing
 ///    runtime BindTarget for new formations and built camps.
-/// The tests call Training directly: Simulation.Step and TurnResolver.Resolve still refuse a ledger game (R-POP-002).</summary>
+/// The tests call Training directly: the turn (TurnResolver.Resolve) still refuses a ledger game (R-POP-002).</summary>
 public class LedgerTrainingTests
 {
     const string TelAviv = "tel_aviv";

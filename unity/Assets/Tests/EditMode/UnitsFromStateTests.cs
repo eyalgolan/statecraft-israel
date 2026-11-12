@@ -465,8 +465,9 @@ public class UnitsFromStateTests
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>Another unit's order rebuilds every token (review of #2177, 3): a unit whose figures were firing goes on
-    /// firing on its new token, from where it was.</summary>
+    /// <summary>Another unit's order must not cut an attack short (review of #2177, 3). Since #3055 it leaves the firing
+    /// unit's token as it was, so the take plays on untouched. A change to the firing unit itself (its strength) builds its
+    /// pieces again, and the new figures go on firing from where the take was.</summary>
     [Test]
     public void ARebuildForAnotherUnitsOrderKeepsAnAttackPlaying()
     {
@@ -488,12 +489,30 @@ public class UnitsFromStateTests
             var animator = figure.gameObject.AddComponent<Animator>(); animator.runtimeAnimatorController = controller;
             animator.Rebind(); animator.Update(0f);
             Assert.IsTrue(layer.PlayAttack(israel[0].Id), "fixture: the token plays the attack");
+            // An Animator takes a Play at its next update, which only enters the state (at time 0) and does not move its clock
+            // (as AnAttackPlaysTheBakedTakeOnTheFigure): that update first, then 0.3 s on the figure's clock, as on the motion's.
+            animator.Update(0f);
+            Assert.AreEqual(UnitFigureMotion.Attack, animator.GetCurrentAnimatorStateInfo(0).fullPathHash, "fixture: the figure fires");
             TokenOf(map, firing).GetComponent<UnitTokenMotion>().Tick(0.3f);
+            var attacker = TokenOf(map, firing).GetComponent<UnitTokenMotion>();
+            animator.Update(0.3f);   // 0.3 s into the 1 s take
+            float taken = animator.GetCurrentAnimatorStateInfo(0).normalizedTime;
+            Assert.AreEqual(0.3f, taken, 0.02f, "fixture: the take has run 0.3 s");
             var to = FreeNeighbour(s, israel[1].Q, israel[1].R);
             MoveTo(s, israel[1].Id, to.q, to.r);
             Assert.IsTrue(layer.Show(C, s), "another unit's move rebuilds the tokens");
+            Assert.AreSame(attacker, TokenOf(map, firing).GetComponent<UnitTokenMotion>(), "the firing unit's token is kept (#3055)");
+            Assert.IsTrue(attacker.Attacking, "the attack goes on");
+            animator.Update(0f);
+            Assert.AreEqual(UnitFigureMotion.Attack, animator.GetCurrentAnimatorStateInfo(0).fullPathHash, "its figure still fires");
+            Assert.AreEqual(taken, animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.02f, "where it was, not restarted");
+            // The firing unit's own strength changes: its pieces are built again on its root, and the attack is handed on.
+            var u0 = s.Units[israel[0].Id];
+            s.Units[u0.Id] = new Unit(u0.Id, u0.Type, u0.Q, u0.R, u0.Service, u0.Side, u0.Strength - 1, u0.Order, u0.OrderTarget, u0.HomeCity, u0.Full, u0.CombatXp, u0.Records);
+            Assert.IsTrue(layer.Show(C, s), "the strength change rebuilds the firing token");
             var successor = TokenOf(map, firing).GetComponent<UnitTokenMotion>();
-            Assert.IsTrue(successor.Attacking, "the attack goes on on the new token");
+            Assert.IsTrue(figure == null, "fixture: the old pieces are gone");
+            Assert.IsTrue(successor.Attacking, "the attack goes on on the rebuilt token");
             // Its near figure turns on a frame later (UnitFigureDetail) and plays on from 0.3 s, not from the start
             // (review of #2176, items 3 and 4).
             var near = new GameObject("test figure").transform; near.SetParent(TokenOf(map, firing), false);

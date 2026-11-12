@@ -56,6 +56,8 @@ namespace Statecraft.Game.UI
         readonly EventCallback<GeometryChangedEvent> onMediaGeometry;
         string watchScreens = "";
         VisualElement? mediaOpener;
+        /// <summary>The control that had the focus when the player opened the tour: closing it gives the focus back there (#3028).</summary>
+        VisualElement? chainOpener;
         bool watchStoppedOnPress;
         int overlayClosedAt = -1;
         internal bool OverlayClosedThisFrame => overlayClosedAt == Time.frameCount;
@@ -197,11 +199,12 @@ namespace Statecraft.Game.UI
         /// Covered(hudRoot) alone misses Settings, and Next's focus would steal the screen's own (#1915).</summary>
         bool ScreenOpen() => Covered(hudRoot) || hudRoot.ClassListContains(ScreenNav.ScreenOpenClass);
 
-        /// <summary>A modal layer is open (spec 4.2): the start screen, the opening (#530), the raid card on New game, the open decision card, the capture
+        /// <summary>A modal layer is open (spec 4.2): the start screen, the opening (#530), the raid card on New game and the raid flight before it (#3000), the open decision card, the capture
         /// dialog, the turn report, an outcome clip, the end screen; and, on the two-row HUD, any side screen (it takes the full width).</summary>
         public static bool Covered(VisualElement hudRoot) =>
             hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(OpeningPresenter.OpenClass)
-            || hudRoot.ClassListContains(RaidCardPresenter.OpenClass) || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
+            || hudRoot.ClassListContains(RaidCardPresenter.OpenClass) || hudRoot.ClassListContains(RaidFlightPresenter.OpenClass)
+            || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
             || hudRoot.ClassListContains(CaptureDialogPresenter.OpenClass) || hudRoot.ClassListContains(TurnReportPresenter.OpenClass)
             || hudRoot.ClassListContains(OutcomePresenter.OpenClass) || hudRoot.ClassListContains(EndScreenPresenter.OpenClass)
             || (hudRoot.ClassListContains(HudPresenter.TwoRowClass) && hudRoot.ClassListContains(ScreenNav.ScreenOpenClass));
@@ -224,7 +227,7 @@ namespace Statecraft.Game.UI
             if (session.Chain.Step >= 0 && ReferenceEquals(openingGame, bridge.Session)) return;
             session.Queue.Reset(); session.Fired.Clear(); session.FiredTurn = Turn;
             Shown = null; covered = null;
-            session.Chain.Step = -1; session.Chain.PutBack = null; adopted = null;
+            session.Chain.Step = -1; session.Chain.PutBack = null; adopted = null; chainOpener = null;
             ClearTarget();
             Notice(AdvisorSignals.NewGame);
             if (session.AutoShow && session.Settings.HasFile && !session.Settings.OpeningSeen
@@ -368,7 +371,9 @@ namespace Statecraft.Game.UI
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
             var focused = layer.focusController?.focusedElement as VisualElement;
-            if (focused != null && layer.Contains(focused)) { focused.Blur(); FocusReturn.To(hudRoot.Q<Button>("end-turn")); }
+            // Back to the tour's opener; End turn when there is none or it cannot take the focus now, and for a queue row the
+            // player reached by Tab (#3028).
+            if (focused != null && layer.Contains(focused)) { focused.Blur(); FocusReturn.ToOrWithin(chainOpener, hudRoot.Q<Button>("end-turn")); }
             if (!ScreenNav.Moves()) { hudRoot.RemoveFromClassList(OpenClass); return; }
             popup.AddToClassList(ScreenNav.ClosingClass);
             fading?.Pause();
@@ -504,6 +509,11 @@ namespace Statecraft.Game.UI
             session.Chain.Step = first;
             if (hooks.Card?.Shown != null && !hooks.Card.Collapsed) hooks.Card.Collapse(takeFocus: false);
             ShowStep(first);
+            // A focus already in the popup keeps the first opener. A focus in a screen, as on the Encyclopedia's button, goes to
+            // that screen's rail button, where CloseScreens (ScreenNav.Close) sends it: from inside that press the focus
+            // controller still names the button in the closed screen, as UI Toolkit applies the change after the press.
+            if (hudRoot.focusController?.focusedElement is VisualElement had && !layer.Contains(had))
+                chainOpener = ScreenNav.ButtonOfScreenAround(hudRoot, had) ?? had;
             FocusReturn.To(gotIt);                          // the player opens it, so Enter goes on (spec 16)
         }
 
@@ -525,6 +535,7 @@ namespace Statecraft.Game.UI
             Shown = null; covered = null;
             ClearTarget();
             Hide();
+            chainOpener = null;
             if (restoreCard && hooks.Card?.Shown != null)
             {
                 if (session.Chain.CardWasOpen && hooks.Card.Collapsed) hooks.Card.Reopen();
@@ -652,7 +663,8 @@ namespace Statecraft.Game.UI
         }
 
         bool HardMediaCover() => hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(OpeningPresenter.OpenClass)
-            || hudRoot.ClassListContains(RaidCardPresenter.OpenClass) || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
+            || hudRoot.ClassListContains(RaidCardPresenter.OpenClass) || hudRoot.ClassListContains(RaidFlightPresenter.OpenClass)
+            || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
             || hudRoot.ClassListContains(CaptureDialogPresenter.OpenClass) || hudRoot.ClassListContains(TurnReportPresenter.OpenClass)
             || hudRoot.ClassListContains(OutcomePresenter.OpenClass) || hudRoot.ClassListContains(EndScreenPresenter.OpenClass)
             || hudRoot.ClassListContains(FeedbackPresenter.OpenClass) || hudRoot.ClassListContains(SharePresenter.OpenClass);

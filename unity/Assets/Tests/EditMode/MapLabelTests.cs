@@ -1746,4 +1746,145 @@ public class MapLabelTests
         }
         finally { labels.Dispose(); hd.Dispose(); Statecraft.Game.Map.Collection.SeaAirCollection.Request = saved; }
     }
+
+    // --- #803: settlement-control states on the map ----------------------------------------------------------------
+
+    static UiText En803 => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+    static UiText He803 => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+
+    /// <summary>The map tag's words for a record, as GameRoot gives them (SettlementControlView.MapText).</summary>
+    static System.Func<Statecraft.Sim.SettlementControl, string?> ControlText(UiText text) => r => SettlementControlView.MapText(text, r);
+
+    static Label ControlBadge(MapLabelsPresenter labels, string id) =>
+        labels.Slots.Single(x => x.name == "slot-" + id).Q<Label>(className: MapLabelsPresenter.ControlBadgeClass);
+
+    /// <summary>#803 Task 3 (owner, 24 October 2026, "1521: 1. a 2.a"): each state on main shows as a short word tag under the
+    /// town's name, in one quiet colour for every state; the name stays, and a place with no record has no tag.</summary>
+    [UnityTest]
+    public IEnumerator EachStateHasOneBadgeAndTheNameStays()
+    {
+        var hd = new HdPanel(cam);
+        var text = En803;
+        var labels = new MapLabelsPresenter(hd.Root, map, cam, controlText: ControlText(text));
+        try
+        {
+            var names = labels.Labels.ToDictionary(x => x.name, x => x.text);
+            var badges = new System.Collections.Generic.List<Label>();
+            labels.SetSettlementControl(new System.Collections.Generic.Dictionary<string, Statecraft.Sim.SettlementControl>
+            {
+                ["acre"] = new Statecraft.Sim.SettlementControl("israel", Statecraft.Sim.SettlementControl.AwaitingChoice),
+                ["nazareth"] = new Statecraft.Sim.SettlementControl("israel", Statecraft.Sim.SettlementControl.Occupied, turns: 4),
+                ["lod"] = new Statecraft.Sim.SettlementControl("israel", Statecraft.Sim.SettlementControl.AwaitingEnd),
+                ["ramla"] = new Statecraft.Sim.SettlementControl(depopulated: true),
+                ["beersheba"] = new Statecraft.Sim.SettlementControl("israel", Statecraft.Sim.SettlementControl.Annexed),
+            });
+            for (int i = 0; i < 3; i++) yield return null;
+            foreach (var (id, key) in new[] { ("acre", "awaiting_choice"), ("nazareth", "occupied"), ("lod", "awaiting_end"), ("ramla", "depopulated"), ("beersheba", "annexed") })
+            {
+                var slot = labels.Slots.Single(x => x.name == "slot-" + id);
+                Assert.AreEqual(names["label-" + id], slot.Q<Label>("label-" + id).text, id + ": the name is kept");
+                var badge = ControlBadge(labels, id);
+                Assert.IsNotNull(badge, id + " has a badge");
+                Assert.AreEqual(text["map.control." + key], badge.text, id);
+                Assert.AreEqual(DisplayStyle.Flex, badge.resolvedStyle.display, id + ": shown");
+                StringAssert.DoesNotMatch(@"\d", badge.text, id + ": the map tag carries no number (Question 2 (a))");
+                badges.Add(badge);
+            }
+            Assert.AreEqual(1, badges.Select(x => x.resolvedStyle.color).Distinct().Count(), "one quiet colour for every state");
+            Assert.AreEqual(1, badges.Select(x => x.resolvedStyle.backgroundColor).Distinct().Count(), "one background for every state");
+            Assert.AreEqual(DisplayStyle.None, ControlBadge(labels, "jaffa").resolvedStyle.display, "no record, no badge");
+            foreach (var x in labels.LocalitySlots.Concat(labels.LocationSlots))
+                Assert.IsNull(x.Q<Label>(className: MapLabelsPresenter.ControlBadgeClass), x.name + ": only game settlements have a badge");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    /// <summary>#803 Task 3: clearing a record hides its badge and keeps the very same name label (no rebuild).</summary>
+    [UnityTest]
+    public IEnumerator ClearingARecordHidesItsBadgeAndKeepsTheSameNameLabel()
+    {
+        var hd = new HdPanel(cam);
+        var text = En803;
+        var labels = new MapLabelsPresenter(hd.Root, map, cam, controlText: ControlText(text));
+        try
+        {
+            var name = labels.Labels.Single(l => l.name == "label-nazareth");
+            var badge = ControlBadge(labels, "nazareth");
+            var occupied = new System.Collections.Generic.Dictionary<string, Statecraft.Sim.SettlementControl>
+                { ["nazareth"] = new Statecraft.Sim.SettlementControl("israel", Statecraft.Sim.SettlementControl.Occupied, turns: 4) };
+            labels.SetSettlementControl(occupied);
+            yield return null;
+            Assert.AreEqual(DisplayStyle.Flex, badge.resolvedStyle.display);
+            Assert.AreEqual(text["map.control.occupied"], badge.text);
+            labels.SetSettlementControl(new System.Collections.Generic.Dictionary<string, Statecraft.Sim.SettlementControl>());
+            yield return null;
+            Assert.AreEqual(DisplayStyle.None, badge.resolvedStyle.display, "the record is gone: the badge hides");
+            Assert.AreSame(name, labels.Labels.Single(l => l.name == "label-nazareth"), "the same name label");
+            Assert.AreSame(name, labels.Slots.Single(x => x.name == "slot-nazareth").Q<Label>("label-nazareth"), "still in its slot");
+            Assert.AreSame(badge, ControlBadge(labels, "nazareth"), "the same badge, hidden, not rebuilt");
+        }
+        finally { labels.Dispose(); hd.Dispose(); }
+    }
+
+    /// <summary>#803 Task 3: at 1920x1080, 1280x720 and 390x844, in English and Hebrew, each shown badge sits under its own
+    /// name (its top at the name's bottom, across the name), stays inside the window, and overlaps no other shown name or
+    /// badge: Lod and Ramla share a hex, and Jaffa sits by Tel Aviv.</summary>
+    [UnityTest]
+    public IEnumerator EveryShownBadgeSitsUnderItsNameAndClearOfTheOtherNames()
+    {
+        var problems = new System.Collections.Generic.List<string>();
+        var records = new System.Collections.Generic.Dictionary<string, Statecraft.Sim.SettlementControl>
+        {
+            ["jaffa"] = new Statecraft.Sim.SettlementControl("israel", Statecraft.Sim.SettlementControl.AwaitingEnd),
+            ["lod"] = new Statecraft.Sim.SettlementControl("israel", Statecraft.Sim.SettlementControl.Occupied, turns: 3),
+            ["ramla"] = new Statecraft.Sim.SettlementControl(depopulated: true),
+        };
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (390, 844) })
+                foreach (var distance in new[] { 30000f, 90000f })
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h} {distance / 1000f:0} km";
+                    var hd = new HdPanel(cam, w, h);
+                    if (hebrew) (hd.Root.Q("root") ?? hd.Root).AddToClassList(UiLanguage.HebrewClass);
+                    var labels = new MapLabelsPresenter(hd.Root, map, cam, hebrew: hebrew, controlText: ControlText(hebrew ? He803 : En803));
+                    try
+                    {
+                        Pose(34.85, 31.98, distance);
+                        labels.SetSettlementControl(records);
+                        for (int i = 0; i < 20 && labels.Labels.Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;
+                        yield return null;
+                        labels.Refresh(force: true); yield return null;
+                        labels.Refresh(force: true); yield return null;
+                        var win = hd.Root.worldBound;
+                        var shown = labels.Slots.Where(Shown).ToList();
+                        var rects = new System.Collections.Generic.List<(string what, Rect rect)>();
+                        foreach (var slot in shown)
+                        {
+                            rects.Add((slot.name + " name", slot.Q<Label>().worldBound));
+                            var b = slot.Q<Label>(className: MapLabelsPresenter.ControlBadgeClass);
+                            if (b != null && b.resolvedStyle.display == DisplayStyle.Flex) rects.Add((slot.name + " badge", b.worldBound));
+                        }
+                        int seen = 0;
+                        foreach (var id in records.Keys)
+                        {
+                            var slot = labels.Slots.Single(x => x.name == "slot-" + id);
+                            if (!Shown(slot)) continue;
+                            seen++;
+                            Rect name = slot.Q<Label>("label-" + id).worldBound, badge = ControlBadge(labels, id).worldBound;
+                            if (Mathf.Abs(badge.yMin - name.yMax) > 1f) problems.Add($"{at} {id}: the badge {badge} is not right under its name {name}");
+                            if (badge.xMax < name.xMin || badge.xMin > name.xMax) problems.Add($"{at} {id}: the badge {badge} is not under its name {name}");
+                            if (badge.xMin < win.xMin - 0.5f || badge.xMax > win.xMax + 0.5f || badge.yMin < win.yMin - 0.5f || badge.yMax > win.yMax + 0.5f)
+                                problems.Add($"{at} {id}: the badge {badge} leaves the window {win}");
+                        }
+                        for (int i = 0; i < rects.Count; i++)
+                            for (int j = i + 1; j < rects.Count; j++)
+                                if (rects[i].what.Split(' ')[0] != rects[j].what.Split(' ')[0] && rects[i].rect.Overlaps(rects[j].rect))
+                                    problems.Add($"{at}: {rects[i].what} {rects[i].rect} overlaps {rects[j].what} {rects[j].rect}");
+                        TestContext.WriteLine($"{at}: {seen} of {records.Count} places with a record shown");
+                        if (w >= 1280 && seen == 0) problems.Add($"{at}: precondition: no place with a record is shown");
+                    }
+                    finally { labels.Dispose(); hd.Dispose(); }
+                }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
 }

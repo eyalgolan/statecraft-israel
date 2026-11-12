@@ -88,6 +88,9 @@ public class ScenarioTests
     [InlineData("      - { kind: set_policy, policy: rationing, level: 1, extra: 2 }\n", "unknown field 'extra'")]
     [InlineData("      - { policy: rationing }\n", "needs 'kind'")]
     [InlineData("      - { kind: set_policy, policy: rationing, level: lots }\n", "must be a number")]
+    // #2526 (R-ORDER-001): a unit order names both hex coordinates or neither.
+    [InlineData("      - { kind: unit_order, unit: 0, order: hold, q: 1 }\n", "needs both 'q' and 'r', or neither")]
+    [InlineData("      - { kind: unit_order, unit: 0, order: hold, r: 1 }\n", "needs both 'q' and 'r', or neither")]
     public void AMalformedCommandIsRefusedWithTheProblemNamed(string command, string expected) =>
         Assert.Contains(expected, Assert.Throws<InvalidDataException>(() => Scenario.Parse(Head + command)).Message);
 

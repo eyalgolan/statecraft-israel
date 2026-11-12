@@ -1995,3 +1995,35 @@ concepts:
   decision_owner: Eyal
   pending_gdd: Further city design and terminology proposals remain owner-gated; the twelve-city content and city panel already
     exist.
+- id: population-ledger
+  status: preferred
+  category: system
+  definition: The gdd-0.3 record of every person in a Historical game (#1689), which refusals name when an order needs people
+    the ledger does not track yet.
+  scope:
+  - ui
+  en:
+    preferred: population ledger
+    avoid: []
+    in_use:
+    - form: who are not on the population ledger yet
+      where: strings.en.yaml workshop.refused_ledger_builders
+    - form: Craftsmen are not on the population ledger yet (#2476)
+      where: strings.en.yaml city.qualification_refused.ledger_craftsmen
+    - form: Craft training does not run on the population ledger yet (#2476)
+      where: strings.en.yaml unit.reinforce_refused.ledger_craftsman
+  he:
+    preferred: מרשם האוכלוסין
+    avoid: []
+    in_use:
+    - form: אינם במרשם האוכלוסין
+      where: strings.he.yaml workshop.refused_ledger_builders, city.qualification_refused.ledger_craftsmen
+    - form: אינה פועלת במרשם האוכלוסין
+      where: strings.he.yaml unit.reinforce_refused.ledger_craftsman
+  recommendation:
+    en: Use 'population ledger' in player text; 'ledger' alone stays in code and comments.
+    he: 'Decided (owner, 10 November 2026, "Approve the term (Recommended)", relayed by the coordinator, #3020): מרשם האוכלוסין.
+      The surrounding strings still go to the native reviewer (#564).'
+    reasons:
+    - The term is new in the UI with #3020; no other string names the ledger.
+  decision_owner: Eyal

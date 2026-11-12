@@ -109,12 +109,12 @@ public class KitAtlasShots
         Shot(name);
     }
 
-    /// <summary>CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3, which would
-    /// draw every still 1.33 times too wide: so the camera takes the still's aspect first, and each SHOT line states it.</summary>
+    /// <summary>A batch run's default aspect is 4:3, which would draw every still 1.33 times too wide: so the camera takes the
+    /// still's frame through ShotCamera.Configure (#2882), and each SHOT line states its aspect.</summary>
     IEnumerator Boot()
     {
         yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
-        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
+        ShotCamera.Configure(Camera.main, CivMovementShots.Width, CivMovementShots.Height);
     }
 
     [UnityTest]

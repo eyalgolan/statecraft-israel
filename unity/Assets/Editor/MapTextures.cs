@@ -17,6 +17,16 @@ namespace Statecraft.Game.EditorTools
             Set(MapTexturePaths.Coast, singleChannel: true);
             Set(MapTexturePaths.Ao, singleChannel: true);
             Set(MapTexturePaths.Land, singleChannel: false);   // the land's colour and weight, block-compressed
+            Set(MapTexturePaths.Furrows, singleChannel: true);   // the furrows' strength (#2917), R8 as the coast and the AO
+            // The farm blocks (#2917): GroundDetail.shader reads them texel by texel and decodes 16 bits from two bytes, so
+            // every byte must arrive as written: no compression, filtering, mips or power-of-two resize, and linear.
+            var blocks = AssetImporter.GetAtPath(MapTexturePaths.FieldBlocks) as TextureImporter
+                ?? throw new System.IO.FileNotFoundException("run tools/land_bake.py", MapTexturePaths.FieldBlocks);
+            blocks.textureType = TextureImporterType.Default; blocks.sRGBTexture = false; blocks.mipmapEnabled = false;
+            blocks.isReadable = false; blocks.npotScale = TextureImporterNPOTScale.None; blocks.wrapMode = TextureWrapMode.Clamp;
+            blocks.filterMode = FilterMode.Point; blocks.textureCompression = TextureImporterCompression.Uncompressed;
+            blocks.alphaSource = TextureImporterAlphaSource.FromInput;
+            blocks.SaveAndReimport();
             // The land: sRGB colour (the sampler decodes it; alpha, the weight, stays linear), 4096 rows on every platform
             // (the platforms' own 2048 caps would halve it: hedges and rims blur, -21% local detail at gameplay03), and an
             // automatic compressed format, so the WebGL build's texture subtarget picks it: DXT5 for the desktop build,

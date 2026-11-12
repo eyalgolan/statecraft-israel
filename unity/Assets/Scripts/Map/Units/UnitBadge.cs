@@ -7,7 +7,8 @@ namespace Statecraft.Game.Map.Units
     /// <summary>The promo's unit badge (promo/final/03-gameplay-1936.png): a small dark rounded plate with a light glyph,
     /// floating over a token so a player sees it is a unit and can click it. Two flat unlit meshes in the local XY plane
     /// (the plate, and the glyph a little towards the camera), turned to face each camera as it renders (UnitLayer). The
-    /// glyph says the service: two figures for a brigade, an aircraft for the squadron, a ship for the navy.</summary>
+    /// glyph says the service: two figures for a brigade, an aircraft for the squadron, a ship for the navy. A military sim
+    /// unit's badge also carries its strength in pips under the glyph (<see cref="PipsMesh"/>, #2432).</summary>
     public sealed class UnitBadge : MonoBehaviour
     {
         /// <summary>The plate's width at map scale (m) from a far camera; nearer it is capped on the screen
@@ -53,10 +54,12 @@ namespace Statecraft.Game.Map.Units
             return m.Build("UnitBadgePlate");
         }
 
-        /// <summary>The service's glyph inside the plate (about 0.6 across).</summary>
-        public static Mesh GlyphMesh(string service)
+        /// <summary>The service's glyph inside the plate (about 0.6 across). With <paramref name="pips"/> (a badge that
+        /// carries <see cref="PipsMesh"/>) it is drawn at <see cref="PippedGlyphScale"/> and raised by
+        /// <see cref="PippedGlyphRise"/>, clear of the pips' strip.</summary>
+        public static Mesh GlyphMesh(string service, bool pips = false)
         {
-            var m = new Flat();
+            var m = pips ? new Flat(PippedGlyphScale, PippedGlyphRise) : new Flat();
             switch (service)
             {
                 case UnitData.Army:   // two standing figures: a head and a tapered body each
@@ -77,7 +80,61 @@ namespace Statecraft.Game.Map.Units
                     m.Fan(Rect(-0.10f, 0.08f, 0.08f, 0.24f));
                     break;
             }
-            return m.Build("UnitBadgeGlyph-" + service);
+            return m.Build("UnitBadgeGlyph-" + service + (pips ? "-pips" : ""));
+        }
+
+        /// <summary>#2432, the damaged look (owner, 8 November 2026, "A. Pips on badge (Recommended)" and "(c) No bands, pips
+        /// (Recommended)"; 9 November 2026, "Rows of five (Recommended)", "Every military unit (Recommended)" and "All 3 as
+        /// recommended (Recommended)"): a military unit's badge carries one pip per population unit of its full strength,
+        /// a disc for each unit it has and a ring for each it lost, so a loss reads by shape, not by colour alone. Five to a
+        /// row, rows from the top, filled pips first from the left in both languages (a count, not text), in a strip inside
+        /// the plate under the glyph, which is drawn smaller and higher (<see cref="GlyphMesh"/>): the plate keeps its size.</summary>
+        public const int PipsPerRow = 5;
+        /// <summary>The pips' strip inside the plate (plate widths): its top and its bottom edge.</summary>
+        public const float PipStripTop = -0.10f, PipStripBottom = -0.43f;
+        /// <summary>The distance between neighbouring pips' centres (plate widths; less when more rows than two must fit the
+        /// strip), a pip's radius as a share of it, and a hollow pip's hole as a share of its radius. Two rows of five fit
+        /// at the full pitch: a pip about 0.11 of the plate across, 6 of its 59 pixels at the gameplay zoom.</summary>
+        public const float PipPitch = 0.16f, PipRadiusShare = 0.34f, PipHoleShare = 0.5f;
+        /// <summary>The glyph's scale and rise (plate widths) on a badge with pips.</summary>
+        public const float PippedGlyphScale = 0.7f, PippedGlyphRise = 0.12f;
+        const int PipSides = 12;
+
+        /// <summary>The pips' centre spacing for a unit of <paramref name="full"/>: <see cref="PipPitch"/>, or less so that
+        /// its rows fit the strip.</summary>
+        public static float PipSpacing(int full) =>
+            Mathf.Min(PipPitch, (PipStripTop - PipStripBottom) / Mathf.Max(1, (full + PipsPerRow - 1) / PipsPerRow));
+
+        /// <summary>Where each pip of a unit at <paramref name="strength"/> of <paramref name="full"/> stands in the plate
+        /// (plate widths, the plate's centre at the origin), in order: row by row from the top, each row centred and from the
+        /// left; the first <paramref name="strength"/> are filled. A strength above the full counts as full. None for a full
+        /// strength of 0.</summary>
+        public static List<(Vector2 centre, bool filled)> PipLayout(int strength, int full)
+        {
+            full = Mathf.Max(full, strength);
+            var pips = new List<(Vector2, bool)>(Mathf.Max(0, full));
+            if (full <= 0) return pips;
+            int rows = (full + PipsPerRow - 1) / PipsPerRow;
+            float pitch = PipSpacing(full), middle = (PipStripTop + PipStripBottom) / 2f;
+            for (int i = 0; i < full; i++)
+            {
+                int row = i / PipsPerRow, inRow = Mathf.Min(PipsPerRow, full - row * PipsPerRow);
+                float x = (i % PipsPerRow - (inRow - 1) / 2f) * pitch, y = middle + ((rows - 1) / 2f - row) * pitch;
+                pips.Add((new Vector2(x, y), i < strength));
+            }
+            return pips;
+        }
+
+        /// <summary>The pips of a unit at <paramref name="strength"/> of <paramref name="full"/> as one mesh (<see cref="PipLayout"/>):
+        /// a disc per filled pip, a ring per hollow one, drawn with the glyph's material.</summary>
+        public static Mesh PipsMesh(int strength, int full)
+        {
+            full = Mathf.Max(full, strength);
+            float r = PipRadiusShare * PipSpacing(full);
+            var m = new Flat();
+            foreach (var (centre, filled) in PipLayout(strength, full))
+                if (filled) m.Fan(Circle(centre, r, PipSides)); else m.Ring(centre, r, r * PipHoleShare, PipSides);
+            return m.Build(System.FormattableString.Invariant($"UnitBadgePips-{strength}of{full}"));
         }
 
         static List<Vector2> Rect(float cx, float cy, float w, float h) => new List<Vector2>
@@ -94,11 +151,30 @@ namespace Statecraft.Game.Map.Units
         sealed class Flat
         {
             readonly List<Vector3> verts = new List<Vector3>(); readonly List<int> tris = new List<int>();
+            readonly float scale, rise;
+            /// <param name="scale">Every point is drawn at this scale about the origin, then raised by <paramref name="rise"/>.</param>
+            public Flat(float scale = 1f, float rise = 0f) { this.scale = scale; this.rise = rise; }
+            Vector3 At(Vector2 p) => new Vector3(p.x * scale, p.y * scale + rise, 0f);
             public void Fan(List<Vector2> outline)
             {
                 int b = verts.Count;
-                foreach (var p in outline) verts.Add(new Vector3(p.x, p.y, 0f));
+                foreach (var p in outline) verts.Add(At(p));
                 for (int i = 1; i + 1 < outline.Count; i++) tris.AddRange(new[] { b, b + i, b + i + 1 });
+            }
+            /// <summary>A ring of <paramref name="n"/> quads between radii <paramref name="inner"/> and <paramref name="outer"/>.</summary>
+            public void Ring(Vector2 centre, float outer, float inner, int n)
+            {
+                int b = verts.Count;
+                for (int i = 0; i < n; i++)
+                {
+                    float a = 2f * Mathf.PI * i / n; var d = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                    verts.Add(At(centre + d * outer)); verts.Add(At(centre + d * inner));
+                }
+                for (int i = 0; i < n; i++)
+                {
+                    int o = b + 2 * i, o2 = b + 2 * ((i + 1) % n);
+                    tris.AddRange(new[] { o, o2, o2 + 1, o, o2 + 1, o + 1 });
+                }
             }
             public Mesh Build(string name)
             {

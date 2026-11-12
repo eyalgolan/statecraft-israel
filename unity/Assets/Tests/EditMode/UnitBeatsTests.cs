@@ -162,7 +162,7 @@ public class UnitBeatsTests
             folded.Moves.Select(m => m.Unit).ToArray(), "every remaining unit, in the sim's order");
         Assert.AreEqual(0f, folded.Pan, "a folded beat moves no camera");
         CollectionAssert.AreEqual(Enumerable.Range(1, 20).ToArray(), Movers(beats).ToArray(), "each unit exactly once");
-        Assert.LessOrEqual(UnitBeats.Total(beats), UnitBeats.Timing.Cap + 1e-4f);
+        Assert.LessOrEqual(UnitBeats.Total(beats), UnitBeats.Timing.Cap - UnitBeats.Timing.PanMax + 1e-4f, "the return glide fits in the cap too");
         foreach (var b in beats)
         {
             if (!b.Folded) Assert.GreaterOrEqual(b.Pan, UnitBeats.Timing.MinPan - 1e-5f);
@@ -179,7 +179,10 @@ public class UnitBeatsTests
         Assert.AreEqual(UnitBeats.Timing.MaxBeats, beats.Count, "fixture: no fold");
         Assert.Greater(UnitBeats.Timing.MaxBeats * (UnitBeats.Timing.PanMax + UnitBeats.Timing.AttackMax), UnitBeats.Timing.Cap,
             "fixture: at full pacing the turn would pass the cap");
-        Assert.AreEqual(UnitBeats.Timing.Cap, UnitBeats.Total(beats), 1e-3f, "shrunk to the cap, no further");
+        // #3004 item 1: the return glide to the player's view (EnemyTurnPlayback.Next, CameraGlide.Seconds) is at most PanMax,
+        // so the beats fit in Cap - PanMax and the whole playback, return included, stays within the cap.
+        Assert.AreEqual(UnitBeats.Timing.Cap - UnitBeats.Timing.PanMax, UnitBeats.Total(beats), 1e-3f,
+            "shrunk to the cap less the return glide, no further");
         foreach (var b in beats)
         {
             Assert.That(b.Pan, NUnit.Framework.Is.InRange(UnitBeats.Timing.MinPan, UnitBeats.Timing.PanMax));
@@ -235,7 +238,7 @@ public class UnitBeatsTests
             Movers(beats).ToArray(), "side by side, each in the sim's order");
         Assert.IsTrue(beats.All(b => b.Moves.All(m => r.Why.First(w => w.Key == WhyKeys.UnitMoved && w.Units[0].Id == m.Unit).Units[0].Side == b.Side)),
             "no beat mixes sides");
-        Assert.LessOrEqual(UnitBeats.Total(beats), UnitBeats.Timing.Cap + 1e-4f);
+        Assert.LessOrEqual(UnitBeats.Total(beats), UnitBeats.Timing.Cap - UnitBeats.Timing.PanMax + 1e-4f, "the return glide fits in the cap too");
         var attacks = r.Why.Count(w => w.Key == WhyKeys.Engagement && w.EnemyOrder == Combat.Attack);
         Assert.AreEqual(attacks, beats.Count(b => b.Kind == BeatKind.Attack && !b.Folded) + beats.Where(b => b.Folded).Sum(b => b.Engagements),
             "every enemy engagement once");
@@ -288,6 +291,6 @@ public class UnitBeatsTests
         CollectionAssert.AreEqual(Enumerable.Range(1, 22).ToArray(), Movers(beats).ToArray(), "each unit once, side by side");
         var folded = beats.Where(b => b.Folded).Select(b => b.Side).ToArray();
         CollectionAssert.AreEqual(new[] { "egypt", "syria", "iraq" }, folded, "one folded beat per side past the cut");
-        Assert.LessOrEqual(UnitBeats.Total(beats), UnitBeats.Timing.Cap + 1e-4f);
+        Assert.LessOrEqual(UnitBeats.Total(beats), UnitBeats.Timing.Cap - UnitBeats.Timing.PanMax + 1e-4f, "the return glide fits in the cap too");
     }
 }

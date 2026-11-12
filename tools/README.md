@@ -83,8 +83,10 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   reproducible only on the same toolchain.
 - `land_bake.py` writes `unity/Assets/Textures/Map/landuse.png` (the land-use colour and weight: field parcels with
   farm tracks, garrigue, terraces and scrub, placed by slope, rainfall and towns) from the heightmap, the CHELSA rainfall,
-  the hex biomes and the 1948 settlements (no network); `StatecraftLand.hlsl` lays it over the biome ground. Re-run it
-  whenever one of those inputs changes.
+  the hex biomes and the 1948 settlements (no network); `StatecraftLand.hlsl` lays it over the biome ground. It also
+  writes `furrows.png` (each texel's furrow strength) and `fieldblocks.png` (each farm block's angle and strip offset),
+  from which `GroundDetail.shader` draws fine furrows along the same parcels (#2917). Re-run it whenever one of those
+  inputs changes.
 - `terrain_graph.py` writes `unity/Assets/Shaders/StatecraftTerrain.shadergraph` from Unity's "Terrain Simple" template
   with one Custom Function node (`StatecraftTerrain.hlsl`); re-run it only when that function's inputs or outputs change.
 - `art_compare.py` puts screenshots next to the promo image of their pose, writes deuteranopia and protanopia copies and
