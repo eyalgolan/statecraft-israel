@@ -23,6 +23,10 @@ the Game's promotion (for example trailers, screenshots and store pages).
 Creator will not use the Covered Works, or adapted versions of them, in any other product or project, and will not
 license them to anyone else.
 
+Portfolio: the Creator may show the Covered Works in their own portfolio (for example a personal website, showreel
+or profile page), noting that they were made for Statecraft: Israel. Portfolio copies are for viewing and listening
+only: they are not offered for download, sale or licence.
+
 3. What everyone else may do
 
 Anyone may download, install and play the Game as the Publisher distributes it.
