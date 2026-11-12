@@ -14,6 +14,13 @@ day by an AI agent (Claude Code) working for Beri; a person's check of those rea
 (CONTENT_POLICY section 2, item 6). A row that could not be closed stays [GAP] with "(24 Oct)
 Searched again and not found. Read: ..." and the list of what was read.
 
+Third pass (11 November 2026, Refs #61, branch `research/61-jerusalem-corridor`): the remaining
+[GAP] rows were worked again, except the Neve Ya'akov rename (handled in #2242). Everything marked
+"(11 Nov)" was opened and read on 2026-11-11 by an AI agent (Claude Code), with the same
+User-Agent as the earlier passes (later checks that day used a generic one); a person's check of those readings is pending (CONTENT_POLICY section 2, item 6).
+Rows on a rename, an abandonment or a dissolution are recorded as facts with their sources only;
+none is judged here and all stay with the owner's sensitivity review.
+
 ## How it was done
 
 - Every page in the first pass was fetched on 23 October 2026 and in the second pass on 24 October, with a research User-Agent
@@ -137,6 +144,17 @@ each have a Jewish population in the 1931 census; for Ramat Rahel, which he.wiki
 1929 and resettled in the early 1930s (part 2), the table shows 131 Jews. The Migdal Eder site
 has none. The census date is not read here.
 
+(11 Nov) **Census 1931, Jericho sub-district, printed pages 45 and 46** (PDF pages 56 and 57 of
+https://archive.org/details/CensusOfPalestine1931.PopulationOfVillagesTownsAndAdministrativeAreas,
+file `PalestineCensus1931.pdf`, rendered from the page images): a unit "Dead Sea", 41 houses, 535
+persons (463 male + 72 female): Moslems 210 + 54, Jews 216 + 14 = 230, Christians 19 + 2, Druses
+15 + 2, no religion 3 (male); 210 + 54 + 216 + 14 + 19 + 2 + 15 + 2 + 3 = 535. The only other units
+with Jews are Jericho (4 male) and Tal'at ed Dam (7 + 2); the sub-district totals on p. 46 give Jews
+227 + 16, which is 216 + 4 + 7 and 14 + 2. The whole sub-district has 675 houses and 3,483 persons.
+No unit is named Beit HaArava or Kalya (Beit HaArava was founded in 1939, part 3). **Our reading:**
+the 230 Jews of the Dead Sea unit are the Potash Company's workforce at the northern works (Kalya,
+part 3); the table does not say so. [S, census 1931; agent read 2026-11-11; a person's check pending]
+
 **Completeness check of the 1945 Jerusalem table, printed pages 56 to 58.** Every row with a Jewish
 population figure was read: Atarot 160; Har Tuv 80; Jericho 170 (Arabs 2,840, total 3,010);
 Jerusalem (Urban) 97,000; Nabi Musa and Palestine Potash Concession (North) 1,270 (Arabs 1,380,
@@ -230,6 +248,18 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
     report, so the rename from "Qiryat Moshe" came no later than the 1929 riots.
     JTA gives no earlier use, no lower bound and no reason; the he.wiki sentence on the Vilnai
     explanation has no year, so the year of the rename stays [GAP].
+  (11 Nov) Searched again and not found. Read: en.wiki `Kfar Uria`, oldid **1374532872**, which
+  gives the same reason for the rename and no year; it cites R. Marom, "Jindās", *Lod, Lydda,
+  Diospolis* 1 (2022), p. 26 (https://www.academia.edu/90931976, not opened here) and the Vilnai
+  article above (JSTOR, not opened; the page needs a login for the text). The same revision says the
+  1913 workers' group "lived in Khan Kfar Uria", so the name of the place was in use for the khan
+  in 1913, our reading of a secondary text; that is not a date for the colony's rename. JTA queries
+  run 2026-11-11 on `https://www.jta.org/wp-json/wp/v2/archive?search=<term>&after=1917-01-01T00:00:00&before=1930-01-01T00:00:00&per_page=50`:
+  `Kiryat+Moshe` (`x-wp-total: 10`), `Kiriath+Moshe` (7), `Kirjath+Moshe` (6), `Kiryath+Moshe` (6),
+  `Kfar+Urieh` (5), `Kefar+Uria` (2). I read the headlines only and opened none; no headline names
+  the colony by its first name, and the Kiryat Moshe hits are, our reading, the Jerusalem
+  neighbourhood of that name. The NLI newspaper search still returns 403 from this machine, so the
+  Hebrew press of 1913 to 1929 was not searched. The year of the rename stays [GAP].
   Coordinates of the old site: he.wiki `כפר אוריה` oldid 44104326 prints 31.79330014, 34.94659163 [S,
   Wikipedia]; Wikidata Q659949 prints 31.7936, 34.948397 [S, Wikidata]; the CBS string in part 1
   gives 31.79261, 34.94732 (computed here). The he.wiki and CBS pairs differ by 0.00069 degrees of
@@ -252,6 +282,24 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   on CBS's coordinate is the cooperative village of the 1970s on a neighbouring hill ("על גבעה בכניסה
   לנווה אילן" is how the article places the historic site). No coordinate for the 1946 site here.
   [GAP] For the later settlement the article gives the first members arriving in Israel in 1970, six families living on the site from 1972, and the cornerstone on 27 September 1971.
+- (11 Nov) **Coordinate of the 1946 site, found.** he.wiki `נווה אילן (קיבוץ משלט)`, oldid
+  **43217458**, prints 31.808850199764127, 35.08226074809324 for the outpost kibbutz, which it says
+  "שעלה על הקרקע בתאריך 27 באוקטובר 1946"; before 1948 the hill was called "חירבת‘ אל הוואה"
+  [S, Wikipedia]. Wikidata Q125844895 (en label "Neve ILan Kibbutz Outpost") prints the same pair [S,
+  Wikidata], so it is not independent of the article. The point is 0.00057 degrees of latitude
+  (about 63 m) and 0.00133 degrees of longitude (about 126 m) from the CBS point in part 1, about
+  141 m in all (computed here), which fits "על גבעה בכניסה לנווה אילן" in the main article. No map
+  sheet was read.
+- (11 Nov) **[C] on the end of the 1946 kibbutz**, recorded only: he.wiki `נווה אילן` oldid
+  43173897 has "קיבוץ שהתפרק ב-1956"; he.wiki `נווה אילן (קיבוץ משלט)` oldid 43217458 has
+  `ננטש = 1961` in its infobox, and Wikidata Q125844895 has dissolved 1961 (P576). Both dates are
+  after 15 May 1948; no reading is offered, and the row is for the owner's review.
+- (11 Nov) The body of the same oldid 43217458 gives several steps. The last 80 members left at the end of
+  1955 (it cites HaBoker, 15.12.1955); the same paragraph has about forty members staying on until the last
+  left in December 1956, and the next paragraph opens "בשנת 1956 עזבו אחרוני הקיבוצניקים". From summer 1956 a
+  youth group from Kfar HaYarok and Youth Aliyah was placed there, and in early 1961 "עזבו הצעירים את המקום
+  והקיבוץ פורק" (it cites Maariv, 4.4.1961). The 1956 and 1961 dates may refer to these different steps; no
+  reading is offered. [S, Wikipedia; agent read 2026-11-11; a person's check pending]
 
 ## 3. Places that stood before 15 May 1948 and are not CBS localities today
 
@@ -382,6 +430,26 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   he.wiki `בית הערבה` oldid 43568559 prints 31.807376, 35.498901 [S, Wikipedia]. The longitudes
   differ by 0.0231 degrees, about 2.2 km at 94.6 km a degree (computed here). Each is the point of the page's
   present-day subject, not shown to be the 1939 to 1948 kibbutz site, so none is used. **Non-combatants ordered out 15 May 1948** ("ב-15 במאי 1948 ניתנת הוראה להוציא את האוכלוסייה הבלתי-לוחמת מבית הערבה"); **evacuation decided 17 May and complete by 20 May 1948.** [S, Wikipedia] Coordinate: [GAP].
+- (11 Nov) **Sub-district, searched again and not closed.** The 1931 Jericho table is now read (part
+  1b); it predates the kibbutz, so it cannot name it. he.wiki `בית הערבה` oldid 43568559 says the
+  first settler lived "בצריף עזוב בשטח המפעל" and that responsibility for the place was shared with
+  "חברת האשלג". **Our reading:** the kibbutz stood on or next to the Potash Company's northern
+  concession, so in the 1945 table it would fall in "Nabi Musa and Palestine Potash Concession
+  (North)", a unit inside the Jerusalem Sub-District table (part 3, Kalya); no source read names its
+  land unit, so the sub-district stays [GAP].
+- (11 Nov) **Nearest dated point, the kibbutz cemetery** (not the settlement's centre). he.wiki
+  `בית העלמין של בית הערבה ההיסטורית`, oldid **43025685**, prints 31.800644, 35.54189 (from Wikidata
+  Q111893924; the wikitext at that oldid has no coordinate); the cemetery
+  "היה בשימוש קיבוץ בית הערבה מיום הקמתו בדצמבר 1940" and the article repeats the abandonment "ב-20
+  במאי 1948" [S, Wikipedia]. Wikidata Q111893924 prints the same pair [S, Wikidata], so it is not
+  independent. The point is about 4.1 km east of he.wiki's Beit HaArava point (0.00673 degrees of
+  latitude, about 749 m; 0.04299 degrees of longitude, about 4.07 km; computed here) and about 6.3 km
+  from the Wikidata Q2777198 point. "מיום הקמתו בדצמבר 1940" is ambiguous: "הקמתו" can be the
+  kibbutz's founding or the cemetery's. The same oldid's infobox (`{{בית קברות}}`) gives the cemetery
+  `תאריך הקמה=1940`, its background section dates the kibbutz "ב-8 באוקטובר 1939", and the
+  first two of the five people its list says are buried there died on 13 December 1940
+  [S, Wikipedia]. Recorded as ambiguous, not as a second founding date. Coordinate of the
+  settlement: [GAP].
 
 ### Gush Etzion: Kefar Etzion, Masuot Yitzhak, Ein Tzurim and Revadim
 - Four kibbutzim (Gvati, narrative: "ארבעה קיבוצים היו בגוש: כפר־עציון, משׂוּאוֹת, עין־צורים
@@ -436,6 +504,30 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   2026-10-24, 0 results for each; the he.wiki pages `עין צורים` and `רבדים` print the coordinates of the
   refounded kibbutzim in the south (31.69596, 34.71987 and 31.77385, 34.81595), which are not the
   Gush sites. Coordinates for those two sites: [GAP].
+- (11 Nov) **Ein Tzurim and Revadim, area only.** he.wiki `ראש צורים`, oldid **44057904**: "נוסד
+  בשנת 1969 על חורבות קיבוץ עין צורים"; he.wiki `רבדים`, oldid **44069086**: "על חורבות רבדים הוקם
+  ב-1969 קיבוץ ראש צורים", and the Gush site was moved "למרחק 400 מטר מהנקודה המקורית" at the end of
+  February 1947 [S, Wikipedia]. **[C]** inside Wikipedia on which old kibbutz lies under Rosh Tzurim;
+  no reading is offered. A Commons photo, "A sign about the old Kibbutz Revadim, located in the area
+  of Kibbutz Rosh Tzurim.jpg", carries no coordinate. Rosh Tzurim's points: Wikidata Q2916614 prints
+  31.667080555556, 35.125694444444 [S, Wikidata]; he.wiki `ראש צורים` prints 31.66781818, 35.12356457
+  [S, Wikipedia]. These are the present kibbutz's points, about 2.1 km from the Kefar Etzion Wikidata
+  point and about 1.8 km from the Masuot Yitzhak (Gush Etzion) point (computed here); our reading,
+  the area of one or both of the two sites, not a site point. Wikidata Q140617198 (the he.wiki
+  redirect `רבדים (גוש עציון)`) has inception 11 February 1947 and dissolved November 1948 and no
+  coordinate. Site coordinates for Ein Tzurim and Revadim: [GAP].
+- (11 Nov) **The date of Village Statistics 1945.** The foreword of the archive.org scan
+  https://archive.org/details/palestine-village-statistics-1945 (text layer; a 1970 Beirut reprint
+  whose foreword is signed "S. H.") gives two dates. Land: "the ownership holdings of the land as
+  between Arabs, Jews, Public and Others as on 1 April 1945". Population: the foreword quotes the
+  Department of Statistics' Explanatory Note, "The population estimates given in ‘Village Statistics’
+  show for each inhabited place in Palestine the number of persons, classified by religion at the end
+  of 1944", and the editor writes "estimated population by community as at the end of 1944". The
+  population figures are estimates, not counts. en.wiki `Village Statistics, 1945` oldid 1359600351
+  cites the title "Village Statistics, April, 1945". **Our reading:** at the end of 1944, and still on
+  1 April 1945, only Kefar Etzion (1943) of the four kibbutzim stood (Masuot Yitzhak August
+  or November 1945, Ein Tzurim October 1946, Revadim February 1947, above), which fits Beit Ummar's
+  80 Jews being Kefar Etzion's; no source read says so, so the sub-district question stays open.
 
 ### Kalya (Palestine Potash Company works and housing, north shore of the Dead Sea)
 - (24 Oct) en.wiki `Kalya`, oldid **1374532040**: infobox `founded = 1929 (original) 1968 (current)`;
@@ -457,6 +549,19 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   counts as a Jewish locality for the game is the owner's call and none is proposed here. The 1931
   census page for it was not opened. Pre-1948 coordinate of the works: [GAP]; the point above is the
   present kibbutz's.
+- (11 Nov) The 1931 census page is now read: Jericho sub-district, unit "Dead Sea", Jews 216 + 14 =
+  230 of 535 persons (part 1b); the unit is not named for the works.
+- (11 Nov) **Site of the 1929 camp, page coordinate.** he.wiki `חוף לידו (ים המלח)`, oldid
+  **41556005**, prints 31.773333, 35.507778 (from Wikidata Q6576987; the wikitext at that oldid has
+  no coordinate); "בשנת 1929 הוקם במקום מחנה עבודה", the site keeps
+  "שרידי מתקנים של חברת אשלג ארץ-ישראלית", and in 1934 workers' housing of "24 דירות ב-4 מבנים" was
+  built [S, Wikipedia]. he.wiki `קליה (קיבוץ)` oldid 43794257 has the same 1929 camp, and he.wiki
+  `חברת אשלג ארץ-ישראלית` oldid 43741713 puts a memorial sign for the northern works at the Lido
+  junction and says most workers lived in Jerusalem [S, Wikipedia]. The Lido point is about 4.8 km
+  from the present Kalya point above (0.02472 degrees of latitude, about 2.75 km; 0.04167 degrees of
+  longitude, about 3.94 km; computed here). **Our reading:** the Lido point is the area of the
+  northern works and their housing; it is a page coordinate, not a surveyed point, so the
+  works' coordinate is recorded as found but not checked against a map.
 
 ## 4. Gaps and what was not done
 
@@ -464,10 +569,14 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   has no unit named for the four kibbutzim and the only Jewish population in it is Beit Ummar's 80.
   The sub-district of the four kibbutzim is still not established by a source; the 1945 Hebron table
   is the best candidate, our reading.
+  (11 Nov) The 1945 population figures are estimates "at the end of 1944" (land: "as on 1 April
+  1945"), when only Kefar Etzion of the four stood (part 3); still not proven.
 - [GAP] **Kalya.** (24 Oct) Moved to part 3: en.wiki gives a 1929 company settlement destroyed in 1948
   and the 1945 table has a Potash unit with 1,270 Jews. Still open: whether Kalya itself, as
   opposed to the northern concession as a whole, is the unit; the 1931 census page was not opened;
   Gvati has no pre-1948 row. he.wiki `קליה` oldid 38683480 is still the short disambiguation page.
+  (11 Nov) The 1931 census page is read (Dead Sea unit, 230 Jews, part 1b) and a page coordinate
+  for the 1929 camp is recorded (part 3); whether the place counts is still the owner's call.
 - [GAP] **Completeness of part 3.** (24 Oct) The 1945 Jerusalem table's nine Jewish-population rows
   are all accounted for (part 1b), which supports but does not prove completeness: kibbutzim inside
   an Arab village's land unit have no row. Gvati's other places lost in the war (Kefar Darom,
@@ -475,12 +584,16 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - **Census of Palestine 1931**: (24 Oct) used, from page images, for the Jerusalem sub-district and
   two Bethlehem pages (part 1b). Not read: the Hebron and Jericho sub-district tables and the Ramle
   table (Kefar Uriyya).
+  (11 Nov) The Jericho table is now read (part 1b); Hebron and Ramle are not.
 - [GAP] **Coordinates of abandoned, moved and merged places**: (24 Oct) found as page coordinates,
   tagged [S, Wikipedia] or [S, Wikidata], for Atarot, Neve Ya'akov, Har Tuv, Moza, Migdal Eder,
   Kefar Etzion, Masuot Yitzhak (Gush Etzion), Kefar Uriyya and Kalya (parts 2 and 3). None is a
   surveyed point or a map-sheet reading; no Survey of Palestine sheet was opened. Beit HaArava has two
   conflicting pairs and none is used; Ein Tzurim and Revadim (Gush Etzion) and the 1946 site of
   Newe Ilan have none.
+  (11 Nov) Newe Ilan's 1946 site now has a page coordinate (part 2) and Kalya's
+  1929 camp has one (part 3). Beit HaArava has only its cemetery's point, not the settlement's
+  (part 3). Ein Tzurim and Revadim have an area (Rosh Tzurim), not a site point.
 - [GAP] **Rename years** for Kefar Uriyya (from Qiryat Moshe) and Neve Ya'akov (from the Hebrew
   Village): (24 Oct) searched again and not found as a dated source; for Neve Ya'akov the window
   June 1921 to the 1925 ascent is our reading of he.wiki, for Kefar Uriyya there is none (part 2).
@@ -489,6 +602,7 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   bound is looser than he.wiki's 1925 reading; the year is still [GAP].
   (1 Nov) Kefar Uriyya now has an upper bound: JTA bulletins already print the name for the moshav attacked
   (28 August 1929) and burned (6 September 1929, quoting the indictment) (part 2); no lower bound found.
+  (11 Nov) Kefar Uriyya searched again, no year found (part 2); Neve Ya'akov not worked here (#2242).
 - [GAP] **Gvati row for Jerusalem.** (24 Oct) Searched again and not found. Read: a copy of the text
   of https://benyehuda.org/read/14684 fetched on 2026-10-24 by another lane of this project (about
   21,000 non-empty lines); a search for lines that begin with "ירושלים" found six: five are running
