@@ -23,7 +23,7 @@ fate, depopulation date or post-May-1948 status is given here.
 - **Map 1946** is the Survey of Palestine 1:250,000 of 1946, read as tiles from Palestine Open Maps (zoom 13 and 14).
   It was used for location only, for 18 rows where the place's identity or position was least obvious. At this scale
   a symbol is placed to within a few hundred metres; a game hex is about 65 km² (5 km circumradius).
-- Every request was made with the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- Every request was made with a research User-Agent that named the project's repository.
 
 Every [V] in this note was an agent's reading on 2026-10-14, unless the tag gives a later date; a person's check is pending for all of them.
 

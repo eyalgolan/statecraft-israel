@@ -98,7 +98,7 @@ lines, and for each: the founding date (and what the date marks), coordinates fr
   the page image; after the owner's review I also read the datelines of J5, J6, J8 and J9 and the hyphen in J2 on the page images. The OCR text of the other items is not a verbatim source and is quoted below only where it is
   unambiguous. Every negative search is recorded in "Searches".
 - Hebrew dates were not converted; no row needed it.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
 
 
 ## Summary table

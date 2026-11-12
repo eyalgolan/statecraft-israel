@@ -75,6 +75,28 @@ public class VeteranTests
         Assert.NotNull(s.Sites[site].BuiltOn);
     }
 
+    // R-VET-001 under gdd-0.3 (#2528): the owner kept the promotion "until the population ledger's work-XP tiers are live"
+    // (#2814, "Keep promotion (Recommended)"; #2828). The shipped content with only eras.yaml's ruleset switched: a halutz
+    // building a yishuv becomes a veteran_halutz after veteran_halutz_service turns of work, as in gdd-0.1.
+    [Fact]
+    public void AHalutzBuildingASiteStillBecomesAVeteranUnderGdd03()
+    {
+        var c = HistoricalPopulationTests.Real(true);
+        Assert.Equal(SaveGame.Gdd03Ruleset, c.Ruleset);
+        var r = c.Rules.Mvp!;
+        var s = WithUnit(c, "halutz", out var id);
+        var site = c.Sites.First(x => x.Kinds.Contains(Projects.YishuvKind)).Id;
+        var step = Step(c, s, new PioneerWork(id, Projects.BuildYishuv, site));
+        for (int i = 1; i < r.VeteranHalutzService; i++)
+        {
+            Assert.Equal(("halutz", i), (step.State.Units[id].Type, step.State.Units[id].Service));
+            step = Step(c, step.State);
+        }
+        var u = step.State.Units[id];
+        Assert.Equal(("veteran_halutz", r.VeteranHalutzService!.Value), (u.Type, u.Service));
+        Assert.Contains(step.Why, x => x.System == "map" && x.Message == "A group of halutzim became veteran pioneers");
+    }
+
     // R-VET-002: a veteran may start pioneer work, and the same build finishes sooner, by veteran_progress turns a turn.
     [Fact]
     public void AVeteranBuildsFaster()

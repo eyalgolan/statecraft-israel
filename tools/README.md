@@ -104,8 +104,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   "Post-merge Unity run" below).
 - `headed.py` drives a WebGL build in a headed Chrome for Testing over CDP (real GPU, real mouse events, a temporary
   profile deleted on exit): `boot` (?bootlog phase timings, optional CPU throttling), `navpairs` (same-frame click pairs
-  under ?navlog), `loadshot` (screenshots during the load) and `profile` (visual v1's `?vprofile` in a headed window at a
-  chosen DPR); `boot --runs N --baseline MS` checks the boot budget. Its browser test runs only with `pytest --headed`.
+  under ?navlog), `loadshot` (screenshots during the load; each must be the page's CSS size times its pixel ratio, within
+  1 px) and `profile` (visual v1's `?vprofile` in a headed window at a chosen DPR; every toggle and pose in `web_check.py`'s
+  lists, which `test_visual_toggles.py` checks against the C#); `boot --runs N --baseline MS` checks the boot budget. Its browser test runs only with `pytest --headed`.
 - `yaml12.py` is how the tools, scripts and their tests read YAML. `yaml12.load` resolves plain scalars by the YAML 1.2
   core schema and refuses duplicate keys, where `yaml.safe_load` follows YAML 1.1 (`yes` becomes True, `1:30` becomes
   90, `2026-10-15` becomes a date). That matches YamlDotNet's reads into string fields, not its bool and int fields,

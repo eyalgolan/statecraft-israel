@@ -6,22 +6,45 @@ using System.Linq;
 
 namespace Statecraft.Sim
 {
+    /// <summary>#1725 PR 3: the kind of work a Work target is. Industry is a city's job slots (R-CITY-007); every other
+    /// target has none.</summary>
+    public enum PopulationWorkKind { None, Industry }
+
     public sealed class PopulationTarget
     {
         public string Id { get; }
         public PopulationAssignmentKind Kind { get; }
         public string Region { get; }
         public int? MaxProgressTicks { get; }
-        public PopulationTarget(string id, PopulationAssignmentKind kind, string region, int? maxProgressTicks = null)
+        /// <summary>#1725 PR 3: <see cref="PopulationWorkKind.Industry"/> for a city's Industry, else None.</summary>
+        public PopulationWorkKind WorkKind { get; }
+        /// <summary>#1725 PR 3: an Industry target's city, a census city of its region (Q27: "a worker works in their
+        /// own city"); null for every other target.</summary>
+        public string? City { get; }
+        /// <summary>#1725 PR 3: the most records an Industry target holds, the city's job_slots (R-CITY-007); null for every
+        /// other target.</summary>
+        public int? Capacity { get; }
+        /// <summary>An Industry target (<paramref name="workKind"/>) is a Work target with its <paramref name="city"/> and a
+        /// nonnegative <paramref name="capacity"/>; any other target has neither.</summary>
+        public PopulationTarget(string id, PopulationAssignmentKind kind, string region, int? maxProgressTicks = null,
+            PopulationWorkKind workKind = PopulationWorkKind.None, string? city = null, int? capacity = null)
         {
             PopulationText.Assignment(kind);
             if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(region) || kind == PopulationAssignmentKind.Unassigned
                 || maxProgressTicks < 0 || (kind == PopulationAssignmentKind.Course) != maxProgressTicks.HasValue)
                 throw new ArgumentException("Targets need explicit kind/region; courses need an explicit progress limit.");
+            if (!Enum.IsDefined(typeof(PopulationWorkKind), workKind) || (workKind == PopulationWorkKind.Industry
+                    ? kind != PopulationAssignmentKind.Work || string.IsNullOrWhiteSpace(city) || capacity is not int cap || cap < 0
+                    : city != null || capacity != null))
+                throw new ArgumentException("An Industry target is a Work target with a city and a nonnegative capacity; no other target has either.");
             PopulationText.ValidateText(id); PopulationText.ValidateText(region);
+            if (city != null) PopulationText.ValidateText(city);
             Id = id; Kind = kind; Region = region; MaxProgressTicks = maxProgressTicks;
+            WorkKind = workKind; City = city; Capacity = capacity;
         }
-        internal string Canonical() => PopulationText.Fields(Id, PopulationText.Assignment(Kind), Region, MaxProgressTicks);
+        // The Industry fields are written only when set (as PopulationLocation's |city=), so every other target keeps its text.
+        internal string Canonical() => PopulationText.Fields(Id, PopulationText.Assignment(Kind), Region, MaxProgressTicks)
+            + (WorkKind == PopulationWorkKind.Industry ? "|industry=" + PopulationText.Fields(City, Capacity) : "");
     }
 
     /// <summary>Frozen explicit reference inventory. No guesses about regional hex ownership, facilities or qualifications.
@@ -78,6 +101,10 @@ namespace Statecraft.Sim
         /// locality, a sites.yaml id or a map location, is refused (review of #2936, S1-1).</summary>
         internal void ValidateCities(Content c)
         {
+            // #1725 PR 3: an Industry target's city is a census city (cities.yaml, R-CITY-006) of its region in regions.yaml.
+            foreach (var t in targets.Values.Where(t => t.City != null))
+                if (c.PlayerRegions.AtLocation(t.City!)?.Id != t.Region || !c.Cities.Any(x => x.Id == t.City))
+                    throw new ArgumentException("Industry target " + t.Id + " needs a census city of region " + t.Region + " (R-POP-002).");
             foreach (var l in locations)
             {
                 if (l.City == null) continue;
@@ -366,6 +393,7 @@ namespace Statecraft.Sim
         void Validate(SortedDictionary<int, PopulationUnit> candidate, PopulationBindings bindings)
         {
             var issued = new HashSet<string>(StringComparer.Ordinal);
+            var held = new Dictionary<string, int>(StringComparer.Ordinal);   // records per capacity target (#1725 PR 3)
             foreach (var p in candidate.Values)
             {
                 if (p.ReceptionTicks > receptionLimit || !bindings.HasQualification(p.Qualification))
@@ -405,6 +433,15 @@ namespace Statecraft.Sim
                     var target = bindings.Target(p.Assignment);
                     if (target.Region != p.Location!.Region || (kind == PopulationAssignmentKind.Course && p.Assignment.ProgressTicks > target.MaxProgressTicks))
                         throw new ArgumentException("Assignment region/progress is inconsistent.");
+                    // #1725 PR 3, Q27: "a worker works in their own city".
+                    if (target.City != null && !string.Equals(p.Location!.City, target.City, StringComparison.Ordinal))
+                        throw new ArgumentException("An Industry worker works in their own city (R-POP-002).");
+                    if (target.Capacity is int capacity)
+                    {
+                        held.TryGetValue(target.Id, out var n);
+                        held[target.Id] = ++n;
+                        if (n > capacity) throw new ArgumentException("Industry target " + target.Id + " holds at most " + capacity.ToString(CultureInfo.InvariantCulture) + " records (R-CITY-007).");
+                    }
                     if (p.Assignment.TeacherId is int teacherId && (teacherId == p.Id || !candidate.TryGetValue(teacherId, out var teacher)
                         || teacher.Assignment.Kind != PopulationAssignmentKind.Teaching || teacher.Assignment.Target != p.Assignment.Target))
                         throw new ArgumentException("Course teacher reference must resolve to a teacher of the same course.");

@@ -65,6 +65,10 @@ namespace Statecraft.Sim
         /// <summary>The census city of the training centre's one veteran pioneer teacher (owner, 7 November 2026, #1689
         /// comment 6704565066: "the training centre's one veteran pioneer teacher is a Haifa census unit").</summary>
         internal const string TeacherCity = "haifa";
+        /// <summary>#1725 PR 3: a census city's Industry Work target is this prefix plus the city id (as
+        /// military_camp/&lt;city&gt;), so a city has exactly one.</summary>
+        internal const string IndustryPrefix = "industry/";
+        internal static string IndustryTarget(string city) => IndustryPrefix + city;
 
         /// <summary>The population id of the training centre's veteran pioneer teacher on a Historical ledger: the last
         /// census/haifa record, as the start makes it (#1689), or null when the ledger has no census/haifa record. Owner, 7
@@ -184,7 +188,7 @@ namespace Statecraft.Sim
         /// its real region of regions.yaml. A census record takes the region that lists its city (AtLocation), and its location names that city. A formation
         /// record takes the region of its starting anchor hex (AtHex): the owner's ruling on #1689's open question 1
         /// (3 November 2026: "Its anchor hex's region (Recommended)"). A source with no region is refused; no region is invented. Records
-        /// are free civilians with no assignment and their reception done (reception.turns), and soldiers serving in their own
+        /// are free civilians with no assignment (but each city's employed, on its Industry target, #1725 PR 3) and their reception done (reception.turns), and soldiers serving in their own
         /// formation, with no profession, tier or qualification (#1717 and #1692 add those), but for the training centre's veteran pioneer teacher, the last census/haifa record (#1689). Each soldier carries one issued military item, id
         /// <c>units_1948/&lt;row&gt;/&lt;ordinal&gt;</c>, owned and recorded as paid, apart from the spare Arms (#1717, 27M-24).
         /// mode Historical gives #2299's 1,000-a-record scale (D2). Fixture-only: the public NewGame does not call it (R-POP-002).</summary>
@@ -239,7 +243,11 @@ namespace Statecraft.Sim
                 // facilities' Course targets are bound at the start; and "Cohorts stay main (Rec.)": each trainee's Course
                 // target is per facility (military_camp/<city>, hakhshara/<city>), in the city's region (27M-7, no travel).
                 .Concat(c.Cities.Where(x => regions.ContainsKey(CensusPrefix + x.Id))
-                    .SelectMany(x => Training.LedgerFacilities(c, x.Facilities).Select(f => Training.CourseTargetOf(c, f, x.Id, regions[CensusPrefix + x.Id]))));
+                    .SelectMany(x => Training.LedgerFacilities(c, x.Facilities).Select(f => Training.CourseTargetOf(c, f, x.Id, regions[CensusPrefix + x.Id]))))
+                // #1725 PR 3: each census city's Industry is a Work target in the city's region, naming the city, with the
+                // city's job_slots as its capacity (R-CITY-007); start.industry_slots is the 10,000-scale value, never it.
+                .Concat(c.Cities.Where(x => regions.ContainsKey(CensusPrefix + x.Id)).Select(x => new PopulationTarget(IndustryTarget(x.Id),
+                    PopulationAssignmentKind.Work, regions[CensusPrefix + x.Id], workKind: PopulationWorkKind.Industry, city: x.Id, capacity: x.JobSlots)));
             // #1689 rows 5 to 8 and the 7th Brigade's combat XP: see SoldierValues.
             var soldier = new Dictionary<string, (string Qualification, int CombatXp)>(StringComparer.Ordinal);
             foreach (var f in c.StartingForces.Where(Bound)) soldier[FormationPrefix + f.Row] = SoldierValues(c, f);
@@ -276,9 +284,18 @@ namespace Statecraft.Sim
             // Work XP 0 (owner, relayed: "0 for all (Recommended)"; veterans "0 (Recommended)", #1689 comment 6710877137).
             // Reception done (reception.turns), as for the census (maintainer call, the coordinator, 7 November 2026). No
             // tools: post-MVP (#1693 answer 1, "Tools in the MVP: no.").
+            // #1725 PR 3. Owner, 7 November 2026 (#1689 comments 6704389240 and 6704428057): a city's employed is its people
+            // times its share (R-CITY-007), and every employed unit starts in Industry. Which records: the city's first
+            // `employed` census ordinals, which are its ascending population ids, as #1692's job default gains the Industry
+            // assignment (owner, 3 November 2026, "Approve all three (Recommended)"); so the teacher, the last ordinal, is
+            // taken last. Farmers are on top of the census and stay out (#1725 PR 4); the start has no craftsmen.
+            var employed = c.Cities.ToDictionary(x => CensusPrefix + x.Id, x => x.Employed, StringComparer.Ordinal);
             PopulationAssignment Assignment(HistoricalPopulationRow r) => r.Status == PopulationStatus.ActiveSoldier
                 ? new PopulationAssignment(PopulationAssignmentKind.ActiveService, r.Source)
-                : farmer.TryGetValue(r.Source, out var f) ? new PopulationAssignment(PopulationAssignmentKind.Work, f.Field) : PopulationAssignment.Unassigned;
+                : farmer.TryGetValue(r.Source, out var f) ? new PopulationAssignment(PopulationAssignmentKind.Work, f.Field)
+                : employed.TryGetValue(r.Source, out var n) && r.Ordinal < n
+                    ? new PopulationAssignment(PopulationAssignmentKind.Work, IndustryTarget(r.Source.Substring(CensusPrefix.Length)))
+                : PopulationAssignment.Unassigned;
             CivilianProfession Profession(HistoricalPopulationRow r) => IsTeacher(r) ? CivilianProfession.Pioneer
                 : farmer.ContainsKey(r.Source) ? CivilianProfession.Farmer : CivilianProfession.None;
             CivilianTier Tier(HistoricalPopulationRow r) => IsTeacher(r) ? CivilianTier.Veteran
