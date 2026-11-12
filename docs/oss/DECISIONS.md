@@ -127,7 +127,7 @@ coordinator. Each quote is the option label the owner chose; the options themsel
 
 ## Paid release and exclusive assets
 
-- [x] X1 Tal Heuberger's models and related files and Afik Faerman's music move from CC BY-NC-ND 4.0 to the
+- [x] X1 Tal Heuberger's models and related files (and Afik Faerman's music, once Afik agrees) move from CC BY-NC-ND 4.0 to the
   Statecraft: Israel Exclusive Asset Licence 1.0 (`LICENSES/LicenseRef-Statecraft-Exclusive-Asset-1.0.txt`):
   used in this game only, with an exclusive licence to the owner to sell the game with them. Owner, 12 November 2026,
   in a Claude Code session: "we need the license to say their work is exclusive to this game only", then the option
@@ -141,4 +141,5 @@ coordinator. Each quote is the option label the owner chose; the options themsel
   (https://github.com/eyalgolan/statecraft-israel/pull/3159#issuecomment-6822146113), and Tal's files moved that day.
   The owner, 12 November 2026, on moving Tal's files before Afik agrees: "Switch Tal's now (Recommended)"; and on
   whether "for my files" covers Tal's later deliveries too: "Treat as covered". Afik Faerman has not agreed yet: the
-  music stays under CC BY-NC-ND 4.0 until Afik does, and a separate change then moves it and records the date.
+  music stays under CC BY-NC-ND 4.0 until Afik does, and a separate change then moves it and records the date. Afik's half is deliberately not an open checkbox here, so it does
+  not hold back releases while the music stays CC BY-NC-ND 4.0.

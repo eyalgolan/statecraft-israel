@@ -312,7 +312,8 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 
 The owner ruled on 2 November 2026: #2083, "Yes, on the soldier figures (Recommended)" ("Attach a period-correct weapon to
 the unit-token soldier figures (sourced per army and date), measured for load"), and #2084, "Yes, for firing units
-(Recommended)" ("Show the aiming pose on a unit token when it attacks"). Models by Tal Heuberger (CC BY-NC-ND 4.0).
+(Recommended)" ("Show the aiming pose on a unit token when it attacks"). Models by Tal Heuberger (Statecraft: Israel
+Exclusive Asset Licence 1.0 from 12 November 2026; CC BY-NC-ND 4.0 before).
 
 | Weapon | Army | From | Figures | Sources (agent-read; a person's check is pending) |
 |---|---|---|---|---|
