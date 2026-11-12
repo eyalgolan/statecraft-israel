@@ -42,30 +42,50 @@ public class HexGroundPaintTests
         int n = data.alphamapResolution, layers = data.alphamapLayers, differing = 0;
         Assert.That(n, Is.EqualTo(2048));
         Assert.That(layers, Is.EqualTo(HexGround.Ids.Count));
-        var whole = HexBoardBuilder.Splat(state.Board, state.Surface, state.Rect, paints, 0, 0, n, n);
-        float maxSeen = 0f;
-        for (int z0 = 0; z0 < n; z0 += 128)
+        // The reference goes through SetAlphamaps/GetAlphamaps too, so both sides carry the same storage rounding.
+        var reference = NewGround();
+        try
         {
-            var band = data.GetAlphamaps(0, z0, n, 128);
-            for (int z = 0; z < 128; z++)
-                for (int x = 0; x < n; x++)
-                    for (int l = 0; l < layers; l++)
-                    {
-                        if (band[z, x, l] != whole[z0 + z, x, l]) differing++;
-                        maxSeen = Mathf.Max(maxSeen, band[z, x, l]);
-                    }
+            reference.SetAlphamaps(0, 0, HexBoardBuilder.Splat(state.Board, state.Surface, state.Rect, paints, 0, 0, n, n));
+            float maxSeen = 0f;
+            for (int z0 = 0; z0 < n; z0 += 128)
+            {
+                var band = data.GetAlphamaps(0, z0, n, 128);
+                var want = reference.GetAlphamaps(0, z0, n, 128);
+                for (int z = 0; z < 128; z++)
+                    for (int x = 0; x < n; x++)
+                        for (int l = 0; l < layers; l++)
+                        {
+                            if (band[z, x, l] != want[z, x, l]) differing++;
+                            maxSeen = Mathf.Max(maxSeen, band[z, x, l]);
+                        }
+            }
+            Assert.That(maxSeen, Is.GreaterThan(0.5f), "the alphamap was painted");
+            Assert.That(differing, Is.EqualTo(0), "alphamap values that differ from the one-piece splat");
         }
-        Assert.That(maxSeen, Is.GreaterThan(0.5f), "the alphamap was painted");
-        Assert.That(differing, Is.EqualTo(0), "alphamap values that differ from the one-piece splat");
+        finally { DestroyGround(reference); }
+    }
+
+    // As Build sets it up: the layers first, then the resolution.
+    static TerrainData NewGround()
+    {
+        var data = new TerrainData { terrainLayers = HexGround.Ids.Select(_ => new TerrainLayer()).ToArray() };
+        data.alphamapResolution = 2048;
+        return data;
+    }
+
+    static void DestroyGround(TerrainData data)
+    {
+        foreach (var l in data.terrainLayers) Object.DestroyImmediate(l);
+        Object.DestroyImmediate(data);
     }
 
     [Test]
     public void PaintingTheGroundAllocatesNoWholeAlphamapAndNoGarbagePerPixel()
     {
-        var data = new TerrainData { alphamapResolution = 2048 };
+        var data = NewGround();
         try
         {
-            data.terrainLayers = HexGround.Ids.Select(_ => new TerrainLayer()).ToArray();
             void PaintOnce() => HexBoardBuilder.PaintGround(data, state.Board, state.Surface, state.Rect, paints);
             PaintOnce();   // warm up: the first call JIT-compiles and allocates
 
@@ -88,10 +108,6 @@ public class HexGroundPaintTests
             Assert.That(grewMB, Is.LessThan(32), $"Mono heap grew {grewMB} MB (the whole alphamap alone is 184 MB)");
             Assert.That(allocations, Is.LessThan(1000), $"{allocations} managed allocations in one ground paint");
         }
-        finally
-        {
-            foreach (var l in data.terrainLayers) Object.DestroyImmediate(l);
-            Object.DestroyImmediate(data);
-        }
+        finally { DestroyGround(data); }
     }
 }
