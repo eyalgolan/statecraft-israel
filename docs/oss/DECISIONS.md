@@ -127,14 +127,14 @@ coordinator. Each quote is the option label the owner chose; the options themsel
 
 ## Paid release and exclusive assets
 
-- [ ] X1 Tal Heuberger's models and Afik Faerman's music move from CC BY-NC-ND 4.0 to the Statecraft: Israel
-  Exclusive Asset Licence 1.0 (`LICENSES/LicenseRef-Statecraft-Exclusive-Asset-1.0.txt`, draft): used in this game only,
-  with an exclusive licence to the owner to sell the game with them. Owner, 12 November 2026, in a Claude Code session:
-  "we need the license to say their work is exclusive to this game only", then the option "This game only, all use"
-  (no one else may use the files, noncommercial use included; existing public copies keep their CC rights), and for
-  payment "Leave terms open"; and "protfolio is allowed" (the creators may show the work in their own portfolios,
-  not for download, sale or licence). It is meant to make a paid release possible; the owner's answer of
-  23 October 2026 under D1 ("the game is never going to charge any money. ever") stands until the owner rules on it.
-  Pending: each creator's written agreement as a comment on the pull request (the owner, 12 November 2026: "a comment
-  for acceptance from them is fine for now. I would work on the document seperatly"). Tick this line, with the
-  dates, only after both creators agree.
+- [ ] X1 Tal Heuberger's models and related files and Afik Faerman's music move from CC BY-NC-ND 4.0 to the
+  Statecraft: Israel Exclusive Asset Licence 1.0 (`LICENSES/LicenseRef-Statecraft-Exclusive-Asset-1.0.txt`, draft):
+  used in this game only, with an exclusive licence to the owner to sell the game with them. Owner, 12 November 2026,
+  in a Claude Code session: "we need the license to say their work is exclusive to this game only", then the option
+  "This game only, all use" (as the option was described: no one else may use the files, noncommercial use included;
+  existing public copies keep their CC rights), and for payment "Leave terms open"; and "protfolio is allowed" (the
+  creators may show the work in their own portfolios, not for download, sale or licence). It is meant to make a paid
+  release possible; the owner's answer of 23 October 2026 under D1 ("the game is never going to charge any money.
+  ever") stands until the owner rules on it. Pending: each creator's written agreement as a comment on the pull
+  request (the owner, 12 November 2026: "a comment for acceptance from them is fine for now. I would work on the
+  document seperatly"). Tick this line, with the dates, only after both creators agree.
