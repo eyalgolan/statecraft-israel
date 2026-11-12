@@ -6,6 +6,119 @@
 # Globs use fnmatch: '*' also matches '/'. Portrait rows live in ASSETS.portraits.yaml (scripts/oss/commons_licences.py).
 # ai_generated: true marks AI output (the future Steam/itch.io disclosure is generated from it).
 rules:
+  # #1954 bounded limestone batch; source and derivative files, not blanket folder grants.
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_07/rock_07.bin"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_07; exact local source copy, SHA-256 e4a532a6d6cf4a08c288f501b790f32cba0528136a29959ce774c3cd39369e7e. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_07/rock_07_1k.gltf"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_07; exact local source copy, SHA-256 efcc2dcaa133ff8ad5c865dc2135772e8f5dbc83fa38db2ee2cf25382436b6e6. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_07/textures/rock_07_arm_1k.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_07; exact local source copy, SHA-256 1ed76e9a8542c76bdc6b7b018720ae1f52cd75d9f5ae719f613de3f5032cf4da. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_07/textures/rock_07_diff_1k.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_07; exact local source copy, SHA-256 8ff1965aa1664cc4abcc0131c44ee2b97ab14d6e131d7a51429ff261eeb101c8. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_07/textures/rock_07_nor_gl_1k.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_07; exact local source copy, SHA-256 57cb2210951aeb376164fce5f7c65f03e5599def04873b56cad0f173c275d78d. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_09/rock_09.bin"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_09; exact local source copy, SHA-256 780c37d6fc11ca3a01c3763535ef883908b6007271a46bd446d2289ded820751. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_09/rock_09_1k.gltf"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_09; exact local source copy, SHA-256 636e57eb0090889627da18edaec202ff9f65f83101b94f91b7da4d21dc080ab9. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_09/textures/rock_09_arm_1k.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_09; exact local source copy, SHA-256 594e2cec49e6bb40bd9bab2649e37dcc261079456cf4d6f680f56770c19db5ea. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_09/textures/rock_09_diff_1k.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_09; exact local source copy, SHA-256 afb7ae5ae82238d304aba589391ac6bc87f7cf1dbfe50980c21f762cfdd87efd. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "asset-sources/polyhaven-limestone-20261112/rock_09/textures/rock_09_nor_gl_1k.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_09; exact local source copy, SHA-256 2195b5c7da3a23af2a5f93dbb20f38bc069028509b106397bc8d2aee0bc55729. Local ledger dates download to 2026-10-16; not compared byte-for-byte with upstream API."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "unity/Assets/Art/HexTiles/Props/shared_rock_07/rock_07.obj"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_07; decimated derivative using retained decimate.py, nominal target 700 triangles; complete local original glTF, BIN and textures retained under asset-sources/polyhaven-limestone-20261112/rock_07/."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "unity/Assets/Art/HexTiles/Props/shared_rock_07/albedo.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_07; byte-preserved copy of asset-sources/polyhaven-limestone-20261112/rock_07/textures/rock_07_diff_1k.jpg."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "unity/Assets/Art/HexTiles/Props/shared_rock_07/normal.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_07; byte-preserved copy of asset-sources/polyhaven-limestone-20261112/rock_07/textures/rock_07_nor_gl_1k.jpg."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "unity/Assets/Art/HexTiles/Props/shared_rock_09/rock_09.obj"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_09; decimated derivative using retained decimate.py, nominal target 700 triangles; complete local original glTF, BIN and textures retained under asset-sources/polyhaven-limestone-20261112/rock_09/."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "unity/Assets/Art/HexTiles/Props/shared_rock_09/albedo.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_09; byte-preserved copy of asset-sources/polyhaven-limestone-20261112/rock_09/textures/rock_09_diff_1k.jpg."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
+  - glob: "unity/Assets/Art/HexTiles/Props/shared_rock_09/normal.jpg"
+    licence: CC0-1.0
+    artist: "Poly Haven contributors"
+    ai_generated: false
+    status: owner-verify
+    source: "https://polyhaven.com/a/rock_09; byte-preserved copy of asset-sources/polyhaven-limestone-20261112/rock_09/textures/rock_09_nor_gl_1k.jpg."
+    note: "CC0 redistribution verified at https://polyhaven.com/license on 2026-11-12; batch artistic review remains pending. See asset-sources/polyhaven-limestone-20261112/README.md."
   # #39 music by Afik Faerman.
   - glob: "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"
     licence: CC-BY-NC-ND-4.0

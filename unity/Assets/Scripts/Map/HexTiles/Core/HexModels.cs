@@ -299,13 +299,24 @@ namespace Statecraft.HexTiles
             if (!variants.TryGetValue(id, out var names))
             {
                 var stem = id.Substring(0, id.Length - 1);
-                var list = new List<string>();
-                for (int v = 1; v < 32; v++) { var name = v == 1 ? stem : $"{stem}_{v}"; if (Prefab(name) == null) break; list.Add(name); }
-                variants[id] = names = list.ToArray();
+                variants[id] = names = VariantNames(stem, name => Prefab(name) != null);
             }
             if (names.Length == 0) return id.Substring(0, id.Length - 1);
             uint h = unchecked((uint)(Mathf.FloorToInt(at.x) * 73856093 ^ Mathf.FloorToInt(at.z) * 19349663));
             return names[h % (uint)names.Length];
+        }
+
+        // A player's stream registration is availability, without consulting an editor/Resources prefab.
+        internal static string[] VariantNames(string stem, Func<string, bool> localPresent)
+        {
+            var list = new List<string>();
+            for (int v = 1; v < 32; v++)
+            {
+                string name = v == 1 ? stem : $"{stem}_{v}";
+                if (!HexProps.Has(name) && !localPresent(name)) break;
+                list.Add(name);
+            }
+            return list.ToArray();
         }
 
         public static bool Skinned(GameObject prefab) => prefab.GetComponentInChildren<SkinnedMeshRenderer>(true) != null;

@@ -560,6 +560,8 @@ Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectP
 
 ## What is local-only (read before relying on a model)
 
+- **Limestone batch (#1954, draft):** `sandbox:limestone*` has two Poly Haven CC0 variants, outside Resources and The 1948 Collection, in `hex-props-limestone`. Existing placements and fit are unchanged. The Rock stand-in remains until its checked bundle arrives. Sources: `asset-sources/polyhaven-limestone-20261112/`. Batch review and player timing/memory acceptance remain required. The existing prop Request API pins its source bundle after a board is disposed; no memory return-to-baseline is claimed. Other shared families and ground remain local-only.
+
 - **Tripo models are local-only while their rights are pending:**
   - figures, animals, vehicles and landmarks (`proto:`);
   - the decimated city kit (`sandbox:kit_*`). The tiles no longer draw it while the shipped town models are found (see

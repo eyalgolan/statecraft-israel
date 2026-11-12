@@ -20,9 +20,11 @@ namespace Statecraft.HexTiles
     /// Hula (HulaPapyrusLayer) without the hex boards' other props. The tamarisk is a bundle of its own too,
     /// <see cref="TamariskBundle"/>: only the boards draw it (no tamarisk on the main map, #1951), so the main map's first
     /// camera, which fetches <see cref="Bundle"/>, does not fetch it.</summary>
+    // Poly Haven CC0 limestone (#1954) is board-only, in its own bundle; not fetched by the main map camera.
     public static class HexProps
     {
-        public const string Bundle = "hex-props", PapyrusBundle = "hex-props-papyrus", TamariskBundle = "hex-props-tamarisk";
+        public const string Bundle = "hex-props", PapyrusBundle = "hex-props-papyrus", TamariskBundle = "hex-props-tamarisk", LimestoneBundle = "hex-props-limestone";
+        public const string Limestone = "sandbox:limestone", Limestone2 = "sandbox:limestone_2";
         public const string Papyrus = "tiles:hula_swamp/papyrus", Tamarisk = "tiles:arava_oasis/tamarisk";
         /// <summary>The folder in the build's StreamingAssets that holds the bundle, and the checks file beside it.</summary>
         public const string StreamingFolder = "hex-props", ChecksFile = "hex-props-checks.txt";
@@ -43,6 +45,7 @@ namespace Statecraft.HexTiles
             "tiles:railway_halt/station", "tiles:railway_halt/well",
             "tiles:village_mill/mill", "tiles:village_mill/sycamore_fig", "tiles:village_mill/terrace_wall",
             "tiles:village_mill/threshing_floor",
+            Limestone, Limestone2,
         };
 
         static readonly HashSet<string> ids = new HashSet<string>(Ids, StringComparer.Ordinal);
@@ -50,13 +53,15 @@ namespace Statecraft.HexTiles
         public static bool Has(string id) => ids.Contains(id);
 
         /// <summary>The prop's bundle: <see cref="PapyrusBundle"/> for the papyrus, <see cref="TamariskBundle"/> for the
-        /// tamarisk, <see cref="Bundle"/> for the rest; null for an id that is not a prop.</summary>
-        public static string? BundleOf(string id) => !Has(id) ? null : id == Papyrus ? PapyrusBundle : id == Tamarisk ? TamariskBundle : Bundle;
+        /// tamarisk, <see cref="Bundle"/> for the rest except the board-only LimestoneBundle; null for an id that is not a prop.</summary>
+        public static string? BundleOf(string id) => !Has(id) ? null : id == Papyrus ? PapyrusBundle : id == Tamarisk ? TamariskBundle : (id == Limestone || id == Limestone2) ? LimestoneBundle : Bundle;
 
         /// <summary>The prop's prefab path in the project, which is also its name inside the bundle (lower case there).</summary>
-        public static string PrefabPath(string id) => PrefabRoot + HexModels.PathOf(id) + ".prefab";
+        public static string PrefabPath(string id) =>
+            id == Limestone || id == Limestone2 ? PrefabRoot + "HexTiles/Shared/" + id.Substring(8) + ".prefab"
+                : PrefabRoot + HexModels.PathOf(id) + ".prefab";
 
-        /// <summary>What the loader streams: three bundles, one prefab per prop (the detail is not used).</summary>
+        /// <summary>What the loader streams: four bundles, one prefab per prop (the detail is not used).</summary>
         public static readonly CollectionStream.Catalog Catalog = new CollectionStream.Catalog("the hex-tile props", StreamingFolder,
             ChecksFile, BundleOf, (id, _) => PrefabPath(id));
     }

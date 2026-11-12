@@ -1,0 +1,91 @@
+{
+  "licence": "CC0-1.0",
+  "licence_url": "https://polyhaven.com/license",
+  "asset_urls": [
+    "https://polyhaven.com/a/rock_07",
+    "https://polyhaven.com/a/rock_09"
+  ],
+  "recorded": "2026-11-12",
+  "original_download_date_per_local_ledger": "2026-10-16",
+  "upstream_byte_hash_comparison": "not performed: API unavailable; local source names and glTF texture references consistent",
+  "files": [
+    {
+      "path": "rock_07/rock_07.bin",
+      "bytes": 468936,
+      "sha256": "e4a532a6d6cf4a08c288f501b790f32cba0528136a29959ce774c3cd39369e7e",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_07"
+    },
+    {
+      "path": "rock_07/rock_07_1k.gltf",
+      "bytes": 2979,
+      "sha256": "efcc2dcaa133ff8ad5c865dc2135772e8f5dbc83fa38db2ee2cf25382436b6e6",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_07"
+    },
+    {
+      "path": "rock_07/textures/rock_07_arm_1k.jpg",
+      "bytes": 309735,
+      "sha256": "1ed76e9a8542c76bdc6b7b018720ae1f52cd75d9f5ae719f613de3f5032cf4da",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_07"
+    },
+    {
+      "path": "rock_07/textures/rock_07_diff_1k.jpg",
+      "bytes": 635452,
+      "sha256": "8ff1965aa1664cc4abcc0131c44ee2b97ab14d6e131d7a51429ff261eeb101c8",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_07"
+    },
+    {
+      "path": "rock_07/textures/rock_07_nor_gl_1k.jpg",
+      "bytes": 766986,
+      "sha256": "57cb2210951aeb376164fce5f7c65f03e5599def04873b56cad0f173c275d78d",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_07"
+    },
+    {
+      "path": "rock_09/rock_09.bin",
+      "bytes": 286592,
+      "sha256": "780c37d6fc11ca3a01c3763535ef883908b6007271a46bd446d2289ded820751",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_09"
+    },
+    {
+      "path": "rock_09/rock_09_1k.gltf",
+      "bytes": 2745,
+      "sha256": "636e57eb0090889627da18edaec202ff9f65f83101b94f91b7da4d21dc080ab9",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_09"
+    },
+    {
+      "path": "rock_09/textures/rock_09_arm_1k.jpg",
+      "bytes": 322950,
+      "sha256": "594e2cec49e6bb40bd9bab2649e37dcc261079456cf4d6f680f56770c19db5ea",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_09"
+    },
+    {
+      "path": "rock_09/textures/rock_09_diff_1k.jpg",
+      "bytes": 595103,
+      "sha256": "afb7ae5ae82238d304aba589391ac6bc87f7cf1dbfe50980c21f762cfdd87efd",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_09"
+    },
+    {
+      "path": "rock_09/textures/rock_09_nor_gl_1k.jpg",
+      "bytes": 757031,
+      "sha256": "2195b5c7da3a23af2a5f93dbb20f38bc069028509b106397bc8d2aee0bc55729",
+      "licence": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rock_09"
+    }
+  ],
+  "tool_files": [
+    {
+      "path": "decimate.py",
+      "bytes": 2017,
+      "sha256": "8c35347444b7e1923a159bac03e6ae75bfc06065161b01874681ccfd8bea2167"
+    }
+  ],
+  "tool_licence": "Project code terms in CONTRIBUTING.md and LICENSING.md; not CC0 art."
+}

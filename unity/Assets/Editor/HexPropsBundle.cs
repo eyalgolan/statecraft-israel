@@ -22,6 +22,7 @@ namespace Statecraft.Game.EditorTools
             new AssetBundleBuild { assetBundleName = HexProps.Bundle, assetNames = HexProps.Ids.Where(id => HexProps.BundleOf(id) == HexProps.Bundle).Select(HexProps.PrefabPath).ToArray() },
             new AssetBundleBuild { assetBundleName = HexProps.PapyrusBundle, assetNames = new[] { HexProps.PrefabPath(HexProps.Papyrus) } },
             new AssetBundleBuild { assetBundleName = HexProps.TamariskBundle, assetNames = new[] { HexProps.PrefabPath(HexProps.Tamarisk) } },
+            new AssetBundleBuild { assetBundleName = HexProps.LimestoneBundle, assetNames = new[] { HexProps.PrefabPath(HexProps.Limestone), HexProps.PrefabPath(HexProps.Limestone2) } },
         };
 
         public static string BuildBundles(BuildTarget target) =>

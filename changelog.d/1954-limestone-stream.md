@@ -1,0 +1,1 @@
+Hex tiles: register two Poly Haven CC0 limestone variants in a board-only streamed bundle, keeping stand-ins while loading or on failure. Preserve sources and per-file provenance for batch review. Other shared models and ground textures are unchanged. Runtime textures are capped at512px with no readable CPU copy; original source bytes are preserved.

@@ -38,7 +38,41 @@ public class HexPropsTests
         "Assets/Art/HexTiles/railway_halt/well.prefab",
         "Assets/Art/HexTiles/village_mill/mill.prefab", "Assets/Art/HexTiles/village_mill/sycamore_fig.prefab",
         "Assets/Art/HexTiles/village_mill/terrace_wall.prefab", "Assets/Art/HexTiles/village_mill/threshing_floor.prefab",
+        "Assets/Art/HexTiles/Shared/limestone.prefab", "Assets/Art/HexTiles/Shared/limestone_2.prefab",
     };
+
+    [TestCase("sandbox:limestone")]
+    [TestCase("sandbox:limestone_2")]
+    public void LimestoneIsRegisteredOutsideResourcesInItsOwnBundle(string id)
+    {
+        Assert.IsTrue(HexProps.Has(id));
+        Assert.AreEqual("hex-props-limestone", HexProps.BundleOf(id));
+        var path = HexProps.PrefabPath(id);
+        Assert.IsFalse(UnderResources(path));
+        Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(path));
+        Assert.IsNull(Resources.Load<GameObject>(HexModels.PathOf(id)));
+        Assert.IsNull(CollectionCatalog.BundleOf(id));
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        Assert.That(prefab.GetComponentsInChildren<MeshFilter>(true).Sum(f => HexModels.IndexTriangles(f.sharedMesh)), Is.InRange(699, 700));
+        foreach (var material in prefab.GetComponentsInChildren<MeshRenderer>(true).SelectMany(m => m.sharedMaterials))
+        foreach (string property in new[] { "_BaseMap", "_BumpMap" })
+        {
+            var texture = (Texture2D)material.GetTexture(property);
+            Assert.That(texture.width, Is.EqualTo(512)); Assert.That(texture.height, Is.EqualTo(512));
+            Assert.IsFalse(texture.isReadable, "no retained CPU-readable pixel copy");
+            Assert.That(((TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture))).maxTextureSize, Is.EqualTo(512));
+        }
+    }
+
+    [Test]
+    public void LimestoneWildcardFindsBothVariantsBeforeAnyPrefabDownload()
+    {
+        var localLookups = new List<string>();
+        var names = HexModels.VariantNames("sandbox:limestone", id => { localLookups.Add(id); return false; });
+        CollectionAssert.AreEqual(new[] { "sandbox:limestone", "sandbox:limestone_2" }, names);
+        CollectionAssert.AreEqual(new[] { "sandbox:limestone_3" }, localLookups,
+            "registered variants must not need an editor/Resources prefab");
+    }
 
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
 
@@ -52,7 +86,7 @@ public class HexPropsTests
     [Test]
     public void ThePropsAreNotInResourcesAndNotInTheCollection()
     {
-        Assert.AreEqual(22, HexProps.Ids.Count);
+        Assert.AreEqual(24, HexProps.Ids.Count);
         foreach (var id in HexProps.Ids)
         {
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id)), id);
@@ -79,18 +113,20 @@ public class HexPropsTests
     const string PapyrusPrefab = "Assets/Art/HexTiles/hula_swamp/papyrus.prefab", TamariskPrefab = "Assets/Art/HexTiles/arava_oasis/tamarisk.prefab";
 
     [Test]
-    public void TheHexPropsBundlesCarryTheTwentyTwoPropsAndNothingElse()
+    public void TheHexPropsBundlesCarryTheTwentyFourPropsAndNothingElse()
     {
         var builds = Builds();
-        Assert.AreEqual(3, builds.Length);
+        Assert.AreEqual(4, builds.Length);
         Assert.AreEqual("hex-props", builds[0].assetBundleName);
-        CollectionAssert.AreEqual(Prefabs.Where(p => p != PapyrusPrefab && p != TamariskPrefab), builds[0].assetNames);
+        CollectionAssert.AreEqual(Prefabs.Where(p => p != PapyrusPrefab && p != TamariskPrefab && !p.Contains("/Shared/")), builds[0].assetNames);
         // The papyrus alone in its own bundle: the main map's Hula fetches it without the boards' other props.
         Assert.AreEqual("hex-props-papyrus", builds[1].assetBundleName);
         CollectionAssert.AreEqual(new[] { PapyrusPrefab }, builds[1].assetNames);
         // The tamarisk alone in its own bundle: only the boards draw it, so the main map's first camera does not fetch it.
         Assert.AreEqual("hex-props-tamarisk", builds[2].assetBundleName);
         CollectionAssert.AreEqual(new[] { TamariskPrefab }, builds[2].assetNames);
+        Assert.AreEqual("hex-props-limestone", builds[3].assetBundleName);
+        CollectionAssert.AreEqual(Prefabs.Where(p => p.Contains("/Shared/")), builds[3].assetNames);
         Assert.AreEqual("hex-props-papyrus", HexProps.BundleOf("tiles:hula_swamp/papyrus"));
         Assert.AreEqual("hex-props-tamarisk", HexProps.BundleOf("tiles:arava_oasis/tamarisk"));
         Assert.IsTrue(HexProps.Has("tiles:jaffa_old_city/clock_tower"), "a prop that stays in hex-props");
@@ -109,7 +145,7 @@ public class HexPropsTests
             && !d.StartsWith("Packages/com.unity.render-pipelines.", StringComparison.Ordinal)).ToArray();
         CollectionAssert.IsEmpty(outside, "the hex-props bundle pulls in files from outside Assets/Art/HexTiles");
         // Each prop is named by a tile: the ids are the "tiles:" ids the prototypes place.
-        foreach (var id in HexProps.Ids) StringAssert.StartsWith("tiles:", id);
+        foreach (var id in HexProps.Ids) Assert.IsTrue(id.StartsWith("tiles:", StringComparison.Ordinal) || id == HexProps.Limestone || id == HexProps.Limestone2);
     }
 
     /// <summary>The main map's first camera fetches the hex-props bundle (HexPropModels), so it carries neither of #2082's
@@ -121,7 +157,7 @@ public class HexPropsTests
     {
         var main = Builds().Single(b => b.assetBundleName == HexProps.Bundle).assetNames;
         var mainFiles = AssetDatabase.GetDependencies(main, true);
-        foreach (var id in new[] { HexProps.Papyrus, HexProps.Tamarisk })
+        foreach (var id in new[] { HexProps.Papyrus, HexProps.Tamarisk, HexProps.Limestone, HexProps.Limestone2 })
         {
             Assert.AreNotEqual(HexProps.Bundle, HexProps.BundleOf(id), id);
             CollectionAssert.DoesNotContain(main, HexProps.PrefabPath(id), id);
@@ -139,7 +175,7 @@ public class HexPropsTests
         LogAssert.Expect(LogType.Warning, new Regex("^Collection: no model 'figure-sheep-idle-1948-v1' in the hex-tile props"));
         Assert.IsFalse(stream.Enqueue("figure-sheep-idle-1948-v1", CollectionDetail.Far, got.Add), "a Collection model is not a prop");
         Step(stream.Run(), 100);
-        Assert.AreEqual(23, got.Count);
+        Assert.AreEqual(25, got.Count);
         Assert.IsNull(got[0], "the Collection id, answered at once");
         CollectionAssert.AreEqual(Prefabs.Select(p => System.IO.Path.GetFileNameWithoutExtension(p)), got.Skip(1).Select(g => g?.name));
         LogAssert.NoUnexpectedReceived();
@@ -147,8 +183,10 @@ public class HexPropsTests
 
     /// <summary>On a board that streams, a prop draws its stand-in (no Resources prefab) until its bundle answers, asked for
     /// once by its own id through the props' stream (never the Collection's), and then the streamed prefab.</summary>
-    [Test]
-    public void ABoardAsksThePropsStreamAndDrawsTheStandInUntilItAnswers()
+    [TestCase("tiles:railway_halt/station")]
+    [TestCase("sandbox:limestone")]
+    [TestCase("sandbox:limestone_2")]
+    public void ABoardAsksThePropsStreamAndDrawsTheStandInUntilItAnswers(string id)
     {
         var props = new List<(string id, Action<GameObject?> done)>();
         var figures = new List<string>();
@@ -157,7 +195,6 @@ public class HexPropsTests
         var model = GameObject.CreatePrimitive(PrimitiveType.Cube);
         try
         {
-            const string id = "tiles:railway_halt/station";
             Assert.IsTrue(HexCollectionFigures.Streams(id));
             int changes = 0;
             using var models = new HexCollectionFigures(() => changes++);
@@ -177,7 +214,7 @@ public class HexPropsTests
         // Without a stream (the editor, the painter) the prop draws from the AssetDatabase.
         Assert.IsFalse(HexCollectionFigures.Streams("tiles:railway_halt/station"));
         HexModels.Clear();
-        Assert.AreEqual("station", HexModels.Prefab("tiles:railway_halt/station")?.name);
+        Assert.AreEqual(System.IO.Path.GetFileNameWithoutExtension(HexProps.PrefabPath(id)), HexModels.Prefab(id)?.name);
     }
 
     /// <summary>#2082: the papyrus and tamarisk prefabs draw Tal Heuberger's OBJ meshes, copied byte for byte from
