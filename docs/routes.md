@@ -112,15 +112,17 @@ is inside it (review C1):
 | rail | Petah Tikva–Tel Aviv North rail link | 1949-09-20 | The 1949 Yarkon link (#786): new track from the Petah Tikva branch to a new Tel Aviv North station, which with the Tulkarm bypass carried the Haifa–Tel Aviv service from 20 September 1949. Drawn along the 1946 tracks (to-verify); the bypass is not drawn, no source gives its line. A GDD Phase 4 corridor (`content/corridors.yaml`). |
 | road | Tel Aviv–Netanya road | 1950-07-28 | Opened on 28 July 1950 (*The Jerusalem Post*, 30 July 1950), from the northern end of the Yarkon bridge by Herzliya, Rishpon and Wadi Falik to Netanya; an 8 km stretch at Wadi Falik was still unfinished. A Phase 4 corridor (#786). Straight draft lines between those five places (`trace: straight`, owner, 18 October 2026, #786), not the built line (to-verify). |
 
-**Paths between villages** (#2917; owner, 8 November 2026: "All four as recommended"). A path is kind `path`: a track the
-1946 map draws between two places of `localities_1948.yaml` or `settlements_1948.yaml` that no road or railway joins.
-- **The symbol.** The legend of Sheet 2 has three relevant lines. The **Track** is a fine dotted line. The **Other
+**Paths between villages** (#2917; owner, 8 November 2026: "All four as recommended"; 10 November 2026: option 2,
+"Track + dry-weather road"). A path is kind `path`: an unmetalled way the 1946 map draws between two places of
+`localities_1948.yaml` or `settlements_1948.yaml` that no road or railway joins.
+- **The symbols.** The legend of Sheet 2 has three relevant lines. The **Track** is a fine dotted line. The **Other
   roads** are a double black line, solid for all-weather and dashed for dry-weather. The **Metalled road** is red. A
-  path follows the Track alone.
+  path follows a Track or a dry-weather Other road, and its `symbol` (`track` or `dry_weather_road`, required on a path
+  and only there) says which, so the data shows which paths are cart roads drawn with the path look.
   - The legend was read on Wikimedia Commons, `File:Survey of Palestine, Palestine 02 (FL33250066 2367883).jpg` (Eran
     Laor Cartographic Collection). That copy is the 1945 compilation ("Road revision to July 1944"), reprinted in January
     1949. The 1946 tiles have no margins, so their own legend cannot be read.
-- **The trace.** `routes_1948.py`'s `path` symbol is `path_dots`, the Track's dots alone:
+- **The trace of a Track.** `routes_1948.py`'s `path` symbol is `path_dots`, the Track's dots alone:
   - the map's brown-black ink: red over blue by more than 25, and red over green by less than 65. That leaves out a
     wadi's blue-grey dashes and a red road;
   - not on or beside a stroke (a straight dark run of 5 px): a dash of an Other road, a line, a letter or a village
@@ -129,28 +131,55 @@ is inside it (review C1):
   - joined into a line by a 7 px dilation.
   - Off the dots a pixel costs 4, not 40. A dotted line has a gap at every faint dot, and at 40 the trace ran a 4 km
     loop on unbroken dots rather than bridge them on the direct 1.8 km track from Salbit to Imwas.
-  - The mask also picks up parts of the plain's dry-weather roads, whose dashes are as short as dots there. So every
-    path was checked by eye on its preview (`--preview`).
-  - Where the trace left its track, a waypoint on the track itself holds it there. That waypoint is a point read off
-    the map and cited to it ("the track south of Salbit (1946 map)").
+- **The trace of a dry-weather road.** Its symbol is `dry_weather_road`: the map's dark ink, less the grid (more than
+  85% of an 81 px run along a row or column, three rows or columns taken as one, since the grid is 2-3 px wide and an
+  Other road's dashes cover about 60% of their line), less a red road's dark edge (printed against its red: a 4 x 4 dilation of the red), with a
+  3 x 3 dilation that closes the gaps between its dashes. Off it a pixel costs 40, as for a road. Lettering and village circles stay in the mask: a trace
+  crosses them in a few pixels.
+- **The check.** The masks also take lines a path must not follow: the dotted mask parts of the plain's dry-weather
+  roads, the dashed mask a metalled road's edge beyond 4 px, the railway's bed and a town's streets. So every path was
+  checked by eye on its preview (`--preview`), and a pair was dropped when its trace rode a red road or the railway,
+  crossed a town, followed a solid (all-weather) double line, or ran on a line the map hides under a name. Where the
+  trace left its line, a waypoint on the line itself holds it there: a point read off the map and cited to it ("the road
+  south of Yibna (1946 map)"). That check by eye was Claude Code's, the coding agent that traced them (#3073 discloses
+  it); no person has checked the sixteen yet, so they stay `status: draft` with no `reviewed_by`.
 - **Quality.** A path's bar is 60% on its symbol, against 85% for a road (`test_each_trace_follows_its_symbol`). The
-  dotted line has a gap at every faint dot, every name over it and every village circle. The six are at 67-100%, and the
-  longest bridged gap is 762 m (bar 800 m).
-- **Dates.** From 1946, the map's date, with no `to`: no source read gives a track's use in 1948 or an end (owner,
+  dotted line has a gap at every faint dot, and both symbols are broken by every name over them and every village
+  circle. The sixteen are at 67-100%, and the longest bridged gap is 762 m (bar 800 m).
+- **The ends** are the places' rows, their names and coordinates, so a path joins the places the map draws. The map's
+  own symbol for a place can sit a few hundred metres from its row, and the path runs to the row.
+- **Dates.** From 1946, the map's date, with no `to`: no source read gives a path's use in 1948 or an end (owner,
   8 November 2026).
 
-| Path | By | Length |
+| Path | Symbol | Length |
 |---|---|---|
-| Al-Tira (Ramle)–Rantis | | 7.9 km |
-| Bayt Nabala–Rantis | | 8.2 km |
-| Rantis–Qibya | | 5.7 km |
-| Al-Qubab–Imwas | | 4.4 km |
-| Imwas–Yalo | | 3.0 km |
-| Innaba–Imwas | Bayt Shanna, Salbit | 9.0 km |
+| Tira–Rantis | Track | 7.9 km |
+| Beit Nabala–Rantis | Track | 8.2 km |
+| Rantis–Qibya | Track | 5.7 km |
+| Qubab–Imwas | Track | 4.4 km |
+| Imwas–Yalu | Track | 3.0 km |
+| Inaba–Imwas, by Bayt Shanna and Salbit | Track | 9.0 km |
+| Beit Nuba–Yalu | Track | 1.6 km |
+| Yibna–Mughar | dry-weather road | 4.6 km |
+| Yibna–Bashshit | dry-weather road | 4.7 km |
+| Bashshit–Qatra | dry-weather road | 2.9 km |
+| Zarnuqa–Rehovot, by Kefar Marmorek | dry-weather road | 3.5 km |
+| Givat Brenner–Aqir | dry-weather road | 2.4 km |
+| Qubeiba–Wadi Hunein | dry-weather road | 4.7 km |
+| Kheiriya–Saqiya | dry-weather road | 1.7 km |
+| Salama–Ramat Gan | dry-weather road | 3.9 km |
+| Jammasin el Gharbi–Sheikh Muwannis | dry-weather road | 2.2 km |
 
-In the gameplay03 view, these are all the dotted tracks between two listed places that no road joins. All six are in
-the Lydda–Latrun foothills. The coastal plain joins its villages by dry-weather roads, which are not tracks. Whether
-those count as paths is the owner's question on #2917.
+The seven Tracks are in the Lydda–Latrun foothills: the six dotted tracks between two listed places in the gameplay03
+view that no road joins, found first, and Beit Nuba–Yalu, found among the dry-weather candidates (its first trace took a
+dry-weather road and a red road round to Yalu; the direct line is dotted). The nine dry-weather roads are those of the plain and the foothills (lon 34.70-35.05,
+lat 31.78-32.20) that passed the check; most candidate pairs did not, because the plain's cart roads run beside its
+metalled roads and the railway and through its towns (Jimzu–Ramle, traced on a dry-weather road, zigzagged under the
+name RAMLE and through the town, and 'Abbasiyya–Tira jumped between the two roads east of Wilhelma and ran beside the
+red road at Yahudiya; both were dropped). Two from Abu Kishk, whose row lies by its name with no village drawn,
+zigzagged off it in a way no waypoint held (`test_no_sawtooth_on_straight_lines`) and were dropped too. That leaves
+sixteen paths, under the owner's "about 20 to 30": no more pass the check in this view. `tools/routes_accuracy.py` leaves the paths out: no reference maps
+them, so a distance would mean nothing.
 
 **Left out, on purpose.**
 - The Afula–Nablus–Tulkarm branch: its service ended in 1932 and 1938 (Palestine Railways article). Freight on the
@@ -349,11 +378,16 @@ toggles, so `?vprofile` prices each one.
 
 **Paths** (#2917) draw with their own material, `Resources/Routes/Path.mat` (`_Kind` 2, queue 3002, opacity 0.75):
 - trodden dust, a little darker and warmer than a road, with no ruts or verges and a wide soft edge;
-- they fade out as a pixel grows from 50 to 90 m, rather than darkening as a road does;
+- they fade out as a pixel across the ribbon (its width times `fwidth(u)`, `_WidthM` from `RouteLayer.PathWidthM`)
+  grows from 50 to 90 m, rather than darkening as a road does. Across, not along: a tilted view foreshortens a path
+  running towards the camera, so a fade along it hid a north-south path sooner than an east-west one (review of #3073);
 - a road's core draws over a path's at a crossing, through the stencil bit;
 - no vehicle runs on them (`RoadVehicles.Plans` name their routes);
 - the kits and the unit tokens do not keep off them (`KitRoutes` and `UnitRoutes` leave them out). A footpath runs
-  between a village's houses and trees, and no house, tree or token moved for them.
+  between a village's houses and trees, and no house, tree or token moved for them; a token, and a placement, may
+  stand on a path as on open ground;
+- the scrub does keep off them, painted and standing: `MapScene.ScrubRouteCorridors` is the kit routes' corridors and
+  the paths' (`RouteLayer.PathRoutes`), and `GroundDetail` keeps its scrub out of both (review of #3073).
 
 **Runtime form** (issue #321). Boot reads the traced lines from `content/map/route_paths_1948.tsv` instead of parsing
 the YAML (about 125 ms at `--cpu 4`), as the localities do since #291.

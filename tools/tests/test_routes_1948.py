@@ -229,9 +229,68 @@ def test_the_path_mask_keeps_the_dotted_track_and_drops_the_lines():
 
 
 def test_validate_accepts_a_path():
-    doc = {"routes": [dict(ROUTES["routes"][0], id="a_path", kind="path")]}
-    doc["routes"][0].pop("service", None)
-    rt.validate_routes(doc, BOUNDS)
+    for symbol in rt.PATH_SYMBOLS:
+        doc = {"routes": [dict(ROUTES["routes"][0], id="a_path", kind="path", symbol=symbol)]}
+        doc["routes"][0].pop("service", None)
+        rt.validate_routes(doc, BOUNDS)
+
+
+@pytest.mark.parametrize("kind, symbol", [("path", None), ("path", "metalled_road"), ("road", "track")])
+def test_validate_wants_a_symbol_on_a_path_and_only_there(kind, symbol):
+    # #2917, owner, 10 November 2026: each path records the legend symbol it follows, so the data shows the cart roads.
+    row = dict(ROUTES["routes"][0], id="a_route", kind=kind)
+    row.pop("service", None)
+    if symbol:
+        row["symbol"] = symbol
+    with pytest.raises(ValueError, match="symbol"):
+        rt.validate_routes({"routes": [row]}, BOUNDS)
+
+
+def test_a_path_is_traced_on_its_symbol():
+    assert rt.traced_symbol({"kind": "path", "symbol": "track"}) == "path"
+    assert rt.traced_symbol({"kind": "path", "symbol": "dry_weather_road"}) == "dry_weather_road"
+    assert rt.traced_symbol({"kind": "path", "symbol": "dry_weather_road", "trace": "straight"}) == "straight"
+    assert rt.traced_symbol({"kind": "road"}) == "road"
+
+
+CREAM, RED = (250, 230, 180), (205, 45, 50)
+
+
+def _dashed_double(img, rows, cols, gap=4, dash=6, every=8):
+    """Draws the Other roads' dry-weather symbol: two dashed lines `gap` px apart along the given rows and columns."""
+    for r, c in list(zip(rows, cols))[::every]:
+        img[r:r + 2, c:c + dash] = INK
+        img[r + gap + 1:r + gap + 3, c:c + dash] = INK
+
+
+def test_the_dry_weather_mask_keeps_the_dashes_and_drops_the_grid_and_a_red_roads_edges():
+    # #2917, option 2: a path may follow the Other roads' double dashed line (dry weather). The grid (2-3 px wide, nearly
+    # solid along its row) and a metalled road's dark edges are dark too, and are not that symbol.
+    img = np.full((140, 240, 3), CREAM, np.uint8)
+    cols = np.arange(10, 230)
+    _dashed_double(img, np.full(cols.size, 40), cols)
+    img[99:102, :] = INK                                      # the grid, 3 px wide
+    img[70:75, :] = RED                                       # a metalled road: red with a 1 px dark edge each side
+    img[69, :] = INK
+    img[75, :] = INK
+    m = rt.dry_weather_road(img)
+    assert m[40, 20:220].all() and m[46, 20:220].all(), "each dashed line reads as a line, its gaps closed"
+    assert not m[96:105, 50:190].any(), "not the grid"
+    assert not m[64:81, 20:220].any(), "not a red road's edges"
+
+
+def test_a_dry_weather_path_follows_the_dashes_not_the_red_road_beside_them():
+    pytest.importorskip("skimage")
+    img = np.full((120, 240, 3), CREAM, np.uint8)
+    cols = np.arange(0, 230)
+    rr = (60 + 30 * np.sin(np.linspace(0, 3, cols.size))).astype(int)
+    _dashed_double(img, rr, cols, every=7)
+    img[58:63, :] = RED                                       # a metalled road straight across, with its edges
+    img[57, :] = INK
+    img[63, :] = INK
+    cost = rt.cost_raster(img, "dry_weather_road")
+    path = rt.least_cost_path(cost, (rr[0] + 3, 0), (rr[-1] + 3, cols[-1]))
+    assert max(abs(r - rr[min(c, cols[-1])] - 3) for r, c in path) <= 6
 
 
 def test_a_path_trace_follows_the_dots_not_the_road_beside_them():

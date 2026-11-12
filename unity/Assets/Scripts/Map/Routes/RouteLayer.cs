@@ -128,6 +128,11 @@ namespace Statecraft.Game.Map.Routes
         public static IEnumerable<RoutePath> KitRoutes(IEnumerable<RoutePath> routes) =>
             routes.Where(r => r.Kind != RoutePaths.Path && RoutePaths.WindowOf(r).Covers(DefaultDate));
 
+        /// <summary>The paths drawn at the game's start (#2917). The ground detail's scrub keeps off them as off the kit routes
+        /// (MapScene.ScrubRouteCorridors): no bush stands on a trodden way. The houses, the trees and the tokens do not.</summary>
+        public static IEnumerable<RoutePath> PathRoutes(IEnumerable<RoutePath> routes) =>
+            routes.Where(r => r.Kind == RoutePaths.Path && RoutePaths.WindowOf(r).Covers(DefaultDate));
+
         /// <summary>The routes whose corridors the unit tokens keep clear: those drawn on some day before <paramref name="until"/>,
         /// the end of the last token's window. A route opened after every token has left the map (the 1949 rail link, the 1950
         /// Tel Aviv–Netanya road) never stands beside one, so it takes no token's spot (#786: the straight 1950 road crossed

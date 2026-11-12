@@ -533,23 +533,27 @@ routes:
     checked: '2026-10-15'
   - url: https://archive.org/details/per_jerusalem-post_the-jerusalem-post_1950-07-28_26_7317
     checked: '2026-10-15'
-# --- Paths between villages (#2917; owner, 8 November 2026) ----------------------------------------------------------
-# A path is the 1946 map's Track symbol, a fine dotted line (the legend of Sheet 2: "Track"), between two places of
-# localities_1948.yaml or settlements_1948.yaml that no road or railway joins. kind path traces that symbol alone
-# (routes_1948.py, path_dots). Drawn from the map's date, with no `to`: no source read gives a track's use or end. The
-# legend is read on Sheet 2's 1945 compilation (road revision to July 1944, reprinted January 1949), not on the 1946
-# edition the tiles show: Palestine Open Maps' tiles have no margins. Where the trace would leave the track for another
-# line, a waypoint on the track itself, read off the map and cited to it, holds it there.
+# --- Paths between villages (#2917; owner, 8 and 10 November 2026) ---------------------------------------------------
+# A path is an unmetalled way the 1946 map draws between two places of localities_1948.yaml or settlements_1948.yaml
+# that no road or railway joins, on one of two legend symbols (the legend of Sheet 2), which its `symbol` names: `track`,
+# the "Track" symbol, a fine dotted line (routes_1948.py traces it alone, path_dots); or `dry_weather_road`, the "Other
+# roads" double dashed line for dry weather, a cart road drawn with the path look (owner, 10 November 2026, option 2;
+# routes_1948.py, dry_weather_road). Drawn from the map's date, with no `to`: no source read gives a path's use or end.
+# The legend is read on Sheet 2's 1945 compilation (road revision to July 1944, reprinted January 1949), not on the 1946
+# edition the tiles show: Palestine Open Maps' tiles have no margins. Where the trace would leave the path's line for
+# another, a waypoint on the line itself, read off the map and cited to it, holds it there. The ends are the places'
+# rows (their names and coordinates); the map's own symbol for a place can sit a few hundred metres from its row.
 - id: path_al_tira_rantis
-  name: Path, Al-Tira, Ramle–Rantis
+  name: Path, Tira–Rantis
   kind: path
+  symbol: track
   from: '1946'
   status: draft
-  note: A dotted Track on the 1946 map between Al-Tira, Ramle and Rantis.
+  note: A dotted Track on the 1946 map between Tira and Rantis.
   to_verify:
   - The map's date only; no source read gives the track's use in 1948 or an end.
   via:
-  - {name: Al-Tira, Ramle, lon: 34.9431, lat: 32.0172, url: 'https://en.wikipedia.org/wiki/Al-Tira,_Ramle'}
+  - {name: Tira, lon: 34.9431, lat: 32.0172, url: 'https://en.wikipedia.org/wiki/Al-Tira,_Ramle'}
   - {name: Rantis, lon: 35.0194, lat: 32.0281, url: 'https://en.wikipedia.org/wiki/Rantis'}
   sources:
   - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
@@ -557,15 +561,16 @@ routes:
   - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
     checked: '2026-11-10'
 - id: path_bayt_nabala_rantis
-  name: Path, Bayt Nabala–Rantis
+  name: Path, Beit Nabala–Rantis
   kind: path
+  symbol: track
   from: '1946'
   status: draft
-  note: A dotted Track on the 1946 map between Bayt Nabala and Rantis.
+  note: A dotted Track on the 1946 map between Beit Nabala and Rantis.
   to_verify:
   - The map's date only; no source read gives the track's use in 1948 or an end.
   via:
-  - {name: Bayt Nabala, lon: 34.9567, lat: 31.9856, url: 'https://en.wikipedia.org/wiki/Bayt_Nabala'}
+  - {name: Beit Nabala, lon: 34.9567, lat: 31.9856, url: 'https://en.wikipedia.org/wiki/Bayt_Nabala'}
   - {name: Rantis, lon: 35.0194, lat: 32.0281, url: 'https://en.wikipedia.org/wiki/Rantis'}
   sources:
   - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
@@ -575,6 +580,7 @@ routes:
 - id: path_rantis_qibya
   name: Path, Rantis–Qibya
   kind: path
+  symbol: track
   from: '1946'
   status: draft
   note: A dotted Track on the 1946 map between Rantis and Qibya.
@@ -589,15 +595,16 @@ routes:
   - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
     checked: '2026-11-10'
 - id: path_al_qubab_imwas
-  name: Path, Al-Qubab–Imwas
+  name: Path, Qubab–Imwas
   kind: path
+  symbol: track
   from: '1946'
   status: draft
-  note: A dotted Track on the 1946 map between Al-Qubab and Imwas.
+  note: A dotted Track on the 1946 map between Qubab and Imwas.
   to_verify:
   - The map's date only; no source read gives the track's use in 1948 or an end.
   via:
-  - {name: Al-Qubab, lon: 34.9542, lat: 31.8666, url: 'https://en.wikipedia.org/wiki/Al-Qubab'}
+  - {name: Qubab, lon: 34.9542, lat: 31.8666, url: 'https://en.wikipedia.org/wiki/Al-Qubab'}
   - {name: Imwas, lon: 34.9927, lat: 31.842, url: 'https://en.wikipedia.org/wiki/Imwas'}
   sources:
   - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
@@ -605,36 +612,210 @@ routes:
   - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
     checked: '2026-11-10'
 - id: path_imwas_yalo
-  name: Path, Imwas–Yalo
+  name: Path, Imwas–Yalu
   kind: path
+  symbol: track
   from: '1946'
   status: draft
-  note: A dotted Track on the 1946 map between Imwas and Yalo.
+  note: A dotted Track on the 1946 map between Imwas and Yalu.
   to_verify:
   - The map's date only; no source read gives the track's use in 1948 or an end.
   via:
   - {name: Imwas, lon: 34.9927, lat: 31.842, url: 'https://en.wikipedia.org/wiki/Imwas'}
   - {name: the track east of Imwas (1946 map), lon: 35.00854, lat: 31.83943, url: 'https://palopenmaps.org/en/maps?basemap=pal250k1946'}
-  - {name: Yalo, lon: 35.0226, lat: 31.8405, url: 'https://en.wikipedia.org/wiki/Yalo'}
+  - {name: Yalu, lon: 35.0226, lat: 31.8405, url: 'https://en.wikipedia.org/wiki/Yalo'}
   sources:
   - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
     checked: '2026-11-10'
   - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
     checked: '2026-11-10'
 - id: path_innaba_imwas
-  name: Path, Innaba–Imwas
+  name: Path, Inaba–Imwas
   kind: path
+  symbol: track
   from: '1946'
   status: draft
-  note: A dotted Track on the 1946 map between Innaba and Imwas by Bayt Shanna and Salbit.
+  note: A dotted Track on the 1946 map between Inaba and Imwas by Bayt Shanna and Salbit.
   to_verify:
   - The map's date only; no source read gives the track's use in 1948 or an end.
   via:
-  - {name: Innaba, lon: 34.9476, lat: 31.9021, url: 'https://en.wikipedia.org/wiki/Innaba'}
+  - {name: Inaba, lon: 34.9476, lat: 31.9021, url: 'https://en.wikipedia.org/wiki/Innaba'}
   - {name: Bayt Shanna, lon: 34.98694, lat: 31.8775, url: 'https://en.wikipedia.org/wiki/Bayt_Shanna'}
   - {name: Salbit, lon: 34.98639, lat: 31.86944, url: 'https://en.wikipedia.org/wiki/Salbit'}
   - {name: the track south of Salbit (1946 map), lon: 34.98802, lat: 31.85321, url: 'https://palopenmaps.org/en/maps?basemap=pal250k1946'}
   - {name: Imwas, lon: 34.9927, lat: 31.842, url: 'https://en.wikipedia.org/wiki/Imwas'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_yibna_al_maghar
+  name: Path, Yibna–Mughar
+  kind: path
+  symbol: dry_weather_road
+  from: '1946'
+  status: draft
+  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Yibna and Mughar.
+  to_verify:
+  - The map's date only; no source read gives the road's use in 1948 or an end.
+  via:
+  - {name: Yibna, lon: 34.7463, lat: 31.866, url: 'https://en.wikipedia.org/wiki/Yibna'}
+  - {name: Mughar, lon: 34.7822, lat: 31.8385, url: 'https://en.wikipedia.org/wiki/Al-Maghar'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_yibna_bashshit
+  name: Path, Yibna–Bashshit
+  kind: path
+  symbol: dry_weather_road
+  from: '1946'
+  status: draft
+  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Yibna and Bashshit.
+  to_verify:
+  - The map's date only; no source read gives the road's use in 1948 or an end.
+  via:
+  - {name: Yibna, lon: 34.7463, lat: 31.866, url: 'https://en.wikipedia.org/wiki/Yibna'}
+  - {name: the road south of Yibna (1946 map), lon: 34.7465, lat: 31.845, url: 'https://palopenmaps.org/en/maps?basemap=pal250k1946'}
+  - {name: Bashshit, lon: 34.7467, lat: 31.824, url: 'https://en.wikipedia.org/wiki/Bashshit'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_bashshit_qatra
+  name: Path, Bashshit–Qatra
+  kind: path
+  symbol: dry_weather_road
+  from: '1946'
+  status: draft
+  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Bashshit and Qatra.
+  to_verify:
+  - The map's date only; no source read gives the road's use in 1948 or an end.
+  via:
+  - {name: Bashshit, lon: 34.7467, lat: 31.824, url: 'https://en.wikipedia.org/wiki/Bashshit'}
+  - {name: Qatra, lon: 34.7777, lat: 31.8229, url: 'https://en.wikipedia.org/wiki/Qatra'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_zarnuqa_rehovot
+  name: Path, Zarnuqa–Rehovot
+  kind: path
+  symbol: dry_weather_road
+  from: '1946'
+  status: draft
+  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Zarnuqa and Rehovot, by Kefar Marmorek.
+  to_verify:
+  - The map's date only; no source read gives the road's use in 1948 or an end.
+  via:
+  - {name: Zarnuqa, lon: 34.7897, lat: 31.8803, url: 'https://en.wikipedia.org/wiki/Zarnuqa'}
+  - {name: Rehovot, lon: 34.8167, lat: 31.8969, url: 'https://en.wikipedia.org/wiki/Rehovot'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_givat_brenner_aqir
+  name: Path, Givat Brenner–Aqir
+  kind: path
+  symbol: dry_weather_road
+  from: '1946'
+  status: draft
+  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Givat Brenner and Aqir.
+  to_verify:
+  - The map's date only; no source read gives the road's use in 1948 or an end.
+  via:
+  - {name: Givat Brenner, lon: 34.8003, lat: 31.8644, url: 'https://en.wikipedia.org/wiki/Givat_Brenner'}
+  - {name: the road west of Aqir (1946 map), lon: 34.806, lat: 31.8618, url: 'https://palopenmaps.org/en/maps?basemap=pal250k1946'}
+  - {name: Aqir, lon: 34.8208, lat: 31.8594, url: 'https://en.wikipedia.org/wiki/Aqir'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_al_qubayba_ramla_wadi_hunayn
+  name: Path, Qubeiba–Wadi Hunein
+  kind: path
+  symbol: dry_weather_road
+  from: '1946'
+  status: draft
+  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Qubeiba and Wadi Hunein.
+  to_verify:
+  - The map's date only; no source read gives the road's use in 1948 or an end.
+  via:
+  - {name: Qubeiba, lon: 34.7714, lat: 31.8947, url: 'https://en.wikipedia.org/wiki/Al-Qubayba,_Ramle'}
+  - {name: Wadi Hunein, lon: 34.7952, lat: 31.9274, url: 'https://en.wikipedia.org/wiki/Wadi_Hunayn'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_al_khayriyya_saqiya
+  name: Path, Kheiriya–Saqiya
+  kind: path
+  symbol: dry_weather_road
+  from: '1946'
+  status: draft
+  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Kheiriya and Saqiya.
+  to_verify:
+  - The map's date only; no source read gives the road's use in 1948 or an end.
+  via:
+  - {name: Kheiriya, lon: 34.828, lat: 32.0371, url: 'https://en.wikipedia.org/wiki/Al-Khayriyya'}
+  - {name: Saqiya, lon: 34.8431, lat: 32.029, url: 'https://en.wikipedia.org/wiki/Saqiya'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_salama_jaffa_ramat_gan
+  name: Path, Salama–Ramat Gan
+  kind: path
+  symbol: dry_weather_road
+  from: '1946'
+  status: draft
+  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Salama and Ramat Gan.
+  to_verify:
+  - The map's date only; no source read gives the road's use in 1948 or an end.
+  via:
+  - {name: Salama, lon: 34.805, lat: 32.0491, url: 'https://en.wikipedia.org/wiki/Salama,_Jaffa'}
+  - {name: Ramat Gan, lon: 34.8235, lat: 32.07, url: 'https://en.wikipedia.org/wiki/Ramat_Gan'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_al_jammasin_al_gharbi_al_shaykh_muwannis
+  name: Path, Jammasin el Gharbi–Sheikh Muwannis
+  kind: path
+  symbol: dry_weather_road
+  from: '1946'
+  status: draft
+  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Jammasin el Gharbi and Sheikh Muwannis.
+  to_verify:
+  - The map's date only; no source read gives the road's use in 1948 or an end.
+  via:
+  - {name: Jammasin el Gharbi, lon: 34.7971, lat: 32.0926, url: 'https://en.wikipedia.org/wiki/Al-Jammasin_al-Gharbi'}
+  - {name: Sheikh Muwannis, lon: 34.8031, lat: 32.1083, url: 'https://en.wikipedia.org/wiki/Al-Shaykh_Muwannis'}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: '2026-11-10'
+  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
+    checked: '2026-11-10'
+- id: path_bayt_nuba_yalo
+  name: Path, Beit Nuba–Yalu
+  kind: path
+  symbol: track
+  from: '1946'
+  status: draft
+  note: A dotted Track on the 1946 map between Beit Nuba and Yalu.
+  to_verify:
+  - The map's date only; no source read gives the track's use in 1948 or an end.
+  via:
+  - {name: Beit Nuba, lon: 35.0325, lat: 31.8533, url: 'https://en.wikipedia.org/wiki/Bayt_Nuba'}
+  - {name: Yalu, lon: 35.0226, lat: 31.8405, url: 'https://en.wikipedia.org/wiki/Yalo'}
   sources:
   - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
     checked: '2026-11-10'

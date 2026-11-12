@@ -22,11 +22,11 @@ namespace Statecraft.Game.EditorTools
             if (!AssetDatabase.IsValidFolder(RouteLayer.Folder)) AssetDatabase.CreateFolder("Assets/Resources", "Routes");
             Make(RouteLayer.RailMaterialResource, kind: 1f, opacity: 1f, RailQueue);
             Make(RouteLayer.RoadMaterialResource, kind: 0f, opacity: RoadOpacity, RoadQueue);
-            Make(RouteLayer.PathMaterialResource, kind: 2f, opacity: PathOpacity, PathQueue);
+            Make(RouteLayer.PathMaterialResource, kind: 2f, opacity: PathOpacity, PathQueue, widthM: RouteLayer.PathWidthM);
             AssetDatabase.SaveAssets();
         }
 
-        static void Make(string resource, float kind, float opacity, int queue)
+        static void Make(string resource, float kind, float opacity, int queue, float widthM = 0f)
         {
             var path = "Assets/Resources/" + resource + ".mat";
             var shader = Shader.Find("Statecraft/Route") ?? throw new System.InvalidOperationException("shader not found: Statecraft/Route"); // editor only
@@ -35,6 +35,7 @@ namespace Statecraft.Game.EditorTools
             else mat.shader = shader;
             mat.SetFloat("_Kind", kind);
             mat.SetFloat("_Opacity", opacity);
+            if (widthM > 0f) mat.SetFloat("_WidthM", widthM);   // a path's far fade measures its pixels across the ribbon
             mat.renderQueue = queue;
             EditorUtility.SetDirty(mat);
         }

@@ -13,6 +13,7 @@ Shader "Statecraft/Route"
     {
         _Kind ("Kind (0 road, 1 rail, 2 path)", Float) = 0
         _Opacity ("Opacity", Range(0, 1)) = 1
+        _WidthM ("Ribbon width (m): a path's, for its far fade (RouteLayer.PathWidthM)", Float) = 120
     }
     SubShader
     {
@@ -25,6 +26,7 @@ Shader "Statecraft/Route"
         CBUFFER_START(UnityPerMaterial)
             float _Kind;
             float _Opacity;
+            float _WidthM;
         CBUFFER_END
 
         // Colours (sRGB) after the promo's gameplay frame (promo/final/03): a wide, pale packed-dirt track with soft,
@@ -59,7 +61,9 @@ Shader "Statecraft/Route"
         static const float VergeOffset = 0.33, VergeHalfWidth = 0.07, VergeStrength = 0.6, RoadEdge = 0.22;
         // A path (#2917): trodden dust, a little darker and warmer than a road's packed dirt, with no ruts or verges and a
         // wide soft edge, so it reads as a thin worn line beside the roads. It is a detail of the gameplay zooms: it fades
-        // out as a pixel grows from PathFadeFromM to PathFadeToM (the overview's 60-150 m), rather than darkening as a road.
+        // out as a pixel across the ribbon (du * _WidthM, whatever way the path runs on the screen; along it, a tilted view
+        // foreshortens a path running towards the camera) grows from PathFadeFromM to PathFadeToM, rather than darkening
+        // as a road.
         static const float3 PathSrgb = float3(0.93, 0.85, 0.70);
         static const float PathEdge = 0.35, PathFadeFromM = 50.0, PathFadeToM = 90.0;
 
@@ -112,7 +116,7 @@ Shader "Statecraft/Route"
                 float patch = ScNoise(mapM / RoadPatchM);
                 albedo = lerp(SRGBToLinear(PathSrgb), SRGBToLinear(RoadDustSrgb), 0.5 * patch);
                 float e = max(PathEdge, du);
-                alpha = smoothstep(0.0, e, u) * smoothstep(1.0, 1.0 - e, u) * (1.0 - smoothstep(PathFadeFromM, PathFadeToM, dv));
+                alpha = smoothstep(0.0, e, u) * smoothstep(1.0, 1.0 - e, u) * (1.0 - smoothstep(PathFadeFromM, PathFadeToM, du * _WidthM));
             }
             else [branch] if (_Kind > 0.5)
             {

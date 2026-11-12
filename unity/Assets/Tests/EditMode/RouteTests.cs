@@ -458,6 +458,8 @@ public class RouteTests
             Assert.That(RouteLayer.PathWidthM, Is.InRange(100f, 140f));
             CollectionAssert.DoesNotContain(RouteLayer.KitRoutes(routes).ToList(), mine);
             CollectionAssert.DoesNotContain(RouteLayer.UnitRoutes(routes, System.DateTime.MaxValue).ToList(), mine);
+            CollectionAssert.Contains(RouteLayer.PathRoutes(routes).ToList(), mine, "the scrub keeps off it (review of #3073)");
+            Assert.IsTrue(RouteLayer.PathRoutes(routes).All(r => r.Kind == RoutePaths.Path));
             Assert.IsFalse(RoadVehicles.Plans.Any(p => p.Route == mine.Id));
             var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
             var check = RouteLayer.Ribbon(new[] { (RouteLayer.Drawn(map.Frame, mine), RouteLayer.PathWidthM) }, data, origin, "check");
@@ -476,6 +478,7 @@ public class RouteTests
                 Assert.AreEqual(1, paths.Count, "one path ribbon, in the path's window");
                 Assert.AreEqual(Resources.Load<Material>(RouteLayer.PathMaterialResource), paths[0].sharedMaterial);
                 Assert.AreEqual(2f, paths[0].sharedMaterial.GetFloat("_Kind"));
+                Assert.AreEqual(RouteLayer.PathWidthM, paths[0].sharedMaterial.GetFloat("_WidthM"), "the far fade measures pixels across the path's own width");
                 CollectionAssert.Contains(VisualToggles.Names, RouteLayer.PathsToggle);
                 VisualToggles.Set(RouteLayer.PathsToggle, false);
                 Assert.IsFalse(paths[0].gameObject.activeSelf);

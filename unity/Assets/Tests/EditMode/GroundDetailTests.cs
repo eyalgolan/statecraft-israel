@@ -160,6 +160,22 @@ public class GroundDetailTests
         Assert.AreEqual(255, At(line.line[line.line.Count / 2]));
     }
 
+    /// <summary>#2917, review of #3073: the scrub keeps off the paths as off the kit routes, so no bush stands on a trodden
+    /// way; the kits do not (KitRouteCorridors holds no path).</summary>
+    [Test]
+    public void TheScrubKeepsOffThePaths()
+    {
+        var map = OpenMap();
+        int paths = Statecraft.Game.Map.Routes.RouteLayer.PathRoutes(map.RouteList).Count();
+        Assert.Greater(paths, 0);
+        Assert.AreEqual(map.KitRouteCorridors.Count + paths, map.ScrubRouteCorridors.Count);
+        var px = GroundDetail.FillKeepOut(map.Frame, new (Vector2, float)[0], map.ScrubRouteCorridors);
+        byte At(Vector2 p) => px[Mathf.FloorToInt(p.y / map.Frame.LengthM * GroundDetail.KeepOutHeight) * GroundDetail.KeepOutWidth
+            + Mathf.FloorToInt(p.x / map.Frame.WidthM * GroundDetail.KeepOutWidth)];
+        foreach (var (line, _) in map.ScrubRouteCorridors.Skip(map.KitRouteCorridors.Count))
+            Assert.AreEqual(255, At(line[line.Count / 2]), "a path's middle is clear of scrub");
+    }
+
     /// <summary>The smallest unit base is a compact token's, its radius built as UnitLayer builds every Army base (the full
     /// trio at DrawSpread times the hex, times UnitGround.CompactScale); no bush's top reaches that base's lip.</summary>
     [Test]

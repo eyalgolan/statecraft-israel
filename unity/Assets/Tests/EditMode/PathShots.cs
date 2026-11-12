@@ -17,7 +17,7 @@ using Object = UnityEngine.Object;
 
 /// <summary>Writes the before and after stills for issue #2917, part B (paths between the villages), to
 /// `.superpowers/shots-2917-paths/&lt;SHOTS_TAG&gt;/` at the repository root (local, not committed; SHOTS_TAG from the
-/// environment, "untagged" when unset), as FurrowShots does for part A. Each pose is shot twice in one run, in the game's
+/// environment, "untagged" when unset). Each pose is shot twice in one run, in the game's
 /// opening state, with the "paths" toggle on (`&lt;pose&gt;-after.png`) and off (`&lt;pose&gt;-before.png`), so a pair differs
 /// only by the change. Explicit, so it does not run with the checks.</summary>
 [Explicit("writes stills for a pull request, not a check")]
@@ -27,6 +27,7 @@ public class PathShots
     {
         ("latrun31", 34.98, 31.88, 31f, 0f), ("latrun12", 34.98, 31.86, 12f, 0f), ("latrun6", 34.99, 31.85, 6f, 0f),
         ("rantis12", 34.98, 32.00, 12f, 0f), ("rantis6", 34.99, 32.01, 6f, 0f),
+        ("plain12", 34.78, 31.85, 12f, 0f), ("plain6", 34.765, 31.85, 6f, 0f), ("sharon12", 34.84, 32.11, 12f, 0f),
         ("gameplay03", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat, PromoPose.Gameplay03.Distance / 1000f, PromoPose.Gameplay03.Yaw),
         ("diorama02", PromoPose.Diorama02.Lon, PromoPose.Diorama02.Lat, PromoPose.Diorama02.Distance / 1000f, PromoPose.Diorama02.Yaw),
     };
@@ -76,7 +77,7 @@ public class PathShots
     {
         var tag = Environment.GetEnvironmentVariable("SHOTS_TAG");
         var dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", ".superpowers", "shots-2917-paths", string.IsNullOrEmpty(tag) ? "untagged" : tag));
-        Directory.CreateDirectory(dir); Directory.CreateDirectory(CivMovementShots.ShotDir);
+        Directory.CreateDirectory(dir);
         yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
         yield return Frames(5);
         // CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3 (GroundDetailShots).

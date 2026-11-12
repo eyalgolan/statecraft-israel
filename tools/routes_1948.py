@@ -13,8 +13,10 @@ waypoints the line is the least-cost path over the scanned map, where the cost i
   track  any dark line (cart tracks, footpaths, the thin narrow-gauge railway symbol): the 1948 Burma Road, which the
          1946 map cannot show as a road, and the 1,050 mm lines (a route's `trace` names the symbol when it is not its
          kind's);
-  path   the map's Track symbol alone, a fine dotted line (the legend of Sheet 2): a path between villages (#2917),
-         which must not slip onto the double lines of the Other roads beside it, nor onto the grid.
+  path   a path between villages (#2917), on the legend symbol its `symbol` names (the legend of Sheet 2): `track`, the
+         Track symbol alone, a fine dotted line, which must not slip onto the double lines of the Other roads beside
+         it, nor onto the grid; or `dry_weather_road`, the Other roads' double dashed line (dry weather), a cart road
+         that no route draws yet (owner, 10 November 2026), which must not slip onto a red metalled road or the grid.
 A route with `trace: straight` is not traced: its line is its waypoints joined by straight lines, for a road the map
 does not show and no source gives the line of (the 1950 Tel Aviv-Netanya road, owner, 18 October 2026, #786). It reads
 no tile, none of it is on a symbol (on_symbol 0), and its max_gap_m is its whole length.
@@ -60,7 +62,9 @@ TILE_CACHE = Path(os.environ.get("STATECRAFT_TILE_CACHE", ROOT / "tools" / ".cac
 USER_AGENT = "statecraft-israel-routes/1.0 (+https://github.com/eyalgolan/statecraft-israel)"
 
 KINDS = ("rail", "road", "track", "path")
-TRACES = KINDS + ("straight",)   # what `trace` may name: a kind's symbol, or straight lines between the waypoints
+PATH_SYMBOLS = ("track", "dry_weather_road")   # the legend symbol a path follows (its `symbol`, #2917)
+MASKS = KINDS + ("dry_weather_road",)          # the symbols symbol_mask reads: a kind's, or the Other roads' dashes
+TRACES = MASKS + ("straight",)   # what `trace` may name: a symbol, or straight lines between the waypoints
 SNAP_M = 1500.0           # a waypoint (a town's or a station's coordinates) snaps to its symbol this close
 WINDOW_MARGIN_M = 3000.0  # the search window around two waypoints: their box grown by this (or 35% of their distance)
 SPUR_M = 130.0            # a trace that comes back this close to where it was cuts the loop (a waypoint off the line)
@@ -89,6 +93,12 @@ GRID_RUN_PX = 81          # the grid is a fine dashed line along the sheet's axe
 GRID_MIN_DOTS = 20        # passes: dots with this many more along their row or column, within this run (1.3 km), are
                           # the grid; a track wanders across rows and columns, so it never has that many in one
 DOT_JOIN_PX = 7           # the dots are joined into a line by a dilation this wide (they are 5-8 px apart)
+GRID_SHARE = 0.85         # an Other road's dashes cover about 60% of their line; the grid, 2-3 px wide, covers over this
+                          # share of a GRID_RUN_PX run along its row or column once three adjacent rows are taken as one
+CASING_PX = 4             # a red metalled road's dark edge, printed against its red (a 4 x 4 dilation of the red, about
+                          # 1.5 px either side), is not an Other road
+DASH_JOIN_PX = 3          # a 3 x 3 dilation closes the 1-2 px gaps between an Other road's dashes (4-8 px long); its two
+                          # lines, 3-4 px apart, stay two, and the trace follows one
 STATUSES = ("draft", "fact-checked")
 
 
@@ -194,6 +204,19 @@ def path_dots(rgb: np.ndarray) -> np.ndarray:
     return dots & ~grid
 
 
+def dry_weather_road(rgb: np.ndarray) -> np.ndarray:
+    """The Other roads' double dashed line (#2917): the map's dark ink less the grid (GRID_RUN_PX, GRID_SHARE) and a red
+    road's dark edges (CASING_PX), its dashes joined by DASH_JOIN_PX. Lettering and village circles stay: a trace crosses them in
+    a few pixels."""
+    dark = _dark(rgb)
+    grid = np.zeros_like(dark)
+    for axis, (dy, dx) in ((1, (1, 0)), (0, (0, 1))):      # a row's grid: a band of three rows; a column's: three columns
+        band = dark | _shift(dark, dy, dx) | _shift(dark, -dy, -dx)
+        g = _box_sum(band.astype(np.int32), GRID_RUN_PX, axis) >= GRID_SHARE * GRID_RUN_PX
+        grid |= g | _shift(g, dy, dx) | _shift(g, -dy, -dx)
+    return dilate(dark & ~dilate(grid, 1) & ~dilate(symbol_mask(rgb, "road"), CASING_PX), DASH_JOIN_PX)
+
+
 def symbol_mask(rgb: np.ndarray, kind: str) -> np.ndarray:
     """Where the map shows a route of this kind (RGB uint8 image -> bool). Tuned on the 1946 sheets:
     road: the red fill of a main road: red over green by more than 90 with green and blue within 50 of each other (the
@@ -203,13 +226,16 @@ def symbol_mask(rgb: np.ndarray, kind: str) -> np.ndarray:
     rail: dark, not blue, strokes at least about 4 px thick once the white dashes inside the line are closed, which
           drops the thin double-dashed cart tracks, hairlines and road casings (lettering stays, but it is short);
     track: any dark, not blue, pixel, dilated by one so a dashed track reads as continuous;
-    path:  the Track symbol's dots (path_dots), joined into a line by a DOT_JOIN_PX dilation."""
-    if kind not in KINDS:
-        raise ValueError(f"unknown kind {kind!r}")
+    path:  the Track symbol's dots (path_dots), joined into a line by a DOT_JOIN_PX dilation;
+    dry_weather_road: the Other roads' double dashed line (dry_weather_road)."""
+    if kind not in MASKS:
+        raise ValueError(f"unknown symbol {kind!r}")
     c = rgb.astype(np.int16)
     r, g, b = c[..., 0], c[..., 1], c[..., 2]
     if kind == "path":
         return dilate(path_dots(rgb), DOT_JOIN_PX)
+    if kind == "dry_weather_road":
+        return dry_weather_road(rgb)
     if kind == "road":
         return (((r - g) > 90) & (np.abs(g - b) < 50) & (r > 130)) | (((r - g) > 65) & (np.abs(g - b) < 35) & (r > 125))
     dark = _dark(rgb)
@@ -431,10 +457,17 @@ def simplify(points: list[tuple[float, float]], tol: float) -> list[tuple[float,
     return [tuple(p) for p in pts[keep]]
 
 
+def traced_symbol(route: dict) -> str:
+    """The symbol a route is traced on: its `trace`, else a dry-weather path's Other road, else its kind's."""
+    if "trace" in route:
+        return route["trace"]
+    return "dry_weather_road" if route["kind"] == "path" and route.get("symbol") == "dry_weather_road" else route["kind"]
+
+
 def trace_route(route: dict, fetch: bool, preview: Path | None = None) -> list[tuple[float, float]]:
     """The route's lon/lat polyline: least-cost paths between its consecutive waypoints, joined and simplified."""
     via = [(float(w["lon"]), float(w["lat"])) for w in route["via"]]
-    kind = route.get("trace", route["kind"])
+    kind = traced_symbol(route)
     if kind == "straight":
         route["_on_symbol"] = 0.0
         route["_max_gap_m"] = length_km(via) * 1000
@@ -530,6 +563,8 @@ def validate_routes(doc: dict, bounds: dict) -> None:
         seen.add(rid)
         if r.get("kind") not in KINDS or r.get("trace", r["kind"]) not in TRACES:
             raise ValueError(f"{rid}: kind must be one of {KINDS}, and trace, when given, one of {TRACES}")
+        if (r["kind"] == "path") != ("symbol" in r) or ("symbol" in r and r["symbol"] not in PATH_SYMBOLS):
+            raise ValueError(f"{rid}: a path, and only a path, names the legend symbol it follows: symbol one of {PATH_SYMBOLS}")
         if r.get("status") not in STATUSES:
             raise ValueError(f"{rid}: status must be one of {STATUSES}")
         signoff = review_record.problem(r)   # a person's sign-off beside the status (#375)
