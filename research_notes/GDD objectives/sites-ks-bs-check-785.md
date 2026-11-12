@@ -41,7 +41,7 @@ ruling rests on, and a person has to read it: see "What a person has to open".
 - **Page images.** The one PDF tagged `[V]` below (the Ministry of Education sheet) was also rendered to an image and viewed on
   27 Oct 2026: the two lines quoted for it (Beit Shemesh and Kiryat Shmona) read the same on the page image as in the text layer.
   No other source was viewed as an image: HTML pages and the CBS sheet were read as text.
-- Requests used `curl` and the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- Requests used `curl` and a research User-Agent that named the project's repository.
   One extra probe of the municipality's site with a generic browser User-Agent also answered 403 (it was a probe, no content was
   obtained from it). The built-in WebFetch tool was also used (no Tavily key on this box); no search result is cited as a source.
 - **Coordinates and hexes.** The CBS localities file 2024 (https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx)

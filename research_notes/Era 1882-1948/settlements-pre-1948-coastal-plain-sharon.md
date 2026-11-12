@@ -15,8 +15,8 @@ section 2 item 6: a [V] an agent added is written `[V, agent read 2026-10-24; a 
 
 ## How it was done
 
-- Every page was fetched on 23 October 2026 with the User-Agent
-  `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- Every page was fetched on 23 October 2026 with a research User-Agent
+  that named the project's repository.
 - **Founding year and coordinates (official).** Central Bureau of Statistics, localities file 2024,
   https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx (checked 2026-10-23),
   columns `שם נפה`, `אזור טבעי`, `דת יישוב`, `שנת ייסוד`, `שם יישוב באנגלית` and `קואורדינטות`. The

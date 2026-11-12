@@ -117,9 +117,9 @@ flowchart LR
 | 2 | Monthly turns for the real game, and the five resources | Done | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
 | 3 | Every city, with housing, jobs and immigrant absorption | Done: 8 of 8 PRs merged | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | Pioneers, building sites, roads and railways | In progress: 6 of 8 PRs merged | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
-| 5 | Military units, movement and combat | In progress: 13 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
-| 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | In progress: 8 of 12 PRs merged | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
-| 7 | Ministers, events and the full 44-turn game | In progress: 6 of 13 PRs merged | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
+| 5 | Military units, movement and combat | In progress: 14 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
+| 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | In progress: 9 of 12 PRs merged | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
+| 7 | Ministers, events and the full 44-turn game | In progress: 7 of 13 PRs merged | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
 
 ### Other tracks
 

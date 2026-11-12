@@ -317,7 +317,7 @@ is shown. The stage is skipped while `steam/steam.json` still has a `null` ID (u
 **itch.io.** Pushes stay off until the owner or an agent (owner, 2 Nov 2026, "2 (a)") runs
 `uv run tools/nightly.py savetest --tag <a published nightly>` once
 and it prints `PASS` (the two-upload save test of `docs/m3-release.md`, "Upload to itch.io"); until then each night
-logs `itch: skipped (<reason>)`, naming the missing config key or the problem, and pushes nothing to itch. The save test pushes only to a separate test page, named in the job's `config.json` as
+logs `itch: skipped (<reason>)`, naming the missing config key or the problem, and pushes nothing to itch. Once the test has run, the command prints the line it records in the job's `LOG.md` (`SAVETEST <result> tag=<tag> <why>`), then the path of the run's `evidence.json` when it wrote one, then the result word; a run refused before the test starts prints only the refusal, on stderr. The save test pushes only to a separate test page, named in the job's `config.json` as
 `savetest_itch_target` (`user/project:channel`), and refuses to run without it or if it names the public project:
 each upload hides the game while itch unpacks it, which took up to an hour on 28 October 2026. It never reads the
 test page: it loads each upload's game frame from the upload and build ids `butler status` shows, so the test page

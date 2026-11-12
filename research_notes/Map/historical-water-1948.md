@@ -15,7 +15,7 @@ regenerated: every hex figure below comes from read-only scripts run in memory o
   It is a property of the game's inputs, not a historical fact.
 - Hexes are axial `(q, r)` as in `hexes.json`; "lon/lat" is the hex centre as `hexes.json` gives it. A hex is about
   65 km² (5 km circumradius, pointy top).
-- Every request was made with the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- Every request was made with a research User-Agent that named the project's repository.
   Sources are listed at the end with the check date.
 
 Every [V] in this note was an agent's reading on 2026-10-14, unless the tag gives a later date; a person's check is pending for all of them.

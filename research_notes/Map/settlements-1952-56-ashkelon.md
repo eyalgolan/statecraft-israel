@@ -21,8 +21,8 @@ owner can draw this line differently.**
 
 ## How it was done
 
-- Every page was fetched on 22 October 2026 with `curl` (User-Agent
-  `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`) or read through the MediaWiki
+- Every page was fetched on 22 October 2026 with `curl` (research User-Agent
+  that named the project's repository) or read through the MediaWiki
   API. No request carried a personal identifier. No web search result was used as a source.
 - **The candidate pool** is the union of these lists:
   1. every row of the CBS localities file 2024 in subdistrict 61 whose "שנת ייסוד" (year of founding) is 1952 to 1956:

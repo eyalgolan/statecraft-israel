@@ -11,8 +11,8 @@ date and group, location and hex, fit with Task 5.0's criteria, and factual flag
 
 ## How it was done
 
-- Every page was fetched on 14 October 2026 with `curl` and the User-Agent
-  `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`. No request carried a personal
+- Every page was fetched on 14 October 2026 with `curl` and a research User-Agent
+  that named the project's repository. No request carried a personal
   identifier. A web search tool was used only to find pages; each page cited was then fetched and read directly.
   One later addition was read differently: the Beit Guvrin conservation survey (section 28, read 1 November 2026) came
   from a Wayback copy and was read from its rendered page images; its entry says so.

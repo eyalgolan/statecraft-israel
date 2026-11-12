@@ -17,7 +17,7 @@ owner decides every question; where this note recommends, it says so.
 - Quotation marks are verbatim from the source named, for the reader to check. None is meant for event text. Real people
   are named in citations and as office-holders; event text would use office placeholders (`docs/WRITING_EVENTS.md`).
   Hebrew quotations are given in Hebrew with an English paraphrase.
-- Requests were made with the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- Requests were made with a research User-Agent that named the project's repository.
   Wikipedia was read through the MediaWiki API and used only as a pointer; where a fact rests on it, the tag says so.
 - Turns are monthly, from the 15th. "The 15 February 1950 turn" means the turn that starts on that day.
 

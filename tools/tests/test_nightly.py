@@ -2418,6 +2418,40 @@ def test_any_other_http_answer_from_the_frame_ends_inconclusive_at_once(saved, c
     assert t.runner.runs == [] and len(t.fetched) == 1 and f"HTTP {code}" in t.evidence()["detail"]
 
 
+def test_an_inconclusive_save_test_prints_its_recorded_line_and_evidence_path(saved, capsys):
+    # The v0.4.1 run (11 Nov 2026) printed only INCONCLUSIVE; the why was in LOG.md, HANDOFF.md and evidence.json alone.
+    t = saved()
+    assert t.run(frame_for(t.itch, t.fetched, missing=10_000, code=404)) == "INCONCLUSIVE"
+    recorded = next(line for line in t.log().splitlines() if "SAVETEST" in line).removeprefix("- ")
+    evidence = next((t.job / "savetest").glob("*/evidence.json"))
+    assert "still answered HTTP 404" in recorded
+    assert capsys.readouterr().out.splitlines() == [recorded, f"evidence: {evidence}"]
+
+
+def test_a_save_test_prints_no_evidence_path_when_its_file_disagrees_with_the_result(saved, monkeypatch, capsys):
+    # A PASS evidence file is written, enabling itch fails and the INCONCLUSIVE rewrite fails: the file on disk still
+    # says PASS, so the command prints only the recorded line.
+    t = saved()
+    real_write, writes = Path.write_text, []
+
+    def write(path, text, *args, **kwargs):
+        if path.name == "evidence.json":
+            writes.append(path)
+            if len(writes) > 1:
+                raise OSError("evidence disk full")
+        return real_write(path, text, *args, **kwargs)
+
+    def enable_itch(*args):
+        raise OSError("config read-only")
+
+    monkeypatch.setattr(Path, "write_text", write)
+    monkeypatch.setattr(nightly, "enable_itch", enable_itch)
+    assert t.run() == "INCONCLUSIVE" and len(writes) == 2 and t.evidence()["result"] == "PASS"
+    recorded = next(line for line in t.log().splitlines() if "SAVETEST" in line).removeprefix("- ")
+    assert recorded == f"SAVETEST INCONCLUSIVE tag={TAG} OSError: config read-only"
+    assert capsys.readouterr().out.splitlines() == [recorded]
+
+
 def test_a_b_frame_that_is_never_served_is_inconclusive_not_fail(saved):
     t = saved()
     def fetch(url, timeout=30):

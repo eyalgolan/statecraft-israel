@@ -21,7 +21,7 @@ claim and does not repeat.
 - Quotation marks are verbatim from the text read, for a person to find. None is meant for event text.
 - JTA dating follows the owner's 24 Oct rule (#1596): the archive page shows the bulletin date; the event date is the
   dateline on the item in the bulletin PDF, read on the page image (`pdftoppm`, 130 dpi crops).
-- Requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`; no
+- Requests used a research User-Agent that named the project's repository; no
   header was changed to get past a block.
 
 ## Sources used and how far each was reached

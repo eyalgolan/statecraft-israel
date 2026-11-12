@@ -116,7 +116,7 @@ and Netiv HaAsara. No locality is on both lists. This is a reading of the source
   PDF (`http://pdfs.jta.org/<year>/<date>_<no>.pdf`) of every item cited, read as page images through PyMuPDF at 200 dpi
   and RapidOCR (the OCR drops spaces). **Dates rule:** the archive page shows the bulletin date; the event date comes from
   the dateline in the PDF and from "today", "yesterday" or "this week" read against it.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
   Hebrew dates were converted with the `convertdate` library (Nisan = 1).
 
 ## Summary table

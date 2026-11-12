@@ -65,6 +65,9 @@ namespace Statecraft.Sim
     {
         public string Id { get; }
         public string CapitalLocation { get; }
+        /// <summary>The hex of <see cref="CapitalLocation"/>, the region's label place, as the place files put it (#2473: a
+        /// returned captive goes to the nearest census city to it). Not in <see cref="Canonical"/>.</summary>
+        public (int Q, int R) CapitalHex { get; }
         public IReadOnlyList<(int Q, int R)> MemberHexes { get; }
         public IReadOnlyList<string> MemberLocations { get; }
         public IReadOnlyList<(int Q, int R)> FieldHexes { get; }
@@ -75,9 +78,9 @@ namespace Statecraft.Sim
         public string BindingStatus { get; }
         public string ControlStatus { get; }
         public string? OpeningController { get; }
-        internal PlayerRegionGeography(PlayerRegionDefinition row, bool hosts)
+        internal PlayerRegionGeography(PlayerRegionDefinition row, bool hosts, (int Q, int R) capitalHex)
         {
-            Id = row.Id; CapitalLocation = row.CapitalLocation;
+            Id = row.Id; CapitalLocation = row.CapitalLocation; CapitalHex = capitalHex;
             MemberHexes = Array.AsReadOnly(row.MemberHexes.Select(h => (h.Q!.Value, h.R!.Value))
                 .OrderBy(h => h.Item1).ThenBy(h => h.Item2).ToArray());
             MemberLocations = Array.AsReadOnly(row.MemberLocations.OrderBy(x => x, StringComparer.Ordinal).ToArray());
@@ -218,7 +221,7 @@ namespace Statecraft.Sim
                     else if (!ownPlaces.Contains(h.Host)) Fail(field + ".host", $"{label}: {h.Host} is not a member location of {row.Id}");
                 }
                 if (string.IsNullOrWhiteSpace(row.CapitalLocation) || !ownPlaces.Contains(row.CapitalLocation)) Fail("capital_location", "must name a member location on a member hex");
-                var frozen = new PlayerRegionGeography(row, readsHosts);
+                var frozen = new PlayerRegionGeography(row, readsHosts, placements[row.CapitalLocation]);
                 result.regions.Add(row.Id, frozen); result.capitals.Add(row.CapitalLocation, row.Id);
                 foreach (var h in ownHexes) result.hexes.Add(h, row.Id);
                 foreach (var p in ownPlaces) result.places.Add(p, row.Id);

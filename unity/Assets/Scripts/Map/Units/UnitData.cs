@@ -179,7 +179,7 @@ namespace Statecraft.Game.Map.Units
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
         string? reviewedOn;
         /// <summary>A fact-checked row's day of its person check (#2722). The sim's StartingForces reads it for the release
-        /// gate; the map does not.</summary>
+        /// gate, and the card's person-checked note (<see cref="UnitData.IsPersonChecked"/>, #2918 P2) by the same rule.</summary>
         public string? CheckedOn { get; set; }
         /// <summary>Why the map does not draw the unit (the sources name it but do not place it), or null.</summary>
         public string? Hidden { get; set; }
@@ -477,6 +477,24 @@ namespace Statecraft.Game.Map.Units
                 if (!(host.EndsWith(".wikipedia.org", StringComparison.Ordinal) || host == "www.wikidata.org")) return false;
             }
             return any;
+        }
+
+        /// <summary>True when a person has checked the row against its sources (status fact-checked) and no source of its
+        /// strength, an anchor or an order target was checked after its checked_on: the release gate's rule
+        /// (ReleaseGate.StartingForcesUnchecked, #2722), so a field sourced after the check is not called checked. The
+        /// card's person-checked note (#2918 P2; owner, 10 November 2026).</summary>
+        public static bool IsPersonChecked(UnitEntry u)
+        {
+            if (u.Status != "fact-checked" || string.IsNullOrEmpty(u.CheckedOn)) return false;
+            bool Later(List<UnitSource>? sources)
+            {
+                if (sources != null) foreach (var s in sources) if (string.CompareOrdinal(s.Checked, u.CheckedOn) > 0) return true;
+                return false;
+            }
+            if (u.Strength != null && Later(u.Strength.Sources)) return false;
+            foreach (var a in u.Anchors) if (Later(a.Sources)) return false;
+            if (u.OrderTargets != null) foreach (var a in u.OrderTargets) if (Later(a.Sources)) return false;
+            return true;
         }
     }
 }
