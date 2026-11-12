@@ -1,6 +1,6 @@
 Statecraft: Israel Exclusive Asset Licence 1.0 (DRAFT)
 
-Status: draft for the creators' agreement and for review by a lawyer. It has no effect for any work until that
+Status: draft for the creators' agreement. It has no effect for any work until that
 work's creator agrees to it in writing; the date of each agreement is recorded in docs/oss/DECISIONS.md. This text
 is the owner's proposal, not legal advice.
 
