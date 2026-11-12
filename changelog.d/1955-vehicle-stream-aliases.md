@@ -1,0 +1,1 @@
+Hex tiles and vehicle units now request the shipped Willys, Sandwich, horse wagon, citrus truck and waterline fishing boat models through the existing Collection stream. Their fallback remains visible while a bundle is pending or fails; existing import transforms and originals are unchanged. Refs #1955.

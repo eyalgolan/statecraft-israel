@@ -51,6 +51,27 @@ public sealed class HexCollectionFiguresTests
         Assert.That(changes, Is.EqualTo(1));
     }
 
+    // Approved mappings under #1955 (owner, 30 October 2026); keep their shipped prefab root transforms.
+    [TestCase("proto:figure-vehicle-willys-jeep-1948-v2", "figure-vehicle-willys-jeep-1948-v2")]
+    [TestCase("proto:figure-vehicle-sandwich-convoy-1948-v2", "figure-vehicle-sandwich-convoy-1948-v2")]
+    [TestCase("proto:figure-vehicle-horse-wagon-1948-v2", "figure-vehicle-horse-wagon-1948-v2")]
+    [TestCase("proto:vehicle-citrus-truck-v1", "figure-vehicle-citrus-truck-1948-v2")]
+    [TestCase("proto:vehicle-fishing-boat-1948-v2", "vehicle-fishing-boat-1948-v2wl")]
+    public void VehicleHookStreamsItsApprovedShippedModel(string hook, string figure)
+    {
+        Assert.That(HexModels.FigureAliases, Has.Exactly(1).EqualTo((hook, figure, "far")));
+        Assert.That(HexCollectionFigures.Streams(hook), Is.True, hook);
+        using var models = new HexCollectionFigures(() => {});
+        models.Prefab(hook); models.Prefab(hook);
+        Assert.That(pending.Select(r => (r.id, r.detail)), Is.EqualTo(new[] { (figure, CollectionDetail.Far) }), "asked once");
+        Assert.That(CollectionCatalog.BundleOf(figure), Is.Not.Null, "a shipped bundle owns the model");
+        var editor = HexModels.Prefab(hook);
+        Assert.That(editor, Is.Not.Null, "the editor draws the shipped prefab");
+        Assert.That(UnityEditor.AssetDatabase.GetAssetPath(editor), Is.EqualTo(CollectionCatalog.PrefabPath(figure, CollectionDetail.Far)));
+        var arrived = Model(); pending[0].done(arrived);
+        Assert.That(models.Prefab(hook), Is.SameAs(arrived), "the player replaces its fallback when the model arrives");
+    }
+
     // The five civilian hooks (#1955; owner, 30 October 2026: "Yes to both"): each tile still asks for its hook, and each
     // hook streams Tal Heuberger's shipped Collection original of the same id, far, from the people's bundle.
     [TestCase("maabara_camp", "figure-elder-immigrant-v1")]

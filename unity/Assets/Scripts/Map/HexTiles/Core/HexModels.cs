@@ -108,10 +108,17 @@ namespace Statecraft.HexTiles
             ("proto:figure-arriving-man-c01-1948-v2", "figure-c01-arriving-man-v2", "near"),
             ("proto:figure-sabra-pioneer-c04-1948-v2", "figure-c04-sabra-pioneer-v3", "far"),
             // The grazing flock (Tal, 19 October 2026: the lite protos see through on 8.4% and 6.3% of rays): the static far
-            // level, whole and lighter than the protos (about 1,350 triangles each). The horse wagon and the vehicle units'
-            // protos measure whole and keep drawing.
+            // level, whole and lighter than the protos (about 1,350 triangles each).
             ("proto:figure-sheep-lite-1948", "figure-sheep-idle-1948-v1", "far"),
             ("proto:figure-donkey-lite-1948", "figure-donkey-1948-v1", "far"),
+            // Approved vehicle mappings (#1955; owner, 30 October 2026). Exact originals for the wagon and units;
+            // the citrus truck and waterline fishing boat are the separately approved reuse mappings. The full shipped
+            // prefabs retain their import rotation; board/unit placement composes yaw with it (#2006).
+            ("proto:figure-vehicle-willys-jeep-1948-v2", "figure-vehicle-willys-jeep-1948-v2", "far"),
+            ("proto:figure-vehicle-sandwich-convoy-1948-v2", "figure-vehicle-sandwich-convoy-1948-v2", "far"),
+            ("proto:figure-vehicle-horse-wagon-1948-v2", "figure-vehicle-horse-wagon-1948-v2", "far"),
+            ("proto:vehicle-citrus-truck-v1", "figure-vehicle-citrus-truck-1948-v2", "far"),
+            ("proto:vehicle-fishing-boat-1948-v2", "vehicle-fishing-boat-1948-v2wl", "far"),
             // The five civilian hooks of the ma'abara and Negev kibbutz tiles (#1955; owner, 30 October 2026: "Yes to both"):
             // Tal Heuberger's shipped Collection originals with the same ids, at the far level (one -stream prefab for both).
             ("proto:figure-elder-immigrant-v1", "figure-elder-immigrant-v1", "far"),
