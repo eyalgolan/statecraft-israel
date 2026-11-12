@@ -1106,6 +1106,35 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(layer.Wanted.SequenceEqual(HexPropModels.Wants(map, d2)), "the props wanted are the new date's");
         }
 
+        /// <summary>An arms workshop built at the same date re-plans the props (they keep clear of its b21, Others): the special
+        /// buildings' wanted list is the dated rows plus the built workshops (SpecialBuildingModels.ArmsWorkshops, passed in as
+        /// GameRoot passes them), with the same stations, dated tokens, civilians' list and rural plan.</summary>
+        [Test]
+        public void AnArmsWorkshopBuiltAtTheSameDateRebuildsWithItsWorkshop()
+        {
+            var map = OpenMap();
+            var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+            foreach (var era in c.Eras) { era.Systems.Ruleset = Statecraft.Sim.SaveGame.Gdd03Ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
+            var d = Opening;
+            var layer = Show(map, d);
+            var people = map.Terrain.transform.Find(CivilianPeople.Name)!.GetComponent<CivilianPeople>();
+            var list = people.Wanted; int rural = RuralLife.VersionOf(map);
+            int replans = layer.Replans;
+            HexPropModels.ShowAt(map, d, c, Array.Empty<Statecraft.Sim.CityProject>());
+            Assert.AreEqual(replans, layer.Replans, "premise: no workshop built, nothing changed: no re-plan");
+
+            var h = c.SettlementHexes.Single(x => x.Id == "rehovot");
+            var projects = new[] { new Statecraft.Sim.CityProject(300, Statecraft.Sim.Workshops.ArmsWorkshop, "rehovot", h.Q, h.R, 0, d) };
+            Assert.AreEqual(1, SpecialBuildingModels.ArmsWorkshops(c, projects).Count, "premise: one workshop built");
+            CollectionGeometryFixture.People(map, d, Array.Empty<Statecraft.Sim.Placement>(), c);
+            Assert.IsTrue(ReferenceEquals(list, people.Wanted), "premise: the civilians' list is the same (CivilianPeople swaps it only on a change)");
+            CollectionGeometryFixture.Rural(map);
+            Assert.AreEqual(rural, RuralLife.VersionOf(map), "premise: the same rural plan");
+            CollectionGeometryFixture.Special(map, d, c, projects);
+            HexPropModels.ShowAt(map, d, c, projects);
+            Assert.AreEqual(replans + 1, layer.Replans, "a workshop was built at the same date: one re-plan");
+        }
+
         /// <summary>A dated token's window ending re-plans the props (they keep clear of the tokens still present, KitGround.OnToken,
         /// and so does the special buildings' plan they keep clear of): the day before the first window that ends after the 1948
         /// rows leave, then that day, with the same stations. Then no prop stands on a token still present.</summary>
