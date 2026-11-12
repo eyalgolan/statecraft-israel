@@ -10,8 +10,8 @@
 // It only reads (passive, no preventDefault) and ignores events whose target is not Unity's canvas.
 //
 // The listener is never removed: Unity's Quit() removes only the handlers Emscripten registered. This game creates
-// the player once, and the queue is capped, so nothing grows. The HEAPF32/HEAP32 indexing assumes wasm32 pointers
-// (Unity 6000.3's WebGL target).
+// the player once, and the queue is capped, so nothing grows. The HEAPF32/HEAP32 indexing assumes wasm32 pointers,
+// read unsigned (>>>) because the heap can grow past 2 GB (Unity 6000.3's WebGL target).
 mergeInto(LibraryManager.library, {
   $StatecraftWheel: { queue: [], listening: false },
 
@@ -29,8 +29,8 @@ mergeInto(LibraryManager.library, {
     }
     var n = Math.min(capacity, w.queue.length / 2);
     for (var i = 0; i < n; i++) {
-      HEAPF32[(deltaY >> 2) + i] = w.queue[2 * i];
-      HEAP32[(mode >> 2) + i] = w.queue[2 * i + 1];
+      HEAPF32[(deltaY >>> 2) + i] = w.queue[2 * i];
+      HEAP32[(mode >>> 2) + i] = w.queue[2 * i + 1];
     }
     w.queue.splice(0, 2 * n);
     return n;

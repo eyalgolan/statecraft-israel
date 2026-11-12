@@ -144,13 +144,16 @@ namespace Statecraft.HexTiles
         public static float DistanceToLine(Vector3 p, IReadOnlyList<Vector3> line)
         {
             float best = float.MaxValue;
-            for (int i = 0; i + 1 < line.Count; i++)
-            {
-                Vector2 a = new Vector2(line[i].x, line[i].z), b = new Vector2(line[i + 1].x, line[i + 1].z), q = new Vector2(p.x, p.z);
-                var ab = b - a; float t = Mathf.Clamp01(Vector2.Dot(q - a, ab) / Mathf.Max(ab.sqrMagnitude, 1e-4f));
-                best = Mathf.Min(best, (q - (a + ab * t)).magnitude);
-            }
+            for (int i = 0; i + 1 < line.Count; i++) best = Mathf.Min(best, DistanceToSegment(p, line[i], line[i + 1]));
             return best;
+        }
+
+        /// <summary>Distance on the ground (x, z) from p to the segment a-b.</summary>
+        public static float DistanceToSegment(Vector3 p, Vector3 a3, Vector3 b3)
+        {
+            Vector2 a = new Vector2(a3.x, a3.z), b = new Vector2(b3.x, b3.z), q = new Vector2(p.x, p.z);
+            var ab = b - a; float t = Mathf.Clamp01(Vector2.Dot(q - a, ab) / Mathf.Max(ab.sqrMagnitude, 1e-4f));
+            return (q - (a + ab * t)).magnitude;
         }
 
         float Terrain(Vector3 p)
