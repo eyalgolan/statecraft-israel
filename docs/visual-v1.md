@@ -3713,7 +3713,8 @@ furrows fade there through `furrows.png`'s 158 x 211 m texels, so they can reach
 points, to within 0.5 m. `test_the_shader_holds_the_bakes_constants` reads the shader's own copies (the block and strip
 size, the angle range, the pad, the wobble's numbers and the table's 16-bit decoding) and fails if they leave the bake's.
 As the scrub does, the furrows give way to the keep-out mask (`_ScDetailKeepOutTex`: the towns, the routes and the units'
-clearings), so no lines show through a unit token's clearing or along a route corridor.
+clearings, and the paths between villages since #3073), so no lines show through a unit token's clearing or along a
+route corridor or a path.
 
 **Why in the ground detail pass.** As with #2878, the terrain function sits at the frame-time cliff of issue #391. The
 furrows are a variant of `GroundDetail.shader` (`SC_FURROWS`) behind the `furrows` visual toggle, so the profile prices

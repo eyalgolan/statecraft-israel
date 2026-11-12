@@ -386,8 +386,9 @@ toggles, so `?vprofile` prices each one.
 - the kits and the unit tokens do not keep off them (`KitRoutes` and `UnitRoutes` leave them out). A footpath runs
   between a village's houses and trees, and no house, tree or token moved for them; a token, and a placement, may
   stand on a path as on open ground;
-- the scrub does keep off them, painted and standing: `MapScene.ScrubRouteCorridors` is the kit routes' corridors and
-  the paths' (`RouteLayer.PathRoutes`), and `GroundDetail` keeps its scrub out of both (review of #3073).
+- the scrub does keep off them, painted and standing, and so do the furrows: `MapScene.ScrubRouteCorridors` is the
+  kit routes' corridors and the paths' (`RouteLayer.PathRoutes`), and `GroundDetail` keeps both out of its keep-out
+  mask (review of #3073).
 
 **Runtime form** (issue #321). Boot reads the traced lines from `content/map/route_paths_1948.tsv` instead of parsing
 the YAML (about 125 ms at `--cpu 4`), as the localities do since #291.
