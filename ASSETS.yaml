@@ -3553,4 +3553,38 @@ rules:
     artist: "Tal Heuberger"
     credit: "Tal Heuberger · CC BY-NC-ND 4.0"
     note: "Ramla whole town from #2085 (Tripo Studio, approved AI concepts; provenance in asset-sources/prepared-towns-20261031/provenance.json and this folder's provenance.json), drawn far off (40 km and out) on Ramla by TownLandmarks.ById in place of the stone village (owner, 2 November 2026: \"Yes, Tal's Ramla (Recommended)\"). Tal's 31 October 2026 permission covers approved export conversions; the same compatibility-export precedent as the placed vehicles (#1932, #2046). Landed in the project's own PR, crediting Tal Heuberger, under the owner's ruling of 2 November 2026 (\"Yes, #1177 covers them\") and the #1177 ruling of 20 and 22 October 2026 (CC BY-NC-ND 4.0 for Tal's new models, confirmed by Tal as the owner reported). No exact 1948 historical acceptance asserted."
+
+  # Four archival originals delivered for #2381; exact-file records.
+  - glob: "asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-original-76df2d06.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio; unchanged high-detail provider original from the prepared 21-file batch. Exact source and input provenance: asset-sources/prepared-towns-20261031/provenance.json; recovered audit #2007 and #2381. SHA-256 801ffc2d15b782671c4eaa180a9938063a37efba22f04de85e0f9516a950efd5."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Archival source only, not enabled in a player. Public distribution of the exact batch authorized 31 October 2026; own paid generation account confirmed. Covered by #1177 under the owner's 2 November 2026 ruling. Same licence and credit as the other prepared sources. Exact bytes independently hashed on 12 November 2026; #2381 and the reviewed #2253 exception pin both size and SHA-256. No compression, decimation or re-export; no reference photographs included; no new historical or visual acceptance asserted."
+  - glob: "asset-sources/prepared-towns-20261031/safed/statecraft-safed-original-6707144a.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio; unchanged high-detail provider original from the prepared 21-file batch. Exact source and input provenance: asset-sources/prepared-towns-20261031/provenance.json; recovered audit #2007 and #2381. SHA-256 4f389ce9fbff53fd577074804954581434aee0ae12a06d84df99168677535303."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Archival source only, not enabled in a player. Public distribution of the exact batch authorized 31 October 2026; own paid generation account confirmed. Covered by #1177 under the owner's 2 November 2026 ruling. Same licence and credit as the other prepared sources. Exact bytes independently hashed on 12 November 2026; #2381 and the reviewed #2253 exception pin both size and SHA-256. No compression, decimation or re-export; no reference photographs included; no new historical or visual acceptance asserted."
+  - glob: "asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-original-d6c8293a.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio; unchanged high-detail provider original from the prepared 21-file batch. Exact source and input provenance: asset-sources/prepared-towns-20261031/provenance.json; recovered audit #2007 and #2381. SHA-256 3d5227a620198c50a134f1e9174e37cdc2d99f6bb57c2a2df4c462efc711de87."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Archival source only, not enabled in a player. Public distribution of the exact batch authorized 31 October 2026; own paid generation account confirmed. Covered by #1177 under the owner's 2 November 2026 ruling. Same licence and credit as the other prepared sources. Exact bytes independently hashed on 12 November 2026; #2381 and the reviewed #2253 exception pin both size and SHA-256. No compression, decimation or re-export; no reference photographs included; no new historical or visual acceptance asserted."
+  - glob: "asset-sources/prepared-weapons-20261031/k98k/statecraft-k98k-original-64e8aded.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tal Heuberger, Tripo Studio; unchanged high-detail provider original from the prepared 21-file batch. Exact source and input provenance: asset-sources/prepared-weapons-20261031/provenance.json; recovered audit #2007 and #2381. SHA-256 320fd59ec86068936dc3cfd9c23e3549ca7926facdf357ea24c40b08360cffc8."
+    status: verified
+    artist: "Tal Heuberger"
+    credit: "Tal Heuberger · CC BY-NC-ND 4.0"
+    note: "Archival source only, not enabled in a player. Public distribution of the exact batch authorized 31 October 2026; own paid generation account confirmed. Covered by #1177 under the owner's 2 November 2026 ruling. Same licence and credit as the other prepared sources. Exact bytes independently hashed on 12 November 2026; #2381 and the reviewed #2253 exception pin both size and SHA-256. No compression, decimation or re-export; no reference photographs included; no new historical or visual acceptance asserted."
 removed: []

@@ -122,7 +122,7 @@ def test_tal_original_licensing_matches_manifest_exactly():
     for path in originals:
         assert sum(r["glob"] == path and r["licence"] == "CC-BY-NC-ND-4.0" for r in rules) == 1, path
     independent = [r for r in rules if r["licence"] == "CC-BY-NC-ND-4.0" and r["glob"] not in originals]
-    # Tal Heuberger's #2082-#2085 files (owner, 2 November 2026: "Yes, #1177 covers them"): the 24 exact source files and,
+    # Tal Heuberger's #2082-#2085 files (owner, 2 November 2026: "Yes, #1177 covers them"): the 28 exact source files (including the four #2381 archival originals) and,
     # for the four #2085 towns in the game, each town's compatibility FBX and colour map. Every other grant stays as it was.
     sources = {
         "asset-sources/prepared-towns-20261031/" + p for p in (
@@ -130,7 +130,9 @@ def test_tal_original_licensing_matches_manifest_exactly():
             "ramla/statecraft-ramla-approved-textured-aaf2619f.glb", "ramla/statecraft-ramla-approved-textured-aaf2619f_basecolor.jpg",
             "safed/statecraft-safed-approved-textured-1e2b8e59.glb", "safed/statecraft-safed-approved-textured-1e2b8e59_basecolor.jpg",
             "tiberias/statecraft-tiberias-smartmesh-original-086ad55f.glb", "tiberias/statecraft-tiberias-smartmesh-textured-086ad55f.glb",
-            "tiberias/statecraft-tiberias-smartmesh-textured-086ad55f_basecolor.jpg")
+            "tiberias/statecraft-tiberias-smartmesh-textured-086ad55f_basecolor.jpg",
+            "netanya/statecraft-netanya-original-76df2d06.glb", "safed/statecraft-safed-original-6707144a.glb",
+            "tiberias/statecraft-tiberias-original-d6c8293a.glb")
     } | {
         "asset-sources/recovered-vegetation-20261031/" + p for p in (
             "g25_papyrus/albedo.jpg", "g25_papyrus/g25_papyrus.obj", "g25_papyrus/normal.jpg",
@@ -139,7 +141,8 @@ def test_tal_original_licensing_matches_manifest_exactly():
         "asset-sources/prepared-weapons-20261031/" + p for p in (
             "k98k/statecraft-k98k-approved-textured-b48a435f.glb", "k98k/statecraft-k98k-approved-textured-b48a435f_basecolor.jpg",
             "mg34/statecraft-mg34-approved-textured-3a384995.glb", "mg34/statecraft-mg34-approved-textured-3a384995_basecolor.jpg",
-            "sten/statecraft-sten-approved-textured-bc6b06c8.glb", "sten/statecraft-sten-approved-textured-bc6b06c8_basecolor.jpg")
+            "sten/statecraft-sten-approved-textured-bc6b06c8.glb", "sten/statecraft-sten-approved-textured-bc6b06c8_basecolor.jpg",
+            "k98k/statecraft-k98k-original-64e8aded.glb")
     } | {
         "asset-sources/c06-point-fire-reference-20261031/" + p for p in (
             "C06-POINT-FIRE-FULL-REVIEW.mp4", "C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx", "C06-POINT-FIRE-REVIEW-CONTACT-SHEET.png")
@@ -158,9 +161,9 @@ def test_tal_original_licensing_matches_manifest_exactly():
     # its colour map, Tal's byte for byte.
     rigged = {f"unity/Assets/Art/Collection/figure-soldier-1948-v1-rigged/figure-soldier-1948-v1-rigged{x}" for x in (".fbx", "_basecolor.jpg")}
     added = sources | towns | plants | weapons | rigged
-    assert len(sources) == 24 and len(towns) == 8 and len(plants) == 6 and len(weapons) == 5 and len(rigged) == 2
+    assert len(sources) == 28 and len(towns) == 8 and len(plants) == 6 and len(weapons) == 5 and len(rigged) == 2
     added_rows = [r for r in independent if r["glob"] in added]
-    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 45
+    assert {r["glob"] for r in added_rows} == added and len(added_rows) == 49
     assert all("Hula + Arava, map and boards" in r["note"] for r in added_rows if r["glob"] in plants)
     assert all(r["artist"] == "Tal Heuberger" and r["ai_generated"] is True for r in added_rows)
     assert all("#1177" in r["note"] and "2 November 2026" in r["note"] for r in added_rows if r["glob"] not in rigged)
@@ -196,7 +199,7 @@ def test_tal_original_licensing_matches_manifest_exactly():
     # The hex-tile props row, the #1901 -light meshes and the two #2378 far-off copy rows (*-far.asset, *-far.png; owner,
     # 3 November 2026, confirms Tal's permission) among them.
     assert len([r for r in independent if r["glob"] not in added and r not in music and r["glob"] not in fire]) == 52
-    assert len(independent) == 99  # 146 originals + 99 independent grants = 245 total
+    assert len(independent) == 103  # 146 originals + 103 independent grants = 249 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"

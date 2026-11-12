@@ -54,32 +54,6 @@
     "https://www.tripo3d.ai/help/privacy-policy/how-to-use-tripo-models-commercially"
   ],
   "provider_limits": "Paid output distribution/licensing basis per section 5.2.2 and official guide; input rights, competing-service restrictions and provenance obligations remain. No legal/copyright certainty asserted.",
-  "held_files": [
-    {
-      "filename": "statecraft-netanya-original-76df2d06.glb",
-      "bytes": 60575748,
-      "sha256": "801ffc2d15b782671c4eaa180a9938063a37efba22f04de85e0f9516a950efd5",
-      "reason": "The file exceeds 10 MiB. The unmodified original is retained locally pending an owner-approved size/storage plan; LFS is ruled out."
-    },
-    {
-      "filename": "statecraft-safed-original-6707144a.glb",
-      "bytes": 59382140,
-      "sha256": "4f389ce9fbff53fd577074804954581434aee0ae12a06d84df99168677535303",
-      "reason": "The file exceeds 10 MiB. The unmodified original is retained locally pending an owner-approved size/storage plan; LFS is ruled out."
-    },
-    {
-      "filename": "statecraft-tiberias-original-d6c8293a.glb",
-      "bytes": 59533508,
-      "sha256": "3d5227a620198c50a134f1e9174e37cdc2d99f6bb57c2a2df4c462efc711de87",
-      "reason": "The file exceeds 10 MiB. The unmodified original is retained locally pending an owner-approved size/storage plan; LFS is ruled out."
-    },
-    {
-      "filename": "statecraft-k98k-original-64e8aded.glb",
-      "bytes": 63014240,
-      "sha256": "320fd59ec86068936dc3cfd9c23e3549ca7926facdf357ea24c40b08360cffc8",
-      "reason": "The file exceeds 10 MiB. The unmodified original is retained locally pending an owner-approved size/storage plan; LFS is ruled out."
-    }
-  ],
   "excluded_jaffa": "Separate two-file candidate held until exact chosen Rothenberg/NLI reference identity is matched to saved input; the 1954 date is an accuracy caveat, not by itself a redistribution blocker. Getty was evidence-only, not uploaded.",
   "known_limits": [
     "Whole towns do not replace modular pieces",
@@ -159,6 +133,35 @@
       "sha256": "e0680e3e3fbc53a0af41292571112c0e76ca0dbe2bf04bafd53c7a4c99ef0113",
       "triangles": null,
       "operation": "byte-preserved provider output or exact embedded JPEG extraction; no new edit"
+    },
+    {
+      "path": "netanya/statecraft-netanya-original-76df2d06.glb",
+      "original_filename": "statecraft-netanya-original-76df2d06.glb",
+      "bytes": 60575748,
+      "sha256": "801ffc2d15b782671c4eaa180a9938063a37efba22f04de85e0f9516a950efd5",
+      "operation": "byte-preserved high-detail provider original; no re-export, compression or decimation",
+      "kind": "archival original; not a runtime replacement"
+    },
+    {
+      "path": "safed/statecraft-safed-original-6707144a.glb",
+      "original_filename": "statecraft-safed-original-6707144a.glb",
+      "bytes": 59382140,
+      "sha256": "4f389ce9fbff53fd577074804954581434aee0ae12a06d84df99168677535303",
+      "operation": "byte-preserved high-detail provider original; no re-export, compression or decimation",
+      "kind": "archival original; not a runtime replacement"
+    },
+    {
+      "path": "tiberias/statecraft-tiberias-original-d6c8293a.glb",
+      "original_filename": "statecraft-tiberias-original-d6c8293a.glb",
+      "bytes": 59533508,
+      "sha256": "3d5227a620198c50a134f1e9174e37cdc2d99f6bb57c2a2df4c462efc711de87",
+      "operation": "byte-preserved high-detail provider original; no re-export, compression or decimation",
+      "kind": "archival original; not a runtime replacement"
     }
-  ]
+  ],
+  "delivered_high_detail_originals": {
+    "date": "2026-11-12",
+    "issue": "https://github.com/eyalgolan/statecraft-israel/issues/2381",
+    "storage": "Unmodified files in the prepared town/weapon folders, with exact size and SHA-256 policy exceptions carried from #2253. No LFS or runtime activation."
+  }
 }

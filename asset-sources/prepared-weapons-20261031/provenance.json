@@ -24,7 +24,7 @@
   },
   "unchanged_originals": true,
   "validation": {
-    "hashes": "all6match recorded downloaded originals",
+    "hashes": "all 7 files match recorded downloaded originals",
     "Unity": "not run; kept closed",
     "known_limits": [
       "No runtime or character attachment",
@@ -82,6 +82,14 @@
       "tripo_task_id": "bc6b06c8-99fb-4869-bd14-3bc653bb151c",
       "triangles": null,
       "kind": "byte-exact extracted embedded base-colour JPEG"
+    },
+    {
+      "path": "k98k/statecraft-k98k-original-64e8aded.glb",
+      "original_filename": "statecraft-k98k-original-64e8aded.glb",
+      "bytes": 63014240,
+      "sha256": "320fd59ec86068936dc3cfd9c23e3549ca7926facdf357ea24c40b08360cffc8",
+      "operation": "byte-preserved high-detail provider original; no re-export, compression or decimation",
+      "kind": "archival original; not a runtime replacement"
     }
   ]
 }
