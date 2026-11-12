@@ -216,7 +216,7 @@ namespace Statecraft.HexTiles
                 return layer;
             }).ToArray();
             data.alphamapResolution = AlphaRes;
-            data.SetAlphamaps(0, 0, Splat(board, surface, rect, paints, 0, 0, AlphaRes, AlphaRes));
+            PaintGround(data, board, surface, rect, paints);
             if (holesOutsideLand)
             {
                 // Holes everywhere but the board's land (and a sliver of shore), so the real map shows around it.
@@ -243,9 +243,17 @@ namespace Statecraft.HexTiles
             return (data, rect);
         }
 
+        /// <summary>Writes the board's whole ground splat into <paramref name="data"/> (alphamap AlphaRes, one layer per
+        /// HexGround id). Test seam (internal; the tests see it through InternalsVisibleTo).</summary>
+        internal static void PaintGround(TerrainData data, HexBoard board, HexBoardSurface surface, Rect rect, IReadOnlyList<(HexPaint paint, int q, int r)> paints)
+        {
+            data.SetAlphamaps(0, 0, Splat(board, surface, rect, paints, 0, 0, AlphaRes, AlphaRes));
+        }
+
         /// <summary>The ground splat over alphamap pixels [x0, x0 + w) x [z0, z0 + h): each hex's layer blended across
-        /// edges (HexBoardSurface.GroundWeights), then the tiles' paints, each clipped to its own hex, then the roads.</summary>
-        static float[,,] Splat(HexBoard board, HexBoardSurface surface, Rect rect, IEnumerable<(HexPaint paint, int q, int r)> paints, int x0, int z0, int w, int h)
+        /// edges (HexBoardSurface.GroundWeights), then the tiles' paints, each clipped to its own hex, then the roads.
+        /// Internal so the tests can compare PaintGround with it.</summary>
+        internal static float[,,] Splat(HexBoard board, HexBoardSurface surface, Rect rect, IEnumerable<(HexPaint paint, int q, int r)> paints, int x0, int z0, int w, int h)
         {
             var ids = HexGround.Ids;
             var alpha = new float[h, w, ids.Count];
