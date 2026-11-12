@@ -108,6 +108,31 @@ namespace Statecraft.Sim
                         $"Our soldiers held by {side} number {m} but the population ledger has {n} captured records with that captor (R-POW-005)."));
         }
 
+        /// <summary>#2473, R-POW-005, R-POP-002 (owner, 9 November 2026, recorded on #2473): the Captured records held by
+        /// <paramref name="front"/>'s sides, in ascending population id, come home under the same ids as Send home's records
+        /// leave service (<see cref="Demobilization.RecordsHome"/>): free civilians without an assignment, captor or home,
+        /// "Yes, settled in (Recommended)" (reception ticks reception.turns), "Keep both (Recommended)" (qualification and
+        /// combat XP kept). "It's gone (Recommended)": the issued military item leaves the record and nothing is added to Arms
+        /// (RecordsHome's item count is not returned). "Nearest to region label (Recommended)": each goes to the nearest census
+        /// city to its home region's label place (regions.yaml capital_location), by Send home's distance rule and city-id
+        /// tie (<see cref="Demobilization.Nearest"/>). One validated ledger commit, so a refusal writes nothing.</summary>
+        static void ReturnRecords(Content c, GameState s, string front)
+        {
+            var sides = new HashSet<string>(Sides(front), StringComparer.Ordinal);
+            var captives = s.PopulationLedger.Units.Where(p => p.Status == PopulationStatus.Captured && sides.Contains(p.Captor!))
+                .OrderBy(p => p.Id).ToList();
+            if (captives.Count == 0) return;
+            var civilians = new List<PopulationUnit>();
+            foreach (var g in captives.GroupBy(p => p.Home!.Region, StringComparer.Ordinal))
+            {
+                var label = c.PlayerRegions.Regions.TryGetValue(g.Key, out var region) ? region.CapitalHex
+                    : throw new InvalidOperationException("No region in regions.yaml for " + g.Key + " (R-POW-005).");
+                var released = g.Select(p => p.WithPlacement(p.Status, p.Location, p.Assignment, null, null));
+                civilians.AddRange(Demobilization.RecordsHome(c, released, Demobilization.Nearest(c, label.Q, label.R), out _));
+            }
+            s.PopulationLedger.Commit(civilians, Array.Empty<PopulationTarget>());
+        }
+
         static IEnumerable<string> Sides(string front) => FrontOf.Where(kv => kv.Value == front).Select(kv => kv.Key).OrderBy(x => x, StringComparer.Ordinal);
 
         /// <summary>True while <paramref name="front"/> holds the player's soldiers or the player holds its prisoners: its exchange
@@ -148,10 +173,12 @@ namespace Statecraft.Sim
 
         /// <summary>R-POW-004, R-POW-005: <paramref name="front"/>'s exchange card was resolved. Its sides' prisoners go home and
         /// score points_per_prisoner_unit_returned a unit (Q-POW-2); the player's soldiers that front held come home, with no
-        /// score (Q-POW-4).</summary>
+        /// score (Q-POW-4). On an initialized Historical ledger (#2473) the Captured records that front's sides hold come home
+        /// too, by <see cref="ReturnRecords"/>, before any other write; a synthetic or Open ledger is still refused.</summary>
         internal static void Return(Content c, GameState s, string front, List<Cause> why)
         {
-            PopulationLedger.RefuseAggregate(s);
+            PopulationLedger.RefuseUnlessHistorical(s);
+            if (s.PopulationLedger.IsInitialized) { RequireHeldMatchesRecords(s); ReturnRecords(c, s, front); }
             // Only GDD combat creates prisoners and the card waits for them, so this runs only in the GDD loop, which has Mvp.
             var points = c.RulesAt(s.Date).Mvp!.PointsPerPrisonerUnitReturned!.Value;
             var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;

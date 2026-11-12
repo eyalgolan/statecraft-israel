@@ -91,9 +91,9 @@ flowchart RL
 | 2 | תורות חודשיים במשחק האמיתי, וחמשת המשאבים | הושלם | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
 | 3 | כל הערים, עם דיור, תעסוקה וקליטת עלייה | הושלם: 8 מתוך 8 PRs מוזגו | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | חלוצים, אתרי בנייה, כבישים ומסילות ברזל | בתהליך: 6 מתוך 8 PRs מוזגו | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
-| 5 | יחידות צבאיות, תנועה וקרב | בתהליך: 13 מתוך 18 PRs מוזגו | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
-| 6 | שליטה ביישובים, לפי [מדיניות התוכן](docs/CONTENT_POLICY.md) | בתהליך: 8 מתוך 12 PRs מוזגו | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
-| 7 | שרים, אירועים והמשחק המלא בן 44 תורות | בתהליך: 6 מתוך 13 PRs מוזגו | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
+| 5 | יחידות צבאיות, תנועה וקרב | בתהליך: 14 מתוך 18 PRs מוזגו | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
+| 6 | שליטה ביישובים, לפי [מדיניות התוכן](docs/CONTENT_POLICY.md) | בתהליך: 9 מתוך 12 PRs מוזגו | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
+| 7 | שרים, אירועים והמשחק המלא בן 44 תורות | בתהליך: 7 מתוך 13 PRs מוזגו | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
 
 ### מסלולים נוספים
 

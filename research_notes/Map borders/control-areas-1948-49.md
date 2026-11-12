@@ -21,7 +21,7 @@ observers recorded. The colours mean **military control on a date**, nothing els
   US copyright does not protect facts (Feist). Israeli state works: 50 years (Copyright Act 2007 s. 42; earlier the 1911
   Act as applied in 1924), so a state map of 1949 or 1953 is out of copyright in Israel. As for D-B, a work still
   protected in Israel on 1996-01-01 may carry a URAA-restored US copyright in its drawing; that does not reach the data.
-- All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
+- All requests used a research User-Agent that named the project's repository.
   Nothing was logged into or submitted. Downloaded scans stayed in the session scratchpad and are not in the repository.
 
 Every [V] in this note was an agent's reading on 2026-10-14, unless the tag gives a later date; a person's check is pending for all of them.

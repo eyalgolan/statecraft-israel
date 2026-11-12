@@ -91,6 +91,7 @@ mergeInto(LibraryManager.library, {
   StatecraftShareKeep: function (pngPtr, length, namePtr) {
     StatecraftInvalidateShareAttempt();
     window.statecraftShareCopied = 0;
+    pngPtr >>>= 0;   // unsigned: with a heap over 2 GB the pointer can be 2^31 or more
     var bytes = HEAPU8.slice(pngPtr, pngPtr + length);
     window.statecraftShareFile = new File([bytes], UTF8ToString(namePtr), { type: "image/png" });
   },

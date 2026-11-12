@@ -1,7 +1,7 @@
 // The browser's safe-area insets in CSS pixels (the notch, the home indicator), for SafeAreaFit: a probe element reads
 // the env(safe-area-inset-*) values, which iOS Safari and Chrome on Android expose; everywhere else they are 0, so the
 // UI is padded only where hardware eats the screen. Writes top, right, bottom, left. The HEAPF32 indexing assumes
-// wasm32 pointers (Unity 6000.3's WebGL target), as WheelInput.jslib.
+// wasm32 pointers read unsigned, as WheelInput.jslib (Unity 6000.3's WebGL target).
 mergeInto(LibraryManager.library, {
   StatecraftSafeAreaInsets: function (out) {
     var v = [0, 0, 0, 0];
@@ -16,6 +16,6 @@ mergeInto(LibraryManager.library, {
            parseFloat(cs.paddingBottom) || 0, parseFloat(cs.paddingLeft) || 0];
       document.body.removeChild(probe);
     }
-    for (var i = 0; i < 4; i++) HEAPF32[(out >> 2) + i] = v[i];
+    for (var i = 0; i < 4; i++) HEAPF32[(out >>> 2) + i] = v[i];
   },
 });

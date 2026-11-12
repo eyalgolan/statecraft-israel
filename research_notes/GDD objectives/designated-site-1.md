@@ -13,8 +13,8 @@ work, finds a second dated source, and changes two of its findings (marked "Chan
 
 ## How it was done
 
-- Every page was fetched on 14 October 2026 with `curl` and the User-Agent
-  `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`. No request carried a personal
+- Every page was fetched on 14 October 2026 with `curl` and a research User-Agent
+  that named the project's repository. No request carried a personal
   identifier. A few pages were found through a web search tool; each was then fetched and read directly.
 - Wikipedia, Commons, Wikidata and Hebrew Wikisource were read through the MediaWiki API (wikitext of the current
   revision). Wikipedia is used as a lead. Where a fact rests on Wikipedia alone it is tagged single source and says so.

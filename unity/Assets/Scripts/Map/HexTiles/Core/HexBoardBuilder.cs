@@ -216,7 +216,7 @@ namespace Statecraft.HexTiles
                 return layer;
             }).ToArray();
             data.alphamapResolution = AlphaRes;
-            data.SetAlphamaps(0, 0, Splat(board, surface, rect, paints, 0, 0, AlphaRes, AlphaRes));
+            PaintGround(data, board, surface, rect, paints);
             if (holesOutsideLand)
             {
                 // Holes everywhere but the board's land (and a sliver of shore), so the real map shows around it.
@@ -243,13 +243,44 @@ namespace Statecraft.HexTiles
             return (data, rect);
         }
 
+        /// <summary>Side of the square of alphamap pixels PaintGround splats at a time (AlphaRes is a multiple of it).</summary>
+        const int SplatTile = 256;
+
+        /// <summary>Writes the board's whole ground splat into <paramref name="data"/> (alphamap AlphaRes, one layer per
+        /// HexGround id), SplatTile pixels square at a time through one reused buffer: the whole 2048 x 2048 x 11 alphamap
+        /// is 184 MB of floats, and in WebGL the heap never shrinks. Test seam (internal; the tests see it through
+        /// InternalsVisibleTo).</summary>
+        internal static void PaintGround(TerrainData data, HexBoard board, HexBoardSurface surface, Rect rect, IReadOnlyList<(HexPaint paint, int q, int r)> paints)
+        {
+            var ids = HexGround.Ids;
+            var tile = new float[SplatTile, SplatTile, ids.Count];
+            var wt = new float[ids.Count];
+            var roads = RoadPaints(board);
+            for (int z0 = 0; z0 < AlphaRes; z0 += SplatTile)
+                for (int x0 = 0; x0 < AlphaRes; x0 += SplatTile)
+                {
+                    SplatInto(tile, wt, ids, surface, rect, paints, roads, x0, z0);
+                    data.SetAlphamaps(x0, z0, tile);
+                }
+        }
+
         /// <summary>The ground splat over alphamap pixels [x0, x0 + w) x [z0, z0 + h): each hex's layer blended across
-        /// edges (HexBoardSurface.GroundWeights), then the tiles' paints, each clipped to its own hex, then the roads.</summary>
-        static float[,,] Splat(HexBoard board, HexBoardSurface surface, Rect rect, IEnumerable<(HexPaint paint, int q, int r)> paints, int x0, int z0, int w, int h)
+        /// edges (HexBoardSurface.GroundWeights), then the tiles' paints, each clipped to its own hex, then the roads.
+        /// Internal so the tests can compare PaintGround with it.</summary>
+        internal static float[,,] Splat(HexBoard board, HexBoardSurface surface, Rect rect, IEnumerable<(HexPaint paint, int q, int r)> paints, int x0, int z0, int w, int h)
         {
             var ids = HexGround.Ids;
             var alpha = new float[h, w, ids.Count];
-            var wt = new float[ids.Count];
+            SplatInto(alpha, new float[ids.Count], ids, surface, rect, paints.ToList(), RoadPaints(board), x0, z0);
+            return alpha;
+        }
+
+        /// <summary>Fills <paramref name="alpha"/> with the splat from alphamap pixel (<paramref name="x0"/>,
+        /// <paramref name="z0"/>), overwriting it all. <paramref name="wt"/> is scratch, one float per layer.</summary>
+        static void SplatInto(float[,,] alpha, float[] wt, IReadOnlyList<string> ids, HexBoardSurface surface, Rect rect,
+            IReadOnlyList<(HexPaint paint, int q, int r)> paints, IReadOnlyList<HexPaint> roads, int x0, int z0)
+        {
+            int h = alpha.GetLength(0), w = alpha.GetLength(1);
             for (int z = 0; z < h; z++)
                 for (int x = 0; x < w; x++)
                 {
@@ -257,11 +288,22 @@ namespace Statecraft.HexTiles
                     for (int l = 0; l < ids.Count; l++) alpha[z, x, l] = wt[l];
                 }
             // Paints, clipped to their own hex (a tile owns its ground), then roads, which run across hexes.
-            foreach (var (paint, q, r) in paints) Paint(alpha, rect, ids, paint, HexGeometry.Centre(q, r, HexScale.HexM), surface, x0, z0);
+            for (int i = 0; i < paints.Count; i++)
+            {
+                var (paint, q, r) = paints[i];
+                Paint(alpha, rect, ids, paint, HexGeometry.Centre(q, r, HexScale.HexM), surface, x0, z0);
+            }
+            for (int i = 0; i < roads.Count; i++) Paint(alpha, rect, ids, roads[i], null, surface, x0, z0);
+        }
+
+        /// <summary>The board's roads as dirt line paints, one per road segment.</summary>
+        static List<HexPaint> RoadPaints(HexBoard board)
+        {
+            var roads = new List<HexPaint>();
             foreach (var line in board.RoadLines())
                 for (int i = 0; i + 1 < line.Length; i++)
-                    Paint(alpha, rect, ids, new HexPaint("dirt", line[i], line[i + 1], RoadM, 0f, 0f, 0.5f, 1f, true), null, surface, x0, z0);
-            return alpha;
+                    roads.Add(new HexPaint("dirt", line[i], line[i + 1], RoadM, 0f, 0f, 0.5f, 1f, true));
+            return roads;
         }
 
         /// <summary>Recomputes the splat round <paramref name="centre"/>: the hex and as far as its ground blends into its
@@ -299,7 +341,7 @@ namespace Statecraft.HexTiles
                     float k;
                     if (p.Line)
                     {
-                        float d = HexBoardSurface.DistanceToLine(w, new[] { p.A, p.B });
+                        float d = HexBoardSurface.DistanceToSegment(w, p.A, p.B);
                         k = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(p.Width * 0.5f, p.Width * 0.5f * (1f - p.Soft), d));
                     }
                     else

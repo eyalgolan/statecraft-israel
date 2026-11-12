@@ -419,22 +419,152 @@ public class LedgerPrisonersTests
         Assert.Contains(lines, x => x.Key == WhyKeys.Engagement);
     }
 
-    // R-POW-005, #2473: Prisoners.Return still refuses a Historical ledger. It removes a front's SoldiersHeld count but moves
-    // no Captured record, so on a dark start after a real capture it must throw before any write; lifting that refusal must
-    // move the records home in the same change, or the next Take or Upkeep finds the count and the records disagree.
+    // #2473: a front's exchange on the dark start returns the player's captured records by their population ids (R-POW-005,
+    // R-POW-004, R-POP-002). The owner's rulings of 9 November 2026, recorded on #2473: "It's gone (Recommended)", "Yes,
+    // settled in (Recommended)", "Keep both (Recommended)" and "Nearest to region label (Recommended)". In the game the
+    // exchange card does not reach a ledger game yet (EventSystem.Choose refuses any initialized ledger at its entry, and
+    // TurnResolver.cs:16 holds the dark turn), so these call Prisoners.Return directly, as the tests above call Take and Upkeep.
+    static List<PopulationUnit> Captives(GameState s, string side) => s.PopulationLedger.Units
+        .Where(p => p.Status == PopulationStatus.Captured && p.Captor == side).OrderBy(p => p.Id).ToList();
+
+    // R-POW-005, ruling 1, "It's gone (Recommended)": the issued military item is removed from the returned record and
+    // nothing is added to Arms; no score either (Q-POW-4), and no Send home Arms line.
     [Fact]
-    public void ReturnStillRefusesAHistoricalLedger()
+    public void AReturnedCaptivesIssuedItemIsGoneAndNoArmsAreAdded()
     {
         var c = Gdd03();
         var s = Dark(c);
         Take(c, s, Own(c, s)[0], Enemy(s, "egypt"));
-        Assert.True(s.SoldiersHeld["egypt"] > 0);
-        Assert.True(s.PopulationLedger.IsHistorical);
-        var before = s.Describe(); var hash = s.Hash(); var ledger = s.PopulationLedger.Canonical().ToList(); var why = new List<Cause>();
-        Assert.Contains("integration is held", Assert.Throws<NotSupportedException>(() => Prisoners.Return(c, s, "egypt", why)).Message);
-        Assert.Equal(before, s.Describe()); Assert.Equal(hash, s.Hash());
-        Assert.Equal(ledger, s.PopulationLedger.Canonical()); Assert.Empty(why);
+        var held = Captives(s, "egypt");
+        Assert.NotEmpty(held);
+        Assert.All(held, p => Assert.NotNull(p.Equipment.MilitaryId));
+        var items = held.Select(p => p.Equipment.MilitaryId!).ToList();
+        var arms = s.Arms; var score = (s.Score, s.ScorePrisonerPoints); var why = new List<Cause>();
+        Prisoners.Return(c, s, "egypt", why);
+        foreach (var was in held)
+        {
+            var p = s.PopulationLedger.Get(was.Id);
+            Assert.Null(p.Equipment.MilitaryId);
+            Assert.False(p.Equipment.MilitaryPaid);
+            Assert.Equal((was.Equipment.ToolsId, was.Equipment.ToolsPaid), (p.Equipment.ToolsId, p.Equipment.ToolsPaid));
+        }
+        Assert.DoesNotContain(s.PopulationLedger.Units, p => p.Equipment.MilitaryId is string id && items.Contains(id));
+        Assert.Equal(arms, s.Arms);
+        Assert.Equal(score, (s.Score, s.ScorePrisonerPoints));
+        Assert.DoesNotContain(why, x => x.Key == CauseKeys.SentHomeArmsReturned);
+        Assert.Equal(held.Count, Assert.Single(why, x => x.Key == CauseKeys.SoldiersReturned).Delta);
+        s.PopulationLedger.Reconcile();
+    }
+
+    // R-POW-005, R-POP-002, ruling 2, "Yes, settled in (Recommended)": each record the front held comes home under the same
+    // population id as a free civilian without an assignment or captor, its reception ticks reception.turns, as soldiers
+    // sent home are. No record is made or lost; another front's captives stay captured with their count; the front's count
+    // goes, so the count still equals the records; a second exchange of the same front changes nothing.
+    [Fact]
+    public void AReturnedCaptiveIsASettledInFreeCivilianUnderTheSameId()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var own = Own(c, s);
+        Take(c, s, own[0], Enemy(s, "egypt"));
+        Take(c, s, own[1], Enemy(s, "jordan"));
+        var held = Captives(s, "egypt"); var jordan = Captives(s, "jordan").Select(p => p.Canonical()).ToList();
+        Assert.NotEmpty(held); Assert.NotEmpty(jordan);
+        var received = c.RequirePopulationInteger("reception.turns");
+        var next = s.PopulationLedger.NextPopulationId; var count = s.PopulationLedger.Units.Count; var people = s.PopulationLedger.TotalPeople;
+        var jordanHeld = s.SoldiersHeld["jordan"];
+        Prisoners.Return(c, s, "egypt", new List<Cause>());
+        foreach (var was in held)
+        {
+            var p = s.PopulationLedger.Get(was.Id);
+            Assert.Equal(PopulationStatus.FreeCivilian, p.Status);
+            Assert.Equal(PopulationAssignmentKind.Unassigned, p.Assignment.Kind);
+            Assert.Equal(received, p.ReceptionTicks);
+            Assert.Null(p.Captor);
+            Assert.Null(p.Home);
+            Assert.NotNull(p.Location!.City);
+        }
+        Assert.Empty(Captives(s, "egypt"));
+        Assert.Equal(jordan, Captives(s, "jordan").Select(p => p.Canonical()));
+        Assert.False(s.SoldiersHeld.ContainsKey("egypt"));
+        Assert.Equal(jordanHeld, s.SoldiersHeld["jordan"]);
+        Assert.Equal((next, count, people), (s.PopulationLedger.NextPopulationId, s.PopulationLedger.Units.Count, s.PopulationLedger.TotalPeople));
         AssertHeldMatchesRecords(s);
+        var hash = s.Hash(); var again = new List<Cause>();
+        Prisoners.Return(c, s, "egypt", again);
+        Assert.Equal(hash, s.Hash()); Assert.Empty(again);
+        s.PopulationLedger.Reconcile();
+    }
+
+    // R-POW-005, ruling 3, "Keep both (Recommended)": the returned record keeps its military qualification and its combat
+    // experience (here set to distinct values while held), and its civilian history.
+    [Fact]
+    public void AReturnedCaptiveKeepsQualificationAndCombatExperience()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        Take(c, s, Own(c, s)[0], Enemy(s, "egypt"));
+        foreach (var p in Captives(s, "egypt"))
+            s.PopulationLedger.Replace(new PopulationUnit(p.Id, p.Status, p.ReceptionTicks, p.Location, p.Assignment, p.Profession,
+                p.Tier, p.WorkXp, p.Qualification, 2 + p.Id % 3, p.Equipment, p.Captor, p.Home));
+        var held = Captives(s, "egypt");
+        Assert.All(held, p => Assert.NotEqual("", p.Qualification));
+        Prisoners.Return(c, s, "egypt", new List<Cause>());
+        foreach (var was in held)
+        {
+            var p = s.PopulationLedger.Get(was.Id);
+            Assert.Equal((was.Qualification, 2 + was.Id % 3, was.Profession, was.Tier, was.WorkXp),
+                (p.Qualification, p.CombatXp, p.Profession, p.Tier, p.WorkXp));
+        }
+        s.PopulationLedger.Reconcile();
+    }
+
+    // R-POW-005, ruling 4, "Nearest to region label (Recommended)": the returned record goes to the nearest of the twelve
+    // census cities to its home region's label place (regions.yaml capital_location), by Send home's hex distance, located
+    // in that city's region plus the city. Each row is a bound home region and the city by hand from settlement_hexes.yaml
+    // and locality_hexes.yaml; negev's label place, Beersheba, is nearest to Jerusalem, outside its own region.
+    [Theory]
+    [InlineData("galilee", "safed")] [InlineData("valleys", "tiberias")] [InlineData("haifa_sharon", "haifa")]
+    [InlineData("tel_aviv_jaffa", "tel_aviv")] [InlineData("central_plain", "rishon_lezion")]
+    [InlineData("jerusalem_hills", "jerusalem")] [InlineData("negev", "jerusalem")]
+    public void AReturnedCaptiveGoesToTheCityNearestTheirHomeRegionsLabelPlace(string home, string city)
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        Take(c, s, Own(c, s)[0], Enemy(s, "egypt"));
+        foreach (var p in Captives(s, "egypt"))
+            s.PopulationLedger.Transition(p.Id, PopulationStatus.Captured, null, PopulationAssignment.Unassigned, p.Captor, new PopulationLocation(home));
+        var held = Captives(s, "egypt");
+        Assert.All(held, p => Assert.Equal(home, p.Home!.Region));
+        Prisoners.Return(c, s, "egypt", new List<Cause>());
+        var region = c.PlayerRegions.AtLocation(city)!.Id;
+        foreach (var was in held)
+            Assert.Equal((region, city), (s.PopulationLedger.Get(was.Id).Location!.Region, s.PopulationLedger.Get(was.Id).Location!.City));
+        s.PopulationLedger.Reconcile();
+    }
+
+    // R-POW-005, ruling 4's tie, "by the same distance rule and city-id tie as Send home": the Negev Brigade's soldiers (home
+    // region southern_coast, label place Gaza) are as near Rehovot as Rishon LeZion; the city id in ordinal order takes
+    // Rehovot, although cities.yaml lists Rishon LeZion first.
+    [Fact]
+    public void AReturnedCaptiveTiedBetweenTwoCitiesGoesToTheLowerCityId()
+    {
+        var c = Gdd03();
+        var s = Dark(c);
+        var negev = Own(c, s).Single(u => c.StartingForces[u.Id].Row == "negev");
+        Take(c, s, negev, Enemy(s, "egypt"));
+        var held = Captives(s, "egypt");
+        Assert.NotEmpty(held);
+        Assert.All(held, p => Assert.Equal("southern_coast", p.Home!.Region));
+        Assert.Equal("gaza", c.PlayerRegions.Regions["southern_coast"].CapitalLocation);
+        int At(string id) { var g = c.SettlementHexes.Single(h => h.Id == "gaza"); var h2 = c.SettlementHexes.Single(h => h.Id == id); return MapActions.Distance(g.Q, g.R, h2.Q, h2.R); }
+        Assert.Equal(At("rehovot"), At("rishon_lezion"));
+        Assert.Equal(At("rehovot"), c.Cities.Min(x => At(x.Id)));
+        Assert.True(c.Cities.FindIndex(x => x.Id == "rishon_lezion") < c.Cities.FindIndex(x => x.Id == "rehovot"));
+        Prisoners.Return(c, s, "egypt", new List<Cause>());
+        foreach (var was in held)
+            Assert.Equal(("central_plain", "rehovot"), (s.PopulationLedger.Get(was.Id).Location!.Region, s.PopulationLedger.Get(was.Id).Location!.City));
+        s.PopulationLedger.Reconcile();
     }
 
     // Determinism: Take and Upkeep draw no RNG; two dark games given the same captures and upkeep end with the same hash and

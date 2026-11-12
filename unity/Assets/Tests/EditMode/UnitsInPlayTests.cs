@@ -1408,12 +1408,116 @@ public class UnitsInPlayTests
         StringAssert.Contains("At Hulda (headquarters for the Latrun attacks) since 24 May 1948", UnitCard.For(Token("brigade_7", latrun), latrun, text).Body);
         var ship = UnitCard.For(Token("ins_haganah", start), start, text);
         StringAssert.Contains("commissioned 1948", ship.Subtitle);
-        StringAssert.Contains("Wikipedia only", UnitCard.For(Token("golani", start), start, text).Note, "Golani is still Wikipedia only; Kiryati cites the Haganah lexicon (P66)");
+        // Golani's start (Yavne'el) is still Wikipedia only, but the row is person-checked, and that note wins (#2918 P2,
+        // owner, 10 November 2026): CheckedRowsSayAPersonCheckedThemEvenOnAWikipediaOnlyPosition.
+        Assert.AreEqual(text["unit.fact_checked"], UnitCard.For(Token("golani", start), start, text).Note);
         var hatzor = StateAt(new DateTime(1948, 12, 1), 5, 0.8);
         StringAssert.DoesNotContain(text["unit.draft_wikipedia"], UnitCard.For(Token("squadron_101", hatzor), hatzor, text).Note,
             "Hatzor's position cites Eduard (review M8: the note is per position)");
         var july = StateAt(new DateTime(1948, 7, 1), 5, 0.8);
         StringAssert.Contains("Wikipedia only", UnitCard.For(Token("squadron_101", july), july, text).Note, "Herzliya's position is Wikipedia only");
+    }
+
+    // ---- The person-checked note (#2918 P2; owner, 10 November 2026: "Show checked status", "Person-checked", "Your check
+    // wins"; the #2722 date clause, coordinator) ------------------------------------------------------------------------
+    // Test-only fixtures: the rows below are synthetic ("Test Place", example.org), not a real unit or source.
+
+    static PlacedToken RowToken(string id, GameState s) => new PlacedToken(UnitRoster.Build(Units, C, s).Single(t => t.Unit.Id == id), default);
+
+    /// <summary>A one-unit fact-checked row checked on <paramref name="checkedOn"/>, with one non-Wikipedia anchor source
+    /// checked on <paramref name="anchorChecked"/>, and any of a strength or order target (<paramref name="more"/>).</summary>
+    static UnitEntry CheckedRow(string checkedOn, string anchorChecked, string more = "")
+        => UnitData.Parse("units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: Test sector, status: fact-checked, "
+            + "checked_on: '" + checkedOn + "', wikipedia_only: false, " + more + "anchors: [{place: Test Place, "
+            + "lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, "
+            + "sources: [{url: 'https://www.example.org/history', checked: '" + anchorChecked + "'}]}]}", "u.yaml")[0];
+
+    /// <summary>(a) A row a person has checked against its sources (units_1948.yaml status: fact-checked, "a person has
+    /// checked the row against its sources") whose sources were none of them checked after its checked_on says so, in
+    /// English and Hebrew, instead of "Draft". Kiryati's start (Tel Aviv) cites the Haganah lexicon, so it said unit.draft.</summary>
+    [Test]
+    public void APersonCheckedRowSaysSoInBothLanguages()
+    {
+        var start = StateAt(C.Rules.Start, 5, 0.8);
+        var kiryati = RowToken("kiryati", start);
+        Assert.AreEqual("fact-checked", kiryati.Token.Unit.Status, "precondition");
+        Assert.IsFalse(UnitData.IsWikipediaOnly(kiryati.Token.Anchor.Sources), "precondition: its start cites more than Wikipedia");
+        Assert.AreEqual(Text["unit.fact_checked"], UnitCard.For(kiryati, start, Text).Note);
+        Assert.AreEqual(He["unit.fact_checked"], UnitCard.For(kiryati, start, He).Note);
+        Assert.AreEqual("Checked by a person against its sources; not yet by a historian", Text["unit.fact_checked"], "owner, 10 November 2026");
+        // A source checked on the row's own checked_on day is not later (#2722 compares the days, later only).
+        var same = CheckedRow("2026-10-11", "2026-10-11");
+        Assert.AreEqual(Text["unit.fact_checked"], ProseCard(same, Text).Note);
+        Assert.AreEqual(He["unit.fact_checked"], ProseCard(same, He).Note);
+    }
+
+    /// <summary>(b) #2722: a field of a fact-checked row whose sources were checked after the row's checked_on is not
+    /// person-checked, as ReleaseGate.StartingForcesUnchecked counts it, so the card keeps the draft note. The gate's
+    /// fields: the strength, every anchor and every order target.</summary>
+    [TestCase("", "2026-10-11")]
+    [TestCase("strength: {value: 10, as_of: '1948-05-15', sources: [{url: 'https://www.example.org/s', checked: '2026-10-11'}]}, ", "2026-10-01")]
+    [TestCase("order_targets: [{place: Test Target, lon: 34.9, lat: 32.1, from: '1948-05-20', to: '1948-06-01', end_basis: source, end_note: n, "
+        + "sources: [{url: 'https://www.example.org/t', checked: '2026-10-11'}]}], ", "2026-10-01")]
+    public void ALaterSourceKeepsTheDraftNote(string more, string anchorChecked)
+    {
+        var u = CheckedRow("2026-10-10", anchorChecked, more);
+        Assert.AreEqual(Text["unit.draft"], ProseCard(u, Text).Note);
+        Assert.AreEqual(He["unit.draft"], ProseCard(u, He).Note);
+    }
+
+    /// <summary>(c) "Your check wins" (owner, 10 November 2026): a person-checked row says so on a position whose own
+    /// sources are all Wikipedia too (Golani at Yavne'el, the 7th Brigade at Hulda), and the footer still lists the hosts.</summary>
+    [Test]
+    public void CheckedRowsSayAPersonCheckedThemEvenOnAWikipediaOnlyPosition()
+    {
+        var start = StateAt(C.Rules.Start, 5, 0.8);
+        var latrun = StateAt(new DateTime(1948, 5, 29), 5, 0.8);
+        foreach (var (id, s) in new[] { ("golani", start), ("brigade_7", latrun) })
+        {
+            var token = RowToken(id, s);
+            Assert.AreEqual("fact-checked", token.Token.Unit.Status, id + ": precondition");
+            Assert.IsTrue(UnitData.IsWikipediaOnly(token.Token.Anchor.Sources), id + ": precondition, a Wikipedia-only position");
+            var english = UnitCard.For(token, s, Text);
+            Assert.AreEqual(Text["unit.fact_checked"], english.Note, id);
+            Assert.AreEqual(He["unit.fact_checked"], UnitCard.For(token, s, He).Note, id);
+            StringAssert.Contains("wikipedia.org", english.Footer, id + ": the footer still names the hosts");
+        }
+    }
+
+    /// <summary>(d) Every drawn row that is not fact-checked (draft, to_verify) keeps today's note: "Wikipedia only" where
+    /// the position's own sources are, else "Draft: not yet checked by a historian" (the ruling: "the others keep" it).</summary>
+    [Test]
+    public void ARowNoPersonHasCheckedKeepsTheDraftNote()
+    {
+        // The draft and to_verify rows stand on the map at different days: the ships from the start, the squadron at Herzliya,
+        // Yiftach at Lydda, the squadron at Hatzor (a sourced position).
+        var seen = new HashSet<string>();
+        foreach (var day in new[] { C.Rules.Start, new DateTime(1948, 7, 1), new DateTime(1948, 7, 15), new DateTime(1948, 12, 1) })
+        {
+            var s = StateAt(day, 5, 0.8);
+            foreach (var t in UnitRoster.Build(Units, C, s).Where(x => x.Unit.Status != "fact-checked"))
+            {
+                seen.Add(t.Unit.Id);
+                foreach (var text in new[] { Text, He })
+                    Assert.AreEqual(UnitData.IsWikipediaOnly(t.Anchor.Sources) ? text["unit.draft_wikipedia"] : text["unit.draft"],
+                        UnitCard.For(new PlacedToken(t, default), s, text).Note, $"{t.Unit.Id} on {day:yyyy-MM-dd}");
+            }
+        }
+        CollectionAssert.IsSupersetOf(seen, new[] { "yiftach", "squadron_101", "ins_haganah" }, "precondition: a to_verify row and two draft rows are drawn");
+        var hatzor = StateAt(new DateTime(1948, 12, 1), 5, 0.8);
+        Assert.AreEqual(Text["unit.draft"], UnitCard.For(RowToken("squadron_101", hatzor), hatzor, Text).Note, "a draft row on a sourced position");
+        Assert.AreEqual(He["unit.draft_wikipedia"], ProseCard(ProseUnit(), He).Note, "a draft row on a Wikipedia-only position");
+    }
+
+    /// <summary>(e) A raised unit has no note, even when its token's row is person-checked.</summary>
+    [Test]
+    public void ARaisedUnitHasNoNote()
+    {
+        var start = StateAt(C.Rules.Start, 5, 0.8);
+        var golani = RowToken("golani", start).Token;
+        var raised = new PlacedToken(new UnitToken(golani.Unit, golani.Anchor, 3, golani.ArtType, false, raised: true), default);
+        Assert.AreEqual("", UnitCard.For(raised, start, Text).Note);
+        Assert.AreEqual("", UnitCard.For(raised, start, He).Note);
     }
 
     [Test]
@@ -1450,7 +1554,8 @@ public class UnitsInPlayTests
             Assert.AreEqual("Golani Brigade", ui.Q<Label>("info-title").text);
             Assert.IsTrue(words.Any(w => w.Contains("At Yavne'el since February 1948")), string.Join(" | ", words));
             Assert.IsFalse(words.Any(w => w.Contains("Reserve call-up")), "the GDD loop: the call-up no longer sets the figures (#1205) | " + string.Join(" | ", words));
-            Assert.IsTrue(words.Any(w => w.Contains("Wikipedia only")), "a Wikipedia-only position says it is a draft");
+            // Golani's start is Wikipedia only, but the row is person-checked and that note wins (#2918 P2, owner, 10 November 2026).
+            Assert.IsTrue(words.Any(w => w.Contains(Text["unit.fact_checked"])), "a person-checked row says so | " + string.Join(" | ", words));
             Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("build-camp").style.display.value, "no orders on a unit");
             var defence = ui.Q<Button>("info-defence");
             Assert.AreEqual(DisplayStyle.Flex, defence.style.display.value);
