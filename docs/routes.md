@@ -142,10 +142,10 @@ is inside it (review C1):
   crossed a town, followed a solid (all-weather) double line, or ran on a line the map hides under a name. Where the
   trace left its line, a waypoint on the line itself holds it there: a point read off the map and cited to it ("the road
   south of Yibna (1946 map)"). That check by eye was Claude Code's, the coding agent that traced them (#3073 discloses
-  it); no person has checked the sixteen yet, so they stay `status: draft` with no `reviewed_by`.
+  it); no person has checked the fifteen yet, so they stay `status: draft` with no `reviewed_by`.
 - **Quality.** A path's bar is 60% on its symbol, against 85% for a road (`test_each_trace_follows_its_symbol`). The
   dotted line has a gap at every faint dot, and both symbols are broken by every name over them and every village
-  circle. The sixteen are at 67-100%, and the longest bridged gap is 762 m (bar 800 m).
+  circle. The fifteen are at 67-100%, and the longest bridged gap is 762 m (bar 800 m).
 - **The ends** are the places' rows, their names and coordinates, so a path joins the places the map draws. The map's
   own symbol for a place can sit a few hundred metres from its row, and the path runs to the row.
 - **Dates.** From 1946, the map's date, with no `to`: no source read gives a path's use in 1948 or an end (owner,
@@ -165,20 +165,22 @@ is inside it (review C1):
 | Bashshit–Qatra | dry-weather road | 2.9 km |
 | Zarnuqa–Rehovot, by Kefar Marmorek | dry-weather road | 3.5 km |
 | Givat Brenner–Aqir | dry-weather road | 2.4 km |
-| Qubeiba–Wadi Hunein | dry-weather road | 4.7 km |
 | Kheiriya–Saqiya | dry-weather road | 1.7 km |
 | Salama–Ramat Gan | dry-weather road | 3.9 km |
 | Jammasin el Gharbi–Sheikh Muwannis | dry-weather road | 2.2 km |
 
 The seven Tracks are in the Lydda–Latrun foothills: the six dotted tracks between two listed places in the gameplay03
 view that no road joins, found first, and Beit Nuba–Yalu, found among the dry-weather candidates (its first trace took a
-dry-weather road and a red road round to Yalu; the direct line is dotted). The nine dry-weather roads are those of the plain and the foothills (lon 34.70-35.05,
+dry-weather road and a red road round to Yalu; the direct line is dotted). The eight dry-weather roads are those of the plain and the foothills (lon 34.70-35.05,
 lat 31.78-32.20) that passed the check; most candidate pairs did not, because the plain's cart roads run beside its
 metalled roads and the railway and through its towns (Jimzu–Ramle, traced on a dry-weather road, zigzagged under the
 name RAMLE and through the town, and 'Abbasiyya–Tira jumped between the two roads east of Wilhelma and ran beside the
 red road at Yahudiya; both were dropped). Two from Abu Kishk, whose row lies by its name with no village drawn,
-zigzagged off it in a way no waypoint held (`test_no_sawtooth_on_straight_lines`) and were dropped too. That leaves
-sixteen paths, under the owner's "about 20 to 30": no more pass the check in this view. `tools/routes_accuracy.py` leaves the paths out: no reference maps
+zigzagged off it in a way no waypoint held (`test_no_sawtooth_on_straight_lines`) and were dropped too. Qubeiba–Wadi
+Hunein was dropped in review (#3073): after the dry-weather road out of Qubeiba, its trace ran north on the grid where a
+name breaks it, then on the red Ness Ziona road into Wadi Hunein, and no dry-weather road on the map reaches Wadi Hunein
+from there. It was 94% on its symbol, so only the check by eye caught it. That leaves
+fifteen paths, under the owner's "about 20 to 30": no more pass the check in this view. `tools/routes_accuracy.py` leaves the paths out: no reference maps
 them, so a distance would mean nothing.
 
 **Left out, on purpose.**

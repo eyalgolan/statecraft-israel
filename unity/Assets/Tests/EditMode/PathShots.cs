@@ -60,6 +60,7 @@ public class PathShots
     static void Shot(string name, string dir)
     {
         var cam = Camera.main;
+        ShotCamera.Require(cam, 1920, 1080);
         var frame = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32);
         var before = cam.targetTexture;
         cam.targetTexture = frame; cam.Render(); cam.targetTexture = before;
@@ -80,8 +81,8 @@ public class PathShots
         Directory.CreateDirectory(dir);
         yield return CivMovementShots.Boot(false, saveDir, (t, p, u, g) => { rt = t; ps = p; });
         yield return Frames(5);
-        // CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3 (GroundDetailShots).
-        Camera.main.aspect = 16f / 9f;
+        // CameraRig.Apply freezes the projection at the camera's own aspect, and a batch run's default is 4:3 (#2882).
+        ShotCamera.Configure(Camera.main, 1920, 1080);
         var rig = Camera.main.GetComponent<CameraRig>();
         var map = Object.FindFirstObjectByType<MapScene>();
         rig.LookAt = CameraRig.OpeningLookAt(map.Frame, Camera.main.aspect, map.Settlements.First(s => s.Id == "tel_aviv"), map.Settlements.First(s => s.Id == "jaffa"));

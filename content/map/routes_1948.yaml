@@ -736,23 +736,6 @@ routes:
     checked: '2026-11-10'
   - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
     checked: '2026-11-10'
-- id: path_al_qubayba_ramla_wadi_hunayn
-  name: Path, Qubeiba–Wadi Hunein
-  kind: path
-  symbol: dry_weather_road
-  from: '1946'
-  status: draft
-  note: A dry-weather road (Other roads, double dashed) on the 1946 map between Qubeiba and Wadi Hunein.
-  to_verify:
-  - The map's date only; no source read gives the road's use in 1948 or an end.
-  via:
-  - {name: Qubeiba, lon: 34.7714, lat: 31.8947, url: 'https://en.wikipedia.org/wiki/Al-Qubayba,_Ramle'}
-  - {name: Wadi Hunein, lon: 34.7952, lat: 31.9274, url: 'https://en.wikipedia.org/wiki/Wadi_Hunayn'}
-  sources:
-  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
-    checked: '2026-11-10'
-  - url: https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_02_(FL33250066_2367883).jpg
-    checked: '2026-11-10'
 - id: path_al_khayriyya_saqiya
   name: Path, Kheiriya–Saqiya
   kind: path
