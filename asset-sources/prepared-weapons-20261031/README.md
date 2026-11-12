@@ -1,6 +1,6 @@
 # Prepared K98k, MG34 and Sten sources
 
-Refs #2007, #1866 and #1867. These six unchanged files preserve three textured provider GLBs and their exact embedded base-colour JPEG bytes. Exact hashes, task/concept IDs and generation route are in provenance.json. High-detail K98k preservation source, rejected concepts and reference photographs are excluded.
+Refs #2007, #1866 and #1867. These seven unchanged files preserve three textured provider GLBs, their exact embedded base-colour JPEG bytes, and the high-detail K98k archival original. Exact hashes, task/concept IDs and generation route are in provenance.json. Rejected concepts and reference photographs are excluded.
 
 Credit **Tal Heuberger**, CC BY-NC-ND 4.0 under his scoped 31 October 2026 public contribution permission. He confirmed his own paid generation account. Provider/input restrictions remain distinct from this grant; no legal certainty or copyright guarantee is asserted. No existing licence row is rewritten.
 
