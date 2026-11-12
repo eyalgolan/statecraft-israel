@@ -385,7 +385,7 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Every drawn craft's world box, for the map labels to keep clear of, as they do of the unit tokens
         /// (MapLabelsPresenter's keepClear, issue #197). A new list after every rebuild and the same list otherwise, so the
-        /// labels re-read it only when it changes. The Dakotas' boxes follow them round their loop (FollowDakotas, #2490), so
+        /// labels re-read it only when it changes. The Dakotas' boxes follow them round their loop or their raid (FollowDakotas, #2490, #3140), so
         /// while they fly it is a new list once a step (DakotaKeepStepS).</summary>
         public IReadOnlyList<Bounds[]> KeepClear
         {
@@ -402,7 +402,7 @@ namespace Statecraft.Game.Map.Collection
         void RebuildKeepAll()
         {
             var drawn = originals.Values.SelectMany(list => list).Where(go => go != null).ToList();
-            keepAll = drawn.Where(keepOf.ContainsKey).Select(go => keepOf[go])
+            keepAll = drawn.Where(keepOf.ContainsKey).Select(go => keepOf[go]).Where(boxes => boxes.Length > 0)   // none for a hidden Dakota (#3140)
                 .Concat(airDefenceKeeps.Where(k => k.Go != null && k.Defence != null && keepOf.ContainsKey(k.Go) && drawn.Contains(k.Defence.gameObject))
                     .Select(k => keepOf[k.Go]))
                 .ToList();
@@ -430,6 +430,8 @@ namespace Statecraft.Game.Map.Collection
         void Show(List<Want> next, List<(int q, int r)> placed, DateTime at)
         {
             date = at;
+            // Out of the first bombing period the repeated raid ends, so the next first-period turn starts its raids from the top (#3140).
+            if (!DakotaRaidsWanted(at)) DakotaRaidFlight.EndRepeat();
             var others = next.Any(w => w.Model == C54) ? Taken() : new List<(Vector2, float)>();
             bool defence = AirDefenceWanted(at);
             if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken) && defence == airDefenceShown) return;

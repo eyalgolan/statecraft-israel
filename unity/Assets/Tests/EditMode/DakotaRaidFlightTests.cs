@@ -17,6 +17,7 @@ public class DakotaRaidFlightTests
     public void Land()
     {
         DakotaRaidFlight.Stop();
+        DakotaRaidFlight.EndRepeat();
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
     }
 
@@ -155,5 +156,69 @@ public class DakotaRaidFlightTests
             DakotaRaidFlight.Stop();   // safe twice
         }
         finally { SpitfireLoop.Clock = clock; Object.DestroyImmediate(go); }
+    }
+
+    /// <summary>#3140 (owner, 11 November 2026, "Repeat the raid (Recommended)"): in the first bombing period the raid repeats,
+    /// each raid <see cref="DakotaRaidFlight.Seconds"/> long and then a pause of <see cref="DakotaRaidFlight.PauseS"/> with
+    /// both aircraft off their path, then again. Each aircraft is on its path from its start to its end only: the lead from 0
+    /// to Seconds - TrailS, the wing TrailS later; in the pause neither is.</summary>
+    [Test]
+    public void EachRaidIsTheFlightAndThenAPauseWithNeitherAircraftOnItsPath()
+    {
+        Assert.That(DakotaRaidFlight.PauseS, Is.InRange(5f, 30f), "a pause, not a gap of minutes");
+        Assert.AreEqual(DakotaRaidFlight.Seconds + DakotaRaidFlight.PauseS, DakotaRaidFlight.CycleS, 1e-4f);
+        float lead = DakotaRaidFlight.Seconds - DakotaRaidFlight.TrailS;
+        foreach (var (s, plane, on) in new[] {
+            (0f, 0, true), (DakotaRaidFlight.ArriveS, 0, true), (lead - 0.01f, 0, true), (lead + 0.01f, 0, false),
+            (DakotaRaidFlight.TrailS - 0.01f, 1, false), (DakotaRaidFlight.TrailS + 0.01f, 1, true), (DakotaRaidFlight.Seconds - 0.01f, 1, true),
+            (DakotaRaidFlight.Seconds + 0.01f, 1, false), (DakotaRaidFlight.CycleS - 0.01f, 0, false), (DakotaRaidFlight.CycleS - 0.01f, 1, false) })
+            Assert.AreEqual(on, DakotaRaidFlight.OnPath(s, plane), $"plane {plane} on its path {s:0.00} s into a raid");
+    }
+
+    /// <summary>#3140: the repeat runs by the map's clock from when it started (the Dakotas drawn on a first-period turn, or New
+    /// game's raid, which is its first): <see cref="DakotaRaidFlight.Cycle"/> is the seconds into the raid now and the raid's
+    /// number. New game's raid starts it over; stopping that raid leaves it running, so the aircraft fly on where they are.</summary>
+    [Test]
+    public void TheRepeatRunsByTheMapClockAndOutlivesNewGamesRaid()
+    {
+        var clock = SpitfireLoop.Clock;
+        var go = new GameObject("dakota", typeof(DakotaLoop));
+        try
+        {
+            float now = 50f;
+            SpitfireLoop.Clock = () => now;
+            Assert.IsFalse(DakotaRaidFlight.Repeating);
+            DakotaRaidFlight.KeepRepeating();
+            Assert.IsTrue(DakotaRaidFlight.Repeating);
+            now += 3f;
+            Assert.AreEqual(3f, DakotaRaidFlight.Cycle(out int raid), 1e-4f); Assert.AreEqual(0, raid);
+            now = 50f + 2f * DakotaRaidFlight.CycleS + 4f;
+            Assert.AreEqual(4f, DakotaRaidFlight.Cycle(out raid), 1e-3f); Assert.AreEqual(2, raid, "the third raid");
+            DakotaRaidFlight.KeepRepeating();
+            Assert.AreEqual(4f, DakotaRaidFlight.Cycle(out _), 1e-3f, "already repeating: it runs on");
+
+            now = 1000f;
+            Assert.IsTrue(DakotaRaidFlight.Start());
+            now += 7f;
+            Assert.AreEqual(7f, DakotaRaidFlight.Cycle(out raid), 1e-4f, "New game's raid is the repeat's first"); Assert.AreEqual(0, raid);
+            DakotaRaidFlight.Stop();
+            Assert.IsTrue(DakotaRaidFlight.Repeating, "stopping the raid leaves the repeat running");
+            Assert.AreEqual(7f, DakotaRaidFlight.Cycle(out _), 1e-4f);
+            DakotaRaidFlight.EndRepeat();
+            Assert.IsFalse(DakotaRaidFlight.Repeating);
+            DakotaRaidFlight.EndRepeat();   // safe twice
+        }
+        finally { SpitfireLoop.Clock = clock; Object.DestroyImmediate(go); }
+    }
+
+    /// <summary>#3140: a raid's bombs are its pass's only. An aircraft's raid time is its loop time (DakotaLoop's bombs read
+    /// it), and the loop drops on each pass over Tel Aviv, every DakotaLoopSeconds; so from the wing's start to the lead's end
+    /// of a whole cycle, pause included, neither aircraft reaches the loop's next pass, PassS short of a loop either way.</summary>
+    [Test]
+    public void ARaidAndItsPauseNeverReachTheLoopsNextPass()
+    {
+        float reach = SeaAirCollection.DakotaLoopSeconds - DakotaRaidFlight.PassS;
+        Assert.Greater(DakotaRaidFlight.U(0f, 1), -reach, "the wing at the cycle's start");
+        Assert.Less(DakotaRaidFlight.U(DakotaRaidFlight.CycleS, 0), reach, "the lead at the cycle's end");
     }
 }
