@@ -396,4 +396,32 @@ public class DefenceScreenTests
         Assert.AreEqual(Text.Format("defence.mob_cost", PlayerText.Money(c, "treasury", EconomySystem.MobilizationCost(c, bridge.State.Date, bridge.State.Mobilization))),
             ui.Q<Label>("mob-cost").text);
     }
+
+    /// <summary>#2533: a woman Minister of Defense is "שרת הביטחון" in the Hebrew header (offices.yaml's title_he_f), as on her
+    /// card below it; the English header is unchanged. No shipped date has a woman in the office, so Golda Meir
+    /// (title_he_form feminine) holds it here from the start.</summary>
+    [Test]
+    public void AWomanMinisterOfDefenseHasTheFeminineTitleInTheHebrewHeader()
+    {
+        var c = ContentLoader.Load(Paths.Content);
+        foreach (var p in c.People) p.Offices.RemoveAll(t => t.Office == "defense_minister");
+        var golda = c.People.Single(p => p.Id == "golda_meir");
+        Assert.AreEqual(TitleHeForms.Feminine, golda.TitleHeForm, "precondition: the fixture's minister is a woman");
+        golda.Offices.Add(new OfficeTerm { Office = "defense_minister", From = new System.DateTime(1948, 5, 14) });
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        foreach (var (text, expected) in new[]
+        {
+            (he, "שרת הביטחון {0} · הרמטכ״ל {1}"),
+            (Text, "Minister of Defense {0} · Chief of Staff {1}"),
+        })
+        {
+            using var ui = new UiTestKit();
+            ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
+            var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), text);
+            new DefencePresenter(ui.Root, bridge, text);
+            Assert.AreSame(golda, Cabinet.Holder(c, bridge.State, "defense_minister"), "precondition: she holds the office");
+            var chief = Cabinet.Holder(c, bridge.State, "chief_of_staff")!;
+            Assert.AreEqual(string.Format(System.Globalization.CultureInfo.InvariantCulture, expected, ContentNames.Of(text, golda), ContentNames.Of(text, chief)), ui.Q<Label>("defence-command").text);
+        }
+    }
 }
