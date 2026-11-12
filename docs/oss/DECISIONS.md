@@ -135,5 +135,6 @@ coordinator. Each quote is the option label the owner chose; the options themsel
   payment "Leave terms open"; and "protfolio is allowed" (the creators may show the work in their own portfolios,
   not for download, sale or licence). It is meant to make a paid release possible; the owner's answer of
   23 October 2026 under D1 ("the game is never going to charge any money. ever") stands until the owner rules on it.
-  Pending: each creator's written agreement on the pull request, then a signed agreement, then a lawyer's check of
-  the text. Tick this line, with the dates, only after both creators agree.
+  Pending: each creator's written agreement as a comment on the pull request (the owner, 12 November 2026: "a comment
+  for acceptance from them is fine for now. I would work on the document seperatly"). Tick this line, with the
+  dates, only after both creators agree.
