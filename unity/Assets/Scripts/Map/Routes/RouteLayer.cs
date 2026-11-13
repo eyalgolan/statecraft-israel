@@ -20,14 +20,15 @@ namespace Statecraft.Game.Map.Routes
     /// same meshes, vertex for vertex.</summary>
     public static class RouteLayer
     {
-        public const string RootName = "Routes", RibbonsName = "RouteRibbons", RoutesToggle = "routes", TrainToggle = "train";
-        public const string RailMaterialResource = "Routes/Rail", RoadMaterialResource = "Routes/Road";
+        public const string RootName = "Routes", RibbonsName = "RouteRibbons", RoutesToggle = "routes", TrainToggle = "train", PathsToggle = "paths";
+        public const string RailMaterialResource = "Routes/Rail", RoadMaterialResource = "Routes/Road", PathMaterialResource = "Routes/Path";
         public const string Folder = "Assets/Resources/Routes";
 
         /// <summary>Full ribbon widths (m), soft edges included (the shader fades the outer 16-30%). A road is 420 m: its pale
         /// core, inside the verges, is about 280 m, about 8 px at the gameplay zoom, as promo 03's dirt tracks (at 300 m the
-        /// core was about 4 px, a thin line between dark verges); still well under the railway's bed.</summary>
-        public const float RailWidthM = 680f, RoadWidthM = 420f, TrackWidthM = 200f;
+        /// core was about 4 px, a thin line between dark verges); still well under the railway's bed. A path between villages
+        /// (#2917) is 120 m, about 3 px at the gameplay zoom: the owner's 100-140 m (8 November 2026).</summary>
+        public const float RailWidthM = 680f, RoadWidthM = 420f, TrackWidthM = 200f, PathWidthM = 120f;
         /// <summary>Spacing (m) of the ribbon's cross-sections along its line: under the heightmap's 211 m N-S spacing, so
         /// every terrain row gets a section; about 3 px at the gameplay zoom.</summary>
         public const float StepM = 120f;
@@ -122,27 +123,34 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>The routes whose corridors the kits keep clear: those drawn on the game's first day, <see cref="DefaultDate"/>.
         /// The kits are built once, not per date, so a later route (the Burma Road, the 1949 rail link, the 1950 Tel Aviv–Netanya
         /// road) clears no town's houses or trees from the start and draws over them when it appears (owner, 18 October 2026,
-        /// #786: the kit floors are kept, not lowered).</summary>
+        /// #786: the kit floors are kept, not lowered). A path (#2917) clears nothing: a footpath runs between the houses
+        /// and the trees of the villages it joins.</summary>
         public static IEnumerable<RoutePath> KitRoutes(IEnumerable<RoutePath> routes) =>
-            routes.Where(r => RoutePaths.WindowOf(r).Covers(DefaultDate));
+            routes.Where(r => r.Kind != RoutePaths.Path && RoutePaths.WindowOf(r).Covers(DefaultDate));
+
+        /// <summary>The paths drawn at the game's start (#2917). The ground detail's scrub keeps off them as off the kit routes
+        /// (MapScene.ScrubRouteCorridors): no bush stands on a trodden way. The houses, the trees and the tokens do not.</summary>
+        public static IEnumerable<RoutePath> PathRoutes(IEnumerable<RoutePath> routes) =>
+            routes.Where(r => r.Kind == RoutePaths.Path && RoutePaths.WindowOf(r).Covers(DefaultDate));
 
         /// <summary>The routes whose corridors the unit tokens keep clear: those drawn on some day before <paramref name="until"/>,
         /// the end of the last token's window. A route opened after every token has left the map (the 1949 rail link, the 1950
         /// Tel Aviv–Netanya road) never stands beside one, so it takes no token's spot (#786: the straight 1950 road crossed
-        /// Tel Aviv and left Kiryati no spot there).</summary>
+        /// Tel Aviv and left Kiryati no spot there). A token may stand on a path (#2917), as on open ground.</summary>
         public static IEnumerable<RoutePath> UnitRoutes(IEnumerable<RoutePath> routes, DateTime until) =>
-            routes.Where(r => RoutePaths.WindowOf(r).From < until);
+            routes.Where(r => r.Kind != RoutePaths.Path && RoutePaths.WindowOf(r).From < until);
 
         public static float WidthOf(string kind) => kind switch
         {
             RoutePaths.Rail => RailWidthM,
             RoutePaths.Road => RoadWidthM,
             RoutePaths.Track => TrackWidthM,
+            RoutePaths.Path => PathWidthM,
             _ => throw new ArgumentException($"unknown route kind '{kind}'", nameof(kind)),
         };
 
-        /// <summary>One ribbon mesh Build draws: the routes of one display window in one look ("Rail", or "Roads" for the
-        /// roads and tracks), in the file's order.</summary>
+        /// <summary>One ribbon mesh Build draws: the routes of one display window in one look ("Rail", "Roads" for the roads
+        /// and tracks, or "Paths", #2917), in the file's order.</summary>
         public sealed class RibbonPlan
         {
             public RouteWindow Window;
@@ -153,14 +161,15 @@ namespace Statecraft.Game.Map.Routes
         }
 
         /// <summary>The ribbons Build draws, in its order: the windows in the order they open, and in each the rail, then the
-        /// roads, where the window has any. The bake (RouteRibbonFile) stores its meshes in this order. A change to it, to
+        /// roads, then the paths, where the window has any. The bake (RouteRibbonFile) stores its meshes in this order. A change to it, to
         /// Derive or to what Derive calls needs a re-bake (RouteRibbonBake.Bake) and a bump of RouteRibbonFile.Version
         /// (tools/tests/test_route_ribbon_bake.py fails until then, issue #535).</summary>
         public static List<RibbonPlan> Plan(IReadOnlyList<RoutePath> routes)
         {
             var plans = new List<RibbonPlan>();
             foreach (var group in routes.GroupBy(RoutePaths.WindowOf).OrderBy(g => g.Key.From).ThenBy(g => g.Key.To ?? DateTime.MaxValue))
-                foreach (var (kinds, look) in new[] { (new[] { RoutePaths.Rail }, "Rail"), (new[] { RoutePaths.Road, RoutePaths.Track }, "Roads") })
+                foreach (var (kinds, look) in new[] { (new[] { RoutePaths.Rail }, "Rail"), (new[] { RoutePaths.Road, RoutePaths.Track }, "Roads"),
+                    (new[] { RoutePaths.Path }, "Paths") })
                 {
                     var members = group.Where(r => kinds.Contains(r.Kind)).ToList();
                     if (members.Count > 0) plans.Add(new RibbonPlan { Window = group.Key, Look = look, Routes = members });
@@ -246,6 +255,8 @@ namespace Statecraft.Game.Map.Routes
                 ?? throw new InvalidOperationException($"Resources/{RailMaterialResource}.mat is missing (run RouteMaterialAssets.Create)");
             var road = Resources.Load<Material>(RoadMaterialResource)
                 ?? throw new InvalidOperationException($"Resources/{RoadMaterialResource}.mat is missing (run RouteMaterialAssets.Create)");
+            var path = Resources.Load<Material>(PathMaterialResource)
+                ?? throw new InvalidOperationException($"Resources/{PathMaterialResource}.mat is missing (run RouteMaterialAssets.Create)");
 
             var root = new GameObject(RootName);
             root.transform.SetParent(terrain.transform, false);
@@ -259,6 +270,7 @@ namespace Statecraft.Game.Map.Routes
             var plans = Plan(routes);
             var geometry = Geometries(plans, frame, data, origin, baked);
             GameObject? holder = null, corridors = null;
+            var paths = new List<GameObject>();   // the paths' ribbons, under the "paths" toggle (#2917)
             for (int i = 0; i < plans.Count; i++)
             {
                 var plan = plans[i];
@@ -275,7 +287,8 @@ namespace Statecraft.Game.Map.Routes
                 go.transform.SetParent(holder.transform, false);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 var r = go.AddComponent<MeshRenderer>();
-                r.sharedMaterial = plan.RailGrade ? rail : road;
+                r.sharedMaterial = plan.RailGrade ? rail : plan.Look == "Paths" ? path : road;
+                if (plan.Look == "Paths") paths.Add(go);
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 r.receiveShadows = true;
                 // A route a corridor follows (#792; each is alone in its ribbon, tools/tests/test_route_ribbon_bake.py): its
@@ -305,6 +318,8 @@ namespace Statecraft.Game.Map.Routes
             }
             ShowSegments(ribbons.transform, map != null ? map.RouteSegmentsBuilt : null);
             assets.OnTeardown(VisualToggles.Register(RoutesToggle, on => { if (ribbons != null) ribbons.SetActive(on); }));
+            if (paths.Count > 0)
+                assets.OnTeardown(VisualToggles.Register(PathsToggle, on => { foreach (var p in paths) if (p != null) p.SetActive(on); }));
 
             if (map != null) RoadVehicles.Create(root.transform, map, routes, date);
 
@@ -367,13 +382,13 @@ namespace Statecraft.Game.Map.Routes
         /// Jaffa Gate, and the Jaffa-Jerusalem railway's station, also outside them, fall inside it. Cut there, each line
         /// ends on the wall line, where the walls leave it a gap (the railway on the owner's ruling, "Cut it at the walls"),
         /// and the traced data keeps the real lines. Only a line's ends are cut: one that ran through the square would keep
-        /// its middle, and RouteTests.TheRoadsAndTheRailwayStopAtTheOldCityWalls fails on it. Tracks are not cut (none comes
-        /// near). The corridors (<see cref="Corridors"/>) keep the traced lines, so the kits and the units stand where
+        /// its middle, and RouteTests.TheRoadsAndTheRailwayStopAtTheOldCityWalls fails on it. Tracks and paths are not cut
+        /// (none comes near). The corridors (<see cref="Corridors"/>) keep the traced lines, so the kits and the units stand where
         /// they did: inside the walls the roads' clear ways read as the streets from the gates.</summary>
         public static List<Vector2> Drawn(GeoFrame frame, RoutePath route)
         {
             var line = World(frame, route);
-            if (route.Kind == RoutePaths.Track) return line;
+            if (route.Kind == RoutePaths.Track || route.Kind == RoutePaths.Path) return line;
             var (centre, half) = Kits.SettlementKits.OldCityWalls(frame);
             return TrimEndsInside(line, centre, half);
         }

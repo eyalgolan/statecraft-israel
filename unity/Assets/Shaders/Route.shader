@@ -1,6 +1,7 @@
 // The 1948 railways and roads (issue #35, RouteLayer): ribbons draped on the terrain at the promo's symbolic width. One
-// shader for both looks, chosen by _Kind (a material value, so a uniform branch): 0 a pale dirt road with faint wheel ruts and patchy colour,
-// 1 a railway (a ballast bed, sleepers and two rails). The mesh gives u across the ribbon (0..1) and v along it (metres),
+// shader for the three looks, chosen by _Kind (a material value, so a uniform branch): 0 a pale dirt road with faint wheel ruts and patchy colour,
+// 1 a railway (a ballast bed, sleepers and two rails), 2 a path between villages (#2917: a thin pale dust line that
+// fades out far off). The mesh gives u across the ribbon (0..1) and v along it (metres),
 // so the sleepers repeat at a fixed spacing; every pattern is box-filtered to the pixel (fwidth), so it fades to its mean
 // instead of shimmering as the camera pulls back. Lit like the ground beside it: the sun with its shadows plus the ambient
 // probe, then the hex grid and the land haze of StatecraftMap.hlsl, so the ribbons carry the terrain's relief shading and
@@ -10,8 +11,9 @@ Shader "Statecraft/Route"
 {
     Properties
     {
-        _Kind ("Kind (0 road, 1 rail)", Float) = 0
+        _Kind ("Kind (0 road, 1 rail, 2 path)", Float) = 0
         _Opacity ("Opacity", Range(0, 1)) = 1
+        _WidthM ("Ribbon width (m): a path's, for its far fade (RouteLayer.PathWidthM)", Float) = 120
     }
     SubShader
     {
@@ -24,6 +26,7 @@ Shader "Statecraft/Route"
         CBUFFER_START(UnityPerMaterial)
             float _Kind;
             float _Opacity;
+            float _WidthM;
         CBUFFER_END
 
         // Colours (sRGB) after the promo's gameplay frame (promo/final/03): a wide, pale packed-dirt track with soft,
@@ -56,6 +59,13 @@ Shader "Statecraft/Route"
         // The verges: a narrow, softer darker worn strip either side of the dirt, where the soft edge (RoadEdge) begins, so
         // it outlines the wide pale core on pale ground without reading as a dark line of its own.
         static const float VergeOffset = 0.33, VergeHalfWidth = 0.07, VergeStrength = 0.6, RoadEdge = 0.22;
+        // A path (#2917): trodden dust, a little darker and warmer than a road's packed dirt, with no ruts or verges and a
+        // wide soft edge, so it reads as a thin worn line beside the roads. It is a detail of the gameplay zooms: it fades
+        // out as a pixel across the ribbon (du * _WidthM, whatever way the path runs on the screen; along it, a tilted view
+        // foreshortens a path running towards the camera) grows from PathFadeFromM to PathFadeToM, rather than darkening
+        // as a road.
+        static const float3 PathSrgb = float3(0.93, 0.85, 0.70);
+        static const float PathEdge = 0.35, PathFadeFromM = 50.0, PathFadeToM = 90.0;
 
         struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
         struct Varyings { float4 positionCS : SV_POSITION; float3 positionWS : TEXCOORD0; float3 normalWS : TEXCOORD1; float2 uv : TEXCOORD2; };
@@ -101,7 +111,14 @@ Shader "Statecraft/Route"
             float grid = ScGridAmount(mapM, input.positionWS);   // uniform control flow (it takes derivatives)
             float3 albedo;
             float alpha;
-            [branch] if (_Kind > 0.5)
+            [branch] if (_Kind > 1.5)
+            {
+                float patch = ScNoise(mapM / RoadPatchM);
+                albedo = lerp(SRGBToLinear(PathSrgb), SRGBToLinear(RoadDustSrgb), 0.5 * patch);
+                float e = max(PathEdge, du);
+                alpha = smoothstep(0.0, e, u) * smoothstep(1.0, 1.0 - e, u) * (1.0 - smoothstep(PathFadeFromM, PathFadeToM, du * _WidthM));
+            }
+            else [branch] if (_Kind > 0.5)
             {
                 albedo = lerp(SRGBToLinear(BankSrgb), SRGBToLinear(BallastSrgb), smoothstep(0.12, 0.3, 0.5 - abs(u - 0.5)));
                 float across = Band(u, 0.5, SleeperHalfSpan, du);

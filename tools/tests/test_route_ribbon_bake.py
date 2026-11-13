@@ -32,7 +32,7 @@ MAGIC = 0x31524353   # "SCR1"
 REBAKE = "run Statecraft.Game.EditorTools.RouteRibbonBake.Bake in Unity (docs/routes.md, Baked ribbons)"
 
 # RouteRibbonFile.Floats and .Ints, in the header's order, with the file that defines each.
-FLOATS = [("Routes/RouteLayer.cs", n) for n in ("RailWidthM", "RoadWidthM", "TrackWidthM", "StepM", "ClearanceM",
+FLOATS = [("Routes/RouteLayer.cs", n) for n in ("RailWidthM", "RoadWidthM", "TrackWidthM", "PathWidthM", "StepM", "ClearanceM",
           "FallToleranceM", "RiseToleranceM", "MinWidthShare", "HalfWidthStepShare", "RailSpanShare", "RailClearanceM")]
 FLOATS += [("MapBuilder.cs", "VerticalExaggeration")]
 INTS = [("Routes/RouteLayer.cs", n) for n in ("Across", "NarrowSamples", "LiftSamples")]
@@ -154,7 +154,7 @@ def test_the_check_is_fnv1a():
 
 # The fingerprint of the ribbons' C# code (code_fingerprint), and the RouteRibbonFile.Version it was pinned at. Re-pin both
 # together, only after re-baking (RouteRibbonBake.Bake) with Version bumped.
-PINNED_VERSION, PINNED_CODE = 4, "55d8f29f2b769273eba9ea01c328fee536db68b57b5155dd2853345808ceb056"
+PINNED_VERSION, PINNED_CODE = 5, "0afc85f0e4e473a8069bb6c912ed5f7ae769354d21a21fd6a4d44d8681a37708"
 
 
 def code_fingerprint() -> str:

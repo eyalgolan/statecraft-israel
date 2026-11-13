@@ -27,6 +27,7 @@ Material:
     m_Floats:
     - _Kind: 0
     - _Opacity: 0.9
+    - _WidthM: 120
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1

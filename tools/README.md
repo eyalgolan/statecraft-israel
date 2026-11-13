@@ -29,7 +29,9 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   on the Survey of Palestine 1:250,000 map of 1946 (public domain; Palestine Open Maps' tiles, downloaded with `--fetch`
   into `tools/.cache/pal250k-1946/`, not committed): it reads the hand-written routes, sources and waypoints in
   `content/map/routes_1948.yaml` and writes the traced lines to `content/map/route_paths_1948.yaml` (committed; the map
-  draws it, the sim never reads it). `--preview` writes each traced segment over the map for checking by eye.
+  draws it, the sim never reads it). `--preview` writes each traced segment over the map for checking by eye. A `path`
+  (#2917) follows the legend symbol its `symbol` names: the dotted Track alone (`path_dots`) or the dry-weather Other
+  road's double dashed line (`dry_weather_road`; `docs/routes.md`, "Paths between villages").
 - `regions_bake.py [--check]` bakes the region files `content/map/subdistrict_hexes_1948.yaml`,
   `armistice_hexes_1949.yaml` and `control_hexes_1948_49.yaml` into `.tsv` runtime forms beside them (committed), which
   the map reads at boot (issue #321). Rerun it after `borders_bake.py`, `armistice_bake.py` or `control_bake.py`

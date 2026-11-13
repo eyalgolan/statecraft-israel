@@ -588,6 +588,10 @@ namespace Statecraft.Game.Map
         /// Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> KitRouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
 
+        /// <summary>The corridors the ground detail's scrub keeps off: the kit routes' and the paths' (RouteLayer.PathRoutes,
+        /// #2917). Empty before Build.</summary>
+        public IReadOnlyList<(List<Vector2> line, float halfWidth)> ScrubRouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
+
         /// <summary>The units of content/map/units_1948.yaml as the last Build read them (empty before a build, or when the
         /// file is missing or malformed). Read only: the units layer draws from this same list (UnitEntriesFor).</summary>
         public IReadOnlyList<Units.UnitEntry> UnitEntries { get; private set; } = Array.Empty<Units.UnitEntry>();
@@ -782,6 +786,7 @@ namespace Statecraft.Game.Map
             DiagLog.BootPhase("route paths read");   // issue #321: the splits of the units' phase
             // Only the routes drawn at the start keep the kits off (#786); the units keep off those drawn while they stand.
             KitRouteCorridors = Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.KitRoutes(routes));
+            ScrubRouteCorridors = KitRouteCorridors.Concat(Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.PathRoutes(routes))).ToList();
             DiagLog.BootPhase("route corridors");
             // The game settlements' and the 1948 localities' discs, as the kits will claim them (review I5: a token placed "off
             // the towns" keeps off the villages too). The camps are placed after the units and keep off them instead.
@@ -865,7 +870,7 @@ namespace Statecraft.Game.Map
             DiagLog.BootPhase("routes built");
             // The ground between the towns (#2878): grain, scrub and stones, a pass over the terrain.
             GroundDetail.Build(transform, Terrain, Frame, Hexes, heights, SettlementFootprints.Concat(UnitClearings).Concat(UnitTokens.Select(t => (t.centre, t.radius))),
-                KitRouteCorridors, terrainMaterial, terrainGo.GetComponent<MapRuntimeAssets>(), bushes: kitsOn);
+                ScrubRouteCorridors, terrainMaterial, terrainGo.GetComponent<MapRuntimeAssets>(), bushes: kitsOn);
             DiagLog.BootPhase("ground detail");
             // The 1949 armistice lines as their true polylines (#237), unless the run turns them off with the
             // "noarmisticelines" flag; a missing or malformed file means no overlay and a warning. Display only.

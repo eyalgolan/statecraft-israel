@@ -98,8 +98,8 @@ def res_error(text: str, expected: str) -> str | None:
 # may be there or not: the train (a train mode or its service date) and the unit showcase (?units) register only then,
 # and "opening" and PromoPose.CloseUps are priced only under vclose.
 VISUAL_TOGGLES = ("armisticelines", "borders", "foam", "furrows", "grade", "grid", "grounddetail", "groundscrub", "haze",
-                  "kits", "labels", "land", "routes", "seacalm", "seatexture", "shadows", "siteground", "tiltshift",
-                  "trees", "units", "water")
+                  "kits", "labels", "land", "paths", "routes", "seacalm", "seatexture", "shadows", "siteground",
+                  "tiltshift", "trees", "units", "water")
 OPTIONAL_VISUAL_TOGGLES = ("train", "unitshowcase")
 PROFILE_POSES = ("gameplay03", "diorama02")
 OPTIONAL_PROFILE_POSES = ("opening", "tel_aviv30", "jaffa12")

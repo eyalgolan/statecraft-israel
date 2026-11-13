@@ -113,16 +113,16 @@ public class RouteTests
         {
             var root = RoutesRoot(map);
             Assert.IsNotNull(root, "MapScene.Build adds the routes under the terrain (a rebuild destroys them)");
-            var rail = Ribbons(root, "Rail").ToList(); var roads = Ribbons(root, "Roads").ToList();
-            Assert.IsTrue(rail.Count > 0 && roads.Count > 0);
+            var rail = Ribbons(root, "Rail").ToList(); var roads = Ribbons(root, "Roads").ToList(); var paths = Ribbons(root, "Paths").ToList();
+            Assert.IsTrue(rail.Count > 0 && roads.Count > 0 && paths.Count > 0);
             Assert.AreSame(Resources.Load<Material>(RouteLayer.RailMaterialResource), rail[0].GetComponent<MeshRenderer>().sharedMaterial);
             // Budget: well under 100k triangles in all (WebGL's integrated GPUs draw millions), one draw call per window
             // group and look (about a dozen).
-            int tris = (int)(rail.Concat(roads).Sum(f => (long)f.sharedMesh.GetIndexCount(0)) / 3);
+            int tris = (int)(rail.Concat(roads).Concat(paths).Sum(f => (long)f.sharedMesh.GetIndexCount(0)) / 3);
             int railVerts = rail.Sum(f => f.sharedMesh.vertexCount), roadVerts = roads.Sum(f => f.sharedMesh.vertexCount);
-            TestContext.WriteLine($"rail {railVerts} vertices, roads {roadVerts}, {tris} triangles, {rail.Count + roads.Count} draw calls");
+            TestContext.WriteLine($"rail {railVerts} vertices, roads {roadVerts}, {tris} triangles, {rail.Count + roads.Count + paths.Count} draw calls");
             Assert.Less(tris, 100000);
-            Assert.LessOrEqual(rail.Count + roads.Count, 20);
+            Assert.LessOrEqual(rail.Count + roads.Count + paths.Count, 20);
             // The meshes are freed after upload (no CPU copy), so check a fresh build of the same data: every vertex
             // clears the ground under it by the clearance, and lies on the terrain.
             var routes = RoutePaths.Parse(CommittedYaml, Bounds);
@@ -137,7 +137,7 @@ public class RouteTests
                 }
                 // Roads keep main's drape: every vertex clears the ground under it by the clearance (the railways' clearance
                 // under their rails is TheRailClearsTheGroundUnderItsRailsAndRampsItsWidth).
-                var roadCheck = RouteLayer.Ribbon(routes.Where(r => r.Kind != RoutePaths.Rail).Select(r => (RouteLayer.Drawn(map.Frame, r), RouteLayer.WidthOf(r.Kind))), data, origin, "roads");
+                var roadCheck = RouteLayer.Ribbon(routes.Where(r => r.Kind == RoutePaths.Road || r.Kind == RoutePaths.Track).Select(r => (RouteLayer.Drawn(map.Frame, r), RouteLayer.WidthOf(r.Kind))), data, origin, "roads");
                 Assert.AreEqual(roadVerts, roadCheck.vertexCount);
                 foreach (var v in roadCheck.vertices)
                     Assert.GreaterOrEqual(v.y - RouteLayer.Ground(data, origin, new Vector2(v.x, v.z)), RouteLayer.ClearanceM - 0.01f);
@@ -441,6 +441,56 @@ public class RouteTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>#2917: a path between villages is a ribbon of its own ("Paths", Path.mat, _Kind 2) at the owner's 100-140 m
+    /// (8 November 2026), under its own "paths" toggle, so the frame profile prices it; neither the kits nor the unit
+    /// tokens keep off it, and no vehicle runs on it.</summary>
+    [Test]
+    public void APathIsAThinRibbonOfItsOwnUnderThePathsToggle()
+    {
+        var map = BuildMap();
+        try
+        {
+            // Imwas to Yalo, joined by a dotted track on the 1946 map, as a straight test line.
+            const string line = "- {id: test_path, kind: path, status: draft, from: '1946', length_km: 3, points: [[34.9927, 31.8420], [35.0226, 31.8405]]}\n";
+            var routes = RoutePaths.Parse(CommittedYaml.TrimEnd('\n') + "\n" + line, Bounds);
+            var mine = routes.Single(r => r.Id == "test_path");
+            Assert.AreEqual(RouteLayer.PathWidthM, RouteLayer.WidthOf(mine.Kind));
+            Assert.That(RouteLayer.PathWidthM, Is.InRange(100f, 140f));
+            CollectionAssert.DoesNotContain(RouteLayer.KitRoutes(routes).ToList(), mine);
+            CollectionAssert.DoesNotContain(RouteLayer.UnitRoutes(routes, System.DateTime.MaxValue).ToList(), mine);
+            CollectionAssert.Contains(RouteLayer.PathRoutes(routes).ToList(), mine, "the scrub keeps off it (review of #3073)");
+            Assert.IsTrue(RouteLayer.PathRoutes(routes).All(r => r.Kind == RoutePaths.Path));
+            Assert.IsFalse(RoadVehicles.Plans.Any(p => p.Route == mine.Id));
+            var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
+            var check = RouteLayer.Ribbon(new[] { (RouteLayer.Drawn(map.Frame, mine), RouteLayer.PathWidthM) }, data, origin, "check");
+            try
+            {
+                var v = check.vertices;
+                var across = new Vector2(v[RouteLayer.Across - 1].x - v[0].x, v[RouteLayer.Across - 1].z - v[0].z).magnitude;
+                Assert.AreEqual(RouteLayer.PathWidthM, across, 1f, "the first cross-section spans the path's width");
+            }
+            finally { Object.DestroyImmediate(check); }
+            var root = RouteLayer.Build(map.Terrain, map.Frame, routes, RouteLayer.TrainMode.None, RouteLayer.DefaultDate);
+            try
+            {
+                var ribbons = root.transform.Find(RouteLayer.RibbonsName).GetComponentsInChildren<MeshRenderer>(true).ToList();
+                var paths = ribbons.Where(r => r.name == "Paths").ToList();
+                Assert.AreEqual(1, paths.Count, "one path ribbon, in the path's window");
+                Assert.AreEqual(Resources.Load<Material>(RouteLayer.PathMaterialResource), paths[0].sharedMaterial);
+                Assert.AreEqual(2f, paths[0].sharedMaterial.GetFloat("_Kind"));
+                Assert.AreEqual(RouteLayer.PathWidthM, paths[0].sharedMaterial.GetFloat("_WidthM"), "the far fade measures pixels across the path's own width");
+                CollectionAssert.Contains(VisualToggles.Names, RouteLayer.PathsToggle);
+                VisualToggles.Set(RouteLayer.PathsToggle, false);
+                Assert.IsFalse(paths[0].gameObject.activeSelf);
+                Assert.IsTrue(ribbons.Where(r => r.name != "Paths").All(r => r.gameObject.activeSelf), "the toggle prices the paths alone");
+                VisualToggles.SetAll(true);
+                Assert.IsTrue(paths[0].gameObject.activeSelf);
+            }
+            finally { VisualToggles.SetAll(true); Object.DestroyImmediate(root); }
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
     /// <summary>Re-review nit 2: a map rebuilt mid-game draws its routes as at the game's date at once, not as at 15 May
     /// until the next state change.</summary>
     [Test]
@@ -539,7 +589,7 @@ public class RouteTests
     {
         var routes = RoutePaths.Parse(CommittedYaml, Bounds);
         var kept = RouteLayer.KitRoutes(routes).Select(r => r.Id).ToList();
-        CollectionAssert.AreEquivalent(routes.Where(r => RoutePaths.Bound(r.From) <= RouteLayer.DefaultDate).Select(r => r.Id), kept);
+        CollectionAssert.AreEquivalent(routes.Where(r => r.Kind != RoutePaths.Path && RoutePaths.Bound(r.From) <= RouteLayer.DefaultDate).Select(r => r.Id), kept);
         CollectionAssert.IsSubsetOf(new[] { "jaffa_jerusalem_railway", "tel_aviv_haifa_road", "jaffa_jerusalem_road" }, kept);
         foreach (var later in new[] { "burma_road", "yarkon_rail_link", "tlv_netanya_road" })
             CollectionAssert.DoesNotContain(kept, later);
@@ -559,7 +609,8 @@ public class RouteTests
         CollectionAssert.IsSubsetOf(new[] { "jaffa_jerusalem_railway", "tel_aviv_haifa_road", "burma_road" }, kept);
         foreach (var later in new[] { "yarkon_rail_link", "tlv_netanya_road" })
             CollectionAssert.DoesNotContain(kept, later);
-        Assert.AreEqual(routes.Count - 2, kept.Count, "only the two Phase 4 routes open after the war's last token");
+        Assert.AreEqual(routes.Count(r => r.Kind != RoutePaths.Path) - 2, kept.Count,
+            "only the two Phase 4 routes open after the war's last token (paths take no token's spot, #2917)");
     }
 
     /// <summary>Kits and routes together (#179 on main): no kit building, landmark or tree reaches into the corridor of a
@@ -1029,7 +1080,7 @@ public class RouteTests
             var plans = RouteLayer.Plan(RoutePaths.ReadRuntimeOrYaml(inputs.RoutesTsv, inputs.RoutesYaml, Bounds, Debug.LogWarning));
             var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
             Assert.IsTrue(RouteRibbonFile.TryRead(baked.bytes, source, data.size, origin, plans, out var read, out var why), why);
-            var placed = Ribbons(RoutesRoot(map), "Rail").Concat(Ribbons(RoutesRoot(map), "Roads"))
+            var placed = Ribbons(RoutesRoot(map), "Rail").Concat(Ribbons(RoutesRoot(map), "Roads")).Concat(Ribbons(RoutesRoot(map), "Paths"))
                 .Select(f => f.sharedMesh).ToDictionary(m => m.name);
             Assert.AreEqual(plans.Count, placed.Count);
             for (int i = 0; i < plans.Count; i++)
