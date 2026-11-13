@@ -63,6 +63,9 @@ namespace Statecraft.Game.UI
         OpeningPresenter? opening;
         RaidCardPresenter? raid;
         RaidFlightPresenter? raidFlight;
+        InvasionCardPresenter? invasion;
+        /// <summary>The invasion card (#3142; null before Begin, or where it does not show): a test aid.</summary>
+        internal InvasionCardPresenter? Invasion => invasion;
         EventCardPresenter? card;
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
@@ -155,6 +158,9 @@ namespace Statecraft.Game.UI
         /// <summary>The raid flight before that card (#3000) outside Play mode: off by default, as RaidCardInEditMode; its own
         /// tests set it, with <see cref="RaidFlightForTests"/>.</summary>
         internal bool RaidFlightInEditMode { get; set; }
+        /// <summary>The invasion card after the raid card (#3142) outside Play mode: off by default, as RaidCardInEditMode; its
+        /// own tests set it.</summary>
+        internal bool InvasionCardInEditMode { get; set; }
         /// <summary>Tests: flies the raid in place of the Dakotas (EditMode has no frame clock to fly them by): given what to
         /// call when it ends by itself, returns how to stop it, or null when there is nothing to fly.</summary>
         internal Func<Action, Action?>? RaidFlightForTests { get; set; }
@@ -305,6 +311,9 @@ namespace Statecraft.Game.UI
             // The raid card on New game, likewise (RaidCardInEditMode).
             bool enableRaid = smoke == 0 && !StartScreenPresenter.Skipped()
                 && (Application.isPlaying || startScreen && RaidCardInEditMode);
+            // And the invasion card after it (InvasionCardInEditMode, #3142).
+            bool enableInvasion = smoke == 0 && !StartScreenPresenter.Skipped()
+                && (Application.isPlaying || startScreen && InvasionCardInEditMode);
             // A companion this Begin runs again keeps the page's panel until its replacement publishes (WebCompanion.Dispose).
             Shutdown(keepCompanionPage: companion != null && CompanionWanted());
             smokeRun = smoke > 0;
@@ -561,7 +570,7 @@ namespace Statecraft.Game.UI
             if (smoke == 0) Own(new AchievementReporter(bridge, () => PlatformServices.Current));
 
             // An outcome clip holds the pointer while it shows and in the frame it closes (the skipping click selects no hex).
-            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || raidFlight?.HoldsThePointer == true || raid?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
+            Func<Vector2, bool> overUi = p => opening?.HoldsThePointer == true || raidFlight?.HoldsThePointer == true || raid?.HoldsThePointer == true || invasion?.HoldsThePointer == true || outcomes?.HoldsThePointer == true || UiPointer.IsOverUi(root.panel, p, Screen.height);
             var terrain = map.Terrain;
             var size = terrain.terrainData.size;
             var oldBounds = cameraController.Bounds;
@@ -739,8 +748,55 @@ namespace Statecraft.Game.UI
                 if (RaidCardContent.MayPresent(raidData, raidPreview))
                     raid = Own(new RaidCardPresenter(root, raidData, text,
                         shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
-                        () => advisor?.NewGame(),
+                        () => { if (invasion != null) invasion.Show(); else advisor?.NewGame(); },
                         video == null ? null : Own(new CardVideo())));   // its own player: no clip in the automated runs either
+            }
+            // The Arab armies' invasion card (#3142; owner, 11 Nov 2026: "One card, step per front (Recommended)", "Replace the
+            // 2 advisor steps (Recommended)", "Info only, turn 1 only (Recommended)"): on New game only, after the raid card
+            // (or the opening, without one) and before the turn 1 advisor chain, which its Continue starts (PlayNewGameIntro).
+            // Each front's step selects that army's token and centres the camera on it, as the advisors' unit step does
+            // (showUnit, below); closing it clears that selection and puts the camera back where the game started. It reads no
+            // sim state. A player build shows it only once it is reviewed (InvasionCardContent.MayPresent).
+            if (enableInvasion && InvasionCardContent.Load() is InvasionCardContent.Document invasionData)
+            {
+#if UNITY_EDITOR
+                const bool invasionPreview = true;
+#else
+                const bool invasionPreview = false;
+#endif
+                if (InvasionCardContent.MayPresent(invasionData, invasionPreview))
+                {
+                    (Vector3 LookAt, float Distance)? before = null;
+                    invasion = Own(new InvasionCardPresenter(root, invasionData, text,
+                        shown => { if (cameraController != null) cameraController.enabled = !shown && start?.IsOpen != true; },
+                        row =>
+                        {
+                            if (row == null || rig == null) return;
+                            before ??= (rig.LookAt, rig.Distance);
+                            rig.Distance = Mathf.Min(rig.Distance, AdvisorTargets.MoveStepDistanceM);
+                            FocusUnit(row);
+                            // An Arab force's token is drawn only once its figure has loaded (UnitLayer.Show), so a quick
+                            // Next can reach a front before it is there: the camera still goes to that army's starting hex.
+                            if (units?.Selected != row && Bridge?.Content.StartingForces.FirstOrDefault(f => f.Row == row) is { } force
+                                && Bridge.Content.HexAt(force.Q, force.R) is { } at)
+                            {
+                                rig.LookAt = map.Frame.ToWorld(at.Lon, at.Lat, 0);
+                                cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+                            }
+                        },
+                        () =>
+                        {
+                            if (units != null) units.Select(null);
+                            map.ClearSelection(); this.info?.Clear();
+                            if (before is { } was && rig != null)
+                            {
+                                rig.LookAt = was.LookAt; rig.Distance = was.Distance;
+                                cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+                            }
+                            before = null;
+                            advisor?.NewGame();
+                        }));
+                }
             }
             // The Dakotas' raid before that card (#3000, PR 2 of #2968; the Dakotas by "Reuse Dakotas (Recommended)"): only where
             // the card shows, and only with video on, so never in the automated runs (CardVideo.ForcedOff) nor in EditMode but
@@ -1151,9 +1207,10 @@ namespace Statecraft.Game.UI
         /// first and shows the card when it ends or is skipped.</summary>
         void PlayNewGameIntro()
         {
-            if (shuttingDown || raidFlight?.IsOpen == true || raid?.IsOpen == true) return;
+            if (shuttingDown || raidFlight?.IsOpen == true || raid?.IsOpen == true || invasion?.IsOpen == true) return;
             if (raidFlight != null) raidFlight.Show();
             else if (raid != null) raid.Show();
+            else if (invasion != null) invasion.Show();
             else advisor?.NewGame();
         }
 
@@ -1176,7 +1233,7 @@ namespace Statecraft.Game.UI
             owned.Clear();
             savePersistenceResult = null;
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; raidFlight = null; raid = null; card = null; outcomes = null; playback = null; report = null; direction = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; opening = null; raidFlight = null; raid = null; invasion = null; card = null; outcomes = null; playback = null; report = null; direction = null; end = null; advisor = null; cabinet = null; budgetScreen = null; newGame = null; encyclopedia = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -1348,6 +1405,10 @@ namespace Statecraft.Game.UI
             // So is the raid card after it (RaidCardPresenter): its only control, OK.
             if (hud.ClassListContains(RaidCardPresenter.OpenClass)
                 && !Press(root.Q<Button>("raid-ok"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
+            // So is the invasion card after it (InvasionCardPresenter, #3142): Next through its steps, then Continue.
+            for (int i = 0; i < 32 && hud.ClassListContains(InvasionCardPresenter.OpenClass); i++)
+                if (!Press(root.Q<Button>("invasion-next"), s => log(s.Replace("SMOKE FAIL", "FIRST CARD FAIL")))) yield break;
+            if (hud.ClassListContains(InvasionCardPresenter.OpenClass)) { log("FIRST CARD FAIL the invasion card did not close"); yield break; }
             while (now() - began <= FirstCardBudgetSeconds)
             {
                 var option = root.Q<VisualElement>("event-options")?.Q<Button>();
@@ -1389,13 +1450,14 @@ namespace Statecraft.Game.UI
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
             // Nor does the opening's (#530), over all but those two, in the frame it closes too; nor the raid flight's after it
-            // (#3000, which shows the card); nor the raid card's after that (its OK).
+            // (#3000, which shows the card); nor the raid card's after that (its OK); nor the invasion card's after that (#3142).
             // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
             if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true
                 && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true
                 && opening?.ClosedThisFrame != true && opening?.Escape() != true
                 && raidFlight?.ClosedThisFrame != true && raidFlight?.Escape() != true
-                && raid?.ClosedThisFrame != true && raid?.Escape() != true)
+                && raid?.ClosedThisFrame != true && raid?.Escape() != true
+                && invasion?.ClosedThisFrame != true && invasion?.Escape() != true)
             {
                 bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
                 if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;

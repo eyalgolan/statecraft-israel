@@ -19,9 +19,10 @@ messages:
   - { id: opening.greeting, advisor: ben_gurion, signal: opening, level: new, he_review: approved, media: { picture: opening.greeting.mp4, narration: { en: opening.greeting.en.wav }, cues: { en: [0.00, 4.31, 6.64] }, label: advisor.media_label, credit: advisor.credit.ben_gurion } }
 # #2933: the war and its armies, then the first turn's moves on a real unit. The order is the requires links, not the file's.
 # The six new rows' Hebrew was approved by the owner, 8 Nov 2026 ("Approve all six"). A fallback row is what a player who quit or pressed X still gets.
-  - { id: opening.invasion, advisor: dayan, signal: opening, level: new, he_review: approved, requires: [opening.greeting], fallback: course_open, lapse_after: 3, priority: 3 }
-  - { id: opening.units, advisor: dayan, signal: opening, level: new, he_review: approved, requires: [opening.invasion] }
-  - { id: opening.cities, advisor: meyerson, signal: opening, level: new, he_review: approved, requires: [opening.units], actions: [{ encyclopedia: cities }] }
+# #3142 (owner, 11 Nov 2026: "Replace the 2 advisor steps (Recommended)"): opening.invasion and opening.units left the chain
+# for the invasion card on New game (Resources/InvasionCard), which shows each army on the map; opening.cities follows the
+# greeting, and opening.end_turn is the chain's one fallback row.
+  - { id: opening.cities, advisor: meyerson, signal: opening, level: new, he_review: approved, requires: [opening.greeting], actions: [{ encyclopedia: cities }] }
 # opening.attention and opening.event: copy-fix wording approved by the owner in chat, 24 October 2026, 04:14 UTC: "Approve all 8".
   - { id: opening.attention, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.cities], actions: [{ show_me: attention }, { encyclopedia: attention }], media: { picture: opening.attention.mp4, narration: { en: opening.attention.en.wav }, cues: { en: [0.00, 4.44] }, label: advisor.media_label, credit: advisor.credit.ben_gurion } }
   - { id: opening.city, advisor: meyerson, signal: course_open, level: new, he_review: approved, when: { turn_at_least: 4 }, lapse_after: 7, actions: [{ show_me: city_housing }, { encyclopedia: cities }], media: { picture: opening.city.mp4, narration: { en: opening.city.en.wav }, cues: { en: [0.00, 4.81] }, label: advisor.media_label, credit: advisor.credit.meyerson } }

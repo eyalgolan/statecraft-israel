@@ -289,15 +289,16 @@ public class AdvisorOpeningParityTests
         }
     }
 
-    /// <summary>The ten steps, in the order a player meets them (#2933): the war and its armies, then the moves of the first
-    /// turn on a real unit, the card and End turn. Objectives and the city's two lines left for the later turns.</summary>
+    /// <summary>The eight steps, in the order a player meets them (#2933): the cities, then the moves of the first turn on a
+    /// real unit, the card and End turn. Objectives and the city's two lines left for the later turns, and the war and its
+    /// armies for the invasion card on New game (#3142).</summary>
     [Test]
-    public void HasTenStepsInOrder()
+    public void HasEightStepsInOrder()
     {
-        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.invasion", "opening.units", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.event", "opening.end_turn" }, Steps);
-        Assert.AreEqual(8, AdvisorPresenter.EventStep);
+        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.event", "opening.end_turn" }, Steps);
+        Assert.AreEqual(6, AdvisorPresenter.EventStep);
         var targets = Steps.Select(id => AdvisorCatalog.Load().Messages.Single(m => m.Id == id).Actions.FirstOrDefault(a => a.ShowMe != "")?.ShowMe ?? "").ToArray();
-        CollectionAssert.AreEqual(new[] { "", "", "", "", "attention", "unit_move", "unit_move", "unit_orders", "decision_waiting", "end_turn" }, targets,
+        CollectionAssert.AreEqual(new[] { "", "", "attention", "unit_move", "unit_move", "unit_orders", "decision_waiting", "end_turn" }, targets,
             "each step's target, in order");
         foreach (var text in new[] { En, He }) foreach (var key in Steps)
             Assert.IsFalse(string.IsNullOrWhiteSpace(text["advisor." + key + ".text"]), key);
@@ -725,7 +726,7 @@ public class AdvisorOpeningParityTests
         Assert.IsFalse(advisor.IsOpen, "the advisor steps aside while the second card is open, its event step kept");
         AnswerTheCard();
         Assert.IsNull(card.Shown, "the opening turn's two cards answered"); Assert.IsTrue(advisor.InChain); Assert.AreEqual(AdvisorPresenter.EventStep + 1, advisor.ChainStep);
-        Assert.AreEqual(En.Format("advisor.step", 10, 10), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
+        Assert.AreEqual(En.Format("advisor.step", 8, 8), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
         Assert.AreEqual(En["advisor.opening.end_turn.text"], Ui.Q<Label>("advisor-text").text, "on to End turn");
         for (int i = 0; i < 3; i++) yield return null;                   // the popup was hidden under the card: styles resolve
         Assert.AreSame(Ui.Q<Button>("advisor-got-it"), Ui.Q("root").focusController.focusedElement, "Next has the focus again (#1323)");
@@ -733,7 +734,7 @@ public class AdvisorOpeningParityTests
 
     /// <summary>Path B: the card was answered before the advisor reaches its event step (a returning player opening it from How
     /// to play, or one who answered it under the advisor): there is no card to explain, so the step is left out and the
-    /// advisor counts nine steps.</summary>
+    /// advisor counts seven steps.</summary>
     [Test]
     public void WithNoCardTheEventStepIsLeftOut()
     {
@@ -750,12 +751,12 @@ public class AdvisorOpeningParityTests
         for (int shown = 1; advisor.InChain; shown++)
         {
             seen.Add(Steps[advisor.ChainStep]);
-            Assert.AreEqual(En.Format("advisor.step", shown, 9), Ui.Q<Label>("advisor-count").text, $"step {shown} of nine");
-            Assert.AreEqual(En[shown == 9 ? "advisor.done" : "advisor.next"], Ui.Q<Button>("advisor-got-it").text);
-            Assert.LessOrEqual(shown, 9, "nine steps, then Done");
+            Assert.AreEqual(En.Format("advisor.step", shown, 7), Ui.Q<Label>("advisor-count").text, $"step {shown} of seven");
+            Assert.AreEqual(En[shown == 7 ? "advisor.done" : "advisor.next"], Ui.Q<Button>("advisor-got-it").text);
+            Assert.LessOrEqual(shown, 7, "seven steps, then Done");
             UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
         }
-        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.invasion", "opening.units", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.end_turn" }, seen);
+        CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.cities", "opening.attention", "opening.move_how", "opening.move", "opening.orders", "opening.end_turn" }, seen);
     }
 
     /// <summary>The unit the advisor shows for its unit steps is put away when the advisor moves on to a step that does not
@@ -1094,7 +1095,7 @@ public class AdvisorOpeningNoAttentionParityTests
     public void EventMessageOpensTheCardAndResumesAfterBothSyntheticDecisions(bool he)
     {
         using var rig = new AdvisorTour1688Fixture.Rig(he); rig.Advisor.OpenChain();
-        foreach (var id in AdvisorTour1688Fixture.Visible.Take(7))
+        foreach (var id in AdvisorTour1688Fixture.Visible.Take(5))
         {
             Assert.AreEqual(id, rig.Advisor.Shown?.Id); Assert.IsTrue(rig.Card.Collapsed); rig.Advisor.NextStep();
         }
@@ -1105,7 +1106,7 @@ public class AdvisorOpeningNoAttentionParityTests
         Assert.AreEqual("tour_test_b", rig.Card.Shown?.Id); Assert.IsFalse(rig.Advisor.IsOpen);
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         Assert.IsNull(rig.Card.Shown); Assert.AreEqual("opening.end_turn", rig.Advisor.Shown?.Id);
-        Assert.AreEqual(AdvisorTour1688Fixture.Text(he).Format("advisor.step", 9, 9), rig.Ui.Q<Label>("advisor-count").text);
+        Assert.AreEqual(AdvisorTour1688Fixture.Text(he).Format("advisor.step", 7, 7), rig.Ui.Q<Label>("advisor-count").text);
         Assert.IsTrue(rig.Advisor.IsOpen); Assert.AreEqual("player", rig.Selection);
     }
 
@@ -1117,7 +1118,7 @@ public class AdvisorOpeningNoAttentionParityTests
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         rig.Advisor.OpenChain(); var ids = new List<string>();
-        while (rig.Advisor.InChain) { ids.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(ids.Count, 8); rig.Advisor.NextStep(); }
+        while (rig.Advisor.InChain) { ids.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(ids.Count, 6); rig.Advisor.NextStep(); }
         CollectionAssert.AreEqual(AdvisorTour1688Fixture.Visible.Where(id => id != "opening.event"), ids);
     }
 }
@@ -1135,14 +1136,14 @@ public class AdvisorOpeningEventIdentityTests
             .Replace("\npages:\n", "\n  - { id: opening.detour, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 99 } }\n\npages:\n");
         using var rig = new AdvisorTour1688Fixture.Rig(catalog: AdvisorCatalog.Parse(yaml));
         rig.Advisor.OpenChain();
-        for (int i = 0; i < 7; i++) rig.Advisor.NextStep();
+        for (int i = 0; i < 5; i++) rig.Advisor.NextStep();
         Assert.AreEqual("opening.event", rig.Advisor.Shown?.Id);
         Assert.AreNotEqual(AdvisorPresenter.EventStep, rig.Advisor.ChainStep, "shifted catalogue precondition");
         rig.Ui.Press("advisor-show-me");
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         Assert.AreEqual("opening.end_turn", rig.Advisor.Shown?.Id);
-        Assert.AreEqual(AdvisorTour1688Fixture.Text(false).Format("advisor.step", 9, 9), rig.Ui.Q<Label>("advisor-count").text);
+        Assert.AreEqual(AdvisorTour1688Fixture.Text(false).Format("advisor.step", 7, 7), rig.Ui.Q<Label>("advisor-count").text);
         Assert.IsTrue(rig.Advisor.IsOpen);
     }
 
@@ -1151,7 +1152,7 @@ public class AdvisorOpeningEventIdentityTests
     public void ClosingEventRestoresTheOriginallyCollapsedCard()
     {
         using var rig = new AdvisorTour1688Fixture.Rig(); rig.Card.Collapse(); rig.Advisor.OpenChain();
-        for (int i = 0; i < 7; i++) rig.Advisor.NextStep();
+        for (int i = 0; i < 5; i++) rig.Advisor.NextStep();
         Assert.AreEqual("opening.event", rig.Advisor.Shown?.Id);
         rig.Ui.Press("advisor-show-me"); Assert.IsFalse(rig.Card.Collapsed);
         rig.Advisor.CloseChain(); Assert.IsTrue(rig.Card.Collapsed);
@@ -1203,10 +1204,10 @@ public class AdvisorOpeningNoAttentionGameRootTests
             .First(h => h != city && game.Units!.UnitToSelectAt(h.Item1, h.Item2) == null);
         GameRoot.OnHexClicked(map, game.Units!, game.Info!, hex.Item1, hex.Item2);
         Assert.AreEqual(hex, game.Info!.Selected, "the player's selection before the tour");
-        game.Advisor.OpenChain(); for (int i = 0; i < 3; i++) game.Advisor.NextStep();
+        game.Advisor.OpenChain(); game.Advisor.NextStep();
         Assert.AreEqual("opening.cities", game.Advisor.Shown?.Id);
         Assert.AreEqual(city, game.Info.Selected, "the tour temporarily selects its city");
-        RoundTrip("opening.cities", 4);
+        RoundTrip("opening.cities", 2);
         Assert.AreEqual(city, game.Info!.Selected, "the rebuilt city step selects its city again");
         game.Advisor!.CloseChain();
         Assert.AreEqual(hex, game.Info.Selected, "closing restores the player's selection in the rebuilt info panel");
@@ -1221,7 +1222,7 @@ public class AdvisorOpeningNoAttentionGameRootTests
             Assert.IsFalse(game.AdvisorSession!.Settings.Seen("opening.attention"));
             if (id == "opening.event")
             {
-                RoundTrip(id, 8);
+                RoundTrip(id, 6);
                 UiTestKit.Press(Ui.Q<Button>("advisor-show-me"));
                 Assert.AreEqual("tour_test_a", game.Card!.Shown?.Id);
                 Assert.IsFalse(game.Card.Collapsed, "the rebuilt event action opens the same decision by identity");

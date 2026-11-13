@@ -1,0 +1,60 @@
+# The Arab armies' invasion card on New game (#3142; owner: "we need event cards about the arab armies invasions, that
+# would show the player where the enemy forces are located"). Owner, 11 Nov 2026: "One card, step per front
+# (Recommended)", "Replace the 2 advisor steps (Recommended)" and "Info only, turn 1 only (Recommended)". So: one card,
+# after the raid card and before the turn 1 advisor chain, in place of the advisors' opening.invasion and opening.units
+# steps; an intro step with no camera, then one step per front, each centring the camera on that army's token on the
+# map (its `focus`, a units_1948.yaml row drawn on 15 May 1948, whose `side` the step names); Next, and Continue on the
+# last step. Presentation only, like the raid card: it reads no sim state, changes no number and is not game content
+# (InvasionCardContent). The five forces on the map on 15 May are Egypt's, the Arab Legion's, Syria's, Iraq's and the
+# ALA's (StartingForces; the sim test InvasionCardTests holds the steps to them). Lebanon's army has no token before
+# 6 June (lebanese_army, first anchor from 1948-06-06), so the intro names it with no camera.
+# Every fact is from the units_1948.yaml rows on main (the row and field are named in each source's `supports`);
+# the rows' strength figures are left out, and so is the size of Iraq's force (its row has no Hebrew number yet).
+# A player build shows the card only once the owner moves status to sensitivity-reviewed (as the opening and the raid
+# card), every source has a person's checked date and the Hebrew is approved by a native read
+# (InvasionCardContent.MayPresent); the Editor shows the draft with the opening's preview label. No `checked` dates
+# below: no person has checked these claims against the sources for this card yet.
+# For the native reviewer (#564): agent-drafted Hebrew, not yet read by a native speaker. Names and places as the
+# rows' agent-checked Hebrew writes them (name_he, number_he, sector_he, place_he); the Arab Legion's line keeps the
+# approved advisor wording ״ירדן״ for the map's label (strings.he.yaml advisor.opening.invasion.text, approved 8 Nov
+# 2026, which this card replaces). Dates as date.day_month_year, with the maqaf of HE-07; no Latin letters (HE-09).
+status: draft
+title: "The Arab armies invade"
+title_he: "צבאות ערב פולשים"
+he_review: pending
+steps:
+  - text: "On 15 May 1948 the armies of Egypt, Transjordan, Syria and Iraq entered the country. Lebanon's army stood at the frontier. The Arab League's volunteer army was already here."
+    text_he: "ב־15 במאי 1948 נכנסו לארץ צבאות מצרים, עבר הירדן, סוריה ועיראק. צבא לבנון עמד על הגבול. צבא המתנדבים של הליגה הערבית כבר היה כאן."
+  - focus: egyptian_expeditionary_force
+    side: egypt
+    text: "The Egyptian army: two brigade groups. The coastal brigade group crossed at Rafah and entered Gaza that evening."
+    text_he: "צבא מצרים: שתי קבוצות חטיבתיות. הקבוצה החטיבתית החופית חצתה ברפיח ונכנסה לעזה באותו ערב."
+  - focus: arab_legion
+    side: jordan
+    text: "Transjordan's Arab Legion, marked Jordan on the map: one division, with its headquarters at Ramallah."
+    text_he: "הלגיון הערבי של עבר הירדן, המסומן במפה ״ירדן״: דיוויזיה אחת, ומפקדתה ברמאללה."
+  - focus: syrian_army
+    side: syria
+    text: "The Syrian army: its 1st Infantry Brigade crossed south of Lake Tiberias toward Samakh."
+    text_he: "הצבא הסורי: חטיבת החי״ר הראשונה שלו חצתה מדרום לכנרת לעבר צמח."
+  - focus: iraqi_expeditionary_force
+    side: iraq
+    text: "The Iraqi army forded the Jordan and took the high ground over Gesher."
+    text_he: "הצבא העיראקי חצה את הירדן ותפס את הגבעות שמעל גשר."
+  - focus: arab_liberation_army
+    side: ala
+    text: "The Arab Liberation Army, the Arab League's volunteer army: its Second Yarmuk Battalion held the al-Malikiyya sector on the Lebanese border."
+    text_he: "צבא ההצלה, צבא המתנדבים של הליגה הערבית: גדוד אל-ירמוכ השני שלו החזיק בגזרת אל-מאלכיה שעל גבול לבנון."
+sources:
+  - url: "https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf"
+    supports: "Dupuy, Elusive Victory (1978), as content/map/units_1948.yaml carries it: egyptian_expeditionary_force, row sources (p. 55, two brigade groups) and the Gaza anchor's note ('Dupuy pp. 56-57: the coastal brigade group crossed at Rafah and entered Gaza in the early evening of 15 May'); syrian_army, the first anchor's note ('Dupuy p. 47: the 1st Brigade crossed south of the lake at 09:00 on 15 May toward Samakh'); iraqi_expeditionary_force, the first anchor's note ('Dupuy p. 51: the main force forded the Jordan near the pipeline south of Ma'ad and took the high ground over Gesher')"
+  - url: "https://archive.org/details/in.ernet.dli.2015.51540"
+    supports: "O'Ballance, The Arab-Israeli War 1948 (1956), as units_1948.yaml carries it: egyptian_expeditionary_force, row sources ('O'Ballance pp. 89-90 and Dupuy p. 55: two brigade groups of unequal size'); arab_legion, row sources ('O'Ballance p. 136: the division in the field')"
+  - url: "https://archive.org/details/elshandawily9575"
+    supports: "al-Tall, Karithat Filastin (1959), pp. 84-85, as units_1948.yaml carries it: arab_legion, the Ramallah anchor's note ('the division's headquarters at Ramallah on 15 May') and its sector ('On 15 May 1948 its division headquarters was at Ramallah'); the map marks the Legion's side as Jordan (side: jordan)"
+  - url: "https://archive.org/details/cia-readingroom-document-cia-rdp78-01617a004700010004-5"
+    supports: "CIA Intelligence Summary, week ending 26 May 1948, as units_1948.yaml carries it: lebanese_army, sector ('On 15 May 1948 it stood at the frontier'); the row is status draft and has no anchor before 1948-06-06, so the card names Lebanon's army with no camera"
+  - url: "https://www.palquest.org/sites/default/files/al-Qawuqji_-_part_I.pdf"
+    supports: "al-Qawuqji, 'Memoirs, 1948, Part I', Journal of Palestine Studies 1(4), as units_1948.yaml carries it: arab_liberation_army, number ('The Arab League's volunteer army') and row sources ('the editor's note: in Palestine from January 1948')"
+  - url: "https://he.wikipedia.org/wiki/%D7%A7%D7%A8%D7%91%D7%95%D7%AA_%D7%9E%D7%9C%D7%9B%D7%99%D7%94"
+    supports: "he.wiki, קרבות מלכיה, as units_1948.yaml carries it: arab_liberation_army, the al-Malikiyya anchor's note ('the Second Yarmuk Battalion held the al-Malikiyya, Qadas and Bar'am sector'; the owner ruled for this account, #226, ruling 2); the row marks it to_verify, resting on he.wiki"

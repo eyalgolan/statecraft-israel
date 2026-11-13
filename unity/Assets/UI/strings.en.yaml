@@ -1013,8 +1013,6 @@ advisor.opening.move.text: "A unit moves at once, and terrain sets the cost of e
 advisor.opening.event.text: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
 advisor.opening.objectives.text: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
 # The war, the armies and the first turn's moves: the plan's copy (#2933), approved with the plan.
-advisor.opening.invasion.text: "On 15 May 1948 Egypt, Syria and Iraq sent armies into the country. Transjordan's Arab Legion, marked Jordan on the map, stood at Ramallah and near Bab al-Wad. Your brigades must hold them."
-advisor.opening.units.text: "Lebanon's army stood at the border, and the Arab League's volunteers were already here. Select any unit on the map to see whose it is."
 advisor.opening.cities.text: "Your cities hold your people, jobs and training, and work there brings in Money. Select a city to see them."
 advisor.opening.move_how.text: "To move, select a brigade, press Move, then click a lit hex. Click a farther hex and the brigade goes there over several turns."
 advisor.opening.orders.text: "A brigade with no order holds up End turn. Fortify and Hold stay until you change them, and a route carries on by itself. Skip this turn lasts one turn."
@@ -1396,6 +1394,11 @@ opening.preview: "Editor preview: draft text; human source checks pending."
 # The Tel Aviv raid card on New game (RaidCardPresenter; owner, 8 Nov 2026: "the player only has an option of clicking
 # ok"). Its text and sources are in Resources/RaidIntro/raid-intro.yaml; its preview label is opening.preview.
 raid.ok: "OK"
+
+# The Arab armies' invasion card on New game (InvasionCardPresenter, #3142; owner, 11 Nov 2026: "Info only, turn 1
+# only (Recommended)"). Its text and sources are in Resources/InvasionCard/invasion-card.yaml; its step count, Next and
+# preview label are opening.count, opening.next and opening.preview. Continue closes it on the last step.
+invasion.continue: "Continue"
 
 # #813 (R-MONEY-004; owner, 2 November 2026: "Spend the dollars (Recommended)"): the Defence screen's dollar conversion.
 # The refusals are EconomySystem's own words, shown in the end-of-turn toast.

@@ -1206,8 +1206,8 @@ advisor.opening.objectives.text: "היעדים מגדירים את מטרות ה
 # #2933's steps, agent-drafted: native review: owner, 8 Nov 2026 ("Approve all six"; step 10's report named by the screen
 # title, "Use the screen title"; step 2 keeps its date, "Keep date, add exception (Recommended)", HE-08; step 2's
 # maqaf, "Use maqaf ב־15 (Recommended)", HE-07).
-advisor.opening.invasion.text: "ב־15 במאי 1948 שלחו מצרים, סוריה ועיראק צבאות אל הארץ. הלגיון הערבי של עבר הירדן, המסומן במפה ״ירדן״, עמד ברמאללה וליד שער הגיא. החטיבות שלכם צריכות לעצור אותם."
-advisor.opening.units.text: "צבא לבנון עמד על הגבול, ומתנדבי הליגה הערבית כבר היו כאן. בחרו יחידה כלשהי במפה כדי לראות של מי היא."
+# (11 Nov 2026) #3142: steps 2 and 3 (opening.invasion, opening.units) left for the invasion card (owner: "Replace the 2
+# advisor steps (Recommended)"), so the HE-07 and HE-08 notes above no longer have a line here.
 advisor.opening.cities.text: "בערים שלכם נמצאים האנשים, המשרות וההכשרה, והעבודה בהן מכניסה כסף. בחרו עיר כדי לראות אותם."
 advisor.opening.move_how.text: "כדי לנוע, בחרו חטיבה, לחצו על ״תנועה״ ואז על משבצת מוארת. לחיצה על משבצת רחוקה יותר שולחת אליה את החטיבה במשך כמה תורות."
 advisor.opening.orders.text: "חטיבה ללא הוראה מעכבת את ״סיום התור״. ״ביצור״ ו״החזקה״ נשארים עד שתשנו אותם, ומסלול ממשיך מעצמו. ״דילוג על התור״ חל על תור אחד."
@@ -1658,6 +1658,11 @@ opening.preview: "תצוגה מקדימה בעורך: טיוטה; בדיקת ה�
 # The Tel Aviv raid card on New game. For the native reviewer (#564): agent-drafted; "אישור" as the Hebrew UI's OK
 # buttons commonly say it. The card's text is in Resources/RaidIntro/raid-intro.yaml, with its own he_review.
 raid.ok: "אישור"
+
+# The Arab armies' invasion card on New game (#3142). For the native reviewer (#564): agent-drafted; "להמשיך" as the
+# events' one-option cards say Continue (content/events/absorb_immigrants.yaml). The card's text is in
+# Resources/InvasionCard/invasion-card.yaml, with its own he_review.
+invasion.continue: "להמשיך"
 
 # #813 (R-MONEY-004): the Defence screen's dollar conversion. Agent-drafted Hebrew; every line below is
 # native-review-pending (#564).

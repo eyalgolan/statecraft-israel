@@ -740,6 +740,24 @@
                 <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
         </ui:VisualElement>
+        <!-- The Arab armies' invasion card on New game (InvasionCardPresenter, #3142; owner, 11 Nov 2026): after the raid card,
+             before the turn 1 advisors. One card in the event-card frame, docked to the side with no backdrop, so the map
+             shows each army's token as the camera centres on it; Next, and Continue on the last step. Editor drafts are
+             labelled; a player build shows it only once it is reviewed. -->
+        <ui:VisualElement name="invasion-layer" class="invasion-layer">
+            <ui:VisualElement name="invasion-card" class="panel event-card invasion-card">
+                <ui:Label name="invasion-preview" class="muted opening-preview" />
+                <ui:Label name="invasion-title" class="title event-title opening-source-en" />
+                <ui:Label name="invasion-count" class="muted opening-count" />
+                <ui:ScrollView name="invasion-scroll" class="invasion-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden">
+                    <ui:Label name="invasion-text" class="opening-text opening-source-en" />
+                </ui:ScrollView>
+                <ui:VisualElement class="row invasion-actions">
+                    <ui:Button name="invasion-next" />
+                </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <!-- "Report a bug or idea" (#1169, FeedbackPresenter): over everything, the start screen too, with what each GitHub
              form opens with under its button; the game sends nothing itself. Before the toast, which stays readable. -->
         <ui:VisualElement name="feedback-layer" class="feedback-layer">
