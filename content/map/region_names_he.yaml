@@ -492,3 +492,55 @@ names:
       - url: "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf"
         checked: 2026-10-27
         cite: "MV-EN, UN document S/1471, 17 March 1950, modus vivendi signed at El Auja on 22 February 1950 (ECF copy), Article I: Egypt-Israel General Armistice Agreement signed at Rhodes on 24 February 1949; supports the caption year 1949. Evidence (the URL above) checked by a coordinator agent, accessed 2026-10-27; not independently retrieved by the caption author. Owner approval recorded at https://github.com/eyalgolan/statecraft-israel/pull/1965#issuecomment-6535421241. Signed-map check approved by the owner, 31 October 2026; native Hebrew wording approved by the owner, 27 October 2026."
+  # Native Hebrew wording approved by the owner on 11 November 2026 (#2525); still pending native review; signed-map check not claimed.
+  - key: zone.syria_dmz_south.name
+    name: "Demilitarized Zone (Syria-Israel), southern part: Ein Gev and El Hamma"
+    name_he: "האזור המפורז (ישראל–סוריה), החלק הדרומי: עין־גב וחמה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/translation-of-international-treaties-db11/he/translation-of-international-treaties-db_%D7%9B%D7%A8%D7%9A%20%D7%90%27-%20%D7%94%D7%A1%D7%9B%D7%9D%20%D7%99%D7%A9%D7%A8%D7%90%D7%9C-%20%D7%A1%D7%95%D7%A8%D7%99%D7%94%20%D7%A2%D7%9C%20%D7%A9%D7%91%D7%99%D7%AA%D7%AA%20%D7%A0%D7%A9%D7%A7%20%D7%9B%D7%9C%D7%9C%D7%99%D7%AA.pdf"
+        checked: 2026-11-11
+        cite: "Kitvei Amana, Hebrew Israel-Syria agreement: printed p. 51 / PDF p. 5, Art. V.5(a) (Ein Gev sector, part of the demilitarized zone); printed p. 56 / PDF p. 10, Annex II 2(b)-(c) (El Hamma, spelled as in the source; English column El Hammam). Southern part is a game division, not an Annex II sector. Editorial composition; native Hebrew wording approved by the owner, 11 November 2026 (relayed by the coordinator); signed-map check not claimed. Evidence and scan read by a coordinator agent, accessed 2026-11-11."
+  - key: line.jordan_adl_iraqi_a_triangle.name
+    name: "Armistice Demarcation Line (Jordan-Israel), line A, Baqa to Kafr Qasim (Art. VI.3(a), by 8 May 1949)"
+    name_he: "קו שביתת הנשק (ירדן–ישראל), קו A, מבקעה עד כפר קאסם (סעיף 6, פסקה 3(א), עד 8 במאי 1949)"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-11
+        cite: "Hebrew Israel-Jordan agreement, PDF p. 4, Art. VI.2 (line marked A) and VI.3(a) (Baqa, Kafr Qasim; five weeks); PDF p. 1 gives 3 April 1949, so the date is 8 May 1949. Editorial composition; native Hebrew wording approved by the owner, 11 November 2026 (relayed by the coordinator); signed-map check not claimed. Evidence and scan read by a coordinator agent, accessed 2026-11-11."
+  - key: line.jordan_adl_iraqi_b_wadi_ara.name
+    name: "Armistice Demarcation Line (Jordan-Israel), line A, Wadi Ara, Zubeiba to Baqa (Art. VI.3(b), by 22 May 1949)"
+    name_he: "קו שביתת הנשק (ירדן–ישראל), קו A, ודי ערה, מזבובה עד בקעה (סעיף 6, פסקה 3(ב), עד 22 במאי 1949)"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-11
+        cite: "Hebrew Israel-Jordan agreement, PDF p. 4, Art. VI.2 (line marked A) and VI.3(b) (Wadi Ara, Baqa, Zubeiba; seven weeks); PDF p. 1 gives 3 April 1949, so the date is 22 May 1949. Editorial composition; native Hebrew wording approved by the owner, 11 November 2026 (relayed by the coordinator); signed-map check not claimed. Evidence and scan read by a coordinator agent, accessed 2026-11-11."
+  - key: line.jordan_adl_iraqi_c_south.name
+    name: "Armistice Demarcation Line (Jordan-Israel), line A, Kafr Qasim to Kh Deir Arab (Art. VI.3(c), by 17 July 1949)"
+    name_he: "קו שביתת הנשק (ירדן–ישראל), קו A, מכפר קאסם עד חירבת דיר-ערב (סעיף 6, פסקה 3(ג), עד 17 ביולי 1949)"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-11
+        cite: "Hebrew Israel-Jordan agreement, PDF p. 4, Art. VI.2 (line marked A), VI.3(a) (Kafr Qasim) and VI.3(c) (rest of the Iraqi sector; fifteen weeks); PDF p. 3, Art. V(a) (Khirbet Deir Arab); PDF p. 1 gives 3 April 1949, so the date is 17 July 1949. Editorial composition; native Hebrew wording approved by the owner, 11 November 2026 (relayed by the coordinator); signed-map check not claimed. Evidence and scan read by a coordinator agent, accessed 2026-11-11."
+  - key: line.jordan_adl_bc_south.name
+    name: "Armistice Demarcation Line (Jordan-Israel), Jerusalem to the Dead Sea (line B, Hebron-Dead Sea)"
+    name_he: "קו שביתת הנשק (ירדן–ישראל), מירושלים עד ים המלח (קו B, גזרת חברון - ים-המלח)"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-11
+        cite: "Hebrew Israel-Jordan agreement, PDF p. 3, Art. V(b) (Jerusalem area), V(c) (Hebron-Dead Sea sector, marked B) and V(d) (Dead Sea). Editorial composition; native Hebrew wording approved by the owner, 11 November 2026 (relayed by the coordinator); signed-map check not claimed. Evidence and scan read by a coordinator agent, accessed 2026-11-11."
+  - key: line.jordan_adl_iraqi_c_east.name
+    name: "Armistice Demarcation Line (Jordan-Israel), line A, Zubeiba to the Jordan (Art. VI.3(c), by 17 July 1949)"
+    name_he: "קו שביתת הנשק (ירדן–ישראל), קו A, מזבובה עד הירדן (סעיף 6, פסקה 3(ג), עד 17 ביולי 1949)"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-11-11
+        cite: "Hebrew Israel-Jordan agreement, PDF p. 4, Art. VI.2 (line marked A), VI.3(b) (Zubeiba) and VI.3(c) (rest of the Iraqi sector; fifteen weeks); PDF p. 1 gives 3 April 1949, so the date is 17 July 1949. The Jordan river is not named in this text. Editorial composition; native Hebrew wording approved by the owner, 11 November 2026 (relayed by the coordinator); signed-map check not claimed. Evidence and scan read by a coordinator agent, accessed 2026-11-11."
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/translation-of-international-treaties-db11/he/translation-of-international-treaties-db_%D7%9B%D7%A8%D7%9A%20%D7%90%27-%20%D7%94%D7%A1%D7%9B%D7%9D%20%D7%99%D7%A9%D7%A8%D7%90%D7%9C-%20%D7%A1%D7%95%D7%A8%D7%99%D7%94%20%D7%A2%D7%9C%20%D7%A9%D7%91%D7%99%D7%AA%D7%AA%20%D7%A0%D7%A9%D7%A7%20%D7%9B%D7%9C%D7%9C%D7%99%D7%AA.pdf"
+        checked: 2026-11-11
+        cite: "Kitvei Amana, Hebrew Israel-Syria agreement: printed p. 55 / PDF p. 9, Annex I items 10 and 14 (the Jordan river, as in the shipped central-zone caption). Form of the river name only; owner accepted it for this Jordan caption, 11 November 2026."
