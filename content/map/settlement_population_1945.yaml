@@ -87,11 +87,13 @@ settlements:
 - id: beersheba
   population: 5570
   listed_as: "Beersheba"
-  note: "The page's Beersheba row is garbled; 5,570 is its most likely reading. Check against the scan."
+  note: "The scan (Village Statistics 1945, printed p. 33) prints 5,570 = 5,360 Moslems + 200 Christians + 10 Others; read by an AI agent, not yet by a person."
   status: owner-verify
   sources:
   - url: https://en.wikipedia.org/wiki/Village_Statistics,_1945
     checked: '2026-10-11'
+  - url: https://users.cecs.anu.edu.au/~bdm/yabber/census/VillageStatistics1945orig.pdf
+    checked: '2026-11-11'
 - id: petah_tikva
   population: 17250
   listed_as: "Petah Tiqva (Urban)"
