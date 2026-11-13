@@ -25,7 +25,7 @@ and review the diff. Do not edit the table by hand.
   field, so it is out of this inventory.
 - **Review reset**: "no" on every row. Of this inventory's own changes, only `israel_bonds`' source bytes move: its
   `launch` option gains `debt_dollars: 52` and a comment (#2457), with its text, Hebrew, sources and review status
-  unchanged. Every card's bytes are pinned (`AllFortyOneSourceRecordsIncludingReviewsAndHebrewAreUnchanged`), and a
+  unchanged. Every card's bytes are pinned (`AllFortyTwoSourceRecordsIncludingReviewsAndHebrewAreUnchanged`), and a
   later edit re-pins a card with its reason. The five operation cards' `requires_unit_regions` lines and their
   `# R-ENEMY-007` comments (#2543) are left out of the pin, so those cards keep theirs. The test also checks that a kept card keeps its status and human sign-off under `gdd-0.3`. An excluded card keeps
   its record and review for the legacy rulesets.
@@ -121,6 +121,8 @@ first-slice availability") describes; this file changes no exclusion.
 | `jerusalem_military_government` | `military_government` | `effects[1].intl_standing` | -0.02 | `effects[1].intl_standing` (same) | -0.02 | no |
 | `jerusalem_military_government` | `accept_demilitarisation` | `effects[0].security` | -0.015 | `effects[0].security` (same) | -0.015 | no |
 | `jerusalem_military_government` | `accept_demilitarisation` | `effects[1].intl_standing` | 0.02 | `effects[1].intl_standing` (same) | 0.02 | no |
+| `jordan_nonaggression_talks` | `agree_in_principle` | `effects[0].intl_standing` | 0.02 | `effects[0].intl_standing` (same) | 0.02 | no |
+| `jordan_nonaggression_talks` | `hold_out_for_peace` | `effects[0].intl_standing` | -0.02 | `effects[0].intl_standing` (same) | -0.02 | no |
 | `latrun_proposal` | `accept_vote` | `effects[0].intl_standing` | 0.01 | `effects[0].intl_standing` (same) | 0.01 | no |
 | `latrun_proposal` | `press_offensive` | `set_rung` | set 5 | `set_rung` (same) | set 5 | no |
 | `latrun_proposal` | `press_offensive` | `effects[0].security` | 0.025 | `effects[0].security` (same) | 0.025 | no |
@@ -187,7 +189,7 @@ first-slice availability") describes; this file changes no exclusion.
 | `ten_days` | `southern_front` | `unit_orders[0].kiryati` | go to (-3, 24) | `unit_orders[0].kiryati` (same, once its units are in place: R-ENEMY-007) | go to (-3, 24) | no |
 | `ten_days` | `southern_front` | `unit_orders[1].carmeli` | go to (14, 6) | `unit_orders[1].carmeli` (same, once its units are in place: R-ENEMY-007) | go to (14, 6) | no |
 
-139 rows: 41 cards under gdd-0.1, 41 under gdd-0.3.
+141 rows: 42 cards under gdd-0.1, 42 under gdd-0.3.
 
 | Excluded card | gdd-0.3 loader with only this exclusion removed |
 |---|---|

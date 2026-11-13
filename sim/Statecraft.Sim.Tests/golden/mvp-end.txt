@@ -2,7 +2,7 @@
 ind{
   food_supply=0.8555395683057426 [3FEB60948449D3F3]
   housing=0.08527449992708651 [3FB5D48CB45E9D83]
-  intl_standing=0.8300000000000003 [3FEA8F5C28F5C292]
+  intl_standing=0.8500000000000003 [3FEB333333333336]
   morale=0.4731417780123105 [3FDE47F473BBC95E]
   security=0.5211322526321603 [3FE0AD1D8BBE4521]
 pol{
@@ -22,7 +22,7 @@ eff{
 shift{
   food_supply=0.15000000000000002 [3FC3333333333334]
   housing=0 [0000000000000000]
-  intl_standing=0.3300000000000003 [3FD51EB851EB8524]
+  intl_standing=0.3500000000000003 [3FD666666666666C]
   morale=-0.10000000000000009 [BFB99999999999A0]
   security=0.18000000000000016 [3FC70A3D70A3D710]
 bud{
@@ -72,6 +72,7 @@ fired[
   israel_bonds
   jerusalem_ceasefire
   jerusalem_military_government
+  jordan_nonaggression_talks
   latrun_proposal
   law_of_return
   maabarot_policy
@@ -107,6 +108,7 @@ chosen{
   israel_bonds=launch
   jerusalem_ceasefire=keep
   jerusalem_military_government=military_government
+  jordan_nonaggression_talks=agree_in_principle
   latrun_proposal=accept_vote
   law_of_return=enact
   maabarot_policy=maabarot

@@ -1,9 +1,9 @@
-1952-01-15;6018027440424184879;Historical;44;
+1952-01-15;10372713005361030233;Historical;44;
 ind{
   food_supply=0 [0000000000000000]
-  housing=0.12527429756872116 [3FC008FCF98B23CA]
+  housing=0.08527429756872117 [3FB5D4894F3F3D57]
   intl_standing=0.7900000000000003 [3FE947AE147AE14A]
-  morale=0.6021843611458284 [3FE345182329166A]
+  morale=0.6761872908333285 [3FE5A35387833317]
   security=0.5211322526321603 [3FE0AD1D8BBE4521]
 pol{
   border_settlement=0.2 [3FC999999999999A]
@@ -14,16 +14,16 @@ eff{
   border_villages_secure=0.04113225263216018 [3FA50F495FBB5C36]
   building_houses=0.08504947742483629 [3FB5C5CD7414E142]
   food_lifts_cohesion=0.012063175589332852 [3F88B49405230026]
-  homes_lift_morale=0.018816345910318985 [3F93449799429ABC]
+  homes_lift_morale=0.012819275597818983 [3F8A40FE0B9BBCA2]
   rationing_feeds=0 [0000000000000000]
   rationing_grates=0 [0000000000000000]
   safety_lifts_morale=0.0520437005265136 [3FAAA578CF72C98B]
   work_lifts_cohesion=0.019261139119662984 [3F93B9312A691F60]
 shift{
   food_supply=-0.04999999999999999 [BFA9999999999998]
-  housing=0.039999999999999994 [3FA47AE147AE147A]
+  housing=-1.3877787807814457E-17 [BC70000000000000]
   intl_standing=0.29000000000000026 [3FD28F5C28F5C294]
-  morale=-0.050000000000000044 [BFA99999999999A0]
+  morale=0.030000000000000027 [3F9EB851EB851EC0]
   security=0.18000000000000016 [3FC70A3D70A3D710]
 bud{
   agriculture_minister=0.07 [3FB1EB851EB851EC]
@@ -50,7 +50,7 @@ debt=295.69012071283805 [40727B0ABC043EE8]
 fx=-74.99043132809652 [C052BF633A14C6F0]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
-stab=0.43907509119986515 [3FDC19CE694C43CD]
+stab=0.4593297084326191 [3FDD65A86EF327F8]
 att=4 [4010000000000000]
 fired[
   altalena
@@ -72,6 +72,7 @@ fired[
   israel_bonds
   jerusalem_ceasefire
   jerusalem_military_government
+  jordan_nonaggression_talks
   latrun_proposal
   law_of_return
   maabarot_policy
@@ -102,10 +103,11 @@ chosen{
   forex_crisis_1951=request_aid
   frumkin_commission=inquiry
   idf_founding=one_army
-  iraqi_exodus=pace
+  iraqi_exodus=airlift
   israel_bonds=donations_only
   jerusalem_ceasefire=keep
   jerusalem_military_government=military_government
+  jordan_nonaggression_talks=hold_out_for_peace
   latrun_proposal=accept_vote
   law_of_return=enact
   maabarot_policy=maabarot
