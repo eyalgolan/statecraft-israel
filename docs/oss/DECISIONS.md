@@ -124,3 +124,22 @@ coordinator. Each quote is the option label the owner chose; the options themsel
   and for "Frequent Violence or Gore", "Tick it (Recommended)" (`docs/steam/coming-soon-kit.md` section 5, PR #2173).
   Deport in the mature-content description: decided (owner, 2026-11-02, relayed by the coordinator): "Mention it
   (Recommended)" (#2165, PR #2225), and its sentence's wording: "Approve as written".
+
+## Paid release and exclusive assets
+
+- [x] X1 Tal Heuberger's models and related files (and Afik Faerman's music, once Afik agrees) move from CC BY-NC-ND 4.0 to the
+  Statecraft: Israel Exclusive Asset Licence 1.0 (`LICENSES/LicenseRef-Statecraft-Exclusive-Asset-1.0.txt`):
+  used in this game only, with an exclusive licence to the owner to sell the game with them. Owner, 12 November 2026,
+  in a Claude Code session: "we need the license to say their work is exclusive to this game only", then the option
+  "This game only, all use" (as the option was described: no one else may use the files, noncommercial use included;
+  existing public copies keep their CC rights), and for payment "Leave terms open"; and "protfolio is allowed" (the
+  creators may show the work in their own portfolios, not for download, sale or licence). It is meant to make a paid
+  release possible; the owner's answer of 23 October 2026 under D1 ("the game is never going to charge any money.
+  ever") stands until the owner rules on it. Acceptance is each creator's written agreement as a comment on the pull
+  request (the owner, 12 November 2026: "a comment for acceptance from them is fine for now. I would work on the
+  document seperatly"). Tal Heuberger agreed on 12 November 2026
+  (https://github.com/eyalgolan/statecraft-israel/pull/3159#issuecomment-6822146113), and Tal's files moved that day.
+  The owner, 12 November 2026, on moving Tal's files before Afik agrees: "Switch Tal's now (Recommended)"; and on
+  whether "for my files" covers Tal's later deliveries too: "Treat as covered". Afik Faerman has not agreed yet: the
+  music stays under CC BY-NC-ND 4.0 until Afik does, and a separate change then moves it and records the date. Afik's half is deliberately not an open checkbox here, so it does
+  not hold back releases while the music stays CC BY-NC-ND 4.0.

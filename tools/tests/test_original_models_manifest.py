@@ -17,7 +17,7 @@ def verify(manifest, assets):
     assert originals, 'the manifest lists original FBX/JPEG entries'
     listed = {a['glob'] for a in assets['rules'] if ORIGINAL_ROW.match(a.get('source', ''))}
     assert {x['path'] for x in originals} == listed, 'manifest originals equal the #507/#336 source files in ASSETS.yaml'
-    assert manifest['header'].get('licence') == 'CC-BY-NC-ND-4.0', 'original header licence'
+    assert manifest['header'].get('licence') == 'LicenseRef-Statecraft-Exclusive-Asset-1.0', 'original header licence (X1)'
     assert manifest['header'].get('generated_licence') == 'PolyForm-Noncommercial-1.0.0', 'generated code row in LICENSING.md'
     for row in originals:
         exact = [a for a in assets['rules'] if a['glob'] == row['path']]

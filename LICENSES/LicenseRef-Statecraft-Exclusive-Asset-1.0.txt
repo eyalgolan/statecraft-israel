@@ -1,0 +1,60 @@
+Statecraft: Israel Exclusive Asset Licence 1.0 (DRAFT)
+
+Status: draft for the creators' agreement. It has no effect for any work until that work's creator agrees to it in
+writing (a comment from the creator's own account on the pull request that proposes this licence counts); the date
+of each agreement is recorded in docs/oss/DECISIONS.md. This text is the owner's proposal, not legal advice.
+
+1. Parties and works
+
+"Creator" means the author of a Covered Work: Tal Heuberger, or Afik Faerman.
+"Publisher" means Eyal Golan, the owner of Statecraft: Israel.
+"The Game" means Statecraft: Israel (https://github.com/eyalgolan/statecraft-israel): every edition, version,
+update, port and build of it, on any platform, free or paid.
+"Covered Works" means the files that LICENSING.md lists under the Creator's name and that the Creator has agreed
+to place under this licence, the source and master files those files were made from (for example a music master
+or a model's original export), and adapted versions of them made for the Game.
+
+2. Exclusive licence to the Publisher
+
+The Creator grants the Publisher an exclusive, worldwide licence, for the full term of copyright, to use, copy,
+adapt, distribute, publicly display and perform, and sell the Covered Works as part of the Game, and to use them in
+the Game's promotion (for example trailers, screenshots and store pages). The Publisher may let stores and
+distributors copy and distribute the Covered Works as part of the Game, only to deliver the Game to players.
+
+"Exclusive" means that, subject to section 5, from the date of the Creator's agreement, the Covered Works are used only in the Game. The
+Creator will not use the Covered Works, or adapted versions of them, in any other product or project, and will not
+license them to anyone else.
+
+Portfolio: the Creator may show the Covered Works in their own portfolio (for example a personal website, showreel
+or profile page), noting that they were made for Statecraft: Israel. Portfolio copies are for viewing and listening
+only: they are not offered for download, sale or licence.
+
+3. What everyone else may do
+
+Anyone may download, install and play the Game as the Publisher distributes it, and may show the Game being played
+(for example streams, videos, reviews and screenshots).
+
+Anyone may copy and change the Covered Works only to develop the Game, in the Game's repository or in a fork used to
+contribute changes back to it. No other use is permitted: in particular, the Covered Works may not be taken out of
+the Game for use in any other product, project or collection, commercial or not. A fork of the Game's code made for
+any other purpose must not include the Covered Works.
+
+4. Credit
+
+The Publisher will name the Creator as the author of the Covered Works in the Game's notices (NOTICE) and credits.
+
+5. Earlier copies
+
+Copies of a Covered Work that someone received before the date of the Creator's agreement, under CC BY-NC-ND 4.0 or
+CC0 1.0, keep the rights of that earlier licence. Those licences cannot be withdrawn. This licence applies to copies
+distributed from that date on.
+
+6. Payment
+
+This licence sets no payment. Any payment or revenue share is agreed separately, in writing, between the Creator and
+the Publisher.
+
+7. Other terms
+
+The Creator keeps the copyright in the Covered Works and their moral rights. Nothing here transfers ownership. All
+rights not granted here are reserved by the Creator.

@@ -11,8 +11,11 @@ See LICENSING.md for the path-by-path map.
 This product includes or is derived from the following third-party material. Per-file records: ASSETS.yaml,
 ASSETS.portraits.yaml, THIRD-PARTY-NOTICES.md.
 
-The 1948 Collection and the single-building models: 146 original files by Tal Heuberger, CC BY-NC-ND 4.0
-(https://creativecommons.org/licenses/by-nc-nd/4.0/) from 20 October 2026, credit Tal Heuberger.
+The 1948 Collection and the single-building models: 146 original files by Tal Heuberger, under the Statecraft: Israel
+Exclusive Asset Licence 1.0 (LICENSES/LicenseRef-Statecraft-Exclusive-Asset-1.0.txt) from 12 November 2026, used in
+this game only; before that CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/) from 20 October 2026,
+credit Tal Heuberger. Tal Heuberger's other models, colour maps and clips listed in LICENSING.md are under the same
+licence, credit Tal Heuberger.
 The exact current originals are identified in docs/original-models.json. Historical CC0 markings concern only the
 copies and versions identified in LICENSING.md; they do not label the current originals as CC0. Copies actually
 obtained under a valid CC0 grant before 20 October 2026 retain that grant. The 311 generated manifest entries

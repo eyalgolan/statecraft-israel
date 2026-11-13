@@ -14,6 +14,11 @@ POLYFORM_NC_SHA256 = "ffcca38841adb694b6f380647e15f17c446a4d1656fed51a1e2041d064
 # sha256 of the official plain text, https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.txt (fetched
 # 23 Oct 2026).
 CC_BY_NC_ND_4_0_SHA256 = "38762e3777f4ec00a6f769062a7c3f704fb78ce08303ecff88558da4c49cf9ea"
+# Tal Heuberger agreed on 12 Nov 2026 to move their files to the exclusive licence (#3159, decision X1); Afik Faerman's
+# music stays CC BY-NC-ND 4.0 until Afik agrees (owner, 12 Nov 2026: "Switch Tal's now (Recommended)").
+EXCLUSIVE = "LicenseRef-Statecraft-Exclusive-Asset-1.0"
+NC_ND = "CC-BY-NC-ND-4.0"
+EXCLUSIVE_LINK = f"[Statecraft: Israel Exclusive Asset Licence 1.0](LICENSES/{EXCLUSIVE}.txt)"
 REQUIRED_NOTICE = "Required Notice: Copyright (c) 2026 Eyal Golan (https://github.com/eyalgolan/statecraft-israel)"
 
 
@@ -120,8 +125,8 @@ def test_tal_original_licensing_matches_manifest_exactly():
     assert len(selected) == 146
     assert {r["glob"] for r in selected} == originals  # no wildcard or extra path
     for path in originals:
-        assert sum(r["glob"] == path and r["licence"] == "CC-BY-NC-ND-4.0" for r in rules) == 1, path
-    independent = [r for r in rules if r["licence"] == "CC-BY-NC-ND-4.0" and r["glob"] not in originals]
+        assert sum(r["glob"] == path and r["licence"] == EXCLUSIVE for r in rules) == 1, path
+    independent = [r for r in rules if r["licence"] in {EXCLUSIVE, NC_ND} and r["glob"] not in originals]
     # Tal Heuberger's #2082-#2085 files (owner, 2 November 2026: "Yes, #1177 covers them"): the 24 exact source files and,
     # for the four #2085 towns in the game, each town's compatibility FBX and colour map. Every other grant stays as it was.
     sources = {
@@ -171,6 +176,8 @@ def test_tal_original_licensing_matches_manifest_exactly():
     # Afik Faerman's main theme (#39, #2240; owner, 2 November 2026: CC BY-NC-ND 4.0, credited to Afik): one exact-file row.
     music = [r for r in independent if r["glob"] == "unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
     assert len(music) == 1 and music[0]["artist"] == "Afik Faerman" and music[0]["ai_generated"] is False
+    assert music[0]["licence"] == NC_ND  # until Afik agrees (X1)
+    assert all(r["licence"] == EXCLUSIVE and r["artist"] == "Tal Heuberger" for r in independent if r not in music)
     # The fire take baked for C04, which has none of its own (#2375; owner, 3 November 2026: Tal Heuberger's permission for
     # this adapted version): one exact-file row, a derived clip of a take inside Tal's own FBX. The enemy infantry get none
     # yet (owner, 3 November 2026: "C04 only; enemies wait (Recommended)"; #2399).
@@ -187,18 +194,18 @@ def test_tal_original_licensing_matches_manifest_exactly():
     }
     far_rows = [r for r in independent if r["glob"] in far_globs]
     assert len(far_rows) == 2 and {r["glob"] for r in far_rows} == far_globs
-    assert all(r["licence"] == "CC-BY-NC-ND-4.0" and r["artist"] == "Tal Heuberger" for r in far_rows)
+    assert all(r["licence"] == EXCLUSIVE and r["artist"] == "Tal Heuberger" for r in far_rows)
     licensing = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
     far_licensing_rows = [next(line for line in licensing.splitlines() if line.startswith(prefix)) for prefix in (
         "| New 22 October buildings, tents and props ", "| Original 3D model files by Tal Heuberger |")]
     assert all("`*-far.asset`" in row and "`*-far.png`" in row for row in far_licensing_rows)
-    assert all("[CC BY-NC-ND 4.0]" in row and "Tal Heuberger" in row for row in far_licensing_rows)
+    assert all(EXCLUSIVE_LINK in row and "Tal Heuberger" in row for row in far_licensing_rows)
     # The hex-tile props row, the #1901 -light meshes and the two #2378 far-off copy rows (*-far.asset, *-far.png; owner,
     # 3 November 2026, confirms Tal's permission) among them.
     assert len([r for r in independent if r["glob"] not in added and r not in music and r["glob"] not in fire]) == 52
     assert len(independent) == 99  # 146 originals + 99 independent grants = 245 total
     for row in selected:
-        assert row["licence"] == "CC-BY-NC-ND-4.0"
+        assert row["licence"] == EXCLUSIVE
         assert row["artist"] == "Tal Heuberger"
         for required in ("from 2026-10-20", "credit 'Tal Heuberger'",
                          "https://creativecommons.org/licenses/by-nc-nd/4.0/",
@@ -217,14 +224,14 @@ def test_no_asset_licence_rule_matches_generated_manifest_paths():
     assert captured == [], f"Asset-licence rows capture generated paths: {captured}"
 
 
-def test_borrowed_fire_clip_resolves_to_explicit_cc_by_nc_nd_row():
+def test_borrowed_fire_clip_resolves_to_explicit_tal_row():
     """C04's derived clip has an exact LICENSING.md row and does not fall back to the PolyForm code row."""
     import re
     text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
     row = next(l for l in text.splitlines() if l.startswith("| Derived borrowed fire clip by Tal Heuberger |"))
     fire = {"unity/Assets/Art/Collection/figure-c04-sabra-pioneer-v3/fire.anim"}
     assert set(re.findall(r"`(unity/Assets/Art/Collection/[^`]+/fire\.anim)`", row)) == fire
-    assert "[CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt)" in row
+    assert EXCLUSIVE_LINK in row
     assert "PolyForm" not in row
 
 
@@ -255,3 +262,24 @@ def test_exact_licensing_code_row_is_unchanged():
     text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
     code = [line for line in text.splitlines(keepends=True) if line.startswith("| Code |")]
     assert code == ['| Code | `sim/`, `tools/` (Python), `scripts/`, `.github/`, `.gitignore`, `unity/Assets/Scripts/`, `unity/Assets/Editor/`, `unity/Assets/Tests/`, `promo/*.py`, `spikes/` code, and everything else under `unity/Assets/` not listed below (scenes such as `Map.unity`, `WebGLTemplates/`, `link.xml`, `*.inputactions`, `.meta` files) | [PolyForm Noncommercial 1.0.0](LICENSE). Code released up to and including v0.2.1 stays MIT; see below |\n']
+
+
+def test_tal_files_are_under_the_exclusive_licence_and_afik_music_is_not_yet():
+    """#3159: Tal Heuberger agreed on 12 Nov 2026 (decision X1 ticked); Afik Faerman has not agreed yet."""
+    text = (ROOT / f"LICENSES/{EXCLUSIVE}.txt").read_text(encoding="utf-8")
+    assert text.startswith("Statecraft: Israel Exclusive Asset Licence 1.0") and "Tal Heuberger" in text
+    rules = yaml12.load_path(ROOT / "ASSETS.yaml")["rules"]
+    tal = [r for r in rules if r.get("artist") == "Tal Heuberger" and r["licence"] in {EXCLUSIVE, NC_ND}]
+    assert len(tal) == 244 and all(r["licence"] == EXCLUSIVE for r in tal)
+    assert [r["glob"] for r in rules if r["licence"] == NC_ND] == ["unity/Assets/StreamingAssets/audio/music/Main_1.3.ogg"]
+    licensing = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    tal_rows = [l for l in licensing.splitlines() if l.startswith("|") and "Tal Heuberger" in l and "CC BY-NC-ND" in l]
+    assert len(tal_rows) == 11 and all(EXCLUSIVE_LINK in l and "12 November 2026" in l for l in tal_rows)
+    afik = next(l for l in licensing.splitlines() if l.startswith("| Music by Afik Faerman |"))
+    assert EXCLUSIVE not in afik and "[CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt)" in afik
+    notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
+    credit = " ".join(next(p for p in notice.split("\n\n") if "Tal Heuberger" in p).split())
+    assert "Statecraft: Israel Exclusive Asset Licence 1.0" in credit and "other models, colour maps and clips" in credit
+    decisions = (ROOT / "docs/oss/DECISIONS.md").read_text(encoding="utf-8")
+    x1 = next(l for l in decisions.splitlines() if l.lstrip().startswith(("- [x] X1", "- [ ] X1")))
+    assert x1.startswith("- [x] X1")
