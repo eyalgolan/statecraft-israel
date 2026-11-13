@@ -92,6 +92,20 @@ public class TimelineScreenTests
             "a translated base title must not hide the active variant's untranslated title");
     }
 
+    /// <summary>#958: a variant with a Hebrew title shows it in Hebrew, and its English in English.</summary>
+    [TestCase(false)]
+    [TestCase(true)]
+    public void AVariantsHebrewTitleShowsInHebrew(bool hebrew)
+    {
+        var content = ContentLoader.Load(Paths.Content);
+        var (game, ev, _, _) = ResolvedIdf(content, false);
+        ev.Variants.Add(new EventVariant { Title = "Fixture variant title", TitleHe = "כותרת גרסה לבדיקה" });
+        using var ui = new UiTestKit(); var text = Text(hebrew); var bridge = new SimBridge(game, text);
+        using var screen = Presenter(ui.Root, bridge, text); using var nav = new ScreenNav(ui.Root); nav.Open("timeline");
+        var row = Rows(ui.Root).Single(r => (string)r.userData == ev.Id);
+        Assert.AreEqual(hebrew ? "כותרת גרסה לבדיקה" : "Fixture variant title", row.Q<Label>("timeline-title").text);
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public void NarrativeOfficePlaceholdersUseNamesInTheRequestedLanguage(bool hebrew)

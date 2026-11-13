@@ -1076,6 +1076,11 @@ namespace Statecraft.Sim
         /// <summary>Empty: the event's own title.</summary>
         public string Title { get; set; } = "";
         public string Text { get; set; } = "";
+        /// <summary>#958 (owner, 11 November 2026: "Add Hebrew support first (Recommended)"): <see cref="Title"/> in Hebrew, set
+        /// exactly when the variant has a title and the event has Hebrew text; under the event's text_he_review.</summary>
+        public string TitleHe { get; set; } = "";
+        /// <summary>#958: <see cref="Text"/> in Hebrew, set exactly when the event has Hebrew text (#1064, all or none).</summary>
+        public string TextHe { get; set; } = "";
         public List<Source> Sources { get; set; } = new List<Source>();
     }
 

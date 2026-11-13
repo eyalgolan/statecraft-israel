@@ -55,10 +55,21 @@ namespace Statecraft.Sim
         public string EarlyText { get; set; } = "";
         /// <summary>Option id and text, in the event file's order.</summary>
         public List<KeyValuePair<string, string>> Options { get; set; } = new List<KeyValuePair<string, string>>();
+        /// <summary>#958: the variants' Hebrew (R-ALT-010), each keyed by its index in the event file's variants, in that
+        /// order; only the variants that have Hebrew text.</summary>
+        public List<VariantTranslation> Variants { get; set; } = new List<VariantTranslation>();
         /// <summary><see cref="HebrewReview.AgentChecked"/> until a native speaker, or an AI-assisted contributor who
         /// discloses it, has read it (#564; owner, 4 November 2026: "AI-assisted can clear it"); else
         /// "".</summary>
         public string Review { get; set; } = "";
+    }
+
+    /// <summary>#958: one variant's Hebrew: its title ("" for a variant with no title of its own) and its text.</summary>
+    public sealed class VariantTranslation
+    {
+        public int Index { get; set; }
+        public string Title { get; set; } = "";
+        public string Text { get; set; } = "";
     }
 
     public sealed class ContentTranslation
@@ -94,6 +105,8 @@ namespace Statecraft.Sim
         static readonly Regex LangCode = new Regex(@"^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$", RegexOptions.CultureInvariant);
         static readonly Regex UiKey = new Regex(@"^[A-Za-z0-9_]+(\.[A-Za-z0-9_\-]+)*$", RegexOptions.CultureInvariant);
         static readonly Regex Id = new Regex(@"^[a-z][a-z0-9_]*$", RegexOptions.CultureInvariant);
+        /// <summary>#958: a variant's index, as Write keys it (no leading zero, so one variant has one key).</summary>
+        static readonly Regex VariantIndex = new Regex(@"^(0|[1-9][0-9]{0,3})$", RegexOptions.CultureInvariant);
         static readonly Regex HeKey = new Regex(@"^(.+)_he(_f)?$", RegexOptions.CultureInvariant);
         static readonly Regex PlainKey = new Regex(@"^[A-Za-z0-9_.\-]+$", RegexOptions.CultureInvariant);
         // YAML 1.1's booleans: text in the 1.2 core schema, but PyYAML's safe_load (and YamlDotNet's typed bool reads,
@@ -147,7 +160,7 @@ namespace Statecraft.Sim
             {
                 if (!Id.IsMatch(id)) throw new ContentException(Where(EventsFile), id, "not an event id");
                 var map = Mapping(node, Where(EventsFile), id);
-                Only(map, Where(EventsFile), id, "title", "text", "late_text", "early_text", "options", "review");
+                Only(map, Where(EventsFile), id, "title", "text", "late_text", "early_text", "options", "variants", "review");
                 var e = new EventTranslation
                 {
                     Id = id,
@@ -163,6 +176,20 @@ namespace Statecraft.Sim
                     if (!Id.IsMatch(oid)) throw new ContentException(Where(EventsFile), $"{id}.options.{oid}", "not an option id");
                     e.Options.Add(new KeyValuePair<string, string>(oid, Text(text, Where(EventsFile), $"{id}.options.{oid}")));
                 }
+                if (map.Children.TryGetValue(new YamlScalarNode("variants"), out var variants))
+                    foreach (var (index, entry) in Entries(Mapping(variants, Where(EventsFile), id + ".variants"), Where(EventsFile)))
+                    {
+                        var at = $"{id}.variants.{index}";
+                        if (!VariantIndex.IsMatch(index)) throw new ContentException(Where(EventsFile), at, "not a variant index (0, 1, ... as the event file lists them)");
+                        var v = Mapping(entry, Where(EventsFile), at);
+                        Only(v, Where(EventsFile), at, "title", "text");
+                        e.Variants.Add(new VariantTranslation
+                        {
+                            Index = int.Parse(index, CultureInfo.InvariantCulture),
+                            Title = v.Children.TryGetValue(new YamlScalarNode("title"), out var title) ? Text(title, Where(EventsFile), at + ".title") : "",
+                            Text = Text(Get(v, "text", Where(EventsFile), at), Where(EventsFile), at + ".text"),
+                        });
+                    }
                 set.Events.Add(e);
             }
 
@@ -312,6 +339,13 @@ namespace Statecraft.Sim
                 if (e.EarlyText != "") events.Append("  early_text: ").Append(Json(e.EarlyText)).Append('\n');
                 events.Append("  options:\n");
                 foreach (var o in e.Options) events.Append("    ").Append(Key(o.Key)).Append(": ").Append(Json(o.Value)).Append('\n');
+                if (e.Variants.Count > 0) events.Append("  variants:\n");
+                foreach (var v in e.Variants)
+                {
+                    events.Append("    ").Append(Key(v.Index.ToString(CultureInfo.InvariantCulture))).Append(":\n");
+                    if (v.Title != "") events.Append("      title: ").Append(Json(v.Title)).Append('\n');
+                    events.Append("      text: ").Append(Json(v.Text)).Append('\n');
+                }
                 if (e.Review != "") events.Append("  review: ").Append(Json(e.Review)).Append('\n');
             }
             var content = new StringBuilder();
@@ -424,6 +458,10 @@ namespace Statecraft.Sim
                     foreach (var o in options.Children.OfType<YamlMappingNode>())
                         if (StringOf(o, "id") is string oid && !string.IsNullOrEmpty(StringOf(o, "text_he")))
                             t.Options.Add(new KeyValuePair<string, string>(oid, StringOf(o, "text_he")!));
+                if (Value(e, "variants") is YamlSequenceNode variants)
+                    for (int i = 0; i < variants.Children.Count; i++)
+                        if (variants.Children[i] is YamlMappingNode v && !string.IsNullOrEmpty(StringOf(v, "text_he")))
+                            t.Variants.Add(new VariantTranslation { Index = i, Title = StringOf(v, "title_he") ?? "", Text = StringOf(v, "text_he")! });
                 set.Events.Add(t);
             }
 

@@ -1,0 +1,22 @@
+id: variant
+kind: reconvergence
+title: Variant
+text: Regardless.
+title_he: גרסה
+text_he: בכל מקרה.
+from: 1949-02-01
+options:
+  - id: record
+    text: As it happened
+    text_he: כפי שקרה
+    historical: true
+variants:
+  - when: [{ event: vote, diverged: true }]
+    title: Variant, on your course
+    title_he: גרסה, במסלול שלך
+    text: On your course.
+    text_he: במסלול שלך.
+  - when: [{ event: alpha, diverged: true }]
+    text: On another course.
+    text_he: במסלול אחר.
+status: draft

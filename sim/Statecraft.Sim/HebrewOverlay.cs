@@ -59,7 +59,8 @@ namespace Statecraft.Sim
             Bindings.Select(b => (b.Value.DeclaringType!, b.Value.Name))
                 .Concat(new[] { (typeof(GameEvent), nameof(GameEvent.TitleHe)), (typeof(GameEvent), nameof(GameEvent.TextHe)),
                     (typeof(GameEvent), nameof(GameEvent.LateTextHe)), (typeof(GameEvent), nameof(GameEvent.EarlyTextHe)),
-                    (typeof(EventOption), nameof(EventOption.TextHe)) });
+                    (typeof(EventOption), nameof(EventOption.TextHe)),
+                    (typeof(EventVariant), nameof(EventVariant.TitleHe)), (typeof(EventVariant), nameof(EventVariant.TextHe)) });
 
         /// <summary>The Hebrew the typed records hold, as a translation set (no UI strings: those are not content).</summary>
         public static TranslationSet Snapshot(Content c)
@@ -71,6 +72,8 @@ namespace Statecraft.Sim
                     {
                         Id = e.Id, Title = e.TitleHe, Text = e.TextHe, LateText = e.LateTextHe, EarlyText = e.EarlyTextHe, Review = e.TextHeReview,
                         Options = e.Options.Where(o => o.TextHe != "").Select(o => new KeyValuePair<string, string>(o.Id, o.TextHe)).ToList(),
+                        Variants = e.Variants.Select((v, i) => (v, i)).Where(x => x.v.TextHe != "")
+                            .Select(x => new VariantTranslation { Index = x.i, Title = x.v.TitleHe, Text = x.v.TextHe }).ToList(),
                     });
             foreach (var b in Bindings)
                 foreach (var r in b.Records(c))
@@ -93,6 +96,7 @@ namespace Statecraft.Sim
             {
                 e.TitleHe = ""; e.TextHe = ""; e.LateTextHe = ""; e.EarlyTextHe = ""; e.TextHeReview = "";
                 foreach (var o in e.Options) o.TextHe = "";
+                foreach (var v in e.Variants) { v.TitleHe = ""; v.TextHe = ""; }
             }
             foreach (var b in Bindings)
                 foreach (var r in b.Records(c))
@@ -102,8 +106,8 @@ namespace Statecraft.Sim
                 }
         }
 
-        /// <summary>Puts a Hebrew set on the typed records. Throws on a key that names no record, an option the event does
-        /// not have, or a review flag on a field that has none; keys of <see cref="UnityReads"/> files are left to Unity.</summary>
+        /// <summary>Puts a Hebrew set on the typed records. Throws on a key that names no record, an option or a variant the
+        /// event does not have, or a review flag on a field that has none; keys of <see cref="UnityReads"/> files are left to Unity.</summary>
         public static void Apply(Content c, TranslationSet set)
         {
             if (set.Lang != Translations.Hebrew) throw new ArgumentException("the sim holds Hebrew only", nameof(set));
@@ -117,6 +121,13 @@ namespace Statecraft.Sim
                 foreach (var o in t.Options)
                     (e.Options.FirstOrDefault(x => x.Id == o.Key)
                         ?? throw new ContentException(file + Translations.EventsFile, $"{t.Id}.options.{o.Key}", "the event has no such option")).TextHe = o.Value;
+                foreach (var v in t.Variants)
+                {
+                    if (v.Index >= e.Variants.Count)
+                        throw new ContentException(file + Translations.EventsFile, $"{t.Id}.variants.{v.Index}", "the event has no such variant");
+                    e.Variants[v.Index].TitleHe = v.Title;
+                    e.Variants[v.Index].TextHe = v.Text;
+                }
             }
             foreach (var t in set.Content)
             {

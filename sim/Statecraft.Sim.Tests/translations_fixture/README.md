@@ -8,6 +8,7 @@ tool and the game stay one contract.
 
 The cases: events ordered by date, then id (`alpha` before `vote` on the same day; `quiet` has no Hebrew); a review flag
 and none; a late text (`late`, R-ENEMY-007) written between the body and the options;
+a variant's Hebrew (`variant`, R-ALT-010, #958) keyed by its index after the options, one variant with no title;
 text with `'`, `"` and `\`; an office's feminine title (`title_f`) beside its retained sources and date window;
 a person whose `name_he` source sits in `biography_sources` (a list, so not a field); a record keyed by a mapping key
 (`regions.north`); a list item with no id (keyed by its index); an English value that is not text (skipped); a Hebrew

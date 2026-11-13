@@ -275,6 +275,13 @@ public class TranslationsTests
     [InlineData("vote:\n  title: 12\n  text: \"ב\"\n  options:\n    a: \"ג\"\n", "must be text")]
     [InlineData("Vote:\n  title: \"א\"\n  text: \"ב\"\n  options:\n    a: \"ג\"\n", "not an event id")]
     [InlineData(GoodEvent + GoodEvent, "")]
+    // #958: a variant's Hebrew, keyed by its place in the event file's variants ("0", "1", quoted as every such key is)
+    [InlineData(GoodEvent + "  variants:\n    x:\n      text: \"ד\"\n", "not a variant index")]
+    [InlineData(GoodEvent + "  variants:\n    \"01\":\n      text: \"ד\"\n", "not a variant index")]
+    [InlineData(GoodEvent + "  variants:\n    0:\n      text: \"ד\"\n", "must be quoted")]
+    [InlineData(GoodEvent + "  variants:\n    \"0\":\n      title: \"ד\"\n", "required")]
+    [InlineData(GoodEvent + "  variants:\n    \"0\":\n      text: \"ד\"\n      note: \"x\"\n", "unknown field")]
+    [InlineData(GoodEvent + "  variants:\n    \"0\":\n      text: \"\"\n", "empty")]
     public void TheEventsFileIsStrict(string events, string message)
     {
         var e = Assert.Throws<ContentException>(() => Translations.Parse("he", null, events, null));
@@ -356,6 +363,7 @@ public class TranslationsTests
     [Theory]
     [InlineData("nope:\n  title: \"א\"\n  text: \"ב\"\n  options:\n    a: \"ג\"\n", null, "no event has this id")]
     [InlineData("altalena:\n  title: \"א\"\n  text: \"ב\"\n  options:\n    nope: \"ג\"\n", null, "no such option")]
+    [InlineData("altalena:\n  title: \"א\"\n  text: \"ב\"\n  options: {}\n  variants:\n    \"0\":\n      text: \"ד\"\n", null, "no such variant")]
     [InlineData(null, "\"people.yaml#people.nobody.name\":\n  text: \"א\"\n", "no record 'nobody'")]
     [InlineData(null, "\"rules.yaml#map_actions.capture.name\":\n  text: \"א\"\n", "holds no Hebrew")]
     [InlineData(null, "\"sites.yaml#sites.mefalsim.name\":\n  text: \"מפלסים\"\n  review: \"agent-checked\"\n", "no review flag")]

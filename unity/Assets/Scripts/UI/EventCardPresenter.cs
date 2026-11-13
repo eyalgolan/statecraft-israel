@@ -310,10 +310,11 @@ namespace Statecraft.Game.UI
             card.Q<Label>("event-draft").style.display = e.Status == "draft" ? DisplayStyle.Flex : DisplayStyle.None;
             // The card in the UI's language (#1064): in Hebrew a field shows the event's Hebrew text where it has one, with
             // the ministers' Hebrew names in its placeholders, and the English where it has none (fail open). A variant
-            // (R-ALT-010) has no Hebrew, so a card on a road not taken keeps its variant's English.
+            // (R-ALT-010) shows its own Hebrew (#958), so a card on a road not taken keeps its variant's English only where
+            // that has none (EventSystem.TitleHe and TextHe pick as Title and Render do).
             var variant = Timeline.Variant(c, s, e);
             string Local(string english, string he) => ContentNames.Fill(text, c, s, date, english, he);
-            card.Q<Label>("event-title").text = Local(EventSystem.Title(c, s, e), variant == null || variant.Title == "" ? e.TitleHe : "");
+            card.Q<Label>("event-title").text = Local(EventSystem.Title(c, s, e), EventSystem.TitleHe(c, s, e));
             // A consequence card's road (#954), or an armistice card's early path (R-WAR-008, #1709; owner, 9 November 2026:
             // "Banner (Recommended)"): an alternative course either way. None on any other card.
             var early = variant == null && EventSystem.ShowsEarly(e, s.Date);
@@ -323,9 +324,8 @@ namespace Statecraft.Game.UI
             var office = holder == null ? null : c.Offices.First(o => o.Id == e.Office);
             card.Q<Label>("event-office").text = holder == null ? "" : text.Format("event.office", ContentNames.Of(text, office!, holder, date), ContentNames.Of(text, holder));
             // R-ENEMY-007: a card shown after its window closed shows its late text, in Hebrew its late_text_he; R-WAR-008: one
-            // shown before its `from` shows its early text, in Hebrew its early_text_he (EventSystem.Render picks the English).
-            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e),
-                variant != null ? "" : early ? e.EarlyTextHe : EventSystem.ShowsLate(e, s.Date) ? e.LateTextHe : e.TextHe);
+            // shown before its `from` shows its early text, in Hebrew its early_text_he (EventSystem.Render and TextHe pick).
+            card.Q<Label>("event-text").text = Local(EventSystem.Render(c, s, e), EventSystem.TextHe(c, s, e));
             var objective = card.Q<Label>("event-objective");   // an objective card's line (#380); none on any other card
             objective.text = ObjectiveLine(c, s, e, text);
             objective.style.display = objective.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
@@ -455,9 +455,8 @@ namespace Statecraft.Game.UI
             // Use the road card's own per-field fallback and name/date routing (#1064), not the consequence's date.
             bool hebrew = t["ui.lang"] == UiLanguage.Hebrew;
             string Local(string english, string he) => hebrew && he != "" ? Cabinet.Fill(c, s, he, date, p => ContentNames.Of(t, p)) : english;
-            var variant = Timeline.Variant(c, s, road);
             var took = Local(Cabinet.Fill(c, s, option.Text, date), option.TextHe);
-            var title = Local(EventSystem.Title(c, s, road), variant == null || variant.Title == "" ? road.TitleHe : "");
+            var title = Local(EventSystem.Title(c, s, road), EventSystem.TitleHe(c, s, road));
             var record = Timeline.HistoricalOption(road);
             return record == null ? t.Format("event.alt_origin_no_record", took, title)
                 : t.Format("event.alt_origin", took, title, Local(Cabinet.Fill(c, s, record.Text, date), record.TextHe));

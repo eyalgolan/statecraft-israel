@@ -49,9 +49,8 @@ namespace Statecraft.Game.UI
                     return label;
                 }
                 var date = EventSystem.FillDate(ev, s.Date);
-                var variant = Timeline.Variant(c, s, ev);
                 bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
-                // Match the decision card: each existing Hebrew field falls back independently; variants have no Hebrew title.
+                // Match the decision card: each existing Hebrew field falls back independently, a variant's title included (#958).
                 string Local(string english, string he) => hebrew && he != "" ? Cabinet.Fill(c, s, he, date, p => ContentNames.Of(text, p)) : english;
                 string Answer(string id)
                 {
@@ -59,7 +58,7 @@ namespace Statecraft.Game.UI
                     return Local(Cabinet.Fill(c, s, option.Text, date), option.TextHe);
                 }
                 row.Add(Line("timeline-date", Statecraft.Game.Map.Control1948.DateText(ev.From, k => text[k])));
-                row.Add(Line("timeline-title", Local(EventSystem.Title(c, s, ev), variant == null || variant.Title == "" ? ev.TitleHe : "")));
+                row.Add(Line("timeline-title", Local(EventSystem.Title(c, s, ev), EventSystem.TitleHe(c, s, ev))));
                 var columns = new VisualElement(); columns.AddToClassList("timeline-columns");
                 columns.Add(Line("timeline-yours", Answer(entry.Chosen)));
                 columns.Add(Line("timeline-record", entry.Historical == "" ? text["timeline.no_record"] : Answer(entry.Historical)));

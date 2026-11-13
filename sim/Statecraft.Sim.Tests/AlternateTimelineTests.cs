@@ -591,6 +591,99 @@ variants:
         Assert.Contains("'parent' can still be open when this card opens", ex.Message);
     }
 
+    // ---- #958 (owner, 11 November 2026: "Add Hebrew support first (Recommended)"): a variant's Hebrew --------------
+    // The Hebrew here is the test's own wording, not content.
+
+    /// <summary><see cref="Outside"/> with Hebrew on the event, its option and its variant.</summary>
+    internal static readonly string OutsideHe = Outside
+        .Replace("text: 'It happened regardless.'\n", "text: 'It happened regardless.'\ntitle_he: האירוע מבחוץ\ntext_he: 'זה קרה בכל מקרה.'\n")
+        .Replace("    text: As it happened\n", "    text: As it happened\n    text_he: כפי שקרה\n")
+        .Replace("    title: The outside event, on your course\n", "    title: The outside event, on your course\n    title_he: האירוע מבחוץ, במסלול שלך\n")
+        .Replace("went the other way.'\n", "went the other way.'\n    text_he: 'זה קרה בכל מקרה; במסלול שלך, ההחלטה הקודמת הלכה לכיוון האחר.'\n");
+
+    [Theory]
+    // R-ALT-010, #958: the matching variant's Hebrew, else the event's; unfilled, as title_he and text_he are.
+    [InlineData("road", "האירוע מבחוץ, במסלול שלך", "זה קרה בכל מקרה; במסלול שלך, ההחלטה הקודמת הלכה לכיוון האחר.")]
+    [InlineData("record", "האירוע מבחוץ", "זה קרה בכל מקרה.")]
+    public void TheFirstMatchingVariantSuppliesTheHebrew(string picked, string titleHe, string textHe)
+    {
+        var c = Load(("parent.yaml", Parent), ("outside.yaml", OutsideHe));
+        var s = NewState(c);
+        s.ChosenOptions["parent"] = picked;
+        var e = c.Events.Single(x => x.Id == "outside");
+        Assert.Equal(titleHe, EventSystem.TitleHe(c, s, e));
+        Assert.Equal(textHe, EventSystem.TextHe(c, s, e));
+        Assert.Equal("כפי שקרה", e.Options.Single().TextHe);                // options never vary
+    }
+
+    [Fact]
+    // R-ALT-010, #958: a variant with no title of its own keeps the event's title, in Hebrew too; a variant on an event with
+    // no Hebrew gives none, so the UI shows its English (#1064, fail open).
+    public void AnUntitledVariantKeepsTheEventsHebrewTitleAndAnEnglishCardHasNoHebrew()
+    {
+        var untitled = OutsideHe.Replace("    title: The outside event, on your course\n    title_he: האירוע מבחוץ, במסלול שלך\n", "");
+        var c = Load(("parent.yaml", Parent), ("outside.yaml", untitled));
+        var s = NewState(c); s.ChosenOptions["parent"] = "road";
+        var e = c.Events.Single(x => x.Id == "outside");
+        Assert.Equal("האירוע מבחוץ", EventSystem.TitleHe(c, s, e));
+        Assert.StartsWith("זה קרה בכל מקרה; במסלול שלך", EventSystem.TextHe(c, s, e));
+        var english = Load(("parent.yaml", Parent), ("outside.yaml", Outside));
+        var s2 = NewState(english); s2.ChosenOptions["parent"] = "road";
+        var e2 = english.Events.Single(x => x.Id == "outside");
+        Assert.Equal("", EventSystem.TitleHe(english, s2, e2));
+        Assert.Equal("", EventSystem.TextHe(english, s2, e2));
+    }
+
+    // R-ALT-010, #958: a variant's Hebrew follows the card's (#1064, all or none): on a card with Hebrew text every variant
+    // has text_he, and title_he exactly when it has a title; in Hebrew letters, with placeholders that resolve.
+    [Theory]
+    [InlineData("    text_he: 'זה קרה בכל מקרה; במסלול שלך, ההחלטה הקודמת הלכה לכיוון האחר.'\n", "", "variants[0].text_he", "required: the card's text is in Hebrew too")]
+    [InlineData("    title_he: האירוע מבחוץ, במסלול שלך\n", "", "variants[0].title_he", "required: the card's text is in Hebrew too")]
+    [InlineData("    title: The outside event, on your course\n", "", "variants[0].title_he", "only a variant with its own title has title_he")]
+    [InlineData("    text_he: 'זה קרה בכל מקרה; במסלול שלך, ההחלטה הקודמת הלכה לכיוון האחר.'\n", "    text_he: 'Not Hebrew at all.'\n", "variants[0].text_he", "must be Hebrew, in Hebrew letters")]
+    [InlineData("    title_he: האירוע מבחוץ, במסלול שלך\n", "    title_he: 'Not Hebrew'\n", "variants[0].title_he", "must be Hebrew, in Hebrew letters")]
+    [InlineData("    text_he: 'זה קרה בכל מקרה; במסלול שלך", "    text_he: '{nobody} זה קרה בכל מקרה; במסלול שלך", "variants[0].text_he", "unknown office placeholder '{nobody}'")]
+    [InlineData("    title_he: האירוע מבחוץ, במסלול שלך\n", "    title_he: '{nobody} במסלול שלך'\n", "variants[0].title_he", "unknown office placeholder '{nobody}'")]
+    public void ABadHebrewVariantIsALoadError(string from, string to, string field, string message)
+    {
+        Assert.Contains(from, OutsideHe);
+        var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("outside.yaml", OutsideHe.Replace(from, to))));
+        Assert.Equal("events[outside]." + field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    [Fact]
+    // R-ALT-010, #958: a variant's Hebrew needs the card's (as late_text_he and early_text_he do).
+    public void AVariantsHebrewOnAnEnglishCardIsALoadError()
+    {
+        foreach (var line in new[] { "    text_he: 'במסלול שלך.'\n", "    title_he: 'במסלול שלך'\n" })
+        {
+            var yaml = Outside.Replace("    title: The outside event, on your course\n", "    title: The outside event, on your course\n" + line);
+            var ex = Assert.Throws<ContentException>(() => Load(("parent.yaml", Parent), ("outside.yaml", yaml)));
+            Assert.Equal("events[outside].variants[0]." + (line.Contains("title_he") ? "title_he" : "text_he"), ex.Field);
+            Assert.Contains("only a card with Hebrew text has a variant's Hebrew", ex.Message);
+        }
+    }
+
+    [Fact]
+    // #958, #1618: the Hebrew overlay carries a variant's Hebrew, keyed by the variant's place in the file.
+    public void TheHebrewOverlayCarriesAVariantsHebrew()
+    {
+        var c = Load(("parent.yaml", Parent), ("outside.yaml", OutsideHe));
+        var events = Translations.Write(HebrewOverlay.Snapshot(c)).Events;
+        Assert.Contains("  variants:\n    \"0\":\n      title: \"האירוע מבחוץ, במסלול שלך\"\n      text: \"זה קרה בכל מקרה; במסלול שלך, ההחלטה הקודמת הלכה לכיוון האחר.\"\n", events);
+        HebrewOverlay.Clear(c);
+        Assert.Equal("", c.Events.Single(x => x.Id == "outside").Variants[0].TextHe);
+        Assert.DoesNotContain("variants", Translations.Write(HebrewOverlay.Snapshot(c)).Events);
+        HebrewOverlay.Apply(c, Translations.Parse(Translations.Hebrew, null, events, null));
+        Assert.Equal(events, Translations.Write(HebrewOverlay.Snapshot(c)).Events);
+        var s = NewState(c); s.ChosenOptions["parent"] = "road";
+        Assert.Equal("האירוע מבחוץ, במסלול שלך", EventSystem.TitleHe(c, s, c.Events.Single(x => x.Id == "outside")));
+        var none = events.Replace("\"0\":", "\"1\":");
+        var ex = Assert.Throws<ContentException>(() => HebrewOverlay.Apply(c, Translations.Parse(Translations.Hebrew, null, none, null)));
+        Assert.Contains("the event has no such variant", ex.Message);
+    }
+
     [Fact]
     // R-ALT-010: variants are tried in file order; the first whose every entry holds wins.
     public void TheFirstOfTwoMatchingVariantsWins()

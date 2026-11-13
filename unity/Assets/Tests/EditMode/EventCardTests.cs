@@ -304,8 +304,8 @@ public class EventCardTests
         }
     }
 
-    /// <summary>#1064: a variant (R-ALT-010) has no Hebrew, so on a road not taken the card keeps the variant's English
-    /// text; a variant with no title of its own keeps the event's title, so that stays Hebrew.</summary>
+    /// <summary>#1064: a variant (R-ALT-010) with no Hebrew keeps its English text on a road not taken (fail open, #958);
+    /// a variant with no title of its own keeps the event's title, so that stays Hebrew.</summary>
     [Test]
     public void InHebrewAVariantKeepsItsEnglishText()
     {
@@ -316,6 +316,28 @@ public class EventCardTests
         {
             Assert.AreEqual("אלטלנה", ui.Q<Label>("event-title").text);
             Assert.AreEqual("The course differs.", ui.Q<Label>("event-text").text);
+        }
+    }
+
+    /// <summary>#958 (owner, 11 November 2026: "Add Hebrew support first (Recommended)"): a variant (R-ALT-010) with Hebrew
+    /// shows its title_he and text_he in Hebrew and its English in English. The wording is the test's, in memory: no real
+    /// event has variants yet.</summary>
+    [Test]
+    public void AVariantWithHebrewShowsItInHebrewAndItsEnglishInEnglish()
+    {
+        var when = new EventRequirement { Event = "probe", Option = "other" };
+        foreach (var local in new[] { Text, He })
+        {
+            var hebrew = local["ui.lang"] == UiLanguage.Hebrew;
+            var (ui, _) = Altalena(local, x => x.Variants.Add(new EventVariant
+            {
+                When = { when }, Title = "A different course", TitleHe = "מסלול אחר", Text = "The course differs.", TextHe = "המסלול שונה."
+            }), s => s.ChosenOptions["probe"] = "other");
+            using (ui)
+            {
+                Assert.AreEqual(hebrew ? "מסלול אחר" : "A different course", ui.Q<Label>("event-title").text, local["ui.lang"]);
+                Assert.AreEqual(hebrew ? "המסלול שונה." : "The course differs.", ui.Q<Label>("event-text").text, local["ui.lang"]);
+            }
         }
     }
 
@@ -1013,6 +1035,26 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         });
         card.Render();
         Assert.AreEqual(He.Format("event.alt_origin", "הדרך שלא נבחרה", "A different road title", "מה שקרה"), ui.Q<Label>("event-alt-banner").text);
+    }
+
+    /// <summary>#958: the banner names the road card as its card shows it, so a variant's Hebrew title in Hebrew.</summary>
+    [Test]
+    public void InHebrewTheBannerShowsAVariantsHebrewTitle()
+    {
+        var c = WithRoad();
+        var bridge = OnTheRoad(c, "banner_after", He);
+        var parent = c.Events.First(e => e.Id == "banner_parent");
+        parent.Options.First(o => o.Id == "road").TextHe = "הדרך שלא נבחרה";
+        parent.Variants.Add(new EventVariant
+        {
+            When = { new EventRequirement { Event = "banner_parent", Option = "road" } },
+            Title = "A different road title", TitleHe = "כותרת של דרך אחרת",
+            Text = "A different road text", TextHe = "טקסט של דרך אחרת"
+        });
+        using var ui = new UiTestKit();
+        var card = new EventCardPresenter(ui.Root, bridge, He, null);
+        card.Render();
+        Assert.AreEqual(He.Format("event.alt_origin", "הדרך שלא נבחרה", "כותרת של דרך אחרת", "מה שקרה"), ui.Q<Label>("event-alt-banner").text);
     }
     [TestCase(false, 1)] [TestCase(false, 2)] [TestCase(true, 1)] [TestCase(true, 2)]
     public void MoreDecisionsUseARealPlural(bool hebrew, int remaining)
