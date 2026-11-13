@@ -1,3 +1,9 @@
+# Important message
+** Statecraft:Israel has turned into a closed-sourced development project. 
+As a result, this repository has been archived and will no longer receive updates.
+Development will continue privately as we work toward the next chapter of Statecraft: Israel.
+I'd like to sincerely thank everyone who contributed to the project. Your contributions have helped shape Statecraft: Israel, and I'm grateful for the time and effort you've invested.
+
 **English** · [עברית](README.he.md)
 
 https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
