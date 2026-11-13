@@ -1,17 +1,21 @@
 # yaml-language-server: $schema=../schema/event.schema.json
 id: jerusalem_military_government
 title: Jerusalem
-text: 'Count Bernadotte''s proposals would put Jerusalem under UN authority, and he has suggested demilitarising the city. The alternative is to put the part of Jerusalem held by the IDF under Israeli military government, with Dov Yosef as military governor. {prime_minister} must decide.'
+text: 'Count Bernadotte''s suggestions would put Jerusalem in Arab territory, with municipal autonomy for the Jewish community, and he has suggested demilitarising the city. The alternative is to put the part of Jerusalem held by the IDF under Israeli military government, with Dov Yosef as military governor. {prime_minister} must decide.'
 # For the native reviewer (#564): פולקה ברנדוט, צה״ל and דב יוסף follow he.wiki
 # (https://he.wikipedia.org/wiki/פולקה_ברנדוט; https://he.wikipedia.org/wiki/צבא_הגנה_לישראל;
 # https://he.wikipedia.org/wiki/דב_יוסף).
 title_he: ירושלים
-text_he: 'הצעותיו של הרוזן ברנדוט יעבירו את ירושלים לסמכות האו״ם, והוא הציע לפרז את העיר. החלופה היא להחיל ממשל צבאי ישראלי על החלק בירושלים שבידי צה״ל, ולמנות את דב יוסף למושל הצבאי. ההחלטה בידי {prime_minister}.'
+text_he: 'הצעותיו של הרוזן ברנדוט יכללו את ירושלים בשטח הערבי, עם אוטונומיה עירונית לקהילה היהודית, והוא הציע לפרז את העיר. החלופה היא להחיל ממשל צבאי ישראלי על החלק בירושלים שבידי צה״ל, ולמנות את דב יוסף למושל הצבאי. ההחלטה בידי {prime_minister}.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: prime_minister
-# Bernadotte's proposals of 28 June 1948 put Jerusalem under UN authority (notes section 1, JVL/IDF; his progress report
-# says he presented them on 28 and 29 June under cover of a letter of 27 June). On 2 August 1948 the government
+# Bernadotte's suggestions of 28 June 1948 put the City of Jerusalem in Arab territory, with municipal autonomy for the
+# Jewish community and special arrangements for the protection of the Holy Places (A/648, the Mediator's progress
+# report, part one, para 6, the territorial annex; S/888 para 28; [C] the JVL/IDF page "The First Truce" has Jerusalem
+# under UN authority instead). The progress report says he presented them on 28 and 29 June under cover of a letter of
+# 27 June. Owner ruling, 11 Nov 2026 (#3146): "Follow the primary (Recommended)". On 2 August 1948 the government
 # declared the Jerusalem area under its control Israel-occupied territory (the proclamation's own words) and appointed
 # Dov Yosef Military Governor (Official Gazette No. 12; JVL; JTA calls him military governor of Jerusalem in September).
 # The rejection of his demilitarisation plan came before that: Shertok read the government's reply, an absolute
