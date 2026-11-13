@@ -58,5 +58,5 @@ def test_the_tel_aviv_netanya_road_has_one_segment_between_each_pair_of_its_plac
     each pair of the five sourced places, the last ending at Netanya."""
     road = next(c for c in CORRIDORS if c["id"] == "tlv_netanya_road")
     via = [w["name"] for w in next(r for r in ROUTES if r["id"] == "tlv_netanya_road")["via"]]
-    assert (road["kind"], road["route"], road["status"]) == ("road", "tlv_netanya_road", "draft")
+    assert (road["kind"], road["route"], road["status"]) == ("road", "tlv_netanya_road", "fact-checked")
     assert [s["to"] for s in road["segments"]] == via[1:]
