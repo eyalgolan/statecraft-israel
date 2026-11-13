@@ -309,6 +309,12 @@ namespace Statecraft.Game.Map
 
         /// <summary>Lakes: flat water (a 3x3 height range within LakeFlatM) below LakeBelowM, tools/terrain_bake.py's rule.</summary>
         public const float LakeBelowM = -150f, LakeFlatM = 0.25f;
+        /// <summary>The Dead Sea's 1948 level (content/map/water.yaml dead_sea_1948, #16): tools/terrain_bake.py draws water
+        /// down there from the lake, so every sample at or below it is wet here (only the Dead Sea's basin lies this low;
+        /// a pit the fill does not reach gets mesh the coast leaves dry, which adds nothing), and the water mesh lies at this
+        /// level over them: one flat surface, drawn as fans (WaterMeshGrid, WaterMesh). tools/tests/test_water.py keeps it
+        /// equal to the file's level_m.</summary>
+        public const float DeadSea1948M = -392f;
         /// <summary>The water mesh reaches this many heightmap samples past the last wet one: the shore's coverage ramp (about
         /// 70 m inland) and the coast texture's own resolution stay inside it.</summary>
         public const int WaterMeshReach = 2;
@@ -318,15 +324,17 @@ namespace Statecraft.Game.Map
         /// <summary>The surface the water inside the map is drawn on (issue #195; MapScene.TerrainWaterName): the terrain's own
         /// heightmap surface wherever the water's coverage can be above 0, so Sea.shader's terrain-water mode can add the water
         /// on top of the terrain instead of the terrain's own shader carrying it. Wet samples are the sea (within SeaToleranceM
-        /// of 0 m) and flat rift lakes (LakeBelowM, LakeFlatM); every cell within WaterMeshReach samples of one is drawn at
-        /// the heightmap's full resolution, except square blocks whose samples all share one height (the open sea, the lakes'
-        /// flat middles), drawn as fans from the centre to every sample on their edge, so no edge has a T-junction.
+        /// of 0 m), flat rift lakes (LakeBelowM, LakeFlatM) and the Dead Sea's 1948 water (DeadSea1948M); every cell within
+        /// WaterMeshReach samples of one is drawn at the heightmap's full resolution, except square blocks whose samples all share one height (the open sea, the lakes'
+        /// flat middles, the Dead Sea's 1948 water), drawn as fans from the centre to every sample on their edge, so no edge
+        /// has a T-junction. Each vertex is at its sample's height, or at the Dead Sea's 1948 level (DeadSea1948M) where the
+        /// sample is below it: the 1948 water is a flat surface over the lower basin of today's heightmap.
         /// <paramref name="heights"/> are the ones the terrain was given (Unity's [y, x], 0..1): the terrain stores them at
         /// 16 bits, a few centimetres off, well inside the water's depth pull (Sea.shader).</summary>
         public static Mesh BuildWaterMesh(TerrainData data, float[,] heights, float elevMinM, MapRuntimeAssets assets)
         {
             var (grid, indices) = WaterMeshGrid(data.heightmapResolution, data.size, heights, elevMinM);
-            return assets.Own(WaterMesh(data.heightmapResolution, data.size, heights, grid, indices));
+            return assets.Own(WaterMesh(data.heightmapResolution, data.size, heights, elevMinM, grid, indices));
         }
 
         /// <summary>The terrain's size (m: width, relief, length) for a heightmap, as Build gives it.</summary>
@@ -346,12 +354,15 @@ namespace Statecraft.Game.Map
             float perMetre = VerticalExaggeration / size.y, zero = -elevMinM * perMetre;
             float seaLo = zero - SeaToleranceM * perMetre, seaHi = zero + SeaToleranceM * perMetre;
             float lakeBelow = (LakeBelowM - elevMinM) * perMetre, lakeFlat = LakeFlatM * perMetre;
-            // A sample is wet when it is sea, or the flat floor of a rift lake (its 3x3 neighbourhood within LakeFlatM).
+            float deadSea = (DeadSea1948M - elevMinM) * perMetre;
+            // A sample is wet when it is sea, the flat floor of a rift lake (its 3x3 neighbourhood within LakeFlatM), or at or
+            // below the Dead Sea's 1948 level.
             bool Wet(int x, int y)
             {
                 float h = heights[y, x];
                 if (h > seaLo && h < seaHi) return true;
                 if (h >= lakeBelow) return false;
+                if (h <= deadSea) return true;
                 float lo = h, hi = h;
                 for (int oy = -1; oy <= 1; oy++)
                     for (int ox = -1; ox <= 1; ox++)
@@ -408,15 +419,15 @@ namespace Statecraft.Game.Map
             // Unity's clockwise front faces take in the reverse order.
             void Tri(int i, int j, int l) { tris.Add(i); tris.Add(l); tris.Add(j); }
             // Whether block (x0, y0, s) is all wet and all its samples share one height (bitwise: the sea's 0 m, a lake's
-            // quantised level).
+            // quantised level, the Dead Sea's 1948 level, which every sample below it is drawn at: WaterMesh).
             bool Flat(int x0, int y0, int s)
             {
-                float h = heights[y0, x0];
+                float h = Mathf.Max(heights[y0, x0], deadSea);
                 for (int y = y0; y <= y0 + s; y++)
                     for (int x = x0; x <= x0 + s; x++)
                     {
                         float v = heights[y, x];
-                        if (v != h || !((v > seaLo && v < seaHi) || (v < lakeBelow && Wet(x, y)))) return false;
+                        if (Mathf.Max(v, deadSea) != h || !((v > seaLo && v < seaHi) || (v < lakeBelow && Wet(x, y)))) return false;
                     }
                 return true;
             }
@@ -512,16 +523,18 @@ namespace Statecraft.Game.Map
             return (verts.ToArray(), tris.ToArray());
         }
 
-        /// <summary>The water mesh from its samples (WaterMeshGrid): every vertex on the terrain's own heightmap sample.</summary>
-        public static Mesh WaterMesh(int res, Vector3 size, float[,] heights, int[] grid, int[] indices)
+        /// <summary>The water mesh from its samples (WaterMeshGrid): every vertex on the terrain's own heightmap sample, or at
+        /// the Dead Sea's 1948 level (DeadSea1948M) where the sample lies below it.</summary>
+        public static Mesh WaterMesh(int res, Vector3 size, float[,] heights, float elevMinM, int[] grid, int[] indices)
         {
             int cells = res - 1;
             float stepX = size.x / cells, stepZ = size.z / cells;
+            float deadSea = (DeadSea1948M - elevMinM) * (VerticalExaggeration / size.y);   // WaterMeshGrid's, in 0..1
             var verts = new Vector3[grid.Length];
             for (int i = 0; i < grid.Length; i++)
             {
                 int x = grid[i] & 0xFFFF, y = grid[i] >> 16;
-                verts[i] = new Vector3(x * stepX, heights[y, x] * size.y, y * stepZ);
+                verts[i] = new Vector3(x * stepX, Mathf.Max(heights[y, x], deadSea) * size.y, y * stepZ);
             }
             var mesh = new Mesh { name = "TerrainWater", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
             mesh.SetVertices(verts);

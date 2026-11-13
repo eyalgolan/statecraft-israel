@@ -94,14 +94,15 @@ namespace Statecraft.Game.Map.Kits
         /// 60-160 m above the Sea of Galilee), and counting all of it as water left Tiberias no ground to build on, while a
         /// shore hex of another biome can hold some of the lake. The surface is told as the drawn water tells it
         /// (MapBuilder.WaterMeshGrid, tools/terrain_bake.py): below <see cref="MapBuilder.LakeBelowM"/> and flat within
-        /// <see cref="MapBuilder.LakeFlatM"/> over the heightmap's 3 x 3 window, at the point or one sample from it.</summary>
+        /// <see cref="MapBuilder.LakeFlatM"/> over the heightmap's 3 x 3 window, at the point or one sample from it; and the
+        /// Dead Sea's 1948 water (NearDeadSea1948).</summary>
         public bool Water(float x, float z)
         {
             if (!Inside(x, z)) return true;
             float e = ElevM(x, z);
             if (Mathf.Abs(e) <= MapBuilder.SeaToleranceM + 0.5f) return true;
             // Only the rift lies this low (no sea hex does), and only a lake's hex or its neighbour holds lake water.
-            if (e < MapBuilder.LakeBelowM) return lakeZone.Contains(Hex(x, z)) && NearLakeSurface(x, z);
+            if (e < MapBuilder.LakeBelowM) return (lakeZone.Contains(Hex(x, z)) && NearLakeSurface(x, z)) || NearDeadSea1948(x, z);
             return e < 2f && Biome(x, z) == "sea";
         }
 
@@ -115,6 +116,17 @@ namespace Statecraft.Game.Map.Kits
             for (int j = -1; j <= 1; j++)
                 for (int i = -1; i <= 1; i++)
                     if (LakeFlat(gx + i, gz + j)) return true;
+            return false;
+        }
+
+        /// <summary>The Dead Sea's 1948 water (MapBuilder.DeadSea1948M, #16) at (x, z) or within one heightmap sample of it,
+        /// as NearLakeSurface: ground at or below the level. Only the Dead Sea's basin lies this low, so no hex test.</summary>
+        bool NearDeadSea1948(float x, float z)
+        {
+            int gx = Mathf.RoundToInt(x / sampleX), gz = Mathf.RoundToInt(z / sampleZ);
+            for (int j = -1; j <= 1; j++)
+                for (int i = -1; i <= 1; i++)
+                    if (ElevM((gx + i) * sampleX, (gz + j) * sampleZ) <= MapBuilder.DeadSea1948M) return true;
             return false;
         }
 

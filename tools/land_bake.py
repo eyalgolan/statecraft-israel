@@ -392,8 +392,7 @@ def bake() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     hx = xk / meta["width_km"] * (meta["width"] - 1)
     e = bilinear(elev.astype(np.float64), hy, hx)
     slope = bilinear(slope_map(elev, meta), hy, hx)
-    dx, dy = tb.spacing_m(meta)
-    water_hm = tb.water_mask(elev, dx, dy).astype(np.float64)
+    water_hm = tb.map_water(elev, meta, tb.water_bodies(tb.MAP_DAY)).astype(np.float64)   # coast.png's water (#16)
     water = bilinear(water_hm, hy, hx) > 0.5
     rain = rain_at(xk, yk, meta)
     biome = biome_at(xk, yk, hexes)

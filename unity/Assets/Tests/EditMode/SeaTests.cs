@@ -51,8 +51,9 @@ public class SeaTests
     /// <summary>Issue #195: the water inside the map is drawn by MapScene's TerrainWater, the terrain's surface over the
     /// water and its shore (MapBuilder.BuildWaterMesh) with a copy of Sea.mat in its terrain-water mode: added on top right
     /// after the terrain and before the other opaques, no depth write, no shadow, no collider. The mesh lies on the
-    /// heightmap (its vertices are heightmap samples or flat fans), reaches the open sea and both rift lakes, and stays off
-    /// inland hills.</summary>
+    /// heightmap (its vertices are heightmap samples or flat fans), except over the Dead Sea's basin below its 1948 level
+    /// (#16), where it lies flat at that level; it reaches the open sea and both rift lakes, and stays off inland
+    /// hills.</summary>
     [Test]
     public void TheTerrainWaterLiesOnTheWaterWithTheSeaShader()
     {
@@ -74,10 +75,16 @@ public class SeaTests
         var verts = mesh.vertices;
         TestContext.WriteLine($"water mesh: {verts.Length} vertices, {mesh.triangles.Length / 3} triangles");
         Assert.Less(mesh.triangles.Length / 3, 1_000_000, "a light mesh, not a second terrain");
-        // Every vertex lies on the terrain (a fan's centre on its flat block).
+        // Every vertex lies on the terrain (a fan's centre on its flat block), or at the Dead Sea's 1948 level where the
+        // terrain is below it.
         var origin = map.Terrain.transform.position;
+        var (meta, _) = HeightmapLoader.Load(Statecraft.Game.Paths.StreamingMap);
+        float deadSeaY = (MapBuilder.DeadSea1948M - meta.elev_min_m) * MapBuilder.VerticalExaggeration;
         for (int i = 0; i < verts.Length; i += 97)
-            Assert.AreEqual(map.Terrain.SampleHeight(origin + verts[i]), verts[i].y, 0.25f, $"vertex {i} {verts[i]}");
+            Assert.AreEqual(Mathf.Max(map.Terrain.SampleHeight(origin + verts[i]), deadSeaY), verts[i].y, 0.25f, $"vertex {i} {verts[i]}");
+        int atDeadSea = 0;
+        foreach (var v in verts) if (Mathf.Abs(v.y - deadSeaY) < 0.01f) atDeadSea++;
+        Assert.Greater(atDeadSea, 0, "the Dead Sea's 1948 water lies flat at its level");
         // Wet places are covered, an inland hill is not: horizontal hits on the mesh's triangles.
         bool Covers(double lon, double lat)
         {

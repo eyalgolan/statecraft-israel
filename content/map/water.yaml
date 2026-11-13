@@ -1,0 +1,35 @@
+# Dated water bodies for the map (#16): what the map draws as water on a date, beyond the heightmap's own sea and
+# flat-lake rule (tools/terrain_bake.py water_mask). Visual only: hexes.json's Land flags and the sim do not read it.
+# tools/terrain_bake.py bakes the bodies in force on the game's first turn (15 May 1948, docs/GDD.md) into coast.png;
+# the game's span (to 15 January 1952) holds one water epoch, so the map has one coast.
+#   kind: level  - fill the heightmap to level_m inside box (lat/lon degrees), only where the fill is 4-connected to the
+#                  water already drawn there; the drawn water stays water (a union).
+#   from / to    - ISO dates; to: null = still in force when the game ends.
+# The Unity side's copy of level_m is MapBuilder.DeadSea1948M; tools/borders_bake.py and tools/borders_digitise.py
+# carry the same level (DEAD_SEA_1948_M). tools/tests/test_water.py keeps them equal.
+bodies:
+- id: dead_sea_1948
+  from: 1948-05-15
+  to: null
+  kind: level
+  level_m: -392.0
+  box: {lat: [30.85, 31.90], lon: [35.25, 35.70]}
+  sources:
+  - url: https://palopenmaps.org/en/maps?basemap=pal250k1946
+    checked: 2026-11-11
+    note: >-
+      Survey of Palestine, Palestine 1:250,000, 1946, read as zoom-12 tiles
+      (https://palopenmaps.org/tiles/pal250k-1946/12/2451/1669.jpg and 12/2451/1670.jpg): "-392 (M.W.L. 1938)" printed
+      in the northern basin west of the Lisan. The level used.
+  - url: https://www.osti.gov/etdeweb/servlets/purl/20154842
+    checked: 2026-10-14
+    note: >-
+      J.R. Gat, "The Dead Sea: a model of a desiccating terminal salt lake", Fig. 2 (hydrograph since 1929): -392 to
+      -393 m from about 1934 to 1957, 1948 at about -392.5 to -393 m, read off the plot (about +/-0.5 m); a cross-check
+      only (research_notes/Map/historical-water-1948.md).
+  gaps:
+  - >-
+    The southern basin is a level fill, not its 1946 shoreline: the sheet puts the shore at about 31.06 N, and the fill
+    adds about 3.4 km2 south of it, where today's evaporation ponds (drawn by the heightmap's flat-lake rule) also stay
+    water. A polygon traced from the 1946 sheet replaces this (#16; research_notes/Map/historical-water-1948.md).
+  - Lake Hula and its marsh (1948; drained from 1951) are not drawn yet (#16).

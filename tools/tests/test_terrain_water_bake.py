@@ -102,13 +102,14 @@ def fingerprint(parts: list[str]) -> str:
 
 # The fingerprint of the water mesh's C# code (code_fingerprint). Re-pin only after re-baking (TerrainWaterBake.Bake) and
 # checking that test_the_bake_is_the_water_mesh_of_the_shipped_heightmap still passes (update the port if the rule changed).
-PINNED_CODE = "6f46eaf81b8c4b18841eb1c1e8e3e1eca19a89be1257542c7d4b269300bc6f06"
+PINNED_CODE = "8ecec6866c3d6b9f6590ee288ee6c5b8db97f9e46acd93d74bcb668ab20bd53c"
 
 
 def code_fingerprint() -> str:
     """WaterMeshGrid, the terrain size it is given, the bytes it is written as and the editor bake that calls it. The
-    constants it reads (SeaToleranceM, LakeBelowM, LakeFlatM, WaterMeshReach, WaterMeshBlock, VerticalExaggeration) are
-    not in it: the port reads them from the source, so a change to one fails the port's test instead."""
+    constants it reads (SeaToleranceM, LakeBelowM, LakeFlatM, DeadSea1948M, WaterMeshReach, WaterMeshBlock,
+    VerticalExaggeration) are not in it: the port reads them from the source, so a change to one fails the port's test
+    instead."""
     builder = csharp("Scripts/Map/MapBuilder.cs")
     return fingerprint([
         method(builder, "public static (int[] grid, int[] indices) WaterMeshGrid("),
@@ -125,11 +126,10 @@ def test_the_water_mesh_code_is_the_one_the_bake_was_made_with():
         "in tools/tests/test_terrain_water_bake.py if the rule changed, then re-pin PINNED_CODE there")
 
 
-def water_mesh() -> tuple[np.ndarray, np.ndarray]:
-    """MapBuilder.WaterMeshGrid in numpy: the vertices' samples (x | y << 16) and the triangles as samples (n, 3), in the
-    C#'s winding. The quadtree is walked a level at a time over the whole map instead of block by block: a block of s
-    cells is flat (one fan) when every one of its cells has four wet corners of one height, and it is looked at when its
-    parent was looked at, was not flat and has a drawn cell."""
+def wet_and_drawn() -> tuple[np.ndarray, np.ndarray, np.ndarray, int, int, np.float32]:
+    """WaterMeshGrid's inputs in numpy: Unity's heights [y, x], its wet samples (Wet), the cells it draws [cy, cx] (a wet
+    sample within WaterMeshReach of a corner: every such cell is in the mesh, as a cell or inside a fan), WaterMeshBlock,
+    WaterMeshReach and the Dead Sea's 1948 level in 0..1 heights (WaterMesh draws every sample below it at it)."""
     meta = json.loads((MAP / "heightmap.json").read_text())
     h = unity_heights()
     res = h.shape[1]
@@ -138,6 +138,7 @@ def water_mesh() -> tuple[np.ndarray, np.ndarray]:
     rel = "Scripts/Map/MapBuilder.cs"
     ve, sea_tol = f(csharp_const(rel, "VerticalExaggeration")), f(csharp_const(rel, "SeaToleranceM"))
     lake_below_m, lake_flat_m = f(csharp_const(rel, "LakeBelowM")), f(csharp_const(rel, "LakeFlatM"))
+    dead_sea_m = f(csharp_const(rel, "DeadSea1948M"))
     B, R = int(csharp_const(rel, "WaterMeshBlock")), int(csharp_const(rel, "WaterMeshReach"))
     assert cells % B == 0 and B & (B - 1) == 0, "the port walks whole power-of-two blocks only"
     emin = f(meta["elev_min_m"])
@@ -146,11 +147,27 @@ def water_mesh() -> tuple[np.ndarray, np.ndarray]:
     zero = f(-emin * per_metre)
     sea_lo, sea_hi = f(zero - f(sea_tol * per_metre)), f(zero + f(sea_tol * per_metre))
     lake_below, lake_flat = f(f(lake_below_m - emin) * per_metre), f(lake_flat_m * per_metre)
+    dead_sea = f(f(dead_sea_m - emin) * per_metre)
 
     padded = np.pad(h, 1, mode="edge")                                 # Wet's clamped 3x3 neighbourhood
     shifts = [padded[1 + oy:1 + oy + res, 1 + ox:1 + ox + res] for oy in (-1, 0, 1) for ox in (-1, 0, 1)]
     lo, hi = np.minimum.reduce(shifts), np.maximum.reduce(shifts)
-    wet = ((h > sea_lo) & (h < sea_hi)) | ((h < lake_below) & (f(hi - lo) <= lake_flat))
+    wet = ((h > sea_lo) & (h < sea_hi)) | ((h < lake_below) & ((f(hi - lo) <= lake_flat) | (h <= dead_sea)))
+    w = np.pad(wet, R)                                                 # near: a wet sample within R (out of the map: dry)
+    near = np.logical_or.reduce([w[j:j + res, i:i + res] for j in range(2 * R + 1) for i in range(2 * R + 1)])
+    drawn = near[:-1, :-1] | near[:-1, 1:] | near[1:, :-1] | near[1:, 1:]          # [cy, cx]
+    return h, wet, drawn, B, R, dead_sea
+
+
+def water_mesh() -> tuple[np.ndarray, np.ndarray]:
+    """MapBuilder.WaterMeshGrid in numpy: the vertices' samples (x | y << 16) and the triangles as samples (n, 3), in the
+    C#'s winding. The quadtree is walked a level at a time over the whole map instead of block by block: a block of s
+    cells is flat (one fan) when every one of its cells has four wet corners of one drawn height (the Dead Sea's
+    1948 level for a sample below it), and it is looked at when its parent was looked at, was not flat and has a drawn
+    cell."""
+    h, wet, drawn, B, R, dead_sea = wet_and_drawn()
+    res = h.shape[1]
+    cells = res - 1
 
     blocks = cells // B                                                # the last block takes the last row and column
     starts = np.arange(0, blocks * B, B)
@@ -158,10 +175,8 @@ def water_mesh() -> tuple[np.ndarray, np.ndarray]:
     bw = np.pad(block_wet, 1)
     relevant = np.logical_or.reduce([bw[1 + j:1 + j + blocks, 1 + i:1 + i + blocks] for j in (-1, 0, 1) for i in (-1, 0, 1)])
 
-    w = np.pad(wet, R)                                                 # near: a wet sample within R (out of the map: dry)
-    near = np.logical_or.reduce([w[j:j + res, i:i + res] for j in range(2 * R + 1) for i in range(2 * R + 1)])
-    drawn = near[:-1, :-1] | near[:-1, 1:] | near[1:, :-1] | near[1:, 1:]          # [cy, cx]
-    c00, c10, c01, c11 = h[:-1, :-1], h[:-1, 1:], h[1:, :-1], h[1:, 1:]
+    drawn_h = np.maximum(h, dead_sea)                                  # Flat compares the heights WaterMesh draws
+    c00, c10, c01, c11 = drawn_h[:-1, :-1], drawn_h[:-1, 1:], drawn_h[1:, :-1], drawn_h[1:, 1:]
     flat_cell = (wet[:-1, :-1] & wet[:-1, 1:] & wet[1:, :-1] & wet[1:, 1:]) & (c00 == c10) & (c00 == c01) & (c00 == c11)
 
     def per_block(a: np.ndarray, s: int, how) -> np.ndarray:
@@ -214,3 +229,17 @@ def test_the_bake_is_the_water_mesh_of_the_shipped_heightmap():
     assert nindices == 3 * len(tris), f"the baked mesh has {nindices // 3} triangles, WaterMeshGrid makes {len(tris)}: " + REBAKE
     baked = grid[indices].reshape(-1, 3)
     assert np.array_equal(canonical(baked), canonical(tris)), "the baked mesh has other triangles than WaterMeshGrid makes: " + REBAKE
+
+
+def test_the_mesh_is_under_every_texel_the_coast_draws_as_water():
+    """Sea.shader adds the water only where this mesh is (the terrain draws black under coast water): every coast.png
+    texel below 0.5, the Dead Sea's 1948 water too (#16), lies on a drawn cell. Texel (j, i), row 0 north, is the mean of
+    samples j..j+1, i..i+1 (tools/terrain_bake.py to_texels): Unity's cell (cx = i, cy = cells - 1 - j)."""
+    from PIL import Image
+    _, _, drawn, _, _, _ = wet_and_drawn()
+    with Image.open(UNITY / "Textures/Map/coast.png") as im:
+        coast = np.asarray(im)
+    wet_cells = (coast < 128)[::-1]                                    # [cy, cx]
+    assert wet_cells.shape == drawn.shape and wet_cells.sum() > 800_000
+    bare = wet_cells & ~drawn
+    assert not bare.any(), f"{bare.sum()} coast-water texels have no water mesh, e.g. cell (cx, cy) {np.argwhere(bare)[:5, ::-1].tolist()}"

@@ -185,6 +185,13 @@ def test_the_committed_coast_texture_marks_the_seas_and_lakes():
     assert c[texel(35.41, 31.18)] < 128, "the largest evaporation pan (45 km2) south of the Dead Sea"
     assert c[texel(35.558, 32.019)] > 192, "the Karameh reservoir (0.3 km2, built in the 1990s) is not a lake"
     assert c[texel(35.50, 32.50)] > 192, "Beit She'an in the rift (-120 m) is land, far from water"
+    # The Dead Sea at its 1948 level (content/map/water.yaml, -392 m; #16): the delta and the strait are water, the
+    # Lisan (-365 m at its centre, -350 m at its northern end) and Ein Gedi's shore (-359 m) stay land.
+    assert c[texel(35.56, 31.76)] < 128, "the Jordan's delta, -427 m: in the 1948 sea"
+    assert c[texel(35.40, 31.25)] < 128, "the strait west of the Lisan, -399 m: open water in 1948"
+    assert c[texel(35.50, 31.26)] > 128, "the Lisan's centre"
+    assert c[texel(35.47, 31.30)] > 128, "the Lisan's northern end"
+    assert c[texel(35.39, 31.46)] > 128, "the western shore at Ein Gedi"
     b = np.asarray(png(ROOT / "unity/Assets/Textures/Map/terrain_bake.png"))
     assert b.shape == (2048, 2048, 3)
 
@@ -383,18 +390,18 @@ def committed_and_metric_coast():
 def test_the_committed_coast_is_the_bake_of_todays_settlements(monkeypatch):
     # A locality added or resized on the dune coast without a re-bake would leave its ground under the extra sand.
     elev, meta, committed = committed_and_metric_coast()
-    fresh = tb.coast(elev, meta, tb.plot_reaches(meta)).astype(int)
+    fresh = tb.coast(elev, meta, tb.plot_reaches(meta), tb.water_bodies(tb.MAP_DAY)).astype(int)
     diff = np.abs(fresh - committed)
     assert diff.max() <= 1 and (diff > 0).mean() < 1e-4, (
-        "unity/Assets/Textures/Map/coast.png is stale against content/map/settlements_1948.yaml, localities_1948.yaml or "
-        "settlement_population_1945.yaml (the dune beach yields to each place's plot reach, set by its coordinates and "
-        "population): run `uv run tools/terrain_bake.py` from the repo root and commit unity/Assets/Textures/Map/coast.png")
+        "unity/Assets/Textures/Map/coast.png is stale against content/map/water.yaml (the dated water) or against "
+        "settlements_1948.yaml, localities_1948.yaml or settlement_population_1945.yaml (the dune beach yields to each "
+        "place's plot reach, set by its coordinates and population): run `uv run tools/terrain_bake.py` from the repo root and commit unity/Assets/Textures/Map/coast.png")
 
 
 def test_the_committed_coast_keeps_every_settlements_own_ground_at_scshores_beach(monkeypatch):
     elev, meta, committed = committed_and_metric_coast()
     monkeypatch.setattr(tb, "BEACH_EXTRA_M", 0.0)
-    metric = tb.coast(elev, meta).astype(int)
+    metric = tb.coast(elev, meta, bodies=tb.water_bodies(tb.MAP_DAY)).astype(int)
     h, w = elev.shape
     dx, dy = tb.spacing_m(meta)
     x = (np.arange(w - 1) + 0.5) * dx                     # texel centres (to_texels: the mean of 2 x 2 samples)
@@ -411,7 +418,7 @@ def test_the_committed_coast_keeps_every_settlements_own_ground_at_scshores_beac
 def test_the_committed_coast_draws_acre_at_scshores_beach_and_the_bays_dunes_wide(monkeypatch):
     elev, meta, committed = committed_and_metric_coast()
     monkeypatch.setattr(tb, "BEACH_EXTRA_M", 0.0)
-    metric = tb.coast(elev, meta).astype(int)
+    metric = tb.coast(elev, meta, bodies=tb.water_bodies(tb.MAP_DAY)).astype(int)
     r0, c0 = texel(35.05, 32.95)
     r1, c1 = texel(35.12, 32.912)
     acre = np.s_[r0:r1, c0:c1]   # Acre's walled town, its peninsula and its shore to just north of the Na'aman's mouth

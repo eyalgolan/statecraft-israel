@@ -14,6 +14,8 @@ Reads unity/Assets/StreamingAssets/map/heightmap.r16z (heightmap_codec) + height
       nearest shoreline, < 0 in water (open sea: |elevation| < SEA_EPS_M and connected to the map's border; lakes: flat
       water below LAKE_BELOW_M covering at least MIN_LAKE_AREA_KM2), the rules tools/hexgrid.py uses for its sea and lake
       biomes; the area floor drops the Karameh reservoir (0.3 km2, built in the 1990s) and dike slivers between the pans.
+      On top of these, the dated water bodies of content/map/water.yaml in force on MAP_DAY (map_water: the Dead Sea at
+      its 1948 level, #16).
       The land side is beach-scaled, not metres, on the dune coasts (BEACH_BANDS): beach_widened takes BEACH_EXTRA_M out
       of the distance past the wet sand, so the shader's beach (ScShore) reaches that much further inland there, except
       over a settlement's own ground (beach_keep: its plots' reach, from content/map/settlements_1948.yaml,
@@ -25,6 +27,7 @@ Distances are exact Euclidean (a Felzenszwalb-Huttenlocher two-pass transform) w
 import json
 import math
 from collections import deque
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +40,8 @@ ROOT = Path(__file__).resolve().parents[1]
 MAP_DIR = ROOT / "unity" / "Assets" / "StreamingAssets" / "map"
 OUT_DIR = ROOT / "unity" / "Assets" / "Textures" / "Map"
 CONTENT_MAP = ROOT / "content" / "map"
+WATER = CONTENT_MAP / "water.yaml"           # dated water bodies (#16): water_bodies, map_water
+MAP_DAY = date(1948, 5, 15)                  # the game's first turn (docs/GDD.md); its span holds one water epoch
 VERTICAL_EXAGGERATION = 3.0
 AO_RADIUS_M = 2000.0
 SKY_RADIUS_M = 12000.0
@@ -199,6 +204,40 @@ def water_mask(elev: np.ndarray, dx: float, dy: float) -> np.ndarray:
     return border_connected(np.abs(elev) < SEA_EPS_M) | lake_mask(elev, dx, dy)
 
 
+def water_bodies(day: date, path: Path = WATER) -> list[dict]:
+    """The bodies of content/map/water.yaml in force on day (from <= day, and day < to unless to is null)."""
+    bodies = yaml12.load(path.read_text())["bodies"]
+    return [b for b in bodies if date.fromisoformat(b["from"]) <= day and (b["to"] is None or day < date.fromisoformat(b["to"]))]
+
+
+def level_fill(elev: np.ndarray, meta: dict, body: dict, water: np.ndarray) -> np.ndarray:
+    """A kind: level body's water: the samples inside its box (inclusive) at or below level_m that are 4-connected,
+    through such samples, to <water> inside the box. A pit at the level that does not reach the water stays land."""
+    h, w = elev.shape
+    lat = meta["lat1"] - np.arange(h) * (meta["lat1"] - meta["lat0"]) / (h - 1)       # row 0 = north
+    lon = meta["lon0"] + np.arange(w) * (meta["lon1"] - meta["lon0"]) / (w - 1)
+    (lat0, lat1), (lon0, lon1) = body["box"]["lat"], body["box"]["lon"]
+    inside = ((lat >= lat0) & (lat <= lat1))[:, None] & ((lon >= lon0) & (lon <= lon1))[None, :]
+    below = inside & (elev <= body["level_m"])
+    reached = water & below
+    while True:
+        before = reached
+        for _ in range(16):                          # 16 growth steps per convergence check, as border_connected
+            reached = grow(reached) & below
+        if np.array_equal(before, reached):
+            return reached
+
+
+def map_water(elev: np.ndarray, meta: dict, bodies: list[dict]) -> np.ndarray:
+    """The map's drawn water: water_mask (the sea and the flat lakes) and every dated body (water_bodies) on top of it."""
+    dx, dy = spacing_m(meta)
+    water = water_mask(elev, dx, dy)
+    for body in bodies:
+        assert body["kind"] == "level", f"{body['id']}: kind {body['kind']!r} is not drawn yet"
+        water = water | level_fill(elev, meta, body, water)
+    return water
+
+
 def column_distance(target: np.ndarray) -> np.ndarray:
     """Samples to the nearest target pixel in the same column (inf where the column has none)."""
     h = target.shape[0]
@@ -320,11 +359,12 @@ def encode_coast(signed_m: np.ndarray, range_m: float = COAST_RANGE_M) -> np.nda
     return to_u8(0.5 + signed_m / (2 * range_m))
 
 
-def coast(elev: np.ndarray, meta: dict, reaches: list[tuple[float, float, float]] = ()) -> np.ndarray:
-    """coast.png's levels (L8, 2048 x 2048, row 0 = north); the beach's extra width yields to <reaches> (plot_reaches;
-    main() passes the map's)."""
+def coast(elev: np.ndarray, meta: dict, reaches: list[tuple[float, float, float]] = (),
+          bodies: list[dict] = ()) -> np.ndarray:
+    """coast.png's levels (L8, 2048 x 2048, row 0 = north) of map_water with <bodies>; the beach's extra width yields to
+    <reaches> (plot_reaches). main() passes the map's places and the water bodies of MAP_DAY."""
     dx, dy = spacing_m(meta)
-    water = water_mask(elev, dx, dy)
+    water = map_water(elev, meta, bodies)
     h, w = elev.shape
     lon = meta["lon0"] + np.arange(w)[None, :] / (w - 1) * (meta["lon1"] - meta["lon0"])
     lat = meta["lat1"] - np.arange(h)[:, None] / (h - 1) * (meta["lat1"] - meta["lat0"])   # row 0 = north
@@ -334,17 +374,18 @@ def coast(elev: np.ndarray, meta: dict, reaches: list[tuple[float, float, float]
     return encode_coast(to_texels(signed.astype(np.float32)))
 
 
-def bake(elev: np.ndarray, meta: dict, reaches: list[tuple[float, float, float]] = ()) -> tuple[np.ndarray, np.ndarray]:
+def bake(elev: np.ndarray, meta: dict, reaches: list[tuple[float, float, float]] = (),
+         bodies: list[dict] = ()) -> tuple[np.ndarray, np.ndarray]:
     dx, dy = spacing_m(meta)
     z = elev * np.float32(VERTICAL_EXAGGERATION)
     ao, sky, curv = openness(z, dx, dy, AO_RADIUS_M), openness(z, dx, dy, SKY_RADIUS_M), curvature(z, dx, dy)
     rgb = np.stack([to_u8(to_texels(ao)), to_u8(to_texels(curv)), to_u8(to_texels(sky))], axis=-1)
-    return rgb, coast(elev, meta, reaches)
+    return rgb, coast(elev, meta, reaches, bodies)
 
 
 def main(map_dir: Path = MAP_DIR, out_dir: Path = OUT_DIR) -> None:
     elev, meta = load_heightmap(map_dir)
-    rgb, levels = bake(elev, meta, plot_reaches(meta))
+    rgb, levels = bake(elev, meta, plot_reaches(meta), water_bodies(MAP_DAY))
     out_dir.mkdir(parents=True, exist_ok=True)
     Image.fromarray(rgb, "RGB").save(out_dir / "terrain_bake.png")
     Image.fromarray(levels, "L").save(out_dir / "coast.png")
