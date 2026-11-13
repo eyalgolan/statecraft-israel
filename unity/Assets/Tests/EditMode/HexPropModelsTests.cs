@@ -989,5 +989,179 @@ namespace Statecraft.Game.Tests
 
         // The budget (design values, set from the PR's measurements with headroom; a delta that needs more must say so).
         const int MaxStandaloneInView = 400, MaxStandaloneTrisInView = 250000, MaxLandmarkTrisInView = 900000;
+
+        // ---- #2905 (suspect 2): ShowAt's early-out keys on what the build reads, not on the raw date (as #3068 for the
+        // special buildings) ----
+
+        static int Tokens(MapScene map, DateTime date) => map.UnitTokens.Count(t => t.until > date);
+
+        static Dictionary<string, GameObject> DrawnObjects(HexPropModels layer) =>
+            layer.Placed.Select(p => p.Name).ToDictionary(n => n, n => layer.transform.Find(n)!.gameObject);
+
+        /// <summary>RED on main (#2905): a new game date that changes nothing the build reads (the same stations, the same
+        /// special-building rows, the same dated tokens, the same civilians' list, the same rural plan) does not re-plan the
+        /// props. 15 August to 15 September 1949: after the 1948 rows leave and the last dated token's window ends (20 July
+        /// 1949), before the Yarkon link's stations (20 September 1949); the civilians' list is the same object (as
+        /// SpecialBuildingModelsTests' #3056 case). Each premise is asserted.</summary>
+        [TestCase("he-IL")] [TestCase("en-US")]
+        public void ADateChangeThatChangesNothingTheBuildReadsSkipsTheRebuild(string culture)
+        {
+            var savedCulture = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+                var map = OpenMap();
+                var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+                var none = Array.Empty<Statecraft.Sim.Placement>();
+                var d1 = new DateTime(1949, 8, 15); var d2 = new DateTime(1949, 9, 15);
+                Assert.IsTrue(SpecialBuildingModels.Same(SpecialBuildingModels.Placements(d1), SpecialBuildingModels.Placements(d2)), "premise: the same rows");
+                Assert.AreEqual(Tokens(map, d1), Tokens(map, d2), "premise: the same dated tokens");
+                Assert.IsTrue(HexPropModels.Wants(map, d1).SequenceEqual(HexPropModels.Wants(map, d2)), "premise: the same stations");
+                var layer = Show(map, d1);
+                var people = map.Terrain.transform.Find(CivilianPeople.Name)!.GetComponent<CivilianPeople>();
+                var list = people.Wanted; int rural = RuralLife.VersionOf(map);
+                Assert.IsNull(map.Terrain.transform.Find(TownLandmarks.Name), "premise: no whole-town plan is shown");
+                var before = DrawnObjects(layer);
+                Assert.Greater(before.Count, 0, "premise: props are drawn");
+                int replans = layer.Replans;
+
+                CollectionGeometryFixture.People(map, d2, none, c);
+                Assert.IsTrue(ReferenceEquals(list, people.Wanted), "premise: the civilians' list is the same (CivilianPeople swaps it only on a change)");
+                CollectionGeometryFixture.Rural(map);
+                Assert.AreEqual(rural, RuralLife.VersionOf(map), "premise: the same rural plan");
+                CollectionGeometryFixture.Special(map, d2);
+                HexPropModels.ShowAt(map, d2);
+                Assert.AreEqual(replans, layer.Replans, "the new date changes nothing the build reads: no re-plan");
+                foreach (var kv in before)
+                    Assert.IsTrue(ReferenceEquals(kv.Value, layer.transform.Find(kv.Key)?.gameObject), kv.Key + " is the same object");
+                Assert.AreEqual(before.Count, layer.Placed.Count, "no prop added or removed");
+            }
+            finally { CultureInfo.CurrentCulture = savedCulture; }
+        }
+
+        /// <summary>RED on main (#2905): the civilians' list changing at the same date re-plans the props, with no rural plan
+        /// shown (RuralLife.VersionOf stays 0 and cannot carry the change): two housing projects being built add their builders
+        /// (as SpecialBuildingModelsTests' #3056 case), whose ground the props keep clear of (RuralLife.OtherProps) and the
+        /// special buildings' plan does too. Then no prop stands on a figure's ground.</summary>
+        [TestCase("he-IL")] [TestCase("en-US")]
+        public void TheCiviliansListChangingAtTheSameDateRebuildsWithNoRuralLifeShown(string culture)
+        {
+            var savedCulture = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+                var map = OpenMap();
+                var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+                var none = Array.Empty<Statecraft.Sim.Placement>();
+                var d = new DateTime(1948, 6, 15);
+                var people = CollectionGeometryFixture.People(map, d, none, c)!;
+                CollectionGeometryFixture.Special(map, d);
+                var layer = HexPropModels.ShowAt(map, d)!;
+                layer.Choose(default, At(Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM));
+                AnswerAll();
+                Assert.AreEqual(0, RuralLife.VersionOf(map), "premise: no rural plan is shown, so its version cannot carry the change");
+                Assert.Greater(layer.Placed.Count, 0, "premise: props are drawn");
+                var old = people.Wanted.ToList();
+                int replans = layer.Replans;
+
+                var projects = new[] { "hadera", "rehovot" }.Select((city, i) =>
+                {
+                    var h = c.SettlementHexes.Single(x => x.Id == city);
+                    return new Statecraft.Sim.CityProject(i + 1, "housing", city, h.Q, h.R, 2, null);
+                }).ToList();
+                CollectionGeometryFixture.People(map, d, none, c, null, projects);
+                Assert.IsFalse(old.SequenceEqual(people.Wanted), "premise: the civilians' list changed (the builders)");
+                CollectionGeometryFixture.Special(map, d);
+                HexPropModels.ShowAt(map, d);
+                Assert.AreEqual(replans + 1, layer.Replans, "the civilians' list changed at the same date: one re-plan");
+                var figures = people.Wanted.Select(p => (new Vector2(p.At.x, p.At.z), CivilianPeople.FigureClearanceM)).ToList();
+                foreach (var p in layer.Placed)
+                    Assert.IsTrue(TownLandmarks.Clear(new Vector2(p.At.x, p.At.z), HexPropModels.ClearanceOf(p.Model), figures),
+                        p.Name + ": no prop stands on a figure's ground");
+            }
+            finally { CultureInfo.CurrentCulture = savedCulture; }
+        }
+
+        /// <summary>A station's first day re-plans with its station (the dated stations follow their RouteWindow): 19 to 20
+        /// September 1949, the Yarkon link's stations, with the same special-building rows and dated tokens.</summary>
+        [Test]
+        public void AStationsFirstDayRebuildsWithItsStation()
+        {
+            var map = OpenMap();
+            var d2 = YarkonLink; var d1 = d2.AddDays(-1);
+            Assert.IsTrue(SpecialBuildingModels.Same(SpecialBuildingModels.Placements(d1), SpecialBuildingModels.Placements(d2)), "premise: the same rows");
+            Assert.AreEqual(Tokens(map, d1), Tokens(map, d2), "premise: the same dated tokens");
+            Assert.Greater(HexPropModels.Wants(map, d2).Count, HexPropModels.Wants(map, d1).Count, "premise: a station opens");
+            var layer = Show(map, d1);
+            var people = map.Terrain.transform.Find(CivilianPeople.Name)!.GetComponent<CivilianPeople>();
+            var list = people.Wanted;
+            int replans = layer.Replans;
+            var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+            CollectionGeometryFixture.People(map, d2, Array.Empty<Statecraft.Sim.Placement>(), c);
+            Assert.IsTrue(ReferenceEquals(list, people.Wanted), "premise: the civilians' list is the same (CivilianPeople swaps it only on a change)");
+            CollectionGeometryFixture.Rural(map);
+            CollectionGeometryFixture.Special(map, d2);
+            HexPropModels.ShowAt(map, d2);
+            Assert.AreEqual(replans + 1, layer.Replans, "a station opened: one re-plan");
+            Assert.IsTrue(layer.Wanted.SequenceEqual(HexPropModels.Wants(map, d2)), "the props wanted are the new date's");
+        }
+
+        /// <summary>An arms workshop built at the same date re-plans the props (they keep clear of its b21, Others): the special
+        /// buildings' wanted list is the dated rows plus the built workshops (SpecialBuildingModels.ArmsWorkshops, passed in as
+        /// GameRoot passes them), with the same stations, dated tokens, civilians' list and rural plan.</summary>
+        [Test]
+        public void AnArmsWorkshopBuiltAtTheSameDateRebuildsWithItsWorkshop()
+        {
+            var map = OpenMap();
+            var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+            foreach (var era in c.Eras) { era.Systems.Ruleset = Statecraft.Sim.SaveGame.Gdd03Ruleset; era.Systems.Loop = Statecraft.Sim.EraSystems.Gdd; }
+            var d = Opening;
+            var layer = Show(map, d);
+            var people = map.Terrain.transform.Find(CivilianPeople.Name)!.GetComponent<CivilianPeople>();
+            var list = people.Wanted; int rural = RuralLife.VersionOf(map);
+            int replans = layer.Replans;
+            HexPropModels.ShowAt(map, d, c, Array.Empty<Statecraft.Sim.CityProject>());
+            Assert.AreEqual(replans, layer.Replans, "premise: no workshop built, nothing changed: no re-plan");
+
+            var h = c.SettlementHexes.Single(x => x.Id == "rehovot");
+            var projects = new[] { new Statecraft.Sim.CityProject(300, Statecraft.Sim.Workshops.ArmsWorkshop, "rehovot", h.Q, h.R, 0, d) };
+            Assert.AreEqual(1, SpecialBuildingModels.ArmsWorkshops(c, projects).Count, "premise: one workshop built");
+            CollectionGeometryFixture.People(map, d, Array.Empty<Statecraft.Sim.Placement>(), c);
+            Assert.IsTrue(ReferenceEquals(list, people.Wanted), "premise: the civilians' list is the same (CivilianPeople swaps it only on a change)");
+            CollectionGeometryFixture.Rural(map);
+            Assert.AreEqual(rural, RuralLife.VersionOf(map), "premise: the same rural plan");
+            CollectionGeometryFixture.Special(map, d, c, projects);
+            HexPropModels.ShowAt(map, d, c, projects);
+            Assert.AreEqual(replans + 1, layer.Replans, "a workshop was built at the same date: one re-plan");
+        }
+
+        /// <summary>A dated token's window ending re-plans the props (they keep clear of the tokens still present, KitGround.OnToken,
+        /// and so does the special buildings' plan they keep clear of): the day before the first window that ends after the 1948
+        /// rows leave, then that day, with the same stations. Then no prop stands on a token still present.</summary>
+        [Test]
+        public void ATokenWindowEndingRebuildsThePropsOntoTheNewGround()
+        {
+            var map = OpenMap();
+            var ends = map.UnitTokens.Select(t => t.until).Where(u => u > SpecialBuildingModels.Year1948To && u < YarkonLink).OrderBy(u => u).ToList();
+            Assert.Greater(ends.Count, 0, "premise: a dated token's window ends after the 1948 rows and before the Yarkon link");
+            var d2 = ends[0]; var d1 = d2.AddDays(-1);
+            Assert.IsTrue(SpecialBuildingModels.Same(SpecialBuildingModels.Placements(d1), SpecialBuildingModels.Placements(d2)), "premise: the same rows");
+            Assert.IsTrue(HexPropModels.Wants(map, d1).SequenceEqual(HexPropModels.Wants(map, d2)), "premise: the same stations");
+            Assert.AreNotEqual(Tokens(map, d1), Tokens(map, d2), "premise: a dated token leaves");
+            var layer = Show(map, d1);
+            var people = map.Terrain.transform.Find(CivilianPeople.Name)!.GetComponent<CivilianPeople>();
+            var list = people.Wanted;
+            int replans = layer.Replans;
+            var c = Statecraft.Sim.ContentLoader.Load(Paths.Content);
+            CollectionGeometryFixture.People(map, d2, Array.Empty<Statecraft.Sim.Placement>(), c);
+            Assert.IsTrue(ReferenceEquals(list, people.Wanted), "premise: the civilians' list is the same (CivilianPeople swaps it only on a change)");
+            CollectionGeometryFixture.Rural(map);
+            CollectionGeometryFixture.Special(map, d2);
+            HexPropModels.ShowAt(map, d2);
+            Assert.AreEqual(replans + 1, layer.Replans, "a token's window ended: one re-plan");
+            var ground = PlacementLayer.CampGround(map);
+            foreach (var p in layer.Placed)
+                Assert.IsFalse(ground.OnToken(new Vector2(p.At.x, p.At.z), HexPropModels.ClearanceOf(p.Model), d2), p.Name + ": on no token still present");
+        }
     }
 }

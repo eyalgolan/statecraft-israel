@@ -230,6 +230,11 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The b21 of each built arms workshop (#1701 slice F), kept clear of with the sourced buildings.</summary>
         IReadOnlyList<SpecialBuildingModels.Want> workshops = Array.Empty<SpecialBuildingModels.Want>();
         int ruralVersion;
+        // ShowAt's key (#2905): what the build read when it last re-planned.
+        List<Want> stations = new List<Want>();
+        IReadOnlyList<SpecialBuildingModels.Want> buildings = Array.Empty<SpecialBuildingModels.Want>();
+        int tokenEpoch, peopleVersion; object? townsWanted;
+        float maxPropOffsetShown; bool townEdgeFallbackShown;
         /// <summary>Whether a camera has come in to the close zoom: the standalone props are built only from then on (none of
         /// them draws further out, #2266 review).</summary>
         bool everClose;
@@ -283,17 +288,48 @@ namespace Statecraft.Game.Map.Collection
                 var go = new GameObject(Name); go.transform.SetParent(map.Terrain.transform, false);
                 layer = go.AddComponent<HexPropModels>(); layer.map = map;
             }
-            // GameRoot calls this on every refresh: rebuild only when the date changes (the dated stations and tokens follow it),
-            // the built arms workshops do, or the rural plan the props keep clear of does (RuralLife.VersionOf; the workshops' b21
-            // rebuild on it too, so both stand on one plan).
+            // GameRoot calls this on every refresh. The props re-plan on events only, keyed on what the build (Rebuild and Others)
+            // reads, not on the raw date (#2905, as SpecialBuildingModels.ShowAt since #3056): the dated stations shown (their
+            // RouteWindow), the special buildings' wanted list (the dated rows and the built arms workshops), the dated tokens
+            // still present (the build's and the special buildings' plan's only other read of the date), the civilians' list
+            // (CivilianPeople.WantedVersion: RuralLife.OtherProps, the special buildings' plan, and the rural plan while no rural
+            // layer is shown), the rural plan (RuralLife.VersionOf; the workshops' b21 rebuild on it too, so both stand on one
+            // plan), the whole-town models' wanted list (TownLandmarks.Wanted, swapped only on a change; Others' seat plan is
+            // cached on the same object) and the special buildings' two test seams.
+            var stations = StationWants(map, date);
+            var buildings = workshops.Count == 0 ? SpecialBuildingModels.Placements(date)
+                : SpecialBuildingModels.Placements(date).Concat(workshops).ToList();
+            int tokens = SpecialBuildingModels.TokenEpoch(map, date);
+            var shownPeople = map.Terrain.transform.Find(CivilianPeople.Name)?.GetComponent<CivilianPeople>();
+            int people = shownPeople != null ? shownPeople.WantedVersion : 0;
             int rural = RuralLife.VersionOf(map);
-            if (layer.shown && layer.date == date && SpecialBuildingModels.Same(layer.workshops, workshops) && layer.ruralVersion == rural) return layer;
+            var shownTowns = map.Terrain.transform.Find(TownLandmarks.Name)?.GetComponent<TownLandmarks>();
+            object? towns = shownTowns != null ? shownTowns.Wanted : null;
+            bool same = layer.shown && layer.stations.SequenceEqual(stations) && SpecialBuildingModels.Same(layer.buildings, buildings)
+                && layer.tokenEpoch == tokens && layer.peopleVersion == people && layer.ruralVersion == rural
+                && ReferenceEquals(layer.townsWanted, towns) && layer.maxPropOffsetShown == SpecialBuildingModels.MaxPropOffset
+                && layer.townEdgeFallbackShown == SpecialBuildingModels.TownEdgeFallback;
+            // The build is the same on either date; the field still follows the game, so a later Rebuild (a stream answer, the
+            // first close camera, a queued render build) builds on today's date.
+            layer.date = date;
+            if (same) return layer;
+#if UNITY_EDITOR
+            layer.Replans++;
+#endif
             layer.fixedWants ??= FixedWants(map);
-            layer.shown = true; layer.date = date; layer.workshops = workshops; layer.ruralVersion = rural;
-            layer.wants = StationWants(map, date); layer.wants.AddRange(layer.fixedWants);
+            layer.shown = true; layer.workshops = workshops; layer.buildings = buildings; layer.stations = stations;
+            layer.tokenEpoch = tokens; layer.peopleVersion = people; layer.ruralVersion = rural; layer.townsWanted = towns;
+            layer.maxPropOffsetShown = SpecialBuildingModels.MaxPropOffset; layer.townEdgeFallbackShown = SpecialBuildingModels.TownEdgeFallback;
+            layer.wants = new List<Want>(stations); layer.wants.AddRange(layer.fixedWants);
             layer.standaloneDirty = true; layer.BuildStandaloneIfDue(inRender: false);
             return layer;
         }
+
+#if UNITY_EDITOR
+        /// <summary>How many times ShowAt has passed its early-out and re-planned the standalone props: a test aid (#2905), not
+        /// in a player.</summary>
+        internal int Replans { get; private set; }
+#endif
 
         void Ask()
         {
