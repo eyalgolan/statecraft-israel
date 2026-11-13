@@ -256,6 +256,50 @@ public class CaptureDialogTests
         Assert.AreEqual("Ramle", r.Root.Q<Label>("capture-title").text);
     }
 
+    /// <summary>#1398 U6 (plan 2026-10-23-civ-movement.md, Task 12a; R-CTRL-004, "Instant"): a move that ends on a target
+    /// captures it at the click (Simulation.RunOrders), and the dialog opens at once, with no End turn: SimBridge.State is
+    /// the turn's start after its committed orders, the commit raises Changed, and the dialog renders after the decision
+    /// card. The answer is an order that waits for End turn. Golani starts 5 movement points from Nazareth
+    /// (docs/determinism.md), out of a turn's reach, so the test first stands it on the hex next to the place.</summary>
+    [UnityTest]
+    public IEnumerator TheDialogOpensRightAfterACapturingMove()
+    {
+        var c = Targets(0, 0, "nazareth");
+        var g = Awaiting(c);
+        var naz = c.SettlementTargets.Single(t => t.Id == "nazareth");
+        var golani = c.StartingForces.ToList().FindIndex(f => f.Row == "golani");
+        Assert.IsTrue(g.State.Units.TryGetValue(golani, out var u), "precondition: Golani is in the state");
+        var (q, r) = (naz.Q, naz.R + 1);
+        Assert.IsTrue(c.HexAt(q, r)?.Land == true, "precondition: the hex next to Nazareth is land");
+        Assert.IsFalse(g.State.Units.Values.Any(x => (x.Q == naz.Q && x.R == naz.R) || (x.Q == q && x.R == r)),
+            "precondition: no unit on Nazareth or on the hex next to it");
+        g.State.Units[golani] = new Unit(u!.Id, u.Type, q, r, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full, u.CombatXp, u.Records);
+        using var rig = new Rig(g);
+        yield return Frames(3);
+        Assert.IsNull(rig.Dialog.Shown, "precondition: nothing awaits a decision");
+        Assert.IsFalse(rig.Hud.ClassListContains(EventCardPresenter.ModalClass), "precondition: no decision card or dialog is open");
+        Assert.IsTrue(Movement.Reachable(c, rig.Bridge.State, golani).ContainsKey((naz.Q, naz.R)), "precondition: Nazareth is in Golani's reach");
+        var turn = rig.Bridge.State.Turn;
+        Assert.IsNull(rig.Bridge.Queue(new Move(golani, naz.Q, naz.R)), "the sim takes the move");
+        Assert.AreEqual(SettlementControl.AwaitingChoice, rig.Bridge.State.Settlements["nazareth"].State, "captured at the click");
+        Assert.AreEqual("nazareth", rig.Dialog.Shown, "the dialog is for Nazareth at once, with no End turn");
+        Assert.AreEqual(turn, rig.Bridge.State.Turn, "still the same turn");
+        Assert.IsFalse(rig.Bridge.TurnStart.Settlements.ContainsKey("nazareth"), "the turn's start is unchanged: the capture is the committed move's");
+        yield return Frames(3);
+        Assert.IsTrue(rig.Shows("capture-card"), "the dialog shows");
+        var raid = rig.Root.Q<Button>("capture-option-raid");
+        Assert.IsTrue(raid.enabledSelf, "Raid is offered");
+        Press(raid);
+        yield return Frames(3);
+        var queued = rig.Bridge.Queued.OfType<ResolveCapture>().ToList();
+        Assert.AreEqual(1, queued.Count, "the answer is one order");
+        Assert.AreEqual(("nazareth", SettlementControl.Raid), (queued[0].Settlement, queued[0].Outcome));
+        Assert.AreEqual(SettlementControl.AwaitingChoice, rig.Bridge.State.Settlements["nazareth"].State, "the answer waits for End turn");
+        Assert.AreEqual((naz.Q, naz.R), (rig.Bridge.State.Units[golani].Q, rig.Bridge.State.Units[golani].R), "Golani holds Nazareth");
+        Assert.IsNull(rig.Dialog.Shown, "answered");
+        Assert.IsFalse(rig.Shows("capture-card"));
+    }
+
     // ---- The options: exactly the helper's, in its order ----
 
     /// <summary>Plan PR 10, CaptureDialogTests.TheOrderIsTheSims: the buttons are the options the real helper lists, in its
