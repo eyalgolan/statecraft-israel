@@ -278,10 +278,11 @@ public class DeportTests
         Assert.Equal(("", "", true, 0, ""), (ctrl.Owner, ctrl.State, ctrl.Depopulated, ctrl.Turns, ctrl.Buildings));
         Assert.True(SettlementControl.DepopulatedAt(c, deport, 1, 0));
 
+        var openingSupport = Support(s);
         var a = Step(c, s, Answer(SettlementControl.Deport)).State;
         for (int turn = 1; turn <= 3; turn++)
         {
-            Assert.Equal(0.5 - 0.1 - 0.01 * turn, Support(a), 9);
+            Assert.Equal(openingSupport - 0.1 - 0.01 * turn, Support(a), 9);
             a = Step(c, a).State;
         }
     }

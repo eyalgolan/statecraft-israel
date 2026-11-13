@@ -318,6 +318,7 @@ public class EndOccupationTests
         var runs = new[] { false, true }.Select(gdd03 =>
         {
             var c = OccupyTests.Load(gdd03);
+            Fixture.UseModelOpening(c); // Compare annexation rules from identical opening conditions.
             var s = CombatTests.With(c, Soldier(1, 4, 0));
             s.Settlements["town_c"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date);
             var run = OccupyTests.Play(c, s, "town_c", (i, x) => { if (i == 4) x.Units.Remove(1); }, turns);

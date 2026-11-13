@@ -191,6 +191,7 @@ public class NoShotArmsTests
     {
         var old = Load(false);
         var modern = Load();
+        Fixture.UseModelOpening(modern); // Compare shot accounting from identical opening conditions.
         var (a, ac) = Battle(old, type, 17);
         var (b, bc) = Battle(modern, type, 17);
         Assert.Equal(Combat.Preview(old, a, 1, ac.Q!.Value, ac.R!.Value), Combat.Preview(modern, b, 1, bc.Q!.Value, bc.R!.Value));
