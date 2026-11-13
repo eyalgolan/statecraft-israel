@@ -1,5 +1,5 @@
 # Important message
-** Statecraft:Israel has turned into a closed-sourced development project. **
+**Statecraft:Israel has turned into a closed-sourced development project.**
 As a result, this repository has been archived and will no longer receive updates.
 Development will continue privately as we work toward the next chapter of Statecraft: Israel.
 I'd like to sincerely thank everyone who contributed to the project. Your contributions have helped shape Statecraft: Israel, and I'm grateful for the time and effort you've invested.
