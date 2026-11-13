@@ -61,8 +61,9 @@ public class MapContentTests
     }
 
     // #1719 (owner, 1 November 2026: "No reception-bed layer (Recommended)"): the named camps are map records only. A
-    // record adds no city, site, capture target, people or starting control; Rosh HaAyin and Pardes Hanna have no
-    // sourced camp point yet (research_notes/Map/camps-1948-51.md), so they have no record.
+    // record adds no city, site, capture target, people or starting control. Rosh HaAyin and Pardes Hanna have no
+    // source that places the camp inside one hex (research_notes/Map/camps-1948-51-kiryat-shmuel-rosh-haayin-pardes-hanna.md),
+    // so they have no record.
     [Theory]
     [InlineData("military_tzrifin", "military_camp")]
     [InlineData("military_tel_litvinsky", "military_camp")]
@@ -70,6 +71,7 @@ public class MapContentTests
     [InlineData("military_camp_80", "military_camp")]
     [InlineData("reception_atlit", "reception_camp")]
     [InlineData("reception_beit_lid", "reception_camp")]
+    [InlineData("kiryat_shmuel_camp_haifa", "reception_camp")]
     public void ANamedCampIsAnOptionalMapRecordOnly(string id, string kind)
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
@@ -90,6 +92,29 @@ public class MapContentTests
         Assert.DoesNotContain(c.Sites, x => x.Id == location.Id);
         Assert.DoesNotContain(c.SettlementTargets, x => x.Id == location.Id);
         Assert.DoesNotContain(c.SettlementHexes, x => x.Id == location.Id);
+    }
+
+    // #1719: the Kiryat Shmuel immigrant camp stood in the south part of the neighbourhood, which lies inside Haifa's hex
+    // (6, 9); the hex is the sourced part, the point is the neighbourhood's. It is its own record beside Haifa (and Sha'ar
+    // HaAliyah), not a second Haifa: one Haifa city, and the camp adds no city, site, capture target or people.
+    [Fact]
+    public void TheKiryatShmuelCampSharesHaifasHexAsItsOwnRecord()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var camp = Assert.Single(c.MapLocations, x => x.Id == "kiryat_shmuel_camp_haifa");
+        var haifa = Assert.Single(c.SettlementHexes, x => x.Id == "haifa");
+
+        Assert.Equal("reception_camp", camp.Kind);
+        Assert.Equal((6, 9), (camp.Q, camp.R));
+        Assert.Equal((haifa.Q, haifa.R), (camp.Q, camp.R));
+        Assert.Single(c.Cities, x => x.Id == "haifa");
+        Assert.DoesNotContain(c.Cities, x => x.Id == camp.Id);
+        Assert.DoesNotContain(c.Sites, x => x.Id == camp.Id);
+        Assert.DoesNotContain(c.SettlementTargets, x => x.Id == camp.Id);
+        Assert.DoesNotContain(c.SettlementHexes, x => x.Id == camp.Id);
+        Assert.DoesNotContain(c.People, x => x.Id == camp.Id);
+        Assert.Empty(camp.StartingControl);
+        Assert.Empty(camp.HistoricalReference);
     }
 
     [Theory]
@@ -237,7 +262,7 @@ public class MapContentTests
         Assert.Equal(1419, c.Hexes.Count);
         Assert.Equal(1118, c.Hexes.Count(h => h.Land));
         Assert.Equal(25, c.SettlementHexes.Count);
-        Assert.Equal(18, c.MapLocations.Count);   // ten must_have rows, umm_rashrash (#1007), nirim (#2113) and six named camps (#1719)
+        Assert.Equal(19, c.MapLocations.Count);   // ten must_have rows, umm_rashrash (#1007), nirim (#2113) and seven named camps (#1719)
         var nirim = Assert.Single(c.MapLocations, x => x.Id == "nirim");   // #2113: the 1948 site at Dangur
         Assert.Equal((-16, 36, "israeli", new System.DateTime(1948, 5, 15), "optional"), (nirim.Q, nirim.R, nirim.StartingControl, nirim.ControlDate, nirim.Priority));
         // The CBS 2024 point of Nir Yitzhak, which stands on the 1948 site (#2111's note), and the row's names and roles.

@@ -290,8 +290,11 @@ locations:
 # (Recommended)"). Coordinates are the Hebrew Wikipedia points recorded [S] in research_notes/Map/camps-1948-51.md: modern
 # points, not surveyed 1948-51 positions; the note keeps the period map readings that differ ([C]). Priority is optional:
 # the owner declined Amir's proposal to make every listed facility must-have (docs/locations.md, "Facility roster"). The
-# bindings to a site, facility or region wait on #1687 and #1691. Rosh HaAyin and Pardes Hanna have only a town point in
-# the note, so they have no record yet. Every source was read by an AI agent only; a person's check is pending.
+# bindings to a site, facility or region wait on #1687 and #1691. Kiryat Shmuel (Haifa), last below, has no camp point
+# either: its record uses the neighbourhood point as a reference point, and its sourced part is the hex
+# (research_notes/Map/camps-1948-51-kiryat-shmuel-rosh-haayin-pardes-hanna.md, the "Kiryat Shmuel note"). Rosh HaAyin
+# and Pardes Hanna have only a town point, and no source places either camp inside one hex, so they have no record yet.
+# Every source was read by an AI agent only; a person's check is pending.
 - id: military_tzrifin
   name: Tzrifin
   name_he: צריפין
@@ -424,4 +427,33 @@ locations:
   # The opening day is [GAP], so no historical_reference.
   - { url: 'https://he.wikipedia.org/w/index.php?oldid=39524540', checked: 2026-11-01 }
   - { url: 'https://www.wikidata.org/wiki/Q12409351', checked: 2026-11-01 } # coordinates (P625); the statement has no reference
+  status: draft
+
+- id: kiryat_shmuel_camp_haifa
+  name: Kiryat Shmuel camp
+  name_he: מחנה העולים בקריית שמואל
+  name_he_review: agent-checked
+  name_he_sources:
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=39577890', checked: 2026-11-11 }
+  kind: reception_camp
+  lon: 35.06784167
+  lat: 32.83401944
+  q: 6
+  r: 9
+  priority: optional # DESIGN VALUE: reception camps are map records only in the MVP (owner, 1 November 2026).
+  marker: true # DESIGN VALUE: this record is a map marker, separate from Haifa and Sha'ar HaAliyah in the same hex.
+  managed_city: false # DESIGN VALUE: cities.yaml keeps one Haifa economy.
+  designated_site: false # DESIGN VALUE: this reception camp is not a yishuv founding site.
+  settlement_control_target: false # DESIGN VALUE: map inclusion does not add a capture target.
+  sources:
+  # A reference point: the coordinates of the Kiryat Shmuel neighbourhood (Haifa, Wikidata Q185687), not of the camp,
+  # which has no point of its own in any source read ([GAP], Kiryat Shmuel note, section 1). The hex (6, 9) is the
+  # sourced part: the camp stood in the south part of the neighbourhood (he.wiki 43128203 only), and the neighbourhood
+  # as drawn on the 1940s 1:20,000 sheet lies inside hex (6, 9), whose nearest edge is 0.6 km north-east of the point,
+  # away from the south part. Not Kiryat Shmuel in Jerusalem or Tiberias. The camp operated from 1947 to January 1948
+  # and again from 1949 (he.wiki 39577890, citing Davar); May 1948 is [GAP], so no historical_reference. The O8
+  # training centre placed in Kiryat Shmuel is an owner design value, bound separately (#1697), not this record.
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=39577890', checked: 2026-11-11 }
+  - { url: 'https://he.wikipedia.org/w/index.php?oldid=43128203', checked: 2026-11-11 }
+  - { url: 'https://www.wikidata.org/wiki/Q185687', checked: 2026-11-11 } # coordinates (P625)
   status: draft
