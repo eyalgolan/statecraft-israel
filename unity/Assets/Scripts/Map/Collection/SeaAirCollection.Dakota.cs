@@ -56,6 +56,14 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>True in either bombing period (<see cref="DakotaFrom"/>, <see cref="DakotaSecondFrom"/>).</summary>
         public static bool DakotaWanted(DateTime date) => (date >= DakotaFrom && date <= DakotaTo) || (date >= DakotaSecondFrom && date <= DakotaSecondTo);
 
+        /// <summary>True in the first bombing period only (<see cref="DakotaFrom"/>), when the Dakotas repeat New game's raid
+        /// instead of flying their loop (#3140; owner, 11 November 2026, "Repeat the raid (Recommended)": the ruling was about
+        /// the first turn's raid, so the second period, with Tel Aviv's air defence, keeps its loop until the owner rules on it).</summary>
+        public static bool DakotaRaidsWanted(DateTime date) => date >= DakotaFrom && date <= DakotaTo;
+
+        /// <summary>Which of the pair a Dakota with clock lag <paramref name="lag"/> is: 0 the lead, 1 its wing.</summary>
+        internal static int DakotaPlaneOf(float lag) => Mathf.RoundToInt(lag / DakotaTrailSeconds);
+
         /// <summary>The C-47's wingspan, 95 ft 6 in (29.11 m): en.wiki "Douglas C-47 Skytrain", Specifications (C-47B-DK),
         /// revision 1383378030, agent-read 2 November 2026. At the unit tokens' aircraft scale (420x, as the Spitfire, #2014)
         /// it is 12.2 km across; each of the two is drawn at <see cref="DakotaScale"/> of that.</summary>
@@ -281,9 +289,12 @@ namespace Statecraft.Game.Map.Collection
             var half = 0.5f * b.size;   // nose east: half its length (x), its height and its span (z)
             var props = DakotaPropellers(go);
             var bombs = DakotaBombs(marks.transform, centre, half, ground, plane);
+            // The first bombing period repeats New game's raid from when they are first drawn (#3140): Continue and a load too.
+            bool raids = DakotaRaidsWanted(date);
+            if (raids) DakotaRaidFlight.KeepRepeating();
             var loop = go.AddComponent<DakotaLoop>();
             loop.Configure(centre, level, b.center - go.transform.position, half, plane * DakotaTrailSeconds, props, Shadow(marks.transform), flag,
-                map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), ground.SeaLevelY, bombs, !Application.isPlaying || VisualShots.Requested());
+                map!.Terrain, 0.5f * ShadowShare * new Vector2(size, b.size.x), ground.SeaLevelY, bombs, !Application.isPlaying || VisualShots.Requested(), raids);
             var cam = Camera.main;
             if (flag != null && cam != null) UnitFlagFacing.Face(flag, cam.transform.position);
             Placed.Add((go.name, Dakota, centre));
@@ -299,8 +310,8 @@ namespace Statecraft.Game.Map.Collection
             // keep-clear area (Recommended)"): its box follows it a DakotaKeepStepS step of the loop at a time (FollowDakotas).
             var follow = new DakotaKeep(go, loop, centre, half, flagUp, flagRadius);
             dakotaKeeps.Add(follow);
-            follow.Step = DakotaKeepStep(loop.PlacedAt);
-            Keep(go, DakotaKeepBox(centre, loop.Lag, follow.Step, half, flagUp, flagRadius));
+            var boxes = follow.Move();
+            if (boxes.Length > 0) Keep(go, boxes[0]); else keepOf[go] = boxes;
         }
 
         /// <summary>DESIGN VALUE: the labels' keep-clear box for a Dakota covers its flight over one step of this many seconds of
@@ -313,7 +324,8 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The box (world) the map names keep clear of for a Dakota whose loop is centred at <paramref name="centre"/> (in
         /// the air), its clock <paramref name="lag"/> behind the loop's, through the loop's clock step <paramref name="step"/>
-        /// (<see cref="DakotaKeepStepS"/>): the aircraft as DakotaLoop flies it at every point of its path in that step, its box
+        /// (<see cref="DakotaKeepStepS"/>), or with <paramref name="raid"/> through that step of a raid (DakotaLoop.PlaceRaid,
+        /// #3140: only the points on its path, where it shows): the aircraft as DakotaLoop flies it at every point of its path in that step, its box
         /// of half size <paramref name="half"/> (nose east, level) at that point's heading and bank (<see cref="DakotaTurn"/>),
         /// and its flag over the tail there (DakotaLoop.Place: <paramref name="flagUp"/> over the banked box's top, within
         /// <paramref name="flagRadius"/> of that point at any turn; no flag when 0). Sampled every eighth of the step, so the
@@ -322,20 +334,30 @@ namespace Statecraft.Game.Map.Collection
         /// #2604: #2490's box held the aircraft at every heading and bank at once (half its box's 3D diagonal, about 6 km, every
         /// way, under it too), which reached about 3.7 km lower and up to 2.7 km wider than the aircraft ever is; seen from
         /// the board camera, 50 degrees down, that hid names in frame while the aircraft itself was off the frame's top edge.</summary>
-        internal static Bounds DakotaKeepBox(Vector3 centre, float lag, long step, Vector3 half, float flagUp, float flagRadius)
+        internal static Bounds DakotaKeepBox(Vector3 centre, float lag, long step, Vector3 half, float flagUp, float flagRadius, bool raid = false)
         {
-            var box = new Bounds();
-            for (int i = 0; i <= DakotaKeepSamples; i++)
-            {
-                float u = (float)(step * (double)DakotaKeepStepS + i * (double)DakotaKeepStepS / DakotaKeepSamples - lag);
-                var o = DakotaLoopOffset(u);
-                var turn = DakotaTurn(u, out var forward, out float bank);
-                var at = centre + new Vector3(o.x, 0f, o.y);
-                var b = new Bounds(at, 2f * Turned(turn, half));
-                if (flagRadius > 0f)
-                    b.Encapsulate(new Bounds(at - forward * half.x + Vector3.up * (SpitfireLoop.TopOver(half, bank) + flagUp), 2f * flagRadius * Vector3.one));
-                if (i == 0) box = b; else box.Encapsulate(b);
-            }
+            var box = new Bounds(); bool any = false;
+            int plane = DakotaPlaneOf(lag);
+            // A raid's step where it leaves or joins its path: its points on the path, or all of them if none is.
+            for (int pass = 0; pass < 2 && !any; pass++)
+                for (int i = 0; i <= DakotaKeepSamples; i++)
+                {
+                    float s = (float)(step * (double)DakotaKeepStepS + i * (double)DakotaKeepStepS / DakotaKeepSamples);
+                    Vector2 o; Quaternion turn; Vector3 forward; float bank;
+                    if (raid)
+                    {
+                        if (pass == 0 && !DakotaRaidFlight.OnPath(s, plane)) continue;
+                        float tau = DakotaRaidFlight.PathTime(DakotaRaidFlight.U(s, plane));
+                        o = DakotaRaidFlight.Offset(tau); turn = DakotaRaidFlight.Turn(tau, out forward, out bank);
+                    }
+                    else { float u = s - lag; o = DakotaLoopOffset(u); turn = DakotaTurn(u, out forward, out bank); }
+                    var at = centre + new Vector3(o.x, 0f, o.y);
+                    var b = new Bounds(at, 2f * Turned(turn, half));
+                    if (flagRadius > 0f)
+                        b.Encapsulate(new Bounds(at - forward * half.x + Vector3.up * (SpitfireLoop.TopOver(half, bank) + flagUp), 2f * flagRadius * Vector3.one));
+                    if (!any) box = b; else box.Encapsulate(b);
+                    any = true;
+                }
             box.Expand(2f * DakotaKeepPadM);
             return box;
         }
@@ -354,18 +376,29 @@ namespace Statecraft.Game.Map.Collection
         }
 
         /// <summary>A drawn Dakota whose keep-clear box follows it: its loop, its loop's centre in the air, the box's sizes
-        /// (<see cref="DakotaKeepBox"/>) and the clock step its box now covers.</summary>
+        /// (<see cref="DakotaKeepBox"/>) and the clock step its box now covers, on the loop or in a raid, or that it is hidden.</summary>
         sealed class DakotaKeep
         {
             public readonly GameObject Go; public readonly DakotaLoop Loop; public readonly Vector3 Centre, Half; public readonly float FlagUp, FlagRadius;
-            public long Step;
+            public long Step; public bool Raid, Hidden;
             public DakotaKeep(GameObject go, DakotaLoop loop, Vector3 centre, Vector3 half, float flagUp, float flagRadius)
             { Go = go; Loop = loop; Centre = centre; Half = half; FlagUp = flagUp; FlagRadius = flagRadius; }
+
+            /// <summary>True when its loop last placed it outside the step, the path or the visibility its box was made for.</summary>
+            public bool Moved => DakotaKeepStep(Loop.PlacedAt) != Step || Loop.PlacedRaid != Raid || Loop.Hidden != Hidden;
+
+            /// <summary>Its boxes where its loop last placed it: none while it is hidden (a raid's pause, #3140), so no name keeps
+            /// clear of it there.</summary>
+            public Bounds[] Move()
+            {
+                Step = DakotaKeepStep(Loop.PlacedAt); Raid = Loop.PlacedRaid; Hidden = Loop.Hidden;
+                return Hidden ? Array.Empty<Bounds>() : new[] { DakotaKeepBox(Centre, Loop.Lag, Step, Half, FlagUp, FlagRadius, Raid) };
+            }
         }
         readonly List<DakotaKeep> dakotaKeeps = new List<DakotaKeep>();
 
         /// <summary>Moves each drawn Dakota's keep-clear box to the clock step where its loop last placed it
-        /// (DakotaLoop.PlacedAt); when one moves, <see cref="KeepClear"/> becomes a new list, so the labels re-place themselves
+        /// (DakotaLoop.PlacedAt), on its loop or in a raid, and drops it while the aircraft is hidden (#3140); when one moves, <see cref="KeepClear"/> becomes a new list, so the labels re-place themselves
         /// (MapLabelsPresenter re-reads a list only when it is a new one). A held loop (edit mode, shots) never moves. Cheap: a
         /// comparison an aircraft a call, and a box and a list once a step.</summary>
         void FollowDakotas()
@@ -374,11 +407,8 @@ namespace Statecraft.Game.Map.Collection
             for (int i = 0; i < dakotaKeeps.Count; i++)
             {
                 var d = dakotaKeeps[i];
-                if (d.Go == null || d.Loop == null || !keepOf.ContainsKey(d.Go)) continue;
-                long step = DakotaKeepStep(d.Loop.PlacedAt);
-                if (step == d.Step) continue;
-                d.Step = step;
-                keepOf[d.Go] = new[] { DakotaKeepBox(d.Centre, d.Loop.Lag, step, d.Half, d.FlagUp, d.FlagRadius) };
+                if (d.Go == null || d.Loop == null || !keepOf.ContainsKey(d.Go) || !d.Moved) continue;
+                keepOf[d.Go] = d.Move();
                 moved = true;
             }
             if (moved) RebuildKeepAll();

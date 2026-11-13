@@ -36,6 +36,7 @@ public class SeaAirCollectionTests
     public void Reset()
     {
         SeaAirCollection.Request = saved;
+        DakotaRaidFlight.Stop(); DakotaRaidFlight.EndRepeat();
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
     }
 
@@ -379,11 +380,11 @@ public class SeaAirCollectionTests
         Assert.Less(SeaAirCollection.SizeOf(SeaAirCollection.Dakota), old - 1000f, "smaller than the one big Dakota");
     }
 
-    /// <summary>Both Dakotas on the 15 May 1948 turn: the layer, the two aircraft (lead first), their loops, and their loop's
-    /// centre in the air (one centre: they fly one track).</summary>
-    (SeaAirCollection layer, Transform[] planes, DakotaLoop[] loops, Vector3 centre) DrawnDakotas(MapScene map)
+    /// <summary>Both Dakotas on the 15 May 1948 turn, or on <paramref name="date"/>: the layer, the two aircraft (lead first),
+    /// their loops, and their loop's centre in the air (one centre: they fly one track).</summary>
+    (SeaAirCollection layer, Transform[] planes, DakotaLoop[] loops, Vector3 centre) DrawnDakotas(MapScene map, DateTime? date = null)
     {
-        var layer = CollectionGeometryFixture.Craft(map, new DateTime(1948, 5, 15), Array.Empty<Placement>(), C)!;
+        var layer = CollectionGeometryFixture.Craft(map, date ?? new DateTime(1948, 5, 15), Array.Empty<Placement>(), C)!;
         Assert.AreEqual(1, asked.Count(a => a.id == SeaAirCollection.Dakota && a.detail == CollectionDetail.Far), "the far mesh, once for both");
         AnswerAll();
         var planes = SeaAirCollection.DakotaKeys.Select(k => layer.transform.Find(k)).ToArray();
@@ -398,13 +399,15 @@ public class SeaAirCollectionTests
     static Vector2 Xz(Vector3 v) => new Vector2(v.x, v.z);
 
     /// <summary>The box the labels keep clear of for <paramref name="plane"/> now (SeaAirCollection.KeepClear, which moves it to
-    /// where its loop last placed it), or null when it has none. Found by object, through the layer's keepOf.</summary>
+    /// where its loop last placed it), or null when it has none (a raiding Dakota off its path, #3140). Found by object,
+    /// through the layer's keepOf.</summary>
     static Bounds? DakotaKeepOf(SeaAirCollection layer, GameObject plane)
     {
         var all = layer.KeepClear;   // first: it moves the Dakotas' boxes
         var keepOf = (System.Collections.IDictionary)typeof(SeaAirCollection).GetField("keepOf", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(layer)!;
         if (!keepOf.Contains(plane)) return null;
         var boxes = (Bounds[])keepOf[plane]!;
+        if (boxes.Length == 0) { Assert.IsFalse(all.Any(b => ReferenceEquals(b, boxes)), $"{plane.name}'s empty box is not in the list the labels read"); return null; }
         Assert.IsTrue(all.Any(b => ReferenceEquals(b, boxes)), $"{plane.name}'s box is in the list the labels read");
         return boxes[0];
     }
@@ -972,11 +975,213 @@ public class SeaAirCollectionTests
                         if (r.enabled) Assert.IsTrue(OnTelAviv(map, r.transform.position), $"{r.name} over Tel Aviv {t:0.00} s into the raid");
                 }
             }
-            // Its end hands the aircraft back to the loop: Update places it by the loop's clock again (DakotaRaidFlight.Stop).
+            // Its end stops the flight (DakotaRaidFlight.Stop); on this turn the repeat flies on from where it is (#3140,
+            // StoppingNewGamesRaidLeavesTheDakotasRaidingWhereTheyAre).
             DakotaRaidFlight.Stop();
             Assert.IsFalse(DakotaRaidFlight.Since(out _));
         }
         finally { DakotaRaidFlight.Stop(); }
+    }
+
+    /// <summary>A Dakota's own renderers: the aircraft and its propellers, and its flag and shadow beside it (not its bombs).</summary>
+    static Renderer[] Parts(SeaAirCollection layer, Transform plane)
+    {
+        var marks = layer.transform.Find(plane.name + SeaAirCollection.DakotaMarksSuffix);
+        Assert.IsNotNull(marks, $"premise: {plane.name}'s marks are drawn");
+        var beside = new[] { SeaAirCollection.DakotaFlagName, SeaAirCollection.DakotaShadowName }.Select(n => marks.Find(n)).Where(t => t != null);
+        return plane.GetComponentsInChildren<Renderer>(true).Concat(beside.SelectMany(t => t.GetComponentsInChildren<Renderer>(true))).ToArray();
+    }
+
+    /// <summary>#3140 (owner, 11 November 2026, after v0.4.1: "but the dakota planes are still in their old circle tel aviv
+    /// pattern", then "Repeat the raid (Recommended)"): on the first bombing period's turns the Dakotas repeat New game's raid
+    /// and never fly their loop, also with no New game raid (Continue, a load). Drawn on 15 May 1948, edit mode holds the raid
+    /// at DakotaRaidFlight.HoldS, both aircraft in sight and the lead on its pass over Tel Aviv; flown by the repeat's clock over two raids, each aircraft is
+    /// where the raid path has it while on its path, and hidden (the aircraft, its propellers, flag and shadow) while off it.</summary>
+    [Test]
+    public void TheDakotasRepeatTheRaidOnTheFirstBombingTurnsNotTheLoop()
+    {
+        foreach (var (date, raids) in new[] {
+            (new DateTime(1948, 5, 14), false), (new DateTime(1948, 5, 15), true), (new DateTime(1948, 6, 11), true),
+            (new DateTime(1948, 6, 12), false), (new DateTime(1948, 7, 8), false), (new DateTime(1948, 7, 15), false) })
+            Assert.AreEqual(raids, SeaAirCollection.DakotaRaidsWanted(date), $"raids on {date:d MMM yyyy}");
+        var map = OpenMap();
+        var clock = SpitfireLoop.Clock;
+        float now = 300f;
+        try
+        {
+            SpitfireLoop.Clock = () => now;
+            var (layer, planes, loops, centre) = DrawnDakotas(map);
+            Assert.IsTrue(DakotaRaidFlight.Repeating, "drawing them starts the repeat");
+            for (int p = 0; p < planes.Length; p++)
+            {
+                Assert.IsTrue(loops[p].Raids, $"{planes[p].name} raids on 15 May");
+                Assert.IsTrue(loops[p].Still, "edit mode holds it");
+                Assert.IsFalse(loops[p].Hidden, $"{planes[p].name} shows where it is held");
+                var held = Xz(centre) + DakotaRaidFlight.Offset(DakotaRaidFlight.PathTime(DakotaRaidFlight.U(DakotaRaidFlight.HoldS, p)));
+                Assert.Less((Xz(WorldBounds(planes[p].gameObject).center) - held).magnitude, 1f, $"{planes[p].name} held on the raid path");
+            }
+            Assert.That(DakotaRaidFlight.U(DakotaRaidFlight.HoldS, 0), Is.InRange(-DakotaRaidFlight.PassS, DakotaRaidFlight.PassS), "the lead held on its pass");
+            Assert.IsTrue(OnTelAviv(map, WorldBounds(planes[0].gameObject).center), "over Tel Aviv");
+            DakotaRaidFlight.EndRepeat(); DakotaRaidFlight.KeepRepeating();   // from now
+            int shown = 0, hidden = 0;
+            for (float t = 0.05f; t < 2f * DakotaRaidFlight.CycleS; t += 0.5f)
+            {
+                now = 300f + t;
+                float s = t % DakotaRaidFlight.CycleS;
+                for (int p = 0; p < planes.Length; p++)
+                {
+                    loops[p].Fly();
+                    bool on = DakotaRaidFlight.OnPath(s, p);
+                    Assert.AreEqual(!on, loops[p].Hidden, $"{planes[p].name} hidden only off its path ({t:0.00} s)");
+                    Assert.IsTrue(Parts(layer, planes[p]).All(r => r.enabled == on), $"{planes[p].name}, its flag and its shadow show only on its path ({t:0.00} s)");
+                    if (!on) { hidden++; continue; }
+                    shown++;
+                    var want = Xz(centre) + DakotaRaidFlight.Offset(DakotaRaidFlight.PathTime(DakotaRaidFlight.U(s, p)));
+                    Assert.Less((Xz(WorldBounds(planes[p].gameObject).center) - want).magnitude, 1f, $"{planes[p].name} on the raid path {t:0.00} s in, not on its loop");
+                }
+            }
+            Assert.Greater(shown, 0); Assert.Greater(hidden, 0);
+            TestDelegate frames = () =>
+            {
+                for (int i = 0; i < 60; i++) { now += 1f; for (int p = 0; p < loops.Length; p++) loops[p].Fly(); }
+            };
+            // Run once first so Mono's JIT is not counted (as UnitGunFireTests does); 60 s spans a raid and its pause.
+            frames();
+            Assert.That(frames, Is.Not.AllocatingGCMemory(), "no allocation per frame through a raid and its pause");
+        }
+        finally { SpitfireLoop.Clock = clock; }
+    }
+
+    /// <summary>#3140 leaves the second bombing period as it was (the issue's open question for the owner): on 15 July 1948 the
+    /// Dakotas fly their loop with Tel Aviv's air defence, by the loop's clock. Leaving the first period ends the repeat, so a
+    /// later first-period turn (a load) starts its raids from the top.</summary>
+    [Test]
+    public void OnTheSecondBombingTurnsTheDakotasStillFlyTheirLoop()
+    {
+        var map = OpenMap();
+        var clock = SpitfireLoop.Clock;
+        float now = 300f;
+        try
+        {
+            SpitfireLoop.Clock = () => now;
+            DrawnDakotas(map);
+            Assert.IsTrue(DakotaRaidFlight.Repeating, "premise: 15 May repeats the raid");
+            var layer = CollectionGeometryFixture.Craft(map, new DateTime(1948, 7, 15), Array.Empty<Placement>(), C)!; AnswerAll();
+            Assert.IsFalse(DakotaRaidFlight.Repeating, "15 July ends the repeat");
+            var centre = layer.Placed.First(p => p.Model == SeaAirCollection.Dakota).At;
+            for (int p = 0; p < SeaAirCollection.DakotaKeys.Length; p++)
+            {
+                var plane = layer.transform.Find(SeaAirCollection.DakotaKeys[p]);
+                Assert.IsNotNull(plane, $"{SeaAirCollection.DakotaKeys[p]} on 15 July");
+                var loop = plane.GetComponent<DakotaLoop>();
+                Assert.IsFalse(loop.Raids, $"{plane.name} loops on 15 July");
+                foreach (var t in new[] { 0f, 17f, 45f, 90f })
+                {
+                    now = 300f + t;
+                    loop.Fly();
+                    Assert.IsFalse(loop.Hidden);
+                    var want = Xz(centre) + SeaAirCollection.DakotaLoopOffset(now - loop.Lag);
+                    Assert.Less((Xz(WorldBounds(plane.gameObject).center) - want).magnitude, 1f, $"{plane.name} on its loop at {now:0} s");
+                }
+            }
+        }
+        finally { SpitfireLoop.Clock = clock; }
+    }
+
+    /// <summary>#3140: over two raids and the pause between them, every bomb, flash, blast, puff and column is over Tel Aviv's
+    /// hex, both aircraft drop on each raid, and a column once lit burns on (its puffs never fewer) through the pause and the
+    /// next raid, as on the loop "for as long as the aircraft flies": the city does not stop burning when a raid starts again.</summary>
+    [Test]
+    public void TheRepeatedRaidsBombOnlyTelAvivAndItBurnsOnBetweenThem()
+    {
+        var map = OpenMap();
+        var clock = SpitfireLoop.Clock;
+        float now = 300f;
+        try
+        {
+            SpitfireLoop.Clock = () => now;
+            var (_, planes, loops, _) = DrawnDakotas(map);
+            DakotaRaidFlight.EndRepeat(); DakotaRaidFlight.KeepRepeating();
+            var lit = new int[planes.Length]; var dropped = new bool[2, planes.Length];
+            for (float t = 0f; t < 2f * DakotaRaidFlight.CycleS; t += 0.25f)
+            {
+                now = 300f + t;
+                int raid = (int)(t / DakotaRaidFlight.CycleS);
+                for (int p = 0; p < planes.Length; p++)
+                {
+                    loops[p].Fly();
+                    var run = loops[p].Bombs!;
+                    foreach (var r in run.Bombs.Concat(run.Flashes).Concat(run.Blasts).Concat(run.Smoke).Concat(run.Columns))
+                        if (r.enabled) Assert.IsTrue(OnTelAviv(map, r.transform.position), $"{r.name} over Tel Aviv {t:0.00} s into the repeat");
+                    if (run.Bombs.Any(r => r.enabled)) dropped[raid, p] = true;
+                    int columns = run.Columns.Count(r => r.enabled);
+                    Assert.GreaterOrEqual(columns, lit[p], $"{planes[p].name}'s columns burn on at {t:0.00} s (raid {raid + 1})");
+                    lit[p] = columns;
+                }
+            }
+            for (int raid = 0; raid < 2; raid++)
+                for (int p = 0; p < planes.Length; p++)
+                    Assert.IsTrue(dropped[raid, p], $"{planes[p].name} drops its bombs on raid {raid + 1}");
+            Assert.IsTrue(lit.All(n => n > 0), "Tel Aviv burning after two raids");
+        }
+        finally { SpitfireLoop.Clock = clock; }
+    }
+
+    /// <summary>#3140: while a Dakota raids, the names keep clear of where it is on the raid path (they show in play, where New
+    /// game's raid hid them), and of nothing while it is off its path in the pause.</summary>
+    [Test]
+    public void TheNamesKeepClearOfARaidingDakotaAndNotOfOneOffItsPath()
+    {
+        var map = OpenMap();
+        var clock = SpitfireLoop.Clock;
+        float now = 300f;
+        try
+        {
+            SpitfireLoop.Clock = () => now;
+            var (layer, planes, loops, _) = DrawnDakotas(map);
+            DakotaRaidFlight.EndRepeat(); DakotaRaidFlight.KeepRepeating();
+            int boxes = 0, none = 0;
+            for (float t = 0.05f; t < DakotaRaidFlight.CycleS; t += 0.5f)
+            {
+                now = 300f + t;
+                foreach (var loop in loops) loop.Fly();
+                for (int p = 0; p < planes.Length; p++)
+                {
+                    var keep = DakotaKeepOf(layer, planes[p].gameObject);
+                    if (loops[p].Hidden) { Assert.IsNull(keep, $"{planes[p].name} off its path keeps no name clear at {t:0.00} s"); none++; continue; }
+                    Assert.IsNotNull(keep, $"{planes[p].name} has its box at {t:0.00} s");
+                    var pb = WorldBounds(planes[p].gameObject);
+                    Assert.IsTrue(keep!.Value.Contains(pb.min) && keep.Value.Contains(pb.max), $"{planes[p].name}'s box holds it on the raid path at {t:0.00} s");
+                    boxes++;
+                }
+            }
+            Assert.Greater(boxes, 0); Assert.Greater(none, 0);
+        }
+        finally { SpitfireLoop.Clock = clock; }
+    }
+
+    /// <summary>#3140: New game's raid is the repeat's first, so when it ends or the player skips it (DakotaRaidFlight.Stop,
+    /// before the raid card) the Dakotas fly on from where they are, not from their loop's clock.</summary>
+    [Test]
+    public void StoppingNewGamesRaidLeavesTheDakotasRaidingWhereTheyAre()
+    {
+        var map = OpenMap();
+        var clock = SpitfireLoop.Clock;
+        float now = 200f;
+        try
+        {
+            SpitfireLoop.Clock = () => now;
+            var (_, planes, loops, _) = DrawnDakotas(map);
+            Assert.IsTrue(DakotaRaidFlight.Start());
+            now += DakotaRaidFlight.ArriveS + DakotaRaidFlight.TrailS;   // the lead on its way out, the wing over Tel Aviv
+            foreach (var loop in loops) loop.Fly();
+            var before = planes.Select(p => WorldBounds(p.gameObject).center).ToArray();
+            DakotaRaidFlight.Stop();
+            foreach (var loop in loops) loop.Fly();
+            for (int p = 0; p < planes.Length; p++)
+                Assert.Less((WorldBounds(planes[p].gameObject).center - before[p]).magnitude, 1f, $"{planes[p].name} flies on where it was");
+        }
+        finally { SpitfireLoop.Clock = clock; }
     }
 
     /// <summary>The owner, 4 November 2026, on the 15 May captures: "the explosions look bad in the screenshot and there is no

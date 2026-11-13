@@ -265,6 +265,45 @@ public class TalModelsShots
     [UnityTest] public IEnumerator DakotaAfterEnglish() { yield return Dakota(false, true); }
     [UnityTest] public IEnumerator DakotaAfterHebrew() { yield return Dakota(true, true); }
 
+    /// <summary>#3140: the two Dakotas flying on 15 May 1948, a frame every 0.5 s for 104 s of a faked map clock (two raids and
+    /// their pauses; on main, two turns of the loop), from the gameplay zoom over the loop's centre as Dakota frames it. The
+    /// aircraft fly as in play (Update, not held) and the frames make a clip for the pull request.</summary>
+    [UnityTest]
+    public IEnumerator DakotaFlightEnglish()
+    {
+        var savedCraft = SeaAirCollection.Request; var clock = SpitfireLoop.Clock; float now = 0f;
+        try
+        {
+            SpitfireLoop.Clock = () => now;
+            yield return Boot(false);
+            var map = Object.FindFirstObjectByType<MapScene>();
+            var state = root.Bridge!.State; var content = root.Bridge.Content;
+            SeaAirCollection.Request = Answer(Array.Empty<string>());
+            Drop(map, SeaAirCollection.Name);
+            var layer = CollectionGeometryFixture.Craft(map, state.Date, state.Placements, content)!;
+            var centre = layer.Placed.First(p => p.Model == SeaAirCollection.Dakota).At;
+            const System.Reflection.BindingFlags Own = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var ticks = SeaAirCollection.DakotaKeys.Select(k => layer.transform.Find(k).GetComponent<DakotaLoop>()).Select(loop =>
+            {
+                typeof(DakotaLoop).GetField("still", Own)!.SetValue(loop, false);
+                return (Action)Delegate.CreateDelegate(typeof(Action), loop, typeof(DakotaLoop).GetMethod("Update", Own)!);
+            }).ToArray();
+            var rig = Camera.main.GetComponent<CameraRig>(); var cc = rig.GetComponent<CameraController>();
+            Look(new Vector3(centre.x, 0f, centre.z), 40000f);
+            CameraController.Step(rig, default, 0f, cc.Bounds, cc.Ground, cc.GroundTop, true);
+            for (int i = 0; i < 5; i++) yield return null;
+            for (int frame = 0; frame <= 208; frame++)
+            {
+                now = 0.5f * frame;
+                foreach (var tick in ticks) tick();
+                UnitFlagFacing.FaceAll(Camera.main.transform.position);
+                CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"dakota-flight-{frame:000}-en"));
+            }
+            Debug.Log($"SHOT dakota flight on {state.Date:yyyy-MM-dd}: 209 frames, 0.5 s apart, loop centre {centre}");
+        }
+        finally { SeaAirCollection.Request = savedCraft; SpitfireLoop.Clock = clock; DakotaRaidFlight.EndRepeat(); }
+    }
+
     /// <summary>#1701 slice F: a gdd-0.3 game (every era's ruleset set on fresh inputs, as FixedNorthGameRootTests does) with
     /// one arms workshop built on Rehovot's own hex, or on Tel Aviv's or Jerusalem's among its houses (owner, 2 November 2026: "Among the
     /// houses") (a fixture state: the project is put in the state, built on the game's date),

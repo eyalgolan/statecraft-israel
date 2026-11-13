@@ -18,26 +18,38 @@ namespace Statecraft.Game.Map.Collection
     /// its flying"). Presentation only: it reads the map's animation clock (SpitfireLoop.Clock, Time.time), sets a few
     /// transforms a frame and allocates nothing. It lives on the aircraft's own object, so it stops when the layer drops the
     /// aircraft. Editor renders and screenshots (`?shot` / `-shot`) hold the loop's start, as the train and the Spitfire do
-    /// (RouteLayer.ModeFor).</summary>
+    /// (RouteLayer.ModeFor). On the first bombing period's turns (<see cref="Raids"/>, #3140) it flies New game's raid again
+    /// and again instead of its loop (DakotaRaidFlight.Cycle), and a held shot holds the raid at DakotaRaidFlight.HoldS.</summary>
     public sealed class DakotaLoop : MonoBehaviour
     {
         /// <summary>DESIGN VALUE: the gap (m) between the aircraft's box top and the flag's lower edge, as #2260's
         /// SpitfireLoop.FlagClearM.</summary>
         public const float FlagClearM = 150f;
 
-        Vector3 centre, offset, half; Quaternion level; bool still; float lag;
+        Vector3 centre, offset, half; Quaternion level; bool still, raids, hidden; float lag;
+        Renderer[] parts = Array.Empty<Renderer>();
         Transform[] props = Array.Empty<Transform>(); Transform? shadow, flag; Terrain? ground; Vector2 shadowHalf; float flagHalf, seaY;
         DakotaBombRun? bombs;
 
         /// <summary>True when the aircraft holds the loop's start (edit mode, screenshots).</summary>
         public bool Still => still;
 
+        /// <summary>True when it repeats the raid instead of flying its loop (SeaAirCollection.DakotaRaidsWanted, #3140).</summary>
+        public bool Raids => raids;
+
+        /// <summary>True while it is hidden, off its raid path (DakotaRaidFlight.OnPath): the aircraft, its propellers, its flag
+        /// and its shadow. Its bombs and smoke show as they are.</summary>
+        public bool Hidden => hidden;
+
+        /// <summary>True when <see cref="PlacedAt"/> is the seconds into a raid (<see cref="PlaceRaid"/>), not on the loop's clock.</summary>
+        public bool PlacedRaid { get; private set; }
+
         /// <summary>How far (s) this aircraft's clock is behind the loop's: 0 for the lead, SeaAirCollection.DakotaTrailSeconds
         /// for its wing.</summary>
         public float Lag => lag;
 
-        /// <summary>The loop clock's seconds where <see cref="Place"/> last put it (the labels' keep-clear box follows it,
-        /// SeaAirCollection.DakotaKeepBox).</summary>
+        /// <summary>The seconds where <see cref="Place"/> (on the loop's clock) or <see cref="PlaceRaid"/> (into a raid,
+        /// <see cref="PlacedRaid"/>) last put it (the labels' keep-clear box follows it, SeaAirCollection.DakotaKeepBox).</summary>
         public float PlacedAt { get; private set; }
 
         /// <summary>The flag that floats over the tail, or null.</summary>
@@ -53,24 +65,40 @@ namespace Statecraft.Game.Map.Collection
         /// its nose east. <paramref name="offset"/>: its drawn centre from its pivot at that rotation. <paramref name="half"/>: half
         /// its box at that rotation (half its length, height and span). <paramref name="lag"/>: its clock behind the loop's. The
         /// propeller discs (children of its mesh), the shadow and the flag (beside it), the terrain the shadow lies on and the
-        /// shadow's half size across and along the heading, the sea's surface (world y), and its bombs.</summary>
+        /// shadow's half size across and along the heading, the sea's surface (world y), its bombs, and whether it repeats the
+        /// raid (<see cref="Raids"/>).</summary>
         internal void Configure(Vector3 centre, Quaternion level, Vector3 offset, Vector3 half, float lag, Transform[] props, Transform? shadow,
-            Transform? flag, Terrain? ground, Vector2 shadowHalf, float seaY, DakotaBombRun? bombs, bool still)
+            Transform? flag, Terrain? ground, Vector2 shadowHalf, float seaY, DakotaBombRun? bombs, bool still, bool raids = false)
         {
             this.centre = centre; this.level = level; this.offset = offset; this.half = half; this.lag = lag; this.props = props;
             this.shadow = shadow; this.flag = flag; this.ground = ground; this.shadowHalf = shadowHalf; this.seaY = seaY; this.bombs = bombs; this.still = still;
+            this.raids = raids;
             flagHalf = flag != null ? flag.GetComponent<MeshFilter>().sharedMesh.bounds.extents.y * flag.localScale.y : 0f;
+            var own = new List<Renderer>(GetComponentsInChildren<Renderer>(true));
+            if (flag != null) own.AddRange(flag.GetComponentsInChildren<Renderer>(true));
+            if (shadow != null) own.AddRange(shadow.GetComponentsInChildren<Renderer>(true));
+            parts = own.ToArray();
             var cam = Camera.main;
             if (cam != null) bombs?.Face(cam.transform.rotation);
-            // Where the clock puts it now: a component added mid-frame gets no Update that frame.
-            Place(still ? 0f : SpitfireLoop.Clock());
+            // Where the clock puts it now: a component added mid-frame gets no Update that frame. A held raid holds both in sight,
+            // the lead on its pass over Tel Aviv (DakotaRaidFlight.HoldS).
+            if (!still) Fly();
+            else if (raids) PlaceRaid(DakotaRaidFlight.HoldS);
+            else Place(0f);
         }
 
         void Update()
         {
-            if (still) return;
-            // New game's raid (#3000) flies every Dakota on its path until it ends; then the loop's clock again.
-            if (DakotaRaidFlight.Since(out float raid)) PlaceRaid(raid);
+            if (!still) Fly();
+        }
+
+        /// <summary>Puts it where the clock has it now: on the first bombing period's turns, in the repeat's raid
+        /// (DakotaRaidFlight.Cycle, #3140, which New game's raid starts); otherwise on New game's raid (#3000) while it flies,
+        /// then on the loop's clock.</summary>
+        internal void Fly()
+        {
+            if (raids) { float seconds = DakotaRaidFlight.Cycle(out int raid); PlaceRaid(seconds, raid); }
+            else if (DakotaRaidFlight.Since(out float seconds)) PlaceRaid(seconds);
             else Place(SpitfireLoop.Clock());
         }
 
@@ -91,28 +119,46 @@ namespace Statecraft.Game.Map.Collection
         /// ground; and its bombs, flashes and smoke as they are then.</summary>
         public void Place(float seconds)
         {
-            PlacedAt = seconds;
+            PlacedAt = seconds; PlacedRaid = false;
+            Show(true);
             float u = seconds - lag;
             var turn = SeaAirCollection.DakotaTurn(u, out var forward, out float bank);
             Put(SeaAirCollection.DakotaLoopOffset(u), turn, forward, bank, seconds, u);
         }
 
         /// <summary>Puts the aircraft where New game's raid has it <paramref name="seconds"/> after the raid started
-        /// (DakotaRaidFlight, #3000): on its path at its raid time (the wing DakotaRaidFlight.TrailS behind the lead), as
-        /// <see cref="Place"/> does on the loop, its bombs at that raid time, which is their loop time on the pass over Tel Aviv.
-        /// <see cref="PlacedAt"/> stays where the loop last put it: the map's names are hidden while the raid flies.</summary>
-        internal void PlaceRaid(float seconds)
+        /// (DakotaRaidFlight, #3000), the repeat's raid number <paramref name="raid"/> (#3140): on its path at its raid time (the
+        /// wing DakotaRaidFlight.TrailS behind the lead), as <see cref="Place"/> does on the loop, its bombs at that raid time,
+        /// which is their loop time on the pass over Tel Aviv. Off its path (DakotaRaidFlight.OnPath) it is hidden and only its
+        /// bombs and smoke move on. Its smoke columns count from the first raid's hits, so the city burns on from raid to raid.</summary>
+        internal void PlaceRaid(float seconds, int raid = 0)
         {
-            int plane = Mathf.RoundToInt(lag / SeaAirCollection.DakotaTrailSeconds);
-            float u = DakotaRaidFlight.U(seconds, plane), tau = DakotaRaidFlight.PathTime(u);
+            PlacedAt = seconds; PlacedRaid = true;
+            int plane = SeaAirCollection.DakotaPlaneOf(lag);
+            float u = DakotaRaidFlight.U(seconds, plane);
+            double burning = u + (double)raid * DakotaRaidFlight.CycleS;
+            bool on = DakotaRaidFlight.OnPath(seconds, plane);
+            Show(on);
+            if (!on) { bombs?.Sample(u, burning); return; }
+            float tau = DakotaRaidFlight.PathTime(u);
             var turn = DakotaRaidFlight.Turn(tau, out var forward, out float bank);
-            Put(DakotaRaidFlight.Offset(tau), turn, forward, bank, seconds, u);
+            Put(DakotaRaidFlight.Offset(tau), turn, forward, bank, seconds, u, burning);
+        }
+
+        /// <summary>Shows or hides the aircraft, its propellers, its flag and its shadow (<see cref="Hidden"/>); nothing when
+        /// that is already so.</summary>
+        void Show(bool on)
+        {
+            if (hidden != on) return;
+            hidden = !on;
+            for (int i = 0; i < parts.Length; i++) if (parts[i] != null) parts[i].enabled = on;
         }
 
         /// <summary>Puts the aircraft at <paramref name="at"/> from its loop's centre, turned by <paramref name="turn"/> (heading
         /// <paramref name="forward"/>, <paramref name="bank"/> degrees), its propellers at their angle <paramref name="seconds"/>
-        /// into the clock, and its bombs as they are at <paramref name="u"/> into its loop.</summary>
-        void Put(Vector2 at, Quaternion turn, Vector3 forward, float bank, float seconds, float u)
+        /// into the clock, and its bombs as they are at <paramref name="u"/> into its loop, its columns at
+        /// <paramref name="burning"/> (u on the loop).</summary>
+        void Put(Vector2 at, Quaternion turn, Vector3 forward, float bank, float seconds, float u, double? burning = null)
         {
             transform.localRotation = turn * level;
             var drawn = centre + new Vector3(at.x, 0f, at.y);
@@ -124,7 +170,7 @@ namespace Statecraft.Game.Map.Collection
             // Cut the sun's ray to convergence: the shadow falls up the rising ground east of Tel Aviv, where the Spitfire's two
             // fixed-point steps miss by about 200 m (SpitfireLoop.LayShadow).
             if (shadow != null && ground != null) SpitfireLoop.LayShadow(shadow, ground, seaY, shadowHalf, drawn, forward, bank, converge: true);
-            bombs?.Sample(u);
+            bombs?.Sample(u, burning ?? u);
         }
     }
 
@@ -308,8 +354,9 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The run as it is <paramref name="u"/> seconds into the aircraft's loop: each slot shows the latest release that
         /// maps to it (release j at j x the interval, the loop's slot j mod its releases), if that slot drops a bomb; each
-        /// column as it is that long after its first hit. The same time gives the same frame. No allocation.</summary>
-        internal void Sample(float u)
+        /// column as it is <paramref name="burning"/> (u, unless given: a repeated raid's columns count from the first raid,
+        /// DakotaLoop.PlaceRaid) less its first hit. The same times give the same frame. No allocation.</summary>
+        internal void Sample(float u, double? burning = null)
         {
             float every = SeaAirCollection.DakotaBombIntervalS;
             int newest = (int)Math.Floor((double)u / every);
@@ -319,7 +366,8 @@ namespace Statecraft.Game.Map.Collection
                 int d = entry[Mod(j, entry.Length)];
                 Show(Mod(j, slots), d < 0 ? (Drop?)null : drops[d], (float)((double)u - (double)j * every));
             }
-            for (int c = 0; c < columnAt.Length; c++) ShowColumn(c, (double)u - columnFrom[c]);
+            double at = burning ?? u;
+            for (int c = 0; c < columnAt.Length; c++) ShowColumn(c, at - columnFrom[c]);
         }
 
         void Show(int s, Drop? drop, float age)

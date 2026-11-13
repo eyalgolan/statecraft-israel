@@ -1,9 +1,11 @@
 #nullable enable
+using System;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>The Dakotas' raid on Tel Aviv, flown once on New game after the opening and before the raid card (#3000, PR 2 of
+    /// <summary>The Dakotas' raid on Tel Aviv, flown on New game after the opening and before the raid card (#3000, PR 2 of
     /// #2968; owner, 8 November 2026, "Film, raid, card, advisors (Recommended)", and the Dakotas by "Reuse Dakotas
     /// (Recommended)"): each Dakota flies in from the south-west along the coast, turns east over the sea onto its loop's
     /// southern pass, crosses Tel Aviv on it dropping its bombs exactly as on the loop (DakotaBombRun, the same releases, flashes,
@@ -12,6 +14,13 @@ namespace Statecraft.Game.Map.Collection
     /// Presentation only: a pure function of the map's animation clock (SpitfireLoop.Clock) since <see cref="Start"/>; no sim,
     /// content, save or hash change. While it flies, every DakotaLoop follows it instead of its loop; <see cref="Stop"/> hands
     /// them back to their loop clock.
+    ///
+    /// The raid repeats (#3140; owner, 11 November 2026, after v0.4.1: "but the dakota planes are still in their old circle tel
+    /// aviv pattern", then "Repeat the raid (Recommended)"): on the turns of the first bombing period (SeaAirCollection
+    /// .DakotaRaidsWanted) the Dakotas fly this raid and no loop, again every <see cref="CycleS"/>, each hidden off its path in
+    /// the pause between raids (<see cref="OnPath"/>). The repeat's clock (<see cref="Cycle"/>) starts when they are drawn
+    /// there (<see cref="KeepRepeating"/>), so Continue and a load show the raids too; New game's raid starts it over and is
+    /// its first, so when that raid stops they fly on where they are.
     ///
     /// Time: an aircraft's raid time u is 0 at the middle of its pass over Tel Aviv, as its loop time is (SeaAirCollection
     /// .DakotaLoopOffset(0) is Tel Aviv's hex centre), and runs at the real clock's pace, so the bombs fall and the smoke rises
@@ -44,6 +53,16 @@ namespace Statecraft.Game.Map.Collection
         /// part of the path, 15 s is about 11.4 km.</summary>
         public const float TrailS = 15f;
 
+        /// <summary>DESIGN VALUE (#3140, for the owner to check in the PR's captures): the pause (s) between raids, from the wing
+        /// reaching the end of its way out to the lead setting off again; both aircraft are hidden through it. Short enough that
+        /// a whole cycle stays clear of the loop's next pass, whose bombs an aircraft's raid time would otherwise reach.</summary>
+        public const float PauseS = 10f;
+
+        /// <summary>DESIGN VALUE (#3140): the second of a raid that editor renders and screenshots hold on the first bombing
+        /// period's turns: a second after the wing sets off (both show only from <see cref="TrailS"/>), with the lead still on its
+        /// pass over Tel Aviv, dropping (the pass runs <see cref="PassS"/> either side of <see cref="ArriveS"/>).</summary>
+        public const float HoldS = TrailS + 1f;
+
         /// <summary>DESIGN VALUE: the share of each turn's path time over which its bank eases from the loop's at the join and
         /// from level at the far end, so the bank never jumps.</summary>
         public const float BankEaseShare = 0.15f;
@@ -56,6 +75,14 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>How long the raid lasts (s): until the wing reaches the end of its way out.</summary>
         public static float Seconds => 2f * ArriveS + TrailS;
+
+        /// <summary>How long one raid of the repeat lasts (s), its pause included.</summary>
+        public static float CycleS => Seconds + PauseS;
+
+        /// <summary>True while aircraft <paramref name="plane"/> is between the start and the end of its path,
+        /// <paramref name="seconds"/> into a raid: the lead from 0 to <see cref="Seconds"/> less <see cref="TrailS"/>, the wing
+        /// <see cref="TrailS"/> later. Off it the repeat hides the aircraft (DakotaLoop.PlaceRaid).</summary>
+        public static bool OnPath(float seconds, int plane) => seconds >= plane * TrailS && seconds <= Seconds - (1 - plane) * TrailS;
 
         /// <summary>Aircraft <paramref name="plane"/>'s raid time (0 the lead, 1 its wing) <paramref name="seconds"/> after the
         /// raid starts.</summary>
@@ -148,7 +175,7 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>A unit direction (world x east, z north) at <paramref name="degrees"/> clockwise from north.</summary>
         static Vector2 Bearing(float degrees) => new Vector2(Mathf.Sin(degrees * Mathf.Deg2Rad), Mathf.Cos(degrees * Mathf.Deg2Rad));
 
-        static float? startedAt;
+        static float? startedAt, repeatFrom;
 
         /// <summary>True from <see cref="Start"/> until <see cref="Stop"/>.</summary>
         public static bool Flying => startedAt.HasValue;
@@ -164,15 +191,39 @@ namespace Statecraft.Game.Map.Collection
         public static bool Over => !Since(out float seconds) || seconds >= Seconds;
 
         /// <summary>Starts the raid now, when a Dakota is in the scene (they stream in, and fly only on their dates,
-        /// SeaAirCollection.DakotaFrom); false, and nothing flies, when none is.</summary>
+        /// SeaAirCollection.DakotaFrom); false, and nothing flies, when none is. It is also the repeat's first raid
+        /// (<see cref="Cycle"/>).</summary>
         public static bool Start()
         {
             if (Object.FindAnyObjectByType<DakotaLoop>() == null) return false;
-            startedAt = SpitfireLoop.Clock();
+            startedAt = repeatFrom = SpitfireLoop.Clock();
             return true;
         }
 
-        /// <summary>Ends the raid: the Dakotas go back to their loop's clock at their next frame. Safe to call at any time.</summary>
+        /// <summary>Ends the raid: Dakotas that loop go back to their loop's clock at their next frame, and Dakotas that raid fly
+        /// on by the repeat's (<see cref="Cycle"/>). Safe to call at any time.</summary>
         public static void Stop() => startedAt = null;
+
+        /// <summary>True while the raid repeats (<see cref="KeepRepeating"/> until <see cref="EndRepeat"/>).</summary>
+        public static bool Repeating => repeatFrom.HasValue;
+
+        /// <summary>Starts the repeat now, with a raid, unless it is already running. SeaAirCollection calls it when it draws the
+        /// Dakotas on a first-period turn: a redraw on the same turn keeps the raid where it is.</summary>
+        public static void KeepRepeating() { if (!repeatFrom.HasValue) repeatFrom = SpitfireLoop.Clock(); }
+
+        /// <summary>Ends the repeat, as the first bombing period ends: the next first-period turn starts its raids from the top.
+        /// Safe to call at any time.</summary>
+        public static void EndRepeat() => repeatFrom = null;
+
+        /// <summary>The seconds into the repeat's raid now (from 0 to <see cref="CycleS"/>), and that raid's number
+        /// (<paramref name="raid"/>, 0 the first); it starts the repeat if it is not running. In double, as the propellers'
+        /// angle: a session's clock runs to hours.</summary>
+        public static float Cycle(out int raid)
+        {
+            KeepRepeating();
+            double since = Math.Max(0.0, (double)SpitfireLoop.Clock() - repeatFrom!.Value), n = Math.Floor(since / CycleS);
+            raid = (int)n;
+            return (float)(since - n * CycleS);
+        }
     }
 }
