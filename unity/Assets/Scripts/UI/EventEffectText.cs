@@ -1,5 +1,8 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Statecraft.Game.Map.Units;
 using Statecraft.Sim;
 
 namespace Statecraft.Game.UI
@@ -45,6 +48,8 @@ namespace Statecraft.Game.UI
                     return text.Format("event.effect.city", name, field, row.Amount);
                 case OptionEffectPreviewKind.ProjectUnlock:
                     return text.Format("event.effect.unlock", name);
+                case OptionEffectPreviewKind.UnitOrder:   // its Hebrew needs the content and the units catalogue
+                    throw new ArgumentException("A unit order is worded by UnitOrder", nameof(row));
                 case OptionEffectPreviewKind.SetPolicy:
                     return text.Format("event.effect.policy", name, row.Amount);
                 case OptionEffectPreviewKind.SetRung:
@@ -54,6 +59,33 @@ namespace Statecraft.Game.UI
                 default:
                     throw new ArgumentOutOfRangeException(nameof(row), "Unknown effect presentation category");
             }
+        }
+
+        /// <summary>#2705, R-EVT-005: an operation card's unit order as given, never its outcome, from the cause's arguments
+        /// (CauseKeys.EventUnitOrder: the row, the order, the unit's and the place's English names, the unit's type, the hex).
+        /// In Hebrew the unit and the place take their Hebrew from <paramref name="units"/> (map/units_1948.yaml, which Unity
+        /// reads itself): the row's name_he, and the place_he of its order target or anchor of that English name. Where there
+        /// is none, the owner's "Generic Hebrew term (Recommended)" (11 November 2026), until a name list exists: the unit is
+        /// named by its type (unit.name.&lt;type&gt;, as UnitNames names a raised unit) and the place by its hex (HexPlaces).
+        /// The Why panel words the same cause.</summary>
+        public static string UnitOrder(Cause cause, Content c, UiText text, IReadOnlyList<UnitEntry>? units,
+            IReadOnlyDictionary<string, string>? namesHe = null)
+        {
+            var a = cause.Args;
+            var key = a[3] switch
+            {
+                Movement.GoTo => "event.effect.go_to",
+                Combat.Attack => "event.effect.attack",
+                _ => throw new ArgumentOutOfRangeException(nameof(cause), "Unknown unit-order presentation label"),
+            };
+            string unit = a[4], place = a[5];
+            if (text["ui.lang"] != UiLanguage.Hebrew) return text.Format(key, unit, place);
+            var row = units?.FirstOrDefault(x => x.Id == a[2]);
+            var named = row == null ? null : (row.OrderTargets ?? new List<UnitAnchor>()).Concat(row.Anchors).FirstOrDefault(x => x.Place == place);
+            var type = "unit.name." + a[6];
+            unit = !string.IsNullOrEmpty(row?.NameHe) ? row!.NameHe : text.Has(type) ? text[type] : unit;
+            place = !string.IsNullOrEmpty(named?.PlaceHe) ? named!.PlaceHe! : HexPlaces.Of(a[7], c, text, namesHe);
+            return text.Format(key, unit, place);
         }
     }
 }

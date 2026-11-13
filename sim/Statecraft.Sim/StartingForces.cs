@@ -65,7 +65,9 @@ namespace Statecraft.Sim
                     for (int k = 0; k < windows.Count; k++)
                         if (windows[k] is Dictionary<object, object> a && DateTime.TryParseExact(Text(a, "to"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var to))
                             c.UnitAnchorEnds[(Text(row, "id"), k)] = to;
-            OrderTargets(c, rows, Hexes(readFile, rows, "order_targets", "target"));
+            var targetHexes = Hexes(readFile, rows, "order_targets", "target");
+            OrderTargets(c, rows, targetHexes);
+            OrderPlaces(c, rows, hexes, targetHexes);
             var start = c.Rules.Start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var ppu = c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit;   // the start day's rules, as Cities.Init reads them
             var list = new List<StartingForce>();
@@ -261,6 +263,25 @@ namespace Statecraft.Sim
                         throw new ContentException(HexesFileName, "order_targets", $"no hex for {at} ({FileName}); rerun tools/unit_anchor_hexes.py");
                     c.UnitOrderTargets[(id, k)] = (qr.q, qr.r, until);
                 }
+            }
+        }
+
+        /// <summary>#2705: the place each row's order target or anchor names (`place`) by the row and its hex, the order targets
+        /// first, so an event card can say where its unit order sends the unit (R-EVT-005). Presentation only; the Hebrew
+        /// `place_he` stays Unity's to read (HebrewOverlay.UnityReads).</summary>
+        static void OrderPlaces(Content c, List<Dictionary<object, object>> rows, Dictionary<(string id, int anchor), (int q, int r)> anchorHexes,
+            Dictionary<(string id, int anchor), (int q, int r)> targetHexes)
+        {
+            foreach (var row in rows)
+            {
+                if (row == null) continue;
+                var id = Text(row, "id");
+                foreach (var (key, hexes) in new[] { ("order_targets", targetHexes), ("anchors", anchorHexes) })
+                    if (row.TryGetValue(key, out var lo) && lo is List<object> places)
+                        for (int k = 0; k < places.Count; k++)
+                            if (places[k] is Dictionary<object, object> p && hexes.TryGetValue((id, k), out var qr)
+                                && !c.UnitOrderPlaces.ContainsKey((id, qr.q, qr.r)))
+                                c.UnitOrderPlaces[(id, qr.q, qr.r)] = Text(p, "place");
             }
         }
 

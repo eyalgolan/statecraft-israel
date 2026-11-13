@@ -86,8 +86,10 @@ namespace Statecraft.Sim
         // Chosen/delegated Args: filled English option, filled Hebrew option, English minister, Hebrew minister (empty: cabinet).
         public const string EventAmount = "event_amount", EventStock = "event_stock", EventGrant = "event_grant",
             EventCity = "event_city", EventUnlock = "event_unlock", EventPolicy = "event_policy",
-            EventSetRung = "event_set_rung", EventRejoin = "event_rejoin";
+            EventSetRung = "event_set_rung", EventRejoin = "event_rejoin", EventUnitOrder = "event_unit_order";
         // Grant: context then city id. City: context then city id, field. Rejoin: context then EN/HE title.
+        // Unit order (#2705): context then the unit row, the order (go_to, attack), the unit's and the place's English names,
+        // the unit's type and the ordered hex ("q,r"), from which the Hebrew line names a unit or place with no Hebrew name.
         public const string MilitaryUpkeep = "military_upkeep";
         /// <summary>#1703, gdd-0.3 only (R-HOUSE-005): the cities' housing surcharge, a Money line (Target treasury) of minus
         /// Delta. No args.</summary>
@@ -286,7 +288,7 @@ namespace Statecraft.Sim
             MoneyFlows, FxFlows, Borrowed, Paid, MoneyOther, CivilianUpkeep, FxCrisisBegan, FxCrisisEased, FxCrisisFood, Arrived, EffectChange,
             SituationBegan, SituationEnded, RungChanged, CallUpSet, CallUpRaised, CallUpLowered, Ceasefire,
             EventNew, EventChosen, EventDelegated, EventDelegatedPartial, OperationPostponed, OperationLapsed, OperationLapsedSigned, OperationLapsedUnitLost, OperationWaitsForArmistice, EventAmount, EventStock, EventGrant, EventCity,
-            EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep, HousingSurcharge, HousingCohesion,
+            EventUnlock, EventUnitOrder, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep, HousingSurcharge, HousingCohesion,
             ObjectiveCompleted, PrisonersReturned, SoldiersReturned,
             WorkersAssigned, WagesPaid, ImmigrantsHoused, HousingShortage, ImmigrantsWaiting, RecruitsVeteran, CorridorStarted, CorridorCancelled, CorridorCompleted, PioneersVeteran, MapBorrowed, MapBuilt, LandWorkStarted, SiteStarted, SiteCancelled, SiteCompleted, ProjectStarted, ProjectCancelled, ProjectCompleted, ProjectBuilder, ProjectBuilderFreed, ProjectWaiting, ArmsBought, WorkshopWorkers, WorkshopArms, WorkshopPaused, DollarsConverted, DollarsConvertedFx, FoodHarvest, FieldFood, FoodShortage, FoodWithoutImports, FoodImported, PrisonerFood, PrisonerFoodShortage, CraftsmenReturned, CraftsmenReassigned, PioneerReturned, PioneersReassigned, TrainingStarted, TrainingArms, TrainingCancelled, TrainingArmsReturned, SentHomeArmsReturned, ReplacementsStopped, ReplacementsJoined, MilitaryTrained, PioneersTrained, CraftsmenTrained, Appointed, Reshuffle, AppointmentsEnded, ApprovalStability, CoalitionCollapsed, LegislatureConvened, GovernmentTookOffice, CoalitionChanged, EraEnded, AdvisoryPolicyRejected, PolicyRejected, PolicySet, AdvisoryBudgetRejected, BudgetRejected, PlaceCaptured, EnemyRegained, PlaceLost, PlaceRetaken, PlaceAnnexed, PlaceWithdrawn, PlaceDeported, DeportEffect, DeportCost, OccupationStarted, PendingBecameRaid, OccupationLostUnit, OccupationCountdown, DepopulationSupport, CityHeld,
         };

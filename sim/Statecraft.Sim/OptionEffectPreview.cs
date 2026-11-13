@@ -1,7 +1,7 @@
 namespace Statecraft.Sim
 {
     /// <summary>Presentation categories of the effects the existing option helper returns; no additional rules.</summary>
-    public enum OptionEffectPreviewKind { Amount, Stock, UnitGrant, City, ProjectUnlock, SetPolicy, SetRung, Rejoin }
+    public enum OptionEffectPreviewKind { Amount, Stock, UnitGrant, City, ProjectUnlock, UnitOrder, SetPolicy, SetRung, Rejoin }
 
     /// <summary>Read-only presentation context for an actual OptionEffects entry. Amount is already formatted by the sim.</summary>
     public sealed class OptionEffectPreview
