@@ -29,7 +29,7 @@ corridors:
     sources:
       # The route's line and its completion on 14 June 1948 (routes_1948.yaml burma_road, with that file's checked date).
       # G1 (owner, 14 October 2026, #384) put the Burma Road in the MVP.
-      - { url: "https://en.wikipedia.org/wiki/Burma_Road_(Israel)", checked: 2026-10-11 }
+      - { url: "https://en.wikipedia.org/wiki/Burma_Road_(Israel)", checked: 2026-10-24 }
     status: draft
   - id: tlv_haifa_rail
     kind: rail
@@ -42,7 +42,7 @@ corridors:
     sources:
       # Israel Railways, 50 Years of Israel Railways (1998), p. 15: the two sections laid in the summer of 1949 and the
       # service from 20 September 1949 (research_notes/gdd-phase-4-sourcing.md, section 2).
-      - { url: "https://web.archive.org/web/20140327112217/http://www.rail.co.il/HE/Fun/Museum/Documents/50Years.pdf", checked: 2026-10-15 }
+      - { url: "https://web.archive.org/web/20140327112217/http://www.rail.co.il/HE/Fun/Museum/Documents/50Years.pdf", checked: 2026-10-24 }
     status: draft
   - id: tlv_netanya_road
     kind: road
@@ -58,5 +58,5 @@ corridors:
     sources:
       # The Jerusalem Post, 30 July 1950, pp. 1 and 3: the opening on 28 July 1950 and the five places the road passed
       # (research_notes/gdd-phase-4-sourcing.md, section 3). The line between them is the owner's straight draft (#786).
-      - { url: "https://archive.org/details/per_jerusalem-post_the-jerusalem-post_1950-07-30_26_7318", checked: 2026-10-15 }
+      - { url: "https://archive.org/details/per_jerusalem-post_the-jerusalem-post_1950-07-30_26_7318", checked: 2026-10-25 }
     status: draft
