@@ -215,3 +215,43 @@ def test_the_money_and_cohesion_meter_tips_name_the_debt_ceiling_and_event_cards
     assert 'רכישת נשק' in he['hud.tip.treasury'] and 'סדנ' not in he['hud.tip.treasury']
     assert 'event cards' in en['hud.tip.cohesion']
     assert 'כרטיסי האירוע' in he['hud.tip.cohesion']
+
+
+def test_the_encyclopedia_pages_state_the_rules_issue_2524_found_misstated():
+    """#2524: each page states the shipped rule, in English and Hebrew. Money: an Arms purchase that would take the debt
+    past the ceiling is refused (Pools.BuyArms RefusedDebtCeiling, R-ARMS-002), and under gdd-0.3 an arms workshop's cycle
+    waits rather than borrow past it (Workshops.Produce, R-ARMS-006). Projects: a transit camp lowers the housing condition
+    (content/projects.yaml transit_camp condition -0.02, R-PROJ-003). Training (Hebrew): a military camp trains recruits
+    and a Hakhshara halutzim (R-TRAIN-001). Combat: attacking artillery loses nothing (R-COMBAT-007), and a battle changes
+    the Arms and the prisoners too (R-COMBAT-005), so the page no longer says only the fighting units change.
+    Immigration: the split follows the cities' census people, their start values (R-CITY-003). Objectives: a part of
+    an objective in parts earns no base points until the last part (R-OBJ-006). Food: the import stays off until
+    foreign currency is back above a quarter of fx_start (EconomySystem fx_crisis, R-FOOD-002). National meters: unfed
+    prisoners lower Social cohesion (R-POW-002)."""
+    en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
+    page = 'advisor.page.'
+    for key in (page + 'money_debt.text', page + 'money_debt.gdd03.text'):
+        assert 'Arms purchase that would pass the debt ceiling is refused' in en[key], key
+        assert 'רכישת נשק שהייתה חוצה את תקרת החוב נדחית' in he[key], key
+    assert 'workshop' not in en[page + 'money_debt.text'] and 'סדנ' not in he[page + 'money_debt.text']
+    assert 'arms workshop waits' in en[page + 'money_debt.gdd03.text']
+    assert 'וסדנת נשק ממתינה' in he[page + 'money_debt.gdd03.text']
+    for key in (page + 'projects.text', page + 'projects.gdd03.text'):
+        assert 'a transit camp adds housing but lowers the condition' in en[key], key
+        assert 'מעברה מוסיפה דיור אבל מורידה את מצב הדיור' in he[key], key
+    training = he[page + 'training.text']
+    assert 'כמגויסים בעיר שיש בה מחנה צבאי' in training and 'כחלוצים בעיר שיש בה מחנה הכשרה' in training
+    assert 'מחנה צבאי או מחנה הכשרה' not in training
+    assert 'attacking artillery loses nothing' in en[page + 'combat.text']
+    assert 'only the fighting units change' not in en[page + 'combat.text']
+    assert 'ארטילריה שתוקפת אינה מאבדת דבר' in he[page + 'combat.text']
+    assert 'ורק היחידות הלוחמות משתנות' not in he[page + 'combat.text']
+    for key in (page + 'immigration.text', 'hud.tip.immigration'):
+        assert 'in proportion to its people at the start of the game' in en[key], key
+        assert 'לפי מספר האנשים שהיו בה בתחילת המשחק' in he[key], key
+    assert 'awards its points only when its last part is done' in en[page + 'objectives.text']
+    assert 'רק כשהחלק האחרון שלו הושלם' in he[page + 'objectives.text']
+    assert 'above a quarter of what we started with' in en[page + 'food.text']
+    assert 'ליותר מרבע ממה שהיה לנו בהתחלה' in he[page + 'food.text']
+    assert 'prisoners the Food stock cannot feed lower Social cohesion' in en[page + 'national_meters.text']
+    assert 'ששבויים שאין במלאי מזון בשבילם מורידים את הלכידות החברתית' in he[page + 'national_meters.text']
