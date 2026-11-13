@@ -523,6 +523,7 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(units);
         placed.UnionWith(Statecraft.Game.Map.Units.UnitWeapons.ByFigure.Values);   // #2083: held by the token figures
         placed.Add(Statecraft.Game.Map.Units.UnitFigurePointFire.PoseFor(Statecraft.Game.Map.Units.UnitFigures.YoungRecruit)!);   // #2084
+        placed.Add(Statecraft.Game.Map.Units.StreamedAircraft.Model);   // #2734: the 101 Squadron Spitfire's streamed model, on the showcase and the squadron's token
         placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: 18 originals and five generated houses are catalogued and requested by TownModelLayer
         // Tel Aviv's, Jerusalem's and Haifa's whole towns stay catalogued but unused: the four major cities draw their kit
         // blocks from 40 km out (owner, 6 November 2026, "Big blocks, every zoom", superseding 2 November's small buildings)

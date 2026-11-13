@@ -107,14 +107,17 @@ public class Generated1948AssetTests
     [Test] public void PlacedGeneratedPropsKeepTheirSourceMeshMaterialAndMap()
     {
         // #2085's generated whole towns are placed the same way (TownLandmarks), so the same checks hold for them.
-        // #2083's weapons are made the same way too (held by the token figures, UnitWeapons).
-        var props = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id)).ToList();
+        // #2083's weapons are made the same way too (held by the token figures, UnitWeapons), and so is the Blender-built 101
+        // Squadron Spitfire (#2734; its colour map is the tool's PNG).
+        var props = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id)
+            || CollectionCatalog.IsAuthoredUnit(id)).ToList();
         CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.EgyptianDakota,
             CollectionCatalog.StoneWell, CollectionCatalog.Sandbags, CollectionCatalog.CrateStack, CollectionCatalog.StoneWall,
-            CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown }, props);
+            CollectionCatalog.TiberiasTown, CollectionCatalog.SafedTown, CollectionCatalog.NetanyaTown, CollectionCatalog.RamlaTown,
+            CollectionCatalog.IsraeliSpitfire }, props);
         foreach (string id in props)
         {
-            string dir = $"{CollectionCatalog.Folder}/{id}", fbx = CollectionCatalog.SourceModelPath(id), map = $"{dir}/{id}_basecolor.jpg";
+            string dir = $"{CollectionCatalog.Folder}/{id}", fbx = CollectionCatalog.SourceModelPath(id), map = CollectionCatalog.ColourMapPath(id);
             var sourceMeshes = AssetDatabase.LoadAssetAtPath<GameObject>(fbx).GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh).ToArray();
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
             var material = AssetDatabase.LoadAssetAtPath<Material>($"{dir}/{id}.mat");

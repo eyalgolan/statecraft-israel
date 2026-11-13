@@ -9,12 +9,6 @@ using UnityEngine;
 
 public class UnitShowcaseTests
 {
-    // These tests are about the code-built models. An authored model in Resources/Units/Authored (#2734's Spitfire) would
-    // replace one in every Spawn, so each test starts with none; the authored tests set their own (AuthoredModel is a seam).
-    System.Func<string, GameObject> realAuthoredModel;
-    [SetUp] public void CodeBuiltModels() { realAuthoredModel = UnitShowcase.AuthoredModel; UnitShowcase.AuthoredModel = _ => null; }
-    [TearDown] public void RestoreAuthoredModels() { if (realAuthoredModel != null) UnitShowcase.AuthoredModel = realAuthoredModel; }
-
     static Mesh[] AllMeshes() => new[]
     {
         UnitModels.Rifleman(UnitModels.Headgear.SlouchHat, UnitModels.RiflePose.Ready, false, "a"),
@@ -295,50 +289,249 @@ public class UnitShowcaseTests
         Assert.IsTrue(assets.All(o => o == null), "destroying the map destroys every mesh, the material and the palette");
     }
 
+    /// <summary>#2734 (coordinator's option 1): no unit model comes from a Resources folder any more. The art hook that loaded
+    /// one there (UnitShowcase.AuthoredModel, from Resources/Units/Authored/&lt;unit type&gt;) is gone, the figures and the ship
+    /// are always the code-built ones, and no unit type has a model left under Resources (the Blender-built Spitfire streams
+    /// instead, StreamedAircraft). Replaces AnAuthoredModelReplacesTheCodeBuiltOneForItsType, which stubbed that hook.</summary>
     [Test]
-    public void AnAuthoredModelReplacesTheCodeBuiltOneForItsType()
+    public void NoUnitModelComesFromResourcesAndTheFiguresAndTheShipStayCodeBuilt()
     {
-        var map = BuildMap();   // first: a new scene would destroy the stand-in models
-        var helmet = new GameObject("authored-helmet"); new GameObject("AuthoredMarker").transform.SetParent(helmet.transform);
-        var spitfire = new GameObject("authored-spitfire"); new GameObject("AuthoredMarker").transform.SetParent(spitfire.transform);
-        // An authored model's own propeller: a child named UnitShowcase.AuthoredPropellerName, turning about its local +z.
-        var bladesMesh = UnitModels.SpitfirePropeller("authored-blades");
-        var blades = new GameObject(UnitShowcase.AuthoredPropellerName);
-        blades.transform.SetParent(spitfire.transform, false);
-        blades.AddComponent<MeshFilter>().sharedMesh = bladesMesh; blades.AddComponent<MeshRenderer>();
-        var saved = UnitShowcase.AuthoredModel;
-        UnitShowcase.AuthoredModel = type => type == UnitShowcase.RiflemanHelmetType ? helmet : type == UnitShowcase.SpitfireType ? spitfire : null;
+        var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+        Assert.IsNull(typeof(UnitShowcase).GetField("AuthoredModel", flags), "the Resources art hook is gone");
+        Assert.IsNull(typeof(UnitShowcase).GetField("AuthoredFolder", flags), "and its folder");
+        foreach (var type in new[] { UnitShowcase.RiflemanSlouchHatType, UnitShowcase.RiflemanHelmetType, UnitShowcase.RiflemanWoolCapType,
+            UnitShowcase.SpitfireType, UnitShowcase.CorvetteType, UnitShowcase.S199Type })
+            Assert.IsNull(Resources.Load<GameObject>("Units/Authored/" + type), type + ": nothing under Resources/Units/Authored");
+        var map = BuildMap();
         try
         {
             var root = UnitShowcase.Spawn(map, still: true);
-            Assert.IsNotNull(root.transform.Find("Rifleman1/AuthoredMarker"), "the helmet rifleman is the authored model");
-            Assert.IsNull(root.transform.Find("Rifleman1").GetComponent<MeshFilter>(), "no code-built mesh for it");
-            Assert.IsNotNull(root.transform.Find("Rifleman0").GetComponent<MeshFilter>(), "the others stay code-built");
-            Assert.AreEqual(UnitShowcase.FigureScale, root.transform.Find("Rifleman1").localScale.x, 1e-3f, "placed and scaled as the code-built one");
-            Assert.IsNotNull(root.transform.Find("Spitfire1948/Airframe/AuthoredMarker"));
-            Assert.IsNull(root.transform.Find("Spitfire1948/Propeller"), "an authored aircraft brings its own propeller");
-            Assert.IsFalse(root.transform.Find("Spitfire1948/Airframe").GetComponentsInChildren<Renderer>(true)
-                .Any(r => r.sharedMaterial != null && r.sharedMaterial.name.EndsWith(" (glossy)")), "nor the code-built glossy paint: it brings its own materials");
-            // The flight's look applies to it all the same: its own propeller turns and carries the blur, sized to its blades,
-            // and a soft shadow lies on the ground while it casts none.
-            var ownProp = root.transform.Find("Spitfire1948/Airframe/" + UnitShowcase.AuthoredPropellerName);
-            Assert.IsNotNull(ownProp, "fixture: the authored propeller");
-            var flight = root.GetComponentInChildren<ShowcaseFlight>();
-            Assert.AreSame(ownProp, typeof(ShowcaseFlight).GetField("propeller", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(flight),
-                "the flight turns the authored propeller");
-            var blur = ownProp.Find(UnitShowcase.PropellerBlurName);
-            Assert.IsNotNull(blur, "the blur on the authored propeller");
-            Assert.That(blur.localScale.x, Is.InRange(1.4f, 1.9f), "sized to its blades (the code-built blades here, reaching about 1.6)");
-            Assert.IsNotNull(flight.transform.Find(UnitShowcase.ShadowName), "the soft shadow under an authored aircraft too");
-            Assert.IsTrue(flight.GetComponentsInChildren<Renderer>(true).All(r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off),
-                "and it casts no shadow of its own");
-            Assert.IsNotNull(root.transform.Find("Corvette1948").GetComponent<MeshFilter>());
+            foreach (var name in new[] { "Rifleman0", "Rifleman1", "Rifleman2", "Corvette1948", "Spitfire1948/Airframe", "Spitfire1948/Propeller" })
+            {
+                var piece = root.transform.Find(name);
+                Assert.IsNotNull(piece, name);
+                Assert.IsNotNull(piece.GetComponent<MeshFilter>().sharedMesh, name + " is code-built");
+            }
+            Assert.AreEqual(UnitShowcase.FigureScale, root.transform.Find("Rifleman1").localScale.x, 1e-3f, "placed and scaled as before");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>A stand-in for the stream's lease, counting its releases.</summary>
+    sealed class CountedLease : System.IDisposable { public int Disposed; public void Dispose() => Disposed++; }
+
+    /// <summary>A stand-in for the streamed Spitfire's prefab, as the FBX's two top-level nodes: a body and, when asked, a
+    /// <see cref="StreamedAircraft.PropellerName"/> at the hub.</summary>
+    static GameObject StandInSpitfire(bool propeller)
+    {
+        var root = new GameObject("stand-in streamed spitfire");
+        void Part(string name, PrimitiveType shape, Vector3 at)
+        {
+            var go = GameObject.CreatePrimitive(shape); go.name = name;
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.SetParent(root.transform, false); go.transform.localPosition = at;
+        }
+        Part("Body", PrimitiveType.Cube, Vector3.zero);
+        if (propeller) Part(StreamedAircraft.PropellerName, PrimitiveType.Sphere, UnitModels.SpitfirePropellerHub);
+        return root;
+    }
+
+    /// <summary>Asks for the streamed Spitfire through a deferred stand-in for the stream: each request is kept, with its own
+    /// lease, until the test answers it. The caller restores <see cref="StreamedAircraft.Source"/> to null.</summary>
+    static List<(string id, Statecraft.Game.Map.Collection.CollectionDetail detail, System.Action<GameObject> done, CountedLease lease)> DeferredStream()
+    {
+        var asked = new List<(string, Statecraft.Game.Map.Collection.CollectionDetail, System.Action<GameObject>, CountedLease)>();
+        StreamedAircraft.Source = (id, detail, done) => { var lease = new CountedLease(); asked.Add((id, detail, done, lease)); return lease; };
+        return asked;
+    }
+
+    /// <summary>The code-built airframe's and propeller's own renderers under an aircraft holder (not the propeller's blur,
+    /// UnitShowcase.PropellerBlurName, a look of the flight rather than of the model).</summary>
+    static Renderer[] CodeBuilt(Transform plane) =>
+        new[] { "Airframe", "Propeller" }.SelectMany(n => plane.Find(n).GetComponentsInChildren<Renderer>(true))
+            .Where(r => r.name != UnitShowcase.PropellerBlurName).ToArray();
+
+    /// <summary>#2734: the showcase's Spitfire is drawn at once, code-built (its airframe and propeller), and the Blender-built
+    /// model is asked for from the Collection stream. When the stream answers, the model stands under the aircraft in the
+    /// code-built model's frame, the code-built airframe and propeller stop drawing, the aircraft keeps its place, heading and
+    /// symbolic scale, and the flight turns the model's own Propeller, not the hidden code-built one. The flying look
+    /// (#2728) carries over to the streamed model: its Propeller carries the light blur, turning with it, the soft ground
+    /// shadow stays, and nothing casts a shadow of its own.</summary>
+    [Test]
+    public void TheShowcaseSpitfireStartsCodeBuiltAndSwapsToTheStreamedModelWhenItArrives()
+    {
+        var map = BuildMap();   // first: a new scene would destroy the stand-in model
+        var model = StandInSpitfire(propeller: true);
+        var asked = DeferredStream();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: false);
+            var plane = root.transform.Find("Spitfire1948");
+            Assert.AreEqual(1, asked.Count, "one request, for the 101 Squadron Spitfire");
+            Assert.AreEqual(Statecraft.Game.Map.Collection.CollectionCatalog.IsraeliSpitfire, asked[0].id);
+            Assert.AreEqual(UnitShowcase.SpitfireType, asked[0].id, "the unit type is the catalog id");
+            Assert.AreEqual(Statecraft.Game.Map.Collection.CollectionDetail.Far, asked[0].detail);
+            var code = CodeBuilt(plane);
+            Assert.AreEqual(2, code.Length);
+            Assert.IsTrue(code.All(r => r.enabled), "until the model arrives the code-built aircraft is drawn");
+            Assert.IsNull(plane.Find(StreamedAircraft.ModelName));
+            var flight = plane.GetComponent<ShowcaseFlight>();
+            var codeProp = plane.Find("Propeller");
+            Assert.AreSame(codeProp, flight.Propeller, "meanwhile the flight turns the code-built propeller");
+            var (position, rotation, scale) = (plane.position, plane.rotation, plane.localScale);
+            var codeBlur = codeProp.Find(UnitShowcase.PropellerBlurName);
+            Assert.IsNotNull(codeBlur, "fixture: #2728's blur on the code-built propeller");
+            var (blurMesh, blurMaterial) = (codeBlur.GetComponent<MeshFilter>().sharedMesh, codeBlur.GetComponent<MeshRenderer>().sharedMaterial);
+            var shadow = plane.Find(UnitShowcase.ShadowName);
+            Assert.IsNotNull(shadow, "fixture: #2728's ground shadow under the aircraft");
+
+            asked[0].done(model);
+
+            var streamed = plane.Find(StreamedAircraft.ModelName);
+            Assert.IsNotNull(streamed, "the streamed model stands under the aircraft");
+            Assert.AreEqual(Vector3.zero, streamed.localPosition, "in the code-built model's frame: its origin");
+            Assert.Less(Quaternion.Angle(Quaternion.identity, streamed.localRotation), 0.01f, "nose along the aircraft's");
+            Assert.AreEqual(Vector3.one, streamed.localScale, "real metres, as the code-built model");
+            Assert.IsTrue(streamed.gameObject.activeSelf);
+            var drawn = streamed.GetComponentsInChildren<Renderer>(true);
+            Assert.AreEqual(2, drawn.Count(r => r.name != UnitShowcase.PropellerBlurName), "the model's body and propeller");
+            Assert.IsTrue(drawn.All(r => r.enabled), "the streamed model draws");
+            Assert.IsTrue(code.All(r => !r.enabled), "the code-built airframe and propeller no longer draw");
+            Assert.AreEqual(position, plane.position, "the aircraft keeps its place");
+            Assert.Less(Quaternion.Angle(rotation, plane.rotation), 0.01f, "and its heading");
+            Assert.AreEqual(scale, plane.localScale, "and its symbolic scale");
+            Assert.AreEqual(Vector3.one * UnitShowcase.AircraftScale, plane.localScale);
+            Assert.AreEqual(0, asked[0].lease.Disposed, "the lease is held while the aircraft lives");
+
+            // The flight now turns the streamed propeller, and leaves the hidden code-built one alone.
+            var streamedProp = streamed.Find(StreamedAircraft.PropellerName);
+            Assert.AreSame(streamedProp, flight.Propeller, "the flight turns the streamed model's Propeller");
+            var hidden = Quaternion.Euler(0f, 0f, 33f);
+            codeProp.localRotation = hidden; streamedProp.localRotation = Quaternion.Euler(0f, 0f, 77f);
+            typeof(ShowcaseFlight).GetMethod("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(flight, null);
+            Assert.Less(Quaternion.Angle(Quaternion.Euler(0f, 0f, -Mathf.Repeat(Time.time * 1500f, 360f)), streamedProp.localRotation), 0.01f,
+                "a flight step sets the streamed propeller's angle");
+            Assert.Less(Quaternion.Angle(hidden, codeProp.localRotation), 0.01f, "and not the hidden code-built one's");
+
+            // #2728's flying look, on the streamed model: the light blur on its Propeller (so it turns with it), as on the
+            // code-built one (TheCodeBuiltSpitfiresPropellerCarriesALightBlur), sized to its blades; nothing drawn is left on
+            // the hidden code-built propeller; the soft shadow stays under the aircraft; and nothing casts a shadow of its own.
+            var blur = streamedProp.Find(UnitShowcase.PropellerBlurName);
+            Assert.IsNotNull(blur, "the blur, a child of the streamed propeller, so it turns with it");
+            var blurRenderer = blur.GetComponent<MeshRenderer>();
+            Assert.IsTrue(blurRenderer.enabled && blur.gameObject.activeInHierarchy, "and it draws");
+            Assert.AreSame(blurMesh, blur.GetComponent<MeshFilter>().sharedMesh, "the same light, streaked disc");
+            Assert.AreSame(blurMaterial, blurRenderer.sharedMaterial, "with the same see-through material");
+            Assert.AreEqual(UnityEngine.Rendering.ShadowCastingMode.Off, blurRenderer.shadowCastingMode); Assert.IsFalse(blurRenderer.receiveShadows);
+            Assert.Greater(Mathf.Abs(Vector3.Dot(blur.up, streamedProp.forward)), 0.999f, "the disc faces along the propeller's axis (+z)");
+            Assert.AreEqual(Vector3.zero, blur.localPosition, "through the hub");
+            // The stand-in's propeller is a unit sphere: its blades reach 0.5 from the hub, so the blur a little beyond.
+            Assert.That(blur.localScale.x, Is.InRange(0.5f, 0.6f), "sized to the streamed blades, not the code-built ones (1.6)");
+            Assert.IsFalse(codeProp.GetComponentsInChildren<Renderer>(true).Any(r => r.enabled), "nothing drawn is left on the hidden code-built propeller");
+            Assert.AreSame(shadow, plane.Find(UnitShowcase.ShadowName), "the soft shadow stays");
+            Assert.IsTrue(shadow.GetComponent<MeshRenderer>().enabled, "and draws");
+            Assert.AreSame(shadow, typeof(ShowcaseFlight).GetField("shadow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(flight),
+                "and the flight still lays it on the ground");
+            Assert.IsTrue(plane.GetComponentsInChildren<Renderer>(true).All(r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.Off),
+                "the streamed model casts no shadow of its own either (one would lie about 7 km off at its drawn height)");
         }
         finally
         {
-            UnitShowcase.AuthoredModel = saved;
-            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(helmet); Object.DestroyImmediate(spitfire); Object.DestroyImmediate(bladesMesh);
+            StreamedAircraft.Source = null;
+            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(model);
         }
+    }
+
+    /// <summary>#2734: the stream failing (a missing or damaged bundle answers null) keeps the whole code-built aircraft, and
+    /// so does a streamed model without a Propeller child (a model the flight could not turn): nothing of either is added.</summary>
+    [Test]
+    public void AFailedOrPropellerlessStreamedSpitfireKeepsTheWholeCodeBuiltAircraft()
+    {
+        var map = BuildMap();
+        var noPropeller = StandInSpitfire(propeller: false);
+        var asked = DeferredStream();
+        try
+        {
+            void KeepsTheCodeBuiltAircraft(GameObject root, string why)
+            {
+                var plane = root.transform.Find("Spitfire1948");
+                Assert.IsNull(plane.Find(StreamedAircraft.ModelName), why + ": no streamed model");
+                Assert.AreEqual(plane.GetComponentsInChildren<Renderer>(true).Count(r => r.name != UnitShowcase.PropellerBlurName && r.name != UnitShowcase.ShadowName),
+                    CodeBuilt(plane).Length, why + ": nothing else under the aircraft but its blur and its shadow");
+                Assert.IsTrue(CodeBuilt(plane).All(r => r.enabled), why + ": the code-built airframe and propeller still draw");
+                Assert.AreSame(plane.Find("Propeller"), plane.GetComponent<ShowcaseFlight>().Propeller, why + ": the flight turns the code-built propeller");
+                var blur = plane.Find("Propeller/" + UnitShowcase.PropellerBlurName);
+                Assert.IsTrue(blur != null && blur.GetComponent<MeshRenderer>().enabled, why + ": the code-built propeller keeps its blur");
+                Assert.IsNotNull(plane.Find(UnitShowcase.ShadowName), why + ": and the aircraft its shadow");
+            }
+            var first = UnitShowcase.Spawn(map, still: true);
+            asked[0].done(null);
+            KeepsTheCodeBuiltAircraft(first, "no model");
+            var second = UnitShowcase.Spawn(map, still: true);
+            Assert.AreEqual(1, asked[0].lease.Disposed, "the replaced showcase released its lease");
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("no Propeller"));
+            asked[1].done(noPropeller);
+            KeepsTheCodeBuiltAircraft(second, "a model without a Propeller");
+        }
+        finally
+        {
+            StreamedAircraft.Source = null;
+            Object.DestroyImmediate(map.gameObject); Object.DestroyImmediate(noPropeller);
+        }
+    }
+
+    /// <summary>#2734: destroying the showcase (here the root; a map rebuild destroys it the same way) releases the aircraft's
+    /// lease exactly once, and the stream's answer coming after that instantiates nothing.</summary>
+    [Test]
+    public void DestroyingTheShowcaseReleasesTheSpitfireLeaseOnceAndALateAnswerDrawsNothing()
+    {
+        var map = BuildMap();
+        var model = StandInSpitfire(propeller: true);
+        var asked = DeferredStream();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: true);
+            Assert.AreEqual(1, asked.Count);
+            Assert.AreEqual(0, asked[0].lease.Disposed);
+            Object.DestroyImmediate(root);
+            Assert.AreEqual(1, asked[0].lease.Disposed, "destroying the aircraft releases its lease");
+            asked[0].done(model);   // the stream answers after all
+            Assert.AreEqual(1, asked[0].lease.Disposed, "once");
+            Assert.IsFalse(Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Any(t => t.name == StreamedAircraft.ModelName),
+                "a late answer instantiates nothing");
+            UnitShowcase.Spawn(map, still: true);
+            Object.DestroyImmediate(map.gameObject);
+            Assert.AreEqual(1, asked[1].lease.Disposed, "destroying the map releases the showcase's lease too");
+        }
+        finally
+        {
+            StreamedAircraft.Source = null;
+            if (map != null) Object.DestroyImmediate(map.gameObject);
+            Object.DestroyImmediate(model);
+        }
+    }
+
+    /// <summary>#2734: the game asks for the streamed Spitfire with the Collection stream's owned lease (CollectionStream.Acquire,
+    /// not Request, so the bundle is not pinned for good). In edit mode, with no stand-in, nothing is asked for (the stream's
+    /// coroutine never runs there, as UnitFigures has it), so the code-built aircraft stays.</summary>
+    [Test]
+    public void TheGameAsksForTheStreamedSpitfireWithCollectionStreamAcquireAndEditModeAsksNothing()
+    {
+        Assert.AreEqual(typeof(Statecraft.Game.Map.Collection.CollectionStream).GetMethod(nameof(Statecraft.Game.Map.Collection.CollectionStream.Acquire),
+                new[] { typeof(string), typeof(Statecraft.Game.Map.Collection.CollectionDetail), typeof(System.Action<GameObject>) }),
+            StreamedAircraft.ProductionAcquire.Method, "the production acquisition is CollectionStream.Acquire");
+        Assert.IsNull(StreamedAircraft.Source, "no stand-in is left set");
+        var map = BuildMap();
+        try
+        {
+            var root = UnitShowcase.Spawn(map, still: true);
+            var streamed = root.transform.Find("Spitfire1948").GetComponent<StreamedAircraft>();
+            Assert.IsNotNull(streamed, "the showcase's Spitfire carries the swap");
+            Assert.IsFalse(streamed.Asked, "edit mode asks nothing of the stream");
+            Assert.IsTrue(CodeBuilt(streamed.transform).All(r => r.enabled));
+            Assert.IsNull(root.transform.Find("Corvette1948").GetComponent<StreamedAircraft>(), "only the aircraft");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
     }
 
     /// <summary>The coordinator-approved Spitfire plan, step 1 (5 November 2026): the code-built 101 Squadron Spitfire's
@@ -451,18 +644,20 @@ public class UnitShowcaseTests
         finally { RenderSettings.sun = sunWas; Object.DestroyImmediate(sun.gameObject); Object.DestroyImmediate(map.gameObject); }
     }
 
-    /// <summary>The authored 101 Squadron Spitfire (#2734), once it is in Resources/Units/Authored: the prefab the game loads
-    /// for the type has a DIRECT child named UnitShowcase.AuthoredPropellerName (UnitShowcase.FlyingSpitfire finds it under
-    /// the root Piece renames "Airframe"), with a mesh, its pivot on the centre line ahead of the airframe, at rest
-    /// (identity rotation, as ShowcaseFlight overwrites it), so the flight turns it and its blur fits its blades. Ignored
-    /// until the model lands.</summary>
+    /// <summary>The 101 Squadron Spitfire's Blender-built model (#2734), once CollectionImport.MakeAuthoredUnitPrefabs has made
+    /// its prefab: the catalog prefab (CollectionCatalog.PrefabPath at Far, loaded from the AssetDatabase, as MapCapture answers
+    /// for the stream; nothing of it is under Resources) has a DIRECT child named StreamedAircraft.PropellerName (the child
+    /// StreamedAircraft hands the flight), with a mesh, its pivot on the centre line ahead of the airframe, at rest (identity
+    /// rotation, as ShowcaseFlight overwrites it), so the flight turns it. Ignored until the prefab is made.</summary>
     [Test]
     public void TheAuthoredSpitfireHasADirectPropellerChildTheFlightCanTurn()
     {
-        var prefab = Resources.Load<GameObject>(UnitShowcase.AuthoredFolder + UnitShowcase.SpitfireType);
-        if (prefab == null) Assert.Ignore("no authored Spitfire in Resources yet (#2734)");
-        var prop = prefab.transform.Find(UnitShowcase.AuthoredPropellerName);
-        Assert.IsNotNull(prop, $"a direct child named {UnitShowcase.AuthoredPropellerName}");
+        var path = Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(Statecraft.Game.Map.Collection.CollectionCatalog.IsraeliSpitfire,
+            Statecraft.Game.Map.Collection.CollectionDetail.Far);
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (prefab == null) Assert.Ignore($"no {path} yet (run CollectionImport.MakeAuthoredUnitPrefabs, #2734)");
+        var prop = prefab.transform.Find(StreamedAircraft.PropellerName);
+        Assert.IsNotNull(prop, $"a direct child named {StreamedAircraft.PropellerName}");
         Assert.IsNotNull(prop.GetComponentInChildren<MeshFilter>()?.sharedMesh, "its blades are a mesh");
         Assert.AreEqual(Quaternion.identity, prop.localRotation, "at rest: ShowcaseFlight sets its turn about local +z");
         Assert.AreEqual(Vector3.one, prop.localScale);
@@ -471,16 +666,20 @@ public class UnitShowcaseTests
         Assert.IsNotEmpty(others, "an airframe besides the propeller");
         Assert.Greater(prop.localPosition.z, others.Max(b => b.center.z), "the propeller is at the nose (+z)");
 
-        // And through the real showcase: the flight turns that propeller and it carries the blur.
-        UnitShowcase.AuthoredModel = realAuthoredModel;
+        // And through the real showcase, the stream answered from the AssetDatabase at once: the flight turns that propeller.
         var map = BuildMap();
+        StreamedAircraft.Source = (id, detail, done) =>
+        {
+            done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, detail)));
+            return new CountedLease();
+        };
         try
         {
             var root = UnitShowcase.Spawn(map, still: true);
-            var spawned = root.transform.Find("Spitfire1948/Airframe/" + UnitShowcase.AuthoredPropellerName);
-            Assert.IsNotNull(spawned, "Airframe/Propeller after Piece renames the prefab's root");
+            var spawned = root.transform.Find($"Spitfire1948/{StreamedAircraft.ModelName}/{StreamedAircraft.PropellerName}");
+            Assert.IsNotNull(spawned, "the streamed model's Propeller under the showcase's Spitfire");
             var flight = root.GetComponentInChildren<ShowcaseFlight>();
-            Assert.AreSame(spawned, typeof(ShowcaseFlight).GetField("propeller", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(flight));
+            Assert.AreSame(spawned, flight.Propeller);
             Assert.IsNotNull(spawned.Find(UnitShowcase.PropellerBlurName), "the blur on it");
             Assert.IsNotNull(flight.transform.Find(UnitShowcase.ShadowName), "the soft shadow");
             // And the flight really turns it about its local +z, 1500 degrees a second, once it flies (not held still).
@@ -496,7 +695,7 @@ public class UnitShowcaseTests
             }
             finally { ShowcaseFlight.Clock = clock; }
         }
-        finally { Object.DestroyImmediate(map.gameObject); }
+        finally { StreamedAircraft.Source = null; Object.DestroyImmediate(map.gameObject); }
     }
 
     static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");

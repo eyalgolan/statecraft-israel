@@ -18,9 +18,9 @@ fight is war mode's job (#104, with the sim side in #21). The golden hashes do n
   editor renders. With `shot` the aircraft holds a fixed point, so the screenshots repeat.
 - **Desktop player:** run with `-units`.
 - **Editor:** `MapCapture.Promo` renders it when given `-units`.
-- **Aircraft close-ups:** `MapCapture.Aircraft` renders the S-199 and the Spitfire alone, from the top, the bottom, the left
-  side and three quarters, into `-captureDir` (default `captures/visual/aircraft`), for checking the markings against the
-  photographs. `MapCapture.Promo -units -unitsDate YYYY-MM-DD` draws the units in play as on that day.
+- **Aircraft close-ups:** `MapCapture.Aircraft` renders the code-built S-199 and the Spitfire's streamed Blender-built model
+  alone, from the top, the bottom, the left side and three quarters, into `-captureDir` (default
+  `captures/visual/aircraft`), for checking the markings against the photographs. `MapCapture.Promo -units -unitsDate YYYY-MM-DD` draws the units in play as on that day.
 - **Frame cost:** `?vprofile&units` prices it as the `unitshowcase` toggle (`median(all) - median(-unitshowcase)`). The
   `units` toggle is the units in play.
 
@@ -34,18 +34,63 @@ Code: `unity/Assets/Scripts/Map/Units/`. The materials are made by `UnitMaterial
 2. **Promo-quality close-zoom models come from a separate track:** a cloud-GPU AI-3D pipeline (TRELLIS, MIT). The
    code-built miniatures here stay as the far-zoom and fallback version.
 
-**The art hook.** An authored model replaces the code-built one for its unit type when a prefab exists at
-`unity/Assets/Resources/Units/Authored/<unit type>`. The unit types are the `*Type` constants in `UnitShowcase`, for
-example `rifleman-1948-steel-helmet` and `spitfire-mk9e-101sqn-1948`.
+**Better models stream in; nothing loads from Resources (#2734).** The code-built models are drawn for every unit type
+at once, and stay as the fallback. No unit model is loaded from a `Resources` folder: everything there ships in the WebGL
+player's first download, which the load-time gate keeps small. The art hook that loaded a prefab from
+`unity/Assets/Resources/Units/Authored/<unit type>` (`UnitShowcase.AuthoredModel`) is gone. Better models come from the
+Collection's bundles after the first frame instead:
+- the riflemen's figures (`UnitFigures`, below);
+- the 101 Squadron Spitfire's Blender-built model (`tools/spitfire_101_model.py`), catalogued as
+  `CollectionCatalog.IsraeliSpitfire` (`spitfire-mk9e-101sqn-1948`, the `SpitfireType`) in a bundle of its own, from
+  `unity/Assets/Art/Collection/spitfire-mk9e-101sqn-1948/`.
 
-An authored model follows the code-built convention:
-- real metres, facing +Z;
-- origin on the ground (an aircraft: its centre of gravity);
-- its own materials;
-- an authored aircraft brings its own propeller.
+The Spitfire's swap (`StreamedAircraft`), on the showcase's Spitfire and on the 101 Squadron token's Spitfire (flying or
+parked; the S-199 stays code-built):
+- the code-built airframe and propeller are built and drawn first;
+- the model is asked for with `CollectionStream.Acquire` (a lease, released when the aircraft is destroyed; an answer after
+  that draws nothing);
+- when it arrives it stands in the code-built model's frame (real metres, facing +Z, its centre of gravity at the
+  origin), the code-built airframe and propeller stop drawing, and the flight turns the model's own `Propeller` child;
+- a flying Spitfire keeps its look (#2728): the propeller's light blur moves onto the model's `Propeller`
+  (`UnitShowcase.CarryBlur`), sized to its blades, the soft ground shadow stays, and the model casts no shadow of its own;
+- a missing or damaged bundle, or a model without a `Propeller` child, keeps the whole code-built aircraft;
+- in edit mode nothing is asked for unless `StreamedAircraft.Source` is set: `MapCapture.Promo` and `MapCapture.Aircraft`
+  answer from the AssetDatabase at once.
 
-The showcase places and scales it as it does the code-built model. That is the whole hook: there is no registry beyond
-it, and there are no level-of-detail switches yet.
+The Blender-built model follows the owner's rulings of 8 November 2026 on #2734 (the option labels are verbatim):
+- **Span: "9.9 m (Recommended)".** The clipped LF Mk IXe's 32 ft 6 in (9.9 m), from en.wikipedia "Supermarine Spitfire
+  variants: specifications, performance and armament"; the clipped wing itself is Efrati p. 14. The elliptical planform
+  is still the full wing's (11.23 m, en.wikipedia "Supermarine Spitfire"), clipped at 9.9 m. Before the ruling the model
+  spanned 10.16 m (11.23 m less the 3 ft 6 in clip). `CollectionImportTests.TheIsraeliSpitfirePrefabIsItsRealSizeWingsAlongXNoseAlongZ`
+  checks 9.9 m, plus or minus 5 percent.
+- **Rear-fuselage band: "Add the band".** White, blue, white, round the fuselage ahead of the fin. Source: Efrati p. 4,
+  the IAF command's order of 31 May 1948: "An additional white-blue-white recognition band was to be applied ahead of the
+  vertical fin". The same page adds that "Airplanes delivered from abroad were rushed into service in their original
+  colors", and the Spitfire captions on pp. 12 and 14 name no band; the nearest evidence that the squadron wore one is
+  Efrati p. 11's caption of its Avia D-120, whose "fuselage identification white-blue-white blue center stripe" lacked
+  "the blue Star of David" for "lack of time or lack of paint". The band is drawn by the owner's ruling, without a star
+  (owner, 11 November 2026: "No star, as ruled (Recommended)"). No source gives its
+  width or place, so both are a DESIGN VALUE in `tools/spitfire_101_model.py` (`BAND_Z`, centred 3.75 m behind the centre
+  of gravity; `BAND_STRIPE`, 0.10 m a stripe).
+- **101 Squadron insignia: "Paint it, left side"**, and, for its shape's source, **"Yes, paint from p. 11"**. Painted on
+  the left engine cowling only.
+  - Shape and colours: Efrati p. 11, on the S-199. The caption: Stan Andrews "drew-up a winged skull wearing a flying
+    cap", and "silk screen stickers of the red, white and black 'angel of death' insignia were printed up and applied to
+    the left nose section". The page's two photographs (Ezer Weizman beside an Avia's nose; the IAF Museum's restored Avia
+    120 in colour) show a round red badge with a dark rim, two tall black wings rising behind the head, a dark flying cap
+    with light goggles, and a white skull.
+  - Use on the Spitfires: Efrati p. 12, "to the left side of their airplanes". The place on the cowling: Efrati p. 11,
+    the caption of Avia D-120, "applied only to the left side of the engine cowling". (Spitfire 17 on p. 12, delivered in
+    December 1948, carried none: "no First Fighter squadron insignia applied to the engine cowling".)
+  - Drawn by `tools/spitfire_101_model.py` (`insignia_layers`) from discs and ellipses, like the roundel: no scan, no
+    traced or copied image, no AI.
+  - DESIGN VALUE: its size (`INSIGNIA`, radius 0.17 m), its place (centred at z 1.75, y -0.10, below the exhaust stubs as
+    on the S-199), the cowling's limits it must sit within (`COWLING_Z`, the panel lines at z 1.05 and 2.75), every
+    shape's proportions, the cap's black (the colour photograph does not resolve it), and the exact shades (the palette's
+    red, white and black). Details the photographs do not resolve, such as the feathers and what is under the jaw, are
+    left out.
+- **Fuselage number: "No number (Recommended)".** A stated choice: the model carries no fuselage number.
+- The rudder stripe angle, the wing-star orientation and the camouflage were not asked about and are unchanged.
 
 ## What is in the slice
 
@@ -447,7 +492,7 @@ and a unit the sim moves is placed without the control layer.
 `EveryAnchorStandsWithinOneHexClearOfTheTownsAndTheRoutes` checks every anchor and logs each spot and its distance.
 
 **Look.**
-- **Models:** the slice's models and the authored-prefab hook.
+- **Models:** the slice's models, and the Spitfire's streamed Blender-built model over the code-built one.
 - **Army:** a token is 1 to 3 riflemen, spread across the ring as in promo 03, about 2 km apart, so each figure reads on
   its own.
 - **Headgear:** only the Negev Brigade's is tied to it by a source: knitted stocking caps and Mk II steel helmets, from
@@ -610,7 +655,7 @@ licence question, and the build-size cost is code only.
 
 **Their limit:** close up (the 6 km hero zoom) they look like wooden mannequins, with faceted limbs and no faces or
 folds. The promo's close shots (0:21) show sculpted miniatures. The way past that limit is the owner's close-zoom track,
-which plugs authored models in through the art hook above.
+whose models stream in from the Collection over the code-built ones, as the figures and the Spitfire do (above).
 
 ## Scale
 
@@ -781,6 +826,10 @@ Aircraft:
   Israeli Air Force Service 1948–1956* has still not been checked.
 - Yoav Efrati, *Colors & Markings of the Israeli Air Force* (IAF, 2005), http://files.iaflibrary.org.il/DigitalLibrary/English/ColorsMarkings.pdf: the IAF's own library publishes this reference, which these marking corrections rest on (pages are the
   book's own numbers).
+  Read again on 8 November 2026 for the Blender-built Spitfire (book page N is PDF page N + 1): p. 4, the order of 31 May
+  1948 (the white-blue-white band ahead of the fin); p. 11, the squadron insignia's origin and shape on an S-199, which
+  the model's insignia is drawn from (owner, 8 November 2026: "Yes, paint from p. 11"); p. 12, its place on the
+  Spitfires, the left side.
 
 Navy:
 - INS Haganah (K-20), ex-HMCS Norsyd, a modified Flower-class corvette, 208 ft (63.4 m) overall, with an upright

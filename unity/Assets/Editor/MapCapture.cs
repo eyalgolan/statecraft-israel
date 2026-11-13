@@ -170,28 +170,31 @@ public static class MapCapture
         int at = System.Array.IndexOf(args, "-captureDir");
         var dir = at >= 0 && at + 1 < args.Length ? args[at + 1] : Path.Combine(CaptureDir, "visual", "editor");
         var map = OpenAndBuild();
-        // The unit art slice and the units in play only when asked (-units, from tools/art_checkpoint.sh --units).
-        if (System.Array.IndexOf(args, "-units") >= 0)
-        {
-            Statecraft.Game.Map.Units.UnitShowcase.Spawn(map, still: true);
-            ShowStartUnits(map);
-        }
-        // The 1948 sub-districts and the 1949 armistice lines, as play draws them (GameRoot.Begin), so the editor renders pair
-        // with the WebGL shots: on the game's start by default, or on -regionsDate yyyy-MM-dd (a 1949 date shows the
-        // armistice zones in force then).
-        var subdistricts = Subdistricts1948.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Subdistricts1948.FileName)));
-        var regions = new MapRegions(subdistricts, Armistice1949.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Armistice1949.FileName))));
-        int dateAt = System.Array.IndexOf(args, "-regionsDate");
-        var date = dateAt >= 0 && dateAt + 1 < args.Length
-            ? System.DateTime.ParseExact(args[dateAt + 1], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)
-            : subdistricts.ShownFrom;
-        regions.Apply(date);
-        // The border renderer's synthetic proof only when asked (-borderproof, from tools/art_checkpoint.sh --borderproof).
-        if (System.Array.IndexOf(args, "-" + BorderProof.Flag) >= 0) BorderProof.Show(map);
-        var rig = Camera.main.GetComponent<CameraRig>();
+        // The streamed 101 Squadron Spitfire is answered from the AssetDatabase at once, as the player's stream would answer it
+        // after the first frame (#2734); put back in the finally below.
+        Statecraft.Game.Map.Units.StreamedAircraft.Source = AircraftFromAssetDatabase;
         int saved = QualitySettings.GetQualityLevel();
         try
         {
+            // The unit art slice and the units in play only when asked (-units, from tools/art_checkpoint.sh --units).
+            if (System.Array.IndexOf(args, "-units") >= 0)
+            {
+                Statecraft.Game.Map.Units.UnitShowcase.Spawn(map, still: true);
+                ShowStartUnits(map);
+            }
+            // The 1948 sub-districts and the 1949 armistice lines, as play draws them (GameRoot.Begin), so the editor renders pair
+            // with the WebGL shots: on the game's start by default, or on -regionsDate yyyy-MM-dd (a 1949 date shows the
+            // armistice zones in force then).
+            var subdistricts = Subdistricts1948.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Subdistricts1948.FileName)));
+            var regions = new MapRegions(subdistricts, Armistice1949.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Armistice1949.FileName))));
+            int dateAt = System.Array.IndexOf(args, "-regionsDate");
+            var date = dateAt >= 0 && dateAt + 1 < args.Length
+                ? System.DateTime.ParseExact(args[dateAt + 1], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)
+                : subdistricts.ShownFrom;
+            regions.Apply(date);
+            // The border renderer's synthetic proof only when asked (-borderproof, from tools/art_checkpoint.sh --borderproof).
+            if (System.Array.IndexOf(args, "-" + BorderProof.Flag) >= 0) BorderProof.Show(map);
+            var rig = Camera.main.GetComponent<CameraRig>();
             for (int level = 0; level < QualitySettings.names.Length; level++)
             {
                 QualitySettings.SetQualityLevel(level, true);
@@ -204,8 +207,22 @@ public static class MapCapture
                 }
             }
         }
-        finally { QualitySettings.SetQualityLevel(saved, true); }
+        finally { QualitySettings.SetQualityLevel(saved, true); Statecraft.Game.Map.Units.StreamedAircraft.Source = null; }
     }
+
+    /// <summary>The editor captures' stand-in for the Collection stream (StreamedAircraft.Source): the catalog prefab from the
+    /// AssetDatabase, answered at once (null, so the code-built aircraft stays, when it has not been made yet; then a warning
+    /// says so, so a render is not mistaken for the streamed model's). Holds nothing, so its lease releases nothing.</summary>
+    static System.IDisposable AircraftFromAssetDatabase(string id, Statecraft.Game.Map.Collection.CollectionDetail detail, System.Action<GameObject> done)
+    {
+        var path = Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, detail);
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (prefab == null) Debug.LogWarning($"MapCapture: no {path} (run CollectionImport.MakeAuthoredUnitPrefabs); the code-built aircraft is drawn.");
+        done(prefab);
+        return new NoLease();
+    }
+
+    sealed class NoLease : System.IDisposable { public void Dispose() { } }
 
     /// <summary>The owner's view of 27 October 2026 ("there are incomplete borders like here"): the south coast from Gaza to
     /// Negba, where the uncoloured south meets the 9 July front and Shoval's pinned hex; bands there ended in mid-air until
@@ -549,9 +566,10 @@ public static class MapCapture
         }
     }
 
-    /// <summary>Close-ups of the unit aircraft (the Avia S-199 and the Spitfire) alone, top and side, at a size where the
-    /// insignia read, into -captureDir (default captures/visual/aircraft) as &lt;aircraft&gt;-&lt;view&gt;.png: for checking the
-    /// markings against the sourced photographs (docs/units.md).</summary>
+    /// <summary>Close-ups of the unit aircraft (the code-built Avia S-199 and the 101 Squadron Spitfire's streamed Blender-built
+    /// model, StreamedAircraft) alone, top and side, at a size where the insignia read, into -captureDir (default
+    /// captures/visual/aircraft) as &lt;aircraft&gt;-&lt;view&gt;.png: for checking the markings against the sourced photographs
+    /// (docs/units.md).</summary>
     public static void Aircraft()
     {
         var args = System.Environment.GetCommandLineArgs();
@@ -565,31 +583,39 @@ public static class MapCapture
         cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.82f, 0.80f, 0.74f); cam.fieldOfView = 30f;
         var paint = new Material(Resources.Load<Material>(Statecraft.Game.Map.Units.UnitMaterials.MiniatureResource));
         paint.SetTexture("_BaseMap", Statecraft.Game.Map.Units.UnitPalette.MakeTexture());
-        foreach (var (name, airframe, prop, hub) in new[]
+        // The Spitfire is the 101 Squadron's Blender-built model, answered from the AssetDatabase as the stream would answer it
+        // (#2734), over the code-built one; the S-199 stays code-built. Put back in the finally below.
+        Statecraft.Game.Map.Units.StreamedAircraft.Source = AircraftFromAssetDatabase;
+        try
         {
-            ("avia-s199", Statecraft.Game.Map.Units.UnitModels.AviaS199("s199"), Statecraft.Game.Map.Units.UnitModels.S199Propeller("p"), Statecraft.Game.Map.Units.UnitModels.S199PropellerHub),
-            ("spitfire", Statecraft.Game.Map.Units.UnitModels.Spitfire("spit"), Statecraft.Game.Map.Units.UnitModels.SpitfirePropeller("p"), Statecraft.Game.Map.Units.UnitModels.SpitfirePropellerHub),
-        })
-        {
-            var plane = new GameObject(name);
-            var body = new GameObject("Airframe"); body.transform.SetParent(plane.transform, false);
-            body.AddComponent<MeshFilter>().sharedMesh = airframe; body.AddComponent<MeshRenderer>().sharedMaterial = paint;
-            var p = new GameObject("Propeller"); p.transform.SetParent(plane.transform, false); p.transform.localPosition = hub;
-            p.AddComponent<MeshFilter>().sharedMesh = prop; p.AddComponent<MeshRenderer>().sharedMaterial = paint;
-            foreach (var (view, pos, look) in new[]
+            foreach (var (name, airframe, prop, hub) in new[]
             {
-                ("top", new Vector3(0f, 22f, -0.5f), new Vector3(0f, 0f, -0.5f)),
-                ("bottom", new Vector3(0f, -22f, -0.5f), new Vector3(0f, 0f, -0.5f)),
-                ("side-left", new Vector3(-20f, 2.5f, -1f), new Vector3(0f, 0f, -1f)),
-                ("three-quarter", new Vector3(-13f, 9f, 13f), Vector3.zero),
+                ("avia-s199", Statecraft.Game.Map.Units.UnitModels.AviaS199("s199"), Statecraft.Game.Map.Units.UnitModels.S199Propeller("p"), Statecraft.Game.Map.Units.UnitModels.S199PropellerHub),
+                ("spitfire", Statecraft.Game.Map.Units.UnitModels.Spitfire("spit"), Statecraft.Game.Map.Units.UnitModels.SpitfirePropeller("p"), Statecraft.Game.Map.Units.UnitModels.SpitfirePropellerHub),
             })
             {
-                cam.transform.position = pos;
-                cam.transform.LookAt(look, Mathf.Abs(pos.y) > 15f ? Vector3.forward : Vector3.up);
-                Save(cam, 1600, 1000, Path.Combine(dir, $"{name}-{view}.png"));
+                var plane = new GameObject(name);
+                var body = new GameObject("Airframe"); body.transform.SetParent(plane.transform, false);
+                body.AddComponent<MeshFilter>().sharedMesh = airframe; body.AddComponent<MeshRenderer>().sharedMaterial = paint;
+                var p = new GameObject("Propeller"); p.transform.SetParent(plane.transform, false); p.transform.localPosition = hub;
+                p.AddComponent<MeshFilter>().sharedMesh = prop; p.AddComponent<MeshRenderer>().sharedMaterial = paint;
+                if (name == "spitfire") Statecraft.Game.Map.Units.StreamedAircraft.Attach(plane, body, p.transform);
+                foreach (var (view, pos, look) in new[]
+                {
+                    ("top", new Vector3(0f, 22f, -0.5f), new Vector3(0f, 0f, -0.5f)),
+                    ("bottom", new Vector3(0f, -22f, -0.5f), new Vector3(0f, 0f, -0.5f)),
+                    ("side-left", new Vector3(-20f, 2.5f, -1f), new Vector3(0f, 0f, -1f)),
+                    ("three-quarter", new Vector3(-13f, 9f, 13f), Vector3.zero),
+                })
+                {
+                    cam.transform.position = pos;
+                    cam.transform.LookAt(look, Mathf.Abs(pos.y) > 15f ? Vector3.forward : Vector3.up);
+                    Save(cam, 1600, 1000, Path.Combine(dir, $"{name}-{view}.png"));
+                }
+                Object.DestroyImmediate(plane);
             }
-            Object.DestroyImmediate(plane);
         }
+        finally { Statecraft.Game.Map.Units.StreamedAircraft.Source = null; }
     }
 
     static void Save(Camera cam, int w, int h, string path)

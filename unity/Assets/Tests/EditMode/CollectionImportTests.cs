@@ -18,7 +18,7 @@ public class CollectionImportTests
 
     static string Dir(string id) => $"{Folder}/{id}";
     static string Model(string id) => $"{Dir(id)}/{id}.fbx";
-    static string ColourMap(string id) => $"{Dir(id)}/{id}_basecolor.jpg";
+    static string ColourMap(string id) => CollectionCatalog.ColourMapPath(id);
     static IEnumerable<string> Ids => CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsBuilding(id));
     static bool Animated(string id) => CollectionCatalog.Animated.Contains(id);
     static readonly string[] GeneratedInfantry =
@@ -103,10 +103,10 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(102, ids.Count);
+        Assert.AreEqual(103, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(124, CollectionCatalog.Bundles.Count,
-            "73 independent originals, the 1948 soldier's rigged copy (#2384), #1763's shared generated bundle, one bundle for each later generated model (#2083's two weapons, #2084's pose source and #2274's Dakota, four props and local irregular among them) and one for each of the 23 town models' far-off copies (#2378)");
+        Assert.AreEqual(125, CollectionCatalog.Bundles.Count,
+            "73 independent originals, the 1948 soldier's rigged copy (#2384), #1763's shared generated bundle, one bundle for each later generated model (#2083's two weapons, #2084's pose source and #2274's Dakota, four props and local irregular among them), one for the Blender-built 101 Squadron Spitfire (#2734) and one for each of the 23 town models' far-off copies (#2378)");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
         // #2378: each town model's far-off copy streams in a bundle of its own; the copies are not among the originals.
@@ -123,7 +123,7 @@ public class CollectionImportTests
         }
         Assert.IsFalse(CollectionCatalog.IsFarCopy("b07-kibbutz-dining-hall-v2"));
         Assert.IsFalse(CollectionCatalog.IsFarCopy("b11-shikun-housing-v2-far"), "a special building has no far-off copy");
-        CollectionAssert.AreEqual(new[] { 22, 13, 6, 10, 5, 2, 5, 9, 4, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 22, 13, 6, 10, 5, 2, 5, 9, 4, 2, 1, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
         Assert.AreEqual(29, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
@@ -224,7 +224,7 @@ public class CollectionImportTests
             if (CollectionCatalog.IsFigurePose(id)) return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.prefab" };
             if (CollectionCatalog.IsGenerated(id))
                 return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
-                    .Concat(CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" })
+                    .Concat(CollectionCatalog.IsGeneratedProp(id) || CollectionCatalog.IsGeneratedTown(id) || CollectionCatalog.IsGeneratedWeapon(id) || CollectionCatalog.IsAuthoredUnit(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" })
                     .ToArray();
             files.AddRange(fire);
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
@@ -424,7 +424,7 @@ public class CollectionImportTests
         var placed = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGenerated(id) || CollectionCatalog.IsGeneratedHouse(id)).ToList();
         CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.KhakiTent,
             CollectionCatalog.EgyptianDakota, CollectionCatalog.StoneWell, CollectionCatalog.Sandbags, CollectionCatalog.CrateStack,
-            CollectionCatalog.StoneWall, CollectionCatalog.LocalIrregular }, placed);
+            CollectionCatalog.StoneWall, CollectionCatalog.LocalIrregular, CollectionCatalog.IsraeliSpitfire }, placed);
         Assert.AreEqual(5, placed.Count(CollectionCatalog.IsGeneratedHouse), "the five generated houses");
         foreach (var id in placed)
         {
@@ -435,11 +435,93 @@ public class CollectionImportTests
             // Its model, streamed prefab, material and colour map are all in its own bundle's closure; #2084's pose source has
             // only its export (for the clip) and its prefab.
             foreach (var file in CollectionCatalog.IsFigurePose(id) ? new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }
-                : new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near), folder + id + ".mat", folder + id + "_basecolor.jpg" })
+                : new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near), folder + id + ".mat", CollectionCatalog.ColourMapPath(id) })
                 CollectionAssert.Contains(closures[own], file, id + " in its own bundle");
             foreach (var other in closures.Where(c => c.Key != own))
                 CollectionAssert.IsEmpty(FilesOf(id, other.Value), id + " pulled into " + other.Key);
         }
+    }
+
+    /// <summary>#2734 (coordinator's option 1): the Blender-built 101 Squadron Spitfire (tools/spitfire_101_model.py) streams in
+    /// a bundle of its own after the first frame, not the Egyptian Spitfire's, from one prefab beside its model in the
+    /// Collection's folder; nothing of it is under a Resources folder, so the WebGL player's first download does not carry it,
+    /// and Resources.Load of the old path finds nothing. Its colour map is the tool's PNG (not a JPG). The importer leaves its
+    /// committed import settings alone (it is no original: CollectionImport.Run imports only those), so the FBX still remaps
+    /// its material to the .mat beside it and imports without compression, animation or file-scale changes.</summary>
+    [Test]
+    public void TheIsraeliSpitfireStreamsInABundleOfItsOwnAndNothingOfItIsUnderResources()
+    {
+        const string id = "spitfire-mk9e-101sqn-1948";
+        Assert.AreEqual(id, CollectionCatalog.IsraeliSpitfire);
+        Assert.AreEqual(Statecraft.Game.Map.Units.UnitShowcase.SpitfireType, id, "the unit type is the catalog id");
+        Assert.IsTrue(CollectionCatalog.Ids.Contains(id));
+        Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), "a bundle of its own");
+        Assert.AreNotEqual(CollectionCatalog.BundleOf(CollectionCatalog.EgyptianSpitfire), CollectionCatalog.BundleOf(id), "not the Egyptian Spitfire's");
+        Assert.IsTrue(CollectionCatalog.IsAuthoredUnit(id) && CollectionCatalog.IsGenerated(id), "imported by none of the originals' importers");
+        CollectionAssert.DoesNotContain(CollectionCatalog.Animated, id, "a static model");
+        var path = CollectionCatalog.PrefabPath(id, CollectionDetail.Far);
+        Assert.AreEqual($"{Folder}/{id}/{id}.prefab", path);
+        Assert.AreEqual(path, CollectionCatalog.PrefabPath(id, CollectionDetail.Near), "one prefab at both details");
+        Assert.IsFalse(UnderResources(path), path);
+        Assert.AreEqual($"{Folder}/{id}/{id}.fbx", CollectionCatalog.SourceModelPath(id));
+        Assert.AreEqual($"{Folder}/{id}/{id}_basecolor.png", CollectionCatalog.ColourMapPath(id), "the tool's PNG");
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        Assert.IsNotNull(prefab, path + " (made by CollectionImport.MakeAuthoredUnitPrefabs)");
+        Assert.IsNotNull(prefab!.transform.Find(Statecraft.Game.Map.Units.StreamedAircraft.PropellerName), "its propeller, a direct child, for the flight to turn");
+        var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Folder}/{id}/{id}.mat");
+        Assert.IsNotNull(mat);
+        var renderers = prefab.GetComponentsInChildren<Renderer>(true);
+        Assert.AreEqual(2, renderers.Length, "the body and the propeller");
+        Assert.IsTrue(renderers.All(r => r.sharedMaterials.Length > 0 && r.sharedMaterials.All(m => m == mat)), "each part draws with the .mat beside it");
+        Assert.AreEqual(AssetDatabase.LoadAssetAtPath<Texture2D>(ColourMap(id)), mat!.GetTexture("_BaseMap"), "the PNG colour map");
+        // The committed import settings (the .fbx.meta beside it), which CollectionImport does not touch.
+        var imp = (ModelImporter)AssetImporter.GetAtPath(CollectionCatalog.SourceModelPath(id));
+        Assert.AreEqual(ModelImporterMaterialImportMode.ImportViaMaterialDescription, imp.materialImportMode, "its material is remapped, not dropped");
+        Assert.AreEqual(ModelImporterMeshCompression.Off, imp.meshCompression);
+        Assert.AreEqual(ModelImporterAnimationCompression.Off, imp.animationCompression);
+        Assert.IsFalse(imp.importAnimation, "no takes");
+        Assert.IsFalse(imp.isReadable);
+        Assert.AreEqual(1f, imp.globalScale); Assert.IsTrue(imp.useFileScale, "real metres, as the FBX has them");
+        // Nothing of it under any Resources folder, and the old path finds nothing.
+        Assert.IsNull(Resources.Load<GameObject>("Units/Authored/" + id), "no Resources copy");
+        CollectionAssert.IsEmpty(AssetDatabase.FindAssets(id).Select(AssetDatabase.GUIDToAssetPath).Where(UnderResources), "no copy under any Resources folder");
+        CollectionAssert.IsEmpty(FilesOf(id, ResourcesClosure()), "no Resources asset depends on it");
+        // Its bundle's entries are its prefab and model; its material and colour map come in as dependencies.
+        var t = Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor");
+        var own = ((AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!).Single(b => b.assetBundleName == "collection-" + id);
+        CollectionAssert.AreEquivalent(new[] { path, CollectionCatalog.SourceModelPath(id) }, own.assetNames);
+        var closure = AssetDatabase.GetDependencies(own.assetNames, true);
+        CollectionAssert.Contains(closure, $"{Folder}/{id}/{id}.mat");
+        CollectionAssert.Contains(closure, ColourMap(id));
+    }
+
+    /// <summary>#2734 review: the real imported prefab is the aircraft's real size in metres, so a later import change (file
+    /// scale, global scale, a unit mix-up) cannot ship a 100x or 0.01x Spitfire. The PR body ("Against the coordinator's
+    /// requirements", 2. Size and frame) gives "real metres", the length 9.47 m (spinner tip to rudder trailing edge) and "Nose
+    /// +Z, Y up, wings along X". The length and the span are en.wikipedia "Supermarine Spitfire variants: specifications,
+    /// performance and armament" (LF Mk IXe, 9.47 m; the clipped wing's 32 ft 6 in, 9.9 m). The span is the owner's ruling
+    /// of 8 November 2026: "9.9 m (Recommended)" (before it the model spanned 10.16 m, 11.23 m less the 1.07 m clip). Plus or
+    /// minus 5 percent is for import-scale faults, not the span's last centimetre (tools/tests/test_spitfire_101_model.py pins
+    /// the FBX's span to 1 cm). Both a lower and an upper bound, so a 100x or 0.01x import fails.</summary>
+    [Test]
+    public void TheIsraeliSpitfirePrefabIsItsRealSizeWingsAlongXNoseAlongZ()
+    {
+        const float span = 9.9f, length = 9.47f, tolerance = 0.05f;   // metres; plus or minus 5 percent
+        var path = CollectionCatalog.PrefabPath(CollectionCatalog.IsraeliSpitfire, CollectionDetail.Far);
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        Assert.IsNotNull(prefab, path + " (made by CollectionImport.MakeAuthoredUnitPrefabs)");
+        var go = UnityEngine.Object.Instantiate(prefab!, Vector3.zero, Quaternion.identity);
+        try
+        {
+            var renderers = go.GetComponentsInChildren<Renderer>(true);
+            Assert.IsNotEmpty(renderers, "the body and the propeller");
+            var b = renderers.Select(r => r.bounds).Aggregate((a, c) => { a.Encapsulate(c); return a; });
+            Assert.GreaterOrEqual(b.size.x, span * (1f - tolerance), $"span along X {b.size.x} m");
+            Assert.LessOrEqual(b.size.x, span * (1f + tolerance), $"span along X {b.size.x} m");
+            Assert.GreaterOrEqual(b.size.z, length * (1f - tolerance), $"length along Z {b.size.z} m");
+            Assert.LessOrEqual(b.size.z, length * (1f + tolerance), $"length along Z {b.size.z} m");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
     }
 
     /// <summary>What every asset under any Resources folder (nested ones too) depends on: all of it ships in every build.</summary>
